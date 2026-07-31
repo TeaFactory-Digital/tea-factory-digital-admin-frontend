@@ -1,0 +1,15 @@
+{
+  "name": "@tfd/domain",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The tea-factory domain model: types, business constants, the RBAC matrix, the credit basis and the Zod schemas. Framework-free — no React, no React Native, no axios.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  }
+}

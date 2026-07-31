@@ -1,0 +1,287 @@
+/**
+ * The Tailwind ↔ brand-token bridge.
+ *
+ * Tailwind generates utility classes at BUILD time. The brand arrives at
+ * RUNTIME, from `GET /config`. The two are reconciled by one level of
+ * indirection: every Tailwind token below is declared as `var(--brand-*)`, and
+ * `applyTheme()` from `@tfd/brand` writes those `--brand-*` properties onto
+ * `documentElement` once the tenant is known.
+ *
+ *   --brand-color-primary: #2E8B57              ← written at runtime, per tenant
+ *   --color-primary: var(--brand-color-primary) ← declared here, at build time
+ *   .bg-primary { background-color: var(--color-primary) }   ← generated
+ *
+ * Consequences, both intended:
+ *
+ *  - `bg-primary` is brand-driven and needs no rebuild to rebrand.
+ *  - `bg-[#128C7E]` is a lint error (see eslint.config.js). There is no legal
+ *    way to write a colour into a component, which is the golden rule from
+ *    architecture.md §4 surviving onto the web.
+ *
+ * There are deliberately NO fallback values in the `var()` calls. Fallbacks
+ * would mean the palette is written twice — here and in `@tfd/brand` — and the
+ * copies would drift. Instead `main.tsx` applies the bundled tenant theme
+ * synchronously before the first React render, so a paint never happens without
+ * brand properties present.
+ */
+
+@import 'tailwindcss';
+
+@theme {
+  /* ── Colours ──────────────────────────────────────────────────────────────
+   * `--color-*: initial` first, which drops Tailwind's default palette. There
+   * is no `bg-red-500` in this codebase: a status colour that is not
+   * `error`/`warning`/`success`/`info` is a colour the factory cannot rebrand.
+   * `transparent` and `currentColor` survive because they are structural, not
+   * brand — a transparent border is a layout device, not a shade.
+   */
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --color-primary: var(--brand-color-primary);
+  --color-primary-contrast: var(--brand-color-primary-contrast);
+  --color-primary-muted: var(--brand-color-primary-muted);
+
+  --color-secondary: var(--brand-color-secondary);
+  --color-secondary-contrast: var(--brand-color-secondary-contrast);
+
+  --color-background: var(--brand-color-background);
+  --color-surface: var(--brand-color-surface);
+  --color-surface-variant: var(--brand-color-surface-variant);
+
+  --color-text-primary: var(--brand-color-text-primary);
+  --color-text-secondary: var(--brand-color-text-secondary);
+  --color-text-inverse: var(--brand-color-text-inverse);
+
+  --color-border: var(--brand-color-border);
+  --color-divider: var(--brand-color-divider);
+
+  --color-success: var(--brand-color-success);
+  --color-warning: var(--brand-color-warning);
+  --color-error: var(--brand-color-error);
+  --color-info: var(--brand-color-info);
+
+  --color-success-muted: var(--brand-color-success-muted);
+  --color-warning-muted: var(--brand-color-warning-muted);
+  --color-error-muted: var(--brand-color-error-muted);
+  --color-info-muted: var(--brand-color-info-muted);
+
+  --color-on-status: var(--brand-color-on-status);
+
+  --color-overlay: var(--brand-color-overlay);
+  --color-disabled: var(--brand-color-disabled);
+  --color-disabled-contrast: var(--brand-color-disabled-contrast);
+
+  --color-table-header: var(--brand-color-table-header);
+  --color-table-row-hover: var(--brand-color-table-row-hover);
+  --color-table-row-alt: var(--brand-color-table-row-alt);
+  --color-focus-ring: var(--brand-color-focus-ring);
+
+  /* ── Spacing ──────────────────────────────────────────────────────────────
+   * Named tokens matching the shared scale, so `p-lg` is the same 16 the phone
+   * uses. Tailwind's numeric scale (`p-4`, `gap-2`) stays available — it is a
+   * scale step, not a magic number, and `w-*`/`h-*`/`inset-*` are built on it.
+   * Prefer the named token when the value is spacing; reach for the numeric
+   * scale for one-off geometry.
+   */
+  --spacing-none: var(--brand-space-none);
+  --spacing-xxs: var(--brand-space-xxs);
+  --spacing-xs: var(--brand-space-xs);
+  --spacing-sm: var(--brand-space-sm);
+  --spacing-md: var(--brand-space-md);
+  --spacing-lg: var(--brand-space-lg);
+  --spacing-xl: var(--brand-space-xl);
+  --spacing-xxl: var(--brand-space-xxl);
+  --spacing-xxxl: var(--brand-space-xxxl);
+  --spacing-huge: var(--brand-space-huge);
+  --spacing-giant: var(--brand-space-giant);
+
+  /* ── Layout widths ────────────────────────────────────────────────────────
+   * These exist because of a real collision, worth understanding before
+   * touching either scale.
+   *
+   * Tailwind's sizing utilities (`max-w-*`, `w-*`, `h-*`) resolve a NAMED value
+   * against `--spacing-*` **before** `--container-*`. Defining `--spacing-md`
+   * therefore silently redefines `max-w-md` from 28rem to 12px — and nothing
+   * errors, the page just collapses to a column one word wide. Restoring
+   * `--container-md` does not win it back; spacing is matched first.
+   *
+   * So every layout width is a **semantic token whose name cannot collide with
+   * a spacing step**. `max-w-card` also says what it is for, which `max-w-md`
+   * never did. `eslint.config.js` rejects t-shirt-named sizing utilities so the
+   * trap cannot be stepped on again.
+   *
+   * Fixed rem values rather than brand variables: this is layout geometry, not
+   * brand. A factory re-colours the console; it does not re-flow it.
+   */
+  --container-card: 28rem;
+  --container-dialog: 32rem;
+  --container-dialog-wide: 48rem;
+  --container-page: 80rem;
+
+  /* ── Radius ───────────────────────────────────────────────────────────── */
+  --radius-*: initial;
+  --radius-none: var(--brand-radius-none);
+  --radius-sm: var(--brand-radius-sm);
+  --radius-md: var(--brand-radius-md);
+  --radius-lg: var(--brand-radius-lg);
+  --radius-xl: var(--brand-radius-xl);
+  --radius-pill: var(--brand-radius-pill);
+  --radius-full: var(--brand-radius-full);
+
+  /* ── Typography ───────────────────────────────────────────────────────────
+   * One class carries size, line height, weight and tracking together, so a
+   * heading cannot be half-applied. `text-h2` is the whole variant.
+   */
+  --text-*: initial;
+
+  --text-display-large: var(--brand-font-size-display-large);
+  --text-display-large--line-height: var(--brand-line-height-display-large);
+  --text-display-large--font-weight: var(--brand-font-weight-display-large);
+  --text-display-large--letter-spacing: var(--brand-letter-spacing-display-large);
+
+  --text-h1: var(--brand-font-size-h1);
+  --text-h1--line-height: var(--brand-line-height-h1);
+  --text-h1--font-weight: var(--brand-font-weight-h1);
+  --text-h1--letter-spacing: var(--brand-letter-spacing-h1);
+
+  --text-h2: var(--brand-font-size-h2);
+  --text-h2--line-height: var(--brand-line-height-h2);
+  --text-h2--font-weight: var(--brand-font-weight-h2);
+  --text-h2--letter-spacing: var(--brand-letter-spacing-h2);
+
+  --text-h3: var(--brand-font-size-h3);
+  --text-h3--line-height: var(--brand-line-height-h3);
+  --text-h3--font-weight: var(--brand-font-weight-h3);
+
+  --text-title: var(--brand-font-size-title);
+  --text-title--line-height: var(--brand-line-height-title);
+  --text-title--font-weight: var(--brand-font-weight-title);
+
+  --text-subtitle: var(--brand-font-size-subtitle);
+  --text-subtitle--line-height: var(--brand-line-height-subtitle);
+  --text-subtitle--font-weight: var(--brand-font-weight-subtitle);
+
+  --text-body: var(--brand-font-size-body);
+  --text-body--line-height: var(--brand-line-height-body);
+  --text-body--font-weight: var(--brand-font-weight-body);
+
+  --text-body-strong: var(--brand-font-size-body-strong);
+  --text-body-strong--line-height: var(--brand-line-height-body-strong);
+  --text-body-strong--font-weight: var(--brand-font-weight-body-strong);
+
+  --text-body-small: var(--brand-font-size-body-small);
+  --text-body-small--line-height: var(--brand-line-height-body-small);
+  --text-body-small--font-weight: var(--brand-font-weight-body-small);
+
+  --text-label: var(--brand-font-size-label);
+  --text-label--line-height: var(--brand-line-height-label);
+  --text-label--font-weight: var(--brand-font-weight-label);
+
+  --text-button: var(--brand-font-size-button);
+  --text-button--line-height: var(--brand-line-height-button);
+  --text-button--font-weight: var(--brand-font-weight-button);
+  --text-button--letter-spacing: var(--brand-letter-spacing-button);
+
+  --text-caption: var(--brand-font-size-caption);
+  --text-caption--line-height: var(--brand-line-height-caption);
+  --text-caption--font-weight: var(--brand-font-weight-caption);
+
+  --text-overline: var(--brand-font-size-overline);
+  --text-overline--line-height: var(--brand-line-height-overline);
+  --text-overline--font-weight: var(--brand-font-weight-overline);
+  --text-overline--letter-spacing: var(--brand-letter-spacing-overline);
+
+  --text-data-cell: var(--brand-font-size-data-cell);
+  --text-data-cell--line-height: var(--brand-line-height-data-cell);
+  --text-data-cell--font-weight: var(--brand-font-weight-data-cell);
+
+  --text-data-header: var(--brand-font-size-data-header);
+  --text-data-header--line-height: var(--brand-line-height-data-header);
+  --text-data-header--font-weight: var(--brand-font-weight-data-header);
+  --text-data-header--letter-spacing: var(--brand-letter-spacing-data-header);
+
+  /* ── Font stacks ──────────────────────────────────────────────────────── */
+  --font-sans: var(--brand-font-family-regular);
+  --font-medium: var(--brand-font-family-medium);
+  --font-semibold: var(--brand-font-family-semibold);
+  --font-bold: var(--brand-font-family-bold);
+
+  /* ── Icon sizes ───────────────────────────────────────────────────────────
+   * Exposed as sizes so `size-icon-md` matches the phone's `iconSizes.md`.
+   */
+  --size-icon-xs: var(--brand-icon-xs);
+  --size-icon-sm: var(--brand-icon-sm);
+  --size-icon-md: var(--brand-icon-md);
+  --size-icon-lg: var(--brand-icon-lg);
+  --size-icon-xl: var(--brand-icon-xl);
+  --size-icon-xxl: var(--brand-icon-xxl);
+}
+
+/**
+ * Tabular, lining figures for money and kilos.
+ *
+ * Not cosmetic: a clerk scans a column of amounts to catch a mistyped kilo
+ * before it becomes a bill (admin-console.md §18.2), and proportional digits
+ * make that column unscannable.
+ */
+@utility numeric {
+  font-feature-settings: var(--brand-numeric-features);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/**
+ * The console is a keyboard product. `focus-visible` is styled once, globally,
+ * so no component has to remember it and no component can opt out by forgetting.
+ */
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    color-scheme: light;
+    /* The office lives on 1366×768 laptops; 15px keeps a dense grid legible
+       without the whole shell scrolling. */
+    font-size: 15px;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* The required marker is drawn, not written. A text node inside the label
+     becomes part of the field's accessible name — "Email star" — and no
+     `aria-hidden` suppresses that reliably. Required is conveyed to assistive
+     technology by the control's own `required` attribute (see ui/Field.tsx). */
+  label[data-required]::after {
+    content: ' *';
+    color: var(--color-error);
+  }
+
+  /* Reduced motion is honoured globally here and per-animation in components,
+     the same rule the app follows: motion is removed, information is not. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Sinhala and Tamil run longer than English and must not clip (§20.2). Words
+     in the content editor break rather than overflow their column. */
+  [lang='si'],
+  [lang='ta'] {
+    overflow-wrap: anywhere;
+    line-height: 1.7;
+  }
+}

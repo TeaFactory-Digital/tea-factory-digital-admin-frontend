@@ -1,0 +1,191 @@
+# Operations
+
+Running, testing and deploying the console.
+
+---
+
+## Commands
+
+From the workspace root:
+
+| Command | What it does |
+| --- | --- |
+| `npm install` | Installs everything. Node ≥ 22.11 |
+| `npm run dev` | Vite dev server on **http://localhost:5273**, mock API on |
+| `npm run build` | Production bundle into `apps/admin/dist` |
+| `npm run preview` | Serves the built bundle |
+| `npm run typecheck` | `tsc --build` across all three projects |
+| `npm run lint` | ESLint, including the white-label and layering rules |
+| `npm run test` | Vitest — 66 tests |
+| `npm run e2e` | Playwright — 3 specs. Needs `npx playwright install chromium` once |
+| `npm run format` | Prettier |
+
+First run needs nothing else: `.env.development` is committed, so a fresh clone
+starts against the mock with the `galaboda` tenant resolved and no setup. Sign in
+with the credentials printed on the screen.
+
+---
+
+## Environments
+
+Every value is public configuration compiled into the bundle. **Nothing secret can
+go in a `VITE_*` variable**, and there is no mechanism here that would keep it
+secret if you tried.
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `VITE_API_BASE_URL` | `https://api.teafactory.example/v1` | **Placeholder.** `{tenant}` is substituted with the resolved tenant id |
+| `VITE_USE_MOCK` | `1` in dev, `0` in prod | Serve from MSW instead of the network |
+| `VITE_DEFAULT_TENANT` | `galaboda` (dev) | Used only when the host carries no subdomain |
+| `VITE_SEND_TENANT_HEADER` | `1` | Send `X-Tenant` alongside the subdomain |
+| `VITE_API_TIMEOUT_MS` | `20000` | **Do not shorten for a rural network** (§20.1) |
+
+Files: `.env.development` (committed, dev defaults) · `.env.example` (documented
+template) · `.env.local` (git-ignored, your overrides).
+
+`assertEnvUsable()` **refuses to boot** a production bundle with mocks on or still
+pointed at the placeholder origin. A console that looks fine, serves fixtures, and
+reports every failure as a network problem is the worst available outcome.
+
+---
+
+## Deployment
+
+One build, served for every tenant:
+
+```
+galaboda.admin.teafactory.lk    ─┐
+hillcountry.admin.teafactory.lk  ├─► same static bundle ─► GET /config per subdomain
+highland.admin.teafactory.lk    ─┘
+```
+
+**A new factory is a DNS record and a `client_config` row.** No build, no deploy.
+That asymmetry with mobile — where a new brand still needs a binary — is expected:
+app stores demand binaries, browsers do not.
+
+Host requirements:
+
+1. **SPA fallback** — rewrite unknown paths to `/index.html`, or a refresh on
+   `/change-requests/chg-2` is a 404.
+2. **Wildcard TLS + DNS** for `*.admin.<domain>`.
+3. **Cache `/assets/*` immutably** (hashed filenames), **never cache
+   `index.html`**.
+4. **CORS on the API**: an explicit origin allowlist with
+   `Access-Control-Allow-Credentials: true` — a wildcard origin is illegal with
+   credentials, and the refresh cookie needs them.
+5. **`noindex`** — already in `index.html`.
+
+Release cadence is the thing to design around: **the API and the console can ship
+daily, the app cannot.** So the API must stay backward compatible for as long as
+old binaries are in the field, and feature flags are the release valve.
+
+---
+
+## Testing
+
+Layered so each layer tests what only it can.
+
+### Vitest — 66 tests
+
+| File | Covers |
+| --- | --- |
+| `rbac.test.ts` (15) | The §12.1 matrix, grant merging, four-eyes, the approval threshold |
+| `money.test.ts` (13) | `floor2`/`round2`, the credit basis, BR-107, account masking |
+| `brand.test.ts` (21) | Tenant resolution, CSS-variable emission, dp→px, served-value validation |
+| `changeRequests.test.tsx` (17) | M9 and M2 end to end against the mock API, through the real transport |
+
+`rbac.test.ts` and `money.test.ts` are the highest-value files. The matrix is what
+a factory will ask to change, and status.md §10 item 10 records that **no tests
+cover the credit rules** in the mobile app — the ceiling arithmetic is the one
+place a bug produces a dispute rather than a crash.
+
+`changeRequests.test.tsx` goes through the real transport, store and screens; only
+the server is a stand-in. A test that stubbed the repository would pass while the
+interceptor flattened every error code.
+
+### Playwright — 4 specs
+
+Narrow on purpose: only what jsdom cannot prove.
+
+1. **Sign-in → dashboard** — proves the service worker registers and the whole
+   session flow works in a browser.
+2. **Survives a page reload** — the access token is in memory by design, so a
+   fresh document must recover the session from the refresh cookie. Covers
+   reload, a cold deep link, and that signing out then reloading stays signed
+   out. Regression test: this failed once, and a console that logs you out on
+   every refresh is unusable.
+3. **The brand bridge paints** — asserts `--brand-color-primary` computes to
+   Galaboda's green, then that `?tenant=hillcountry` repaints without a rebuild.
+   The entire white-label mechanism in one assertion.
+4. **A reduced-feature tenant loses its queues** — `highland` must have no loan or
+   manure rows at all.
+
+Viewport is **1366×768**: testing at 1920 hides every layout problem that actually
+gets reported.
+
+### Not tested, and known
+
+- **Refresh-token rotation and reuse detection** — the mock is deliberately looser
+  here (see [mocks.md](./mocks.md)); this needs the real backend.
+- **Visual regression** — no snapshots. The brand-bridge assertion covers the case
+  that would otherwise break silently.
+- **Screen-reader behaviour** — semantics are built in (real tables, `aria-sort`,
+  `role="alert"`, a clean accessible name on every field) but no assistive
+  technology has been driven over it.
+
+---
+
+## CI
+
+Five steps, in this order — each fails faster than the next:
+
+```yaml
+- npm ci
+- npm run typecheck
+- npm run lint
+- npm run test
+- npm run build
+```
+
+Add `npm run e2e` behind `npx playwright install --with-deps chromium`. The
+Playwright config already sets `forbidOnly` and one retry under `CI`, and reports
+in GitHub format.
+
+---
+
+## Performance
+
+The bundle is split by **change rate**, not size, because one bundle serves every
+tenant and the console ships continuously — what matters is how much a returning
+clerk re-downloads after a release.
+
+| Chunk | gzip | Loaded |
+| --- | --- | --- |
+| `index` | ~82 kB | Always |
+| `charts` (Recharts) | ~105 kB | Only with M1/M16 |
+| `data` (Query, Table, axios) | ~44 kB | Always |
+| `ui` (Radix) | ~33 kB | Always |
+| `react` | ~32 kB | Always |
+| `forms` (RHF, Zod) | ~29 kB | Always |
+| `i18n` | ~16 kB | Always |
+| Each module screen | 1–9 kB | On navigation |
+| CSS | ~6 kB | Always |
+
+Module screens are lazy, so a sign-in form does not arrive with a charting library
+attached. MSW is **eliminated** from production, not merely unloaded — the guard is
+`import.meta.env.DEV && env.useMock`, so Vite drops the branch.
+
+The §20.1 payload budget (a bill in one round trip, ≤30 KB) is a **mobile**
+constraint and does not apply here — the console is a desktop product on office
+broadband. What does apply is that the API is shared: `refetchOnWindowFocus` and
+debounced search exist so the office is not competing with the phones on
+publication day (§20.5).
+
+### Not built yet
+
+- **Error reporting.** `sentryDsn` is a placeholder in the mobile config and there
+  is no SDK behind it on either side. A console error currently reaches
+  `console.error` and nowhere else.
+- **Analytics.** §19.4 is greenfield. The console's own instrumentation is not
+  started; the KPIs that need a `channel` column are a backend concern first
+  (§19.3).

@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    // `css.ts` writes custom properties onto an element, so it needs DOM *types*.
+    // That is not a framework dependency — the package still imports nothing, and
+    // the DOM-touching functions take the element as a parameter so a React Native
+    // consumer simply never calls them.
+    "lib": ["ES2023", "DOM"]
+  },
+  "include": ["src/**/*.ts"]
+}

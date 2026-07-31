@@ -1,0 +1,17 @@
+{
+  // Playwright loads the nearest tsconfig at runtime and cannot follow the app
+  // config's project `references` (it resolves them as files, not directories).
+  // This standalone config is what it reads; `apps/admin/tsconfig.json` still
+  // type-checks these specs as part of `npm run typecheck`.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["**/*.ts"]
+}

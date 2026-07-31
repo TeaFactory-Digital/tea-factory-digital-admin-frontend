@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["vite/client", "vitest/globals"],
+    "outDir": "./dist/types",
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@tfd/domain": ["../../packages/domain/src/index.ts"],
+      "@tfd/brand": ["../../packages/brand/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "e2e/**/*.ts", "vite.config.ts", "vitest.config.ts"],
+  // Referenced by explicit file path, not by directory: Playwright's tsconfig
+  // loader resolves `references` as files and fails on a directory.
+  "references": [
+    { "path": "../../packages/domain/tsconfig.json" },
+    { "path": "../../packages/brand/tsconfig.json" }
+  ]
+}
