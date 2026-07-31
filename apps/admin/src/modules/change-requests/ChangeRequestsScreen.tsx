@@ -14,7 +14,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { ArrowRight } from 'lucide-react';
 import type { AdminChangeRequest, ChangeRequestType, RequestStatus } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
@@ -45,6 +45,15 @@ export function ChangeRequestsScreen() {
   const supplierId = params.get('supplierId');
   const page = Number(params.get('page') ?? 0);
 
+  /**
+   * Oldest first, expressed as a sort the clerk can see and change.
+   *
+   * `ageHours` descending *is* the queue's front-to-back order, so the default
+   * behaviour is unchanged — but it now shows in the column header, and a clerk
+   * chasing one supplier's request can sort by code instead of paging.
+   */
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'ageHours', desc: true }]);
+
   const query = useMemo(
     () => ({
       status,
@@ -53,8 +62,10 @@ export function ChangeRequestsScreen() {
       q: debouncedSearch || undefined,
       page,
       pageSize: 25,
+      sort: sorting[0]?.id ?? 'ageHours',
+      dir: sorting[0]?.desc ? ('desc' as const) : ('asc' as const),
     }),
-    [status, type, supplierId, debouncedSearch, page],
+    [status, type, supplierId, debouncedSearch, page, sorting],
   );
 
   const { data, isPending, error, refetch } = useChangeRequests(query);
@@ -63,16 +74,36 @@ export function ChangeRequestsScreen() {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
-    next.delete('page');
+    // Changing a filter resets to page 0 — page 7 of a new filter is nowhere.
+    // Changing the *page* obviously must not, which is what this guard is for:
+    // without it `setParam('page', '1')` set the page and then deleted it, and
+    // the grid could never leave page 1.
+    if (key !== 'page') next.delete('page');
     setParams(next, { replace: true });
+  }
+
+  /**
+   * Sorting starts a new pass over the list, so it goes back to the first page.
+   * Page 3 of "oldest first" is not page 3 of "by supplier code".
+   */
+  function handleSortingChange(next: SortingState) {
+    setSorting(next);
+    setParam('page', null);
   }
 
   const columns = useMemo<ColumnDef<AdminChangeRequest, unknown>[]>(
     () => [
       {
-        id: 'supplier',
+        /**
+         * An `accessorKey`, not an `id`, even though the cell reads the whole row.
+         *
+         * TanStack refuses to sort a column with no accessor (`getCanSort()` ends
+         * in `!!column.accessorFn`), so a display column renders a plain header
+         * and the click does nothing — which is how this column looked sortable
+         * and was not. The key doubles as the field name the server sorts on.
+         */
+        accessorKey: 'supplierCode',
         header: t('changeRequests.column.supplier'),
-        enableSorting: false,
         cell: (info) => {
           const row = info.row.original;
           return (
@@ -86,7 +117,6 @@ export function ChangeRequestsScreen() {
       {
         accessorKey: 'type',
         header: t('changeRequests.column.type'),
-        enableSorting: false,
         cell: (info) => t(`changeRequests.type.${info.getValue<ChangeRequestType>()}`),
       },
       {
@@ -124,7 +154,6 @@ export function ChangeRequestsScreen() {
       {
         accessorKey: 'ageHours',
         header: t('changeRequests.column.age'),
-        enableSorting: false,
         cell: (info) => {
           const hours = info.getValue<number>();
           const row = info.row.original;
@@ -146,8 +175,9 @@ export function ChangeRequestsScreen() {
     <>
       <PageHeader title={t('changeRequests.title')} description={t('changeRequests.subtitle')} />
 
-      <Card>
-        <div className="flex flex-wrap items-center gap-sm border-b border-divider p-md">
+      {/* Fixed-height card, scrolling rows — see the note in SuppliersScreen. */}
+      <Card className="flex min-h-0 flex-1 flex-col">
+        <div className="flex shrink-0 flex-wrap items-center gap-sm border-b border-divider p-md">
           <div className="min-w-64 flex-1">
             <SearchInput
               label={t('changeRequests.column.supplier')}
@@ -193,6 +223,8 @@ export function ChangeRequestsScreen() {
           getRowId={(row) => row.id}
           onRowActivate={(row) => navigate(`/change-requests/${row.id}`)}
           onPageChange={(next) => setParam('page', String(next))}
+          sorting={sorting}
+          onSortingChange={handleSortingChange}
           emptyState={
             <EmptyState
               title={status === 'pending' ? t('changeRequests.empty') : t('common.noResults')}

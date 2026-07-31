@@ -8,11 +8,11 @@
  * disabled button.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import type { AuditEntry } from '@tfd/domain';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { qk } from '@/query/queryKeys';
@@ -33,9 +33,22 @@ export function AuditScreen() {
   const entity = params.get('entity');
   const page = Number(params.get('page') ?? 0);
 
+  /**
+   * Newest first, and sortable — an auditor reconstructing a sequence reads the
+   * log the other way round, and "who touched this first" is a question the
+   * default order answers backwards.
+   */
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'at', desc: true }]);
+
   const query = useMemo(
-    () => ({ entity: entity ?? undefined, page, pageSize: 50 }),
-    [entity, page],
+    () => ({
+      entity: entity ?? undefined,
+      page,
+      pageSize: 50,
+      sort: sorting[0]?.id ?? 'at',
+      dir: sorting[0]?.desc ? ('desc' as const) : ('asc' as const),
+    }),
+    [entity, page, sorting],
   );
 
   const { data, isPending, error, refetch } = useQuery({
@@ -48,8 +61,21 @@ export function AuditScreen() {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
-    next.delete('page');
+    // Changing a filter resets to page 0 — page 7 of a new filter is nowhere.
+    // Changing the *page* obviously must not, which is what this guard is for:
+    // without it `setParam('page', '1')` set the page and then deleted it, and
+    // the grid could never leave page 1.
+    if (key !== 'page') next.delete('page');
     setParams(next, { replace: true });
+  }
+
+  /**
+   * Sorting starts a new pass over the list, so it goes back to the first page.
+   * Page 3 of "oldest first" is not page 3 of "by supplier code".
+   */
+  function handleSortingChange(next: SortingState) {
+    setSorting(next);
+    setParam('page', null);
   }
 
   const columns = useMemo<ColumnDef<AuditEntry, unknown>[]>(
@@ -57,18 +83,16 @@ export function AuditScreen() {
       {
         accessorKey: 'at',
         header: t('audit.column.when'),
-        enableSorting: false,
         cell: (info) => (
           <span className="numeric whitespace-nowrap text-text-secondary">
             {formatDateTime(info.getValue<string>())}
           </span>
         ),
       },
-      { accessorKey: 'actorName', header: t('audit.column.actor'), enableSorting: false },
+      { accessorKey: 'actorName', header: t('audit.column.actor') },
       {
         accessorKey: 'action',
         header: t('audit.column.action'),
-        enableSorting: false,
         cell: (info) => auditActionLabel(info.getValue<string>(), t),
       },
       {
@@ -103,8 +127,9 @@ export function AuditScreen() {
     <>
       <PageHeader title={t('audit.title')} />
 
-      <Card>
-        <div className="flex flex-wrap items-center gap-sm border-b border-divider p-md">
+      {/* Fixed-height card, scrolling rows — see the note in SuppliersScreen. */}
+      <Card className="flex min-h-0 flex-1 flex-col">
+        <div className="flex shrink-0 flex-wrap items-center gap-sm border-b border-divider p-md">
           <Select
             aria-label={t('audit.column.entity')}
             value={entity ?? ''}
@@ -129,6 +154,8 @@ export function AuditScreen() {
           onRetry={() => void refetch()}
           getRowId={(row) => row.id}
           onPageChange={(next) => setParam('page', String(next))}
+          sorting={sorting}
+          onSortingChange={handleSortingChange}
           emptyState={<EmptyState title={t('audit.empty')} />}
         />
       </Card>

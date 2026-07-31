@@ -62,13 +62,25 @@ export function SuppliersScreen() {
 
   const { data, isPending, error, refetch } = useSuppliers(query);
 
-  /** Changing a filter resets to page 0 — page 7 of a new filter is nowhere. */
   function setParam(key: string, value: string | null) {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
-    next.delete('page');
+    // Changing a filter resets to page 0 — page 7 of a new filter is nowhere.
+    // Changing the *page* obviously must not, which is what this guard is for:
+    // without it `setParam('page', '1')` set the page and then deleted it, and
+    // the grid could never leave page 1.
+    if (key !== 'page') next.delete('page');
     setParams(next, { replace: true });
+  }
+
+  /**
+   * Sorting starts a new pass over the list, so it goes back to the first page.
+   * Page 3 of "oldest first" is not page 3 of "by supplier code".
+   */
+  function handleSortingChange(next: SortingState) {
+    setSorting(next);
+    setParam('page', null);
   }
 
   const columns = useMemo<ColumnDef<SupplierListItem, unknown>[]>(
@@ -155,8 +167,11 @@ export function SuppliersScreen() {
     <>
       <PageHeader title={t('suppliers.title')} description={t('suppliers.subtitle')} />
 
-      <Card>
-        <div className="flex flex-wrap items-center gap-sm border-b border-divider p-md">
+      {/* The card takes the height the page header leaves and gives all of it to
+          the grid: filters, column headers and pagination stay put, and only the
+          rows move (§18.2 — the repetitive path is scanning rows). */}
+      <Card className="flex min-h-0 flex-1 flex-col">
+        <div className="flex shrink-0 flex-wrap items-center gap-sm border-b border-divider p-md">
           <div className="min-w-64 flex-1">
             <SearchInput
               label={t('suppliers.searchPlaceholder')}
@@ -208,7 +223,9 @@ export function SuppliersScreen() {
           </Select>
         </div>
 
-        <p className="px-md pt-sm text-caption text-text-secondary">{t('suppliers.searchHint')}</p>
+        <p className="shrink-0 px-md pt-sm text-caption text-text-secondary">
+          {t('suppliers.searchHint')}
+        </p>
 
         <DataTable
           label={t('suppliers.title')}
@@ -221,7 +238,7 @@ export function SuppliersScreen() {
           onRowActivate={(row) => navigate(`/suppliers/${row.id}`)}
           onPageChange={(next) => setParam('page', String(next))}
           sorting={sorting}
-          onSortingChange={setSorting}
+          onSortingChange={handleSortingChange}
           emptyState={
             <EmptyState title={t('common.noResults')} body={t('common.noResultsHint')} />
           }

@@ -30,6 +30,14 @@ export const en = {
   'common.next': 'Next',
   'common.rowsPerPage': 'Rows',
   'common.showing': 'Showing {{from}}–{{to}} of {{total}}',
+  // The page controls are icons, so these are the only names they have — they
+  // reach the clerk as a tooltip and a screen reader as the accessible name.
+  'common.pagination': 'Pages',
+  'common.firstPage': 'First page',
+  'common.previousPage': 'Previous page',
+  'common.nextPage': 'Next page',
+  'common.lastPage': 'Last page',
+  'common.pageOf': 'Page {{page}} of {{total}}',
   'common.noResults': 'Nothing to show',
   'common.noResultsHint': 'Try a different search or clear the filters.',
   'common.signOut': 'Sign out',

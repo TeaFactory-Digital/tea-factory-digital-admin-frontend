@@ -54,8 +54,29 @@ export function AppShell() {
           {t('shell.skipToContent')}
         </a>
 
-        <main id="main" className="min-w-0 flex-1 overflow-y-auto p-lg">
-          <div className="mx-auto flex max-w-page flex-col gap-lg">
+        {/* 30 px from the sidebar on the left, 30 px from the window on the right
+            (`--spacing-gutter`). The vertical padding stays on the shared scale —
+            only the gutters are fixed geometry. */}
+        <main id="main" className="min-w-0 flex-1 overflow-y-auto px-gutter py-lg">
+          {/**
+           * `h-full` is what lets a grid screen fill the window instead of
+           * growing past it.
+           *
+           * It gives the wrapper a *definite* height, which a `flex-1` child can
+           * then resolve against — without one, a screen asking for "the height
+           * that is left" gets the height of its own content and the whole page
+           * scrolls, header and pagination included.
+           *
+           * It does not squash the screens that are taller than the window
+           * (dashboard, detail pages): their children keep `min-height: auto`, so
+           * they refuse to shrink below their content and `main` scrolls as
+           * before. Only a child that explicitly opts out with `min-h-0` — the
+           * grid card — is asked to fit.
+           */}
+          {/* Full width, deliberately: the 80 rem cap this used to carry would
+              re-open the right-hand gap to whatever the monitor is wide, and a
+              twelve-column grid is the screen that wants the pixels most. */}
+          <div className="flex h-full flex-col gap-lg">
             {/* Module screens are lazy (see routes/router.tsx). The boundary is
                 here rather than per route so the sidebar and topbar stay
                 interactive while a screen's chunk arrives — a clerk can start

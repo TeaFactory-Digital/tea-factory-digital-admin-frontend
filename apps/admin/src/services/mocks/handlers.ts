@@ -28,7 +28,6 @@ import type {
   DeliveryBatchResult,
   DeliveryRejection,
   Paged,
-  SupplierListItem,
 } from '@tfd/domain';
 import {
   MAX_DELIVERY_BATCH_ROWS,
@@ -210,6 +209,35 @@ function paginate<T>(items: T[], url: URL): Paged<T> {
   return { items: slice, page, pageSize, total: items.length, nextPage: hasMore ? page + 1 : null };
 }
 
+/**
+ * Sort a result set by the column the grid asked for.
+ *
+ * Server-side because the grid is server-paged: sorting page 3 of 84 suppliers in
+ * the browser sorts *that page*, which is the bug where a clerk sorts by code and
+ * the first row is 5301 (admin-console.md §18.2).
+ *
+ * Returns a copy. `state.audit` is handed out unfiltered when no filter is set, and
+ * an in-place sort would reorder the mock's own log as a side effect of reading it.
+ *
+ * `fallback` keeps each list's own default order — oldest-first for a queue,
+ * newest-first for a log — so "no sort" is not silently "sorted by whatever the
+ * fixture order happens to be".
+ */
+function sortRows<T>(rows: T[], url: URL, fallback: (a: T, b: T) => number): T[] {
+  const sort = url.searchParams.get('sort');
+  if (!sort) return [...rows].sort(fallback);
+
+  const dir = url.searchParams.get('dir') === 'desc' ? -1 : 1;
+  return [...rows].sort((a, b) => {
+    const left = (a as Record<string, unknown>)[sort];
+    const right = (b as Record<string, unknown>)[sort];
+    if (typeof left === 'number' && typeof right === 'number') return (left - right) * dir;
+    // `localeCompare` rather than `<`: supplier codes carry a division suffix and
+    // actor names are Sinhala-transliterated, and both sort wrongly by code point.
+    return String(left ?? '').localeCompare(String(right ?? '')) * dir;
+  });
+}
+
 function record(entry: Omit<AuditEntry, 'id' | 'at' | 'ip'>): AuditEntry {
   const created: AuditEntry = {
     ...entry,
@@ -378,8 +406,6 @@ export const handlers: HttpHandler[] = [
     const status = url.searchParams.get('status');
     const point = url.searchParams.get('collectionPoint');
     const hasBankDetails = url.searchParams.get('hasBankDetails');
-    const sort = url.searchParams.get('sort') ?? 'supplierCode';
-    const dir = url.searchParams.get('dir') === 'desc' ? -1 : 1;
 
     let rows = state.suppliers.map(toListItem);
 
@@ -399,12 +425,9 @@ export const handlers: HttpHandler[] = [
       rows = rows.filter((s) => s.hasBankDetails === (hasBankDetails === 'true'));
     }
 
-    rows.sort((a, b) => {
-      const left = a[sort as keyof SupplierListItem];
-      const right = b[sort as keyof SupplierListItem];
-      if (typeof left === 'number' && typeof right === 'number') return (left - right) * dir;
-      return String(left ?? '').localeCompare(String(right ?? '')) * dir;
-    });
+    // The registry's default is the code, which is how the office refers to a
+    // supplier and how the paper ledgers it replaced were ordered.
+    rows = sortRows(rows, url, (a, b) => a.supplierCode.localeCompare(b.supplierCode));
 
     return HttpResponse.json(paginate(rows, url));
   }),
@@ -578,8 +601,10 @@ export const handlers: HttpHandler[] = [
     }
 
     // Oldest first within an inbox: a queue is worked front to back, and the
-    // item that has waited longest is the one at risk of breaching §14.4.
-    rows.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    // item that has waited longest is the one at risk of breaching §14.4. A clerk
+    // may sort by another column, but that is a choice they make — never the
+    // order they are given.
+    rows = sortRows(rows, url, (a, b) => a.createdAt.localeCompare(b.createdAt));
 
     return HttpResponse.json(paginate(rows, url));
   }),
@@ -709,6 +734,10 @@ export const handlers: HttpHandler[] = [
     if (entity) rows = rows.filter((e) => e.entity === entity);
     if (entityId) rows = rows.filter((e) => e.entityId === entityId);
     if (actorId) rows = rows.filter((e) => e.actorId === actorId);
+
+    // Newest first: a log is read from the top, and the entry someone is looking
+    // for is almost always the one that just happened.
+    rows = sortRows(rows, url, (a, b) => b.at.localeCompare(a.at));
 
     return HttpResponse.json(paginate(rows, url));
   }),

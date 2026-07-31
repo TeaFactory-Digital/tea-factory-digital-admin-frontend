@@ -97,6 +97,17 @@
   --spacing-huge: var(--brand-space-huge);
   --spacing-giant: var(--brand-space-giant);
 
+  /**
+   * The page gutter: the gap between the sidebar and the content on the left, and
+   * between the content and the window on the right.
+   *
+   * Off the shared scale (which steps 24 → 32) and a fixed px value, because it
+   * is page geometry rather than brand or rhythm — the same reason the layout
+   * widths below are fixed rems. Named so the two edges cannot drift apart: they
+   * are one measurement, set once here.
+   */
+  --spacing-gutter: 30px;
+
   /* ── Layout widths ────────────────────────────────────────────────────────
    * These exist because of a real collision, worth understanding before
    * touching either scale.

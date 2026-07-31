@@ -29,7 +29,7 @@ import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Paged } from '@tfd/domain';
 import { cn } from '@/lib/cn';
-import { Button } from './Button';
+import { Pagination } from './Pagination';
 import { ErrorState, TableSkeleton } from './states';
 
 export interface DataTableProps<Row> {
@@ -72,6 +72,15 @@ export function DataTable<Row>({
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
     manualSorting: true,
+    /**
+     * Two clicks, not three.
+     *
+     * TanStack's default cycle is ascending → descending → *unsorted*, and that
+     * third state is a lie here: the query still has to send some order, so the
+     * rows come back sorted while no column shows a direction. A clerk sees a
+     * sorted grid whose headers deny it.
+     */
+    enableSortingRemoval: false,
     state: sorting ? { sorting } : undefined,
     onSortingChange: onSortingChange
       ? (updater) => {
@@ -81,9 +90,29 @@ export function DataTable<Row>({
       : undefined,
   });
 
-  if (error) return <ErrorState error={error} onRetry={onRetry} />;
-  if (loading && !page) return <TableSkeleton columns={columns.length} />;
-  if (page && page.items.length === 0) return <>{emptyState}</>;
+  /**
+   * The three non-grid states take the space the grid would have taken.
+   *
+   * `flex-1 min-h-0` rather than natural height: the card is a fixed-height
+   * column, so a short error inside a tall card would otherwise leave the
+   * pagination bar floating in the middle of it.
+   */
+  if (error)
+    return (
+      <div className="flex min-h-0 flex-1 items-center justify-center">
+        <ErrorState error={error} onRetry={onRetry} />
+      </div>
+    );
+  if (loading && !page)
+    return (
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <TableSkeleton columns={columns.length} />
+      </div>
+    );
+  if (page && page.items.length === 0)
+    return (
+      <div className="flex min-h-0 flex-1 items-center justify-center">{emptyState}</div>
+    );
 
   /** ↑/↓ between rows, Enter to open. Focus stays inside the grid. */
   function handleKeyDown(event: KeyboardEvent<HTMLTableSectionElement>) {
@@ -102,12 +131,28 @@ export function DataTable<Row>({
   const to = page ? Math.min(page.total, from + page.items.length - 1) : 0;
 
   return (
-    <div className="flex flex-col">
-      {/* The one place horizontal scrolling is allowed — inside the grid, never
-          on the page body. Twelve columns will not fit a 1366 px laptop. */}
-      <div className="overflow-x-auto">
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/**
+       * The only scrolling region on a grid screen, in both axes.
+       *
+       * Horizontal because twelve columns will not fit a 1366 px laptop, and
+       * vertical because the header, the filters above it and the pagination
+       * below it have to stay put: a clerk reading row sixty still needs to know
+       * which column is which, and still needs "Next" without scrolling back.
+       * The page body itself never scrolls — see `AppShell`.
+       */}
+      <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-full border-collapse text-data-cell" aria-label={label}>
-          <thead className="sticky top-0 z-10 bg-table-header">
+          {/**
+           * Sticky against the scroll container above, not the page.
+           *
+           * The bottom rule is a `shadow` rather than a `border`, because
+           * `border-collapse: collapse` hands table borders to the table itself —
+           * so a border on a sticky `th` is painted at the row's original
+           * position and slides away under the header. A shadow is painted by the
+           * cell, so it travels with it.
+           */}
+          <thead className="sticky top-0 z-10 bg-table-header shadow-[inset_0_-1px_0_0_var(--color-border)]">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
@@ -124,7 +169,7 @@ export function DataTable<Row>({
                             ? 'descending'
                             : undefined
                       }
-                      className="border-b border-border px-md py-sm text-left text-data-header whitespace-nowrap text-text-secondary uppercase"
+                      className="px-md py-sm text-left text-data-header whitespace-nowrap text-text-secondary uppercase"
                     >
                       {canSort ? (
                         <button
@@ -191,29 +236,17 @@ export function DataTable<Row>({
       </div>
 
       {page ? (
-        <div className="flex flex-wrap items-center justify-between gap-md border-t border-divider px-md py-sm">
+        <Pagination
+          page={page.page}
+          pageSize={page.pageSize}
+          total={page.total}
+          onPageChange={onPageChange}
+          busy={loading}
+        >
           <p className="numeric text-caption text-text-secondary">
             {t('common.showing', { from, to, total: page.total })}
           </p>
-          <div className="flex items-center gap-sm">
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={page.page === 0 || loading}
-              onClick={() => onPageChange(page.page - 1)}
-            >
-              {t('common.previous')}
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={page.nextPage === null || loading}
-              onClick={() => onPageChange(page.page + 1)}
-            >
-              {t('common.next')}
-            </Button>
-          </div>
-        </div>
+        </Pagination>
       ) : null}
     </div>
   );
