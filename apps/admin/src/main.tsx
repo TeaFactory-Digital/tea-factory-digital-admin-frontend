@@ -44,13 +44,19 @@ connectAuthToTransport();
  * being down.
  *
  * The `import.meta.env.DEV` guard is not redundant with `env.useMock`. Vite
- * replaces it with a literal `false` in a production build, so the whole branch
- * and the ~300 kB MSW chunk behind it are eliminated rather than shipped as a
- * lazy chunk nobody loads. `assertEnvUsable()` already refuses a production
- * bundle with mocks on; this makes it impossible rather than merely refused.
+ * replaces it with a literal `false` in a normal production build, so the whole
+ * branch and the ~300 kB MSW chunk behind it are eliminated rather than shipped
+ * as a lazy chunk nobody loads.
+ *
+ * The demo build (`npm run build:demo`) is the one exception. It is spelled
+ * `import.meta.env.MODE === 'demo'` inline rather than `env.demoMode` so it stays
+ * a *literal* the bundler can fold: in a normal production build this whole
+ * condition collapses to `false` and the MSW chunk disappears as before. Reading
+ * the flag off the `env` object instead would leave the branch un-foldable and
+ * emit the chunk into every production `dist`.
  */
 async function start() {
-  if (import.meta.env.DEV && env.useMock) {
+  if ((import.meta.env.DEV || import.meta.env.MODE === 'demo') && env.useMock) {
     const { startMockWorker } = await import('@/services/mocks/browser');
     await startMockWorker();
   }

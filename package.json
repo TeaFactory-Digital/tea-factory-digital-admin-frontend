@@ -10,13 +10,15 @@
   "scripts": {
     "dev": "npm run dev --workspace @tfd/admin",
     "build": "npm run build --workspace @tfd/admin",
+    "build:demo": "npm run build:demo --workspace @tfd/admin",
     "preview": "npm run preview --workspace @tfd/admin",
     "typecheck": "tsc --build --force",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx,css,md,json}\"",
     "test": "vitest run --root apps/admin",
     "test:watch": "vitest --root apps/admin",
-    "e2e": "playwright test --config apps/admin/playwright.config.ts"
+    "e2e": "playwright test --config apps/admin/playwright.config.ts",
+    "e2e:demo": "playwright test --config apps/admin/playwright.demo.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",

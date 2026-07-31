@@ -12,8 +12,7 @@ import { ChevronDown, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore, useCurrentUser } from '@/auth/authStore';
 import { useFactory } from '@/config/RuntimeConfigProvider';
-import { env } from '@/config/env';
-import { tenantId, tenantSource, switchTenantForDevelopment } from '@/config/tenant';
+import { allowTenantOverride, tenantId, tenantSource, switchTenantByReload } from '@/config/tenant';
 import { MOCK_TENANT_IDS } from '@/services/mocks/seed';
 import { Logo } from '@/brand/Logo';
 import { Button } from '@/components/ui/Button';
@@ -40,15 +39,16 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-md">
-        {/* Dev-only tenant switcher. Reloads rather than mutating state: a tenant
-            change invalidates every cached query and the applied theme, and in
-            production it is a different subdomain and a fresh document anyway. */}
-        {env.isDev ? (
+        {/* Tenant switcher, in development and the hosted demo only (see
+            config/tenant.ts). Reloads rather than mutating state: a tenant change
+            invalidates every cached query and the applied theme, and in production
+            it is a different subdomain and a fresh document anyway. */}
+        {allowTenantOverride ? (
           <label className="hidden items-center gap-xs text-caption text-text-secondary md:flex">
-            {t('shell.devTenant')}
+            {t('shell.tenantSwitcher')}
             <select
               value={tenantId}
-              onChange={(event) => switchTenantForDevelopment(event.target.value)}
+              onChange={(event) => switchTenantByReload(event.target.value)}
               className="h-9 rounded-md border border-border bg-surface px-sm text-caption text-text-primary"
             >
               {[...new Set([tenantId, ...MOCK_TENANT_IDS])].map((id) => (
@@ -64,12 +64,14 @@ export function Topbar() {
         {user ? (
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
-              <Button variant="ghost" size="sm" iconRight={<ChevronDown className="size-icon-sm" />}>
+              <Button
+                variant="ghost"
+                size="sm"
+                iconRight={<ChevronDown className="size-icon-sm" />}
+              >
                 <span className="flex flex-col items-start">
                   <span className="text-label">{user.name}</span>
-                  <span className="text-caption text-text-secondary">
-                    {user.roles.join(', ')}
-                  </span>
+                  <span className="text-caption text-text-secondary">{user.roles.join(', ')}</span>
                 </span>
               </Button>
             </DropdownMenu.Trigger>

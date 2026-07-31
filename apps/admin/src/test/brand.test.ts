@@ -44,6 +44,24 @@ describe('tenantIdFromHost', () => {
   it('strips a port', () => {
     expect(tenantIdFromHost('galaboda.admin.localhost:5273')).toBe('galaboda');
   });
+
+  it('ignores preview-hosting domains, where the label is a deployment', () => {
+    // The leading label on these is a project or branch name. Reading it as a
+    // tenant makes `GET /config` answer 404 and the console boot unbranded behind
+    // a "could not reach the factory configuration" banner — which looks exactly
+    // like the API being down.
+    expect(tenantIdFromHost('teafactorydigital-admin.vercel.app')).toBeNull();
+    expect(tenantIdFromHost('tfd-admin-git-main-acme.vercel.app')).toBeNull();
+    expect(tenantIdFromHost('tfd-admin.netlify.app')).toBeNull();
+    expect(tenantIdFromHost('tfd-admin.pages.dev')).toBeNull();
+
+    // The domain itself, not just its subdomains.
+    expect(tenantIdFromHost('vercel.app')).toBeNull();
+
+    // A factory's own domain that merely *contains* the string is still a tenant:
+    // the match is on the domain suffix, not a substring.
+    expect(tenantIdFromHost('galaboda.admin.notvercel.app')).toBe('galaboda');
+  });
 });
 
 describe('resolveTenant', () => {

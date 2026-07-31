@@ -44,6 +44,25 @@ export const env = {
    */
   useMock: bool(raw.VITE_USE_MOCK, Boolean(raw.DEV)),
 
+  /**
+   * This bundle is a **demo**: it is allowed to answer from fixtures even though
+   * it is a production build.
+   *
+   * Built by `npm run build:demo` (`--mode demo`, see `.env.demo`) so the console
+   * can be hosted and clicked through before the backend exists.
+   *
+   * Read from the build **mode**, not from a `VITE_*` variable, and that is the
+   * whole point: a demo is a different build artefact, not the real bundle with a
+   * variable flipped. No environment variable set in a hosting dashboard can turn
+   * a production console into a fiction — someone has to run a different build
+   * command.
+   *
+   * What keeps it honest at runtime is that nothing is hidden: the mock banner in
+   * `AppShell` and the printed credentials on the sign-in screen are both keyed
+   * off `useMock`, so a demo build says so on every screen.
+   */
+  demoMode: raw.MODE === 'demo',
+
   /** Tenant used when the host carries no subdomain (localhost). */
   defaultTenant: String(raw.VITE_DEFAULT_TENANT ?? 'base'),
 
@@ -69,6 +88,22 @@ export const env = {
  */
 export function assertEnvUsable(): void {
   if (!env.isProd) return;
+
+  /**
+   * A demo build is exempt from the placeholder-origin check — the mock answers
+   * every request, so no origin is reached — but not from having to be coherent.
+   * Demo mode with the mock off is the exact failure the check below exists for,
+   * dressed up as intentional.
+   */
+  if (env.demoMode) {
+    if (!env.useMock) {
+      throw new Error(
+        '[config] VITE_DEMO_MODE is on but VITE_USE_MOCK is off. A demo build with no mock reaches the network for every request.',
+      );
+    }
+    return;
+  }
+
   if (env.useMock) {
     throw new Error(
       '[config] VITE_USE_MOCK is on in a production build. The console would serve fixtures as if they were the factory’s records.',

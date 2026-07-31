@@ -8,17 +8,19 @@ Running, testing and deploying the console.
 
 From the workspace root:
 
-| Command | What it does |
-| --- | --- |
-| `npm install` | Installs everything. Node ≥ 22.11 |
-| `npm run dev` | Vite dev server on **http://localhost:5273**, mock API on |
-| `npm run build` | Production bundle into `apps/admin/dist` |
-| `npm run preview` | Serves the built bundle |
-| `npm run typecheck` | `tsc --build` across all three projects |
-| `npm run lint` | ESLint, including the white-label and layering rules |
-| `npm run test` | Vitest — 66 tests |
-| `npm run e2e` | Playwright — 3 specs. Needs `npx playwright install chromium` once |
-| `npm run format` | Prettier |
+| Command              | What it does                                                                              |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| `npm install`        | Installs everything. Node ≥ 22.11                                                         |
+| `npm run dev`        | Vite dev server on **http://localhost:5273**, mock API on                                 |
+| `npm run build`      | Production bundle into `apps/admin/dist`                                                  |
+| `npm run build:demo` | Demo bundle into `apps/admin/dist` — real production build, mock API on (see Deployment)  |
+| `npm run preview`    | Serves the built bundle                                                                   |
+| `npm run typecheck`  | `tsc --build` across all three projects                                                   |
+| `npm run lint`       | ESLint, including the white-label and layering rules                                      |
+| `npm run test`       | Vitest — 72 tests                                                                         |
+| `npm run e2e`        | Playwright — 4 specs against the dev server. Needs `npx playwright install chromium` once |
+| `npm run e2e:demo`   | The same specs against the built demo bundle on a static server                           |
+| `npm run format`     | Prettier                                                                                  |
 
 First run needs nothing else: `.env.development` is committed, so a fresh clone
 starts against the mock with the `galaboda` tenant resolved and no setup. Sign in
@@ -32,20 +34,28 @@ Every value is public configuration compiled into the bundle. **Nothing secret c
 go in a `VITE_*` variable**, and there is no mechanism here that would keep it
 secret if you tried.
 
-| Variable | Default | Notes |
-| --- | --- | --- |
-| `VITE_API_BASE_URL` | `https://api.teafactory.example/v1` | **Placeholder.** `{tenant}` is substituted with the resolved tenant id |
-| `VITE_USE_MOCK` | `1` in dev, `0` in prod | Serve from MSW instead of the network |
-| `VITE_DEFAULT_TENANT` | `galaboda` (dev) | Used only when the host carries no subdomain |
-| `VITE_SEND_TENANT_HEADER` | `1` | Send `X-Tenant` alongside the subdomain |
-| `VITE_API_TIMEOUT_MS` | `20000` | **Do not shorten for a rural network** (§20.1) |
+| Variable                  | Default                             | Notes                                                                  |
+| ------------------------- | ----------------------------------- | ---------------------------------------------------------------------- |
+| `VITE_API_BASE_URL`       | `https://api.teafactory.example/v1` | **Placeholder.** `{tenant}` is substituted with the resolved tenant id |
+| `VITE_USE_MOCK`           | `1` in dev, `0` in prod             | Serve from MSW instead of the network                                  |
+| `VITE_DEFAULT_TENANT`     | `galaboda` (dev)                    | Used only when the host carries no subdomain                           |
+| `VITE_SEND_TENANT_HEADER` | `1`                                 | Send `X-Tenant` alongside the subdomain                                |
+| `VITE_API_TIMEOUT_MS`     | `20000`                             | **Do not shorten for a rural network** (§20.1)                         |
 
-Files: `.env.development` (committed, dev defaults) · `.env.example` (documented
-template) · `.env.local` (git-ignored, your overrides).
+Files: `.env.development` (committed, dev defaults) · `.env.demo` (committed, demo
+build) · `.env.example` (documented template) · `.env.local` (git-ignored, your
+overrides).
 
 `assertEnvUsable()` **refuses to boot** a production bundle with mocks on or still
 pointed at the placeholder origin. A console that looks fine, serves fixtures, and
 reports every failure as a network problem is the worst available outcome.
+
+The **demo build is the one exception**, and it is a build mode rather than a
+variable: `env.demoMode` reads `import.meta.env.MODE === 'demo'`, so no environment
+variable set in a hosting dashboard can turn the real console into a fixture
+server — someone has to run a different build command. What a demo build still
+cannot do is hide: the permanent mock banner and the printed sign-in credentials
+are both keyed off `VITE_USE_MOCK`, so every screen says what it is.
 
 ---
 
@@ -75,6 +85,46 @@ Host requirements:
    credentials, and the refresh cookie needs them.
 5. **`noindex`** — already in `index.html`.
 
+### Vercel — the hosted demo
+
+`vercel.json` at the repo root configures this, and it deploys the **demo** bundle:
+
+```
+installCommand    npm ci                 (workspace root; devDependencies needed — vite is one)
+buildCommand      npm run build:demo
+outputDirectory   apps/admin/dist
+rewrites          /(.*) → /index.html    (requirement 1; Vercel checks the filesystem first,
+                                          so /assets/* and /mockServiceWorker.js still win)
+headers           /assets/* immutable, index.html and the worker no-cache (requirement 3)
+```
+
+Connect the GitHub repo once in the Vercel dashboard and leave the root directory
+at the repo root — the monorepo is handled by the commands above, not by pointing
+Vercel at `apps/admin`. **No environment variables need setting**; `.env.demo` is
+committed, and adding a `VITE_*` override in the dashboard cannot promote the demo
+to a real deployment (see Environments).
+
+Two things this hosting cannot give you, both by design:
+
+- **No tenant from the hostname.** The leading label of `*.vercel.app` is a
+  deployment name, not a factory, so `@tfd/brand` refuses to read it as a tenant
+  (`PLATFORM_DOMAINS`) and the demo falls back to `VITE_DEFAULT_TENANT`. A real
+  per-tenant deployment needs the wildcard domain in requirement 2. The switcher in
+  the topbar is how the demo shows a rebrand instead.
+- **No real records.** Every request is answered by MSW in the page, so the demo is
+  a UI review, never a data review. Nothing survives a reload.
+
+`npm run build:demo && npm run e2e:demo` is the check that the artefact actually
+boots — it catches the demo-only failures (`assertEnvUsable()` throwing, MSW
+tree-shaken out, the tenant resolving to a deployment name) that a dev-server test
+run cannot see.
+
+### Going to production
+
+Point `VITE_API_BASE_URL` at the real origin and build with `npm run build` — the
+mock is not merely off in that bundle, it is not in it. Then the five host
+requirements above apply in full, plus the API's CORS allowlist.
+
 Release cadence is the thing to design around: **the API and the console can ship
 daily, the app cannot.** So the API must stay backward compatible for as long as
 old binaries are in the field, and feature flags are the release valve.
@@ -85,14 +135,15 @@ old binaries are in the field, and feature flags are the release valve.
 
 Layered so each layer tests what only it can.
 
-### Vitest — 66 tests
+### Vitest — 72 tests
 
-| File | Covers |
-| --- | --- |
-| `rbac.test.ts` (15) | The §12.1 matrix, grant merging, four-eyes, the approval threshold |
-| `money.test.ts` (13) | `floor2`/`round2`, the credit basis, BR-107, account masking |
-| `brand.test.ts` (21) | Tenant resolution, CSS-variable emission, dp→px, served-value validation |
-| `changeRequests.test.tsx` (17) | M9 and M2 end to end against the mock API, through the real transport |
+| File                           | Covers                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------ |
+| `brand.test.ts` (22)           | Tenant resolution, CSS-variable emission, dp→px, served-value validation |
+| `changeRequests.test.tsx` (17) | M9 and M2 end to end against the mock API, through the real transport    |
+| `rbac.test.ts` (15)            | The §12.1 matrix, grant merging, four-eyes, the approval threshold       |
+| `money.test.ts` (13)           | `floor2`/`round2`, the credit basis, BR-107, account masking             |
+| `listSorting.test.ts` (5)      | Server-side sort and pagination parameters                               |
 
 `rbac.test.ts` and `money.test.ts` are the highest-value files. The matrix is what
 a factory will ask to change, and status.md §10 item 10 records that **no tests
@@ -159,17 +210,17 @@ The bundle is split by **change rate**, not size, because one bundle serves ever
 tenant and the console ships continuously — what matters is how much a returning
 clerk re-downloads after a release.
 
-| Chunk | gzip | Loaded |
-| --- | --- | --- |
-| `index` | ~82 kB | Always |
-| `charts` (Recharts) | ~105 kB | Only with M1/M16 |
-| `data` (Query, Table, axios) | ~44 kB | Always |
-| `ui` (Radix) | ~33 kB | Always |
-| `react` | ~32 kB | Always |
-| `forms` (RHF, Zod) | ~29 kB | Always |
-| `i18n` | ~16 kB | Always |
-| Each module screen | 1–9 kB | On navigation |
-| CSS | ~6 kB | Always |
+| Chunk                        | gzip    | Loaded           |
+| ---------------------------- | ------- | ---------------- |
+| `index`                      | ~82 kB  | Always           |
+| `charts` (Recharts)          | ~105 kB | Only with M1/M16 |
+| `data` (Query, Table, axios) | ~44 kB  | Always           |
+| `ui` (Radix)                 | ~33 kB  | Always           |
+| `react`                      | ~32 kB  | Always           |
+| `forms` (RHF, Zod)           | ~29 kB  | Always           |
+| `i18n`                       | ~16 kB  | Always           |
+| Each module screen           | 1–9 kB  | On navigation    |
+| CSS                          | ~6 kB   | Always           |
 
 Module screens are lazy, so a sign-in form does not arrive with a charting library
 attached. MSW is **eliminated** from production, not merely unloaded — the guard is

@@ -62,7 +62,7 @@ export const en = {
     'Could not reach the factory configuration — showing bundled defaults. Branding and feature flags may be out of date.',
   'shell.mockBanner':
     'Mock data. Nothing here is a real record, and nothing is saved past a page reload.',
-  'shell.devTenant': 'Tenant (dev only)',
+  'shell.tenantSwitcher': 'Tenant (dev/demo only)',
 
   /* ──────────────────────────── navigation ──────────────────────────── */
   'nav.dashboard': 'Dashboard',
@@ -101,7 +101,8 @@ export const en = {
   'auth.mfaVerify': 'Verify',
   'auth.mfaRequiredNote': 'Two-factor authentication is required for manager accounts and above.',
   'auth.forgotPassword': 'Forgotten your password?',
-  'auth.forgotPasswordHint': 'Ask your factory administrator to reset it. The console cannot email a reset link.',
+  'auth.forgotPasswordHint':
+    'Ask your factory administrator to reset it. The console cannot email a reset link.',
   'auth.supplierWrongPlace': 'Suppliers sign in on the mobile app, not here.',
   'auth.demoCredentials': 'Mock sign-in',
   'auth.demoClerk': 'Clerk (no two-factor)',
@@ -127,11 +128,13 @@ export const en = {
   'dashboard.alerts': 'Needs attention',
   'dashboard.noAlerts': 'Nothing needs attention',
 
-  'dashboard.stage.collecting': 'Collecting leaf',
-  'dashboard.stage.awaitingRate': 'Awaiting auction result',
-  'dashboard.stage.rateEntered': 'Rate entered',
-  'dashboard.stage.billsGenerated': 'Bills generated',
-  'dashboard.stage.published': 'Published',
+  /* The §13 cycle stage is read by M1 and M3 alike, so it is not a dashboard
+     label. Moved rather than duplicated: two tables for one enum drift. */
+  'month.stage.collecting': 'Collecting leaf',
+  'month.stage.awaitingRate': 'Awaiting auction result',
+  'month.stage.rateEntered': 'Rate entered',
+  'month.stage.billsGenerated': 'Bills generated',
+  'month.stage.published': 'Published',
   'dashboard.stageHint.awaitingRate':
     'No rate yet for {{month}}, so every rate-derived figure is blank rather than zero.',
   'dashboard.stageHint.published': 'Published {{date}} by {{name}}.',
@@ -316,6 +319,72 @@ export const en = {
   'validation.noteTooShort': 'Write at least 10 characters — the supplier reads this',
   'validation.reasonRequired': 'A reason is required',
 
+  /* ─────────────────────── M3 Leaf collection ─────────────────────── */
+  'deliveries.title': 'Leaf collection',
+  'deliveries.subtitle': 'What the factory weighed in, day by day',
+  'deliveries.date': 'Day',
+  'deliveries.point': 'Collection point',
+  'deliveries.allPoints': 'All collection points',
+  'deliveries.showVoided': 'Show voided rows',
+  'deliveries.pickPointToEnter':
+    'Pick a collection point to start recording — a delivery is filed against the point where it was weighed.',
+  'deliveries.monthLocked':
+    '{{month}} is published, so its leaf can no longer be changed. Pick a day in the current month to record or void.',
+  'deliveries.empty': 'Nothing weighed yet',
+  'deliveries.emptyHint': 'Rows appear here as soon as a weighing session is committed.',
+
+  'deliveries.column.recordedAt': 'Recorded',
+  'deliveries.column.supplier': 'Supplier',
+  'deliveries.column.point': 'Point',
+  'deliveries.column.kgs': 'Kilos',
+  'deliveries.column.source': 'Source',
+  'deliveries.column.recordedBy': 'Weighed by',
+  'deliveries.column.line': 'Line',
+  'deliveries.source.manual': 'Keyed in',
+  'deliveries.source.scaleFile': 'Scale file',
+
+  'deliveries.totalKgs': 'Total kilos',
+  'deliveries.rowCount': 'Deliveries',
+  'deliveries.supplierCount': 'Suppliers',
+
+  'deliveries.supplierCode': 'Supplier code',
+  'deliveries.supplierCodeHint': 'With or without the division, e.g. 5708 or 5708 (MAKADURA).',
+  'deliveries.supplierCodePlaceholder': 'Code, then Tab',
+  'deliveries.kgs': 'Kilos',
+  'deliveries.addRow': 'Add line',
+  'deliveries.removeRow': 'Remove',
+  'deliveries.sessionEmpty':
+    'Type a supplier code and the kilos, then press Enter. Nothing is recorded until you commit.',
+  'deliveries.sessionTable': 'Lines in this weighing session, not yet recorded',
+  'deliveries.commit': 'Record {{count}} lines',
+  'deliveries.committed': 'Recorded {{count}} deliveries',
+  'deliveries.committedTotal': "The day's total is now {{kgs}}.",
+  'deliveries.committedPartly': 'Recorded {{accepted}}, refused {{rejected}}',
+  'deliveries.committedPartlyHint':
+    'The refused lines are still in the grid with the reason on each one. Fix them and record again.',
+  'deliveries.commitFailed': 'Nothing was recorded',
+  'deliveries.outlierConfirm':
+    '{{kgs}} is far more than the rest of this session. Press Enter again to record it as typed.',
+
+  'deliveries.error.sessionFull':
+    'A session holds at most {{limit}} lines. Record these, then start another.',
+  'deliveries.error.stillMatching': 'Still looking up that code…',
+  'deliveries.error.unknownSupplier': 'No active supplier with that code.',
+  'deliveries.error.kgRange': 'Kilos must be more than 0 and at most {{max}}.',
+  'deliveries.error.kgPrecision':
+    'Kilos take at most two decimals — the factory records 12.35, not 12.345.',
+
+  'deliveries.void': 'Void',
+  'deliveries.voidedBadge': 'Voided',
+  'deliveries.voidTitle': 'Void this delivery',
+  'deliveries.voidDescription':
+    '{{kgs}} recorded for {{code}} · {{name}}. The row stays in the record with your reason — nothing money-bearing is deleted.',
+  'deliveries.voidConfirm': 'Void the delivery',
+  'deliveries.voidReasonHint':
+    'At least {{min}} characters. The supplier holds a slip for this weighing and may ask.',
+  'deliveries.voided': 'Voided {{kgs}}',
+  'deliveries.voidFailed': 'The delivery was not voided',
+
   /* ─────────────────────────────── errors ─────────────────────────────── */
   'error.title': 'Something went wrong',
   'error.network': 'No connection to the factory server. Check the network and try again.',
@@ -328,6 +397,12 @@ export const en = {
   'error.noteRequired': 'A note is required before this can be recorded.',
   'error.fourEyesViolation': 'You raised this record, so you cannot approve it.',
   'error.alreadyDecided': 'Someone else has already decided this.',
+  'error.monthLocked': 'That month is published, so its figures can no longer be changed.',
+  'error.alreadyVoided': 'This delivery was already voided.',
+  'error.invalidBatch':
+    'One of the lines is not something the factory can record. Check the kilos.',
+  'error.batchTooLarge':
+    'That is more lines than one session can carry. Record some, then continue.',
   'error.staleEligibility': 'The figures changed while this was open. Reload and check them again.',
   'error.unknown': 'Unexpected error. If it keeps happening, tell the factory administrator.',
   'error.boundaryTitle': 'This screen could not be shown',

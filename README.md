@@ -33,7 +33,7 @@ docs/         Architecture, the API contract, and what is deliberately unfinishe
 **Built:** M1 Dashboard · M2 Suppliers · M9 Change requests · M17 Audit log, on a
 foundation of runtime white-labelling, a separate console auth realm with MFA, and
 capability-based access control. The other 13 modules from §18.1 appear in the
-sidebar as *Planned* rows — see [docs/modules.md](./docs/modules.md).
+sidebar as _Planned_ rows — see [docs/modules.md](./docs/modules.md).
 
 **The backend does not exist yet.** The console runs against an in-browser mock
 that enforces every rule the real API must, and
@@ -45,14 +45,16 @@ switch to it.
 
 ## Commands
 
-| Command | |
-| --- | --- |
-| `npm run dev` | Dev server, mock API on |
-| `npm run build` | Production bundle |
-| `npm run typecheck` | `tsc --build`, all three projects |
-| `npm run lint` | Includes the white-label and layering rules |
-| `npm run test` | Vitest — 66 tests |
-| `npm run e2e` | Playwright — 3 specs (`npx playwright install chromium` once) |
+| Command              |                                                                  |
+| -------------------- | ---------------------------------------------------------------- |
+| `npm run dev`        | Dev server, mock API on                                          |
+| `npm run build`      | Production bundle                                                |
+| `npm run build:demo` | Demo bundle — production build, mock API on, for preview hosting |
+| `npm run typecheck`  | `tsc --build`, all three projects                                |
+| `npm run lint`       | Includes the white-label and layering rules                      |
+| `npm run test`       | Vitest — 72 tests                                                |
+| `npm run e2e`        | Playwright — 4 specs (`npx playwright install chromium` once)    |
+| `npm run e2e:demo`   | The same specs against the built demo bundle                     |
 
 ---
 
@@ -84,17 +86,17 @@ consistently. All of them come from the product spec in the mobile repo's `docs/
 
 Start at [docs/README.md](./docs/README.md).
 
-| | |
-| --- | --- |
-| [api-contract.md](./docs/api-contract.md) | **For the backend developer** — every endpoint, payload and refusal, with a build checklist |
-| [architecture.md](./docs/architecture.md) | Layers, state, start-up, security posture |
-| [white-label.md](./docs/white-label.md) | Runtime branding, the Tailwind ↔ token bridge, feature flags, adding a tenant |
-| [design-system.md](./docs/design-system.md) | Tokens, components, density, accessibility |
-| [rbac.md](./docs/rbac.md) | The permission matrix and where it is really enforced |
-| [modules.md](./docs/modules.md) | What each of the 17 modules does and needs |
-| [mocks.md](./docs/mocks.md) | The mock API and how to leave it behind |
-| [operations.md](./docs/operations.md) | Environments, deployment, testing, CI |
-| [status.md](./docs/status.md) | **Known gaps and the questions blocking specific modules** |
+|                                             |                                                                                             |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| [api-contract.md](./docs/api-contract.md)   | **For the backend developer** — every endpoint, payload and refusal, with a build checklist |
+| [architecture.md](./docs/architecture.md)   | Layers, state, start-up, security posture                                                   |
+| [white-label.md](./docs/white-label.md)     | Runtime branding, the Tailwind ↔ token bridge, feature flags, adding a tenant               |
+| [design-system.md](./docs/design-system.md) | Tokens, components, density, accessibility                                                  |
+| [rbac.md](./docs/rbac.md)                   | The permission matrix and where it is really enforced                                       |
+| [modules.md](./docs/modules.md)             | What each of the 17 modules does and needs                                                  |
+| [mocks.md](./docs/mocks.md)                 | The mock API and how to leave it behind                                                     |
+| [operations.md](./docs/operations.md)       | Environments, deployment, testing, CI                                                       |
+| [status.md](./docs/status.md)               | **Known gaps and the questions blocking specific modules**                                  |
 
 The product specification — what the console is for and why — lives in the mobile
 repository's `docs/`, and nothing here restates it. `BR-###`, `AC-##` and `§n`

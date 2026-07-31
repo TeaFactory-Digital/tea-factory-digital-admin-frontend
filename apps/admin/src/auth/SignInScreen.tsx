@@ -209,9 +209,11 @@ function MfaForm() {
  * Mock credentials, printed on screen while `VITE_USE_MOCK` is on.
  *
  * Deliberate: a demo credential that has to be looked up in a source file gets
- * pasted into a chat thread and outlives the demo. This block cannot render in a
- * production build, because `env.useMock` is false there and `assertEnvUsable()`
- * refuses to boot if it is not.
+ * pasted into a chat thread and outlives the demo. It renders in development and
+ * in the hosted demo build (`npm run build:demo`) — where it is the only way a
+ * visitor gets in, and where printing it costs nothing because the accounts are
+ * fixtures. It cannot render in a real production build: `env.useMock` is false
+ * there and `assertEnvUsable()` refuses to boot if it is not.
  */
 function MockCredentials() {
   const { t } = useTranslation();
