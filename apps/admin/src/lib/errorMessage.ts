@@ -61,6 +61,18 @@ const BY_CODE: Record<string, string> = {
   'category-disabled': 'error.categoryDisabled',
   'no-recipients': 'error.noRecipients',
   'push-not-configured': 'error.pushNotConfigured',
+  // M14. `flag-has-records` is the load-bearing one: turning off a money-bearing feature
+  // would hide a liability the factory still owes suppliers.
+  'tenant-immutable': 'error.tenantImmutable',
+  'flag-has-records': 'error.flagHasRecords',
+  'point-in-use': 'error.pointInUse',
+  'fallback-language-required': 'error.fallbackLanguageRequired',
+  // M15. `last-admin` is the refusal that keeps a factory from locking itself out of its
+  // own console — including the version where no *role* grants the capability any more.
+  'last-admin': 'error.lastAdmin',
+  'self-modification': 'error.selfModification',
+  'email-taken': 'error.emailTaken',
+  'unknown-role': 'error.unknownRole',
   '403': 'error.forbidden',
   '404': 'error.notFound',
 };

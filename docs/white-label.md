@@ -204,6 +204,27 @@ looser line height — Sinhala and Tamil run longer than English and must not cl
 That asymmetry with mobile — where a new brand still needs a binary — is expected:
 app stores demand binaries, browsers do not.
 
+**Since M14, the row is editable from inside the console** — which is what turns AC-12 from a
+mechanism into something you can watch happen. `/configuration` has a control for every block
+of the row: identity, the ten flags, collection points, banks, savings rates, languages,
+branding, the push block. That completeness is the criterion: one field still requiring a
+developer would make AC-12 false however good the rest of the screen was.
+
+Two consequences worth knowing before you use it:
+
+- **`tenantId` is not editable.** It comes from the subdomain and every other row is keyed on
+  it, so the API refuses a patch containing it (`tenant-immutable`). Renaming a factory is a
+  new row and a new DNS record, not an edit.
+- **Turning a flag off is refused when the module behind it holds money.** Savings balances,
+  unfinished payout runs and outstanding credit each block their flag, with the figure in the
+  message. The screen computes this from the same `configImpact` the API refuses with, so
+  what it predicts is what happens.
+
+What is still outside the console is **creating** the row for a factory that has none. §12.1
+has a `tenants` capability and §18.1's seventeen modules have no screen behind it, so the
+first row is inserted by whoever adds the DNS record — the same act by the same person, which
+is what AC-12 describes. Everything after that is the configuration screen.
+
 Optionally, for a branded login screen on the very first paint before `/config`
 resolves, add a bundled fallback:
 

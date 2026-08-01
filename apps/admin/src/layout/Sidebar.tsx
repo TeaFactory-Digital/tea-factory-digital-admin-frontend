@@ -14,7 +14,7 @@ import { can } from '@tfd/domain';
 import { useAuthStore } from '@/auth/authStore';
 import { useFeatureFlags } from '@/config/RuntimeConfigProvider';
 import { Logo } from '@/brand/Logo';
-import { Badge, CountBadge } from '@/components/ui/Badge';
+import { CountBadge } from '@/components/ui/Badge';
 import { cn } from '@/lib/cn';
 import { NAVIGATION, flagsOf, queuesOf, type NavItem } from './navigation';
 
@@ -81,22 +81,6 @@ export function Sidebar({ summary }: { summary?: DashboardSummary }) {
 function SidebarLink({ item, pending }: { item: NavItem; pending: number }) {
   const { t } = useTranslation();
   const Icon = item.icon;
-
-  // A planned module is shown and disabled, not linked. Navigating to a route
-  // that renders "coming soon" is a worse answer than a row that says so.
-  if (item.status === 'planned') {
-    return (
-      <span
-        aria-disabled
-        title={t('common.plannedHint')}
-        className="flex cursor-not-allowed items-center gap-sm px-lg py-sm text-body-small text-disabled-contrast"
-      >
-        <Icon className="size-icon-md shrink-0" aria-hidden />
-        <span className="min-w-0 flex-1 truncate">{t(item.labelKey)}</span>
-        <Badge tone="neutral">{t('common.planned')}</Badge>
-      </span>
-    );
-  }
 
   return (
     <NavLink

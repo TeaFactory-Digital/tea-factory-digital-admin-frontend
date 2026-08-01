@@ -52,8 +52,6 @@ export const en = {
   'common.required': 'Required',
   'common.optional': 'Optional',
   'common.back': 'Back',
-  'common.planned': 'Planned',
-  'common.plannedHint': 'This module is specified but not built yet.',
 
   /* ──────────────────────────────── shell ──────────────────────────────── */
   'shell.skipToContent': 'Skip to content',
@@ -119,6 +117,10 @@ export const en = {
   'dashboard.subtitle': 'The day at a glance',
   'dashboard.queues': 'Queues',
   'dashboard.queueEmpty': 'Nothing waiting',
+  /* A queue the server reports that this version of the console has no screen for. Not
+     "planned" — every module of the §18.1 scope is built; this is a newer API naming a
+     queue this build has never heard of. */
+  'dashboard.noScreenForQueue': 'No screen for this in this version',
   'dashboard.oldestWaiting': 'Oldest {{age}}',
   'dashboard.slaBreaching': '{{count}} past target',
   'dashboard.todaysCollection': "Today's leaf",
@@ -477,6 +479,14 @@ export const en = {
 
   'audit.action.notificationSend': 'Sent a notification',
   'audit.action.notificationTrigger': 'Changed an automatic notification',
+
+  'audit.action.configUpdate': 'Changed the configuration',
+  'audit.action.userCreate': 'Added a console user',
+  'audit.action.userUpdate': 'Changed a user’s name or roles',
+  'audit.action.userSuspend': 'Suspended a console user',
+  'audit.action.userReactivate': 'Reactivated a console user',
+  'audit.action.userMfaReset': 'Reset a user’s two-factor sign-in',
+  'audit.action.roleUpdate': 'Changed what a role may do',
 
   /* ───────────────────────────── validation ───────────────────────────── */
   'validation.required': 'This is required',
@@ -1158,6 +1168,312 @@ export const en = {
   'notifications.sentSuppressed': '{{count}} phones have this kind switched off and did not get it.',
   'notifications.sendFailed': 'Nothing was sent',
 
+  /* ───────────────────────── M14 Configuration ───────────────────────── */
+  /* AC-12 lives in this block: "a new factory goes live without a code deploy". The copy
+     has to explain *consequences*, because every edit here reaches across modules the
+     reader cannot see from this screen. */
+  'configuration.title': 'Configuration',
+  'configuration.subtitle': 'Everything about this factory that is data rather than code',
+  'config.tenantId': 'Factory id',
+  'config.readOnlyBadge': 'Read only',
+  'config.readOnly': 'Only the factory administrator can change the configuration.',
+  'config.sections': 'Settings',
+  'config.save': 'Save this section',
+  'config.saved': 'Configuration saved',
+  'config.savedHint': 'The change is live everywhere in the console — no reload needed.',
+  'config.saveFailed': 'Nothing was saved',
+  'config.revert': 'Undo changes',
+  'config.unsavedHint': 'Unsaved changes in this section.',
+  'config.nothingToSave': 'Nothing has changed.',
+  'config.blockedHint': 'Fix the problem above before saving.',
+  'config.remove': 'Remove',
+  'config.inUse': 'used by {{count}}',
+  'config.listEmpty': 'Nothing here yet.',
+  'config.ac12Note':
+    'This screen is the whole of setting a factory up. A new factory needs a web address and the settings on this page — no new version of the console, and nothing for a developer to do.',
+
+  'config.section.factory': 'The factory',
+  'config.sectionHint.factory': 'Name, registration, contact',
+  'config.sectionDescription.factory':
+    'What appears on the printed Green Leaf Account and in the app’s help screens.',
+  'config.section.features': 'Features',
+  'config.sectionHint.features': 'What this factory offers',
+  'config.sectionDescription.features':
+    'Turning a feature off removes it completely — the menu row, the screens, and the app.',
+  'config.section.operations': 'Collection & payment',
+  'config.sectionHint.operations': 'Points, banks, savings rates',
+  'config.sectionDescription.operations':
+    'The lists the weighing points, the payout runs and the savings scheme choose from.',
+  'config.section.appearance': 'Languages & branding',
+  'config.sectionHint.appearance': 'Languages, logo, colours',
+  'config.sectionDescription.appearance':
+    'Which languages content is written in, and how the console and the app look.',
+  'config.section.push': 'Notifications',
+  'config.sectionHint.push': 'What may be sent',
+  'config.sectionDescription.push':
+    'Which kinds of notification this factory can send, and which a new phone accepts.',
+
+  'config.factory.name': 'Factory name',
+  'config.factory.nameHint': 'Appears on every account and in the app.',
+  'config.factory.regNo': 'Registration number',
+  'config.factory.regNoHint': 'Printed on the Green Leaf Account.',
+  'config.factory.telephone': 'Telephone',
+  'config.factory.location': 'Location',
+  'config.factory.supportEmail': 'Office email',
+  'config.factory.supportHours': 'Office hours',
+  'config.factory.legalFooter': 'Legal footer',
+  'config.factory.legalFooterHint': 'The small print at the foot of a printed account.',
+
+  'config.flagGates': 'Removes {{module}} from the console and the app.',
+  'config.flag.enableSavings': 'Savings scheme',
+  'config.flag.enableAdvances': 'Advances against leaf',
+  'config.flag.enableLoans': 'Loans against income history',
+  'config.flag.enableManure': 'Fertilizer on credit',
+  'config.flag.enableInquiry': 'Supplier messages',
+  'config.flag.enableNews': 'News feed',
+  'config.flag.enablePushNotifications': 'Notifications',
+  'config.flag.enablePromoBanner': 'Promotional banner',
+  'config.flag.enablePayouts': 'Payout runs',
+  'config.flag.enableReports': 'Reports',
+
+  'config.points': 'Collection points',
+  'config.addPoint': 'Add a point',
+  'config.banks': 'Banks',
+  'config.addBank': 'Add a bank',
+  'config.branchesOf': 'Branches of {{bank}}',
+  'config.addBranch': 'Add a branch',
+  'config.savingsRates': 'Savings rates a supplier may choose (LKR per kg)',
+  'config.addRate': 'Add a rate',
+
+  'config.contentLanguages': 'Languages content is written in',
+  'config.contentLanguagesHint':
+    'News articles and the app’s fixed pages are written in each of these. A language that is not ticked stops being counted as missing.',
+  'config.fallbackRequired': '— required',
+  'config.recordsWritten': '{{count}} records written',
+  'config.defaultLanguage': 'Default language in the app',
+  'config.defaultLanguageHint': 'What a supplier sees before they choose one.',
+  'config.logoUrl': 'Logo address',
+  'config.logoUrlHint': 'A web address. Left empty, the factory name is drawn instead.',
+  'config.faviconUrl': 'Browser icon address',
+  'config.colour.primary': 'Main colour',
+  'config.colour.secondary': 'Second colour',
+
+  'config.topicPrefix': 'Notification topic prefix',
+  'config.topicPrefixHint': 'Technical. Only change this if the messaging provider asks you to.',
+  'config.pushCategories': 'Kinds of notification this factory sends',
+  'config.pushCategoriesHint':
+    'Only a ticked kind can be sent at all. The second box is whether a phone accepts it without the supplier turning it on.',
+  'config.optedInByDefault': 'accepted by default',
+  'config.pushFlagOff':
+    'Notifications are switched off for this factory, so nothing here has any effect yet. Turn them on under Features first.',
+
+  /* The impact list. Each of these is why a change is refused or worth thinking about —
+     rendered from the same `configImpact` the API refuses with, so the two can never
+     name different things. */
+  'config.impact.savingsHeld':
+    '{{count}} suppliers have money in the savings scheme. Turning it off would hide balances the factory is holding for them, so this cannot be saved.',
+  'config.impact.payoutRunsOpen':
+    '{{count}} payout runs are not finished. Turning payouts off would hide money that has not been paid out yet, so this cannot be saved.',
+  'config.impact.creditOutstanding':
+    'Suppliers still owe LKR {{amount}} on {{facility}}. Turning it off would hide that, so this cannot be saved.',
+  'config.impact.surfaceRemoved':
+    'Everyone loses this from the menu straight away, and the app stops offering it.',
+  'config.impact.pointInUse':
+    '{{count}} weighings are filed against {{point}}. Removing it would leave them pointing at a place that no longer exists, so this cannot be saved.',
+  'config.impact.bankInUse':
+    '{{count}} suppliers are paid through {{bank}}. Their details keep the name; it just stops being offered for new ones.',
+  'config.impact.languageDropped': 'No content is written in {{lang}}, so nothing is lost.',
+  'config.impact.languageDroppedWithCopy':
+    '{{count}} records are written in {{lang}}. The copy stays, but it stops being counted as missing — so nothing will tell you it is out of date.',
+  'config.impact.fallbackLanguageRequired':
+    'English cannot be removed. Every article and page falls back to it when a translation is missing.',
+
+  /* ───────────────────────── M15 Users & roles ───────────────────────── */
+  /* Every refusal in this module is a version of one failure: a factory locking itself out
+     of its own console. The copy has to make that concrete, because "last administrator"
+     means nothing until somebody reads what happens if they press on. */
+  'users.title': 'Users & roles',
+  'users.subtitle': 'Who can use the console, and what each role may do',
+  'users.views': 'Users or roles',
+  'users.view.users': 'People',
+  'users.view.roles': 'What each role may do',
+  'users.you': '(you)',
+  'users.searchPlaceholder': 'Search name or email',
+  'users.filter.all': 'Everyone',
+  'users.column.person': 'Person',
+  'users.column.roles': 'Roles',
+  'users.column.lastSignIn': 'Last signed in',
+  'users.status.active': 'Active',
+  'users.status.suspended': 'Suspended',
+  'users.neverSignedIn': 'Never',
+  'users.lastAdministrator': 'Only way back in',
+  'users.mfaOwed': 'Two-factor not set up',
+  'users.noDeleteHint':
+    'Accounts are suspended, never deleted — a person who approved a payout or closed a month is named on those records, and a record whose author cannot be found is not evidence.',
+
+  'users.edit': 'Edit',
+  'users.suspend': 'Suspend',
+  'users.reactivate': 'Reactivate',
+  'users.resetMfa': 'Reset two-factor',
+  'users.invite': 'Add a user',
+  'users.inviteTitle': 'Add a user',
+  'users.inviteBody':
+    'They sign in with this email address. Nothing is sent automatically — tell them their password yourself.',
+  'users.editTitle': 'Edit {{name}}',
+  'users.editBody': 'Changing roles changes what they can do the next time they load a screen.',
+  'users.field.name': 'Full name',
+  'users.field.email': 'Email',
+  'users.field.emailHint': 'This is how they sign in, and it cannot be changed afterwards.',
+  'users.field.emailLocked':
+    'An email address cannot be changed — it is the name on everything this person has already approved.',
+  'users.field.roles': 'Roles',
+  'users.field.rolesHint':
+    'More than one is fine. Where roles disagree, the most permissive one applies.',
+  'users.cannotEditOwnRoles':
+    'You cannot change your own roles. Ask another administrator — this is what stops somebody locking themselves out halfway through a job.',
+  'users.mfaObligation':
+    'This person will have to set up two-factor sign-in before they can get in. It is required for managers and administrators.',
+  'users.created': '{{name}} can now sign in',
+  'users.createdHint': 'Tell them their password. They will be asked to set up two-factor if their role needs it.',
+  'users.createFailed': 'The user was not created',
+  'users.updated': '{{name}} updated',
+  'users.updateFailed': 'Nothing was changed',
+
+  'users.suspendTitle': 'Suspend {{name}}?',
+  'users.suspendBody':
+    'They cannot sign in until somebody reactivates them. Everything they have already done stays exactly as it is.',
+  'users.suspendConfirm': 'Suspend them',
+  'users.suspendDone': '{{name}} can no longer sign in',
+  'users.suspendFailed': 'Nothing was changed',
+  'users.reactivateTitle': 'Reactivate {{name}}?',
+  'users.reactivateBody': 'They can sign in again immediately, with the roles they had.',
+  'users.reactivateConfirm': 'Reactivate them',
+  'users.reactivateDone': '{{name}} can sign in again',
+  'users.reactivateFailed': 'Nothing was changed',
+  'users.mfaTitle': 'Reset two-factor for {{name}}?',
+  'users.mfaBody':
+    'Use this when somebody has lost their phone. They will set it up again next time they sign in — and until they do, their password alone gets them in. Only do this when you are certain who you are talking to.',
+  'users.mfaConfirm': 'Reset it',
+  'users.mfaDone': 'Two-factor reset for {{name}}',
+  'users.mfaFailed': 'Nothing was changed',
+  'users.reasonHint': 'At least {{min}} characters. The person this happens to will ask why.',
+
+  'users.role.clerk': 'Clerk',
+  'users.role.weigher': 'Weigher',
+  'users.role.accountant': 'Accountant',
+  'users.role.manager': 'Manager',
+  'users.role.editor': 'Editor',
+  'users.role.factoryAdmin': 'Factory administrator',
+  'users.role.platformAdmin': 'Platform administrator',
+
+  'users.matrixTitle': 'What each role may do',
+  'users.matrixDescription':
+    'Change a role here and it changes for everybody who has it. Nothing needs installing.',
+  'users.matrixDefault': 'Standard roles',
+  'users.matrixCustomised': 'Changed for this factory',
+  'users.matrixChanged': 'Last changed by {{name}}, {{when}}.',
+  'users.matrixWarning':
+    'These take effect the next time somebody loads a screen. Widening a role gives it to everybody who has that role, including people who are signed in right now.',
+  'users.matrixReadOnly': 'Only the factory administrator can change what a role may do.',
+  'users.capability': 'Can do',
+  'users.grantFor': '{{capability}} for {{role}}',
+  'users.recoveryCapabilityHint':
+    'This is the one that lets somebody manage users. At least one role must keep it, or nobody can get back in.',
+  'users.matrixLockoutTitle': 'That would lock everybody out',
+  'users.matrixLockoutBody':
+    'No role would be left able to manage users, so nobody could ever change this back. Leave at least one role able to.',
+  'users.roleSaved': '{{role}} updated',
+  'users.roleSaveFailed': 'Nothing was changed',
+
+  'users.level.none': '—',
+  'users.level.read': 'See',
+  'users.level.write': 'Change',
+  'users.level.approve': 'Approve',
+
+  'users.capabilityName.suppliers': 'Suppliers',
+  'users.capabilityName.deliveries': 'Leaf collection',
+  'users.capabilityName.ratesAndMonthClose': 'Rates & month close',
+  'users.capabilityName.billing': 'Bills & savings',
+  'users.capabilityName.payouts': 'Payouts',
+  'users.capabilityName.creditRequests': 'Credit requests',
+  'users.capabilityName.creditAboveThreshold': 'Large credit requests',
+  'users.capabilityName.changeRequests': 'Change requests',
+  'users.capabilityName.inquiries': 'Supplier messages',
+  'users.capabilityName.content': 'News & pages',
+  'users.capabilityName.flagsAndBranding': 'Configuration',
+  'users.capabilityName.usersAndRoles': 'Users & roles',
+  'users.capabilityName.reports': 'Reports & dashboard',
+  'users.capabilityName.auditLog': 'Audit log',
+  'users.capabilityName.tenants': 'Other factories',
+
+  /* ───────────────────────────── M16 Reports ───────────────────────────── */
+  /* The list is short on purpose and the copy says so: §19.1's warehouse shape is what the
+     rest of M16 needs, and §19.1 is not in this repository. */
+  'reports.title': 'Reports',
+  'reports.subtitle': 'Figures pulled straight from the records, every time you look',
+  'reports.available': 'Reports',
+  'reports.results': 'Results',
+  'reports.rows': 'Rows',
+  'reports.total': 'Total',
+  'reports.generatedAt': 'Worked out {{when}}',
+  'reports.runsAutomatically': 'Change anything above and the figures update.',
+  'reports.needsParams': 'Choose the options above first.',
+  'reports.noParams': 'Nothing to show yet',
+  'reports.noParamsHint': 'Choose what the report should cover.',
+  'reports.empty': 'No rows',
+  'reports.emptyHint': 'Nothing in the records matches what you asked for.',
+  'reports.shortListNote':
+    'Only these four for now. Each one is built from records the console already keeps — the rest of the reports the factory asked for need a separate reporting database, which does not exist yet.',
+  'reports.noExportNote':
+    'No download yet. You can select the table and paste it into a spreadsheet in the meantime.',
+
+  'reports.name.monthSummary': 'Month summary',
+  'reports.description.monthSummary':
+    'One month at a glance: leaf, rate, what the bills came to, and what is being held as savings.',
+  'reports.name.leafByCollectionPoint': 'Leaf by collection point',
+  'reports.description.leafByCollectionPoint':
+    'Where the month’s leaf came from, and how one point compares with another.',
+  'reports.name.dormantSuppliers': 'Suppliers who have stopped',
+  'reports.description.dormantSuppliers':
+    'Registered suppliers with no leaf for a while — and what the factory still holds for them.',
+  'reports.name.channelShift': 'App use over time',
+  'reports.description.channelShift':
+    'How many requests suppliers make themselves in the app, against how many the office keys in for them.',
+
+  'reports.param.dormantMonths': 'No leaf for at least',
+  'reports.param.dormantMonthsHint': 'Months.',
+  'reports.param.from': 'From',
+  'reports.param.to': 'To',
+
+  'reports.column.metric': 'Figure',
+  'reports.column.value': 'Value',
+  'reports.column.point': 'Collection point',
+  'reports.column.kgs': 'Kilos',
+  'reports.column.suppliers': 'Suppliers',
+  'reports.column.deliveries': 'Weighings',
+  'reports.column.meanKgs': 'Average per weighing',
+  'reports.column.code': 'Code',
+  'reports.column.name': 'Name',
+  'reports.column.lastDelivery': 'Last delivery',
+  'reports.column.savings': 'Savings held',
+  'reports.column.credit': 'Owes',
+  'reports.column.month': 'Month',
+  'reports.column.fromApp': 'From the app',
+  'reports.column.fromOffice': 'Keyed in',
+  'reports.column.total': 'Total',
+  'reports.column.appShare': 'From the app',
+
+  'reports.metric.stage': 'Where the month is',
+  'reports.metric.totalKgs': 'Leaf',
+  'reports.metric.supplierCount': 'Suppliers',
+  'reports.metric.deliveryCount': 'Weighings',
+  'reports.metric.ratePerKg': 'Rate per kg',
+  'reports.metric.extraRatePerKg': 'Extra per kg',
+  'reports.metric.billCount': 'Bills',
+  'reports.metric.grossTotal': 'Gross',
+  'reports.metric.payableTotal': 'Payable',
+  'reports.metric.savingsTotal': 'Savings held',
+
   /* ─────────────────────────────── errors ─────────────────────────────── */
   'error.title': 'Something went wrong',
   'error.network': 'No connection to the factory server. Check the network and try again.',
@@ -1210,6 +1526,18 @@ export const en = {
     'No phone in that audience accepts this kind of notification, so nothing would arrive.',
   'error.pushNotConfigured':
     'Push is switched on for this factory but no kinds have been set up yet. That is done in Configuration.',
+  'error.tenantImmutable': 'The factory id comes from the web address and cannot be changed.',
+  'error.flagHasRecords':
+    'That feature is holding records the factory still has to account for, so it cannot be turned off yet.',
+  'error.pointInUse':
+    'That collection point has weighings filed against it and cannot be removed.',
+  'error.fallbackLanguageRequired':
+    'English cannot be removed — every article and page falls back to it.',
+  'error.lastAdmin':
+    'That would leave nobody able to manage users, so nobody could undo it. Give somebody else the role first.',
+  'error.selfModification': 'You cannot do that to your own account. Ask another administrator.',
+  'error.emailTaken': 'That email address already has an account.',
+  'error.unknownRole': 'There is no such role.',
   'error.unknown': 'Unexpected error. If it keeps happening, tell the factory administrator.',
   'error.boundaryTitle': 'This screen could not be shown',
   'error.boundaryBody': 'The rest of the console still works. Reload this page to try again.',

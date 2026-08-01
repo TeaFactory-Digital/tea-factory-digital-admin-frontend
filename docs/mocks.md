@@ -45,6 +45,12 @@ what makes `handlers.ts` readable as an executable version of
 | An idempotent replay of a committed weighing session | §1.3 — the same `batchId` returns the original result, rejections included |
 | Per-row rejections inside a `200` on a batch | §9.3 — one bad code must not send fifty-nine good rows back |
 | `409 exceptions-open` on a publish with unresolved exceptions | AC-04 |
+| `409 flag-has-records` / `409 point-in-use` on a config change that would hide money or orphan rows | M14. A flag holding a liability is not a preference the factory gets to express |
+| `422 tenant-immutable` on a patch containing `tenantId` | The subdomain owns it and every other row is keyed on it |
+| `409 last-admin` on suspending or re-roling the only user who can administer users | A factory locking itself out of its own console has no recovery path |
+| `409 last-admin` on a **role matrix** in which no role grants `usersAndRoles` | The same lockout with no user record changing — a check written per user misses it entirely |
+| `422 unknown-category` on a notification the app would drop | M13. A send the console called successful, reaching nobody, reporting nothing |
+| `422 invalid` on a report run missing a parameter | M16. An empty grid reads as "no leaf that month", which is the one wrong answer that screen can give |
 
 Two structural choices worth copying into the backend:
 
@@ -54,6 +60,19 @@ Two structural choices worth copying into the backend:
    the reveal endpoint.
 2. **`authorize()` returns either the user or the response to send.** A handler
    cannot forget the check and still compile into something that answers `200`.
+3. **A handler reads live state; it never reads the seed.** This one was learned three
+   times, from three bugs with the same shape and three different symptoms:
+   - `bearer()` read `mockUsers`, so suspending a user was cosmetic — their token kept working.
+   - `roleMatrix()` wrote `state.roleMatrix ??= …` on *read*, so merely opening the matrix
+     screen marked the factory as having customised its permissions.
+   - `flagsOf()` and `contentLanguagesOf()` read `mockConfigs` while `GET /config` served
+     live state, so a flag turned off in M14 removed the sidebar row and the route while
+     every endpoint behind them went on answering — which is exactly the half of AC-07 the
+     criterion exists to insist on.
+
+   The pattern: **once a fixture becomes editable, every reader of it is a potential bug**,
+   and the symptom is always "the screen changed and the thing behind it did not". Worth the
+   same care server-side, where the equivalent is a cached config or a stale read replica.
 
 ---
 
@@ -89,6 +108,18 @@ BR-501 on the month close, where the accountant enters the rate and the manager
 publishes it. The weigher exists because §12.1 gives `deliveries: W` to nobody
 else in this fixture — signed in as the clerk, M3 is read-only, and that is the
 matrix working rather than a broken screen.
+
+**M15 makes these six mutable, and that changed what they are for.** A suspension now takes
+effect on the next request rather than being a badge, so the fixture can demonstrate the one
+failure the module exists to prevent: `factoryadmin` is the *only* user holding
+`usersAndRoles`, which makes them the last way back in — the row says so and the suspend
+button is withheld from it. Invite a second factory administrator and the badge disappears
+from both rows, because `isLastAdministrator` is derived on every read rather than stored.
+
+The §12.1 matrix is mutable too, and `state.roleMatrix` is `null` until somebody edits it —
+`null` meaning *"this factory uses the standard roles"*, which is what the *Standard roles*
+badge reports. That is why reading the matrix must not materialise it (see the seed-versus-
+state rule above).
 
 ### Suppliers — 84
 
@@ -340,9 +371,13 @@ independently-sold facilities, so the row is gated on **any** of the three flags
 rather than on advances alone. Gating it on `enableAdvances` would have hidden the
 queue from a factory that lends against income history and not against leaf.
 
-**`enableInquiry` is `true` on all three tenants**, so M10's endpoint half of AC-07
-is built (`featureGate` guards every inquiry route) and **not asserted** — no fixture
-tenant has the flag off. Same gap as savings, and stated for the same reason.
+**Every flag now has an off-tenant on demand**, which retired the old "`enableInquiry` is
+`true` on all three tenants, so its half of AC-07 is unasserted" caveat. Since M14 the
+configuration screen writes to live state and `featureGate` reads it, so a test turns the
+flag off *through the console* and replays a clerk's existing token — the mechanism a factory
+would actually use, rather than a fourth fixture tenant invented to be assertable. A fixture
+tenant is still the better demonstration (`highland` shows a reduced-feature console on
+arrival); a config edit is the better test.
 
 Switching to `highland` in the dev tenant switcher should visibly empty those rows
 out of the sidebar. It is the fastest check that no surface is hardcoded, and a

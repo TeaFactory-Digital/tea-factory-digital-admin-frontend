@@ -17,8 +17,8 @@ From the workspace root:
 | `npm run preview`    | Serves the built bundle                                                                   |
 | `npm run typecheck`  | `tsc --build` across all three projects                                                   |
 | `npm run lint`       | ESLint, including the white-label and layering rules                                      |
-| `npm run test`       | Vitest — 204 tests                                                                        |
-| `npm run e2e`        | Playwright — 23 specs against the dev server. Needs `npx playwright install chromium` once |
+| `npm run test`       | Vitest — 252 tests                                                                        |
+| `npm run e2e`        | Playwright — 28 specs against the dev server. Needs `npx playwright install chromium` once |
 | `npm run e2e:demo`   | The same specs against the built demo bundle on a static server                           |
 | `npm run format`     | Prettier                                                                                  |
 
@@ -140,7 +140,7 @@ old binaries are in the field, and feature flags are the release valve.
 
 Layered so each layer tests what only it can.
 
-### Vitest — 204 tests
+### Vitest — 252 tests
 
 | File                           | Covers                                                                    |
 | ------------------------------ | ------------------------------------------------------------------------- |
@@ -155,6 +155,11 @@ Layered so each layer tests what only it can.
 | `deliveries.test.ts` (9)       | M3: batch commit and its idempotent replay, per-row rejections, the void, `month-locked`, and the day totals the dashboard reads |
 | `notifications.test.ts` (15)   | M13: the refusals a push has no feedback loop for, consent honoured per device, and each automatic trigger fired by doing the real thing — publishing a month, publishing an article, answering a message |
 | `content.test.ts` (20)         | M11/M12 and **AC-08 end to end**: the preview resolving as `content.ts` does, gaps derived against the tenant's own languages, stale copy, and the write/publish split |
+| `credit.test.tsx` (23)         | M7: the eligibility working as identities (AC-05), `stale-eligibility`, `over-ceiling` on both sides, and an approval raising the balance the next bill deducts against |
+| `users.test.ts` (20)           | M15: all three lockouts — the last administrator, self-modification, and the **matrix** in which no role grants recovery — plus the mandatory reasons and a suspension taking effect on the next request |
+| `configuration.test.ts` (16)   | M14 and **AC-12**: every block of the row editable, the money-bearing refusals with their figures, a save reaching the public `GET /config`, and a flag turned off here making the endpoint behind it refuse (AC-07) |
+| `inquiries.test.tsx` (15)      | M10: reply and close as different acts, §21.18's status mapping, and the reply screen reading M13's trigger |
+| `reports.test.ts` (12)         | M16: each report tied to the module its figures come from, `null` kept as `null`, totals only where they mean something, and a factory administrator running a month report without a `billing` grant |
 | `listSorting.test.ts` (5)      | Server-side sort and pagination parameters                                |
 
 `rbac.test.ts` and `money.test.ts` are the highest-value files. The matrix is what
@@ -166,14 +171,20 @@ place a bug produces a dispute rather than a crash.
 the server is a stand-in. A test that stubbed the repository would pass while the
 interceptor flattened every error code.
 
-### Playwright — 23 specs
+### Playwright — 28 specs
 
 `short-screen.spec.ts` is the odd one out and earns its place: it renders every grid at
 five viewports down to 1152×640 and asserts the first row is **inside the viewport**. It
 exists because a list collapsing to zero pixels got past the rest of the suite — the rows
 were in the DOM, so `toBeVisible()` passed while a human saw nothing.
 
-Narrow on purpose: only what jsdom cannot prove.
+Narrow on purpose: only what jsdom cannot prove — plus, in four module specs
+(`money`, `content`, `notifications`, `administration`), the handful of behaviours that
+only exist once a screen renders. `administration.spec.ts` earned its keep immediately: it
+found that M16's month picker was fed from a `billing`-gated endpoint, so the factory
+administrator — who holds `reports: R` and no `billing` — could not run a single month
+report. Every unit test passed, because they called the repository and never rendered the
+picker.
 
 1. **Sign-in → dashboard** — proves the service worker registers and the whole
    session flow works in a browser.

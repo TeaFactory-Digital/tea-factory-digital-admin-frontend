@@ -18,5 +18,8 @@ export * from './leafCredit';
 export * from './inquiry';
 export * from './content';
 export * from './notifications';
+export * from './config';
 export * from './rbac';
+export * from './users';
+export * from './reports';
 export * from './schemas';

@@ -34,14 +34,19 @@ apps/
 docs/         Architecture, the API contract, and what is deliberately unfinished
 ```
 
-**Built: 14 of the 17 modules.** M1 Dashboard · M2 Suppliers · **M3 Leaf
-collection** · **M4 Rates & month close** · **M5 Bills** · **M6 Payouts** ·
-**M7 Credit queues** · **M8 Savings** · M9 Change requests · **M10 Inquiries** ·
-**M11 News** · **M12 Static content** · **M13 Notifications** · M17 Audit log — on a
-foundation of runtime white-labelling, a separate console auth realm with MFA, and
-capability-based access control. The remaining three (Configuration, Users & roles,
-Reports) appear in the sidebar as _Planned_ rows — see
-[docs/modules.md](./docs/modules.md).
+**Built: all 17 modules.** M1 Dashboard · M2 Suppliers · M3 Leaf collection ·
+M4 Rates & month close · M5 Bills · M6 Payouts · M7 Credit queues · M8 Savings ·
+M9 Change requests · M10 Inquiries · M11 News · M12 Static content ·
+M13 Notifications · **M14 Configuration** · **M15 Users & roles** · **M16 Reports** ·
+M17 Audit log — on a foundation of runtime white-labelling, a separate console auth
+realm with MFA, and capability-based access control.
+
+Every module has a route, so what is unfinished is no longer module-shaped: it is a
+short list of named absences *inside* built modules — the payout file, savings
+withdrawals, a deduction editor, CSV export — each blocked on a decision only the
+factory can make, and each stated on the screen where somebody would look for the
+control. [docs/status.md](./docs/status.md) is the list; nothing is quietly assumed
+to be solved.
 
 M3 and M4 are the pair §18.2 calls the ones the project succeeds or fails on: the
 leaf is recorded at the weighing point in one keyboard-driven session per day, and
@@ -65,6 +70,17 @@ per-tenant switch defaulted from the platform's own `push.defaultCategories`, an
 send is preceded by a reach figure that counts who opted out. A push is the only act here
 with no undo and no delivery report, so every safeguard is a pre-check.
 
+M14, M15 and M16 are the Administration section, and together they are what makes the
+console **handed over** rather than demonstrated. M14 closes AC-12 — a new factory is a
+DNS record and a `client_config` row, and every field of that row now has a control, so
+nothing about onboarding a factory needs a developer. M15 makes §12.1 editable, which is
+what its own specification always claimed it was; its refusals all guard one failure, a
+factory locking itself out of a console with no recovery path outside itself. M16 is
+deliberately the smallest: four reports, each built from records the console already keeps
+and each carrying the citation that justifies it, because the rest need a reporting
+warehouse that lives in another repository — and a report nobody asked for is a query
+somebody maintains and nobody reads.
+
 **The backend does not exist yet.** The console runs against an in-browser mock
 that enforces every rule the real API must, and
 [docs/api-contract.md](./docs/api-contract.md) specifies each endpoint. Hand that
@@ -82,8 +98,8 @@ switch to it.
 | `npm run build:demo` | Demo bundle — production build, mock API on, for preview hosting |
 | `npm run typecheck`  | `tsc --build`, all three projects                                |
 | `npm run lint`       | Includes the white-label and layering rules                      |
-| `npm run test`       | Vitest — 204 tests                                               |
-| `npm run e2e`        | Playwright — 23 specs (`npx playwright install chromium` once)    |
+| `npm run test`       | Vitest — 252 tests                                               |
+| `npm run e2e`        | Playwright — 28 specs (`npx playwright install chromium` once)    |
 | `npm run e2e:demo`   | The same specs against the built demo bundle                     |
 
 ---
@@ -123,7 +139,7 @@ Start at [docs/README.md](./docs/README.md).
 | [white-label.md](./docs/white-label.md)     | Runtime branding, the Tailwind ↔ token bridge, feature flags, adding a tenant               |
 | [design-system.md](./docs/design-system.md) | Tokens, components, density, accessibility                                                  |
 | [rbac.md](./docs/rbac.md)                   | The permission matrix and where it is really enforced                                       |
-| [modules.md](./docs/modules.md)             | What each of the 17 modules does and needs                                                  |
+| [modules.md](./docs/modules.md)             | What each of the 17 modules decides, and what a real deployment still needs                  |
 | [mocks.md](./docs/mocks.md)                 | The mock API and how to leave it behind                                                     |
 | [operations.md](./docs/operations.md)       | Environments, deployment, testing, CI                                                       |
 | [status.md](./docs/status.md)               | **Known gaps and the questions blocking specific modules**                                  |

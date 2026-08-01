@@ -1271,6 +1271,68 @@ export interface NotificationReach {
   suppliersWithoutDevice: number;
 }
 
+/* ───────────────────────── M15 Users & roles ───────────────────────── */
+
+/**
+ * A console user as the administration screen lists them.
+ *
+ * Extends `ConsoleUser` with the two things a list has to show and a session payload has no
+ * reason to carry: whether this person is **the way back into the console**, and whether they
+ * owe a second factor.
+ */
+export interface AdminConsoleUser extends ConsoleUser {
+  /**
+   * Holds a role granting `usersAndRoles: write` and is active.
+   *
+   * Carried on the row so the console can withhold "suspend" from the last one without
+   * recomputing the whole set per button — and so the count is the server's, since the
+   * server is what refuses.
+   */
+  canAdministerUsers: boolean;
+  /** Holds a manager-or-above role and has not enrolled a second factor. */
+  owesMfa: boolean;
+  /** `true` when suspending or demoting this user would lock the factory out. */
+  isLastAdministrator: boolean;
+}
+
+export interface UserQuery extends PageQuery {
+  q?: string;
+  role?: ConsoleRole;
+  status?: ConsoleUser['status'];
+}
+
+/** What the office may set when inviting somebody. */
+export interface ConsoleUserDraft {
+  name: string;
+  email: string;
+  roles: ConsoleRole[];
+}
+
+/** What the office may change afterwards. Email is not here — it is the identity. */
+export interface ConsoleUserPatch {
+  name?: string;
+  roles?: ConsoleRole[];
+}
+
+/**
+ * The §12.1 matrix, **as data on the wire**.
+ *
+ * rbac.md: *"a factory will want to split or merge these roles, and that must not be a
+ * deploy."* This is that promise made operable — and `packages/domain/src/rbac.ts` becomes
+ * what it always said it was, the offline default rather than the authority.
+ */
+export interface RoleMatrix {
+  matrix: Record<ConsoleRole, Record<Capability, AccessLevel>>;
+  /**
+   * `true` when the served matrix differs from the shipped default, so the screen can say
+   * "this factory has customised its roles" rather than leaving the reader to compare
+   * fifteen rows against a table in a document.
+   */
+  customised: boolean;
+  updatedAt: string | null;
+  updatedByName: string | null;
+}
+
 /* ───────────────────────────── M17 Audit log ───────────────────────────── */
 
 /**
@@ -1447,6 +1509,20 @@ export const ADMIN_ERROR_CODES = [
   'fallback-translation-missing',
   'slug-taken',
   'content-not-published',
+
+  /* M14 Configuration. `flag-has-records` is the load-bearing one: turning off a
+     money-bearing feature would hide a liability the factory still owes suppliers. */
+  'tenant-immutable',
+  'flag-has-records',
+  'point-in-use',
+  'fallback-language-required',
+
+  /* M15 Users & roles. `last-admin` is the refusal that keeps a factory from locking
+     itself out of its own console. */
+  'last-admin',
+  'self-modification',
+  'email-taken',
+  'unknown-role',
 
   /* M13 Notifications. `unknown-category` is the one that matters: the app **drops** a
      push whose category it does not recognize, so a send the console called successful

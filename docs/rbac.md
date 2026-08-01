@@ -69,9 +69,24 @@ responsibly.
 > The matrix itself is **data, not code**: a factory will want to split or merge
 > these roles, and that must not be a deploy.
 
-So the table above is the **offline default**. The authority is the `grants`
-object the server sends on `GET /admin/auth/me`, and `resolveGrants` merges them
-asymmetrically:
+So the table above is the **offline default**, and since M15 that is finally the whole
+truth of it rather than an intention. Until this module existed,
+`packages/domain/src/rbac.ts` was the authority while calling itself a default — there was
+no way to change a role without editing that file and shipping a build, which is precisely
+the deploy §12.1 says must not be required. `/users?view=roles` edits the matrix, the API
+serves it, and `DEFAULT_ROLE_MATRIX` is what a factory that has never customised anything
+happens to be using. `RoleMatrix.customised` says which of the two you are looking at.
+
+**Editing it has one refusal, and it is the failure nobody predicts.** A matrix in which no
+role grants `usersAndRoles` locks the factory out of its own console — with every user still
+holding the roles they had, and no user record having changed. A guard written per user
+misses it entirely, so `matrixKeepsRecovery` checks the *proposed matrix* before it is saved,
+in the screen, the repository and the server. Three layers is not belt-and-braces here: the
+console has no recovery path outside itself, so the toast has to be able to explain the
+refusal before the request goes.
+
+The authority is the `grants` object the server sends on `GET /admin/auth/me`, and
+`resolveGrants` merges them asymmetrically:
 
 ```ts
 resolveGrants(roles, serverGrants)   // server wins per capability; matrix fills gaps

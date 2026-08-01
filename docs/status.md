@@ -14,9 +14,18 @@ Foundation plus M1, M2, M9 and M17 — the first agreed milestone — then **M3 
 the pair §18.2 calls the ones the project succeeds or fails on, then **M5, M6 and
 M8**: the money chain those two exist to feed. Now **M7 and M10**, which finish the
 sidebar's Queues section — every `pending` in the supplier's app is a queue in the
-console, which is the promise the whole product rests on. And now **M11 and M12**, the
+console, which is the promise the whole product rests on. Then **M11 and M12**, the
 Content section — the smallest slice that closes an acceptance criterion outright, because
-AC-08 was the last one with no screen behind it at all.
+AC-08 was the last one with no screen behind it at all — followed by **M13**, built at the
+factory's request with §21.24 answered as configuration rather than code.
+
+Now **M14, M15 and M16**, the Administration section, which is the slice that turns a
+console that can be *demonstrated* into one that can be *handed over*: every field of a
+factory's `client_config` row has a control (AC-12), the §12.1 matrix is editable so
+[rbac.md](./rbac.md)'s central claim is finally true, and the figures the office quotes come
+out of the records rather than out of a spreadsheet. **All seventeen §18.1 modules now have
+a route.** What is unfinished is no longer module-shaped — see the gaps below, every one of
+which is a named absence inside a built module.
 
 | Area | State |
 | --- | --- |
@@ -25,7 +34,7 @@ AC-08 was the last one with no screen behind it at all.
 | **Auth realm** | Separate from suppliers. Password → optional TOTP → in-memory access token + httpOnly refresh cookie, with refresh-on-401 |
 | **RBAC** | The §12.1 matrix as data, server grants overriding per capability, four-eyes, capability route guards |
 | **Transport** | Axios with domain-code-preserving errors, tenant header, idempotency keys, single-retry refresh |
-| **Mock API** | MSW: 84 suppliers, 14 change requests, 14 credit requests, 7 inquiries, **eight months of delivery rows**, months with stored stages and derived exceptions, bills and savings ledgers chained month to month, payout runs in every state, 3 tenants, **6 console users**, five news articles and the app's six fixed pages in si/en/ta — enforcing every refusal the real API must |
+| **Mock API** | MSW: 84 suppliers, 14 change requests, 14 credit requests, 7 inquiries, **eight months of delivery rows**, months with stored stages and derived exceptions, bills and savings ledgers chained month to month, payout runs in every state, 3 tenants, **6 console users whose suspensions and roles actually take effect on the next request**, an editable §12.1 matrix, five news articles and the app's six fixed pages in si/en/ta — enforcing every refusal the real API must |
 | **UI kit** | 15 token-driven primitives, keyboard-navigable data grid, i18n throughout |
 | **M1 Dashboard** | Queue cards with age and SLA, month-cycle stage, today's leaf, server-composed alerts, 14-day trend — the leaf figures now derived from M3's rows, so committing a session moves the card |
 | **M2 Suppliers** | Search/filter/sort grid with URL state, detail, suspend/reactivate, the audited bank reveal |
@@ -36,12 +45,15 @@ AC-08 was the last one with no screen behind it at all.
 | **M8 Savings** | Read-only. Balance as a liability, ledger derived from published bills only, oldest-first passbook, and the registry's balance following the ledger rather than sitting beside it |
 | **M7 Credit queues** | One queue over all three facilities, the **eligibility working printed rather than summarised** (AC-05), a decision that carries the ceiling it was made against so `stale-eligibility` is enforceable (BR-310), `over-ceiling` refused on both sides, and an approval that raises the supplier's balance so the next bill deducts against it |
 | **M9 Change requests** | Queue oldest-first, side-by-side comparison, approve/reject with mandatory note, four-eyes, already-decided |
-| **M10 Inquiries** | Open/answered/closed as data (§21.18), reply and close-unanswered as **different acts**, prose-first triage grid, and the console saying plainly that no notification is sent because M13 is not built |
+| **M10 Inquiries** | Open/answered/closed as data (§21.18), reply and close-unanswered as **different acts**, prose-first triage grid, and the reply screen reading M13's `inquiryReplied` trigger so it says whether a notification actually goes out rather than a sentence that was true when it was written |
 | **M11 News** | Per-language authoring with the fallback and the gap lists shared with the app (`content.ts`), a server-resolved preview, a "live with a gap" working list, and publish/unpublish/archive split from writing by §12.1 |
 | **M12 Static content** | The app's six fixed pages, unwritten ones shown as a state rather than omitted, and every edit to a live page audited with its previous wording |
 | **M13 Notifications** | Automatic triggers as per-tenant data (§21.24 deferred as config, not guessed), a reach preview that counts opt-outs before anything is sent, composed sends gated on `content: A`, and a log where reached and suppressed sit side by side |
+| **M14 Configuration** | Five independently-patched sections covering the **whole** `client_config` row (AC-12), the tenant id shown and immutable, and every edit's consequences computed from the shared `configImpact` **before** the save — a flag holding money is refused with the figure, a collection point with leaf against it cannot be removed, and the fallback language cannot be dropped |
+| **M15 Users & roles** | Invite, re-role, suspend and reactivate with a mandatory reason, the §12.1 matrix **editable as data**, and three lockout guards including the one nobody thinks of: a matrix in which no role grants `usersAndRoles` is refused, because every user keeps their roles while nobody can ever manage users again |
+| **M16 Reports** | Four reports, each carrying the citation that justifies it, computed from live records at request time; self-describing columns so one screen renders any report; totals only under the columns that add up; and the month list served behind the `reports` grant rather than `billing` |
 | **M17 Audit** | Filterable read-only log, plus per-record panels on M2, M9 and M11. Every mutation in every built module writes to it |
-| **Tests** | 204 Vitest + 18 Playwright, all passing. Typecheck and lint clean |
+| **Tests** | 252 Vitest + 28 Playwright, all passing. Typecheck and lint clean |
 
 ## Acceptance criteria
 
@@ -56,9 +68,9 @@ assessed.
 | AC-09 | Every decision appears in M17 within a second, with actor and before/after | ✅ Met against the mock; the real API must do the same |
 | AC-10 | No console user can approve a record they created | ✅ Met — buttons withheld, server refuses `four-eyes-violation` |
 | AC-04 | The month cannot be published with an unresolved exception | ✅ Met — exceptions are records with a mandatory resolution note, and publish answers `exceptions-open`. Integration-tested, including the four-eyes refusal on the publisher who entered the rate |
-| AC-12 | A new factory goes live without a code deploy | ⚠️ Mechanism met — subdomain + config + no bundled identity. Unprovable until M14 exists |
+| AC-12 | A new factory goes live without a code deploy | ✅ **Met, and now demonstrable field by field.** M14 puts a control on every block of the `client_config` row — identity, the ten flags, collection points, banks, savings rates, languages, branding, push — so there is no value left that needs a developer. The console bundles no factory identity, resolves the tenant from the subdomain, and reads the row at runtime. **One step is still outside the console:** inserting the row for a factory that does not have one. §12.1 has a `tenants` capability and §18.1's seventeen modules have no screen behind it, so the first row is created by whoever adds the DNS record — the same act, by the same person, which is what AC-12 describes. Everything *after* that is this screen |
 | AC-03 | A bill matches the app's Home screen and the PDF field for field | ⚠️ **Console half met.** The slip renders every `GreenLeafBill` field in the printed account's order, and the derivation is shared (`packages/domain/src/bill.ts`) so the API cannot compute it differently. Integration-tested as identities — gross from kilos × rate, the nine lines summing to their total, whole rupees plus carried coins equalling the balance. **Unprovable end to end until the app reads the same endpoint**, and the PDF is not built |
-| AC-07 | A flag off removes the surface **and** the endpoint refuses | ⚠️ **Console half met, API half now met for the two flags that have an off-tenant.** `enablePayouts` is off for `highland`, and `GET /admin/payout-runs` answers `403 feature-disabled` for it — asserted with a raw request carrying an explicit `X-Tenant`, which is how a replayed request or a hand-typed URL would arrive. The mechanism (`featureGate`) is in place for savings too; no fixture tenant has that flag off. **The real backend still has none of this** |
+| AC-07 | A flag off removes the surface **and** the endpoint refuses | ⚠️ **Console half met, mock API half met for every flag.** Two ways round: `enablePayouts` is off for `highland` and `GET /admin/payout-runs` answers `403 feature-disabled` for it, and — since M14 — a flag can be turned **off through the console** and the endpoint behind it refuses on the next request. That second path is asserted with a clerk's token taken *before* the change and replayed after it, which is how a hand-typed URL arrives; it is also what closed the old "`enableInquiry` has no off-tenant" gap, because the off-tenant is now made rather than found. It caught a real defect on the way in: the gate read the **seed** while `GET /config` served live state, so a flag turned off removed the sidebar row and the route while every endpoint behind them kept answering. **The real backend still has none of this** |
 | AC-05 | Credit eligibility matches the app's, byte for byte, including the working | ⚠️ **Console half met.** M7 renders every intermediate figure — months of history against the requirement, the average account and the multiple, the last settled rate and the kilos it priced — and the derivation is shared (`packages/domain/src/leafCredit.ts`), so the API cannot compute it differently. Integration-tested as identities rather than as fixed numbers: the ceiling equals its own arithmetic. **Unprovable end to end until the app reads the same endpoint** |
 | AC-08 | Content falls back to English, and the gap is visible to the editor | ✅ **Met.** The fallback is `resolveTranslation` in `@tfd/domain`, shared so the API cannot resolve it differently, and the preview is fetched from the server rather than composed by the console. The gap appears on the tab for the language that has it, on the list row, in a "live with a gap" filter, in the publish confirmation, and in the publish audit entry. Integration-tested as identities between the preview and the shared function. Also flags **stale** copy — written before the English it was translated from — which AC-08's wording does not cover and an office hits second |
 | AC-11 | The FAQ | ✅ Met — M12 carries the app's six fixed pages, and the FAQ is written in all three languages in the fixture. A page the factory has never written is shown as such rather than omitted, because the app is rendering its own bundled default |
@@ -78,12 +90,12 @@ Worst first: correctness, then plumbing, then polish.
    working native build for a console change is not a trade worth making blind.
 
 2. **The API half of every feature flag exists only in the mock.** The console hides a
-   disabled surface end to end, and the mock now refuses the payouts and savings
-   endpoints with `403 feature-disabled` for a tenant that has the flag off — which is
-   what closed the AC-07 argument for those two. But nothing refuses `POST /loans` at a
-   factory that does not lend, because **there is no backend**. Until the real API
-   reproduces `featureGate`, a flag is a UI preference for every module the mock has
-   not been extended to cover.
+   disabled surface end to end, and the mock now refuses **every** flagged endpoint with
+   `403 feature-disabled` — either for a fixture tenant that has the flag off, or for a flag
+   an administrator turns off through M14, which is the same mechanism reached the way a
+   factory would actually reach it. But nothing refuses `POST /loans` at a factory that does
+   not lend, because **there is no backend**. Until the real API reproduces `featureGate`, a
+   flag is a UI preference — and the console's own gate is a courtesy, not a control.
 
 3. **Refresh-token rotation is unverified.** The mock stands in for the httpOnly
    cookie with a `sessionStorage` entry, which is enough for the console to
@@ -180,12 +192,13 @@ Worst first: correctness, then plumbing, then polish.
     refused with `over-ceiling` rather than paid. What is missing is the console
     saying so before the first one is decided. §21.5 is the rule question behind it.
 
-18. **`enableInquiry` has no off-tenant.** M10's endpoint half of AC-07 is built —
-    `featureGate` guards every inquiry route — and no fixture tenant turns the flag
-    off, so it is unasserted. Exactly the same gap savings has, and it means the
-    flag is a UI preference for M10 until either a fixture tenant or the real API
-    refuses the call. M7's half **is** asserted: `highland` sells advances and not
-    loans or manure, and a loan reached by its own URL answers `feature-disabled`.
+18. ~~**`enableInquiry` has no off-tenant.**~~ **Closed by M14**, and the way it closed is
+    worth keeping: rather than adding a fourth fixture tenant with the flag off, the test
+    turns the flag off *through the configuration screen* and replays a clerk's existing
+    token — so the assertion is about the mechanism a factory would actually use rather than
+    about a fixture. Every flag now has an off-tenant on demand. It also found a defect in
+    the process: the mock's flag gate read the seed while `GET /config` served live state, so
+    the surface disappeared and the endpoints did not.
 
 19. **The Sinhala and Tamil fixture copy has not been reviewed by a native speaker.**
     It is real script rather than Latin placeholders on purpose — the `[lang="si"]` and
@@ -232,6 +245,42 @@ Worst first: correctness, then plumbing, then polish.
     Deliberately not half-built: doing it properly means the composer grows the same
     language strip M11 has, and the send picks per device.
 
+25. **M16 reads the same store a clerk is writing to.** §19.5 asks that reports run off a
+    **read replica** so a month-close query does not compete with leaf entry, and the mock
+    has one store. That is a deployment concern rather than a console one — but the four
+    reports are written as single-pass scans over live records precisely so that moving them
+    to a replica is a connection string and not a rewrite. Recorded because "the report is
+    slow during month close" is the failure it produces, and it will look like a console bug.
+
+26. **The report list is four long because §19.1 is in the other repository.** Each of the
+    four is defined by something already in this codebase and carries that citation on the
+    row. The rest of what the factory asked for needs the warehouse shape, and a report
+    invented to fill the list is a query somebody maintains and nobody reads. The screen says
+    this where somebody would look for the missing reports, rather than leaving the shortness
+    to be read as an oversight.
+
+27. **A created user's password is the demo password, and nothing forces a change.** M15
+    invites a user and the mock gives them `demo1234`, which is why the success toast says
+    *"tell them their password"*. A real API issues a one-time credential the office cannot
+    read back, and insists on a change at first sign-in. Neither exists here, and the
+    console has no screen for either — this is the one place in the console where the mock is
+    weaker than the contract rather than equal to it.
+
+28. **MFA is owed and never collected.** `MFA_REQUIRED_ROLES` marks manager and above, the
+    user list shows *Two-factor not set up*, and the sign-in demands a code from anyone who
+    **is** enrolled — but nothing enrols anybody. The only MFA control that exists is the
+    reset, which un-enrols. So a manager who owes a second factor signs in with a password
+    indefinitely, and the badge is a note rather than a gate. *To close:* an enrolment step
+    at first sign-in for a role that requires it, which is a screen plus a TOTP secret the
+    server issues — and it is where §18.1 expected MFA enrolment to live.
+
+29. **The role matrix has no "restore the standard roles".** A factory that has narrowed
+    six roles has no single control to put them back, and `DEFAULT_ROLE_MATRIX` is right
+    there in the bundle. Left out deliberately: a one-click reset of every permission in the
+    console is a control whose worst case is worse than the inconvenience it saves, and the
+    matrix already says whether it has diverged. If it is wanted, it should be a confirm
+    dialog naming what changes, not a button.
+
 ---
 
 ## Blocking business questions
@@ -239,13 +288,17 @@ Worst first: correctness, then plumbing, then polish.
 These stop specific modules. Numbering follows `status.md` §21 in the mobile repo,
 so an answer can be recorded in one place.
 
-### Stops a module I could otherwise build now
+### Stops a control inside a module, and no module any more
+
+Nothing here blocks a module — all seventeen are routed. Both of these stop a **supplier
+identity** operation, which is the one area of the console where the wrong flow is worse than
+no flow:
 
 | § | Question | Blocks |
 | --- | --- | --- |
-| 21.15 | **Registration** — how does a new supplier get a code and a login? Who creates it, and what does the supplier receive? | M2 create |
+| 21.15 | **Registration** — how does a new supplier get a code and a login? Who creates it, and what does the supplier receive? | M2 create. The endpoint and types exist; no screen calls them, because the form is the *flow* and the flow is the question |
 | 21.16 | **Password reset** — the app says "contact the factory". What does the office actually do, and how is the supplier's identity checked? | M2's reset action, currently disabled with an explanation. The wrong flow here is an account-takeover path |
-| 21.24 | **Notifications** — does the office compose every send, or does bill-published fire automatically off the publish step? Who may send free text? | M13. M5 has now given the trigger a real event to hang off — `month.publish` is the moment a bill becomes something the supplier can see |
+| 21.24 | **Notifications** — does the office compose every send, or does bill-published fire automatically off the publish step? Who may send free text? | **Nothing.** Built as configuration instead: every trigger is a row and "who may send free text" is `content: approve`, stated on the screen so it can be contested. This is what an unanswered question should cost — a switch to flip, not a rewrite. See gap 22 |
 
 ### Stops one control inside a module that is otherwise built
 
@@ -312,15 +365,26 @@ after a month has been published on the wrong assumption:
 2. **The scale-file import for M3.** The entry grid is built; the other half of
    §18.2's data-entry story is a scale file the weighing point can upload, and
    `source: 'scaleFile'` is already in the data waiting for it.
-3. **M14 Configuration.** The other end of `GET /config`, and the only thing standing
-   between AC-12 ("a new factory goes live without a code deploy") and being provable
-   rather than merely mechanised. It is also where `contentLanguages` is set, which M11
-   and M12 now read on every request.
+3. **MFA enrolment** (gap 28), which is the largest hole the Administration slice left
+   behind: the console now names who owes a second factor and still has no way for them to
+   set one up. It is one screen and a server-issued secret, and until it exists the *Two-factor
+   not set up* badge is a note rather than a gate.
 4. **The repo merge**, before the shared types drift far enough to hurt.
 
-**M13 was built anyway, at the factory's request**, and the way it was built is the point:
-§21.24 is answered as **configuration** rather than code. Which categories fire
+**Every module in §18.1 now has a route, and that changes what this list is for.** It is no
+longer a build order — it is the four things that would make what exists trustworthy in
+production rather than demonstrable in a meeting. Nothing on it is blocked on the factory;
+the things that are, are in the tables above.
+
+**M13 was built out of order, at the factory's request**, and the way it was built is the
+point: §21.24 is answered as **configuration** rather than code. Which categories fire
 automatically is a per-tenant row, defaulted from `push.defaultCategories` — the platform's
 own existing statement about which categories are routine — and "who may send free text" is
 `content: approve`, stated on the screen so it can be contested. When the factory answers,
 somebody flips a switch. See gap 22 for what is still genuinely unknown.
+
+**M14 answered a question the other modules kept asking.** Seven of them read a config value
+that had no editor — `contentLanguages` for M11 and M12, `push.defaultCategories` and the
+topic prefix for M13, `savings.perKgOptions` for M8, the collection points for M3, the bank
+list for M2 and M6. Every one of those was a value the console *depended* on and a developer
+*owned*. That is the sense in which AC-12 was mechanised but not met.

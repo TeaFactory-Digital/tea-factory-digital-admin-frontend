@@ -18,7 +18,9 @@
 
 import { HttpResponse, delay, http, type HttpHandler } from 'msw';
 import type {
+  AccessLevel,
   AdminBill,
+  AdminConsoleUser,
   AdminNewsArticle,
   AdminStaticPage,
   AdminChangeRequest,
@@ -30,9 +32,12 @@ import type {
   BillListItem,
   BillRun,
   Capability,
+  ConfigPatch,
+  ConfigUsage,
   ContentPreview,
   ContentTranslation,
   ContentTranslations,
+  ConsoleRole,
   ConsoleUser,
   CreditFacility,
   Delivery,
@@ -44,6 +49,7 @@ import type {
   MonthException,
   MonthSummary,
   LanguageCode,
+  LockoutCandidate,
   MonthlyRateEntry,
   NotificationAudience,
   NotificationCategory,
@@ -54,6 +60,9 @@ import type {
   PaymentMethod,
   PayoutLine,
   PayoutRun,
+  ReportId,
+  ReportResult,
+  RuntimeConfig,
   SavingsAccount,
   SavingsSummary,
   StaticPageSlug,
@@ -74,16 +83,28 @@ import {
   deductionsBalance,
   isExactKg,
   isInquiryClosed,
+  DEFAULT_ROLE_MATRIX,
+  REPORT_DEFINITIONS,
+  REPORT_IDS,
   audienceMatches,
+  canAdministerUsers,
+  configImpact,
+  isConfigPatchAllowed,
+  grantsFromRoles,
   isRecognizedCategory,
+  isReportId,
   isSelfApproval,
   partitionDevices,
+  matrixKeepsRecovery,
+  missingReportParams,
   missingTranslations,
+  owesMfa,
   monthKeyOf,
   publishability,
   resolveTranslation,
   slugify,
   staleTranslations,
+  wouldLockOut,
   round2,
   roundKg,
   summariseKgs,
@@ -141,6 +162,21 @@ import {
  * docs/mocks.md rather than discovered.
  */
 const state = {
+  /**
+   * The console's own users, mutable.
+   *
+   * Copied rather than aliased, so `resetMockState()` can restore it: M15 suspends accounts
+   * and rewrites roles, and a suspension leaking into the next test would leave a suite
+   * unable to sign in as anybody.
+   *
+   * **Authentication reads this, not the fixture** — see `bearer()`. That is what makes a
+   * suspension and a role change take effect rather than being cosmetic.
+   */
+  users: mockUsers.map((user) => ({ ...user, roles: [...user.roles] })),
+  /** `null` until the factory edits it, at which point it becomes the authority. */
+  roleMatrix: null as Record<ConsoleRole, Record<Capability, AccessLevel>> | null,
+  roleMatrixUpdatedAt: null as string | null,
+  roleMatrixUpdatedByName: null as string | null,
   suppliers: mockSuppliers,
   changeRequests: mockChangeRequests,
   deliveries: mockDeliveries,
@@ -196,6 +232,16 @@ const state = {
    * here: the symptom is a test suite where the second case finds Sinhala already
    * written and the AC-08 gap it was asserting on has quietly disappeared.
    */
+  /**
+   * The `client_config` row per tenant, deep-cloned.
+   *
+   * Deep, because a config is nested three levels and a shallow copy would let M14 mutate
+   * the seed — so `resetMockState()` would hand the mutated object back and a test that
+   * turned a flag off would leave it off for every test after it.
+   */
+  configs: {} as Record<string, RuntimeConfig>,
+  /** Bumped on every save, so an `ETag` cannot answer `304` with the pre-edit row. */
+  configRevisions: {} as Record<string, number>,
   notificationTriggers: mockNotificationTriggers.map((trigger) => ({ ...trigger })),
   notificationSends: mockNotificationSends.map((send) => ({ ...send })),
   news: mockNews.map(cloneNews),
@@ -221,6 +267,358 @@ function cloneMonths(): Record<string, MonthRecord> {
 }
 
 
+
+
+
+/* ─────────────────────── M16 report helpers ─────────────────────── */
+
+/**
+ * The four reports, each one a query over live state.
+ *
+ * Written as one function returning columns **with** rows, because the API is the only thing
+ * that knows whether a number is money, kilos or a count — and a grid that guessed would print
+ * `LKR 412.00` over a supplier count. Totals are per-report rather than derived from the
+ * column types: summing kilos is a fact, summing a percentage is nonsense.
+ */
+function runReport(
+  id: ReportId,
+  params: { monthKey?: string; from?: string; to?: string; dormantMonths?: number },
+): Pick<ReportResult, 'id' | 'columns' | 'rows' | 'totals'> {
+  switch (id) {
+    /**
+     * The month's own figures, in the order the office asks for them: how much leaf, at what
+     * rate, worth what, of which how much is payable and how much is held as savings.
+     */
+    case 'monthSummary': {
+      const monthKey = params.monthKey!;
+      const record = state.months[monthKey];
+      const bills = state.bills.filter((bill) => bill.monthKey === monthKey);
+      const rows = state.deliveries.filter((row) => row.monthKey === monthKey && !row.voidedAt);
+      const totals = summariseKgs(rows.map((row) => ({ supplierId: row.supplierId, kgs: row.kgs })));
+
+      return {
+        id,
+        columns: [
+          // `metricKey`, not `text`: the row label is a key under `reports.metric.*`, and
+          // running it through the console as literal prose is how `reports.metric.5091`
+          // happened to a completely different column that was also typed `text`.
+          { key: 'metric', labelKey: 'reports.column.metric', type: 'metricKey' },
+          { key: 'value', labelKey: 'reports.column.value', type: 'text' },
+        ],
+        // A two-column shape, because this report is a set of unrelated figures rather than a
+        // table of like things — one row per metric reads as a summary, and a single wide row
+        // reads as a spreadsheet nobody scrolls.
+        rows: [
+          // `null` rather than the string `'unknown'`: the console already renders a `null`
+          // value as an em dash, and a month record should always exist for a month this
+          // picker offered — inventing a translatable "unknown" state for a case that should
+          // not occur is worse than the em dash.
+          { metric: 'stage', value: record?.stage ?? null },
+          { metric: 'totalKgs', value: totals.totalKgs },
+          { metric: 'supplierCount', value: totals.supplierCount },
+          { metric: 'deliveryCount', value: totals.rowCount },
+          { metric: 'ratePerKg', value: record?.rate?.ratePerKg ?? null },
+          { metric: 'extraRatePerKg', value: record?.rate?.extraRatePerKg ?? null },
+          { metric: 'billCount', value: bills.length },
+          {
+            metric: 'grossTotal',
+            value: round2(bills.reduce((sum, bill) => sum + (bill.grossAmount ?? 0), 0)),
+          },
+          {
+            metric: 'payableTotal',
+            value: round2(bills.reduce((sum, bill) => sum + (bill.finalBalance ?? 0), 0)),
+          },
+          {
+            metric: 'savingsTotal',
+            value: round2(bills.reduce((sum, bill) => sum + bill.deductions.savings, 0)),
+          },
+        ],
+      };
+    }
+
+    /** Where the leaf came from. The one report a weighing supervisor asks for by name. */
+    case 'leafByCollectionPoint': {
+      const monthKey = params.monthKey!;
+      const rows = state.deliveries.filter((row) => row.monthKey === monthKey && !row.voidedAt);
+
+      const byPoint = new Map<string, { kgs: number; suppliers: Set<string>; deliveries: number }>();
+      for (const row of rows) {
+        const entry = byPoint.get(row.collectionPoint) ?? {
+          kgs: 0,
+          suppliers: new Set<string>(),
+          deliveries: 0,
+        };
+        entry.kgs = roundKg(entry.kgs + row.kgs);
+        entry.suppliers.add(row.supplierId);
+        entry.deliveries += 1;
+        byPoint.set(row.collectionPoint, entry);
+      }
+
+      const out = [...byPoint.entries()]
+        .map(([point, entry]) => ({
+          collectionPoint: point,
+          totalKgs: entry.kgs,
+          supplierCount: entry.suppliers.size,
+          deliveryCount: entry.deliveries,
+          // Mean kilos per delivery: the figure that shows one point weighing very
+          // differently from the others, which is what a supervisor is looking for.
+          meanKgs: entry.deliveries === 0 ? 0 : roundKg(entry.kgs / entry.deliveries),
+        }))
+        .sort((a, b) => b.totalKgs - a.totalKgs);
+
+      return {
+        id,
+        columns: [
+          { key: 'collectionPoint', labelKey: 'reports.column.point', type: 'text' },
+          { key: 'totalKgs', labelKey: 'reports.column.kgs', type: 'kg' },
+          { key: 'supplierCount', labelKey: 'reports.column.suppliers', type: 'count' },
+          { key: 'deliveryCount', labelKey: 'reports.column.deliveries', type: 'count' },
+          { key: 'meanKgs', labelKey: 'reports.column.meanKgs', type: 'kg' },
+        ],
+        rows: out,
+        totals: {
+          totalKgs: roundKg(out.reduce((sum, row) => sum + row.totalKgs, 0)),
+          deliveryCount: out.reduce((sum, row) => sum + row.deliveryCount, 0),
+          // Deliberately **no `supplierCount` total**: a supplier who delivers to two points
+          // would be counted twice, and a sum that double-counts people is worse than none.
+        },
+      };
+    }
+
+    /**
+     * Registered and not supplying (§19.2).
+     *
+     * The report the office uses to decide who to telephone, so it carries the balances too —
+     * a dormant supplier who is owed savings is a different conversation from one who is not.
+     */
+    case 'dormantSuppliers': {
+      const months = params.dormantMonths!;
+      const cutoff = new Date(Date.now() - months * 30 * 86_400_000).toISOString();
+
+      const out = state.suppliers
+        .filter((supplier) => supplier.status !== 'closed')
+        .filter((supplier) => !supplier.lastDeliveryAt || supplier.lastDeliveryAt < cutoff)
+        .map((supplier) => ({
+          supplierCode: supplier.supplierCode,
+          name: supplier.name,
+          collectionPoint: supplier.collectionPoint,
+          // `null` is a real value here, and the one that matters most: a supplier who has
+          // *never* delivered is a registration that never became a supply relationship.
+          lastDeliveryAt: supplier.lastDeliveryAt,
+          savingsBalance: supplier.savingsBalance,
+          creditOutstanding: round2(
+            supplier.creditBalances.advance +
+              supplier.creditBalances.loan +
+              supplier.creditBalances.manure,
+          ),
+        }))
+        .sort((a, b) => (a.lastDeliveryAt ?? '').localeCompare(b.lastDeliveryAt ?? ''));
+
+      return {
+        id,
+        columns: [
+          { key: 'supplierCode', labelKey: 'reports.column.code', type: 'text' },
+          { key: 'name', labelKey: 'reports.column.name', type: 'text' },
+          { key: 'collectionPoint', labelKey: 'reports.column.point', type: 'text' },
+          { key: 'lastDeliveryAt', labelKey: 'reports.column.lastDelivery', type: 'date' },
+          { key: 'savingsBalance', labelKey: 'reports.column.savings', type: 'money' },
+          { key: 'creditOutstanding', labelKey: 'reports.column.credit', type: 'money' },
+        ],
+        rows: out,
+        totals: {
+          savingsBalance: round2(out.reduce((sum, row) => sum + row.savingsBalance, 0)),
+          creditOutstanding: round2(out.reduce((sum, row) => sum + row.creditOutstanding, 0)),
+        },
+      };
+    }
+
+    /**
+     * App adoption and channel shift — *"the two KPIs that justify the project"* (§19.3).
+     *
+     * Measured as the share of requests that arrived from the app rather than being keyed in
+     * by the office, which is only measurable because every request carries `channel`. That
+     * column exists for this report and nothing else.
+     */
+    case 'channelShift': {
+      const { from, to } = params;
+      const inWindow = (createdAt: string) => {
+        const monthKey = createdAt.slice(0, 7);
+        return monthKey >= from! && monthKey <= to!;
+      };
+
+      const buckets = new Map<string, { app: number; office: number }>();
+      const add = (createdAt: string, channel: 'app' | 'office') => {
+        if (!inWindow(createdAt)) return;
+        const key = createdAt.slice(0, 7);
+        const entry = buckets.get(key) ?? { app: 0, office: 0 };
+        entry[channel] += 1;
+        buckets.set(key, entry);
+      };
+
+      // Every queue that carries a channel. Counted together, because the KPI is about
+      // suppliers using the app at all rather than about any one request type.
+      for (const request of state.changeRequests) add(request.createdAt, request.channel);
+      for (const request of state.creditRequests) add(request.createdAt, request.channel);
+      for (const inquiry of state.inquiries) add(inquiry.createdAt, inquiry.channel);
+
+      const out = [...buckets.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([monthKey, entry]) => {
+          const total = entry.app + entry.office;
+          return {
+            monthKey,
+            fromApp: entry.app,
+            fromOffice: entry.office,
+            total,
+            // `null`, not `0`, for a month with no requests: a share of nothing is not zero
+            // per cent, and a chart that plotted it as such would show adoption collapsing.
+            appShare: total === 0 ? null : round2((entry.app / total) * 100),
+          };
+        });
+
+      return {
+        id,
+        columns: [
+          { key: 'monthKey', labelKey: 'reports.column.month', type: 'month' },
+          { key: 'fromApp', labelKey: 'reports.column.fromApp', type: 'count' },
+          { key: 'fromOffice', labelKey: 'reports.column.fromOffice', type: 'count' },
+          { key: 'total', labelKey: 'reports.column.total', type: 'count' },
+          { key: 'appShare', labelKey: 'reports.column.appShare', type: 'percent' },
+        ],
+        rows: out,
+        totals: {
+          fromApp: out.reduce((sum, row) => sum + row.fromApp, 0),
+          fromOffice: out.reduce((sum, row) => sum + row.fromOffice, 0),
+          total: out.reduce((sum, row) => sum + row.total, 0),
+          // No `appShare` total: averaging percentages across months of different sizes gives
+          // a figure that is not the overall share, and the office would quote it.
+        },
+      };
+    }
+  }
+}
+
+/* ─────────────────── M15 users & roles helpers ─────────────────── */
+
+/**
+ * The role matrix this factory is actually using.
+ *
+ * Starts as the shipped default and becomes the tenant's own the first time it is edited —
+ * which is `rbac.ts`'s doc comment made true rather than aspirational: *"the table above is
+ * the offline default. The authority is the `grants` object the server sends."*
+ */
+function roleMatrix(): Record<ConsoleRole, Record<Capability, AccessLevel>> {
+  /**
+   * **Read-only: this must not materialise `state.roleMatrix`.**
+   *
+   * It used to be `state.roleMatrix ??= clone(DEFAULT)`, which meant the first *read* of the
+   * matrix set it — and `customised` is `state.roleMatrix !== null`, so simply opening the
+   * screen reported the factory as having changed its roles. The flag exists to tell an
+   * administrator whether this factory has diverged from the shipped table; one that turns
+   * itself on when looked at answers nothing.
+   */
+  return state.roleMatrix ?? DEFAULT_ROLE_MATRIX;
+}
+
+/** A user as M15 lists them: the record, plus what it would cost to take them away. */
+function toAdminUser(user: MockUser): AdminConsoleUser {
+  const matrix = roleMatrix();
+  const candidates: LockoutCandidate[] = state.users.map((one) => ({
+    id: one.id,
+    roles: one.roles,
+    status: one.status,
+  }));
+  const self = candidates.find((one) => one.id === user.id)!;
+  const others = candidates.filter((one) => one.id !== user.id);
+
+  const { password: _password, grants: _grants, ...rest } = user;
+  return {
+    ...rest,
+    canAdministerUsers: canAdministerUsers(self, matrix),
+    owesMfa: owesMfa(user),
+    /**
+     * Derived, not stored, and derived **per read**: "is this the last administrator" stops
+     * being true the moment somebody else is given the role, and a stored flag would go on
+     * withholding the suspend button afterwards.
+     */
+    isLastAdministrator: wouldLockOut({ ...self, status: 'suspended' }, others, matrix),
+  };
+}
+
+/** The lockout refusal, with the reason in `details` so the screen can name it. */
+function lockoutRefusal(details: unknown) {
+  return fail({
+    status: 409,
+    code: 'last-admin',
+    message: 'That would leave nobody able to administer users.',
+    details,
+  });
+}
+
+/* ─────────────────── M14 configuration helpers ─────────────────── */
+
+/**
+ * The counts a config change is judged against.
+ *
+ * Computed from live state on every read rather than stored, because every one of them is
+ * the answer to "would this change hide something": a stored figure would let a factory
+ * turn savings off the moment after the last balance was created.
+ */
+function configUsage(): ConfigUsage {
+  const deliveriesByPoint: Record<string, number> = {};
+  for (const row of state.deliveries) {
+    if (row.voidedAt) continue;
+    deliveriesByPoint[row.collectionPoint] = (deliveriesByPoint[row.collectionPoint] ?? 0) + 1;
+  }
+
+  const suppliersByBank: Record<string, number> = {};
+  for (const supplier of state.suppliers) {
+    const bank = supplier.bankDetails?.bankName;
+    if (bank) suppliersByBank[bank] = (suppliersByBank[bank] ?? 0) + 1;
+  }
+
+  const contentByLanguage: Partial<Record<LanguageCode, number>> = {};
+  for (const record of [...state.news, ...state.staticPages]) {
+    for (const [lang, translation] of Object.entries(record.translations)) {
+      if (translation && translation.title.trim()) {
+        contentByLanguage[lang as LanguageCode] = (contentByLanguage[lang as LanguageCode] ?? 0) + 1;
+      }
+    }
+  }
+
+  return {
+    savingsBalances: state.suppliers.filter((supplier) => supplier.savingsBalance > 0).length,
+    openPayoutRuns: state.payoutRuns.filter((run) => run.status !== 'completed').length,
+    outstandingCredit: {
+      advance: round2(state.suppliers.reduce((sum, s) => sum + s.creditBalances.advance, 0)),
+      loan: round2(state.suppliers.reduce((sum, s) => sum + s.creditBalances.loan, 0)),
+      manure: round2(state.suppliers.reduce((sum, s) => sum + s.creditBalances.manure, 0)),
+    },
+    deliveriesByPoint,
+    suppliersByBank,
+    contentByLanguage,
+  };
+}
+
+/**
+ * The tenant's live config — the mock's `client_config` row.
+ *
+ * **`tenantId` is stamped with the tenant the row is being served for**, and that is not
+ * cosmetic. A tenant outside the fixture (Vitest resolves to `base`, since jsdom's hostname
+ * carries no subdomain) falls back to Galaboda's row as a stand-in — and without this line
+ * that row goes on claiming to *be* Galaboda. The console then displays one factory id while
+ * the API keys its audit entries on another, which is precisely the second-source-of-truth
+ * problem `tenant-immutable` exists to refuse. Found by the M14 audit test, not by reading.
+ */
+function tenantConfig(request: Request): RuntimeConfig {
+  const id = tenantOf(request);
+  if (!state.configs[id]) {
+    const source = mockConfigs[id] ?? mockConfigs.galaboda!;
+    state.configs[id] = { ...(JSON.parse(JSON.stringify(source)) as RuntimeConfig), tenantId: id };
+  }
+  return state.configs[id]!;
+}
+
 /* ─────────────────── M13 notification helpers ─────────────────── */
 
 /**
@@ -229,10 +627,13 @@ function cloneMonths(): Record<string, MonthRecord> {
  * `hillcountry` has `enablePushNotifications: true` and **no `push` block**, which is a
  * real state rather than a fixture oversight: the flag is on and nobody has configured
  * the categories. The console must say so — `push-not-configured` — rather than sending
- * into a void or crashing on an undefined. Configuring it is M14's job.
+ * into a void or crashing on an undefined.
+ *
+ * Read from **live state**, because configuring it is M14's job and a comment that says so
+ * while this function read the seed would be describing something that could not happen.
  */
 function pushConfigOf(request: Request) {
-  const config = mockConfigs[tenantOf(request)] ?? mockConfigs.galaboda!;
+  const config = tenantConfig(request);
   return config.push ?? null;
 }
 
@@ -396,8 +797,9 @@ function cloneStaticPage(record: StaticPageRecord): StaticPageRecord {
  * warning stops reading warnings.
  */
 function contentLanguagesOf(request: Request): LanguageCode[] {
-  const config = mockConfigs[tenantOf(request)] ?? mockConfigs.galaboda!;
-  return config.localization.contentLanguages;
+  // From live state, not the seed: adding or removing a language in M14 has to change what
+  // counts as a gap, or the impact list is warning about a consequence that never arrives.
+  return tenantConfig(request).localization.contentLanguages;
 }
 
 /** The newest edit in any language — the record's own `updatedAt`. */
@@ -814,7 +1216,16 @@ function bearer(request: Request): MockUser | null {
   const header = request.headers.get('Authorization');
   if (!header?.startsWith('Bearer ')) return null;
   const userId = state.sessions.get(header.slice(7));
-  return mockUsers.find((u) => u.id === userId) ?? null;
+  /**
+   * `state.users`, not the fixture.
+   *
+   * M15 suspends accounts and changes roles, and both have to *mean* something: a suspended
+   * user must stop being able to act, and a re-roled one must get their new grants on the
+   * next request rather than at the next deploy. Reading the immutable fixture here would
+   * have made every M15 write cosmetic — the screen would say "suspended" and the account
+   * would carry on working.
+   */
+  return state.users.find((u) => u.id === userId) ?? null;
 }
 
 /**
@@ -884,8 +1295,18 @@ function tenantOf(request: Request): string {
 }
 
 /** A tenant's flags, so `feature-disabled` can be answered the way AC-07 needs. */
+/**
+ * This tenant's flags, from **live state** — which is what makes AC-07 more than a fixture.
+ *
+ * It used to read the seed, so a flag turned off in M14 removed the sidebar row and the
+ * route while every endpoint behind them went on answering. That is precisely the half of
+ * AC-07 the criterion exists to insist on ("the surface *and* the endpoint"), and it made
+ * the answer depend on whether some fixture tenant happened to have the flag off. Now any
+ * flag can be turned off in the console and the endpoint refuses — see the AC-07 case in
+ * `configuration.test.ts`.
+ */
 function flagsOf(request: Request) {
-  return (mockConfigs[tenantOf(request)] ?? mockConfigs.galaboda!).flags;
+  return tenantConfig(request).flags;
 }
 
 function paginate<T>(items: T[], url: URL): Paged<T> {
@@ -1010,21 +1431,571 @@ function withInquiryAge(inquiry: AdminInquiry): AdminInquiry {
 /* ──────────────────────────────── handlers ──────────────────────────────── */
 
 export const handlers: HttpHandler[] = [
+  /* ── M16 Reports ───────────────────────────────────────────────────────── */
+
+  /**
+   * The reports this factory can run. Registered before `/admin/reports/:id`.
+   *
+   * Served rather than hardcoded in the console, because which reports exist is a property of
+   * the warehouse behind them (§19.1) — and when that lands, the list grows without a console
+   * release.
+   */
+  http.get('*/admin/reports', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enableReports');
+    if (gate) return gate;
+    const auth = authorize(request, 'reports');
+    if ('response' in auth) return auth.response;
+
+    /**
+     * The months come with the list, behind the `reports` grant rather than `billing`.
+     *
+     * The factory administrator holds `reports: R` and `billing: none` (§12.1), so a picker
+     * fed from `GET /admin/bill-months` left the one role that owns this section unable to
+     * run a month report at all — see `ReportCatalogue`.
+     */
+    return HttpResponse.json({
+      reports: Object.values(REPORT_DEFINITIONS),
+      months: Object.keys(state.months).sort().reverse(),
+    });
+  }),
+
+  /**
+   * Run one.
+   *
+   * **Every figure is derived from live state at request time**, which is the whole reason
+   * these four exist and nothing else does: each is a query anybody can re-run against the
+   * records it came from. A stored result would be a second answer waiting to disagree with
+   * them — the same argument that keeps a bill a read model over deliveries and a rate.
+   *
+   * §19.5 says a report should run off a read replica so a month-close query does not compete
+   * with a clerk entering deliveries. Here it reads the same store; that is a scaling gap and
+   * it is recorded in status.md rather than pretended away.
+   */
+  http.get('*/admin/reports/:id', async ({ request, params }) => {
+    await delay(LATENCY_MS * 2);
+    const gate = featureGate(request, 'enableReports');
+    if (gate) return gate;
+    const auth = authorize(request, 'reports');
+    if ('response' in auth) return auth.response;
+
+    const id = String(params.id);
+    if (!isReportId(id)) {
+      return fail({
+        status: 404,
+        code: '404',
+        message: 'No such report.',
+        details: { reports: REPORT_IDS },
+      });
+    }
+
+    const url = new URL(request.url);
+    const runParams = {
+      monthKey: url.searchParams.get('monthKey') ?? undefined,
+      from: url.searchParams.get('from') ?? undefined,
+      to: url.searchParams.get('to') ?? undefined,
+      dormantMonths: url.searchParams.get('dormantMonths')
+        ? Number(url.searchParams.get('dormantMonths'))
+        : undefined,
+    };
+
+    const missing = missingReportParams(id, runParams);
+    if (missing.length > 0) {
+      // An empty grid would read as "nothing that month". A refusal says what is missing.
+      return fail({
+        status: 422,
+        code: 'invalid',
+        message: 'That report needs more than it was given.',
+        details: { missing },
+      });
+    }
+
+    return HttpResponse.json({
+      ...runReport(id, runParams),
+      generatedAt: new Date().toISOString(),
+      params: runParams,
+    });
+  }),
+
+  /* ── M15 Users & roles ─────────────────────────────────────────────────── */
+
+  /**
+   * The §12.1 matrix, as served. Registered before `/admin/roles/:role` is irrelevant
+   * (different methods) but before `/admin/users` matters not at all — kept adjacent so the
+   * module reads in one place.
+   */
+  http.get('*/admin/roles', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'usersAndRoles');
+    if ('response' in auth) return auth.response;
+
+    return HttpResponse.json({
+      matrix: roleMatrix(),
+      // Whether this factory has diverged from the shipped table, so the screen can say so
+      // rather than leaving a reader to compare fifteen rows against a document.
+      customised: state.roleMatrix !== null,
+      updatedAt: state.roleMatrixUpdatedAt,
+      updatedByName: state.roleMatrixUpdatedByName,
+    });
+  }),
+
+  /**
+   * Edit one role's grants — **the promise rbac.md makes.** §12.1 is data, not code.
+   *
+   * The refusal here is the lockout nobody thinks of: strip `usersAndRoles` from every role
+   * and the factory is locked out with every user still holding the roles they had. Not one
+   * user record changes, so a check written per user would miss it entirely.
+   */
+  http.put('*/admin/roles/:role', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'usersAndRoles', 'write');
+    if ('response' in auth) return auth.response;
+
+    const role = String(params.role) as ConsoleRole;
+    if (!(role in DEFAULT_ROLE_MATRIX)) {
+      // A grant nothing can hold is a permission nobody has.
+      return fail({
+        status: 422,
+        code: 'unknown-role',
+        message: 'No such role.',
+        details: { role, roles: Object.keys(DEFAULT_ROLE_MATRIX) },
+      });
+    }
+
+    const { grants } = (await request.json()) as { grants: Record<Capability, AccessLevel> };
+    const current = roleMatrix();
+    const proposed = { ...current, [role]: grants };
+
+    if (!matrixKeepsRecovery(proposed)) {
+      return lockoutRefusal({ role, reason: 'no role would grant usersAndRoles' });
+    }
+
+    const before = current[role];
+    state.roleMatrix = proposed;
+    state.roleMatrixUpdatedAt = new Date().toISOString();
+    state.roleMatrixUpdatedByName = auth.user.name;
+
+    /**
+     * Audited with the whole row before and after.
+     *
+     * A permission change is the one edit whose consequence is invisible until somebody is
+     * refused something months later, and "who widened this, and from what" is the only
+     * question that gets asked about it.
+     */
+    recordBy(auth, 'role.update', 'role', role, { before, after: grants });
+
+    return HttpResponse.json({
+      matrix: state.roleMatrix,
+      customised: true,
+      updatedAt: state.roleMatrixUpdatedAt,
+      updatedByName: state.roleMatrixUpdatedByName,
+    });
+  }),
+
+  http.get('*/admin/users', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'usersAndRoles');
+    if ('response' in auth) return auth.response;
+
+    const url = new URL(request.url);
+    const q = url.searchParams.get('q')?.trim().toLowerCase();
+    const role = url.searchParams.get('role');
+    const status = url.searchParams.get('status');
+
+    let rows = state.users.map(toAdminUser);
+    if (q) {
+      rows = rows.filter(
+        (one) => one.name.toLowerCase().includes(q) || one.email.toLowerCase().includes(q),
+      );
+    }
+    if (role) rows = rows.filter((one) => one.roles.includes(role as ConsoleRole));
+    if (status) rows = rows.filter((one) => one.status === status);
+
+    // Suspended last, then by name: an office reads this list to find a person, and the
+    // people who can still sign in are the ones being looked for.
+    rows = sortRows(rows, url, (a, b) => {
+      if ((a.status === 'active') !== (b.status === 'active')) return a.status === 'active' ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    return HttpResponse.json(paginate(rows, url));
+  }),
+
+  http.post('*/admin/users', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'usersAndRoles', 'write');
+    if ('response' in auth) return auth.response;
+
+    const body = (await request.json()) as { name?: string; email?: string; roles?: ConsoleRole[] };
+    const name = body.name?.trim() ?? '';
+    const email = body.email?.trim().toLowerCase() ?? '';
+
+    if (!name || !email) {
+      return fail({ status: 422, code: 'invalid', message: 'A name and an email are required.' });
+    }
+    // The address is the identity a session is issued against, so two of them is two people.
+    if (state.users.some((one) => one.email.toLowerCase() === email)) {
+      return fail({ status: 409, code: 'email-taken', message: 'That email already has an account.' });
+    }
+    if (!body.roles?.length) {
+      return fail({ status: 422, code: 'invalid', message: 'A user needs at least one role.' });
+    }
+    const unknown = body.roles.filter((role) => !(role in DEFAULT_ROLE_MATRIX));
+    if (unknown.length > 0) {
+      return fail({ status: 422, code: 'unknown-role', message: 'No such role.', details: { unknown } });
+    }
+
+    const created: MockUser = {
+      id: `usr-${nextId()}`,
+      name,
+      email,
+      factoryId: tenantOf(request),
+      roles: body.roles,
+      /**
+       * **Never enrolled at creation**, whatever roles they are given.
+       *
+       * A user cannot enrol a second factor before they have an account, so refusing to
+       * create a manager without one would make the senior roles unassignable. The
+       * obligation is reported instead (`owesMfa`) and the sign-in is what enforces it.
+       */
+      mfaEnrolled: false,
+      lastLoginAt: null,
+      status: 'active',
+      password: MOCK_PASSWORD,
+      grants: grantsFromRoles(body.roles),
+    };
+    state.users = [...state.users, created];
+
+    recordBy(auth, 'user.create', 'consoleUser', created.id, {
+      after: { name, email, roles: created.roles },
+    });
+
+    return HttpResponse.json(toAdminUser(created), { status: 201 });
+  }),
+
+  http.patch('*/admin/users/:id', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'usersAndRoles', 'write');
+    if ('response' in auth) return auth.response;
+
+    const index = state.users.findIndex((one) => one.id === params.id);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such user.' });
+
+    const before = state.users[index]!;
+    const patch = (await request.json()) as { name?: string; roles?: ConsoleRole[] };
+
+    if (patch.roles) {
+      // Refused even when it would be safe: editing your own roles mid-session is never what
+      // was meant, and the person it strands is the one doing the work.
+      if (before.id === auth.user.id) {
+        return fail({
+          status: 409,
+          code: 'self-modification',
+          message: 'You cannot change your own roles.',
+          details: { what: 'roles' },
+        });
+      }
+      const unknown = patch.roles.filter((role) => !(role in DEFAULT_ROLE_MATRIX));
+      if (unknown.length > 0) {
+        return fail({ status: 422, code: 'unknown-role', message: 'No such role.', details: { unknown } });
+      }
+      if (patch.roles.length === 0) {
+        return fail({ status: 422, code: 'invalid', message: 'A user needs at least one role.' });
+      }
+
+      const candidates: LockoutCandidate[] = state.users.map((one) => ({
+        id: one.id,
+        roles: one.roles,
+        status: one.status,
+      }));
+      const next = { id: before.id, roles: patch.roles, status: before.status };
+      if (wouldLockOut(next, candidates.filter((one) => one.id !== before.id), roleMatrix())) {
+        return lockoutRefusal({ userId: before.id, roles: patch.roles });
+      }
+    }
+
+    const after: MockUser = {
+      ...before,
+      name: patch.name?.trim() || before.name,
+      roles: patch.roles ?? before.roles,
+      grants: grantsFromRoles(patch.roles ?? before.roles),
+    };
+    state.users[index] = after;
+
+    recordBy(auth, 'user.update', 'consoleUser', after.id, {
+      before: { name: before.name, roles: before.roles },
+      after: { name: after.name, roles: after.roles },
+    });
+
+    return HttpResponse.json(toAdminUser(after));
+  }),
+
+  ...(['suspend', 'reactivate'] as const).map((verb) =>
+    http.post(`*/admin/users/:id/${verb}`, async ({ request, params }) => {
+      await delay(LATENCY_MS);
+      const auth = authorize(request, 'usersAndRoles', 'write');
+      if ('response' in auth) return auth.response;
+
+      const index = state.users.findIndex((one) => one.id === params.id);
+      if (index < 0) return fail({ status: 404, code: '404', message: 'No such user.' });
+
+      const before = state.users[index]!;
+      const { reason } = (await request.json()) as { reason?: string };
+
+      // A suspended colleague will ask why, exactly as a suspended supplier does (§12.1).
+      if (!reason || reason.trim().length < 10) {
+        return fail({ status: 422, code: 'note-required', message: 'A reason is required.' });
+      }
+
+      if (verb === 'suspend') {
+        if (before.id === auth.user.id) {
+          return fail({
+            status: 409,
+            code: 'self-modification',
+            message: 'You cannot suspend your own account.',
+            details: { what: 'suspend' },
+          });
+        }
+        const candidates: LockoutCandidate[] = state.users.map((one) => ({
+          id: one.id,
+          roles: one.roles,
+          status: one.status,
+        }));
+        const next = { id: before.id, roles: before.roles, status: 'suspended' as const };
+        if (wouldLockOut(next, candidates.filter((one) => one.id !== before.id), roleMatrix())) {
+          return lockoutRefusal({ userId: before.id });
+        }
+      }
+
+      const after: MockUser = {
+        ...before,
+        status: verb === 'suspend' ? 'suspended' : 'active',
+      };
+      state.users[index] = after;
+
+      recordBy(auth, `user.${verb}`, 'consoleUser', after.id, {
+        before: { status: before.status },
+        after: { status: after.status, reason: reason.trim() },
+      });
+
+      return HttpResponse.json(toAdminUser(after));
+    }),
+  ),
+
+  /**
+   * Clear an enrolled second factor.
+   *
+   * The one action in this module that is a security operation rather than an administrative
+   * one: it is what the office does when somebody loses their phone, and it is exactly what
+   * an attacker holding an administrator session would do. Hence the reason, the audit entry,
+   * and the refusal on yourself — resetting your own is not recovery, it is dropping your
+   * second factor while holding a live session.
+   */
+  http.post('*/admin/users/:id/mfa/reset', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'usersAndRoles', 'write');
+    if ('response' in auth) return auth.response;
+
+    const index = state.users.findIndex((one) => one.id === params.id);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such user.' });
+
+    const before = state.users[index]!;
+    const { reason } = (await request.json()) as { reason?: string };
+    if (!reason || reason.trim().length < 10) {
+      return fail({ status: 422, code: 'note-required', message: 'A reason is required.' });
+    }
+    if (before.id === auth.user.id) {
+      return fail({
+        status: 409,
+        code: 'self-modification',
+        message: 'You cannot reset your own second factor.',
+        details: { what: 'mfa' },
+      });
+    }
+
+    const after: MockUser = { ...before, mfaEnrolled: false };
+    state.users[index] = after;
+
+    recordBy(auth, 'user.mfa.reset', 'consoleUser', after.id, {
+      before: { mfaEnrolled: before.mfaEnrolled },
+      after: { mfaEnrolled: false, reason: reason.trim() },
+    });
+
+    return HttpResponse.json(toAdminUser(after));
+  }),
+
+  /* ── M14 Configuration ─────────────────────────────────────────────────── */
+
+  /**
+   * The authenticated config, **and** what a change to it would cost.
+   *
+   * **Registered before the public `/config` handler, and it has to be.** That handler's
+   * path is a wildcard followed by `/config`, and MSW's wildcard matches across segments —
+   * so it swallows `/admin/config` and answers it with the unauthenticated payload. Placed
+   * after it, this endpoint returned `404 tenant-unknown` for every request, which is
+   * exactly the class of bug the "specific routes first" note at the top of this file
+   * exists for. Caught by the M14 suite, not by reading.
+   */
+  http.get('*/admin/config', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'flagsAndBranding');
+    if ('response' in auth) return auth.response;
+
+    return HttpResponse.json({ config: tenantConfig(request), usage: configUsage() });
+  }),
+
+  /**
+   * Save one or more sections.
+   *
+   * **AC-12 lives here**: white-label.md says a new factory is a DNS record and a
+   * `client_config` row, so if a field is missing from this handler the criterion is false.
+   * The refusals are what stop the row being edited into a state that hides records:
+   */
+  http.patch('*/admin/config', async ({ request }) => {
+    await delay(LATENCY_MS);
+    // `write` — §12.1 gives `flagsAndBranding: W` to the factory admin and the platform
+    // admin, and `R` to the manager. A manager may read the configuration and not change it.
+    const auth = authorize(request, 'flagsAndBranding', 'write');
+    if ('response' in auth) return auth.response;
+
+    const patch = (await request.json()) as ConfigPatch & { tenantId?: string };
+
+    /**
+     * The tenant is not editable.
+     *
+     * It is resolved from the subdomain (`config/tenant.ts`) and everything else is keyed
+     * on it, so an editable copy would be a second source of truth for the one value that
+     * decides which factory's records are being served.
+     */
+    if (patch.tenantId !== undefined) {
+      return fail({
+        status: 409,
+        code: 'tenant-immutable',
+        message: 'The factory id comes from the subdomain and cannot be edited.',
+      });
+    }
+
+    const config = tenantConfig(request);
+    const usage = configUsage();
+    const impacts = configImpact(
+      patch,
+      {
+        flags: config.flags,
+        collectionPoints: config.collectionPoints,
+        banks: config.banks,
+        contentLanguages: config.localization.contentLanguages,
+      },
+      usage,
+    );
+
+    /**
+     * Refused with the **impacts in `details`**, not a bare code.
+     *
+     * A factory administrator told "that is not allowed" opens a support ticket; one told
+     * "9 suppliers hold LKR 412,000 in savings" goes and looks at the savings screen. The
+     * console renders these from the same keys, so the two can never disagree.
+     */
+    if (!isConfigPatchAllowed(impacts)) {
+      const blocking = impacts.filter((impact) => impact.severity === 'blocks');
+      const first = blocking[0]!;
+      const code = first.field.startsWith('collectionPoints')
+        ? 'point-in-use'
+        : first.messageKey.includes('fallbackLanguage')
+          ? 'fallback-language-required'
+          : 'flag-has-records';
+      return fail({
+        status: code === 'fallback-language-required' ? 422 : 409,
+        code,
+        message: 'That change would hide records the factory still has to account for.',
+        details: { impacts: blocking },
+      });
+    }
+
+    if (!patch.factory?.name && patch.factory && 'name' in patch.factory) {
+      return fail({ status: 422, code: 'invalid', message: 'The factory needs a name.' });
+    }
+
+    // Section by section, so a patch that names one block never blanks another. The
+    // sections that are lists are replaced wholesale — a merged bank list would keep
+    // branches the factory has just removed, which is the bug `configRepository.merge`
+    // documents on the read side.
+    const before = JSON.parse(JSON.stringify(config)) as RuntimeConfig;
+    if (patch.factory) config.factory = { ...config.factory, ...patch.factory };
+    if (patch.flags) config.flags = { ...config.flags, ...patch.flags };
+    if (patch.savings) config.savings = patch.savings;
+    if (patch.banks) config.banks = patch.banks.map((bank) => ({ ...bank, branches: [...bank.branches] }));
+    if (patch.localization) config.localization = { ...config.localization, ...patch.localization };
+    if (patch.branding) config.branding = { ...config.branding, ...patch.branding };
+    if (patch.theme) {
+      config.theme = {
+        ...config.theme,
+        colors: { ...config.theme?.colors, ...patch.theme.colors },
+      };
+    }
+    if (patch.push) {
+      config.push = {
+        topicPrefix: patch.push.topicPrefix ?? config.push?.topicPrefix ?? tenantOf(request),
+        categories: (patch.push.categories ?? config.push?.categories ?? []) as NotificationCategory[],
+        defaultCategories: (patch.push.defaultCategories ??
+          config.push?.defaultCategories ??
+          []) as NotificationCategory[],
+      };
+    }
+    if (patch.collectionPoints) config.collectionPoints = patch.collectionPoints.map((p) => ({ ...p }));
+
+    /**
+     * Audited **per section**, with only the sections that changed in before/after.
+     *
+     * A config row is large, and an entry carrying the whole thing on every save is an
+     * entry nobody reads — which defeats the point of AC-09 for the one record whose edits
+     * reach across every other module.
+     */
+    state.configRevisions[config.tenantId] = (state.configRevisions[config.tenantId] ?? 1) + 1;
+
+    const sections = Object.keys(patch);
+    recordBy(auth, 'config.update', 'config', tenantOf(request), {
+      before: Object.fromEntries(
+        sections.map((key) => [key, (before as unknown as Record<string, unknown>)[key]]),
+      ),
+      after: Object.fromEntries(
+        sections.map((key) => [key, (config as unknown as Record<string, unknown>)[key]]),
+      ),
+    });
+
+    return HttpResponse.json({ config, usage: configUsage() });
+  }),
+
   /* ── Tenant config: public, per subdomain ──────────────────────────────── */
   http.get('*/config', async ({ request }) => {
     await delay(LATENCY_MS);
-    const config = mockConfigs[tenantOf(request)];
-    if (!config) {
+    if (!mockConfigs[tenantOf(request)]) {
       return fail({ status: 404, code: 'tenant-unknown', message: 'No such factory.' });
     }
-    return HttpResponse.json(config, { headers: { ETag: `"cfg-${config.tenantId}-1"` } });
+
+    /**
+     * Served from **live state**, not from the seed.
+     *
+     * This is what closes the loop AC-12 is about: M14 edits the `client_config` row, and
+     * every consumer of it — the sidebar's flags, the theme, the collection-point pickers,
+     * M11's content languages, M13's push categories — reads it from here. Serving the
+     * fixture instead would make the configuration screen a form that saves into nothing,
+     * which is the most convincing way to appear to satisfy the criterion without doing so.
+     *
+     * The `ETag` carries a revision, so a config that has been edited is not answered from
+     * a `304` against the version before the edit.
+     */
+    const config = tenantConfig(request);
+    state.configRevisions[config.tenantId] = state.configRevisions[config.tenantId] ?? 1;
+    return HttpResponse.json(config, {
+      headers: { ETag: `"cfg-${config.tenantId}-${state.configRevisions[config.tenantId]}"` },
+    });
   }),
 
   /* ── Auth ──────────────────────────────────────────────────────────────── */
   http.post('*/admin/auth/login', async ({ request }) => {
     await delay(LATENCY_MS * 2); // login is deliberately the slowest call
     const { email, password } = (await request.json()) as { email: string; password: string };
-    const user = mockUsers.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
+    const user = state.users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
 
     // One message for both wrong-user and wrong-password: a login form that
     // distinguishes them is an account enumeration oracle.
@@ -1066,7 +2037,7 @@ export const handlers: HttpHandler[] = [
     // Single-use: a replayed challenge is a replayed second factor.
     state.challenges.delete(challengeToken);
 
-    const user = mockUsers.find((u) => u.id === userId)!;
+    const user = state.users.find((u) => u.id === userId)!;
     return HttpResponse.json({
       session: { ...issueSession(user), user: publicUser(user), grants: user.grants },
     });
@@ -1087,7 +2058,7 @@ export const handlers: HttpHandler[] = [
     await delay(LATENCY_MS);
 
     const userId = readRefreshCookie() ?? [...state.sessions.values()][0];
-    const user = userId ? mockUsers.find((u) => u.id === userId) : undefined;
+    const user = userId ? state.users.find((u) => u.id === userId) : undefined;
     if (!user) {
       return fail({ status: 401, code: 'invalid', message: 'No refresh token.' });
     }
@@ -3938,6 +4909,12 @@ export function resetMockState(): void {
    */
   state.news = mockNews.map(cloneNews);
   state.staticPages = mockStaticPages.map(cloneStaticPage);
+  state.users = mockUsers.map((user) => ({ ...user, roles: [...user.roles] }));
+  state.roleMatrix = null;
+  state.roleMatrixUpdatedAt = null;
+  state.roleMatrixUpdatedByName = null;
+  state.configs = {};
+  state.configRevisions = {};
   state.notificationTriggers = mockNotificationTriggers.map((trigger) => ({ ...trigger }));
   state.notificationSends = mockNotificationSends.map((send) => ({ ...send }));
   /**

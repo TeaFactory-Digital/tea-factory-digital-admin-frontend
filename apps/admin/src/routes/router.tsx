@@ -97,6 +97,17 @@ const NotificationsScreen = lazy(() =>
     default: m.NotificationsScreen,
   })),
 );
+const ConfigurationScreen = lazy(() =>
+  import('@/modules/configuration/ConfigurationScreen').then((m) => ({
+    default: m.ConfigurationScreen,
+  })),
+);
+const ReportsScreen = lazy(() =>
+  import('@/modules/reports/ReportsScreen').then((m) => ({ default: m.ReportsScreen })),
+);
+const UsersScreen = lazy(() =>
+  import('@/modules/users/UsersScreen').then((m) => ({ default: m.UsersScreen })),
+);
 const AuditScreen = lazy(() =>
   import('@/modules/audit/AuditScreen').then((m) => ({ default: m.AuditScreen })),
 );
@@ -309,6 +320,41 @@ export const router = createBrowserRouter([
               <NotificationsScreen />
             </RequireCapability>
           </RequireFlag>
+        ),
+      },
+      /**
+       * No flag. A factory's own identity, flags and branding are not a feature it can
+       * decline — this is the screen that turns the others off, and gating it on a flag
+       * would make a misconfiguration unrecoverable from the console.
+       */
+      {
+        path: 'configuration',
+        element: (
+          <RequireCapability capability="flagsAndBranding">
+            <ConfigurationScreen />
+          </RequireCapability>
+        ),
+      },
+      {
+        path: 'reports',
+        element: (
+          <RequireFlag flag="enableReports">
+            <RequireCapability capability="reports">
+              <ReportsScreen />
+            </RequireCapability>
+          </RequireFlag>
+        ),
+      },
+      /**
+       * No flag, for the same reason M14 has none: the screen that decides who may use the
+       * console cannot itself be switchable, or a misconfiguration would be unrecoverable.
+       */
+      {
+        path: 'users',
+        element: (
+          <RequireCapability capability="usersAndRoles">
+            <UsersScreen />
+          </RequireCapability>
         ),
       },
       {

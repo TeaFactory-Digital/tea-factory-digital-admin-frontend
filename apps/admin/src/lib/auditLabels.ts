@@ -39,6 +39,13 @@ const ACTION_KEYS: Record<string, string> = {
   'staticPage.publish': 'audit.action.staticPagePublish',
   'notification.send': 'audit.action.notificationSend',
   'notification.trigger.set': 'audit.action.notificationTrigger',
+  'config.update': 'audit.action.configUpdate',
+  'user.create': 'audit.action.userCreate',
+  'user.update': 'audit.action.userUpdate',
+  'user.suspend': 'audit.action.userSuspend',
+  'user.reactivate': 'audit.action.userReactivate',
+  'user.mfa.reset': 'audit.action.userMfaReset',
+  'role.update': 'audit.action.roleUpdate',
 };
 
 export function auditActionLabel(action: string, t: (key: string) => string): string {

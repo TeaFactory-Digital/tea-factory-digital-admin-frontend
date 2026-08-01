@@ -106,7 +106,7 @@ function QueueCard({ queue }: { queue: QueueCount }) {
   const target = NAVIGATION.flatMap((section) => section.items).find(
     (item) => item.queue === queue.queue,
   );
-  const isBuilt = target?.status === 'built';
+
   const label = t(`dashboard.queue.${queue.queue}`);
 
   const body = (
@@ -126,13 +126,21 @@ function QueueCard({ queue }: { queue: QueueCount }) {
     </>
   );
 
-  if (!isBuilt || !target) {
+  /**
+   * A queue the API reports and this console has no module for.
+   *
+   * It used to be the *planned* case, and now it is a forward-compatibility one: the server
+   * decides which queues exist, so a newer API can name one this build has never heard of.
+   * The count is still worth showing — it is a real backlog — but a card that linked
+   * somewhere would be a dead link.
+   */
+  if (!target) {
     return (
       <Card className="opacity-70">
         <CardBody>
           {body}
           <Badge tone="neutral" className="mt-sm">
-            {t('common.planned')}
+            {t('dashboard.noScreenForQueue')}
           </Badge>
         </CardBody>
       </Card>

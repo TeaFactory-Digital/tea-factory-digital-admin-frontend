@@ -1,8 +1,8 @@
 # Modules
 
-The §18.1 module map, what is built, and what each planned module needs. Scope and
-rationale for all 17 are in the mobile repo's `docs/admin-console.md`; this is the
-console's state against it.
+The §18.1 module map, what each module decides, and what a real deployment still
+needs. Scope and rationale for all 17 are in the mobile repo's
+`docs/admin-console.md`; this is the console's state against it.
 
 `NAVIGATION` in `apps/admin/src/layout/navigation.ts` is the machine-readable
 version of this table — it carries each module's capability, feature flag and
@@ -28,15 +28,17 @@ build status, and the sidebar is generated from it.
 | M11 | **News (CMS)** | ✅ Built | `/news`, `/news/:id` |
 | M12 | **Static content** | ✅ Built | `/content` |
 | M13 | **Notifications** | ✅ Built (§21.24 answered as config) | `/notifications` |
-| M14 | Configuration | ⏳ Planned | — |
-| M15 | Users & roles | ⏳ Planned | — |
-| M16 | Reports | ⏳ Planned | — |
+| M14 | **Configuration** | ✅ Built (AC-12) | `/configuration` |
+| M15 | **Users & roles** | ✅ Built | `/users` |
+| M16 | **Reports** | ✅ Built (4 reports, no export) | `/reports` |
 
-**Planned modules have no routes.** They appear in the sidebar as disabled rows
-with a *Planned* chip. A route rendering "coming soon" is worse than no route — it
-is a URL a clerk can bookmark, share, and then report as broken. The rows are
-shown rather than hidden because the office signed off a 17-module scope, and a
-sidebar with four rows reads as a different product.
+**All seventeen have a route.** The *Planned* chip and the disabled sidebar row that
+carried it are gone from the tree, and `NAVIGATION` no longer has a `planned` status to
+render. What is left is not "planned modules" but **named absences inside built ones** —
+the payout file, savings movements, a deduction editor, CSV export — each recorded below
+and stated on the screen where somebody would look for the control. That distinction
+matters: a missing module is a schedule, a missing control inside a built module is a
+decision, and the second needs a reason on the screen.
 
 ---
 
@@ -71,6 +73,14 @@ the next slice should be argued the same way:
   it at all.** The two modules are one slice because they are one problem: an article and
   a fixed page differ in their lifecycle, not in their copy, and a second translation
   editor would be a second place for the fallback rules to drift.
+- **M14, M15 and M16 are the fifth slice**, and they are one slice because they are the
+  three things a factory needs before it can be *handed over* rather than demonstrated.
+  M14 is the one that closes an acceptance criterion outright: **AC-12 says a new factory
+  is a DNS record and a `client_config` row with no build and no deploy**, and until every
+  field of that row had a control, the criterion was an aspiration. M15 is the other half
+  of the same handover — rbac.md always claimed §12.1 was *"data, not code"*, and until
+  this slice `packages/domain/src/rbac.ts` was the authority while calling itself a
+  default. M16 is last on purpose and smallest on purpose; see below.
 - **What is left out of each rather than guessed at.** Three questions the factory has
   not answered would each have been a wrong build: §21.17 (what the bank accepts) is
   the payout *file*, §21.9 (may a supplier withdraw) is savings *movements*, and
@@ -493,10 +503,134 @@ nobody has answered, and it should be easy to argue with.
 
 ---
 
+## M14 Configuration
+
+*Everything about a factory that is data rather than code.*
+
+**This module is AC-12.** [white-label.md](./white-label.md) says a new factory is *"a DNS
+record and a `client_config` row — no build, no deploy"*, and the criterion is therefore not
+whether this screen exists but whether the **last** field a factory needs is on it. One value
+still requiring a developer makes AC-12 false, so the five sections cover the whole payload
+rather than the parts that were convenient: factory identity, the ten feature flags,
+collection points / banks / savings rates, languages and branding, and the push block.
+
+`tenantId` is **shown and not editable** — it comes from the subdomain and every other row is
+keyed on it, so a patch containing it is refused (`tenant-immutable`).
+
+**The screen's real job is showing what an edit costs, before it is made.** A configuration
+edit is the only change in the console whose effects are almost all somewhere the person
+making it is not looking — another module's sidebar row, a supplier's app, a printed bill —
+so every section computes its consequences from the same `configImpact` the API refuses
+with, and shows them while the change is still a draft.
+
+| Impact | Severity | Why |
+| --- | --- | --- |
+| `savingsHeld`, `payoutRunsOpen`, `creditOutstanding` | **Blocks** | Turning off a flag whose module holds money would hide balances the factory owes. The figure is in the message, because "23 suppliers have money in the savings scheme" is an argument and "cannot disable" is not |
+| `pointInUse` | **Blocks** | A delivery names its collection point and nothing else. Removing a point with leaf filed against it orphans those rows |
+| `fallbackLanguageRequired` | **Blocks** | Every article and page falls back to English (AC-08). Removing it removes the floor |
+| `surfaceRemoved` | Warns | A flag that only shows something is a choice the factory is entitled to make |
+| `bankInUse` | Warns | A supplier's details keep the bank name; it just stops being offered for new ones |
+| `languageDroppedWithCopy` | Warns | The copy survives, but stops being counted as missing — so nothing will tell you it is out of date |
+
+**One `PATCH` per section, not a `PUT`.** Two administrators editing different parts of the
+row is normal, and a save should carry only what its author touched. Sections are drafted
+locally and saved as a unit so the impact list can describe the *complete* change: "remove
+Deniyaya, add Kamburupitiya" as two patches would refuse the first for orphaning rows the
+second would have kept.
+
+## M15 Users & roles
+
+*Who may use the console, and what each role may do.*
+
+**Every refusal in this module is one failure wearing different clothes: a factory locking
+itself out of its own console.** There is no recovery path outside the console, so the guard
+is not a nicety.
+
+| Guard | Where it can happen |
+| --- | --- |
+| **`last-admin`** | Suspending or re-roling the only user who can administer users. Withheld on the row *and* refused by the server |
+| **`self-modification`** | Changing your own roles, or resetting your own second factor. Neither is recovery — the second is dropping your own second factor while holding a live session |
+| **Matrix recovery** | The one nobody thinks of: strip `usersAndRoles` from every **role** and every user keeps the roles they had while nobody can manage users again. Not one user record changes, so a check written per user misses it entirely — `matrixKeepsRecovery` guards the *proposed matrix* |
+
+`isLastAdministrator` is **derived per read**, not stored. It stops being true the moment
+somebody else is given the role, and a stored flag would go on withholding the suspend
+button afterwards.
+
+**The §12.1 matrix is editable, which is what makes [rbac.md](./rbac.md) honest.** That
+document always said the table is *"data, not code: a factory will want to split or merge
+these roles, and that must not be a deploy"* — and until this module,
+`packages/domain/src/rbac.ts` was the authority while calling itself a default. Now it is
+the default it always claimed to be: the offline fallback, with the server's matrix winning.
+
+**There is no delete.** A user who approved a payout or published a month is the actor on an
+audit entry, and an entry whose actor cannot be resolved is not evidence — the same rule that
+voids a delivery rather than removing it. Accounts are suspended, and the screen says why
+where somebody would look for the delete button.
+
+**MFA is owed, not enforced at the point of granting.** A user cannot enrol a second factor
+before they have an account, so refusing to create a manager without one would make the
+senior roles unassignable. The console states the obligation and shows *Two-factor not set
+up* on the row; the sign-in is what insists.
+
+## M16 Reports
+
+*Figures pulled straight from the records, every time you look.*
+
+**Four reports, and the shortness is the design.** §19.1 defines the reporting warehouse and
+it lives in the mobile repository, not this one — so rather than inventing a plausible dozen,
+these are the reports whose **definition already exists in this codebase**, each carrying its
+citation on the row:
+
+| Report | Defined by |
+| --- | --- |
+| `dormantSuppliers` | `SupplierQuery.dormantMonths`, whose own comment cites §19.2 |
+| `channelShift` | `REQUEST_CHANNELS` — app adoption and channel shift, *"the two KPIs that justify the project"* (§19.3) |
+| `leafByCollectionPoint` | M3's delivery rows |
+| `monthSummary` | M4's rate and M5's bill run |
+
+A fifth would be a guess dressed as a requirement, and a report the factory did not ask for
+is a query somebody maintains and nobody reads. The screen says so where somebody would look
+for the missing reports.
+
+**A report is asked for and answered, never stored.** No saved reports, no scheduling: a
+stored result is a second answer waiting to disagree with the records it came from — the same
+argument that keeps a bill a read model over deliveries and a rate.
+
+**The report describes itself.** Columns come with the rows, carrying what each one *is* —
+money, kilos, a count, a percentage — so one screen renders any report. The API is the only
+thing that knows a number's units, and a grid that guessed would print `LKR 412.00` over a
+supplier count. It is the same rule as BR-110: the server says what a value is, the console
+decides how it looks.
+
+**Totals appear only under columns that add up, and the gaps are deliberate.** No supplier
+total across collection points — a grower who delivers to two points is not two growers — and
+no `appShare` total, because averaging monthly percentages across months of different sizes is
+not the overall share. Both would be figures the office quotes.
+
+`null` is never `0` (BR-102): a supplier who has never delivered has no last delivery, and a
+month with no requests has no adoption share. Both render as an em dash.
+
+**The month picker is served with the report list**, not fetched from M5's
+`GET /admin/bill-months`. §12.1 gives the factory administrator `reports: R` and
+`billing: none`, so a picker behind the billing grant left the one role that owns this
+section with an empty picker and a screen that said "nothing to show yet" for a report they
+are entitled to run. The list a report is chosen from belongs behind the same grant as the
+report. (Found by the browser test, not the unit tests — those called the repository directly
+and never rendered the picker.)
+
+**No export**, and §19.5 is not met either: these queries run against the same store a clerk
+is writing to, where §19.5 asks for a read replica. Both are in [status.md](./status.md)
+rather than implied by a disabled download button. The grid is a real `<table>`, so the office
+can select it and paste it into a spreadsheet, which is where the office lives.
+
+---
+
 ## What is deliberately not built
 
-Three questions would each have produced a wrong build, so each is an absence with a
-reason on the screen rather than a guess:
+With all seventeen modules routed, **this table is what "not finished" now means.** Every
+row is an absence inside a built module, and each is stated on the screen where somebody
+would look for the control — because a missing control that says nothing reads as a bug,
+and a guessed one reads as a decision the factory never made.
 
 | § | Question | What is missing | Why not guess |
 | --- | --- | --- | --- |
@@ -504,6 +638,8 @@ reason on the screen rather than a guess:
 | 21.9 | May a supplier withdraw savings? | Withdrawals, interest | Moving somebody's savings on a rule nobody approved |
 | 21.10 | Who may set which deduction line? | A deduction **editor** | It decides who can change what a supplier is paid, which is a permission, not a form |
 | 21.8 | May a published bill be corrected? | Any post-publish change | The console assumes not. If the answer is yes, that is a new audited reversal endpoint — never a relaxation of BR-108's lock |
+| 19.1 | What shape is the reporting warehouse? | The reports beyond the four whose definition already exists here | A report nobody asked for is a query somebody maintains and nobody reads. §19.1 is in the mobile repo, not this one |
+| 21.24 | Which notifications fire, and who may compose one? | Nothing — it is answered as **configuration** | The one question that did not need an absence: triggers are rows, so the factory's answer is a switch rather than a rewrite |
 
 ---
 
@@ -613,9 +749,11 @@ exactly what §21.18 is being asked to resolve, so it lives in one function
 (`inquiryStatusForApp`) rather than spread across screens. An answer that adds
 `escalated` adds a row to `INQUIRY_STATUSES`, not a migration.
 
-**Nothing is pushed.** M13 is not built, so a reply lands in the app the next time it
-is opened — and the screen says so under the answer. A clerk who believes a text
-message went out is a clerk who does not follow up.
+**Whether a reply is pushed is now a row, not a fact.** M13 owns the `inquiryReplied`
+trigger, and this screen reads it: with the trigger on, answering fires a push; with it
+off, the reply lands in the app the next time it is opened — and the screen says whichever
+is true rather than a sentence that was true when it was written. A clerk who believes a
+notification went out when it did not is a clerk who does not follow up.
 
 ## M17 Audit log
 
@@ -631,12 +769,16 @@ prettified summary is an interpretation of evidence.
 
 ---
 
-## What each planned module needs
+## What a real deployment still needs
 
-Ordered by what I would build next.
+There is no "planned modules" table any more — §18.1's seventeen all have routes. What is
+left is not module-shaped, and pretending otherwise would make this document read as
+finished:
 
-| Module | Blocked on / needs |
+| Needs | Why it is not a console change |
 | --- | --- |
-| **M14 Configuration** | Nothing external. It is the other end of `GET /config`, and AC-12 says a new factory must go live through it without a code deploy |
-| **M15 Users & roles** | Nothing external, but it must edit the §12.1 matrix **as data** (see [rbac.md](./rbac.md)), and MFA enrolment belongs here |
-| **M16 Reports** | Needs the warehouse shape from §19.1 more than the report list. Run off a read replica (§19.5) |
+| **A real API** | Every screen here talks to MSW, which is an executable reading of [api-contract.md](./api-contract.md). The handlers are the specification the server has to satisfy, not a stand-in for one — see [mocks.md](./mocks.md) |
+| **§19.1's warehouse** | M16 grows a report list without a console release; the four here are the ones this codebase can define. §19.5 also asks that reports run off a **read replica**, and they currently read the same store a clerk is writing to |
+| **§18.1 export** | CSV/XLSX for M16 and M17. Absent rather than a disabled button |
+| **Answers to §21.8, §21.9, §21.10, §21.17** | Each is a decision about money or authority, listed above with what it would add |
+| **A push provider** | M13 records what it *would* send and what it would reach. The topic prefix and category list are configured (M14); the transport is not this repository |

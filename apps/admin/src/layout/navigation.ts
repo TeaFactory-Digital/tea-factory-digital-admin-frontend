@@ -7,12 +7,18 @@
  *     manure has no manure row, and no manure endpoint either (AC-07).
  *  2. **`capability`** — may *this* user see it? A courtesy: the server enforces
  *     per endpoint, and hiding a lever that would 403 is kinder than offering it.
- *  3. **`status`** — is it built? `planned` rows render disabled with a chip.
+ * There used to be a third gate — `status: 'built' | 'planned'`, which rendered a
+ * disabled row with a *Planned* chip so a walkthrough could see the shape of the
+ * whole console. **All seventeen modules of the §18.1 scope now have a route**, so
+ * every row was `built` and the branch that rendered the other case was
+ * unreachable. It is gone rather than kept warm: a rendering path no row can reach
+ * and no test can exercise is a path that rots.
  *
- * The `planned` rows are deliberately visible rather than omitted. The office
- * signed off a 17-module scope; a sidebar showing three modules reads as a
- * different product, and a stakeholder walkthrough should be able to see the
- * shape of the whole console while being told plainly what is not there yet.
+ * A module that arrives later (§18.1 stops at M17) gets a row when it gets a
+ * route, not before. What is *not* built is now smaller than a module — the payout
+ * file (§21.17), savings movements (§21.9), a deduction editor (§21.10), CSV
+ * export (§18.1) — and each of those is stated on the screen where somebody would
+ * look for it, which a sidebar chip could never do.
  */
 
 import type { Capability, FeatureFlagName, QueueKey } from '@tfd/domain';
@@ -36,8 +42,6 @@ import {
   UsersRound,
 } from 'lucide-react';
 
-export type NavStatus = 'built' | 'planned';
-
 export interface NavItem {
   /** The §18.1 module id, so a bug report can cite it. */
   module: string;
@@ -53,7 +57,6 @@ export interface NavItem {
    * from a factory that only does loans.
    */
   flag?: FeatureFlagName | FeatureFlagName[];
-  status: NavStatus;
   /**
    * Reads the pending count for a badge from the dashboard summary. An array is
    * summed — the credit row is three queues behind one link, and a badge showing
@@ -89,7 +92,6 @@ export const NAVIGATION: NavSection[] = [
         to: '/',
         icon: LayoutDashboard,
         capability: 'reports',
-        status: 'built',
       },
       {
         module: 'M2',
@@ -97,7 +99,6 @@ export const NAVIGATION: NavSection[] = [
         to: '/suppliers',
         icon: Users,
         capability: 'suppliers',
-        status: 'built',
       },
       {
         module: 'M3',
@@ -105,7 +106,6 @@ export const NAVIGATION: NavSection[] = [
         to: '/deliveries',
         icon: Scale,
         capability: 'deliveries',
-        status: 'built',
       },
     ],
   },
@@ -118,7 +118,6 @@ export const NAVIGATION: NavSection[] = [
         to: '/rates',
         icon: Gauge,
         capability: 'ratesAndMonthClose',
-        status: 'built',
       },
       {
         module: 'M5',
@@ -126,7 +125,6 @@ export const NAVIGATION: NavSection[] = [
         to: '/bills',
         icon: FileText,
         capability: 'billing',
-        status: 'built',
       },
       {
         module: 'M6',
@@ -135,7 +133,6 @@ export const NAVIGATION: NavSection[] = [
         icon: Landmark,
         capability: 'payouts',
         flag: 'enablePayouts',
-        status: 'built',
       },
       {
         module: 'M8',
@@ -147,7 +144,6 @@ export const NAVIGATION: NavSection[] = [
         // matrix has never granted anybody.
         capability: 'billing',
         flag: 'enableSavings',
-        status: 'built',
       },
     ],
   },
@@ -160,7 +156,6 @@ export const NAVIGATION: NavSection[] = [
         to: '/change-requests',
         icon: ClipboardList,
         capability: 'changeRequests',
-        status: 'built',
         queue: 'changeRequests',
       },
       {
@@ -174,7 +169,6 @@ export const NAVIGATION: NavSection[] = [
         // then offers only the facilities that are on, and the API refuses the
         // rest with `feature-disabled` (AC-07).
         flag: ['enableAdvances', 'enableLoans', 'enableManure'],
-        status: 'built',
         queue: ['advanceRequests', 'loanRequests', 'manureRequests'],
       },
       {
@@ -184,7 +178,6 @@ export const NAVIGATION: NavSection[] = [
         icon: MessageSquare,
         capability: 'inquiries',
         flag: 'enableInquiry',
-        status: 'built',
         queue: 'inquiries',
       },
     ],
@@ -199,7 +192,6 @@ export const NAVIGATION: NavSection[] = [
         icon: Newspaper,
         capability: 'content',
         flag: 'enableNews',
-        status: 'built',
       },
       {
         module: 'M12',
@@ -207,7 +199,6 @@ export const NAVIGATION: NavSection[] = [
         to: '/content',
         icon: ScrollText,
         capability: 'content',
-        status: 'built',
       },
       {
         module: 'M13',
@@ -216,7 +207,6 @@ export const NAVIGATION: NavSection[] = [
         icon: Bell,
         capability: 'content',
         flag: 'enablePushNotifications',
-        status: 'built',
       },
     ],
   },
@@ -230,7 +220,6 @@ export const NAVIGATION: NavSection[] = [
         icon: Gauge,
         capability: 'reports',
         flag: 'enableReports',
-        status: 'planned',
       },
       {
         module: 'M17',
@@ -238,7 +227,6 @@ export const NAVIGATION: NavSection[] = [
         to: '/audit',
         icon: ShieldCheck,
         capability: 'auditLog',
-        status: 'built',
       },
       {
         module: 'M14',
@@ -246,7 +234,6 @@ export const NAVIGATION: NavSection[] = [
         to: '/configuration',
         icon: Settings,
         capability: 'flagsAndBranding',
-        status: 'planned',
       },
       {
         module: 'M15',
@@ -254,7 +241,6 @@ export const NAVIGATION: NavSection[] = [
         to: '/users',
         icon: UsersRound,
         capability: 'usersAndRoles',
-        status: 'planned',
       },
     ],
   },

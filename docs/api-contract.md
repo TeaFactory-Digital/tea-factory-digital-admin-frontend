@@ -1510,7 +1510,8 @@ the gap between the two numbers is the only place a factory sees its own opt-out
 `available: false` when the tenant's `push.categories` does not carry the category, or when
 the tenant has **no `push` block at all**. That second case is real: a factory can have
 `enablePushNotifications: true` and nothing configured, and the console must say "not set
-up for this factory" rather than offer a toggle that would 409. Configuring it is §14's job.
+up for this factory" rather than offer a toggle that would 409. Configuring it is §18's job
+(M14), and the push block is one of the five sections that screen edits.
 
 **This endpoint pair is the answer to §21.24.** Whether the office composes every send or
 whether "your bill is ready" fires off the publish step is a row here. Default each
@@ -1586,7 +1587,214 @@ Three rules for all of them:
 
 ---
 
-## 18. Not yet called by the console
+## 18. M14 Configuration
+
+Authorize reads on `flagsAndBranding: read` and writes on `flagsAndBranding: write`. **No
+feature gate** — the screen that turns flags on cannot be behind one.
+
+This is the write end of §1's `GET /config`, and the single most important property is that
+**they are the same row**. A `PATCH` here must be visible on the next public `GET /config`,
+with a new `ETag`. A configuration screen that saved into a private copy would look
+identical and satisfy nothing, and AC-12 — *"a new factory goes live without a code
+deploy"* — is exactly what it would fail.
+
+`packages/domain/src/config.ts` is the shared implementation. Import `configImpact`: the
+console shows the consequences of a draft *before* it is saved, and a server that refused
+for different reasons than the screen predicted would make that panel worse than nothing.
+
+### 18.1 `GET /admin/config` → `{ config: RuntimeConfig; usage: ConfigUsage }`
+
+`usage` is the counts a change is judged against, **computed live, never stored**:
+
+```json
+{ "savingsBalances": 61, "openPayoutRuns": 2,
+  "creditOutstanding": { "advance": 412000, "loan": 0, "manure": 38500 },
+  "deliveriesByPoint": { "MAKADURA": 1840, "DENIYAYA": 970 },
+  "suppliersByBank": { "Bank of Ceylon": 43 },
+  "contentByLanguage": { "si": 7, "ta": 4 } }
+```
+
+Every figure is the answer to *"would this change hide something?"*. A stored count would
+let a factory turn off a facility that acquired a balance after the count was taken.
+
+### 18.2 `PATCH /admin/config` → `{ config; usage }`
+
+A **partial** patch of whole blocks, not a `PUT`. Two administrators editing different parts
+of the row is normal, and a save should carry only what its author touched.
+
+```
+422 tenant-immutable   the body contains tenantId          + details.tenantId
+409 flag-has-records   turning a flag off would hide money  + details.flag, count/amount
+409 point-in-use       leaf is filed against that point     + details.point, deliveries
+409 language-required  the fallback language was removed    + details.language
+```
+
+The refusals draw one line, and it is money: **a flag whose module holds a liability cannot
+be turned off.** A savings balance vanishing from the only screen that reports it is not a
+preference a factory gets to express; the flags that merely *show* something are the
+factory's business, and the response says what goes rather than refusing. `MONEY_BEARING_FLAGS`
+in `config.ts` is the list, so both sides refuse the same set.
+
+`point-in-use` exists because a delivery names its collection point and nothing else —
+removing the point orphans the rows. A **bank** is different: a supplier's details keep the
+name, so removing one only stops it being offered, and that is a warning rather than a
+refusal.
+
+Audit the save with **only the blocks that changed**, before and after. A configuration diff
+that lists every field makes the one that moved impossible to find six months later.
+
+---
+
+## 19. M15 Users & roles
+
+Authorize on `usersAndRoles`. **No feature gate.**
+
+`packages/domain/src/users.ts` is shared, and the reason is not code reuse: every refusal in
+this module is one failure — **a factory locking itself out of its own console** — and there
+is no recovery path outside it. The console withholds the control and the server refuses,
+and they have to agree about which user is the last way in.
+
+### 19.1 `GET /admin/users` → `Paged<AdminConsoleUser>`
+
+Three fields are **derived per read**, never stored:
+
+| Field | Rule |
+| --- | --- |
+| `canAdministerUsers` | Active, and holding `usersAndRoles: write` through some role. A suspended administrator is not a way back in |
+| `isLastAdministrator` | Would suspending *this* user leave nobody who can administer users? It stops being true the moment somebody else is given the role, and a stored flag would go on withholding the suspend button afterwards |
+| `owesMfa` | Holds a role in `MFA_REQUIRED_ROLES` and has not enrolled. Owed, not enforced at the point of granting: a user cannot enrol before they have an account |
+
+Never send `password` or `grants` on a user record. The signed-in user's own grants come from
+`GET /admin/auth/me`; another user's are a property of their roles.
+
+### 19.2 `POST /admin/users` → 201 · `PATCH /admin/users/{id}`
+
+```
+409 email-taken          the identity a session is issued against
+409 self-modification    changing your own roles mid-session
+409 last-admin           the change would leave nobody able to administer users
+```
+
+`email` is **immutable** after creation. Changing it is creating a different person while
+keeping their audit trail.
+
+**There is no `DELETE`.** A user who approved a payout or published a month is the actor on
+an audit entry, and an entry whose actor cannot be resolved is not evidence. Suspend instead
+— the same rule that voids a delivery rather than removing it.
+
+The console cannot issue a credential, and this contract does not say how you do: an
+invitation with a one-time password, or an enrolment link. What it does say is that the
+office must not be able to read the password back, and that a role in `MFA_REQUIRED_ROLES`
+should be made to enrol at first sign-in. Neither exists in the mock — see status.md.
+
+### 19.3 `POST /admin/users/{id}/suspend` · `/reactivate` · `/mfa/reset`
+
+All three take a **mandatory reason** (≥10 chars, `422 note-required`). The person it
+happens to will ask why, and "suspended on the 14th" with no reason is a conversation
+nobody in the office can have — the same argument AC-06 makes about a rejection note.
+
+`self-modification` on suspending yourself and on resetting your own second factor. The
+second is the one worth stating: it is dropping your own second factor while holding a live
+session, which is precisely what an attacker with a stolen administrator session would do.
+
+A suspension must take effect on the **next request**, not at the next login. A token issued
+before it stops working.
+
+### 19.4 `GET /admin/roles` → `RoleMatrix` · `PUT /admin/roles/{role}`
+
+```json
+{ "matrix": { "clerk": { "suppliers": "read", … }, … },
+  "customised": false, "updatedAt": null, "updatedByName": null }
+```
+
+**§12.1 is data, not code** (see [rbac.md](./rbac.md)). A factory will want to split or merge
+these roles and that must not be a deploy. `customised` is whether this factory has diverged
+from the shipped table at all — without it, a reader has to compare fifteen rows against a
+document.
+
+```
+422 unknown-role   + details.roles
+409 last-admin     no role in the proposed matrix would grant usersAndRoles
+```
+
+**That second refusal is the lockout nobody thinks of.** Every user keeps the roles they
+had while the roles stop granting recovery: not one user record changes, so a check written
+per user misses it entirely. Guard the **proposed matrix** — `matrixKeepsRecovery` — and
+audit the change with the whole row before and after. "Who widened this, and from what" is
+the only question ever asked about a permission change, and it gets asked months later.
+
+---
+
+## 20. M16 Reports
+
+Gate on `enableReports`. Authorize on `reports: read` — which §12.1 gives to every
+operational role, because this is the dashboard's capability.
+
+### 20.1 `GET /admin/reports` → `ReportCatalogue`
+
+```json
+{ "reports": [{ "id": "dormantSuppliers", "params": ["dormantMonths"],
+                "definedBy": "§19.2, via SupplierQuery.dormantMonths" }],
+  "months": ["2026-07", "2026-06", "2026-05"] }
+```
+
+**Served rather than hardcoded**, because which reports exist is a property of the warehouse
+(§19.1) — when it lands, the list grows without a console release. `definedBy` is what keeps
+the list honest: a report with no citation is one somebody thought would be useful.
+
+`months` is here and **not on a billing endpoint**, which is a mistake this repository made
+and fixed: §12.1 gives the factory administrator `reports: read` and `billing: none`, so a
+month picker fed from §11.1 left the one role that owns the Administration section with an
+empty picker. **The list a report is chosen from belongs behind the same grant as the
+report.**
+
+### 20.2 `GET /admin/reports/{id}` → `ReportResult`
+
+```json
+{ "id": "leafByCollectionPoint",
+  "columns": [{ "key": "totalKgs", "labelKey": "reports.column.kgs", "type": "kg" }],
+  "rows": [{ "collectionPoint": "MAKADURA", "totalKgs": 1840.5, "supplierCount": 31 }],
+  "totals": { "totalKgs": 2810.5, "deliveryCount": 412 },
+  "generatedAt": "2026-08-01T04:12:00.000Z",
+  "params": { "monthKey": "2026-07" } }
+```
+
+Four properties, each of which is a decision:
+
+1. **Columns come with the rows, carrying what each one *is*** — `money`, `kg`, `count`,
+   `percent`, `month`, `date`, `text`. One screen renders any report, and the server is the
+   only thing that knows a number's units. A grid that guessed would print `LKR 412.00` over
+   a supplier count. Same rule as BR-110: never send a formatted string, always send what
+   the value is.
+2. **`totals` is per-report and partial, and the gaps are deliberate.** Send a total only
+   where a total means something. No supplier count across collection points — a grower who
+   delivers to two points is not two growers — and no `appShare` average, because averaging
+   monthly percentages across months of different sizes is not the overall share. A column
+   with no entry renders blank, not zero, because a zero there is a figure the office quotes.
+3. **`null` is not `0`** (BR-102). A supplier who has never delivered has no last delivery;
+   a month with no requests has no adoption share. Both are `null`, and the console renders
+   an em dash.
+4. **`params` is echoed back**, so a printed page says what window it covers.
+
+```
+404                the report id is unknown        + details.reports
+422 invalid        a required parameter is missing + details.missing
+403 feature-disabled
+```
+
+**Refuse rather than answer emptily.** An empty grid for a missing month reads as "no leaf
+that month", which is the one wrong answer this screen can give. `missingReportParams` is
+shared so the console can disable the control and the server can refuse identically.
+
+**A report is asked for and answered, never stored.** No saved reports and no scheduling: a
+stored result is a second answer waiting to disagree with the records it came from — the same
+argument that keeps a bill a read model over deliveries and a rate. Which is also why §19.5
+asks for a **read replica**: these are live scans, and a month-close query must not compete
+with a clerk entering leaf.
+
+---
+
+## 21. Not yet called by the console
 
 These are in §17.6's scope and the console has no code for them yet, so the
 shapes are open. Requests from the front end when you get there:
@@ -1597,11 +1805,13 @@ shapes are open. Requests from the front end when you get there:
 | **The bill PDF** | AC-03 names the PDF alongside the app's Home screen. §11.3 is the same data, so this is a renderer over an existing read model rather than a new shape — and it must be generated from the *published* bill, not re-derived at print time |
 | **The payout file** | §12.5's note: blocked on §21.17. It is an export over an existing run, and the run must not change shape to accommodate it |
 | **The push transport** | §17 specifies the record and the reach; **nothing here sends anything.** FCM/APNs brings a failure mode the console has no shape for yet — a per-device delivery result arriving asynchronously, minutes later. `NotificationSend.status` already carries `queued` and `failed` for it |
-| **M16 Reports** | Run off a read replica or nightly snapshot (§19.5). A month-close query must not compete with a clerk entering deliveries |
+| **M16's read replica** | §20 is built and its four queries are live scans over the same store a clerk is writing to. §19.5 asks for a read replica or a nightly snapshot; a month-close query must not compete with leaf entry. The four reports are written as single-pass scans so this is a connection string rather than a rewrite |
+| **The reports beyond four** | §20.1's list is served, so it grows without a console release — but the reports themselves need §19.1's warehouse shape, which is in the mobile repository. The four that exist are the ones whose definition already lives in this codebase |
+| **Credentials for a new console user** | §19.2 creates the record and cannot issue a password. An invitation with a one-time credential the office cannot read back, and enrolment forced at first sign-in for a role in `MFA_REQUIRED_ROLES` |
 
 ---
 
-## 19. A checklist for the first PR
+## 22. A checklist for the first PR
 
 Ordered so each step is independently useful to the console.
 
@@ -1633,6 +1843,12 @@ Ordered so each step is independently useful to the console.
 - [ ] `/admin/notifications/*` — triggers as data, a reach endpoint that splits consent
       from "never installed the app", and automatic sends fired from the endpoints in
       §17.5 rather than from a job
+- [ ] `/admin/config` — the `PATCH` visible on the next public `GET /config` with a new
+      `ETag`, `usage` computed live, and the money-bearing refusals from §18.2
+- [ ] `/admin/users/*` and `/admin/roles/*` — the three derived fields, the mandatory
+      reasons, and **both** `last-admin` refusals, including the matrix one
+- [ ] `/admin/reports/*` — the catalogue with its months behind the `reports` grant, columns
+      carrying their types, and partial totals
 
 Point `VITE_API_BASE_URL` at it and set `VITE_USE_MOCK=0`; the console needs no
 other change. If a shape differs from this document, the seam that absorbs it is

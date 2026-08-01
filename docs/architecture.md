@@ -167,8 +167,10 @@ anyone loads is a sign-in form; without lazy routes it arrives with a charting
 library, a table engine and every screen attached.
 
 **Only built modules have routes.** A route rendering "coming soon" is worse than
-no route — it is a URL a clerk can bookmark, share, and then report as broken.
-Planned modules appear in the sidebar as disabled rows with a *Planned* chip.
+no route — it is a URL a clerk can bookmark, share, and then report as broken. There used
+to be a *Planned* chip on a disabled sidebar row for the modules that had none; all
+seventeen of §18.1's modules now have routes, so both the chip and the branch that rendered
+it are gone rather than kept warm for a case no row can reach.
 
 Every route is wrapped in `RequireCapability`, so a bookmarked or emailed URL is
 refused the same way the sidebar would have hidden it. Guards render an

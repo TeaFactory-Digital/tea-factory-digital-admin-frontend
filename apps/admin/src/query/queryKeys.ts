@@ -24,11 +24,23 @@ import type {
   PayoutLineQuery,
   PayoutRunQuery,
   SavingsAccountQuery,
+  ReportRunParams,
   SupplierQuery,
+  UserQuery,
 } from '@tfd/domain';
 
 export const qk = {
   config: ['config'] as const,
+
+  /**
+   * The **authenticated** config, separate from `config` above.
+   *
+   * Two keys for one row on purpose: `config` is the public payload every screen is branded
+   * and gated from, and this one carries the same row plus the usage counts M14 judges a
+   * change against. A save invalidates both — the second so the editor sees its own result,
+   * the first so the sidebar does.
+   */
+  adminConfig: ['admin-config'] as const,
 
   session: {
     me: ['session', 'me'] as const,
@@ -164,6 +176,31 @@ export const qk = {
     all: ['notifications'] as const,
     list: (query: NotificationQuery) => ['notifications', 'list', query] as const,
     triggers: ['notifications', 'triggers'] as const,
+  },
+
+  /**
+   * A user or role change invalidates the **session** as well as the list.
+   *
+   * `resolveGrants` merges the server's grants over the shipped matrix, so editing a role
+   * changes what the signed-in user may do — and an administrator who had just narrowed their
+   * own role while still seeing every button would be looking at a console that disagrees
+   * with the server about what they can do.
+   */
+  users: {
+    all: ['users'] as const,
+    list: (query: UserQuery) => ['users', 'list', query] as const,
+    roles: ['users', 'roles'] as const,
+  },
+
+  /**
+   * Keyed by the parameters, because that is what a report *is*: the same report over a
+   * different month is a different answer, and one cache entry for both would show July's
+   * figures under an August heading.
+   */
+  reports: {
+    all: ['reports'] as const,
+    list: ['reports', 'list'] as const,
+    run: (id: string, params: ReportRunParams) => ['reports', 'run', id, params] as const,
   },
 
   audit: {
