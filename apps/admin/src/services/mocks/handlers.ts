@@ -18,28 +18,40 @@
 
 import { HttpResponse, delay, http, type HttpHandler } from 'msw';
 import type {
+  AdminBill,
   AdminChangeRequest,
+  AdminSavingsLedgerEntry,
   AdminSupplier,
   AuditEntry,
+  BillListItem,
+  BillRun,
   Capability,
   ConsoleUser,
   Delivery,
   DeliveryBatch,
   DeliveryBatchResult,
   DeliveryRejection,
+  FeatureFlagName,
   MonthCycleStage,
   MonthException,
   MonthSummary,
   MonthlyRateEntry,
   Paged,
+  PaymentMethod,
+  PayoutLine,
+  PayoutRun,
+  SavingsAccount,
+  SavingsSummary,
 } from '@tfd/domain';
 import {
   MAX_DELIVERY_BATCH_ROWS,
   MAX_DELIVERY_KG,
   can,
+  deductionsBalance,
   isExactKg,
   isSelfApproval,
   monthKeyOf,
+  round2,
   roundKg,
   summariseKgs,
 } from '@tfd/domain';
@@ -47,19 +59,31 @@ import {
   MOCK_MFA_CODE,
   MOCK_PASSWORD,
   TODAY,
+  billFactoryOf,
   buildDashboard,
+  buildPayoutLines,
+  currentMonthKey,
+  generateBills,
   mockAudit,
+  mockBillRuns,
+  mockBills,
   mockChangeRequests,
   mockConfigs,
   mockDeliveries,
   mockMonthExceptions,
   mockMonths,
+  mockPayoutLines,
+  mockPayoutRuns,
+  mockSavingsLedger,
   monthStageOf,
   mockFullAccountNumbers,
   mockSuppliers,
   mockUsers,
+  summariseBillRun,
   summariseDay,
+  summarisePayoutRun,
   toListItem,
+  type BillRunRecord,
   type MockUser,
   type MonthRecord,
 } from './seed';
@@ -100,6 +124,19 @@ const state = {
    */
   months: cloneMonths(),
   monthExceptions: mockMonthExceptions.map((e) => ({ ...e })),
+  /**
+   * M5's bills, and the run each came out of.
+   *
+   * Held as generated output rather than recomputed per request, which is the one
+   * place a read model has to be *stored*: a bill is what the supplier was handed,
+   * so it must not silently change when a delivery is voided the following week.
+   * The way to pick a change up is to re-generate, and only while the month is open.
+   */
+  bills: mockBills.map((bill) => ({ ...bill })),
+  billRuns: mockBillRuns.map((run) => ({ ...run })),
+  payoutRuns: mockPayoutRuns.map((run) => ({ ...run })),
+  payoutLines: mockPayoutLines.map((line) => ({ ...line })),
+  savingsLedger: mockSavingsLedger.map((entry) => ({ ...entry })),
   sequence: 1000,
 };
 
@@ -190,6 +227,157 @@ const nextId = () => String(++state.sequence);
 
 /** Latency worth having: it is what makes a missing loading state visible. */
 const LATENCY_MS = 180;
+
+/* ──────────────────────────── M5 Bills helpers ──────────────────────────── */
+
+function billRunFor(monthKey: string): BillRunRecord | null {
+  return state.billRuns.find((run) => run.monthKey === monthKey) ?? null;
+}
+
+/**
+ * A run, with `stale` decided at read time against the live leaf.
+ *
+ * Never stored, because staleness is a *relationship* between the run and the
+ * delivery rows, and a stored flag would go on lying the moment somebody voided a
+ * weighing. A published month cannot be stale — nothing can change under it (BR-108).
+ */
+function serialiseBillRun(run: BillRunRecord): BillRun {
+  const rows = state.deliveries.filter((row) => row.monthKey === run.monthKey && !row.voidedAt);
+  const liveKgs = summariseKgs(rows.map((row) => ({ supplierId: row.supplierId, kgs: row.kgs })));
+  const published = stageOf(run.monthKey) === 'published';
+
+  return {
+    ...run,
+    stale: !published && Math.abs(liveKgs.totalKgs - run.totalKgs) > 0.005,
+  };
+}
+
+function toBillListItem(bill: AdminBill): BillListItem {
+  return {
+    id: bill.id,
+    supplierId: bill.supplierId,
+    supplierCode: bill.supplierCode,
+    supplierName: bill.supplierName,
+    billNo: bill.billNo,
+    monthKey: bill.monthKey,
+    totalKgs: bill.totalKgs,
+    grossAmount: bill.grossAmount,
+    deductionsTotal: bill.deductions.total,
+    finalBalance: bill.finalBalance,
+    paymentMethod: bill.paymentMethod,
+    carriesDebt: bill.carryForward.nextMonthDeb > 0,
+    hasBankDetails: bill.hasBankDetails,
+    // BR-107, checked rather than assumed. See the generate handler.
+    unbalanced: !deductionsBalance(bill.deductions),
+  };
+}
+
+/**
+ * What the previous accounts leave for this one.
+ *
+ * The chain is the reason a bill cannot be computed in isolation: coins held back
+ * last month are spendable this month, an unpaid balance becomes `previousDebts`,
+ * and the savings figure printed as "previous" is the ledger's running balance. A
+ * month generated without them would tie to nothing.
+ */
+function carriedInto(monthKey: string) {
+  const coins = new Map<string, number>();
+  const debts = new Map<string, number>();
+  const savings = new Map<string, number>();
+
+  for (const bill of [...state.bills]
+    .filter((candidate) => candidate.monthKey < monthKey)
+    .sort((a, b) => a.monthKey.localeCompare(b.monthKey))) {
+    coins.set(bill.supplierId, bill.coinsCarriedForward);
+    debts.set(bill.supplierId, bill.carryForward.nextMonthDeb);
+  }
+
+  // The savings balance of record is the ledger's, not the registry's — see M8.
+  for (const entry of state.savingsLedger) {
+    if (entry.monthKey < monthKey) savings.set(entry.supplierId, entry.balance);
+  }
+
+  return { coins, debts, savings };
+}
+
+/** The running savings balance for one supplier, as the ledger has it. */
+function savingsBalanceOf(supplierId: string): number {
+  let balance = 0;
+  for (const entry of state.savingsLedger) {
+    if (entry.supplierId === supplierId) balance = entry.balance;
+  }
+  return balance;
+}
+
+/**
+ * Post a published month's savings deductions to the ledger.
+ *
+ * Runs **on publish**, not on generation, because a contribution is a deduction
+ * from a bill the supplier has actually been given. Crediting savings off a draft
+ * bill would put money in a passbook against a figure the office might still
+ * re-generate.
+ */
+function postSavingsFor(monthKey: string, publishedAt: string): number {
+  const bills = state.bills
+    .filter((bill) => bill.monthKey === monthKey && bill.deductions.savings > 0)
+    .sort((a, b) => a.supplierCode.localeCompare(b.supplierCode));
+
+  for (const bill of bills) {
+    // Idempotent: publishing is once-only, but a replayed request must not credit
+    // a supplier twice — and this is money.
+    if (state.savingsLedger.some((entry) => entry.billId === bill.id)) continue;
+
+    const balance = round2(savingsBalanceOf(bill.supplierId) + bill.deductions.savings);
+    state.savingsLedger.push({
+      id: `sav-${nextId()}`,
+      supplierId: bill.supplierId,
+      monthKey,
+      month: bill.month,
+      amount: bill.deductions.savings,
+      balance,
+      source: 'billDeduction',
+      billId: bill.id,
+      recordedAt: publishedAt,
+      note: null,
+    });
+
+    // The registry's balance follows the ledger, so M2's detail page and M8's
+    // account row are one number rather than two (AC-01).
+    const index = state.suppliers.findIndex((supplier) => supplier.id === bill.supplierId);
+    if (index >= 0) state.suppliers[index] = { ...state.suppliers[index]!, savingsBalance: balance };
+  }
+
+  return bills.length;
+}
+
+/* ─────────────────────────── M6 Payouts helpers ─────────────────────────── */
+
+const linesOf = (runId: string): PayoutLine[] =>
+  state.payoutLines.filter((line) => line.runId === runId);
+
+/** Counts and totals derived from the lines, never from stored figures. */
+const serialisePayoutRun = (run: PayoutRun): PayoutRun =>
+  summarisePayoutRun(run, linesOf(run.id));
+
+/* ─────────────────────────── feature flags (AC-07) ─────────────────────────── */
+
+/**
+ * The **API half** of a feature flag.
+ *
+ * AC-07 is only half met by hiding a surface: "a flag off removes the surface *and*
+ * the endpoint refuses". The console hides the sidebar row and guards the route; a
+ * tenant that does not buy payouts must also be unable to reach the endpoint by
+ * typing a URL or replaying a request.
+ */
+function featureGate(request: Request, flag: FeatureFlagName): Response | null {
+  if (flagsOf(request)[flag]) return null;
+  return fail({
+    status: 403,
+    code: 'feature-disabled',
+    message: 'This factory does not use that feature.',
+    details: { flag },
+  });
+}
 
 /* ─────────────────────── the stand-in refresh cookie ─────────────────────── */
 
@@ -284,6 +472,38 @@ function authorize(
         code: 'forbidden',
         message: `Your role cannot ${level} ${capability}.`,
         details: { capability, required: level, granted: user.grants[capability] ?? 'none' },
+      }),
+    };
+  }
+  return { user };
+}
+
+/**
+ * Authorize against **any one** of several capabilities.
+ *
+ * For a read two modules share. The money modules' month picker is the case: a month
+ * key is needed by `billing` and by `payouts`, and widening either module's own
+ * capability to cover the other would grant access to that module's writes as a side
+ * effect. The `403` names all of them, so a refusal is diagnosable.
+ */
+function authorizeAny(
+  request: Request,
+  capabilities: Capability[],
+  level: 'read' | 'write' | 'approve' = 'read',
+): { user: MockUser } | { response: Response } {
+  const user = bearer(request);
+  if (!user) {
+    return {
+      response: fail({ status: 401, code: 'unauthenticated', message: 'Sign in required.' }),
+    };
+  }
+  if (!capabilities.some((capability) => can(user.grants, capability, level))) {
+    return {
+      response: fail({
+        status: 403,
+        code: 'forbidden',
+        message: `Your role cannot ${level} any of: ${capabilities.join(', ')}.`,
+        details: { capabilities, required: level },
       }),
     };
   }
@@ -981,6 +1201,146 @@ export const handlers: HttpHandler[] = [
     return HttpResponse.json(paginate(rows, url));
   }),
 
+  /**
+   * The generation run for a month, or `404`.
+   *
+   * Registered before `/months/:monthKey` so the literal segment wins. A month with
+   * no run is a `404` rather than an empty run, because "bills have not been built"
+   * and "bills were built and came to nothing" are different answers and the close
+   * checklist branches on which.
+   */
+  http.get('*/admin/months/:monthKey/bill-run', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'billing');
+    if ('response' in auth) return auth.response;
+
+    const monthKey = String(params.monthKey);
+    if (!monthRecord(monthKey)) return noSuchMonth(monthKey);
+
+    const run = billRunFor(monthKey);
+    if (!run) {
+      return fail({
+        status: 404,
+        code: 'bills-missing',
+        message: `Bills have not been generated for ${monthKey}.`,
+        details: { monthKey },
+      });
+    }
+    return HttpResponse.json(serialiseBillRun(run));
+  }),
+
+  /**
+   * Generate — or **re-generate** — a month's bills.
+   *
+   * A bill is a read model over the leaf and the rate (api.md §16), so this is a
+   * recomputation, not a write of a new fact. That is exactly why re-running before
+   * the publish is the normal case rather than an exception: a delivery gets voided,
+   * a change request is approved, and the figures move. After the publish the month
+   * is immutable and this answers `month-locked` (BR-108).
+   */
+  http.post('*/admin/months/:monthKey/bills/generate', async ({ request, params }) => {
+    await delay(LATENCY_MS * 2);
+    const auth = authorize(request, 'billing', 'write');
+    if ('response' in auth) return auth.response;
+
+    const monthKey = String(params.monthKey);
+    const body = (await request.json().catch(() => ({}))) as { monthKey?: string };
+    if (body.monthKey && body.monthKey !== monthKey) {
+      return fail({
+        status: 409,
+        code: 'month-mismatch',
+        message: 'The screen is showing a different month. Reload and check.',
+        details: { expected: monthKey, received: body.monthKey },
+      });
+    }
+
+    const record = monthRecord(monthKey);
+    if (!record) return noSuchMonth(monthKey);
+    if (record.stage === 'published') {
+      return fail({
+        status: 409,
+        code: 'month-locked',
+        message: `${monthKey} is published — its bills are the record now.`,
+        details: { monthKey },
+      });
+    }
+    // Nothing to build a bill from. Refused rather than producing a page of bills
+    // with every amount blank, which reads as a broken run instead of a missing rate.
+    if (!record.rate) {
+      return fail({
+        status: 409,
+        code: 'rate-missing',
+        message: 'The auction rate has not been entered for this month.',
+      });
+    }
+
+    const runId = `run-${monthKey}-${nextId()}`;
+    const generatedAt = new Date().toISOString();
+    const carried = carriedInto(monthKey);
+
+    const bills = generateBills({
+      monthKey,
+      runId,
+      generatedAt,
+      generatedById: auth.user.id,
+      generatedByName: auth.user.name,
+      publishedAt: null,
+      deliveries: state.deliveries,
+      suppliers: state.suppliers,
+      rate: record.rate,
+      factory: billFactoryOf(tenantOf(request)),
+      coinsBroughtForward: carried.coins,
+      debtBroughtForward: carried.debts,
+      savingsBefore: carried.savings,
+    });
+
+    /**
+     * BR-107, as a refusal rather than a warning.
+     *
+     * The arithmetic in `@tfd/domain` derives `total` from the nine lines, so this
+     * cannot fire against that implementation — and it is here for the one that
+     * matters: a backend that computes the total separately and lets it drift is a
+     * backend that prints a slip whose column does not add up. Better a run that
+     * refuses than a supplier holding the evidence.
+     */
+    const unbalanced = bills.filter((bill) => !deductionsBalance(bill.deductions));
+    if (unbalanced.length > 0) {
+      return fail({
+        status: 422,
+        code: 'bills-unbalanced',
+        message: `${unbalanced.length} bills have deduction lines that do not add up to their total.`,
+        details: { billNos: unbalanced.slice(0, 5).map((bill) => bill.billNo) },
+      });
+    }
+
+    // A re-run replaces the previous one rather than accumulating beside it: two
+    // runs for one open month is two sets of figures nobody can choose between.
+    state.bills = [...state.bills.filter((bill) => bill.monthKey !== monthKey), ...bills];
+    const summary = summariseBillRun(monthKey, runId, bills, {
+      generatedAt,
+      generatedById: auth.user.id,
+      generatedByName: auth.user.name,
+    });
+    state.billRuns = [...state.billRuns.filter((run) => run.monthKey !== monthKey), summary];
+
+    // Generating is what occupies §13's `billsGenerated` stage. The stage is
+    // derived from what has happened, never set by the client.
+    if (record.stage === 'rateEntered' || record.stage === 'awaitingRate') {
+      record.stage = 'billsGenerated';
+    }
+
+    recordBy(auth, 'month.bills.generate', 'billRun', runId, {
+      after: {
+        monthKey,
+        bills: summary.billCount,
+        payableTotal: summary.payableTotal,
+        missingBankDetails: summary.missingBankDetails,
+      },
+    });
+
+    return HttpResponse.json(serialiseBillRun(summary));
+  }),
+
   http.get('*/admin/months/:monthKey', async ({ request, params }) => {
     await delay(LATENCY_MS);
     const auth = authorize(request, 'ratesAndMonthClose');
@@ -1158,6 +1518,41 @@ export const handlers: HttpHandler[] = [
       });
     }
 
+    /**
+     * The bills have to exist, and they have to match the leaf.
+     *
+     * Publishing is what turns a generated bill into the document the supplier
+     * holds, so a month published with no run has nothing to hand over — and one
+     * published on a **stale** run hands over figures that disagree with the leaf
+     * the month closed on. Both are refused rather than repaired here, because
+     * re-generating inside a publish would mean the manager signs off figures they
+     * never saw.
+     *
+     * Checked **after** the exceptions, which is where it belongs in the office's
+     * order rather than merely in this function's: resolving an exception is what
+     * changes a bill — collecting a bank details form, deciding a change request —
+     * so bills generated before the queue is clear are bills that need generating
+     * again. The refusals report the earliest unmet precondition, so the accountant
+     * is sent to the first thing to do rather than the last.
+     */
+    const run = billRunFor(monthKey);
+    if (!run) {
+      return fail({
+        status: 409,
+        code: 'bills-missing',
+        message: 'Bills have not been generated for this month.',
+        details: { monthKey },
+      });
+    }
+    if (serialiseBillRun(run).stale) {
+      return fail({
+        status: 409,
+        code: 'bills-stale',
+        message: 'The leaf has changed since the bills were generated. Re-generate them first.',
+        details: { generatedAt: run.generatedAt, runKgs: run.totalKgs },
+      });
+    }
+
     // BR-501, the four-eyes rule. Reachable because a manager holds `approve`,
     // which implies `write` — so the same person *could* enter a rate and close the
     // month on it, and this is what stops them.
@@ -1170,10 +1565,26 @@ export const handlers: HttpHandler[] = [
       });
     }
 
+    const publishedAt = new Date().toISOString();
     record.stage = 'published';
-    record.publishedAt = new Date().toISOString();
+    record.publishedAt = publishedAt;
     record.publishedByName = auth.user.name;
     record.publishedById = auth.user.id;
+
+    /**
+     * Publishing is the moment the bills become the supplier's, and the moment the
+     * savings deducted on them are theirs.
+     *
+     * Both happen here rather than in M5 and M8 on their own, because there is
+     * exactly one event: a month that published its bills but not its savings
+     * contributions would show a supplier a deduction with no matching passbook
+     * entry, which is the first thing they would query.
+     */
+    for (let index = 0; index < state.bills.length; index += 1) {
+      const bill = state.bills[index]!;
+      if (bill.monthKey === monthKey) state.bills[index] = { ...bill, publishedAt };
+    }
+    const credited = postSavingsFor(monthKey, publishedAt);
 
     recordBy(auth, 'month.publish', 'monthlyRate', monthKey, {
       before: { stage: 'billsGenerated' },
@@ -1181,11 +1592,587 @@ export const handlers: HttpHandler[] = [
         stage: 'published',
         ratePerKg: record.rate.ratePerKg,
         extraRatePerKg: record.rate.extraRatePerKg,
+        bills: run.billCount,
+        savingsCredited: credited,
         note: body.note ?? null,
       },
     });
 
     return HttpResponse.json(monthSummary(record));
+  }),
+
+  /* ── M5 Bills ──────────────────────────────────────────────────────────── */
+
+  /**
+   * The months the money screens can be pointed at. Registered before
+   * the bills list — a distinct path, but the specific-first rule in this file has
+   * already caught two bugs.
+   *
+   * Newest first, because the office works the month it just closed.
+   */
+  http.get('*/admin/bill-months', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const auth = authorizeAny(request, ['billing', 'payouts']);
+    if ('response' in auth) return auth.response;
+
+    const rows = Object.keys(state.months)
+      .sort()
+      .reverse()
+      .map((monthKey) => ({
+        monthKey,
+        stage: stageOf(monthKey),
+        billCount: state.bills.filter((bill) => bill.monthKey === monthKey).length,
+        open: stageOf(monthKey) !== 'published',
+      }));
+
+    return HttpResponse.json(rows);
+  }),
+
+  http.get('*/admin/bills', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'billing');
+    if ('response' in auth) return auth.response;
+
+    const url = new URL(request.url);
+    const monthKey = url.searchParams.get('monthKey');
+    const q = url.searchParams.get('q')?.trim().toLowerCase();
+    const missingBankDetails = url.searchParams.get('missingBankDetails');
+    const carriesDebt = url.searchParams.get('carriesDebt');
+
+    let rows = state.bills.map(toBillListItem);
+    if (monthKey) rows = rows.filter((row) => row.monthKey === monthKey);
+    if (q) {
+      rows = rows.filter(
+        (row) =>
+          row.supplierCode.toLowerCase().includes(q) ||
+          row.supplierName.toLowerCase().includes(q) ||
+          row.billNo.toLowerCase().includes(q),
+      );
+    }
+    // A payout run cannot pay these, so the office needs them as a list rather than
+    // as a count on the run summary they are about to sign off.
+    if (missingBankDetails === 'true') {
+      rows = rows.filter((row) => !row.hasBankDetails && (row.finalBalance ?? 0) > 0);
+    }
+    if (carriesDebt === 'true') rows = rows.filter((row) => row.carriesDebt);
+
+    // By supplier code, which is the order the paper ledgers were kept in and the
+    // order the office checks a run down.
+    rows = sortRows(rows, url, (a, b) => a.supplierCode.localeCompare(b.supplierCode));
+
+    return HttpResponse.json(paginate(rows, url));
+  }),
+
+  http.get('*/admin/bills/:id', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'billing');
+    if ('response' in auth) return auth.response;
+
+    const bill = state.bills.find((candidate) => candidate.id === params.id);
+    if (!bill) return fail({ status: 404, code: '404', message: 'No such bill.' });
+    return HttpResponse.json(bill);
+  }),
+
+  /* ── M6 Payouts ────────────────────────────────────────────────────────── */
+
+  http.get('*/admin/payout-runs', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const gated = featureGate(request, 'enablePayouts');
+    if (gated) return gated;
+    const auth = authorize(request, 'payouts');
+    if ('response' in auth) return auth.response;
+
+    const url = new URL(request.url);
+    const monthKey = url.searchParams.get('monthKey');
+    const status = url.searchParams.get('status');
+
+    let rows = state.payoutRuns.map(serialisePayoutRun);
+    if (monthKey) rows = rows.filter((run) => run.monthKey === monthKey);
+    if (status) rows = rows.filter((run) => run.status === status);
+
+    // Newest month first, then by method, because the office works the run it just
+    // prepared and the older ones are reference.
+    rows = sortRows(rows, url, (a, b) =>
+      b.monthKey.localeCompare(a.monthKey) || a.method.localeCompare(b.method),
+    );
+
+    return HttpResponse.json(paginate(rows, url));
+  }),
+
+  /**
+   * Prepare a run: one month, one method.
+   *
+   * `month-not-published` is the load-bearing refusal and the reason this endpoint
+   * cannot simply take a month key. A run against an open month pays against figures
+   * that can still change — a rate correction, a voided delivery, an approved change
+   * request — and money that has already left the factory cannot be re-derived.
+   */
+  http.post('*/admin/payout-runs', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const gated = featureGate(request, 'enablePayouts');
+    if (gated) return gated;
+    const auth = authorize(request, 'payouts', 'write');
+    if ('response' in auth) return auth.response;
+
+    const body = (await request.json()) as { monthKey?: string; method?: PaymentMethod };
+    const monthKey = String(body.monthKey ?? '');
+    const method = body.method;
+    if (!monthKey || !method) {
+      return fail({ status: 422, code: 'invalid', message: 'A month and a method are required.' });
+    }
+
+    const record = monthRecord(monthKey);
+    if (!record) return noSuchMonth(monthKey);
+    if (record.stage !== 'published') {
+      return fail({
+        status: 409,
+        code: 'month-not-published',
+        message: `${monthKey} is not published, so its figures can still change.`,
+        details: { monthKey, stage: record.stage },
+      });
+    }
+
+    const monthBills = state.bills.filter((bill) => bill.monthKey === monthKey);
+    if (monthBills.length === 0) {
+      return fail({
+        status: 409,
+        code: 'bills-missing',
+        message: 'This month has no bills to pay against.',
+        details: { monthKey },
+      });
+    }
+
+    // One run per month per method. A second would be a second total for the same
+    // payment, and the office would have no way to tell which one the bank saw.
+    if (state.payoutRuns.some((run) => run.monthKey === monthKey && run.method === method)) {
+      return fail({
+        status: 409,
+        code: 'run-exists',
+        message: 'A run for this month and method already exists.',
+        details: { monthKey, method },
+      });
+    }
+
+    const id = `pay-${monthKey}-${method}`;
+    const lines = buildPayoutLines(id, method, monthBills, state.suppliers, nextId);
+    if (lines.length === 0) {
+      return fail({
+        status: 409,
+        code: 'no-payable-lines',
+        message: 'No supplier on this method has anything payable for this month.',
+        details: { monthKey, method },
+      });
+    }
+
+    const run = summarisePayoutRun(
+      {
+        id,
+        monthKey,
+        method,
+        status: 'draft',
+        lineCount: 0,
+        payableCount: 0,
+        heldCount: 0,
+        paidCount: 0,
+        failedCount: 0,
+        totalAmount: 0,
+        paidAmount: 0,
+        createdAt: new Date().toISOString(),
+        createdById: auth.user.id,
+        createdByName: auth.user.name,
+        approvedAt: null,
+        approvedById: null,
+        approvedByName: null,
+        completedAt: null,
+      },
+      lines,
+    );
+
+    state.payoutLines = [...state.payoutLines, ...lines];
+    state.payoutRuns = [...state.payoutRuns, run];
+
+    recordBy(auth, 'payout.run.create', 'payoutRun', id, {
+      after: {
+        monthKey,
+        method,
+        lines: run.lineCount,
+        held: run.heldCount,
+        totalAmount: run.totalAmount,
+      },
+    });
+
+    return HttpResponse.json(serialisePayoutRun(run));
+  }),
+
+  /**
+   * The lines of a run. Registered before `/payout-runs/:id` so the literal
+   * segment wins.
+   */
+  http.get('*/admin/payout-runs/:id/lines', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gated = featureGate(request, 'enablePayouts');
+    if (gated) return gated;
+    const auth = authorize(request, 'payouts');
+    if ('response' in auth) return auth.response;
+
+    const url = new URL(request.url);
+    const status = url.searchParams.get('status');
+    const q = url.searchParams.get('q')?.trim().toLowerCase();
+
+    let rows = linesOf(String(params.id));
+    if (status) rows = rows.filter((line) => line.status === status);
+    if (q) {
+      rows = rows.filter(
+        (line) =>
+          line.supplierCode.toLowerCase().includes(q) ||
+          line.supplierName.toLowerCase().includes(q),
+      );
+    }
+
+    /**
+     * Held first, then pending, then the settled ones.
+     *
+     * A run is worked by clearing what is stuck: a held line needs a passbook
+     * collected before anything can move, and burying it under fifty paid rows is
+     * how a supplier goes a month without being paid.
+     */
+    const rank = { held: 0, failed: 1, pending: 2, paid: 3 } as const;
+    rows = sortRows(
+      rows,
+      url,
+      (a, b) => rank[a.status] - rank[b.status] || a.supplierCode.localeCompare(b.supplierCode),
+    );
+
+    return HttpResponse.json(paginate(rows, url));
+  }),
+
+  http.get('*/admin/payout-runs/:id', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gated = featureGate(request, 'enablePayouts');
+    if (gated) return gated;
+    const auth = authorize(request, 'payouts');
+    if ('response' in auth) return auth.response;
+
+    const run = state.payoutRuns.find((candidate) => candidate.id === params.id);
+    if (!run) return fail({ status: 404, code: '404', message: 'No such payout run.' });
+    return HttpResponse.json(serialisePayoutRun(run));
+  }),
+
+  /**
+   * Approve a run — `payouts: approve`, which §12.1 gives the manager and not the
+   * accountant who prepared it.
+   *
+   * Four eyes on money (BR-501): the same person may not prepare a run and release
+   * it, and a manager holds `approve` which implies `write` — so they *could* do
+   * both, and this is what stops them.
+   */
+  http.post('*/admin/payout-runs/:id/approve', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gated = featureGate(request, 'enablePayouts');
+    if (gated) return gated;
+    const auth = authorize(request, 'payouts', 'approve');
+    if ('response' in auth) return auth.response;
+
+    const index = state.payoutRuns.findIndex((candidate) => candidate.id === params.id);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such payout run.' });
+
+    const before = state.payoutRuns[index]!;
+    const { note } = (await request.json().catch(() => ({}))) as { note?: string };
+
+    if (before.status !== 'draft') {
+      return fail({
+        status: 409,
+        code: 'already-approved',
+        message: 'This run has already been approved.',
+        details: { approvedByName: before.approvedByName, approvedAt: before.approvedAt },
+      });
+    }
+    if (isSelfApproval(auth.user, before.createdById)) {
+      return fail({
+        status: 409,
+        code: 'four-eyes-violation',
+        message: 'You prepared this run, so you cannot release it.',
+        details: { createdByName: before.createdByName },
+      });
+    }
+    const lines = linesOf(before.id);
+    if (lines.every((line) => line.status === 'held')) {
+      return fail({
+        status: 409,
+        code: 'no-payable-lines',
+        message: 'Every line in this run is held. There is nothing to release.',
+      });
+    }
+
+    const after: PayoutRun = {
+      ...before,
+      status: 'approved',
+      approvedAt: new Date().toISOString(),
+      approvedById: auth.user.id,
+      approvedByName: auth.user.name,
+    };
+    state.payoutRuns[index] = after;
+
+    recordBy(auth, 'payout.run.approve', 'payoutRun', after.id, {
+      before: { status: 'draft' },
+      after: {
+        status: 'approved',
+        totalAmount: summarisePayoutRun(after, lines).totalAmount,
+        note: note ?? null,
+      },
+    });
+
+    return HttpResponse.json(serialisePayoutRun(after));
+  }),
+
+  /**
+   * Reconcile one line against what the bank or the counter actually did.
+   *
+   * Only after approval: marking a line paid in a draft run would record money
+   * moving that nobody released. And a failure needs a reason, because the supplier
+   * has not been paid and the next person to pick the run up works from that note.
+   */
+  http.post('*/admin/payout-runs/:id/lines/:lineId/mark', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gated = featureGate(request, 'enablePayouts');
+    if (gated) return gated;
+    const auth = authorize(request, 'payouts', 'write');
+    if ('response' in auth) return auth.response;
+
+    const runIndex = state.payoutRuns.findIndex((candidate) => candidate.id === params.id);
+    if (runIndex < 0) return fail({ status: 404, code: '404', message: 'No such payout run.' });
+    const run = state.payoutRuns[runIndex]!;
+
+    if (run.status === 'draft') {
+      return fail({
+        status: 409,
+        code: 'run-not-approved',
+        message: 'This run has not been approved yet, so nothing in it has been paid.',
+      });
+    }
+
+    const lineIndex = state.payoutLines.findIndex(
+      (line) => line.id === params.lineId && line.runId === run.id,
+    );
+    if (lineIndex < 0) return fail({ status: 404, code: '404', message: 'No such payout line.' });
+
+    const before = state.payoutLines[lineIndex]!;
+    const body = (await request.json()) as { status?: 'paid' | 'failed'; reason?: string };
+
+    if (before.status === 'held') {
+      return fail({
+        status: 409,
+        code: 'line-not-payable',
+        message: 'This line is held — there is no account to pay into.',
+        details: { supplierCode: before.supplierCode },
+      });
+    }
+    if (before.status === 'paid') {
+      return fail({
+        status: 409,
+        code: 'line-not-payable',
+        message: 'This line has already been paid.',
+        details: { paidAt: before.paidAt, markedByName: before.markedByName },
+      });
+    }
+    if (body.status !== 'paid' && body.status !== 'failed') {
+      return fail({ status: 422, code: 'invalid', message: 'Mark a line paid or failed.' });
+    }
+    if (body.status === 'failed' && (body.reason?.trim().length ?? 0) < 10) {
+      return fail({
+        status: 422,
+        code: 'note-required',
+        message: 'A reason is required when a payment failed.',
+      });
+    }
+
+    const now = new Date().toISOString();
+    const after: PayoutLine = {
+      ...before,
+      status: body.status,
+      reason: body.status === 'failed' ? body.reason!.trim() : null,
+      paidAt: body.status === 'paid' ? now : null,
+      markedByName: auth.user.name,
+    };
+    state.payoutLines[lineIndex] = after;
+
+    /**
+     * A run completes when nothing is left to work.
+     *
+     * Held lines do not block it: they cannot be paid by this method at all, and a
+     * run that could never complete is a run the office stops looking at. They stay
+     * counted on it, which is what keeps them visible.
+     */
+    const lines = linesOf(run.id);
+    const outstanding = lines.filter((line) => line.status === 'pending');
+    state.payoutRuns[runIndex] = {
+      ...run,
+      status: outstanding.length === 0 ? 'completed' : run.status,
+      completedAt: outstanding.length === 0 ? now : null,
+    };
+
+    recordBy(auth, `payout.line.${body.status}`, 'payoutLine', after.id, {
+      before: { status: before.status },
+      after: {
+        status: after.status,
+        supplierCode: after.supplierCode,
+        amount: after.amount,
+        reason: after.reason,
+      },
+    });
+
+    return HttpResponse.json(after);
+  }),
+
+  /* ── M8 Savings ────────────────────────────────────────────────────────── */
+
+  /**
+   * The scheme across the factory. Registered before the account routes so the
+   * literal segment wins.
+   */
+  http.get('*/admin/savings/summary', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const gated = featureGate(request, 'enableSavings');
+    if (gated) return gated;
+    const auth = authorize(request, 'billing');
+    if ('response' in auth) return auth.response;
+
+    const url = new URL(request.url);
+    const requested = url.searchParams.get('monthKey');
+
+    const contributionMonths = [
+      ...new Set(
+        state.savingsLedger
+          .filter((entry) => entry.source !== 'openingBalance')
+          .map((entry) => entry.monthKey),
+      ),
+    ].sort();
+    const monthKey = requested ?? contributionMonths.at(-1) ?? currentMonthKey;
+
+    /** The running balance per supplier as at the end of a month. */
+    const balanceAt = (key: string) => {
+      const balances = new Map<string, number>();
+      for (const entry of state.savingsLedger) {
+        if (entry.monthKey <= key) balances.set(entry.supplierId, entry.balance);
+      }
+      return round2([...balances.values()].reduce((sum, value) => sum + value, 0));
+    };
+
+    const contributionsIn = (key: string) =>
+      state.savingsLedger.filter(
+        (entry) => entry.monthKey === key && entry.source === 'billDeduction',
+      );
+
+    const month = contributionsIn(monthKey);
+    const contributed = round2(month.reduce((sum, entry) => sum + entry.amount, 0));
+    const kgsThisMonth = roundKg(
+      state.bills
+        .filter((bill) => bill.monthKey === monthKey && bill.deductions.savings > 0)
+        .reduce((sum, bill) => sum + bill.totalKgs, 0),
+    );
+
+    const summary: SavingsSummary = {
+      monthKey,
+      // The factory's liability: this is the suppliers' money, held.
+      balanceTotal: balanceAt(monthKey),
+      accountCount: state.suppliers.filter((supplier) => supplier.status !== 'closed').length,
+      // Opted out is a real answer, not a missing one (`savingsPerKg: 0`).
+      optedOutCount: state.suppliers.filter(
+        (supplier) => supplier.status !== 'closed' && supplier.savingsPerKg === 0,
+      ).length,
+      contributedThisMonth: contributed,
+      contributingSuppliers: month.length,
+      // `null`, not `0`, for a month that has contributed nothing (BR-102).
+      averagePerKg: kgsThisMonth > 0 ? round2(contributed / kgsThisMonth) : null,
+      // Oldest first — charts read left to right.
+      trend: contributionMonths.slice(-6).map((key) => ({
+        monthKey: key,
+        contributed: round2(contributionsIn(key).reduce((sum, entry) => sum + entry.amount, 0)),
+        balanceTotal: balanceAt(key),
+      })),
+    };
+
+    return HttpResponse.json(summary);
+  }),
+
+  /**
+   * One supplier's passbook. Registered before `/savings/accounts` — MSW matches
+   * whole paths, but keeping the more specific route first is the rule that has
+   * already caught two bugs in this file.
+   */
+  http.get('*/admin/savings/accounts/:supplierId/ledger', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gated = featureGate(request, 'enableSavings');
+    if (gated) return gated;
+    const auth = authorize(request, 'billing');
+    if ('response' in auth) return auth.response;
+
+    const supplier = state.suppliers.find((candidate) => candidate.id === params.supplierId);
+    if (!supplier) return fail({ status: 404, code: '404', message: 'No such supplier.' });
+
+    // **Oldest first**, which is part of the wire contract: a passbook is read
+    // forward, and a running balance only means something in the order it grew.
+    const rows = state.savingsLedger
+      .filter((entry) => entry.supplierId === supplier.id)
+      .sort((a, b) => a.monthKey.localeCompare(b.monthKey) || a.id.localeCompare(b.id));
+
+    return HttpResponse.json(paginate(rows, new URL(request.url)));
+  }),
+
+  http.get('*/admin/savings/accounts', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const gated = featureGate(request, 'enableSavings');
+    if (gated) return gated;
+    const auth = authorize(request, 'billing');
+    if ('response' in auth) return auth.response;
+
+    const url = new URL(request.url);
+    const q = url.searchParams.get('q')?.trim().toLowerCase();
+    const optedOut = url.searchParams.get('optedOut');
+
+    const lastContribution = new Map<string, AdminSavingsLedgerEntry>();
+    for (const entry of state.savingsLedger) {
+      if (entry.source === 'openingBalance') continue;
+      lastContribution.set(entry.supplierId, entry);
+    }
+
+    let rows: SavingsAccount[] = state.suppliers
+      .filter((supplier) => supplier.status !== 'closed')
+      .map((supplier) => {
+        const latest = lastContribution.get(supplier.id);
+        const pending = state.changeRequests.find(
+          (candidate) =>
+            candidate.supplierId === supplier.id &&
+            candidate.type === 'savingsRate' &&
+            candidate.status === 'pending',
+        );
+        return {
+          supplierId: supplier.id,
+          supplierCode: supplier.supplierCode,
+          supplierName: supplier.name,
+          // The **active** rate (AC-01) — a pending change is flagged, never applied.
+          savingsPerKg: supplier.savingsPerKg,
+          balance: supplier.savingsBalance,
+          lastContributionMonth: latest?.monthKey ?? null,
+          lastContributionAmount: latest?.amount ?? null,
+          pendingRateChangeId: pending?.id ?? null,
+        };
+      });
+
+    if (q) {
+      rows = rows.filter(
+        (row) =>
+          row.supplierCode.toLowerCase().includes(q) || row.supplierName.toLowerCase().includes(q),
+      );
+    }
+    if (optedOut !== null) {
+      rows = rows.filter((row) => (row.savingsPerKg === 0) === (optedOut === 'true'));
+    }
+
+    // Largest balance first: the accounts the office is asked about are the big ones.
+    rows = sortRows(rows, url, (a, b) => b.balance - a.balance);
+
+    return HttpResponse.json(paginate(rows, url));
   }),
 
   /* ── M9 Change requests ────────────────────────────────────────────────── */
@@ -1408,6 +2395,17 @@ export function resetMockState(): void {
   // A published month leaking into the next test would lock M3 for it.
   state.months = cloneMonths();
   state.monthExceptions = mockMonthExceptions.map((e) => ({ ...e }));
+  /**
+   * The money modules reset with everything else, and the order matters less than
+   * the completeness: a payout run left over from an earlier test is a `run-exists`
+   * refusal in the next one, and a savings entry left behind doubles a balance an
+   * assertion is about.
+   */
+  state.bills = mockBills.map((bill) => ({ ...bill }));
+  state.billRuns = mockBillRuns.map((run) => ({ ...run }));
+  state.payoutRuns = mockPayoutRuns.map((run) => ({ ...run }));
+  state.payoutLines = mockPayoutLines.map((line) => ({ ...line }));
+  state.savingsLedger = mockSavingsLedger.map((entry) => ({ ...entry }));
   state.audit = [...mockAudit];
   state.sessions.clear();
   state.challenges.clear();

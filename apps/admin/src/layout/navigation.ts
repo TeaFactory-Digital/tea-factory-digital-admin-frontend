@@ -104,7 +104,7 @@ export const NAVIGATION: NavSection[] = [
         to: '/bills',
         icon: FileText,
         capability: 'billing',
-        status: 'planned',
+        status: 'built',
       },
       {
         module: 'M6',
@@ -113,16 +113,19 @@ export const NAVIGATION: NavSection[] = [
         icon: Landmark,
         capability: 'payouts',
         flag: 'enablePayouts',
-        status: 'planned',
+        status: 'built',
       },
       {
         module: 'M8',
         labelKey: 'nav.savings',
         to: '/savings',
         icon: PiggyBank,
+        // `billing`, not a capability of its own: §12.1 has no savings row, and the
+        // scheme is a view over bills. Inventing one here would be a permission the
+        // matrix has never granted anybody.
         capability: 'billing',
         flag: 'enableSavings',
-        status: 'planned',
+        status: 'built',
       },
     ],
   },

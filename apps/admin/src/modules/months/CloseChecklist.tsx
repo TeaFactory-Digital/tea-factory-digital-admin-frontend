@@ -19,6 +19,7 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { Check, CircleAlert, Lock } from 'lucide-react';
 import type { MonthSummary } from '@tfd/domain';
 import { round2 } from '@tfd/domain';
@@ -30,6 +31,7 @@ import { Field, Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatCount, formatDateTime, formatKg, formatMoney, formatMonthKey } from '@/lib/format';
+import { useBillRun } from '@/modules/bills/hooks';
 import { usePublishMonth } from './hooks';
 
 interface Step {
@@ -37,6 +39,9 @@ interface Step {
   done: boolean;
   label: string;
   detail: string;
+  /** Where to go and do it. A blocked step with no link is a puzzle, not a task. */
+  href?: string;
+  hrefLabel?: string;
 }
 
 export function CloseChecklist({ month }: { month: MonthSummary }) {
@@ -45,6 +50,14 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
   const canPublish = useCan('ratesAndMonthClose', 'approve');
   const userId = useAuthStore((s) => s.user?.id);
   const publish = usePublishMonth(month.monthKey);
+  /**
+   * M5's run, read from M4.
+   *
+   * The dependency runs this way round on purpose: the *close* is what needs to know
+   * whether bills exist, and inverting it would mean the bills module deciding when a
+   * month may be published — which is M4's job and where the four-eyes rule lives.
+   */
+  const run = useBillRun(month.monthKey);
 
   const [confirming, setConfirming] = useState(false);
   const [note, setNote] = useState('');
@@ -86,6 +99,30 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
         month.openExceptions === 0
           ? t('months.step.exceptionsClear', { total: formatCount(month.totalExceptions) })
           : t('months.step.exceptionsOpen', { count: month.openExceptions }),
+    },
+    /**
+     * The step that fills §13's `billsGenerated` stage.
+     *
+     * Publishing is what turns a generated bill into the document a supplier holds,
+     * so a month with no run has nothing to hand over — and one whose run is
+     * **stale** would hand over figures that disagree with the leaf it closed on.
+     * Both are refused by the server (`bills-missing`, `bills-stale`); this is where
+     * the manager is told which, and where to go and fix it.
+     */
+    {
+      key: 'bills',
+      done: Boolean(run.data) && !run.data?.stale,
+      label: t('months.step.bills'),
+      detail: run.data
+        ? run.data.stale
+          ? t('months.step.billsStale')
+          : t('months.step.billsDetail', {
+              count: formatCount(run.data.billCount),
+              payable: formatMoney(run.data.payableTotal),
+            })
+        : t('months.step.billsMissing'),
+      href: `/bills?month=${month.monthKey}`,
+      hrefLabel: t('months.step.openBills'),
     },
   ];
 
@@ -145,6 +182,16 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
                     </span>
                   </span>
                   <span className="text-caption text-text-secondary">{step.detail}</span>
+                  {/* Where to go and do it. A blocked step that only states the
+                      problem leaves the reader hunting for the screen that fixes it. */}
+                  {step.href && step.hrefLabel ? (
+                    <Link
+                      to={step.href}
+                      className="text-caption text-primary underline-offset-2 hover:underline"
+                    >
+                      {step.hrefLabel}
+                    </Link>
+                  ) : null}
                 </span>
               </li>
             ))}

@@ -12,7 +12,16 @@
  * and detail, `qk.suppliers.detail(id)` only one.
  */
 
-import type { AuditQuery, ChangeRequestQuery, DeliveryQuery, SupplierQuery } from '@tfd/domain';
+import type {
+  AuditQuery,
+  BillQuery,
+  ChangeRequestQuery,
+  DeliveryQuery,
+  PayoutLineQuery,
+  PayoutRunQuery,
+  SavingsAccountQuery,
+  SupplierQuery,
+} from '@tfd/domain';
 
 export const qk = {
   config: ['config'] as const,
@@ -53,6 +62,42 @@ export const qk = {
     detail: (monthKey: string) => ['months', 'detail', monthKey] as const,
     exceptions: (monthKey: string, resolved: boolean | undefined) =>
       ['months', 'exceptions', monthKey, resolved ?? 'any'] as const,
+  },
+
+  /**
+   * A generation run invalidates the whole module, not one list: every bill in the
+   * month is replaced, so a key that only refreshed the run summary would leave the
+   * grid showing the previous recomputation's figures beside the new totals.
+   */
+  bills: {
+    all: ['bills'] as const,
+    list: (query: BillQuery) => ['bills', 'list', query] as const,
+    detail: (id: string) => ['bills', 'detail', id] as const,
+    run: (monthKey: string) => ['bills', 'run', monthKey] as const,
+  },
+
+  /**
+   * Marking one line changes the run's totals, so `payouts.all` is what a mark
+   * invalidates — the alternative is a run header reading "3 paid" above a grid
+   * showing four.
+   */
+  payouts: {
+    all: ['payouts'] as const,
+    list: (query: PayoutRunQuery) => ['payouts', 'list', query] as const,
+    detail: (id: string) => ['payouts', 'detail', id] as const,
+    lines: (id: string, query: PayoutLineQuery) => ['payouts', 'lines', id, query] as const,
+  },
+
+  /**
+   * Savings is read-only, so nothing in the module invalidates it — but **publishing
+   * a month does**, because that is when a bill's savings deduction becomes a
+   * passbook entry. M4's invalidation names this key for that reason.
+   */
+  savings: {
+    all: ['savings'] as const,
+    summary: (monthKey: string | undefined) => ['savings', 'summary', monthKey ?? 'latest'] as const,
+    accounts: (query: SavingsAccountQuery) => ['savings', 'accounts', query] as const,
+    ledger: (supplierId: string) => ['savings', 'ledger', supplierId] as const,
   },
 
   changeRequests: {

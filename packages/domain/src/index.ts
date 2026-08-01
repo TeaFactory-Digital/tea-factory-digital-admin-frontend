@@ -12,6 +12,7 @@ export * from './types/app';
 export * from './types/admin';
 export * from './constants';
 export * from './money';
+export * from './bill';
 export * from './leafCollection';
 export * from './leafCredit';
 export * from './rbac';

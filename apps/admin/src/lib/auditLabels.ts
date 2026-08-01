@@ -20,6 +20,11 @@ const ACTION_KEYS: Record<string, string> = {
   'month.rate.enter': 'audit.action.rateSet',
   'month.exception.resolve': 'audit.action.monthExceptionResolve',
   'month.publish': 'audit.action.monthPublish',
+  'month.bills.generate': 'audit.action.billsGenerate',
+  'payout.run.create': 'audit.action.payoutRunCreate',
+  'payout.run.approve': 'audit.action.payoutRunApprove',
+  'payout.line.paid': 'audit.action.payoutLinePaid',
+  'payout.line.failed': 'audit.action.payoutLineFailed',
 };
 
 export function auditActionLabel(action: string, t: (key: string) => string): string {

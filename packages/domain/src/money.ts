@@ -9,6 +9,7 @@
  */
 
 import { MONEY_SCALE } from './constants';
+import type { BillDeductions } from './types/app';
 
 const FACTOR = 10 ** MONEY_SCALE;
 
@@ -28,22 +29,36 @@ export function round2(value: number): number {
 }
 
 /**
+ * A bill's deduction lines, or any subset of them.
+ *
+ * The union is what lets a caller pass a real `BillDeductions` **without a cast**.
+ * `BillDeductions` is a closed interface, so it does not satisfy an index signature —
+ * and a `Record<string, number>` parameter pushed an `as unknown as` onto every call
+ * site, which is how a genuine type error hides among the noise of four fake ones.
+ */
+export type DeductionInput = BillDeductions | Readonly<Record<string, number>>;
+
+/**
  * Sum the nine deduction lines.
  *
  * BR-107 requires the itemized lines to equal `total`. This exists so the
  * console can *check* that rather than trust it — a bill whose lines do not add
  * up is an M4 exception, and finding it after publishing is finding it too late.
+ *
+ * Sums every key except `total`, rather than the nine names: a backend that grows a
+ * tenth line has to be caught disagreeing with its own total, not silently balanced
+ * by a checker that ignored the new column.
  */
-export function sumDeductionLines(deductions: Record<string, number>): number {
+export function sumDeductionLines(deductions: DeductionInput): number {
   return round2(
-    Object.entries(deductions)
+    Object.entries(deductions as Record<string, number>)
       .filter(([key]) => key !== 'total')
       .reduce((sum, [, value]) => sum + value, 0),
   );
 }
 
-/** True when a bill's itemized deductions disagree with its stated total (BR-107). */
-export function deductionsBalance(deductions: Record<string, number> & { total: number }): boolean {
+/** True when a bill's itemized deductions agree with its stated total (BR-107). */
+export function deductionsBalance(deductions: DeductionInput & { total: number }): boolean {
   return Math.abs(sumDeductionLines(deductions) - deductions.total) < 1 / FACTOR;
 }
 

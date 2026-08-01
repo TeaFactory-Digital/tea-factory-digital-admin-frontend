@@ -250,3 +250,56 @@ export const publishMonthSchema = z.object({
   monthKey: monthKeySchema,
   note: z.string().max(1000).optional(),
 });
+
+/* ────────────────────────────── M5 Bills ────────────────────────────── */
+
+/**
+ * Generating bills for a month.
+ *
+ * The key travels in the body as well as the path for the same reason the publish
+ * does: the screen can sit open on July while a colleague works June, and
+ * recomputing "the current month" would rebuild the wrong one.
+ */
+export const generateBillsSchema = z.object({
+  monthKey: monthKeySchema,
+});
+
+/* ───────────────────────────── M6 Payouts ───────────────────────────── */
+
+export const paymentMethodSchema = z.enum(['cheque', 'bankTransfer', 'cash']);
+
+/**
+ * Preparing a run: one month, one method.
+ *
+ * The method is required rather than defaulted. "Which of these am I paying" is
+ * the question the office answers before it opens a bank portal or a cheque book,
+ * and a run that guessed would be a run somebody signs off without noticing.
+ */
+export const createPayoutRunSchema = z.object({
+  monthKey: monthKeySchema,
+  method: paymentMethodSchema,
+});
+
+export const approvePayoutRunSchema = z.object({
+  note: z.string().trim().max(1000).optional(),
+});
+
+/**
+ * Reconciling one line against what the bank or the counter actually did.
+ *
+ * **A failure needs a reason and a payment does not**, and the asymmetry is the
+ * point: "paid" is self-explanatory, while a refused transfer is something the
+ * office has to act on — the supplier has not been paid, and the note is what the
+ * next person picking the run up has to work from.
+ */
+export const markPayoutLineSchema = z
+  .object({
+    status: z.enum(['paid', 'failed']),
+    reason: z.string().trim().max(500).optional(),
+  })
+  .refine((value) => value.status !== 'failed' || (value.reason?.length ?? 0) >= 10, {
+    message: 'validation.reasonRequired',
+    path: ['reason'],
+  });
+
+export type MarkPayoutLineInput = z.infer<typeof markPayoutLineSchema>;

@@ -19,11 +19,11 @@ build status, and the sidebar is generated from it.
 | M9 | **Change requests** | ✅ Built | `/change-requests`, `/change-requests/:id` |
 | M17 | **Audit log** | ✅ Built (no export) | `/audit` |
 | M3 | **Leaf collection** | ✅ Built (no scale-file import) | `/deliveries` |
-| M4 | **Rates & month close** | ✅ Built (bills not generated) | `/rates` |
-| M5 | Bills | ⏳ Planned | — |
-| M6 | Payouts | ⏳ Planned | — |
+| M4 | **Rates & month close** | ✅ Built | `/rates` |
+| M5 | **Bills** | ✅ Built (no PDF) | `/bills`, `/bills/:id` |
+| M6 | **Payouts** | ✅ Built (no bank file) | `/payouts`, `/payouts/:id` |
 | M7 | Credit queues | ⏳ Planned | — |
-| M8 | Savings | ⏳ Planned | — |
+| M8 | **Savings** | ✅ Built (read-only) | `/savings` |
 | M10 | Inquiries | ⏳ Planned | — |
 | M11 | News (CMS) | ⏳ Planned | — |
 | M12 | Static content | ⏳ Planned | — |
@@ -54,15 +54,23 @@ the next slice should be argued the same way:
 - **M1 is where a clerk starts the day**, and it is the only place the month-cycle
   stage is visible — which is the console's most-asked question, because it decides
   what every other module will let you do.
-- **M3 and M4 were deliberately not first**, and are now the second slice. §18.2
+- **M3 and M4 were deliberately not first**, and were the second slice. §18.2
   names them as where the project succeeds or fails, which is the argument for
   building them on a foundation that was already proven end to end rather than at
   the same time as it.
-- **What was left out of M4 rather than guessed at.** §21.8 — may a published bill
-  be corrected? — decides whether `bills` is immutable, so bill *generation* is not
-  built and the `billsGenerated` stage is unoccupied. The month close itself does
-  not depend on that answer: a rate, a resolved exception list and a second pair of
-  eyes are required whatever the answer turns out to be.
+- **M5, M6 and M8 are the third slice**, and they are one slice rather than three
+  because they are one chain: a bill is a read model over M3's leaf and M4's rate, a
+  payout line pays a bill, and a savings contribution *is* a bill's savings deduction.
+  Building any one of them alone would have meant inventing the other two ends — a
+  payout amount derived a second time, a savings balance posted by hand — and every
+  one of those inventions is a figure the office would later reconcile against itself.
+  It also fills §13's `billsGenerated` stage, which M4 shipped empty.
+- **What is left out of each rather than guessed at.** Three questions the factory has
+  not answered would each have been a wrong build: §21.17 (what the bank accepts) is
+  the payout *file*, §21.9 (may a supplier withdraw) is savings *movements*, and
+  §21.10 (who may set which deduction line) is a deduction *editor*. All three are
+  absent, and each is stated on the screen where somebody would look for the control —
+  see "What is deliberately not built" below.
 
 ---
 
@@ -215,10 +223,159 @@ server refuses regardless.
 `already-published`, and `four-eyes-violation`. A month the factory has no records
 for is a `404`, never an empty month rendered from a URL.
 
-**Not built yet:** bill generation. The stage enum has `billsGenerated` between
-`rateEntered` and `published`, and nothing occupies it — publishing currently goes
-straight from the rate and a clear exception list. That is M5, and §21.8 (may a
-published bill be corrected?) shapes it.
+**Five refusals guard the publish**, in the order the office meets them:
+`rate-missing`, `exceptions-open` (AC-04), `bills-missing`/`bills-stale`,
+`already-published`, and `four-eyes-violation` when the publisher entered the rate
+(BR-501). The bills check is **after** the exceptions rather than before, and that
+ordering is deliberate: resolving an exception is what changes a bill — collecting a
+bank details form, deciding a change request — so bills built before the queue is
+clear are bills that need building again. The refusals report the earliest unmet
+precondition, which sends the accountant to the first thing to do rather than the last.
+
+A month the factory has no records for is a `404`, never an empty month rendered from
+a URL.
+
+---
+
+## M5 Bills
+
+*The Green Leaf Account.* The month's leaf and its rate, turned into the document each
+supplier is handed.
+
+**A bill is derived, not authored** (api.md §16). That one sentence produces the whole
+module:
+
+- **There is no bill editor, and there will not be one.** A wrong bill is a wrong
+  delivery or a wrong rate. An editor would let the office correct the symptom and
+  leave the cause in place, so the next run would reintroduce it.
+- **Re-generating is the normal case**, not a repair. The auction result gets read off
+  a fax and mistyped, a weighing gets voided, a change request is approved — and the
+  figures move. `generate` is therefore a `POST` that may be repeated for as long as
+  the month is open, and a re-run *replaces* the previous one rather than accumulating
+  beside it: two runs for one month is two sets of figures nobody can choose between.
+- **A run knows when it has gone stale.** `stale` is computed at read time by comparing
+  the run's kilos with the month's live total, never stored — staleness is a
+  relationship between the run and the delivery rows, and a stored flag would go on
+  lying the moment somebody voided a weighing. Publishing on a stale run is refused
+  (`bills-stale`), because it would freeze figures that disagree with the leaf the
+  month closed on.
+- **The arithmetic is shared, not re-derived** — `packages/domain/src/bill.ts`. AC-03
+  requires the console, the printed slip and the app's Home screen to agree field for
+  field, and three implementations of one derivation is three figures the office
+  reconciles by hand after a supplier has already been handed a slip.
+
+**The nine deduction lines are the document's shape**, so all nine render including the
+zeros. A slip with a blank where "Stamps" should be is a slip the supplier queries.
+Their **total is recomputed from the lines, never trusted** (BR-107): an unbalanced
+bill is flagged in the grid, said loudly on the slip, and refuses the whole run at
+generation — because this is the last screen before the figure is something somebody
+is holding.
+
+**The factory pays whole rupees.** The sub-rupee remainder is the slip's "coins" line
+and it carries into the next account, which is what `coinsBroughtForward` and
+`coinsCarriedForward` are for and why neither is ever `null`. An account whose
+deductions came to more than it earned pays **nothing** and carries the shortfall as
+`nextMonthDeb` — stated as its own case rather than falling out of the arithmetic,
+because the alternative reaches a payout run as a negative line that no bank file can
+express and no cheque can be written for.
+
+The grid's three lenses are the queries the office actually runs — *nothing payable*,
+*payable with no bank details*, *lines that do not add up* — rather than badges to hunt
+for in a hundred rows.
+
+**Not built:** the PDF. AC-03 names it alongside the app's Home screen and the console
+renders the same fields, but nothing produces a printable file yet.
+
+---
+
+## M6 Payouts
+
+*Money leaving the factory.* Prepared by the accountant, released by a manager,
+reconciled against what the bank actually did.
+
+**Blocked on §21.17, and built anyway around the part that is not blocked.** What
+format the factory's bank accepts — SLIPS, CEFTS or its own CSV — and whether cheques
+print on pre-printed stock decides the *file*. What the office needs whatever the
+answer turns out to be is the **run**: which suppliers, how much each, by which method,
+which of them cannot be paid, who released it, and what came back. That is a record
+rather than a serialiser, so it exists now and the export lands on top of it. The
+absence is stated on the screen where somebody would look for a download button.
+
+**A run is one month and one method.** A bank transfer file, a cheque book and a cash
+counter are three different jobs done on three different days and reconciled from three
+different pieces of paper; one run covering all of them shows a total nobody in the
+office is responsible for.
+
+**`month-not-published` is the load-bearing refusal.** A run against an open month pays
+against figures that can still change — a rate correction, a voided delivery, an
+approved change request — and money that has left the factory cannot be re-derived.
+
+**A line that cannot be paid is held, not dropped.** A supplier owed money with no
+account on file stays on the run, counted and carrying the reason, because a line
+silently filtered out is a supplier who is not paid and nobody notices until they
+telephone. Held lines are excluded from the total and from the `paid / payable`
+progress, so a run can still reach `completed` — a run that could never finish is a run
+the office stops looking at.
+
+**The amount comes from the bill, never recomputed.** The bill is the record the
+supplier holds (AC-03); a payout that re-derived the figure would be a second answer to
+a question that already has one. Zero and negative accounts are not lines at all.
+
+**Four eyes on the release** (BR-501): `payouts` is `W` for the accountant and `A` for
+the manager, and because `approve` implies `write` a manager *could* prepare a run and
+release it — so the check is on `createdById`. And **reconciliation is the half systems
+leave out**: `paid` needs only a confirmation, `failed` needs a reason, and the
+asymmetry is the point — the supplier has not been paid, and the next person to pick the
+run up works entirely from that note.
+
+---
+
+## M8 Savings
+
+*What the factory is holding, and whose it is.* Read-only, by decision.
+
+The screen leads with the **balance as a liability**, because that is the question the
+office is asked and the figure an auditor reconciles against the bank. This is
+suppliers' money; a screen leading with "contributions this month" would read like
+revenue.
+
+**There is exactly one way a contribution is created: publishing a month.** A savings
+movement *is* the `savings` deduction on a published bill, credited at the moment the
+month closes — not when the bills are generated, because crediting a passbook off a
+draft would put money against a figure the office might still re-run. Two write paths
+for one movement would be two balances to reconcile, and the two that disagreed would be
+the supplier's passbook and their slip.
+
+Three consequences:
+
+- **The registry's balance follows the ledger.** `AdminSupplier.savingsBalance` (M2)
+  and the savings account row are one number, which is what AC-01 is about.
+- **The ledger is oldest-first**, which is part of the wire contract: a passbook is read
+  forward, and a running balance only means something in the order it accumulated.
+- **The rate is not set here.** It belongs to the supplier and moves through M9's queue,
+  which already carries the four-eyes rule and the audit trail. A row with an open
+  request links there rather than offering an edit, and shows the **active** rate until
+  it is decided.
+
+**Blocked on §21.9:** may a supplier withdraw, on what notice, and is interest paid?
+Until that is answered there is no withdrawal endpoint and no interest posting —
+`SavingsEntrySource` already carries `withdrawal` and `interest` so the answer adds
+endpoints rather than migrating a money table. Stated in the passbook, where somebody
+would look for the control.
+
+---
+
+## What is deliberately not built
+
+Three questions would each have produced a wrong build, so each is an absence with a
+reason on the screen rather than a guess:
+
+| § | Question | What is missing | Why not guess |
+| --- | --- | --- | --- |
+| 21.17 | What format does the bank accept? | The payout **file** | A serialiser written against a guessed format is a serialiser that gets thrown away |
+| 21.9 | May a supplier withdraw savings? | Withdrawals, interest | Moving somebody's savings on a rule nobody approved |
+| 21.10 | Who may set which deduction line? | A deduction **editor** | It decides who can change what a supplier is paid, which is a permission, not a form |
+| 21.8 | May a published bill be corrected? | Any post-publish change | The console assumes not. If the answer is yes, that is a new audited reversal endpoint — never a relaxation of BR-108's lock |
 
 ---
 
@@ -279,9 +436,6 @@ Ordered by what I would build next.
 | **M10 Inquiries** | Nothing external. §21.18 asks whether Resolved/Closed is the right pair — build with the two and add states as data |
 | **M11 / M12 Content** | Nothing external. si/en/ta tabs from `config.localization.contentLanguages`, with **missing translations visible to the editor** (AC-08) |
 | **M14 Configuration** | Nothing external. It is the other end of `GET /config`, and AC-12 says a new factory must go live through it without a code deploy |
-| **M5 Bills** | M4 is built, so the rate and the close exist. Still open: §21.8 — may a published bill be corrected? That decides whether `bills` is immutable. AC-03 requires field-for-field identity with the app's Home screen and the PDF |
-| **M6 Payouts** | **Blocked**: §21.17 — what format the factory's bank accepts (SLIPS / CEFTS / bank-specific CSV), and whether cheques print on pre-printed stock |
-| **M8 Savings** | **Blocked**: §21.9 — may a supplier withdraw, with what notice, is interest paid |
-| **M13 Notifications** | **Blocked**: §21.24 — does the office compose every send by hand, or does bill-published fire automatically off the publish step, and who may send free-text |
+| **M13 Notifications** | **Blocked**: §21.24 — does the office compose every send by hand, or does bill-published fire automatically off the publish step, and who may send free-text. M5 now gives the trigger a real event to hang off: `month.publish` is the moment a bill becomes a document a supplier can see |
 | **M15 Users & roles** | Nothing external, but it must edit the §12.1 matrix **as data** (see [rbac.md](./rbac.md)), and MFA enrolment belongs here |
 | **M16 Reports** | Needs the warehouse shape from §19.1 more than the report list. Run off a read replica (§19.5) |

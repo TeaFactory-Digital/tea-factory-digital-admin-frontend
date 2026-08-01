@@ -46,6 +46,17 @@ function useInvalidateMonth(monthKey: string) {
     // M3's day summaries carry `locked` and the stage, so they change with the
     // month even though no delivery did.
     void client.invalidateQueries({ queryKey: qk.deliveries.all });
+    /**
+     * M5's run goes stale on a rate change and its bills are stamped published on a
+     * close, and M8's ledger gains a month's contributions at that same moment.
+     *
+     * Named here rather than left to those screens because the event belongs to the
+     * month: a publish that only refreshed M4 would leave the bills grid showing
+     * drafts of documents suppliers can already see, and a savings balance a month
+     * behind the slip it came from.
+     */
+    void client.invalidateQueries({ queryKey: qk.bills.all });
+    void client.invalidateQueries({ queryKey: qk.savings.all });
     void client.invalidateQueries({ queryKey: qk.months.detail(monthKey) });
   };
 }

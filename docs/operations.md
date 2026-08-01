@@ -17,7 +17,7 @@ From the workspace root:
 | `npm run preview`    | Serves the built bundle                                                                   |
 | `npm run typecheck`  | `tsc --build` across all three projects                                                   |
 | `npm run lint`       | ESLint, including the white-label and layering rules                                      |
-| `npm run test`       | Vitest — 91 tests                                                                         |
+| `npm run test`       | Vitest — 131 tests                                                                        |
 | `npm run e2e`        | Playwright — 4 specs against the dev server. Needs `npx playwright install chromium` once |
 | `npm run e2e:demo`   | The same specs against the built demo bundle on a static server                           |
 | `npm run format`     | Prettier                                                                                  |
@@ -140,7 +140,7 @@ old binaries are in the field, and feature flags are the release valve.
 
 Layered so each layer tests what only it can.
 
-### Vitest — 91 tests
+### Vitest — 131 tests
 
 | File                           | Covers                                                                    |
 | ------------------------------ | ------------------------------------------------------------------------- |
@@ -148,7 +148,10 @@ Layered so each layer tests what only it can.
 | `changeRequests.test.tsx` (17) | M9 and M2 end to end against the mock API, through the real transport     |
 | `rbac.test.ts` (15)            | The §12.1 matrix, grant merging, four-eyes, the approval threshold        |
 | `money.test.ts` (13)           | `floor2`/`round2`, the credit basis, BR-107, account masking              |
-| `monthClose.test.ts` (10)      | M4: the rate, exception resolution, and all five publish refusals         |
+| `payouts.test.ts` (14)         | M6: every refusal money can hit — an unpublished month, four-eyes on the release, a draft that cannot be paid from, a failure with no reason — plus held lines staying counted and totals derived from lines |
+| `bills.test.ts` (13)           | M5: the slip's arithmetic as identities (AC-03), BR-107 balance, the whole-rupee/coins carry, re-generation, staleness, and the publish lock |
+| `monthClose.test.ts` (12)      | M4: the rate, exception resolution, and all seven publish refusals        |
+| `savings.test.ts` (11)         | M8: the balance tying to the ledger, the ledger tying to published bills, the registry tying to both (AC-01) — and AC-07's endpoint half |
 | `deliveries.test.ts` (9)       | M3: batch commit and its idempotent replay, per-row rejections, the void, `month-locked`, and the day totals the dashboard reads |
 | `listSorting.test.ts` (5)      | Server-side sort and pagination parameters                                |
 

@@ -10,9 +10,11 @@ import type {
   BankDetails,
   ChangeRequest,
   CreditFacility,
+  GreenLeafBill,
   NotificationCategory,
   PaymentMethod,
   RequestStatus,
+  SavingsLedgerEntry,
   Supplier,
 } from './app';
 import type { LanguageCode, RequestChannel } from '../constants';
@@ -557,6 +559,305 @@ export interface MonthSummary extends MonthCycleStatus {
   open: boolean;
 }
 
+/* ────────────────────────────── M5 Bills ────────────────────────────── */
+
+/**
+ * A bill as the console shows it: the app's `GreenLeafBill`, plus what the office
+ * needs and the supplier's phone never sees.
+ *
+ * It **extends** rather than restates, and that is AC-03: the console, the printed
+ * slip and the app's Home screen must be the same figures field for field. A
+ * console-shaped DTO alongside the app's would be two read models over one fact.
+ */
+export interface AdminBill extends GreenLeafBill {
+  supplierId: string;
+  /** The generation run this bill came out of, so a whole run can be found. */
+  runId: string;
+  generatedAt: string;
+  generatedByName: string;
+  /**
+   * `null` until the month is published — which is the moment the supplier can
+   * see it (BR-108). Before that a bill is the office's working figure.
+   */
+  publishedAt: string | null;
+  /** Payable, but nowhere to pay it. A payout run holds these lines rather than dropping them. */
+  hasBankDetails: boolean;
+}
+
+/**
+ * The grid row. Deliberately far smaller than the slip: an accountant checking a
+ * run reads down one column looking for the figure that is wrong, and a
+ * hundred-supplier month is a hundred rows, not a hundred slips.
+ */
+export interface BillListItem {
+  id: string;
+  supplierId: string;
+  supplierCode: string;
+  supplierName: string;
+  billNo: string;
+  monthKey: string;
+  totalKgs: number;
+  /** `null` while the auction result is not in (BR-102) — never `0`. */
+  grossAmount: number | null;
+  deductionsTotal: number;
+  finalBalance: number | null;
+  paymentMethod: PaymentMethod;
+  /** Deductions swallowed the account: nothing payable, and the shortfall carries. */
+  carriesDebt: boolean;
+  hasBankDetails: boolean;
+  /**
+   * BR-107: the itemized lines disagree with the stated total.
+   *
+   * Carried on the row rather than left for the console to work out, so the flag
+   * means the same thing to every consumer — and so a bill that does not add up is
+   * visible in the list instead of only on the slip nobody opened.
+   */
+  unbalanced: boolean;
+}
+
+/**
+ * One generation run over a month.
+ *
+ * A bill is a read model (api.md §16), so generating is **recomputing**, not
+ * writing a new fact — which is why re-running before the publish is normal rather
+ * than exceptional. The run exists as a record because the accountant needs to
+ * know *which* recomputation the figures on screen came from.
+ */
+export interface BillRun {
+  runId: string;
+  monthKey: string;
+  generatedAt: string;
+  generatedById: string;
+  generatedByName: string;
+  billCount: number;
+  totalKgs: number;
+  grossTotal: number;
+  deductionsTotal: number;
+  /** What a payout run would move, before any line is held. */
+  payableTotal: number;
+  savingsTotal: number;
+  /** Bills with nothing to pay this month. */
+  carryingDebt: number;
+  /** Payable, with no account to pay into — the AC-04 blocker, seen again. */
+  missingBankDetails: number;
+  /**
+   * The leaf has moved since this run.
+   *
+   * Derived by comparing the run's kilos with the month's live total, because a
+   * delivery voided after generation leaves a bill that is quietly wrong. Before
+   * the publish the fix is to re-run; after it, the month is immutable and there is
+   * nothing to be stale against.
+   */
+  stale: boolean;
+}
+
+/**
+ * A month as the money modules' pickers need it.
+ *
+ * Its own small endpoint rather than `GET /admin/months`, and the reason is the
+ * §12.1 matrix: the month list is gated on `ratesAndMonthClose`, which the clerk does
+ * not have — while `billing: R` gives them bills to read and therefore a month to
+ * choose. Widening the close endpoint to let a picker work would grant read access to
+ * the close itself, which is a permission decision made by accident.
+ */
+export interface BillMonth {
+  monthKey: string;
+  stage: MonthCycleStage;
+  /** Bills generated for it. `0` when the run has not been made yet. */
+  billCount: number;
+  /** `false` once published (BR-108). */
+  open: boolean;
+}
+
+export interface BillQuery extends PageQuery {
+  monthKey?: string;
+  /** Matches supplier code, name or bill number. */
+  q?: string;
+  /** The bills a payout run cannot pay. */
+  missingBankDetails?: boolean;
+  /** The bills that pay nothing this month. */
+  carriesDebt?: boolean;
+}
+
+/* ───────────────────────────── M6 Payouts ───────────────────────────── */
+
+/**
+ * `draft` prepared and editable · `approved` signed off by a manager and payable ·
+ * `completed` every line reconciled against what the bank or the counter did.
+ *
+ * There is no `cancelled`: a run that should not have existed is a run whose lines
+ * are all marked failed with a reason, and that is a record rather than an absence.
+ */
+export type PayoutRunStatus = 'draft' | 'approved' | 'completed';
+
+/**
+ * `pending` payable and not yet paid · `held` payable but unpayable *by this
+ * method* · `paid` · `failed`.
+ *
+ * `held` is the one that earns its place: a supplier with leaf and no bank details
+ * must be **visible and counted**, not filtered out. A line silently dropped is a
+ * supplier who is not paid and nobody notices until they telephone.
+ */
+export type PayoutLineStatus = 'pending' | 'held' | 'paid' | 'failed';
+
+/**
+ * A payout run: one month, one payment method.
+ *
+ * Split by method on purpose. A bank transfer file, a cheque list and a cash sheet
+ * are three different physical things the office does, on three different days,
+ * reconciled from three different pieces of paper — and one run covering all three
+ * would show a total nobody in the office is responsible for.
+ */
+export interface PayoutRun {
+  id: string;
+  monthKey: string;
+  method: PaymentMethod;
+  status: PayoutRunStatus;
+  lineCount: number;
+  /** Lines this method can actually move. */
+  payableCount: number;
+  heldCount: number;
+  paidCount: number;
+  failedCount: number;
+  /** The payable total. Held lines are excluded — they are not money going out. */
+  totalAmount: number;
+  paidAmount: number;
+  createdAt: string;
+  createdById: string;
+  createdByName: string;
+  approvedAt: string | null;
+  approvedById: string | null;
+  approvedByName: string | null;
+  /** Every line reconciled, or `null` while any remain. */
+  completedAt: string | null;
+}
+
+/**
+ * One supplier's payment inside a run.
+ *
+ * `amount` is copied from the **bill**, never re-derived. The bill is the record
+ * the supplier holds (AC-03), and a payout that recomputed the figure would be a
+ * second answer to a question that already has one.
+ */
+export interface PayoutLine {
+  id: string;
+  runId: string;
+  /** The bill this pays. A payout line with no bill is a payment with no basis. */
+  billId: string;
+  supplierId: string;
+  supplierCode: string;
+  supplierName: string;
+  amount: number;
+  method: PaymentMethod;
+  /** Masked (§20.4). Revealing a number is M2's audited call, never a grid column. */
+  bankName: string | null;
+  branchName: string | null;
+  accountNumber: string | null;
+  status: PayoutLineStatus;
+  /** Why it is held, or why the bank refused it. Mandatory on `failed`. */
+  reason: string | null;
+  paidAt: string | null;
+  markedByName: string | null;
+}
+
+export interface PayoutRunQuery extends PageQuery {
+  monthKey?: string;
+  status?: PayoutRunStatus;
+}
+
+export interface PayoutLineQuery extends PageQuery {
+  status?: PayoutLineStatus;
+  q?: string;
+}
+
+/** Reconciliation against what actually happened. A failure needs a reason. */
+export interface PayoutLineMark {
+  status: 'paid' | 'failed';
+  reason?: string;
+}
+
+/* ───────────────────────────── M8 Savings ───────────────────────────── */
+
+/**
+ * A supplier's savings account, as the office sees it.
+ *
+ * The balance is a **liability**, not factory income: this is the supplier's money,
+ * deducted from their bill at their own approved rate and held. Which is why the
+ * office is never offered a control that spends it here — see `SavingsSummary`.
+ */
+export interface SavingsAccount {
+  supplierId: string;
+  supplierCode: string;
+  supplierName: string;
+  /** The **active** rate (AC-01). A pending change shows as pending, never applied. */
+  savingsPerKg: number;
+  balance: number;
+  lastContributionMonth: string | null;
+  lastContributionAmount: number | null;
+  /** An open savings-rate request, so the row can link straight into M9's queue. */
+  pendingRateChangeId: string | null;
+}
+
+export interface SavingsAccountQuery extends PageQuery {
+  q?: string;
+  /** `true` for the accounts on `savingsPerKg: 0` — opted out, not absent. */
+  optedOut?: boolean;
+}
+
+/**
+ * Where a movement came from.
+ *
+ * `billDeduction` is the only one the console can produce today. `withdrawal` and
+ * `interest` are in the vocabulary because the **ledger shape must not change**
+ * when §21.9 is answered — whether a supplier may withdraw, on what notice, and
+ * whether interest is paid is a policy question, and a ledger that has to grow a
+ * column to answer it is a migration on money data.
+ */
+export type SavingsEntrySource =
+  | 'openingBalance'
+  | 'billDeduction'
+  | 'adjustment'
+  | 'withdrawal'
+  | 'interest';
+
+/**
+ * One movement, extending the app's ledger row.
+ *
+ * **Oldest first** on the wire, which is part of the contract (types/app.ts): a
+ * passbook is read forward, and a running `balance` only makes sense in the order
+ * it accumulated.
+ */
+export interface AdminSavingsLedgerEntry extends SavingsLedgerEntry {
+  id: string;
+  supplierId: string;
+  source: SavingsEntrySource;
+  /** The bill the deduction came from, when it came from one. */
+  billId: string | null;
+  recordedAt: string;
+  note: string | null;
+}
+
+/**
+ * The scheme across the factory, for one month.
+ *
+ * `balanceTotal` leads because it is the question the office is actually asked —
+ * "how much are we holding" — and because it is the figure an auditor reconciles
+ * against the bank. The trend is oldest-first: charts read left to right.
+ */
+export interface SavingsSummary {
+  monthKey: string;
+  /** What the factory holds on suppliers' behalf. */
+  balanceTotal: number;
+  accountCount: number;
+  /** On `savingsPerKg: 0` — a real answer, not a missing one. */
+  optedOutCount: number;
+  contributedThisMonth: number;
+  contributingSuppliers: number;
+  /** `null` when the month has no published bills to contribute from. */
+  averagePerKg: number | null;
+  trend: Array<{ monthKey: string; contributed: number; balanceTotal: number }>;
+}
+
 /* ───────────────────────────── M17 Audit log ───────────────────────────── */
 
 /**
@@ -718,6 +1019,23 @@ export const ADMIN_ERROR_CODES = [
   'already-resolved',
   'already-published',
   'month-mismatch',
+
+  /* M5 Bills. `bills-unbalanced` is a refusal to *generate*, not a warning:
+     itemized lines that disagree with their total (BR-107) must never reach a
+     supplier's slip, and finding it after the publish is finding it too late. */
+  'bills-missing',
+  'bills-unbalanced',
+  /** The leaf moved after the run: publishing would freeze the wrong figures. */
+  'bills-stale',
+
+  /* M6 Payouts. `month-not-published` is the load-bearing one: a run against an
+     open month pays against figures that can still change. */
+  'month-not-published',
+  'run-exists',
+  'already-approved',
+  'run-not-approved',
+  'no-payable-lines',
+  'line-not-payable',
 ] as const;
 
 export type AdminErrorCode = (typeof ADMIN_ERROR_CODES)[number];

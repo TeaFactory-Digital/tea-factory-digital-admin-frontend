@@ -34,15 +34,21 @@ docs/         Architecture, the API contract, and what is deliberately unfinishe
 ```
 
 **Built:** M1 Dashboard · M2 Suppliers · **M3 Leaf collection** · **M4 Rates &
-month close** · M9 Change requests · M17 Audit log, on a foundation of runtime
-white-labelling, a separate console auth realm with MFA, and capability-based
-access control. The other 11 modules from §18.1 appear in the sidebar as
-_Planned_ rows — see [docs/modules.md](./docs/modules.md).
+month close** · **M5 Bills** · **M6 Payouts** · **M8 Savings** · M9 Change
+requests · M17 Audit log, on a foundation of runtime white-labelling, a separate
+console auth realm with MFA, and capability-based access control. The other 8
+modules from §18.1 appear in the sidebar as _Planned_ rows — see
+[docs/modules.md](./docs/modules.md).
 
 M3 and M4 are the pair §18.2 calls the ones the project succeeds or fails on: the
 leaf is recorded at the weighing point in one keyboard-driven session per day, and
 the month is closed on a rate that a second person publishes, with every open
 exception resolved by name first.
+
+M5, M6 and M8 are the chain those two feed, and they are one slice because they are
+one fact: a bill is a read model over the leaf and the rate, a payout line pays a
+bill, and a savings contribution *is* a bill's savings deduction. Nothing is derived
+twice — which is what stops the office reconciling the console against itself.
 
 **The backend does not exist yet.** The console runs against an in-browser mock
 that enforces every rule the real API must, and
@@ -61,8 +67,8 @@ switch to it.
 | `npm run build:demo` | Demo bundle — production build, mock API on, for preview hosting |
 | `npm run typecheck`  | `tsc --build`, all three projects                                |
 | `npm run lint`       | Includes the white-label and layering rules                      |
-| `npm run test`       | Vitest — 91 tests                                                |
-| `npm run e2e`        | Playwright — 4 specs (`npx playwright install chromium` once)    |
+| `npm run test`       | Vitest — 131 tests                                               |
+| `npm run e2e`        | Playwright — 7 specs (`npx playwright install chromium` once)    |
 | `npm run e2e:demo`   | The same specs against the built demo bundle                     |
 
 ---

@@ -18,29 +18,42 @@
  */
 
 import type {
+  AdminBill,
   AdminChangeRequest,
+  AdminSavingsLedgerEntry,
   AdminSupplier,
   AuditEntry,
+  BillRun,
   CapabilityGrants,
   CollectionDaySummary,
   ConsoleUser,
   DashboardSummary,
+  DeductionLines,
   Delivery,
+  FactoryInfo,
   MonthCycleStage,
   MonthException,
   MonthExceptionType,
   MonthlyRate,
+  PaymentMethod,
+  PayoutLine,
+  PayoutRun,
   RuntimeConfig,
   SupplierListItem,
 } from '@tfd/domain';
 import {
   OUTLIER_KG_FLOOR_KG,
+  billNumberFor,
   colomboDayOf,
+  computeBillAmounts,
   grantsFromRoles,
   isOutlierKg,
   maskAccountNumber,
   monthKeyOf,
+  round2,
   roundKg,
+  savingsDeductionFor,
+  slipMonthLabel,
   summariseKgs,
 } from '@tfd/domain';
 
@@ -214,7 +227,22 @@ function makeSupplier(index: number): AdminSupplier {
         }
       : undefined,
     hasBankDetails: hasBank,
-    paymentMethod: hasBank ? (index % 4 === 0 ? 'cheque' : 'bankTransfer') : 'cash',
+    /**
+     * One in eighteen is marked **`bankTransfer` with no account on file**.
+     *
+     * Not a fixture quirk — it is the real case AC-04's `missingBankDetails`
+     * exception exists for: the office recorded "pay by transfer" when the
+     * supplier registered and never received the passbook. It is also the only
+     * way M6's `held` line status happens, and a status nothing in the fixture
+     * can reach is a status nobody notices is broken.
+     */
+    paymentMethod: hasBank
+      ? index % 4 === 0
+        ? 'cheque'
+        : 'bankTransfer'
+      : index % 18 === 0
+        ? 'bankTransfer'
+        : 'cash',
     savingsPerKg: [0, 0, 5, 10, 15, 20, 25][index % 7]!,
     savingsBalance: Math.round(between(0, 180000) * 100) / 100,
     creditBalances: {
@@ -437,8 +465,38 @@ export const TODAY = colomboDayOf(NOW);
 
 export const currentMonthKey = monthKeyOf(TODAY);
 
-/** How many days of history the fixture carries. Matches the dashboard's trend. */
+/** The window the dashboard's intake trend covers. */
 const COLLECTION_DAYS = 14;
+
+/**
+ * How many months the fixture carries, the current one included.
+ *
+ * Declared here rather than beside the M4 month records below, because **M3's
+ * delivery rows have to span the same window.** A bill is a read model over those
+ * rows and a monthly rate (api.md §16), so a published month with no leaf in it
+ * generates no bills — and M5, M6 and M8 would each render an empty screen that
+ * reads as a broken module rather than as a fixture with nothing in it.
+ */
+const MONTHS_OF_HISTORY = 4;
+
+function monthKeyBack(months: number): string {
+  const date = new Date(Date.UTC(NOW.getUTCFullYear(), NOW.getUTCMonth() - months, 15));
+  return date.toISOString().slice(0, 7);
+}
+
+/** The first Colombo-local day the fixture records leaf on. */
+const HISTORY_START_DAY = `${monthKeyBack(MONTHS_OF_HISTORY - 1)}-01`;
+
+/** Every factory day from the fixture's start to today, oldest first. */
+function fixtureDays(): string[] {
+  const days: string[] = [];
+  for (let back = 0; back < 400; back += 1) {
+    const date = colomboDayOf(new Date(NOW.getTime() - back * 86_400_000));
+    if (date < HISTORY_START_DAY) break;
+    days.push(date);
+  }
+  return days.reverse();
+}
 
 /**
  * The §13 stage of a month.
@@ -490,17 +548,15 @@ function makeDeliveries(): Delivery[] {
   const rows: Delivery[] = [];
   let sequence = 0;
 
-  for (let back = COLLECTION_DAYS - 1; back >= 0; back -= 1) {
-    const date = colomboDayOf(new Date(NOW.getTime() - back * 86_400_000));
-
+  fixtureDays().forEach((date, dayIndex) => {
     // Sunday: the factory does not weigh. An empty day in the trend is a real
     // day off, not a hole in the fixture — and a chart that skipped it would
     // imply the office lost a day's leaf.
-    if (weekdayOf(date) === 0) continue;
+    if (weekdayOf(date) === 0) return;
 
     // A scale file every fourth day, so the `source` column and the import path
     // both have something in the fixture to show.
-    const source = back % 4 === 0 ? ('scaleFile' as const) : ('manual' as const);
+    const source = dayIndex % 4 === 0 ? ('scaleFile' as const) : ('manual' as const);
 
     for (const supplier of supplyingSuppliers) {
       // Not every supplier plucks every day.
@@ -533,7 +589,7 @@ function makeDeliveries(): Delivery[] {
         });
       }
     }
-  }
+  });
 
   return rows;
 }
@@ -547,7 +603,12 @@ export const mockDeliveries: Delivery[] = makeDeliveries();
  * `includeVoided` filter has something to return. A void is not a delete (§12.1):
  * the row stays, with who withdrew it and why.
  */
-const voidable = mockDeliveries.find((row) => daysSince(row.recordedAt) > 2);
+const voidable = mockDeliveries.find(
+  // In the **open** month, deliberately. A voided row in a published month is a
+  // row nothing in the console could have produced, since BR-108 refuses a void
+  // there — and a fixture that shows an impossible state teaches the wrong rule.
+  (row) => row.monthKey === currentMonthKey && daysSince(row.recordedAt) > 2,
+);
 if (voidable) {
   voidable.voidedAt = colomboInstant(voidable.date, 17, 30);
   voidable.voidedByName = 'Sunil Rathnayake';
@@ -582,14 +643,6 @@ export interface MonthRecord {
   publishedAt: string | null;
   publishedByName: string | null;
   publishedById: string | null;
-}
-
-/** How many months of history the fixture carries, current one included. */
-const MONTHS_OF_HISTORY = 4;
-
-function monthKeyBack(months: number): string {
-  const date = new Date(Date.UTC(NOW.getUTCFullYear(), NOW.getUTCMonth() - months, 15));
-  return date.toISOString().slice(0, 7);
 }
 
 /**
@@ -1002,8 +1055,16 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
       location: 'Nuwara Eliya, Sri Lanka',
       supportEmail: 'office@highlandestate.lk',
     },
-    // Reduced feature set: no credit against income history, no fertilizer on
-    // credit, no push. The sidebar must lose those rows entirely.
+    /**
+     * Reduced feature set: no credit against income history, no fertilizer on
+     * credit, no push. The sidebar must lose those rows entirely.
+     *
+     * **And no payouts**, which is the only tenant in the fixture with a
+     * console-side surface turned off. A small estate that counts cash out at the
+     * counter buys no bank-file module — and until one tenant had the flag off, the
+     * API half of AC-07 ("a flag off removes the surface *and* the endpoint
+     * refuses") had nothing to be tested against.
+     */
     flags: {
       enableSavings: true,
       enableAdvances: true,
@@ -1013,7 +1074,7 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
       enableNews: false,
       enablePushNotifications: false,
       enablePromoBanner: false,
-      enablePayouts: true,
+      enablePayouts: false,
       enableReports: false,
     },
     savings: { perKgOptions: [0, 15, 30] },
@@ -1035,3 +1096,627 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
 };
 
 export const MOCK_TENANT_IDS = Object.keys(mockConfigs);
+
+/* ────────────────────────────── M5 Bills ────────────────────────────── */
+
+/**
+ * The factory identity printed on a bill.
+ *
+ * Read from the tenant config rather than restated, because it is the same
+ * `FactoryInfo` the app renders on the supplier's own copy of the slip (AC-03) —
+ * two sources for a registration number is two documents that disagree.
+ */
+export const billFactoryOf = (tenantId: string): FactoryInfo =>
+  (mockConfigs[tenantId] ?? mockConfigs.galaboda!).factory;
+
+const supplierIndexOf = (id: string) => Number(id.replace('sup-', '')) || 0;
+
+const daysInMonth = (monthKey: string): number => {
+  const [year, month] = monthKey.split('-').map(Number);
+  return year && month ? new Date(Date.UTC(year, month, 0)).getUTCDate() : 31;
+};
+
+/**
+ * The nine deduction lines held against one month's account.
+ *
+ * **The values here stand in for a policy decision that has not been made.**
+ * §21.10 — which lines the office may set per supplier per month, and who may set
+ * them — is unanswered, so the console offers no editor for these and the mock
+ * derives them deterministically from the supplier record. What is *not* a
+ * placeholder is the shape: nine lines in the printed slip's order, with the total
+ * recomputed from them rather than stated alongside them (BR-107).
+ *
+ * Two of them are real derivations the API must reproduce rather than invent:
+ *
+ *  - **`savings`** is `kilos × the supplier's approved rate`. It is also M8's only
+ *    inbound movement, so a different figure here would be a savings balance that
+ *    disagrees with the bill it came from.
+ *  - **`previousDebts`** is last month's unpaid balance. It is what makes a debt
+ *    actually carry rather than quietly vanish at the month boundary.
+ */
+function deductionLinesFor(
+  supplier: AdminSupplier,
+  totalKgs: number,
+  grossAmount: number,
+  previousDebts: number,
+): DeductionLines {
+  const index = supplierIndexOf(supplier.id);
+
+  /**
+   * Credit is settled in instalments against the account it was advanced on,
+   * capped as a share of the gross.
+   *
+   * The cap is what stops a facility swallowing a whole month: a supplier whose
+   * entire account went to a loan repayment is paid nothing, telephones the
+   * office, and is right to.
+   */
+  const instalment = (balance: number, share: number) =>
+    balance <= 0 ? 0 : round2(Math.min(balance, grossAmount * share));
+
+  return {
+    // A per-kilo transport charge for collection from the estate.
+    transportCharges: round2(totalKgs * 2.5),
+    // Made tea issued to the supplier against their account.
+    tea: index % 5 === 0 ? 450 : 0,
+    savings: savingsDeductionFor(totalKgs, supplier.savingsPerKg),
+    loansAdvance: instalment(supplier.creditBalances.loan, 0.2),
+    advance: instalment(supplier.creditBalances.advance, 0.3),
+    manure: instalment(supplier.creditBalances.manure, 0.15),
+    otherCards: index % 7 === 0 ? 260 : 0,
+    stamps: 25,
+    previousDebts,
+  };
+}
+
+/** Everything a run needs to recompute a month's bills. */
+export interface BillGenerationContext {
+  monthKey: string;
+  runId: string;
+  generatedAt: string;
+  generatedById: string;
+  generatedByName: string;
+  /** Non-null only for a month that is already published. */
+  publishedAt: string | null;
+  deliveries: Delivery[];
+  suppliers: AdminSupplier[];
+  rate: MonthlyRate | null;
+  factory: FactoryInfo;
+  /** Cents the previous account could not pay in whole rupees, per supplier id. */
+  coinsBroughtForward: Map<string, number>;
+  /** Unpaid balance carried from the previous account, per supplier id. */
+  debtBroughtForward: Map<string, number>;
+  /** Savings balance as at the start of this month, per supplier id. */
+  savingsBefore: Map<string, number>;
+}
+
+/**
+ * Recompute a month's bills from the leaf and the rate.
+ *
+ * Shared between the fixture and the `generate` handler on purpose: the bills a
+ * developer sees on first load and the ones the office produces by clicking must
+ * be the same objects, or the screen is tested against something the API never
+ * returns.
+ *
+ * Ordered by supplier code, which is also the order bill numbers are handed out
+ * in — the office reads a run down the same column the paper ledgers were kept in,
+ * and a re-run must not renumber everybody because one supplier stopped plucking.
+ */
+export function generateBills(context: BillGenerationContext): AdminBill[] {
+  const rows = context.deliveries.filter(
+    (row) => row.monthKey === context.monthKey && !row.voidedAt,
+  );
+
+  const bySupplier = new Map<string, Delivery[]>();
+  for (const row of rows) {
+    const list = bySupplier.get(row.supplierId);
+    if (list) list.push(row);
+    else bySupplier.set(row.supplierId, [row]);
+  }
+
+  const suppliers = context.suppliers
+    .filter((supplier) => bySupplier.has(supplier.id))
+    .sort((a, b) => a.supplierCode.localeCompare(b.supplierCode));
+
+  const dayCount = daysInMonth(context.monthKey);
+
+  return suppliers.map((supplier, index) => {
+    const deliveries = bySupplier.get(supplier.id)!;
+    const totalKgs = summariseKgs(deliveries).totalKgs;
+
+    /**
+     * The day grid the slip prints.
+     *
+     * Every day of the month is present, with `null` where nothing was weighed —
+     * `null` rather than `0`, because a day the supplier did not pluck and a day
+     * they brought nothing are the same thing on paper and neither is a zero the
+     * office would have to explain (BR-102).
+     */
+    const perDay = new Map<number, number>();
+    for (const row of deliveries) {
+      const day = Number(row.date.slice(8, 10));
+      perDay.set(day, roundKg((perDay.get(day) ?? 0) + row.kgs));
+    }
+    const dailySupply = Array.from({ length: dayCount }, (_, i) => ({
+      day: i + 1,
+      kgs: perDay.get(i + 1) ?? null,
+    }));
+
+    // Computed the same way `computeBillAmounts` will, purely so the credit
+    // instalments have a gross to be capped against.
+    const grossEstimate = context.rate
+      ? round2(
+          round2(totalKgs * context.rate.ratePerKg) +
+            round2(totalKgs * context.rate.extraRatePerKg),
+        )
+      : 0;
+
+    const coinsBroughtForward = round2(context.coinsBroughtForward.get(supplier.id) ?? 0);
+    const deductions = deductionLinesFor(
+      supplier,
+      totalKgs,
+      grossEstimate,
+      round2(context.debtBroughtForward.get(supplier.id) ?? 0),
+    );
+
+    const amounts = computeBillAmounts({
+      totalKgs,
+      ratePerKg: context.rate?.ratePerKg ?? null,
+      extraRatePerKg: context.rate?.extraRatePerKg ?? null,
+      coinsBroughtForward,
+      deductions,
+    });
+
+    const savingsPrevious = round2(context.savingsBefore.get(supplier.id) ?? 0);
+
+    return {
+      id: `bill-${context.monthKey}-${supplier.id}`,
+      supplierId: supplier.id,
+      runId: context.runId,
+      generatedAt: context.generatedAt,
+      generatedByName: context.generatedByName,
+      publishedAt: context.publishedAt,
+      hasBankDetails: supplier.hasBankDetails,
+
+      factory: context.factory,
+      supplierCode: supplier.supplierCode,
+      supplierName: supplier.name,
+      billNo: billNumberFor(context.monthKey, index + 1),
+      billDateTime: context.generatedAt,
+      month: slipMonthLabel(context.monthKey),
+      monthKey: context.monthKey,
+      year: Number(context.monthKey.slice(0, 4)),
+
+      auctionResultAvailable: amounts.auctionResultAvailable,
+      ratePerKg: context.rate?.ratePerKg ?? null,
+      extraRatePerKg: context.rate?.extraRatePerKg ?? null,
+      totalRatePerKg: amounts.totalRatePerKg,
+      totalKgs,
+
+      coinsBroughtForward,
+      greenLeafAmount: amounts.greenLeafAmount,
+      extraPayment: amounts.extraPayment,
+      grossAmount: amounts.grossAmount,
+
+      deductions: amounts.deductions,
+
+      balanceAmount: amounts.balanceAmount,
+      coinsCarriedForward: amounts.coinsCarriedForward,
+      finalBalance: amounts.finalBalance,
+
+      carryForward: {
+        nextMonthDeb: amounts.nextMonthDeb,
+        // Slip wording: this line is the **advance** balance (§9.4), which is why
+        // it is not simply `creditBalances.loan`.
+        loanBalance: round2(
+          Math.max(0, supplier.creditBalances.advance - amounts.deductions.advance),
+        ),
+        manureBalance: round2(
+          Math.max(0, supplier.creditBalances.manure - amounts.deductions.manure),
+        ),
+        loanInterest: round2(supplier.creditBalances.loan * 0.01),
+      },
+      savingsSummary: {
+        thisMonth: amounts.deductions.savings,
+        previous: savingsPrevious,
+        toDate: round2(savingsPrevious + amounts.deductions.savings),
+      },
+
+      dailySupply,
+      paymentMethod: supplier.paymentMethod,
+    } satisfies AdminBill;
+  });
+}
+
+/** A run as the mock holds it. `stale` is recomputed on read, never stored. */
+export type BillRunRecord = Omit<BillRun, 'stale'>;
+
+/** The run summary for a set of bills. */
+export function summariseBillRun(
+  monthKey: string,
+  runId: string,
+  bills: AdminBill[],
+  meta: { generatedAt: string; generatedById: string; generatedByName: string },
+): BillRunRecord {
+  return {
+    runId,
+    monthKey,
+    ...meta,
+    billCount: bills.length,
+    totalKgs: roundKg(bills.reduce((sum, bill) => sum + bill.totalKgs, 0)),
+    grossTotal: round2(bills.reduce((sum, bill) => sum + (bill.grossAmount ?? 0), 0)),
+    deductionsTotal: round2(bills.reduce((sum, bill) => sum + bill.deductions.total, 0)),
+    payableTotal: round2(bills.reduce((sum, bill) => sum + (bill.finalBalance ?? 0), 0)),
+    savingsTotal: round2(bills.reduce((sum, bill) => sum + bill.deductions.savings, 0)),
+    carryingDebt: bills.filter((bill) => (bill.finalBalance ?? 0) <= 0).length,
+    // Payable, with nowhere to pay it. The AC-04 blocker seen from the other end:
+    // M4 raises it as an exception, and this is what it costs if it is waved through.
+    missingBankDetails: bills.filter(
+      (bill) => (bill.finalBalance ?? 0) > 0 && !bill.hasBankDetails,
+    ).length,
+  };
+}
+
+/* ───────────────────────────── M6 Payouts ───────────────────────────── */
+
+/**
+ * Does this payment method need a bank account to move money?
+ *
+ * Cheque and cash are handed over at the counter, so a missing account number does
+ * not stop them. A transfer without one is a line that cannot be paid — and it is
+ * **held**, not dropped: a supplier quietly filtered out of a run is a supplier who
+ * is not paid and nobody notices until they telephone.
+ */
+export const methodNeedsAccount = (method: PaymentMethod): boolean => method === 'bankTransfer';
+
+/**
+ * The lines a run would carry.
+ *
+ * Only **payable** bills become lines. A zero or negative account is not a payment
+ * of nothing — it is an account that carries its shortfall forward (`nextMonthDeb`),
+ * and a bank file cannot express a negative transfer or a cheque be written for it.
+ */
+export function buildPayoutLines(
+  runId: string,
+  method: PaymentMethod,
+  bills: AdminBill[],
+  suppliers: AdminSupplier[],
+  sequence: () => string,
+): PayoutLine[] {
+  return bills
+    .filter((bill) => bill.paymentMethod === method)
+    .filter((bill) => (bill.finalBalance ?? 0) > 0)
+    .map((bill) => {
+      const supplier = suppliers.find((candidate) => candidate.id === bill.supplierId);
+      const held = methodNeedsAccount(method) && !supplier?.hasBankDetails;
+
+      return {
+        id: `pol-${sequence()}`,
+        runId,
+        billId: bill.id,
+        supplierId: bill.supplierId,
+        supplierCode: bill.supplierCode,
+        supplierName: bill.supplierName,
+        // Copied from the bill, never re-derived: the bill is the record the
+        // supplier holds, and a second derivation is a second answer.
+        amount: bill.finalBalance!,
+        method,
+        // Masked at the source (§20.4) — the full number is M2's audited reveal.
+        bankName: supplier?.bankDetails?.bankName ?? null,
+        branchName: supplier?.bankDetails?.branchName ?? null,
+        accountNumber: supplier?.bankDetails?.accountNumber ?? null,
+        status: held ? 'held' : 'pending',
+        reason: held ? 'No account on file — collect the passbook before paying.' : null,
+        paidAt: null,
+        markedByName: null,
+      } satisfies PayoutLine;
+    });
+}
+
+/** The counts and totals on a run, derived from its lines rather than stored. */
+export function summarisePayoutRun(run: PayoutRun, lines: PayoutLine[]): PayoutRun {
+  const payable = lines.filter((line) => line.status !== 'held');
+  const paid = lines.filter((line) => line.status === 'paid');
+
+  return {
+    ...run,
+    lineCount: lines.length,
+    payableCount: payable.length,
+    heldCount: lines.filter((line) => line.status === 'held').length,
+    paidCount: paid.length,
+    failedCount: lines.filter((line) => line.status === 'failed').length,
+    // Held lines are excluded: they are not money leaving the factory.
+    totalAmount: round2(payable.reduce((sum, line) => sum + line.amount, 0)),
+    paidAmount: round2(paid.reduce((sum, line) => sum + line.amount, 0)),
+  };
+}
+
+/* ───────────────────────────── M8 Savings ───────────────────────────── */
+
+/**
+ * The savings ledger, **derived from published bills**.
+ *
+ * There is no second write path, and that is the module's load-bearing decision: a
+ * contribution *is* the `savings` deduction on a published bill. A ledger the
+ * office could also post to directly would be a balance that disagrees with the
+ * bills it was supposedly built from, and the disagreement would surface when a
+ * supplier asks why their passbook and their slip differ.
+ *
+ * Oldest first, which is part of the wire contract (types/app.ts): a passbook is
+ * read forward, and a running balance only means something in the order it
+ * accumulated.
+ */
+export function buildSavingsLedger(
+  suppliers: AdminSupplier[],
+  bills: AdminBill[],
+  openingBalances: Map<string, number>,
+): AdminSavingsLedgerEntry[] {
+  const entries: AdminSavingsLedgerEntry[] = [];
+  let sequence = 0;
+
+  const published = bills
+    .filter((bill) => bill.publishedAt !== null && bill.deductions.savings > 0)
+    .sort((a, b) => a.monthKey.localeCompare(b.monthKey));
+
+  const bySupplier = new Map<string, AdminBill[]>();
+  for (const bill of published) {
+    const list = bySupplier.get(bill.supplierId);
+    if (list) list.push(bill);
+    else bySupplier.set(bill.supplierId, [bill]);
+  }
+
+  for (const supplier of suppliers) {
+    const opening = round2(openingBalances.get(supplier.id) ?? 0);
+    let balance = opening;
+
+    if (opening > 0) {
+      sequence += 1;
+      entries.push({
+        id: `sav-${sequence}`,
+        supplierId: supplier.id,
+        // The opening sits in the month before the fixture's first, because it is
+        // what the passbook already said when this history starts.
+        monthKey: monthKeyBack(MONTHS_OF_HISTORY),
+        month: slipMonthLabel(monthKeyBack(MONTHS_OF_HISTORY)),
+        amount: opening,
+        balance,
+        source: 'openingBalance',
+        billId: null,
+        recordedAt: daysAgo(MONTHS_OF_HISTORY * 30 + 5),
+        note: 'Balance carried in from the passbook.',
+      });
+    }
+
+    for (const bill of bySupplier.get(supplier.id) ?? []) {
+      balance = round2(balance + bill.deductions.savings);
+      sequence += 1;
+      entries.push({
+        id: `sav-${sequence}`,
+        supplierId: supplier.id,
+        monthKey: bill.monthKey,
+        month: bill.month,
+        amount: bill.deductions.savings,
+        balance,
+        source: 'billDeduction',
+        billId: bill.id,
+        recordedAt: bill.publishedAt!,
+        note: null,
+      });
+    }
+  }
+
+  return entries;
+}
+
+/* ──────────────── the fixture's bill, payout and savings history ──────────────── */
+
+/**
+ * Generate the history the money modules need to have anything to show.
+ *
+ * Chronological and **chained**, which is the whole reason it is one function
+ * rather than three independent fixtures: this month's `previousDebts` is last
+ * month's unpaid balance, this month's `coinsBroughtForward` is last month's
+ * remainder, and this month's savings `previous` is the running balance. A fixture
+ * that generated each month independently would show three months that do not add
+ * up — and "the carried figures do not tie" is precisely the bug M5 exists to make
+ * impossible.
+ */
+function seedMoneyHistory() {
+  const bills: AdminBill[] = [];
+  const runs: BillRunRecord[] = [];
+
+  const coins = new Map<string, number>();
+  const debts = new Map<string, number>();
+  const savings = new Map<string, number>();
+
+  /**
+   * A few suppliers start the fixture already owing the factory.
+   *
+   * Not decoration: **an account that owes more than it earned is the state a payout
+   * run must never turn into a negative bank line**, and nothing else in the fixture
+   * reaches it. The proportional deductions cannot — a credit instalment is capped as
+   * a share of the gross precisely so a facility cannot swallow a whole month — so the
+   * only honest route to it is a debt carried in from before this history starts.
+   *
+   * Sized to take several months of leaf to work off, which is what a large advance
+   * against income actually looks like, and which keeps the state visible in the
+   * newest published month rather than only the oldest.
+   */
+  for (const supplier of mockSuppliers) {
+    if (supplierIndexOf(supplier.id) % 19 !== 0) continue;
+    debts.set(supplier.id, 380_000 + supplierIndexOf(supplier.id) * 1_000);
+  }
+
+  /**
+   * The savings balance the registry already carries is treated as the **opening**
+   * balance, not as an independent figure.
+   *
+   * `mockSuppliers[].savingsBalance` is then recomputed from the ledger below, so
+   * M2's detail page and M8's account row are the same number. Two figures for one
+   * balance is the exact inconsistency AC-01 is about.
+   */
+  const openingBalances = new Map(
+    mockSuppliers.map((supplier) => [supplier.id, supplier.savingsBalance]),
+  );
+  for (const [id, balance] of openingBalances) savings.set(id, balance);
+
+  const publishedKeys = monthKeys
+    .filter((key) => mockMonths[key]?.stage === 'published')
+    .sort();
+
+  for (const monthKey of publishedKeys) {
+    const record = mockMonths[monthKey]!;
+    const runId = `run-${monthKey}`;
+    const generatedAt = record.publishedAt
+      ? new Date(new Date(record.publishedAt).getTime() - 3_600_000).toISOString()
+      : daysAgo(30);
+
+    const monthBills = generateBills({
+      monthKey,
+      runId,
+      generatedAt,
+      generatedById: 'usr-accountant-1',
+      generatedByName: 'Dilani Fonseka',
+      publishedAt: record.publishedAt,
+      deliveries: mockDeliveries,
+      suppliers: mockSuppliers,
+      rate: record.rate,
+      factory: billFactoryOf('galaboda'),
+      coinsBroughtForward: coins,
+      debtBroughtForward: debts,
+      savingsBefore: savings,
+    });
+
+    for (const bill of monthBills) {
+      coins.set(bill.supplierId, bill.coinsCarriedForward);
+      debts.set(bill.supplierId, bill.carryForward.nextMonthDeb);
+      savings.set(bill.supplierId, bill.savingsSummary.toDate);
+    }
+
+    bills.push(...monthBills);
+    runs.push(
+      summariseBillRun(monthKey, runId, monthBills, {
+        generatedAt,
+        generatedById: 'usr-accountant-1',
+        generatedByName: 'Dilani Fonseka',
+      }),
+    );
+  }
+
+  const ledger = buildSavingsLedger(mockSuppliers, bills, openingBalances);
+
+  // The registry's balance is the ledger's, not a second guess at it.
+  const finalBalances = new Map<string, number>();
+  for (const entry of ledger) finalBalances.set(entry.supplierId, entry.balance);
+  for (const supplier of mockSuppliers) {
+    supplier.savingsBalance = round2(finalBalances.get(supplier.id) ?? supplier.savingsBalance);
+  }
+
+  return { bills, runs, ledger, latestPublished: publishedKeys.at(-1) ?? null };
+}
+
+const history = seedMoneyHistory();
+
+export const mockBills: AdminBill[] = history.bills;
+export const mockBillRuns: BillRunRecord[] = history.runs;
+export const mockSavingsLedger: AdminSavingsLedgerEntry[] = history.ledger;
+
+/**
+ * Payout runs for the two most recent published months.
+ *
+ * Two, and in different states, because every status has to be reachable without
+ * anybody having to create it first: the older month is **completed** (what a
+ * finished run looks like), the latest is **approved** with a mix of paid, pending
+ * and failed lines (what a run being worked looks like), and its cheque run is left
+ * as a **draft** awaiting a manager. `held` arrives on its own, from the suppliers
+ * marked for transfer with no account on file.
+ */
+function seedPayoutRuns() {
+  const runs: PayoutRun[] = [];
+  const lines: PayoutLine[] = [];
+  let sequence = 0;
+  const nextSequence = () => String((sequence += 1));
+
+  const publishedKeys = monthKeys
+    .filter((key) => mockMonths[key]?.stage === 'published')
+    .sort()
+    .reverse();
+  const [latest, previous] = publishedKeys;
+
+  const add = (
+    monthKey: string,
+    method: PaymentMethod,
+    status: PayoutRun['status'],
+    ageDays: number,
+  ) => {
+    const id = `pay-${monthKey}-${method}`;
+    const monthBills = mockBills.filter((bill) => bill.monthKey === monthKey);
+    const runLines = buildPayoutLines(id, method, monthBills, mockSuppliers, nextSequence);
+    if (runLines.length === 0) return;
+
+    const approved = status !== 'draft';
+    const base: PayoutRun = {
+      id,
+      monthKey,
+      method,
+      status,
+      lineCount: 0,
+      payableCount: 0,
+      heldCount: 0,
+      paidCount: 0,
+      failedCount: 0,
+      totalAmount: 0,
+      paidAmount: 0,
+      createdAt: daysAgo(ageDays),
+      createdById: 'usr-accountant-1',
+      createdByName: 'Dilani Fonseka',
+      approvedAt: approved ? daysAgo(ageDays - 1) : null,
+      approvedById: approved ? 'usr-manager-1' : null,
+      approvedByName: approved ? 'Ruwan Jayasuriya' : null,
+      completedAt: null,
+    };
+
+    if (status === 'completed') {
+      for (const line of runLines) {
+        if (line.status === 'held') continue;
+        line.status = 'paid';
+        line.paidAt = daysAgo(ageDays - 2);
+        line.markedByName = 'Dilani Fonseka';
+      }
+      base.completedAt = daysAgo(ageDays - 2);
+    } else if (status === 'approved') {
+      // Part-worked: the office has been through the first stretch of the file and
+      // the bank refused one. That refusal is the state M6 has to make workable.
+      runLines.forEach((line, index) => {
+        if (line.status === 'held') return;
+        if (index % 3 === 0) {
+          line.status = 'paid';
+          line.paidAt = daysAgo(1);
+          line.markedByName = 'Dilani Fonseka';
+        } else if (index === 4) {
+          line.status = 'failed';
+          line.reason = 'Bank returned it — the account name does not match the supplier.';
+          line.markedByName = 'Dilani Fonseka';
+        }
+      });
+    }
+
+    lines.push(...runLines);
+    runs.push(summarisePayoutRun(base, runLines));
+  };
+
+  if (previous) add(previous, 'bankTransfer', 'completed', 34);
+  if (latest) {
+    add(latest, 'bankTransfer', 'approved', 5);
+    add(latest, 'cheque', 'draft', 4);
+  }
+
+  return { runs, lines };
+}
+
+const payouts = seedPayoutRuns();
+
+export const mockPayoutRuns: PayoutRun[] = payouts.runs;
+export const mockPayoutLines: PayoutLine[] = payouts.lines;
+
+/** The latest month with published bills — the default the money screens open on. */
+export const latestPublishedMonthKey: string | null = history.latestPublished;

@@ -33,6 +33,19 @@ const BY_CODE: Record<string, string> = {
   'already-resolved': 'error.alreadyResolved',
   'month-mismatch': 'error.monthMismatch',
   'batch-too-large': 'error.batchTooLarge',
+  // M5. `bills-missing` doubles as a *state* on the bills screen — a month that has
+  // not been generated yet — which is why the run card checks the code itself rather
+  // than rendering this string.
+  'bills-missing': 'error.billsMissing',
+  'bills-stale': 'error.billsStale',
+  'bills-unbalanced': 'error.billsUnbalanced',
+  // M6. Each of these is money that would otherwise have moved on the wrong basis.
+  'month-not-published': 'error.monthNotPublished',
+  'run-exists': 'error.runExists',
+  'already-approved': 'error.alreadyApproved',
+  'run-not-approved': 'error.runNotApproved',
+  'no-payable-lines': 'error.noPayableLines',
+  'line-not-payable': 'error.lineNotPayable',
   '403': 'error.forbidden',
   '404': 'error.notFound',
 };

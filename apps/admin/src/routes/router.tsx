@@ -17,7 +17,7 @@
 import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppShell } from '@/layout/AppShell';
-import { RequireAuth, RequireCapability } from '@/auth/guards';
+import { RequireAuth, RequireCapability, RequireFlag } from '@/auth/guards';
 import { SignInScreen } from '@/auth/SignInScreen';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
 
@@ -37,6 +37,23 @@ const DeliveriesScreen = lazy(() =>
 );
 const MonthCloseScreen = lazy(() =>
   import('@/modules/months/MonthCloseScreen').then((m) => ({ default: m.MonthCloseScreen })),
+);
+const BillsScreen = lazy(() =>
+  import('@/modules/bills/BillsScreen').then((m) => ({ default: m.BillsScreen })),
+);
+const BillDetailScreen = lazy(() =>
+  import('@/modules/bills/BillDetailScreen').then((m) => ({ default: m.BillDetailScreen })),
+);
+const PayoutsScreen = lazy(() =>
+  import('@/modules/payouts/PayoutsScreen').then((m) => ({ default: m.PayoutsScreen })),
+);
+const PayoutRunDetailScreen = lazy(() =>
+  import('@/modules/payouts/PayoutRunDetailScreen').then((m) => ({
+    default: m.PayoutRunDetailScreen,
+  })),
+);
+const SavingsScreen = lazy(() =>
+  import('@/modules/savings/SavingsScreen').then((m) => ({ default: m.SavingsScreen })),
 );
 const ChangeRequestsScreen = lazy(() =>
   import('@/modules/change-requests/ChangeRequestsScreen').then((m) => ({
@@ -105,6 +122,58 @@ export const router = createBrowserRouter([
           <RequireCapability capability="ratesAndMonthClose">
             <MonthCloseScreen />
           </RequireCapability>
+        ),
+      },
+      {
+        path: 'bills',
+        element: (
+          <RequireCapability capability="billing">
+            <BillsScreen />
+          </RequireCapability>
+        ),
+      },
+      {
+        path: 'bills/:id',
+        element: (
+          <RequireCapability capability="billing">
+            <BillDetailScreen />
+          </RequireCapability>
+        ),
+      },
+      /**
+       * Payouts and savings are **flag-gated as well as capability-gated**, and the
+       * flag is checked first — a factory that does not use a feature is not a
+       * permission question, and asking it in the other order shows a manager at a
+       * cash-only factory a bank-transfer screen they are entitled to but cannot use.
+       */
+      {
+        path: 'payouts',
+        element: (
+          <RequireFlag flag="enablePayouts">
+            <RequireCapability capability="payouts">
+              <PayoutsScreen />
+            </RequireCapability>
+          </RequireFlag>
+        ),
+      },
+      {
+        path: 'payouts/:id',
+        element: (
+          <RequireFlag flag="enablePayouts">
+            <RequireCapability capability="payouts">
+              <PayoutRunDetailScreen />
+            </RequireCapability>
+          </RequireFlag>
+        ),
+      },
+      {
+        path: 'savings',
+        element: (
+          <RequireFlag flag="enableSavings">
+            <RequireCapability capability="billing">
+              <SavingsScreen />
+            </RequireCapability>
+          </RequireFlag>
         ),
       },
       {

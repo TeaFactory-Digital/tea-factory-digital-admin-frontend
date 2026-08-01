@@ -930,16 +930,281 @@ only safe reading of the button. And the four-eyes check is reachable precisely
 because `approve` implies `write` — a manager *could* enter a rate and then close
 the month on it, and this is what stops them.
 
+Two more refusals were added when M5 landed, and they sit **between**
+`exceptions-open` and the four-eyes check:
+
+```
+409 bills-missing   no run for this month              + details.monthKey
+409 bills-stale     the leaf moved after the run       + details.generatedAt, runKgs
+```
+
+The ordering is not arbitrary. Resolving an exception is what *changes* a bill —
+collecting a bank details form, deciding a change request — so bills built before the
+queue is clear are bills that need building again. The refusals report the **earliest
+unmet precondition**, which sends the accountant to the first thing to do rather than
+the last.
+
 **Publishing locks the month everywhere**: from that moment M3 refuses entries and
 voids in it with `month-locked`, and the rate can no longer be corrected. If the
 factory answers §21.8 with "a published bill may be corrected", that becomes a new
 endpoint and an audited reversal — never a relaxation of this lock.
 
-Audit: `month.publish`, with the rate and the note in `after`.
+**Publishing also does two things outside M4**, and they must be one transaction with
+the close: it stamps `publishedAt` on the month's bills (the moment they become
+documents the supplier can see) and posts each bill's `deductions.savings` to the
+savings ledger. A month that published its bills but not its savings would show a
+supplier a deduction with no matching passbook entry, which is the first thing they
+would query. The savings post must be **idempotent on `billId`** — a replayed request
+that credited a supplier twice is money.
+
+Audit: `month.publish`, with the rate, the bill count, the savings credited and the
+note in `after`.
 
 ---
 
-## 11. Not yet called by the console
+## 11. M5 Bills
+
+A bill is a **read model over §9's delivery rows and §10's rate** (api.md §16), not a
+table the office writes. Everything below follows from that, and `packages/domain/src/bill.ts`
+is the shared implementation — import it rather than re-deriving, because AC-03 requires
+the console, this API and the app's Home screen to agree field for field.
+
+### 11.1 `GET /admin/bill-months` → `BillMonth[]`
+
+```json
+[{ "monthKey": "2026-07", "stage": "billsGenerated", "billCount": 62, "open": true }]
+```
+
+Newest first. Its own endpoint rather than reusing §10.1, and the reason is the §12.1
+matrix: the month list is gated on `ratesAndMonthClose`, which the clerk does not have
+while still holding `billing: R`. **Authorize on `billing` OR `payouts`.** Widening the
+close endpoint so a month picker works would grant read access to the close itself,
+which is a permission decision made by accident.
+
+### 11.2 `GET /admin/bills` → `Paged<BillListItem>`
+
+Filters: `monthKey`, `q` (code, name or bill number), `missingBankDetails`,
+`carriesDebt`. Default order **by supplier code**, which is how the paper ledgers were
+kept and the order the office checks a run down.
+
+`unbalanced` on each row is BR-107 **checked, not assumed**: the nine itemized lines
+must equal `total`. Carry it on the row rather than leaving the console to work it out,
+so the flag means the same thing to every consumer.
+
+### 11.3 `GET /admin/bills/{id}` → `AdminBill`
+
+The full slip: the app's `GreenLeafBill` plus `supplierId`, `runId`, `generatedAt`,
+`generatedByName`, `publishedAt` and `hasBankDetails`.
+
+Three invariants the console renders and therefore depends on:
+
+- **`null` is not `0`** (BR-102). Without a rate every rate-derived field is `null`.
+- **All nine deduction lines are present, zeros included.** They are the document's
+  shape, and a missing line is a line the supplier asks about.
+- **Whole rupees out, cents carried.** `finalBalance` is an integer; the remainder is
+  `coinsCarriedForward` and becomes next month's `coinsBroughtForward`. An account whose
+  deductions exceed it pays `0` and carries `carryForward.nextMonthDeb` — never a
+  negative `finalBalance`, which a payout run cannot express.
+
+### 11.4 `GET /admin/months/{monthKey}/bill-run` → `BillRun`
+
+`404 bills-missing` when there is no run. A `404` rather than an empty run, because "the
+bills have not been built" and "they were built and came to nothing" are different
+answers and the close checklist branches on which one it got.
+
+`stale` is **derived at read time** by comparing the run's kilos with the month's live
+total — never stored. Staleness is a relationship between the run and the delivery rows,
+and a stored flag goes on lying the moment somebody voids a weighing. A published month
+is never stale.
+
+### 11.5 `POST /admin/months/{monthKey}/bills/generate` → `BillRun`
+
+```json
+→ { "monthKey": "2026-07" }
+```
+
+`billing: write`. **This may be repeated**, because it recomputes rather than writes a
+new fact: the auction result gets mistyped, a delivery gets voided, a change request is
+approved. A re-run **replaces** the month's bills rather than accumulating beside them —
+two runs for one open month is two sets of figures nobody can choose between.
+
+```
+409 month-locked      the month is published (BR-108)
+409 rate-missing      no auction result to build from
+409 month-mismatch    body.monthKey ≠ the path
+422 bills-unbalanced  a slip's lines disagree with its total  + details.billNos
+```
+
+`bills-unbalanced` refuses the **whole run**, and it is aimed squarely at an
+implementation that computes `total` separately from the lines. Better a run that
+refuses than a supplier holding the evidence.
+
+Generating is what occupies §13's `billsGenerated` stage. **Derive the stage from what
+has happened; never let the client set it.**
+
+Audit: `month.bills.generate` on entity `billRun`, with the bill count, the payable
+total and the missing-bank-details count in `after`.
+
+There is deliberately **no `PATCH`**. A wrong bill is a wrong delivery or a wrong rate,
+and the fix is upstream followed by a re-generation. An editor would let the office
+correct the symptom and leave the cause to reappear on the next run.
+
+---
+
+## 12. M6 Payouts
+
+Gate every endpoint on `enablePayouts` and answer `403 feature-disabled` (AC-07) — the
+console hides the surface, and this is the half that cannot be bypassed by a replayed
+request.
+
+### 12.1 `GET /admin/payout-runs` → `Paged<PayoutRun>`
+
+Filters: `monthKey`, `status`. Newest month first, then by method.
+
+Counts and totals are **derived from the lines**, not stored: `heldCount` excluded from
+`totalAmount`, because a held line is not money leaving the factory.
+
+### 12.2 `POST /admin/payout-runs` → `PayoutRun`
+
+```json
+→ { "monthKey": "2026-06", "method": "bankTransfer" }
+```
+
+`payouts: write`. **One run per month per method.** A bank file, a cheque list and a
+cash sheet are three different jobs reconciled from three different pieces of paper, and
+one run covering all of them shows a total nobody in the office is responsible for.
+
+```
+409 month-not-published  the month is still open       + details.stage
+409 bills-missing        no bills to pay against
+409 run-exists           this month + method already has one
+409 no-payable-lines     nobody on this method is owed anything
+```
+
+**`month-not-published` is the load-bearing refusal of the module.** A run against an
+open month pays against figures that can still change — a rate correction, a voided
+delivery, an approved change request — and money that has left the factory cannot be
+re-derived.
+
+Line construction, which the console depends on and does not itself compute:
+
+- Only bills whose `paymentMethod` matches, and only where `finalBalance > 0`. A zero or
+  negative account is **not a line**: it carries its shortfall forward instead.
+- `amount` is **copied from the bill**, never recomputed. The bill is the record the
+  supplier holds (AC-03); a second derivation is a second answer.
+- A payable supplier with no account on file is **`held`**, not omitted — visible,
+  counted, and carrying the reason. A line silently filtered out is a supplier who is
+  not paid and nobody notices until they telephone. Cheque and cash need no account, so
+  nothing is held on those runs.
+- Account numbers are **masked** (§20.4). A run is a list of payments, not a place full
+  numbers are handed out; revealing one is §8.4's audited call.
+
+Audit: `payout.run.create`.
+
+### 12.3 `GET /admin/payout-runs/{id}/lines` → `Paged<PayoutLine>`
+
+Filters: `status`, `q`. Default order **held → failed → pending → paid**: a run is
+worked by clearing what is stuck, and burying a held line under fifty paid rows is how a
+supplier goes a month unpaid.
+
+### 12.4 `POST /admin/payout-runs/{id}/approve` → `PayoutRun`
+
+`payouts: approve` — §12.1 gives that to the manager and `write` to the accountant who
+prepares it.
+
+```
+409 already-approved     + details.approvedByName, approvedAt
+409 four-eyes-violation  the approver prepared it   + details.createdByName  (BR-501)
+409 no-payable-lines     every line is held
+```
+
+The four-eyes check is reachable because `approve` implies `write`: a manager *could*
+prepare a run and release it, and this is what stops them.
+
+Audit: `payout.run.approve`, with the released total and the note.
+
+### 12.5 `POST /admin/payout-runs/{id}/lines/{lineId}/mark` → `PayoutLine`
+
+```json
+→ { "status": "failed", "reason": "Bank returned it — the account name does not match." }
+```
+
+Reconciliation against what the bank or the counter actually did — the half of a payout
+every system leaves out and every office does on paper.
+
+```
+409 run-not-approved   nothing in a draft has been paid
+409 line-not-payable   the line is held, or already paid  + details.paidAt
+422 note-required      `failed` with no reason (or under 10 characters)
+```
+
+**A failure needs a reason and a payment does not**, and the asymmetry is the point:
+"paid" explains itself, while a refused transfer means the supplier has not been paid and
+the next person picking the run up works entirely from that note.
+
+A run reaches `completed` when **no `pending` lines remain**. Held lines do not block it
+— they cannot be paid by this method at all, and a run that could never complete is a run
+the office stops looking at. They stay counted on it, which is what keeps them visible.
+
+Audit: `payout.line.paid` / `payout.line.failed`, with the supplier code, the amount and
+the reason.
+
+**Not specified here: the file.** §21.17 — SLIPS, CEFTS or a bank-specific CSV, and
+whether cheques print on pre-printed stock — is unanswered, so there is no export
+endpoint and the console does not offer one. When it is answered, it is a new endpoint
+over an existing run, not a change to any of the above.
+
+---
+
+## 13. M8 Savings
+
+Gate on `enableSavings` (`403 feature-disabled`), authorize on `billing`. §12.1 has no
+savings row and the console invents no capability for it — the scheme is a view over
+bills.
+
+**Read-only, and that is the design.** A contribution *is* the `savings` deduction on a
+published bill, credited by §10.5's publish. There must be no second write path: two ways
+to move the same money is two balances to reconcile, and the two that disagree are the
+supplier's passbook and their slip.
+
+### 13.1 `GET /admin/savings/summary` → `SavingsSummary`
+
+`?monthKey=` optional; default to the latest month with contributions.
+
+`balanceTotal` is a **liability** — suppliers' money, held — and it is the figure the
+office is asked for and an auditor reconciles against the bank. `averagePerKg` is `null`,
+never `0`, for a month that contributed nothing (BR-102). `trend` is **oldest first**:
+charts read left to right, and a cumulative balance only means something in the order it
+accumulated.
+
+### 13.2 `GET /admin/savings/accounts` → `Paged<SavingsAccount>`
+
+Filters: `q`, `optedOut`. Largest balance first — the accounts the office is asked about
+are the big ones.
+
+`savingsPerKg` is the **active** rate (AC-01). An open savings-rate request is reported
+as `pendingRateChangeId` so the row can link into §11's queue — **never applied early**.
+`savingsPerKg: 0` is opted out: a real answer, not a missing value.
+
+### 13.3 `GET /admin/savings/accounts/{supplierId}/ledger` → `Paged<AdminSavingsLedgerEntry>`
+
+**Oldest first**, and this is part of the contract rather than a preference: a passbook is
+read forward, and the running `balance` column is meaningless in any other order.
+
+Each `billDeduction` entry carries the `billId` it came from, and its `amount` must equal
+that bill's `deductions.savings` to the cent.
+
+`AdminSupplier.savingsBalance` (§8.2) must equal the ledger's closing balance. Two
+figures for one balance is exactly the inconsistency AC-01 is about.
+
+`SavingsEntrySource` already includes `withdrawal` and `interest`, which nothing produces
+yet: §21.9 — may a supplier withdraw, on what notice, is interest paid — is unanswered.
+The vocabulary is there so the answer **adds endpoints rather than migrating a money
+table**.
+
+---
+
+## 14. Not yet called by the console
 
 These are in §17.6's scope and the console has no code for them yet, so the
 shapes are open. Requests from the front end when you get there:
@@ -947,14 +1212,15 @@ shapes are open. Requests from the front end when you get there:
 | Area | Ask |
 | --- | --- |
 | **M3 scale file** | The upload half of M3 is not built, because no factory has yet said what its weighbridge exports. Whatever the format, it should land as the **same batch** in §9.3 with `source: "scaleFile"` — a second write path for the same fact is a second set of refusals to keep in step |
-| **M5 Bills** | A bill is a read model over §9's delivery rows and §10's rate (api.md §16), not a table to be written. Field-for-field identity with the app's Home screen and the PDF is AC-03 |
-| **M7 Credit** | Eligibility in a queue row must be **byte-for-byte identical** to `GET /advances\|loans\|manure/eligibility` for that supplier (AC-05), including the working — months of history, rate × kilos, the ceiling. Re-check at the moment of approval and answer `stale-eligibility` (BR-310). `packages/domain/src/leafCredit.ts` is the shared implementation; import it rather than re-deriving |
+| **The bill PDF** | AC-03 names the PDF alongside the app's Home screen. §11.3 is the same data, so this is a renderer over an existing read model rather than a new shape — and it must be generated from the *published* bill, not re-derived at print time |
+| **The payout file** | §12.5's note: blocked on §21.17. It is an export over an existing run, and the run must not change shape to accommodate it |
+| **M7 Credit** | Eligibility in a queue row must be **byte-for-byte identical** to `GET /advances\|loans\|manure/eligibility` for that supplier (AC-05), including the working — months of history, rate × kilos, the ceiling. Re-check at the moment of approval and answer `stale-eligibility` (BR-310). `packages/domain/src/leafCredit.ts` is the shared implementation; import it rather than re-deriving. Note that an approved advance surfaces as a `deductions.advance` line on the next bill (§11.3), so the two have to agree |
 | **M13 Notifications** | Sends must carry a recognized `data.category` — the app drops anything else rather than opening an arbitrary screen — and must honour each device's opted-in categories, not only its topic subscriptions |
 | **M16 Reports** | Run off a read replica or nightly snapshot (§19.5). A month-close query must not compete with a clerk entering deliveries |
 
 ---
 
-## 12. A checklist for the first PR
+## 15. A checklist for the first PR
 
 Ordered so each step is independently useful to the console.
 
@@ -973,7 +1239,13 @@ Ordered so each step is independently useful to the console.
       idempotency, with per-row rejections inside the `200` — plus the day
       summary and the void
 - [ ] `/admin/months/*`: the summary with totals derived from the delivery rows,
-      the rate `PUT`, the exception list, and `publish` with all five refusals
+      the rate `PUT`, the exception list, and `publish` with all seven refusals
+- [ ] `/admin/bills/*` and `bills/generate` — the read model, re-runnable while the
+      month is open, with `stale` derived at read time
+- [ ] `/admin/payout-runs/*` — prepare, approve with four-eyes, and mark, with held
+      lines counted rather than dropped
+- [ ] `/admin/savings/*` — read-only, with the ledger posted by the publish in §10.5
+      and nothing else
 
 Point `VITE_API_BASE_URL` at it and set `VITE_USE_MOCK=0`; the console needs no
 other change. If a shape differs from this document, the seam that absorbs it is

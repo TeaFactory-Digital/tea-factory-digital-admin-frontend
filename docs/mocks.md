@@ -112,7 +112,7 @@ The ids are fixed, because the integration tests name them:
 | `chg-13` | approved | so the non-pending filters are not empty |
 | `chg-14` | rejected | with a real rejection note |
 
-### Deliveries — 14 days
+### Deliveries — four months
 
 Generated per day per supplier rather than as a flat list, so the shape of a real
 fortnight is present: **Sundays are empty** (the factory does not weigh), about
@@ -120,7 +120,13 @@ three suppliers in five deliver on any given day, and one in seven of those brin
 a second load in the afternoon — which is why `supplierCount` and `deliveryCount`
 are different figures everywhere they appear.
 
-Three properties are load-bearing rather than decorative:
+It spans **the fixture's whole month window, not the last fortnight**, and that is
+M5's doing rather than generosity: a bill is a read model over these rows, so a
+published month with no leaf in it generates no bills — and Bills, Payouts and
+Savings would each render an empty screen that reads as a broken module rather than
+as a fixture with nothing in it.
+
+Four properties are load-bearing rather than decorative:
 
 - **Only non-dormant active suppliers have rows.** Derived from the registry, not
   invented beside it: a supplier the grid calls dormant (no delivery for 95+ days)
@@ -129,7 +135,11 @@ Three properties are load-bearing rather than decorative:
 - **`lastDeliveryAt` on the supplier record is set *from* these rows**, for the
   same reason.
 - **One row is voided**, so the state is visible without anyone creating it and
-  `includeVoided` has something to return.
+  `includeVoided` has something to return. It sits in the **open** month
+  deliberately: BR-108 refuses a void in a published one, and a fixture showing an
+  impossible state teaches the wrong rule.
+- **A scale file every fourth day**, so `source` and the unbuilt import path have
+  something to show.
 
 The dashboard's "today's leaf" and 14-day trend are computed from these rows, so
 committing a session in M3 moves the dashboard — which is what
@@ -154,11 +164,41 @@ weighing outside the day's spread. A hand-written exception list would say "12
 suppliers have no bank details" while the registry said something else, and the
 accountant would be reconciling the console against itself.
 
+### Bills, payouts and savings — one chained history
+
+The three money modules share one fixture builder, and it is **chronological and
+chained**: a month's `previousDebts` is the previous month's unpaid balance, its
+`coinsBroughtForward` is the previous month's sub-rupee remainder, and its savings
+`previous` is the ledger's running balance. Three independent fixtures would show
+three months that do not add up — and "the carried figures do not tie" is precisely
+the bug M5 exists to make impossible.
+
+What that produces, and why each piece is there:
+
+| Piece | Why |
+| --- | --- |
+| A **bill run per published month**, one bill per supplier with leaf | A published month with no bills is a month M6 has nothing to pay against |
+| A **few suppliers carrying debt** from an opening balance | An account that owes more than it earned is the state a payout run must never turn into a negative bank line, and nothing else in the fixture reaches it — the credit instalments are capped as a share of the gross precisely so a facility cannot swallow a month |
+| A handful of suppliers marked **`bankTransfer` with no account on file** | The real case AC-04's `missingBankDetails` exception is about (the office recorded a transfer and never got the passbook), and the only way M6's `held` status happens. A status nothing in the fixture reaches is a status nobody notices is broken |
+| Payout runs in **all three states** — `completed`, `approved` part-worked with a failed line, `draft` | Each is a different set of available actions, and none of them should need creating before it can be seen |
+| A **savings ledger derived from the published bills**, with the registry's `savingsBalance` recomputed from it | M2's detail page and M8's account row must be one number, not two (AC-01) |
+
+The **deduction values are the mock's invention and the shape is not** — see
+status.md gap 6. `savings` (kilos × the supplier's rate) and `previousDebts` (last
+month's shortfall) are real derivations the API must reproduce; the other seven lines
+stand in for §21.10, which nobody has answered.
+
 ### Tenants — 3
 
 `galaboda` (full), `hillcountry` (full, different palette and radius), and
 **`highland` — the reduced-feature reference**: no loans, no manure, no push, no
-reports, mirroring mobile's `clientB`.
+reports, **and no payouts**, mirroring mobile's `clientB`.
+
+`enablePayouts: false` on `highland` is the fixture's only *console-side* surface
+turned off, and it is there so AC-07's second half has something to be tested
+against: the sidebar loses the row **and** `GET /admin/payout-runs` answers
+`403 feature-disabled` for that tenant. Until one tenant had the flag off, the
+endpoint half was unassertable.
 
 Switching to `highland` in the dev tenant switcher should visibly empty those rows
 out of the sidebar. It is the fastest check that no surface is hardcoded, and a

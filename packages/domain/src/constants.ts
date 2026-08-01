@@ -116,3 +116,30 @@ export const MAX_DELIVERY_BATCH_ROWS = 200;
  */
 export const OUTLIER_KG_MULTIPLE = 3;
 export const OUTLIER_KG_FLOOR_KG = 150;
+
+/* ───────────────────────── M6 Payouts · M8 Savings ───────────────────────── */
+
+export const PAYOUT_RUN_STATUSES = ['draft', 'approved', 'completed'] as const;
+
+/**
+ * Ordered by where a line sits in the office's day: waiting, stuck, done, refused.
+ * The grid's default sort follows this, so the lines needing attention are on top.
+ */
+export const PAYOUT_LINE_STATUSES = ['pending', 'held', 'paid', 'failed'] as const;
+
+export const SAVINGS_ENTRY_SOURCES = [
+  'openingBalance',
+  'billDeduction',
+  'adjustment',
+  'withdrawal',
+  'interest',
+] as const;
+
+/**
+ * The whole-rupee granularity the factory pays in.
+ *
+ * Not cosmetic: the sub-rupee remainder is the printed slip's "coins" line and it
+ * carries into the next account, which is why `coinsBroughtForward` exists in the
+ * bill type at all. A payout of `LKR 4,213.47` is a figure no cheque is written for.
+ */
+export const PAYOUT_ROUNDING_UNIT = 1;

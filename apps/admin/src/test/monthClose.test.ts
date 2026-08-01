@@ -9,6 +9,8 @@
  *  - **`rate-missing`** — no auction rate, nothing to build a bill from.
  *  - **`exceptions-open`** (AC-04) — the accountant resolves each one, and the
  *    count cannot be clicked past.
+ *  - **`bills-missing`** — publishing is what turns a generated bill into the
+ *    document a supplier holds, so a month with no run has nothing to hand over.
  *  - **`four-eyes-violation`** (BR-501) — a manager holds `approve`, which implies
  *    `write`, so the same person *could* enter a rate and close the month on it.
  *  - **`already-published`** and **`month-locked`** — a published month is
@@ -20,6 +22,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { colomboDayOf } from '@tfd/domain';
+import { billRepository } from '@/services/repositories/billRepository';
 import { deliveryRepository } from '@/services/repositories/deliveryRepository';
 import { monthRepository } from '@/services/repositories/monthRepository';
 import { supplierRepository } from '@/services/repositories/supplierRepository';
@@ -55,6 +58,20 @@ async function resolveAll(monthKey: string) {
     ),
   );
   return open.items.length;
+}
+
+/**
+ * Everything the close needs before the publish: a rate, a clear exception queue and
+ * a bill run.
+ *
+ * The order matters and is the office's rather than this helper's convenience —
+ * resolving an exception is what changes a bill, so bills are generated last.
+ */
+async function readyToPublish(monthKey: string) {
+  await monthRepository.setRate(monthKey, { ratePerKg: 122.5, extraRatePerKg: 8 });
+  const cleared = await resolveAll(monthKey);
+  const run = await billRepository.generate(monthKey);
+  return { cleared, run };
 }
 
 describe('M4 rates & month close', () => {
@@ -154,6 +171,79 @@ describe('M4 rates & month close', () => {
     expect(isApiError(refused) && refused.status).toBe(409);
   });
 
+  /**
+   * The fifth refusal, and the one that fills §13's `billsGenerated` stage.
+   *
+   * It is checked **after** the exceptions on purpose: resolving one is what changes a
+   * bill, so the refusals report the earliest unmet precondition and send the
+   * accountant to the first thing to do rather than the last.
+   */
+  it('refuses to publish a month whose bills have not been generated', async () => {
+    await signInWithMfaAs(MANAGER);
+    const month = await openMonth();
+
+    await monthRepository.setRate(month.monthKey, { ratePerKg: 122.5, extraRatePerKg: 8 });
+    await resolveAll(month.monthKey);
+
+    // A rate and a clear queue is no longer enough: there are no bills to hand over.
+    await expect(monthRepository.publish(month.monthKey)).rejects.toMatchObject({
+      code: 'bills-missing',
+    });
+
+    // Generating moves the stage on, and it is derived rather than set by the client.
+    await billRepository.generate(month.monthKey);
+    const withBills = await monthRepository.get(month.monthKey);
+    expect(withBills.stage).toBe('billsGenerated');
+
+    // Now only the four-eyes rule is left, because this manager entered the rate.
+    await expect(monthRepository.publish(month.monthKey)).rejects.toMatchObject({
+      code: 'four-eyes-violation',
+    });
+  }, 20_000);
+
+  /**
+   * A run made before the leaf moved must not be publishable.
+   *
+   * The failure it prevents is quiet and expensive: a delivery voided after
+   * generation leaves every bill in the month built on kilos that no longer exist,
+   * and publishing freezes them as the documents suppliers hold.
+   */
+  it('refuses to publish on a run the leaf has moved under (bills-stale)', async () => {
+    await signInAs(ACCOUNTANT);
+    const month = await openMonth();
+    await readyToPublish(month.monthKey);
+    expect((await billRepository.run(month.monthKey)).stale).toBe(false);
+
+    // One more weighing, after the run.
+    const supplier = (await supplierRepository.list({ status: 'active', pageSize: 1 })).items[0]!;
+    await deliveryRepository.commit({
+      date: TODAY,
+      collectionPoint: 'MAKADURA',
+      batchId: 'm4-stale-run',
+      rows: [{ supplierId: supplier.id, kgs: 40 }],
+    });
+
+    expect((await billRepository.run(month.monthKey)).stale).toBe(true);
+
+    signOut();
+    await signInWithMfaAs(MANAGER);
+    await expect(monthRepository.publish(month.monthKey)).rejects.toMatchObject({
+      code: 'bills-stale',
+    });
+
+    // Re-generating is the fix, and it is a normal act rather than a repair.
+    signOut();
+    await signInAs(ACCOUNTANT);
+    const fresh = await billRepository.generate(month.monthKey);
+    expect(fresh.stale).toBe(false);
+
+    signOut();
+    await signInWithMfaAs(MANAGER);
+    await expect(monthRepository.publish(month.monthKey)).resolves.toMatchObject({
+      stage: 'published',
+    });
+  }, 30_000);
+
   it('refuses to resolve an exception without a note, or twice', async () => {
     await signInAs(ACCOUNTANT);
     const month = await openMonth();
@@ -186,6 +276,7 @@ describe('M4 rates & month close', () => {
     const month = await openMonth();
     await monthRepository.setRate(month.monthKey, { ratePerKg: 130, extraRatePerKg: 5 });
     await resolveAll(month.monthKey);
+    await billRepository.generate(month.monthKey);
 
     await expect(monthRepository.publish(month.monthKey)).rejects.toMatchObject({
       code: 'four-eyes-violation',
@@ -193,12 +284,12 @@ describe('M4 rates & month close', () => {
   }, 20_000);
 
   it('publishes when every step passes, and then locks the month everywhere', async () => {
-    // The accountant enters the rate and clears the exceptions…
+    // The accountant enters the rate, clears the exceptions and builds the bills…
     await signInAs(ACCOUNTANT);
     const month = await openMonth();
-    await monthRepository.setRate(month.monthKey, { ratePerKg: 122.5, extraRatePerKg: 8 });
-    const cleared = await resolveAll(month.monthKey);
+    const { cleared, run } = await readyToPublish(month.monthKey);
     expect(cleared).toBeGreaterThan(0);
+    expect(run.billCount).toBeGreaterThan(0);
 
     // …and the accountant may not publish: §12.1 gives them `write`, not `approve`.
     const refused = await monthRepository.publish(month.monthKey).catch((cause: unknown) => cause);
@@ -247,8 +338,7 @@ describe('M4 rates & month close', () => {
   it('writes the audit trail for the rate, the resolutions and the publish (AC-09)', async () => {
     await signInAs(ACCOUNTANT);
     const month = await openMonth();
-    await monthRepository.setRate(month.monthKey, { ratePerKg: 122.5, extraRatePerKg: 8 });
-    await resolveAll(month.monthKey);
+    await readyToPublish(month.monthKey);
 
     signOut();
     await signInWithMfaAs(MANAGER);
@@ -258,6 +348,7 @@ describe('M4 rates & month close', () => {
     const actions = trail.items.map((entry) => entry.action);
     expect(actions).toContain('month.rate.enter');
     expect(actions).toContain('month.exception.resolve');
+    expect(actions).toContain('month.bills.generate');
     expect(actions).toContain('month.publish');
 
     const publish = trail.items.find((entry) => entry.action === 'month.publish');

@@ -86,4 +86,16 @@ test('a reduced-feature tenant loses the queues it does not use', async ({ page 
   await expect(nav.getByText(/change requests/i)).toBeVisible();
   await expect(nav.getByText(/^loans$/i)).toHaveCount(0);
   await expect(nav.getByText(/^manure$/i)).toHaveCount(0);
+
+  /**
+   * And the console-side surface, which is the other half of AC-07.
+   *
+   * `highland` counts cash out at the counter, so it buys no bank-file module: the
+   * Payouts row is absent while Bills and Savings stay. The **endpoint** refuses the
+   * same call with `feature-disabled` — see `src/test/savings.test.ts`, which is what
+   * makes this a policy rather than a hidden link.
+   */
+  await expect(nav.getByText(/^payouts$/i)).toHaveCount(0);
+  await expect(nav.getByText(/^bills$/i)).toBeVisible();
+  await expect(nav.getByText(/^savings$/i)).toBeVisible();
 });

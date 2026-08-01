@@ -29,7 +29,7 @@ backend.
 | [white-label.md](./white-label.md) | One bundle, many factories: runtime brand resolution, the Tailwind ↔ token bridge, feature flags, adding a tenant |
 | [design-system.md](./design-system.md) | Tokens, the component inventory, density, tables, forms, accessibility, and the decisions behind them |
 | [rbac.md](./rbac.md) | The §12.1 permission matrix as data, four-eyes, and where authorization is actually enforced |
-| [modules.md](./modules.md) | The §18.1 module map: what M1/M2/M3/M4/M9/M17 do today, and what each planned module needs |
+| [modules.md](./modules.md) | The §18.1 module map: what M1–M6, M8, M9 and M17 do today, and what each planned module needs |
 | [mocks.md](./mocks.md) | The mock API: what it enforces, its fixtures, its one deliberate infidelity, and how to swap it for the real thing |
 | [operations.md](./operations.md) | Commands, environments, deployment per subdomain, testing strategy, CI, and performance |
 | [status.md](./status.md) | Known gaps, acceptance-criteria coverage, and the business questions that block specific modules |
