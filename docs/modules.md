@@ -27,7 +27,7 @@ build status, and the sidebar is generated from it.
 | M10 | **Inquiries** | ✅ Built | `/inquiries`, `/inquiries/:id` |
 | M11 | **News (CMS)** | ✅ Built | `/news`, `/news/:id` |
 | M12 | **Static content** | ✅ Built | `/content` |
-| M13 | Notifications | ⏳ Planned | — |
+| M13 | **Notifications** | ✅ Built (§21.24 answered as config) | `/notifications` |
 | M14 | Configuration | ⏳ Planned | — |
 | M15 | Users & roles | ⏳ Planned | — |
 | M16 | Reports | ⏳ Planned | — |
@@ -442,6 +442,57 @@ one, that is a versioning feature and a real piece of work — not a tweak.
 
 ---
 
+## M13 Notifications
+
+*What suppliers are told, and what they are told automatically.*
+
+**Built while §21.24 was still open**, which is the whole design problem. The question —
+does the office compose every send, or does "your bill is ready" fire off the publish
+step, and who may send free text? — is answered here as **configuration rather than
+code**, so the factory's eventual answer is a switch and not a rewrite.
+
+The defaults are not invented. `config.push.defaultCategories` already says which
+categories a supplier is opted into when they install the app, and it pointedly excludes
+`newsArticle` — so `billPublished`, `requestDecided` and `inquiryReplied` fire by default
+and news does not. That is the platform's existing decision being read rather than a new
+one being made.
+
+**A push is the only act in this console with no undo and no delivery report.** Nothing
+comes back from a phone to say the message was dropped; no supplier reports that they had
+the category switched off. Every safeguard is therefore a *pre*-check:
+
+| Rule | Why it is a refusal rather than a warning |
+| --- | --- |
+| **`unknown-category`** | The app **drops** a push whose category it does not recognize rather than opening an arbitrary screen. A send the console called successful would reach nobody and report nothing at all — the worst available outcome |
+| **Per-device consent** | A device subscribed to the factory's topic but opted out of `newsArticle` must not get news. Topic membership is routing; the category list is consent |
+| **`no-recipients`** | Refused for a *composed* send, because somebody is standing at the screen and can put it on the noticeboard instead. Not refused for an automatic one — a month published where nobody has the app is a normal month, and a red row would train the office to ignore red rows |
+| **`push-not-configured`** | `hillcountry` has the flag on and no `push` block at all. The flag being on and the module being set up are different things, and M14 is what sets it up |
+
+**The reach panel is the module.** Before anything is sent, the server answers how many
+devices would receive it, how many opted out, and how many suppliers never installed the
+app. Three numbers rather than one, because they are three different problems: *reaches 3,
+11 opted out* is a circular that belongs on the noticeboard, and there is no way to learn
+that afterwards. It is also the only place a factory ever sees its own opt-out rate.
+
+**Automatic sends fire from the module that owns the event** — `month.publish`,
+`news.publish`, a change-request decision, an inquiry reply — rather than from something
+watching the audit log. The event is the fact; whether it notifies is one row. Firing
+cannot throw and cannot block: a push that failed must never roll back an irreversible
+publish, so the failure is recorded on the send instead.
+
+**What a push does not carry.** Neither the decision note nor the reply body reaches a
+lock screen, even though both are the most useful sentence the office wrote. They are
+written *to* one supplier and can name a bank account or a dispute; a lock screen is read
+by whoever is holding the phone. The notification says there is an answer, and the app
+shows it.
+
+**Who may send free text** is `content: approve` — the same boundary M11 draws between
+writing a circular and putting it in front of every supplier. Stated on the screen so the
+factory can contest it, which is the point: this is the console's answer to a question
+nobody has answered, and it should be easy to argue with.
+
+---
+
 ## What is deliberately not built
 
 Three questions would each have produced a wrong build, so each is an absence with a
@@ -587,6 +638,5 @@ Ordered by what I would build next.
 | Module | Blocked on / needs |
 | --- | --- |
 | **M14 Configuration** | Nothing external. It is the other end of `GET /config`, and AC-12 says a new factory must go live through it without a code deploy |
-| **M13 Notifications** | **Blocked**: §21.24 — does the office compose every send by hand, or does bill-published fire automatically off the publish step, and who may send free-text. M5 now gives the trigger a real event to hang off: `month.publish` is the moment a bill becomes a document a supplier can see |
 | **M15 Users & roles** | Nothing external, but it must edit the §12.1 matrix **as data** (see [rbac.md](./rbac.md)), and MFA enrolment belongs here |
 | **M16 Reports** | Needs the warehouse shape from §19.1 more than the report list. Run off a read replica (§19.5) |

@@ -39,8 +39,9 @@ AC-08 was the last one with no screen behind it at all.
 | **M10 Inquiries** | Open/answered/closed as data (§21.18), reply and close-unanswered as **different acts**, prose-first triage grid, and the console saying plainly that no notification is sent because M13 is not built |
 | **M11 News** | Per-language authoring with the fallback and the gap lists shared with the app (`content.ts`), a server-resolved preview, a "live with a gap" working list, and publish/unpublish/archive split from writing by §12.1 |
 | **M12 Static content** | The app's six fixed pages, unwritten ones shown as a state rather than omitted, and every edit to a live page audited with its previous wording |
+| **M13 Notifications** | Automatic triggers as per-tenant data (§21.24 deferred as config, not guessed), a reach preview that counts opt-outs before anything is sent, composed sends gated on `content: A`, and a log where reached and suppressed sit side by side |
 | **M17 Audit** | Filterable read-only log, plus per-record panels on M2, M9 and M11. Every mutation in every built module writes to it |
-| **Tests** | 189 Vitest + 16 Playwright, all passing. Typecheck and lint clean |
+| **Tests** | 204 Vitest + 18 Playwright, all passing. Typecheck and lint clean |
 
 ## Acceptance criteria
 
@@ -209,6 +210,28 @@ Worst first: correctness, then plumbing, then polish.
     PUT for M9's evidence, so this is wiring rather than design. Both are absent rather
     than half-built. Neither is blocked on anything.
 
+22. **§21.24 is answered by the console, not by the factory.** The defaults are read from
+    `push.defaultCategories` rather than invented, and every choice is a toggle — but
+    nobody at the factory has confirmed that a bill publication *should* push to every
+    supplier, or that `content: approve` is the right gate on free text. Both are the
+    console's reading, and both are one row and one line respectively to change. *To
+    close:* show the office the Notifications screen and ask whether the four switches are
+    set the way they want them.
+
+23. **Nothing is actually sent, and nothing ever reports back.** There is no FCM or APNs
+    integration — the mock records a send and computes its reach, which is every part of
+    the problem *except* the transport. When the real one lands it brings a failure mode
+    the console currently has no shape for: a per-device delivery result arriving
+    asynchronously, minutes later. `NotificationSend.status` already has `queued` and
+    `failed` in its vocabulary for that reason, and nothing sets them yet.
+
+24. **A composed notification is English-only.** M11 taught the console that editorial copy
+    is authored in three languages and falls back (AC-08); a push does not, and it should —
+    a Sinhala supplier receiving an English lock-screen message is the same failure AC-08
+    is written about, in the one place the supplier cannot go and find the translation.
+    Deliberately not half-built: doing it properly means the composer grows the same
+    language strip M11 has, and the send picks per device.
+
 ---
 
 ## Blocking business questions
@@ -295,6 +318,9 @@ after a month has been published on the wrong assumption:
    and M12 now read on every request.
 4. **The repo merge**, before the shared types drift far enough to hurt.
 
-**Not next, and why:** M13 Notifications is tempting now that `month.publish` is a real
-event to fire "your bill is ready" from — but §21.24 has to say whether that send is
-automatic or composed by hand before a single line of it is worth writing.
+**M13 was built anyway, at the factory's request**, and the way it was built is the point:
+§21.24 is answered as **configuration** rather than code. Which categories fire
+automatically is a per-tenant row, defaulted from `push.defaultCategories` — the platform's
+own existing statement about which categories are routine — and "who may send free text" is
+`content: approve`, stated on the screen so it can be contested. When the factory answers,
+somebody flips a switch. See gap 22 for what is still genuinely unknown.

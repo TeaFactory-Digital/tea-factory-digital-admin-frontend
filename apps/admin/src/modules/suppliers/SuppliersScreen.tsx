@@ -21,6 +21,7 @@ import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { useDebounced } from '@/lib/useDebounced';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
+import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
 import { SearchInput, Select } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -170,7 +171,7 @@ export function SuppliersScreen() {
       {/* The card takes the height the page header leaves and gives all of it to
           the grid: filters, column headers and pagination stay put, and only the
           rows move (§18.2 — the repetitive path is scanning rows). */}
-      <Card className="flex min-h-0 flex-1 flex-col">
+      <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-center gap-sm border-b border-divider p-md">
           <div className="min-w-64 flex-1">
             <SearchInput

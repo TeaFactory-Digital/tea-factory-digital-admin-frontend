@@ -21,11 +21,14 @@ import type {
 import type {
   ContentStatus,
   InquiryStatus,
+  NotificationOrigin,
+  NotificationSendStatus,
   LanguageCode,
   RequestChannel,
   StaticPageSlug,
 } from '../constants';
 import type { ContentTranslation, ContentTranslations } from '../content';
+import type { NotificationAudience } from '../notifications';
 
 /* ─────────────────────────────── Identity ─────────────────────────────── */
 
@@ -1175,6 +1178,99 @@ export interface ContentPreview {
   fallbackLanguage: LanguageCode;
 }
 
+/* ───────────────────────── M13 Notifications ───────────────────────── */
+
+/**
+ * Whether this factory fires a category automatically, and off what.
+ *
+ * **This record is the answer to §21.24, deferred honestly.** The factory has not said
+ * whether the office composes every send or whether "your bill is ready" fires off the
+ * publish step — so both paths exist and *which triggers are on* is per-tenant data. When
+ * the answer comes it is a row, not a rewrite.
+ *
+ * `event` is a fact rather than a policy: `billPublished` can only mean the moment a
+ * month is published, because that is the moment a bill becomes something a supplier can
+ * open. `enabled` is the policy.
+ */
+export interface NotificationTrigger {
+  category: NotificationCategory;
+  /** The console event it hangs off, e.g. `month.publish`. */
+  event: string;
+  enabled: boolean;
+  /**
+   * `false` when the tenant's `push.categories` does not include this one, so the
+   * console can say "not configured for this factory" rather than offering a toggle
+   * that would answer `category-disabled`. That is M14's job, not M13's.
+   */
+  available: boolean;
+  updatedAt: string | null;
+  updatedByName: string | null;
+}
+
+/**
+ * One send, as a **record** rather than a fire-and-forget.
+ *
+ * The counts are the reason it is a record. A push is the only thing this console does
+ * that it gets no acknowledgement for — nothing comes back from a phone to say the
+ * message was dropped — so "sent to 240" with no breakdown is a figure the office would
+ * act on wrongly. `suppressedDevices` is the honest half: registered, subscribed, and
+ * **opted out of this category** (api-contract.md §17). Counted, never quietly filtered.
+ */
+export interface NotificationSend {
+  id: string;
+  category: NotificationCategory;
+  origin: NotificationOrigin;
+  title: string;
+  body: string;
+  audience: NotificationAudience;
+  /** For an automatic send, the record it fired from — so the log links back. */
+  entity: string | null;
+  entityId: string | null;
+  /** Suppliers the audience resolved to. */
+  targetedSuppliers: number;
+  /** Devices that will receive it. */
+  reachableDevices: number;
+  /** Devices whose owner turned this category off. */
+  suppressedDevices: number;
+  status: NotificationSendStatus;
+  /** `null` for an automatic send — nobody pressed anything. */
+  createdById: string | null;
+  createdByName: string | null;
+  createdAt: string;
+  sentAt: string | null;
+  /** Why it failed, when it did. */
+  failureReason: string | null;
+}
+
+export interface NotificationQuery extends PageQuery {
+  category?: NotificationCategory;
+  origin?: NotificationOrigin;
+}
+
+/** What the office is about to send. `audience` decides who. */
+export interface ComposeNotificationBody {
+  category: NotificationCategory;
+  title: string;
+  body: string;
+  audience: NotificationAudience;
+}
+
+/**
+ * How far a send would actually reach, **before** anybody presses send.
+ *
+ * Its own endpoint because the numbers are the decision: a circular that reaches 40 of
+ * 300 suppliers is a circular the office should put on the noticeboard instead, and there
+ * is no way to learn that after the fact. `suppressed` is what makes the two figures
+ * different and is the only place a factory ever sees its own opt-out rate.
+ */
+export interface NotificationReach {
+  targetedSuppliers: number;
+  reachableDevices: number;
+  suppressedDevices: number;
+  /** Suppliers in the audience with no registered device at all. */
+  suppliersWithoutDevice: number;
+}
+
 /* ───────────────────────────── M17 Audit log ───────────────────────────── */
 
 /**
@@ -1351,6 +1447,14 @@ export const ADMIN_ERROR_CODES = [
   'fallback-translation-missing',
   'slug-taken',
   'content-not-published',
+
+  /* M13 Notifications. `unknown-category` is the one that matters: the app **drops** a
+     push whose category it does not recognize, so a send the console called successful
+     would reach nobody and report nothing. */
+  'unknown-category',
+  'category-disabled',
+  'no-recipients',
+  'push-not-configured',
 
   /* M6 Payouts. `month-not-published` is the load-bearing one: a run against an
      open month pays against figures that can still change. */

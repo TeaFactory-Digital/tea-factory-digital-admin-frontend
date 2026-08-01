@@ -34,13 +34,14 @@ apps/
 docs/         Architecture, the API contract, and what is deliberately unfinished
 ```
 
-**Built: 13 of the 17 modules.** M1 Dashboard · M2 Suppliers · **M3 Leaf
+**Built: 14 of the 17 modules.** M1 Dashboard · M2 Suppliers · **M3 Leaf
 collection** · **M4 Rates & month close** · **M5 Bills** · **M6 Payouts** ·
 **M7 Credit queues** · **M8 Savings** · M9 Change requests · **M10 Inquiries** ·
-**M11 News** · **M12 Static content** · M17 Audit log — on a foundation of runtime
-white-labelling, a separate console auth realm with MFA, and capability-based access
-control. The remaining four (Notifications, Configuration, Users & roles, Reports)
-appear in the sidebar as _Planned_ rows — see [docs/modules.md](./docs/modules.md).
+**M11 News** · **M12 Static content** · **M13 Notifications** · M17 Audit log — on a
+foundation of runtime white-labelling, a separate console auth realm with MFA, and
+capability-based access control. The remaining three (Configuration, Users & roles,
+Reports) appear in the sidebar as _Planned_ rows — see
+[docs/modules.md](./docs/modules.md).
 
 M3 and M4 are the pair §18.2 calls the ones the project succeeds or fails on: the
 leaf is recorded at the weighing point in one keyboard-driven session per day, and
@@ -57,6 +58,12 @@ queue here** — the promise the whole product rests on. M11 and M12 are the Con
 section, and they close AC-08: editorial copy falls back to English when a translation
 is missing, and the console makes that gap visible on the tab for the language that has
 it, in a "live with a gap" working list, and in the audit entry for the publish.
+
+M13 was built while §21.24 — automatic sends or composed ones, and who may send free text —
+was still open, so it is answered as **configuration**: which categories fire is a
+per-tenant switch defaulted from the platform's own `push.defaultCategories`, and every
+send is preceded by a reach figure that counts who opted out. A push is the only act here
+with no undo and no delivery report, so every safeguard is a pre-check.
 
 **The backend does not exist yet.** The console runs against an in-browser mock
 that enforces every rule the real API must, and
@@ -75,8 +82,8 @@ switch to it.
 | `npm run build:demo` | Demo bundle — production build, mock API on, for preview hosting |
 | `npm run typecheck`  | `tsc --build`, all three projects                                |
 | `npm run lint`       | Includes the white-label and layering rules                      |
-| `npm run test`       | Vitest — 189 tests                                               |
-| `npm run e2e`        | Playwright — 16 specs (`npx playwright install chromium` once)    |
+| `npm run test`       | Vitest — 204 tests                                               |
+| `npm run e2e`        | Playwright — 23 specs (`npx playwright install chromium` once)    |
 | `npm run e2e:demo`   | The same specs against the built demo bundle                     |
 
 ---

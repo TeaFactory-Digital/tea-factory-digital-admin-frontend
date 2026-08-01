@@ -409,8 +409,10 @@ export const en = {
   'inquiries.detail.closedBy': 'Closed by {{name}}, {{when}}',
   'inquiries.detail.auditTitle': 'Audit trail',
   'inquiries.detail.history': 'Their earlier messages',
-  'inquiries.detail.noPushYet':
-    'The supplier sees this the next time they open the app. Notifications are not built yet, so nothing has been sent to their phone.',
+  'inquiries.detail.pushSent':
+    'A notification was sent to their phone telling them there is an answer — the reply itself is only in the app, because a lock screen is read by whoever is holding it.',
+  'inquiries.detail.pushNotSent':
+    'The supplier sees this the next time they open the app. Automatic notifications for answered messages are switched off for this factory, so nothing has been sent to their phone.',
 
   'inquiries.reply': 'Reply',
   'inquiries.sendReply': 'Send reply',
@@ -472,6 +474,9 @@ export const en = {
   'audit.action.newsArchive': 'Archived a news article',
   'audit.action.staticPageSave': 'Edited a static page',
   'audit.action.staticPagePublish': 'Published a static page',
+
+  'audit.action.notificationSend': 'Sent a notification',
+  'audit.action.notificationTrigger': 'Changed an automatic notification',
 
   /* ───────────────────────────── validation ───────────────────────────── */
   'validation.required': 'This is required',
@@ -1067,6 +1072,92 @@ export const en = {
     'This page is live. An edit reaches suppliers as soon as it is saved — every change is recorded in the audit log with the previous wording.',
   'staticContent.savedLive': 'Suppliers see this now.',
 
+  /* ───────────────────────── M13 Notifications ───────────────────────── */
+  /* §21.24 is unanswered — whether the office composes every send or whether
+     bill-published fires off the publish step. The console does both and makes the
+     choice a toggle, so the copy here has to explain a *mechanism* rather than assert
+     a policy. */
+  'notifications.title': 'Notifications',
+  'notifications.subtitle': 'What suppliers have been told, and what the factory tells them automatically',
+  'notifications.compose': 'Write a notification',
+
+  'notifications.category.billPublished': 'Account published',
+  'notifications.category.requestDecided': 'Request decided',
+  'notifications.category.newsArticle': 'News article',
+  'notifications.category.inquiryReplied': 'Message answered',
+  'notifications.event.billPublished': 'Fires when a month is published in Rates & month close.',
+  'notifications.event.requestDecided': 'Fires when a change request is approved or rejected.',
+  'notifications.event.newsArticle': 'Fires when a news article is published.',
+  'notifications.event.inquiryReplied': 'Fires when the office replies to a message.',
+
+  'notifications.triggersTitle': 'Automatic notifications',
+  'notifications.triggersDescription':
+    'Sent by the system when something happens, with nobody pressing anything.',
+  'notifications.on': 'On',
+  'notifications.off': 'Off',
+  'notifications.notConfigured': 'Not set up for this factory',
+  'notifications.triggerChanged': 'Changed by {{name}}, {{when}}.',
+  'notifications.triggerOn': '{{category}} will now be sent automatically',
+  'notifications.triggerOff': '{{category}} will no longer be sent automatically',
+  'notifications.triggerFailed': 'That setting was not changed',
+  'notifications.triggersNeedAdmin':
+    'Only the factory administrator can change what is sent automatically.',
+  'notifications.openQuestion':
+    'Whether the office writes every message by hand or the system sends them automatically is still an open question with the factory (§21.24). Until it is answered, both work and these switches are the answer — no code change is needed to settle it.',
+
+  'notifications.column.message': 'Message',
+  'notifications.column.category': 'Kind',
+  'notifications.column.audience': 'Sent to',
+  'notifications.column.reach': 'Reached',
+  'notifications.firedBy': 'Sent automatically',
+  'notifications.composedBy': 'Written by {{name}}',
+  'notifications.reachedDevices': '{{count}} phones',
+  'notifications.optedOutDevices': '{{count}} opted out',
+  'notifications.audience.allSuppliers': 'Every supplier',
+  'notifications.audience.collectionPoint': '{{point}} only',
+  'notifications.audience.supplier': 'One supplier',
+  'notifications.filterLabel': 'Show',
+  'notifications.filter.all': 'All notifications',
+  'notifications.filter.automatic': 'Sent automatically',
+  'notifications.filter.composed': 'Written by the office',
+  'notifications.empty': 'Nothing has been sent yet',
+  'notifications.emptyHint':
+    'Automatic notifications appear here as they fire, and anything the office writes appears alongside them.',
+  'notifications.noDeliveryReports':
+    'A phone never reports back, so these are the figures at the moment of sending — not proof anybody read it.',
+  'notifications.useNewsHint':
+    'A notification is a headline, not an article. Anything longer belongs in',
+
+  'notifications.composeTitle': 'Write a notification',
+  'notifications.composeDescription':
+    'This appears on every supplier’s lock screen in the audience you choose.',
+  'notifications.field.category': 'Kind',
+  'notifications.field.categoryHint':
+    'Decides which screen the app opens. The app ignores anything it does not recognise, so this is not cosmetic.',
+  'notifications.field.categoryPlaceholder': 'Choose a kind',
+  'notifications.field.audience': 'Send to',
+  'notifications.field.pickPoint': 'Choose a collection point',
+  'notifications.audienceKind.allSuppliers': 'Every supplier',
+  'notifications.audienceKind.collectionPoint': 'One collection point',
+  'notifications.field.title': 'Title',
+  'notifications.field.titleHint': 'At most {{max}} characters — a lock screen cuts the rest.',
+  'notifications.field.body': 'Message',
+  'notifications.field.bodyHint': 'At most {{max}} characters. Say the whole thing here.',
+  'notifications.reachLoading': 'Working out who this reaches…',
+  'notifications.reachSummary': 'Reaches {{devices}} phones, across {{suppliers}} suppliers.',
+  'notifications.reachSuppressed':
+    '{{count}} phones have “{{category}}” switched off and will not get this.',
+  'notifications.reachNoDevice': '{{count}} suppliers in this audience have never installed the app.',
+  'notifications.reachNobody':
+    'Nobody in this audience would receive it. Put it on the noticeboard instead, or choose a different kind.',
+  'notifications.noRecallHint':
+    'A notification cannot be taken back, and nothing reports whether a phone showed it.',
+  'notifications.send': 'Send it',
+  'notifications.sendToCount': 'Send to {{count}} phones',
+  'notifications.sent': 'Sent to {{count}} phones',
+  'notifications.sentSuppressed': '{{count}} phones have this kind switched off and did not get it.',
+  'notifications.sendFailed': 'Nothing was sent',
+
   /* ─────────────────────────────── errors ─────────────────────────────── */
   'error.title': 'Something went wrong',
   'error.network': 'No connection to the factory server. Check the network and try again.',
@@ -1112,6 +1203,13 @@ export const en = {
   'error.slugTaken': 'An article with that title already exists.',
   'error.contentNotPublished': 'That is not live, so there is nothing to take down.',
   'error.url': 'Enter a valid web address',
+  'error.unknownCategory':
+    'The app would throw that away — it only opens notifications of a kind it recognises.',
+  'error.categoryDisabled': 'This factory does not send that kind of notification.',
+  'error.noRecipients':
+    'No phone in that audience accepts this kind of notification, so nothing would arrive.',
+  'error.pushNotConfigured':
+    'Push is switched on for this factory but no kinds have been set up yet. That is done in Configuration.',
   'error.unknown': 'Unexpected error. If it keeps happening, tell the factory administrator.',
   'error.boundaryTitle': 'This screen could not be shown',
   'error.boundaryBody': 'The rest of the console still works. Reload this page to try again.',

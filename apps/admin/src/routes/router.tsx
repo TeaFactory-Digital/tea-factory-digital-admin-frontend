@@ -92,6 +92,11 @@ const StaticContentScreen = lazy(() =>
     default: m.StaticContentScreen,
   })),
 );
+const NotificationsScreen = lazy(() =>
+  import('@/modules/notifications/NotificationsScreen').then((m) => ({
+    default: m.NotificationsScreen,
+  })),
+);
 const AuditScreen = lazy(() =>
   import('@/modules/audit/AuditScreen').then((m) => ({ default: m.AuditScreen })),
 );
@@ -294,6 +299,16 @@ export const router = createBrowserRouter([
           <RequireCapability capability="content">
             <StaticContentScreen />
           </RequireCapability>
+        ),
+      },
+      {
+        path: 'notifications',
+        element: (
+          <RequireFlag flag="enablePushNotifications">
+            <RequireCapability capability="content">
+              <NotificationsScreen />
+            </RequireCapability>
+          </RequireFlag>
         ),
       },
       {

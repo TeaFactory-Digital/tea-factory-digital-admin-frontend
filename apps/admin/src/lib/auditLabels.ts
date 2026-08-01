@@ -37,6 +37,8 @@ const ACTION_KEYS: Record<string, string> = {
   'news.archive': 'audit.action.newsArchive',
   'staticPage.translation.save': 'audit.action.staticPageSave',
   'staticPage.publish': 'audit.action.staticPagePublish',
+  'notification.send': 'audit.action.notificationSend',
+  'notification.trigger.set': 'audit.action.notificationTrigger',
 };
 
 export function auditActionLabel(action: string, t: (key: string) => string): string {

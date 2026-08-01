@@ -20,6 +20,7 @@ import type {
   DeliveryQuery,
   InquiryQuery,
   NewsQuery,
+  NotificationQuery,
   PayoutLineQuery,
   PayoutRunQuery,
   SavingsAccountQuery,
@@ -151,6 +152,18 @@ export const qk = {
     list: ['static-pages', 'list'] as const,
     detail: (slug: string) => ['static-pages', 'detail', slug] as const,
     preview: (slug: string, lang: string) => ['static-pages', 'preview', slug, lang] as const,
+  },
+
+  /**
+   * A send invalidates the log **and** the triggers, even though a composed send touches
+   * no trigger. The two are read side by side on one screen, and a factory that has just
+   * turned `newsArticle` on wants to see the next publish appear in the log underneath
+   * it — a stale trigger card over a fresh log reads as the toggle not having worked.
+   */
+  notifications: {
+    all: ['notifications'] as const,
+    list: (query: NotificationQuery) => ['notifications', 'list', query] as const,
+    triggers: ['notifications', 'triggers'] as const,
   },
 
   audit: {

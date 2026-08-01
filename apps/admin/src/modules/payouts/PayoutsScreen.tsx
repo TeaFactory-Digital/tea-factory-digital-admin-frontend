@@ -24,6 +24,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { PayoutRun, PayoutRunQuery } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
+import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/states';
@@ -191,7 +192,7 @@ export function PayoutsScreen() {
 
       <PreparePayoutRun monthKey={monthKey} month={month} existing={rows} />
 
-      <Card className="flex min-h-0 flex-1 flex-col">
+      <Card className={GRID_CARD}>
         <DataTable
           label={t('payouts.title')}
           columns={columns}

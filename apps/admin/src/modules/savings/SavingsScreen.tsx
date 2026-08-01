@@ -26,6 +26,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { SavingsAccount, SavingsAccountQuery } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SearchInput, Select } from '@/components/ui/Field';
@@ -302,7 +303,7 @@ export function SavingsScreen() {
        * which is exactly the fallback `AppShell` describes for a screen taller than
        * the window.
        */}
-      <Card className="flex min-h-96 flex-1 flex-col">
+      <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-end gap-sm border-b border-divider p-md">
           <SearchInput
             label={t('savings.searchPlaceholder')}

@@ -16,6 +16,8 @@ import {
   MAX_CONTENT_BODY_CHARS,
   MAX_CONTENT_EXCERPT_CHARS,
   MAX_CONTENT_TITLE_CHARS,
+  MAX_PUSH_BODY_CHARS,
+  MAX_PUSH_TITLE_CHARS,
   MAX_DELIVERY_BATCH_ROWS,
   MAX_DELIVERY_KG,
   STATIC_PAGE_SLUGS,
@@ -404,3 +406,50 @@ export const newsArticleDraftSchema = z.object({
 });
 
 export type NewsArticleDraftInput = z.infer<typeof newsArticleDraftSchema>;
+
+/* ───────────────────────── M13 Notifications ───────────────────────── */
+
+export const notificationCategorySchema = z.enum([
+  'billPublished',
+  'requestDecided',
+  'newsArticle',
+  'inquiryReplied',
+]);
+
+/**
+ * Who a send is aimed at.
+ *
+ * Refined rather than left as three optional fields, because "collection point" with no
+ * point named resolves to **everybody** — the audience widens silently, which is the one
+ * way this module can do real harm.
+ */
+export const notificationAudienceSchema = z
+  .object({
+    kind: z.enum(['allSuppliers', 'collectionPoint', 'supplier']),
+    collectionPoint: z.string().trim().max(80).optional(),
+    supplierId: z.string().trim().max(60).optional(),
+  })
+  .refine((value) => value.kind !== 'collectionPoint' || Boolean(value.collectionPoint), {
+    message: 'validation.required',
+    path: ['collectionPoint'],
+  })
+  .refine((value) => value.kind !== 'supplier' || Boolean(value.supplierId), {
+    message: 'validation.required',
+    path: ['supplierId'],
+  });
+
+/**
+ * A composed notification.
+ *
+ * The lengths are short on purpose: both platforms truncate on the lock screen, and a
+ * supplier who has to open the app to find out what the factory said is a supplier who
+ * stops opening it. A push is a headline, and the article it points at is M11's job.
+ */
+export const composeNotificationSchema = z.object({
+  category: notificationCategorySchema,
+  title: requiredString('validation.required', MAX_PUSH_TITLE_CHARS),
+  body: requiredString('validation.required', MAX_PUSH_BODY_CHARS),
+  audience: notificationAudienceSchema,
+});
+
+export type ComposeNotificationInput = z.infer<typeof composeNotificationSchema>;

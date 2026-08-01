@@ -22,6 +22,7 @@ import { useAuthStore, useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
 import { Dialog } from '@/components/ui/Dialog';
 import { Field, Select, Textarea } from '@/components/ui/Field';
@@ -305,7 +306,7 @@ export function PayoutRunDetailScreen() {
         </CardBody>
       </Card>
 
-      <Card className="flex min-h-0 flex-1 flex-col">
+      <Card className={GRID_CARD}>
         <CardHeader
           title={t('payouts.linesTitle')}
           description={t('payouts.linesDescription')}

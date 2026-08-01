@@ -243,3 +243,31 @@ export const QUEUE_SLA_HOURS = {
   manureRequests: 72,
   inquiries: 24,
 } as const;
+
+/* ─────────────────────── M13 Notifications ─────────────────────── */
+
+export const NOTIFICATION_SEND_STATUSES = ['queued', 'sent', 'failed'] as const;
+
+export type NotificationSendStatus = (typeof NOTIFICATION_SEND_STATUSES)[number];
+
+/**
+ * Where a send came from.
+ *
+ * `automatic` fired off a console event; `composed` was written by a person. Kept apart
+ * because they answer different questions and the office asks both: "did the bill
+ * notification go out" is a system question, and "who told every supplier the factory is
+ * closed on Friday" is not.
+ */
+export const NOTIFICATION_ORIGINS = ['automatic', 'composed'] as const;
+
+export type NotificationOrigin = (typeof NOTIFICATION_ORIGINS)[number];
+
+/**
+ * A push payload is not an article.
+ *
+ * Both platforms truncate a long notification on the lock screen, and a supplier who has
+ * to open the app to find out what the factory said is a supplier who stops opening it.
+ * These are guards against a paste, not editorial limits.
+ */
+export const MAX_PUSH_TITLE_CHARS = 65;
+export const MAX_PUSH_BODY_CHARS = 240;

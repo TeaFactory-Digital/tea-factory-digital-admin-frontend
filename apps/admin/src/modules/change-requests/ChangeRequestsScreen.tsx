@@ -19,6 +19,7 @@ import { ArrowRight } from 'lucide-react';
 import type { AdminChangeRequest, ChangeRequestType, RequestStatus } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
+import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
 import { SearchInput, Select } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -176,7 +177,7 @@ export function ChangeRequestsScreen() {
       <PageHeader title={t('changeRequests.title')} description={t('changeRequests.subtitle')} />
 
       {/* Fixed-height card, scrolling rows — see the note in SuppliersScreen. */}
-      <Card className="flex min-h-0 flex-1 flex-col">
+      <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-center gap-sm border-b border-divider p-md">
           <div className="min-w-64 flex-1">
             <SearchInput

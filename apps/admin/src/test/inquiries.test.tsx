@@ -210,14 +210,17 @@ describe('M10 detail screen', () => {
     expect(screen.getByRole('button', { name: /close unanswered/i })).toBeEnabled();
   });
 
-  it('shows the answer and says plainly that no notification went out', async () => {
+  it('shows the answer and says whether a notification went to the phone', async () => {
     await signInAs(CLERK);
     renderDetail(ANSWERED);
 
     expect(await screen.findByText(/The answer/i)).toBeInTheDocument();
-    // M13 is not built, and a clerk who believes a message was pushed to the
+    // M13 now exists, and `inquiryReplied` is on by default for this tenant — so the
+    // screen must say a notification *was* sent. It used to assert the opposite, which
+    // was true until M13 landed and is exactly the kind of copy that quietly becomes a
+    // lie. A clerk who believes a message was pushed to the
     // supplier's phone is a clerk who does not follow up.
-    expect(screen.getByText(/Notifications are not built yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/A notification was sent to their phone/i)).toBeInTheDocument();
     // Nothing to do on a message already answered.
     expect(screen.queryByRole('button', { name: /^reply$/i })).not.toBeInTheDocument();
   });

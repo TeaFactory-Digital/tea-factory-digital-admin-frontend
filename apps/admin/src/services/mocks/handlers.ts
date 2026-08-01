@@ -45,6 +45,10 @@ import type {
   MonthSummary,
   LanguageCode,
   MonthlyRateEntry,
+  NotificationAudience,
+  NotificationCategory,
+  NotificationReach,
+  NotificationSend,
   NewsListItem,
   Paged,
   PaymentMethod,
@@ -59,6 +63,10 @@ import {
   EDITORIAL_FALLBACK_LANGUAGE,
   MAX_CONTENT_BODY_CHARS,
   MAX_CONTENT_TITLE_CHARS,
+  MAX_PUSH_BODY_CHARS,
+  MAX_PUSH_TITLE_CHARS,
+  NOTIFICATION_CATEGORIES,
+  NOTIFICATION_EVENTS,
   MAX_DELIVERY_BATCH_ROWS,
   MAX_DELIVERY_KG,
   STATIC_PAGE_SLUGS,
@@ -66,7 +74,10 @@ import {
   deductionsBalance,
   isExactKg,
   isInquiryClosed,
+  audienceMatches,
+  isRecognizedCategory,
   isSelfApproval,
+  partitionDevices,
   missingTranslations,
   monthKeyOf,
   publishability,
@@ -97,7 +108,10 @@ import {
   mockInquiries,
   mockMonthExceptions,
   mockMonths,
+  mockDevicesBySupplier,
   mockNews,
+  mockNotificationSends,
+  mockNotificationTriggers,
   mockPayoutLines,
   mockPayoutRuns,
   mockSavingsLedger,
@@ -182,6 +196,8 @@ const state = {
    * here: the symptom is a test suite where the second case finds Sinhala already
    * written and the AC-08 gap it was asserting on has quietly disappeared.
    */
+  notificationTriggers: mockNotificationTriggers.map((trigger) => ({ ...trigger })),
+  notificationSends: mockNotificationSends.map((send) => ({ ...send })),
   news: mockNews.map(cloneNews),
   staticPages: mockStaticPages.map(cloneStaticPage),
   sequence: 1000,
@@ -202,6 +218,161 @@ function cloneMonths(): Record<string, MonthRecord> {
       { ...record, rate: record.rate ? { ...record.rate } : null },
     ]),
   );
+}
+
+
+/* ─────────────────── M13 notification helpers ─────────────────── */
+
+/**
+ * What this tenant is allowed to send at all.
+ *
+ * `hillcountry` has `enablePushNotifications: true` and **no `push` block**, which is a
+ * real state rather than a fixture oversight: the flag is on and nobody has configured
+ * the categories. The console must say so — `push-not-configured` — rather than sending
+ * into a void or crashing on an undefined. Configuring it is M14's job.
+ */
+function pushConfigOf(request: Request) {
+  const config = mockConfigs[tenantOf(request)] ?? mockConfigs.galaboda!;
+  return config.push ?? null;
+}
+
+/** Resolve an audience to suppliers, then to devices, honouring per-device consent. */
+function resolveReach(
+  request: Request,
+  category: NotificationCategory,
+  audience: NotificationAudience,
+): NotificationReach {
+  const suppliers = state.suppliers.filter((supplier) =>
+    audienceMatches(
+      { id: supplier.id, collectionPoint: supplier.collectionPoint, status: supplier.status },
+      audience,
+    ),
+  );
+
+  let reachable = 0;
+  let suppressed = 0;
+  let withoutDevice = 0;
+
+  for (const supplier of suppliers) {
+    const devices = mockDevicesBySupplier[supplier.id] ?? [];
+    if (devices.length === 0) {
+      // Counted, because "reached 240 of 300" is only meaningful if the office knows how
+      // many of the other 60 never installed the app at all.
+      withoutDevice += 1;
+      continue;
+    }
+    const split = partitionDevices(devices, category);
+    reachable += split.reachable.length;
+    suppressed += split.suppressed.length;
+  }
+
+  void request;
+  return {
+    targetedSuppliers: suppliers.length,
+    reachableDevices: reachable,
+    suppressedDevices: suppressed,
+    suppliersWithoutDevice: withoutDevice,
+  };
+}
+
+/** The refusals every send shares, composed or automatic. */
+function checkSendable(
+  request: Request,
+  category: string,
+): { push: NonNullable<ReturnType<typeof pushConfigOf>> } | { response: Response } {
+  const push = pushConfigOf(request);
+  if (!push) {
+    return {
+      response: fail({
+        status: 409,
+        code: 'push-not-configured',
+        message: 'This factory has push turned on but no categories configured.',
+      }),
+    };
+  }
+  /**
+   * The refusal that matters most, and the one with no feedback loop behind it: the app
+   * **drops** a push whose category it does not recognize rather than opening an
+   * arbitrary screen. A send the console called successful would reach nobody and report
+   * nothing at all.
+   */
+  if (!isRecognizedCategory(category)) {
+    return {
+      response: fail({
+        status: 422,
+        code: 'unknown-category',
+        message: 'The app would drop a notification in that category.',
+        details: { category, recognized: NOTIFICATION_CATEGORIES },
+      }),
+    };
+  }
+  if (!push.categories.includes(category)) {
+    return {
+      response: fail({
+        status: 409,
+        code: 'category-disabled',
+        message: 'This factory does not send that category.',
+        details: { category, categories: push.categories },
+      }),
+    };
+  }
+  return { push };
+}
+
+/**
+ * Fire an automatic notification, if this factory has that trigger on.
+ *
+ * Called from the module that owns the event — `month.publish`, `news.publish` and the
+ * two decision paths — rather than from a scheduler watching the audit log. The event is
+ * the fact; whether it notifies is policy, and the policy lives in one row.
+ *
+ * **Never throws and never blocks.** A push that could not be sent must not roll back the
+ * month it was announcing: publishing is irreversible, and a notification failure after
+ * that point would leave the console refusing an act the server had already committed.
+ * The failure is recorded on the send instead, which is what the log is for.
+ */
+function fireAutomatic(
+  request: Request,
+  category: NotificationCategory,
+  content: { title: string; body: string; entity: string; entityId: string },
+  audience: NotificationAudience = { kind: 'allSuppliers' },
+): NotificationSend | null {
+  if (!flagsOf(request).enablePushNotifications) return null;
+
+  const trigger = state.notificationTriggers.find((one) => one.category === category);
+  if (!trigger?.enabled) return null;
+
+  const push = pushConfigOf(request);
+  if (!push || !push.categories.includes(category)) return null;
+
+  const reach = resolveReach(request, category, audience);
+  const now = new Date().toISOString();
+
+  const send: NotificationSend = {
+    id: `ntf-${nextId()}`,
+    category,
+    origin: 'automatic',
+    title: content.title,
+    body: content.body,
+    audience,
+    entity: content.entity,
+    entityId: content.entityId,
+    targetedSuppliers: reach.targetedSuppliers,
+    reachableDevices: reach.reachableDevices,
+    suppressedDevices: reach.suppressedDevices,
+    // No recipients is **not** a failure for an automatic send: a month published at a
+    // factory where nobody has installed the app is a normal month, and a red row in the
+    // log would train the office to ignore red rows.
+    status: 'sent',
+    createdById: null,
+    createdByName: null,
+    createdAt: now,
+    sentAt: now,
+    failureReason: null,
+  };
+
+  state.notificationSends = [send, ...state.notificationSends];
+  return send;
 }
 
 /** Deep enough to isolate the translations map — see the `state.news` comment. */
@@ -1821,6 +1992,22 @@ export const handlers: HttpHandler[] = [
     }
     const credited = postSavingsFor(monthKey, publishedAt);
 
+    /**
+     * M13, if this factory has the trigger on.
+     *
+     * Fired **here**, from the module that owns the event, rather than by something
+     * watching the audit log: publishing is the moment a bill becomes something a
+     * supplier can open, so it is the moment the notification means anything. It cannot
+     * throw and cannot block — a push that failed must never roll back an irreversible
+     * publish, and `fireAutomatic` records the outcome in the send log instead.
+     */
+    fireAutomatic(request, 'billPublished', {
+      title: `Your ${monthKey} account is ready`,
+      body: 'The Green Leaf Account has been published. Open the app to see your kilos and your balance.',
+      entity: 'monthlyRate',
+      entityId: monthKey,
+    });
+
     recordBy(auth, 'month.publish', 'monthlyRate', monthKey, {
       before: { stage: 'billsGenerated' },
       after: {
@@ -2548,6 +2735,26 @@ export const handlers: HttpHandler[] = [
         after: { status, note: note.trim() },
       });
 
+      /**
+       * `requestDecided`, to the one supplier who asked.
+       *
+       * The **decision note is deliberately not in the push**, even though it is the most
+       * useful sentence the office wrote. It is written *to* the supplier and can say why
+       * a bank change was refused; a lock screen is read by whoever is holding the phone,
+       * and this is the one category that carries a decision about somebody's money.
+       */
+      fireAutomatic(
+        request,
+        'requestDecided',
+        {
+          title: status === 'approved' ? 'Your request was approved' : 'Your request was not approved',
+          body: 'Open the app to see the decision and the note from the office.',
+          entity: 'changeRequest',
+          entityId: before.id,
+        },
+        { kind: 'supplier', supplierId: before.supplierId },
+      );
+
       return HttpResponse.json(after);
     }),
   ),
@@ -2764,6 +2971,224 @@ export const handlers: HttpHandler[] = [
       return HttpResponse.json(after);
     }),
   ),
+
+  /* ── M13 Notifications ─────────────────────────────────────────────────── */
+
+  /** Registered before the collection route so the literal segment wins. */
+  http.get('*/admin/notifications/triggers', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enablePushNotifications');
+    if (gate) return gate;
+    const auth = authorize(request, 'content');
+    if ('response' in auth) return auth.response;
+
+    const push = pushConfigOf(request);
+    return HttpResponse.json(
+      state.notificationTriggers.map((trigger) => ({
+        ...trigger,
+        event: NOTIFICATION_EVENTS[trigger.category],
+        // `false` when the tenant carries no push config at all, or does not list this
+        // category — so the console says "not configured for this factory" instead of
+        // offering a toggle that would answer `category-disabled`.
+        available: Boolean(push?.categories.includes(trigger.category)),
+      })),
+    );
+  }),
+
+  /**
+   * Turn a trigger on or off.
+   *
+   * **This endpoint is the answer to §21.24**, deferred rather than guessed: whether the
+   * office composes every send or whether "your bill is ready" fires off the publish step
+   * is a row here, not a code change.
+   */
+  http.put('*/admin/notifications/triggers/:category', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enablePushNotifications');
+    if (gate) return gate;
+    // `content: approve` — the same boundary M11 draws. Deciding that every supplier's
+    // phone buzzes when a month closes is a factory-administrator decision, not an
+    // editor's.
+    const auth = authorize(request, 'content', 'approve');
+    if ('response' in auth) return auth.response;
+
+    const category = String(params.category);
+    const check = checkSendable(request, category);
+    if ('response' in check) return check.response;
+
+    const index = state.notificationTriggers.findIndex((one) => one.category === category);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such trigger.' });
+
+    const { enabled } = (await request.json()) as { enabled?: boolean };
+    const before = state.notificationTriggers[index]!;
+    const after = {
+      ...before,
+      enabled: Boolean(enabled),
+      updatedAt: new Date().toISOString(),
+      updatedByName: auth.user.name,
+    };
+    state.notificationTriggers[index] = after;
+
+    recordBy(auth, 'notification.trigger.set', 'notificationTrigger', category, {
+      before: { enabled: before.enabled },
+      after: { enabled: after.enabled },
+    });
+
+    return HttpResponse.json({
+      ...after,
+      event: NOTIFICATION_EVENTS[after.category],
+      available: true,
+    });
+  }),
+
+  /**
+   * How far a send would reach — **before** anybody presses send.
+   *
+   * A `POST` despite being a read: the audience is a structured body, and encoding a
+   * supplier id into a cacheable URL for a preview is worse than the verb mismatch.
+   */
+  http.post('*/admin/notifications/reach', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enablePushNotifications');
+    if (gate) return gate;
+    const auth = authorize(request, 'content');
+    if ('response' in auth) return auth.response;
+
+    const body = (await request.json()) as {
+      category?: string;
+      audience?: NotificationAudience;
+    };
+    const check = checkSendable(request, String(body.category));
+    if ('response' in check) return check.response;
+
+    return HttpResponse.json(
+      resolveReach(
+        request,
+        body.category as NotificationCategory,
+        body.audience ?? { kind: 'allSuppliers' },
+      ),
+    );
+  }),
+
+  http.get('*/admin/notifications', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enablePushNotifications');
+    if (gate) return gate;
+    const auth = authorize(request, 'content');
+    if ('response' in auth) return auth.response;
+
+    const url = new URL(request.url);
+    const category = url.searchParams.get('category');
+    const origin = url.searchParams.get('origin');
+
+    let rows = state.notificationSends;
+    if (category) rows = rows.filter((send) => send.category === category);
+    if (origin) rows = rows.filter((send) => send.origin === origin);
+
+    // Newest first: a send log is read from the top, and the message somebody is asking
+    // about is almost always the one that just went out.
+    rows = sortRows(rows, url, (a, b) => b.createdAt.localeCompare(a.createdAt));
+
+    return HttpResponse.json(paginate(rows, url));
+  }),
+
+  /**
+   * Send one, composed by a person.
+   *
+   * `content: approve`, which is the console's answer to §21.24's second half — "who may
+   * send free text". A composed push reaches every supplier's lock screen and **cannot be
+   * recalled**, which is a different act from writing an article somebody else publishes.
+   * Stated on the screen so the factory can contest it.
+   */
+  http.post('*/admin/notifications', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enablePushNotifications');
+    if (gate) return gate;
+    const auth = authorize(request, 'content', 'approve');
+    if ('response' in auth) return auth.response;
+
+    const body = (await request.json()) as {
+      category?: string;
+      title?: string;
+      body?: string;
+      audience?: NotificationAudience;
+    };
+
+    const check = checkSendable(request, String(body.category));
+    if ('response' in check) return check.response;
+
+    const title = body.title?.trim() ?? '';
+    const text = body.body?.trim() ?? '';
+    if (title.length === 0 || text.length === 0) {
+      return fail({ status: 422, code: 'invalid', message: 'A title and a message are required.' });
+    }
+    if (title.length > MAX_PUSH_TITLE_CHARS || text.length > MAX_PUSH_BODY_CHARS) {
+      return fail({
+        status: 422,
+        code: 'invalid',
+        message: 'That is longer than a lock screen will show.',
+      });
+    }
+
+    const category = body.category as NotificationCategory;
+    const audience = body.audience ?? { kind: 'allSuppliers' };
+    const reach = resolveReach(request, category, audience);
+
+    /**
+     * Nobody would receive it — refused rather than logged as sent.
+     *
+     * Unlike an automatic send, somebody is standing at this screen: telling them the
+     * message went nowhere is information they can act on (put it on the noticeboard,
+     * or turn the category back on), while a green row in the log is a lie they will
+     * believe.
+     */
+    if (reach.reachableDevices === 0) {
+      return fail({
+        status: 409,
+        code: 'no-recipients',
+        message: 'No device in that audience accepts this category.',
+        details: {
+          targetedSuppliers: reach.targetedSuppliers,
+          suppressedDevices: reach.suppressedDevices,
+          suppliersWithoutDevice: reach.suppliersWithoutDevice,
+        },
+      });
+    }
+
+    const now = new Date().toISOString();
+    const send: NotificationSend = {
+      id: `ntf-${nextId()}`,
+      category,
+      origin: 'composed',
+      title,
+      body: text,
+      audience,
+      entity: null,
+      entityId: null,
+      targetedSuppliers: reach.targetedSuppliers,
+      reachableDevices: reach.reachableDevices,
+      suppressedDevices: reach.suppressedDevices,
+      status: 'sent',
+      createdById: auth.user.id,
+      createdByName: auth.user.name,
+      createdAt: now,
+      sentAt: now,
+      failureReason: null,
+    };
+    state.notificationSends = [send, ...state.notificationSends];
+
+    recordBy(auth, 'notification.send', 'notification', send.id, {
+      after: {
+        category,
+        audience,
+        title,
+        reachableDevices: reach.reachableDevices,
+        suppressedDevices: reach.suppressedDevices,
+      },
+    });
+
+    return HttpResponse.json(send, { status: 201 });
+  }),
 
   /* ── M11 News ──────────────────────────────────────────────────────────── */
 
@@ -3002,6 +3427,27 @@ export const handlers: HttpHandler[] = [
        * only the publish cannot answer it.
        */
       const gaps = serialiseNews(after, request);
+
+      /**
+       * Only on `publish`, and only the fallback title.
+       *
+       * A push carries one string, so it carries the language everything falls back to
+       * (AC-08) — the alternative is choosing a language per device, which the app does
+       * itself when it opens the article. Taking a supplier to copy they can read is the
+       * app's job; getting them there is this one's.
+       */
+      if (verb === 'publish') {
+        const headline = after.translations[EDITORIAL_FALLBACK_LANGUAGE];
+        if (headline) {
+          fireAutomatic(request, 'newsArticle', {
+            title: headline.title,
+            body: headline.excerpt ?? headline.body.slice(0, MAX_PUSH_BODY_CHARS),
+            entity: 'newsArticle',
+            entityId: after.id,
+          });
+        }
+      }
+
       recordBy(auth, `news.${verb}`, 'newsArticle', after.id, {
         before: { status: before.status },
         after: {
@@ -3316,6 +3762,24 @@ export const handlers: HttpHandler[] = [
       after: { status: 'resolved' },
     });
 
+    /**
+     * Aimed at **one supplier**, which is what makes this the safest of the four
+     * triggers: the audience is the person who asked, and the body carries no answer —
+     * only that there is one. A reply can name a bank account or a dispute, and a lock
+     * screen is read by whoever is holding the phone.
+     */
+    fireAutomatic(
+      request,
+      'inquiryReplied',
+      {
+        title: 'The factory replied to your message',
+        body: `Your message about "${before.subject}" has an answer.`,
+        entity: 'inquiry',
+        entityId: before.id,
+      },
+      { kind: 'supplier', supplierId: before.supplierId },
+    );
+
     return HttpResponse.json(after);
   }),
 
@@ -3462,6 +3926,20 @@ export function resetMockState(): void {
   state.payoutRuns = mockPayoutRuns.map((run) => ({ ...run }));
   state.payoutLines = mockPayoutLines.map((line) => ({ ...line }));
   state.savingsLedger = mockSavingsLedger.map((entry) => ({ ...entry }));
+  /**
+   * The content and notification state too, and **`cloneNews` rather than a spread**:
+   * a shallow copy shares the `translations` map with the seed, so a test that saves a
+   * Sinhala translation mutates the fixture and every later test finds Sinhala already
+   * written — the AC-08 gap it was asserting on quietly gone.
+   *
+   * The triggers matter for the same reason from the other direction: a test that turns
+   * `newsArticle` on leaves every subsequent publish firing a notification, and a suite
+   * asserting "no send was made" fails somewhere else entirely.
+   */
+  state.news = mockNews.map(cloneNews);
+  state.staticPages = mockStaticPages.map(cloneStaticPage);
+  state.notificationTriggers = mockNotificationTriggers.map((trigger) => ({ ...trigger }));
+  state.notificationSends = mockNotificationSends.map((send) => ({ ...send }));
   /**
    * The queues too. A credit request approved in one test leaves the supplier's
    * `creditBalances` raised, which lowers the headroom the next test asserts on —

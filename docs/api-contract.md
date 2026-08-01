@@ -1475,7 +1475,118 @@ differences:
 
 ---
 
-## 17. Not yet called by the console
+## 17. M13 Notifications
+
+Gate every endpoint on `enablePushNotifications` (`403 feature-disabled`). Authorize reads
+on `content` and **both writes on `content: approve`** — sending to every supplier's lock
+screen is the factory administrator's act, not the editor's.
+
+`packages/domain/src/notifications.ts` is the shared implementation. Import it: the
+audience resolution and the consent split must be identical on both sides, because the
+console shows the office a reach figure it then has to honour.
+
+### 17.1 The two rules everything else follows from
+
+1. **A send must carry a recognized `data.category`.** The app drops anything else rather
+   than opening an arbitrary screen — so an unrecognized category is not a degraded send,
+   it is a **silent** one. Refuse with `422 unknown-category`; do not accept and log.
+2. **Honour each device's opted-in categories, not only its topic subscription.** A device
+   on the factory topic that has `newsArticle` switched off must not receive news.
+
+Rule 2 is why every count comes back in **two halves**. A suppressed device is reported,
+never filtered: "sent to 240" when 90 opted out is a figure the office acts on wrongly, and
+the gap between the two numbers is the only place a factory sees its own opt-out rate.
+
+### 17.2 `GET /admin/notifications/triggers` → `NotificationTrigger[]`
+
+```json
+[{ "category": "billPublished", "event": "month.publish", "enabled": true,
+   "available": true, "updatedAt": null, "updatedByName": null }]
+```
+
+`event` is a **fact** — `billPublished` can only mean the moment a month is published.
+`enabled` is the factory's policy and `PUT /triggers/{category}` changes it.
+
+`available: false` when the tenant's `push.categories` does not carry the category, or when
+the tenant has **no `push` block at all**. That second case is real: a factory can have
+`enablePushNotifications: true` and nothing configured, and the console must say "not set
+up for this factory" rather than offer a toggle that would 409. Configuring it is §14's job.
+
+**This endpoint pair is the answer to §21.24.** Whether the office composes every send or
+whether "your bill is ready" fires off the publish step is a row here. Default each
+trigger from `push.defaultCategories` — the platform's own statement about which categories
+are routine — rather than from an opinion.
+
+### 17.3 `POST /admin/notifications/reach` → `NotificationReach`
+
+```json
+→ { "category": "newsArticle", "audience": { "kind": "collectionPoint", "collectionPoint": "MAKADURA" } }
+← { "targetedSuppliers": 17, "reachableDevices": 3, "suppressedDevices": 11, "suppliersWithoutDevice": 4 }
+```
+
+A `POST` despite being a read: the audience is a structured body, and encoding a supplier
+id into a cacheable URL for a preview is worse than the verb mismatch.
+
+**Four numbers rather than one**, because they are four different problems. `suppressed`
+is a supplier who turned this category off; `withoutDevice` is one who never installed the
+app; the difference between `targeted` and `reachable` is both together. A single
+"not reached" figure hides which, and they have different fixes.
+
+**A closed supplier is never in an audience**, whatever the audience says — they have left,
+and a factory circular on their phone is how an app gets uninstalled. A *suspended* one
+stays in: they are mid-dispute, which is exactly when they need to hear from the office.
+
+### 17.4 `POST /admin/notifications` → 201 `NotificationSend`
+
+```json
+→ { "category": "billPublished", "title": "…", "body": "…",
+    "audience": { "kind": "allSuppliers" } }
+```
+
+```
+422 unknown-category      the app would drop it        + details.recognized
+409 category-disabled     not in this tenant's push.categories
+409 push-not-configured   the flag is on, nothing is configured
+409 no-recipients         no device in the audience accepts this category
+                          + details.targetedSuppliers, suppressedDevices, suppliersWithoutDevice
+```
+
+`no-recipients` is refused for a **composed** send and not for an automatic one, and the
+asymmetry is deliberate: somebody is standing at the composer and can act on the
+information, while a month published at a factory where nobody has the app is a normal
+month whose red row would train the office to ignore red rows.
+
+Title and body are short (65 / 240) because both platforms truncate on a lock screen, and a
+supplier who must open the app to find out what the factory said stops opening it.
+
+Audit `notification.send` **with the reach in `after`**: "how many people did that actually
+go to" is asked afterwards and nothing else can answer it.
+
+### 17.5 Automatic sends
+
+Fire from the endpoint that owns the event, not from a job watching the audit log:
+
+| Category | Fires in |
+| --- | --- |
+| `billPublished` | §10.5 publish, after the bills are stamped and savings posted |
+| `requestDecided` | §11's approve/reject |
+| `newsArticle` | §16.6 publish |
+| `inquiryReplied` | §15's reply |
+
+Three rules for all of them:
+
+- **Check the trigger first.** A disabled trigger sends nothing and records nothing.
+- **Never throw, never block.** A push that could not be sent must not roll back the month
+  it was announcing. Publishing is irreversible; a notification failure after that point
+  would leave the console refusing an act the server already committed.
+- **Do not put the payload in the push.** Neither the decision note nor the reply body,
+  even though both are the most useful sentence the office wrote — they are written to one
+  supplier, can name a bank account or a dispute, and a lock screen is read by whoever is
+  holding the phone. Say there is an answer; let the app show it.
+
+---
+
+## 18. Not yet called by the console
 
 These are in §17.6's scope and the console has no code for them yet, so the
 shapes are open. Requests from the front end when you get there:
@@ -1485,12 +1596,12 @@ shapes are open. Requests from the front end when you get there:
 | **M3 scale file** | The upload half of M3 is not built, because no factory has yet said what its weighbridge exports. Whatever the format, it should land as the **same batch** in §9.3 with `source: "scaleFile"` — a second write path for the same fact is a second set of refusals to keep in step |
 | **The bill PDF** | AC-03 names the PDF alongside the app's Home screen. §11.3 is the same data, so this is a renderer over an existing read model rather than a new shape — and it must be generated from the *published* bill, not re-derived at print time |
 | **The payout file** | §12.5's note: blocked on §21.17. It is an export over an existing run, and the run must not change shape to accommodate it |
-| **M13 Notifications** | Sends must carry a recognized `data.category` — the app drops anything else rather than opening an arbitrary screen — and must honour each device's opted-in categories, not only its topic subscriptions |
+| **The push transport** | §17 specifies the record and the reach; **nothing here sends anything.** FCM/APNs brings a failure mode the console has no shape for yet — a per-device delivery result arriving asynchronously, minutes later. `NotificationSend.status` already carries `queued` and `failed` for it |
 | **M16 Reports** | Run off a read replica or nightly snapshot (§19.5). A month-close query must not compete with a clerk entering deliveries |
 
 ---
 
-## 18. A checklist for the first PR
+## 19. A checklist for the first PR
 
 Ordered so each step is independently useful to the console.
 
@@ -1519,6 +1630,9 @@ Ordered so each step is independently useful to the console.
 - [ ] `/admin/news/*` and `/admin/static-pages/*` — per-language saves, gaps derived
       against the tenant's `contentLanguages`, and a preview endpoint that resolves the
       fallback the way `content.ts` does
+- [ ] `/admin/notifications/*` — triggers as data, a reach endpoint that splits consent
+      from "never installed the app", and automatic sends fired from the endpoints in
+      §17.5 rather than from a job
 
 Point `VITE_API_BASE_URL` at it and set `VITE_USE_MOCK=0`; the console needs no
 other change. If a shape differs from this document, the seam that absorbs it is

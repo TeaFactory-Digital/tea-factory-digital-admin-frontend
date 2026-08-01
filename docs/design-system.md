@@ -206,6 +206,41 @@ to the HTTP status.
   12-column row needs help staying on one line.
 - **The page body never scrolls horizontally**, in any language.
 
+### A grid must never be squeezed to nothing
+
+`AppShell` gives a screen a **definite** height (`h-full`) so a `flex-1` grid card can
+resolve against it and scroll internally instead of the page scrolling. That is the right
+default and it has one sharp edge: a flex item only shrinks below its content if it opts
+out of `min-height: auto`, and every grid card opted out with `min-h-0` — which says
+*shrink me as far as you like*, including to zero.
+
+On a tall window that is invisible. On a 13-inch laptop, with a page header **and a card
+above the grid**, the leftover space runs out and the list disappears. Measured on the
+notifications screen: 28 px of list at 1440×785 and 0 px at 1440×700, with the rows still
+in the DOM at full size behind a zero-height scroller. Nothing errored, and the browser
+test asserting the first row was visible **passed** — Playwright's visibility check asks
+whether an element has a box, not whether the box is anywhere a person could see it.
+
+Two rules follow:
+
+1. **Use `GRID_CARD`** (`components/ui/layout.ts`) for the card that holds a grid. It
+   carries `min-h-[22rem]` *instead of* `min-h-0` — fill the window when there is room,
+   and when there is not, take a usable height and let the page scroll. Never write both:
+   same property, and the winner is whichever Tailwind emits later in the stylesheet.
+2. **Do not stack a tall card on top of a grid in the fill-height column.** Put it beside
+   the grid above `xl` and *underneath* it below, with the grid first in the DOM — the
+   notifications screen is the worked example. Reading order stays the same at every
+   width, and the settings can be as tall as they like without costing the list a row.
+
+`min-h-full` on the shell wrapper looks like the fix and is not: it makes the container
+auto-height, so `flex-grow` has no free space to distribute and every grid sizes to its own
+content. A fifty-row savings table rendered 2,582 px tall and scrolled the whole page
+rather than itself. Tried, measured, reverted.
+
+`e2e/short-screen.spec.ts` holds the line at five viewports down to 1152×640, and asserts
+the first row is **inside the viewport** — scrolling the page first if it sits below the
+fold, because "below the fold" is fine and "nowhere" is not.
+
 ---
 
 ## Accessibility

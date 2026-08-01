@@ -30,6 +30,7 @@ import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
 import { Input, Select } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -201,7 +202,7 @@ export function DeliveriesScreen() {
         </Notice>
       ) : null}
 
-      <Card className="flex min-h-0 flex-1 flex-col">
+      <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-end gap-sm border-b border-divider p-md">
           <label className="flex flex-col gap-xs text-label text-text-primary">
             {t('deliveries.date')}

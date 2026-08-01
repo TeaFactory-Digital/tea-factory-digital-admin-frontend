@@ -17,5 +17,6 @@ export * from './leafCollection';
 export * from './leafCredit';
 export * from './inquiry';
 export * from './content';
+export * from './notifications';
 export * from './rbac';
 export * from './schemas';

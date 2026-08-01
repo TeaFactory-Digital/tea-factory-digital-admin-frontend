@@ -7,8 +7,10 @@
  * shape the supplier will see it is the cheapest way to stop a clerk writing an
  * answer that only makes sense next to a screen the supplier does not have.
  *
- * **No notification is sent from here**, and the console does not pretend
- * otherwise. §17.5's `inquiryReplied` category exists and M13 does not, so a reply
+ * **Whether a notification is sent is read, not asserted.** §17.5's `inquiryReplied`
+ * category now has M13 behind it, and whether it fires is a per-factory trigger — so this
+ * screen asks rather than claiming either way. It used to say flatly that nothing was
+ * sent, which was true until M13 landed and would have quietly become a lie. A reply
  * lands in the app the next time it is opened. The note under the reply says so —
  * a clerk who believes a text message went out is a clerk who does not follow up.
  */
@@ -23,6 +25,7 @@ import { ErrorState, Notice, Skeleton } from '@/components/ui/states';
 import { AuditPanel } from '@/components/AuditPanel';
 import { formatAge, formatDateTime } from '@/lib/format';
 import { InquiryActions } from './ReplyDialog';
+import { useNotificationTriggers } from '@/modules/notifications/hooks';
 import { useInquiry, useInquiryAudit } from './hooks';
 
 const STATUS_TONES = { open: 'warning', resolved: 'success', closed: 'neutral' } as const;
@@ -32,6 +35,19 @@ export function InquiryDetailScreen() {
   const { id } = useParams<{ id: string }>();
   const { data: inquiry, isPending, error, refetch } = useInquiry(id);
   const { data: audit, isPending: auditPending } = useInquiryAudit(id);
+
+  /**
+   * Does answering push anything to the supplier's phone?
+   *
+   * Read from M13's trigger rather than stated, and **tolerant of a refusal**: a clerk
+   * holds `inquiries: A` and may hold no `content` grant at all, in which case this 403s.
+   * An unanswerable question is treated as "no push", which is the safer of the two
+   * wrong answers — it makes the clerk follow up rather than assume the supplier was told.
+   */
+  const triggers = useNotificationTriggers();
+  const pushesOnReply = Boolean(
+    triggers.data?.find((trigger) => trigger.category === 'inquiryReplied')?.enabled,
+  );
 
   if (error) return <ErrorState error={error} onRetry={() => void refetch()} />;
   if (isPending || !inquiry) {
@@ -102,10 +118,17 @@ export function InquiryDetailScreen() {
                 <blockquote className="border-l-2 border-primary pl-md text-body whitespace-pre-line text-text-primary">
                   {inquiry.reply.body}
                 </blockquote>
-                {/* Said plainly, because the alternative is a clerk assuming a
-                    notification went out. M13 is not built (status.md §21.24). */}
+                {/**
+                 * Said plainly either way, because both mistakes are real: a clerk who
+                 * assumes a notification went out does not follow up, and one who assumes
+                 * it did not telephones a supplier who has already been told.
+                 */}
                 <Notice tone="info">
-                  <span>{t('inquiries.detail.noPushYet')}</span>
+                  <span>
+                    {pushesOnReply
+                      ? t('inquiries.detail.pushSent')
+                      : t('inquiries.detail.pushNotSent')}
+                  </span>
                 </Notice>
               </CardBody>
             </Card>

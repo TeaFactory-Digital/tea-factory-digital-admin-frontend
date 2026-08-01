@@ -54,6 +54,13 @@ const BY_CODE: Record<string, string> = {
   'fallback-translation-missing': 'error.fallbackTranslationMissing',
   'slug-taken': 'error.slugTaken',
   'content-not-published': 'error.contentNotPublished',
+  // M13. `unknown-category` is the one with no feedback loop behind it: the app drops a
+  // push it does not recognize, so a send the console called successful reaches nobody
+  // and reports nothing.
+  'unknown-category': 'error.unknownCategory',
+  'category-disabled': 'error.categoryDisabled',
+  'no-recipients': 'error.noRecipients',
+  'push-not-configured': 'error.pushNotConfigured',
   '403': 'error.forbidden',
   '404': 'error.notFound',
 };

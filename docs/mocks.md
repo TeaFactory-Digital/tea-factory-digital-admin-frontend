@@ -295,9 +295,33 @@ reason `stale` is not stored on a bill run. Galaboda authors in si/en/ta and hig
 en/ta, so the two see different gaps on the same page, which is what the AC-08 tenant test
 asserts.
 
+### Devices and notifications — the opt-outs are the fixture
+
+A fixture where every device accepts everything cannot demonstrate the one push rule that
+matters (*honour each device's opted-in categories, not only its topic subscription*), so
+this one is built around consent:
+
+- **one supplier in five has no device at all** — they never installed the app, and the
+  office needs that number separated from the opt-outs;
+- every device starts from the tenant's `defaultCategories`, which **excludes
+  `newsArticle`** — so a news push reaches far fewer phones than a bill does, and that
+  asymmetry is the platform's existing decision rather than one invented here;
+- one in seven has turned `newsArticle` back on and one in eleven has turned
+  `billPublished` off, because both are things people do;
+- a few carry two devices, which is why reach counts **devices** and an audience counts
+  **suppliers**.
+
+The triggers default from `push.defaultCategories` for the same reason: it is the closest
+thing to an answer to §21.24 already in the codebase. Three sends seed the log — two
+automatic and one composed to a single collection point, the last with 3 reached against
+11 opted out, which is the figure that tells an office a push was the wrong channel.
+
 ### Tenants — 3
 
-`galaboda` (full), `hillcountry` (full, different palette and radius), and
+`galaboda` (full), `hillcountry` (full, different palette and radius — and **push turned
+on with no `push` block at all**, which is a real state rather than an oversight: the flag
+being on and the module being configured are different things, and M13 answers
+`push-not-configured` for it), and
 **`highland` — the reduced-feature reference**: no loans, no manure, no push, no
 reports, no payouts, **no news**, and it authors content in English and Tamil only, mirroring mobile's `clientB`.
 

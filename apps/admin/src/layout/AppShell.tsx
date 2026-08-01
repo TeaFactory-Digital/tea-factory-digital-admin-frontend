@@ -73,6 +73,21 @@ export function AppShell() {
            * before. Only a child that explicitly opts out with `min-h-0` — the
            * grid card — is asked to fit.
            */}
+          {/**
+           * `h-full` and **not** `min-h-full`, which was tried and reverted.
+           *
+           * The height has to be *definite* for a `flex-1` grid card to resolve against
+           * it. Under `min-height: 100%` the container is auto-height, `flex-grow` has no
+           * free space to distribute, and every grid sizes to its own content instead —
+           * a fifty-row savings table rendered 2,582 px tall and scrolled the whole page
+           * rather than itself. Measured, not reasoned about.
+           *
+           * The failure `min-h-full` was reaching for is real, though, and is fixed at the
+           * other end: a definite height forces the flexible child to absorb any overflow,
+           * and a card that opted out of `min-height: auto` absorbed it all the way to
+           * zero. `GRID_CARD` gives that card a floor, so it overflows this wrapper and
+           * `main` scrolls instead of the list disappearing.
+           */}
           {/* Full width, deliberately: the 80 rem cap this used to carry would
               re-open the right-hand gap to whatever the monitor is wide, and a
               twelve-column grid is the screen that wants the pixels most. */}

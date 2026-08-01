@@ -21,6 +21,7 @@ import { useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader } from '@/components/ui/Card';
+import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
 import { Dialog } from '@/components/ui/Dialog';
 import { Field, Select, Textarea } from '@/components/ui/Field';
@@ -169,7 +170,7 @@ export function ExceptionsQueue({ month }: { month: MonthSummary }) {
   );
 
   return (
-    <Card className="flex min-h-0 flex-1 flex-col">
+    <Card className={GRID_CARD}>
       <CardHeader
         title={t('months.exceptionsTitle')}
         description={t('months.exceptionsDescription')}

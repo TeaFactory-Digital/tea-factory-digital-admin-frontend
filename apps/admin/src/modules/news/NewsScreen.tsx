@@ -22,6 +22,7 @@ import { useCan } from '@/auth/authStore';
 import { Badge, type BadgeTone } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
 import { SearchInput, Select } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -180,7 +181,7 @@ export function NewsScreen() {
         }
       />
 
-      <Card className="flex min-h-0 flex-1 flex-col">
+      <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-center gap-sm border-b border-divider p-md">
           <div className="min-w-64 flex-1">
             <SearchInput

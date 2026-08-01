@@ -216,7 +216,7 @@ export const NAVIGATION: NavSection[] = [
         icon: Bell,
         capability: 'content',
         flag: 'enablePushNotifications',
-        status: 'planned',
+        status: 'built',
       },
     ],
   },

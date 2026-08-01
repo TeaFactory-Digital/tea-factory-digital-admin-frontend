@@ -17,6 +17,7 @@ import type { AuditEntry } from '@tfd/domain';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { qk } from '@/query/queryKeys';
 import { Card } from '@/components/ui/Card';
+import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
 import { Select } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -128,7 +129,7 @@ export function AuditScreen() {
       <PageHeader title={t('audit.title')} />
 
       {/* Fixed-height card, scrolling rows — see the note in SuppliersScreen. */}
-      <Card className="flex min-h-0 flex-1 flex-col">
+      <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-center gap-sm border-b border-divider p-md">
           <Select
             aria-label={t('audit.column.entity')}

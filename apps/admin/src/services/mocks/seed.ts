@@ -45,7 +45,10 @@ import type {
   MonthException,
   MonthExceptionType,
   MonthlyRate,
+  NotificationCategory,
+  NotificationSend,
   PaymentMethod,
+  RegisteredDevice,
   PayoutLine,
   PayoutRun,
   QueueCount,
@@ -56,6 +59,7 @@ import type {
 } from '@tfd/domain';
 import {
   EDITORIAL_FALLBACK_LANGUAGE,
+  NOTIFICATION_CATEGORIES,
   OUTLIER_KG_FLOOR_KG,
   QUEUE_SLA_HOURS,
   REQUIRED_MONTHS_OF_HISTORY,
@@ -2664,3 +2668,176 @@ function seedStaticPages(): StaticPageRecord[] {
 }
 
 export const mockStaticPages: StaticPageRecord[] = seedStaticPages();
+
+/* ───────────────────────── M13 Notifications ───────────────────────── */
+
+/**
+ * Registered devices, and **the opt-outs are the point of them**.
+ *
+ * The contract's second push rule is that a send must honour each device's opted-in
+ * categories, not only its topic subscription — so a fixture where every device accepts
+ * everything cannot demonstrate the one behaviour that matters. Here:
+ *
+ *  - roughly four suppliers in five have a device at all, so "reached 240 of 300" is a
+ *    real gap the office should see rather than a rounding artefact;
+ *  - every device starts from the tenant's `defaultCategories`, which pointedly
+ *    **excludes `newsArticle`** — so news reaches far fewer phones than a bill does, and
+ *    that asymmetry is the platform's existing decision rather than one invented here;
+ *  - one supplier in seven has turned `newsArticle` back on, and one in eleven has turned
+ *    `billPublished` off, because both are things people do and neither should be
+ *    reachable only by editing a fixture.
+ */
+function seedDevices(): RegisteredDevice[] {
+  const devices: RegisteredDevice[] = [];
+  let sequence = 0;
+
+  for (const supplier of mockSuppliers) {
+    if (supplier.status === 'closed') continue;
+    const index = supplierIndexOf(supplier.id);
+    // One in five has never installed the app. The office needs that number.
+    if (index % 5 === 0) continue;
+
+    const categories: NotificationCategory[] = ['billPublished', 'requestDecided', 'inquiryReplied'];
+    if (index % 7 === 0) categories.push('newsArticle');
+    const opted = index % 11 === 0
+      ? categories.filter((category) => category !== 'billPublished')
+      : categories;
+
+    sequence += 1;
+    devices.push({
+      id: `dev-${sequence}`,
+      token: `mock-token-${supplier.id}`,
+      platform: index % 3 === 0 ? 'ios' : 'android',
+      categories: opted,
+      registeredAt: daysAgo(intBetween(5, 400)),
+    });
+    // A few suppliers carry two devices — a phone and a spare — which is why the reach
+    // figures count devices and the audience counts suppliers.
+    if (index % 23 === 0) {
+      sequence += 1;
+      devices.push({
+        id: `dev-${sequence}`,
+        token: `mock-token-${supplier.id}-2`,
+        platform: 'android',
+        categories: opted,
+        registeredAt: daysAgo(intBetween(5, 200)),
+      });
+    }
+  }
+
+  return devices;
+}
+
+/** Devices by supplier id — the shape every reach calculation needs. */
+export const mockDevicesBySupplier: Record<string, RegisteredDevice[]> = (() => {
+  const all = seedDevices();
+  const out: Record<string, RegisteredDevice[]> = {};
+  let cursor = 0;
+
+  for (const supplier of mockSuppliers) {
+    if (supplier.status === 'closed') continue;
+    const index = supplierIndexOf(supplier.id);
+    if (index % 5 === 0) continue;
+    const count = index % 23 === 0 ? 2 : 1;
+    out[supplier.id] = all.slice(cursor, cursor + count);
+    cursor += count;
+  }
+
+  return out;
+})();
+
+/** A trigger record as the mock holds it. `available` is derived per tenant on read. */
+export interface NotificationTriggerRecord {
+  category: NotificationCategory;
+  enabled: boolean;
+  updatedAt: string | null;
+  updatedByName: string | null;
+}
+
+/**
+ * Which categories fire automatically, defaulted from **the tenant's own
+ * `defaultCategories`** rather than from an opinion.
+ *
+ * §21.24 has not been answered, and this is the closest thing to an answer already in the
+ * codebase: `push.defaultCategories` is what a supplier is opted into when they install
+ * the app, which is the platform saying which categories are routine. `newsArticle` is
+ * excluded there, so it is off here — a factory that wants every circular pushed can turn
+ * it on, and that toggle is the answer to §21.24 rather than a code change.
+ */
+export const mockNotificationTriggers: NotificationTriggerRecord[] = NOTIFICATION_CATEGORIES.map(
+  (category) => ({
+    category,
+    enabled: (mockConfigs.galaboda!.push?.defaultCategories ?? []).includes(category),
+    updatedAt: null,
+    updatedByName: null,
+  }),
+);
+
+/**
+ * Three sends, so the log is not empty and every origin is visible.
+ *
+ * The composed one is deliberately the awkward case: a free-text message to every
+ * supplier, which is the act §21.24's second half is about and the one the console should
+ * make somebody think before doing.
+ */
+export const mockNotificationSends: NotificationSend[] = [
+  {
+    id: 'ntf-1',
+    category: 'billPublished',
+    origin: 'automatic',
+    title: 'Your July account is ready',
+    body: 'The July Green Leaf Account has been published. Open the app to see your kilos and your balance.',
+    audience: { kind: 'allSuppliers' },
+    entity: 'monthlyRate',
+    entityId: monthKeyBack(1),
+    targetedSuppliers: 68,
+    reachableDevices: 61,
+    suppressedDevices: 6,
+    status: 'sent',
+    createdById: null,
+    createdByName: null,
+    createdAt: daysAgo(4),
+    sentAt: daysAgo(4),
+    failureReason: null,
+  },
+  {
+    id: 'ntf-2',
+    category: 'inquiryReplied',
+    origin: 'automatic',
+    title: 'The factory replied to your message',
+    body: 'Your message about changing collection point has an answer.',
+    audience: { kind: 'supplier', supplierId: mockSuppliers[12]!.id },
+    entity: 'inquiry',
+    entityId: 'inq-5',
+    targetedSuppliers: 1,
+    reachableDevices: 1,
+    suppressedDevices: 0,
+    status: 'sent',
+    createdById: null,
+    createdByName: null,
+    createdAt: daysAgo(3),
+    sentAt: daysAgo(3),
+    failureReason: null,
+  },
+  {
+    id: 'ntf-3',
+    category: 'newsArticle',
+    origin: 'composed',
+    title: 'Makadura closed on Poya day',
+    body: 'Bring leaf to Deniyaya or Morawaka instead. Tell the weigher your supplier code.',
+    audience: { kind: 'collectionPoint', collectionPoint: 'MAKADURA' },
+    entity: null,
+    entityId: null,
+    targetedSuppliers: 17,
+    // Most of them are opted out of `newsArticle` — which is exactly the figure a factory
+    // needs before it decides a push is how to announce a closure.
+    reachableDevices: 3,
+    suppressedDevices: 11,
+    status: 'sent',
+    createdById: 'usr-factoryadmin-1',
+    createdByName: 'Chandima Bandara',
+    createdAt: hoursAgo(30),
+    sentAt: hoursAgo(30),
+    failureReason: null,
+  },
+];
