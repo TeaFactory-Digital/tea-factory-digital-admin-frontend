@@ -16,25 +16,37 @@ import { useFeatureFlags } from '@/config/RuntimeConfigProvider';
 import { Logo } from '@/brand/Logo';
 import { Badge, CountBadge } from '@/components/ui/Badge';
 import { cn } from '@/lib/cn';
-import { NAVIGATION, type NavItem } from './navigation';
+import { NAVIGATION, flagsOf, queuesOf, type NavItem } from './navigation';
 
 export function Sidebar({ summary }: { summary?: DashboardSummary }) {
   const { t } = useTranslation();
   const grants = useAuthStore((s) => s.grants);
   const flags = useFeatureFlags();
 
+  /**
+   * Summed across the row's queues.
+   *
+   * The credit row opens three of them behind one link, and a badge counting only
+   * the advances would tell a clerk the inbox is emptier than it is. Queues the
+   * tenant has switched off are simply absent from the payload, so they contribute
+   * nothing without needing to be filtered here.
+   */
   const pendingFor = (item: NavItem) =>
-    item.queue ? (summary?.queues.find((q) => q.queue === item.queue)?.pending ?? 0) : 0;
+    queuesOf(item).reduce(
+      (total, key) => total + (summary?.queues.find((q) => q.queue === key)?.pending ?? 0),
+      0,
+    );
 
   const sections = NAVIGATION.map((section) => ({
     ...section,
-    items: section.items.filter(
-      (item) =>
-        // Flag first: a feature the factory does not buy is not a permission
-        // question, and asking it in the other order shows a manure queue to a
-        // manager at a factory that has never sold fertilizer.
-        (!item.flag || flags[item.flag]) && can(grants, item.capability, 'read'),
-    ),
+    items: section.items.filter((item) => {
+      // Flag first: a feature the factory does not buy is not a permission
+      // question, and asking it in the other order shows a manure queue to a
+      // manager at a factory that has never sold fertilizer.
+      const needed = flagsOf(item);
+      const enabled = needed.length === 0 || needed.some((flag) => flags[flag]);
+      return enabled && can(grants, item.capability, 'read');
+    }),
   })).filter((section) => section.items.length > 0);
 
   return (

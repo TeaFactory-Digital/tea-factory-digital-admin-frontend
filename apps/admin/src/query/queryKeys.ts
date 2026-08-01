@@ -16,7 +16,9 @@ import type {
   AuditQuery,
   BillQuery,
   ChangeRequestQuery,
+  CreditRequestQuery,
   DeliveryQuery,
+  InquiryQuery,
   PayoutLineQuery,
   PayoutRunQuery,
   SavingsAccountQuery,
@@ -104,6 +106,24 @@ export const qk = {
     all: ['change-requests'] as const,
     list: (query: ChangeRequestQuery) => ['change-requests', 'list', query] as const,
     detail: (id: string) => ['change-requests', 'detail', id] as const,
+  },
+
+  /**
+   * Deciding a credit request invalidates more than the queue, and the extra one is
+   * easy to miss: **the supplier**. An approval raises `creditBalances`, which is
+   * what the next eligibility read subtracts from the ceiling — so a detail page
+   * left open would keep offering headroom that has already been lent (§11.3).
+   */
+  credit: {
+    all: ['credit-requests'] as const,
+    list: (query: CreditRequestQuery) => ['credit-requests', 'list', query] as const,
+    detail: (id: string) => ['credit-requests', 'detail', id] as const,
+  },
+
+  inquiries: {
+    all: ['inquiries'] as const,
+    list: (query: InquiryQuery) => ['inquiries', 'list', query] as const,
+    detail: (id: string) => ['inquiries', 'detail', id] as const,
   },
 
   audit: {

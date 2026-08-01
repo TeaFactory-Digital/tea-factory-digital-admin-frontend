@@ -290,6 +290,148 @@ export const en = {
   'changeRequests.alreadyDecided.body':
     'Someone else decided this while the queue was open. Reloading to show what they chose.',
 
+  /* ─────────────────────── M7 Credit queues ─────────────────────── */
+  'credit.title': 'Credit queues',
+  'credit.subtitle': 'Advances, loans and manure on credit',
+  'credit.column.supplier': 'Supplier',
+  'credit.column.facility': 'Facility',
+  'credit.column.amount': 'Asked for',
+  'credit.column.available': 'May draw',
+  'credit.column.age': 'Waiting',
+  'credit.facility.advance': 'Advance',
+  'credit.facility.loan': 'Loan',
+  'credit.facility.manure': 'Manure',
+  'credit.status.pending': 'Pending',
+  'credit.status.approved': 'Approved',
+  'credit.status.rejected': 'Rejected',
+  'credit.filter.pending': 'Pending',
+  'credit.filter.approved': 'Approved',
+  'credit.filter.rejected': 'Rejected',
+  'credit.filter.allFacilities': 'Any facility',
+  'credit.filter.overCeiling': 'Over the ceiling only',
+  'credit.requested': 'Asked for',
+  'credit.empty': 'The queue is clear',
+  'credit.emptyHint': 'Every credit request has been decided.',
+  'credit.overCeilingShort': 'Over ceiling',
+  'credit.notEligibleShort': 'Not eligible',
+
+  'credit.eligibility.title': 'What this supplier may draw',
+  'credit.eligibility.computedAt': 'Worked out {{when}}',
+  'credit.eligibility.eligible': 'Eligible',
+  'credit.eligibility.notEligible': 'Not eligible',
+  'credit.eligibility.ceiling': 'Ceiling',
+  'credit.eligibility.outstanding': 'Already drawn',
+  'credit.eligibility.available': 'Still available',
+  'credit.eligibility.withinCeiling': 'Within the ceiling',
+  'credit.eligibility.overBy': 'Over by {{amount}}',
+  'credit.eligibility.blocked': 'Why not:',
+  'credit.eligibility.working': 'How this was worked out',
+  'credit.eligibility.monthsOfHistory': 'Closed months of income',
+  'credit.eligibility.historyOf': '{{count}} of {{required}} required',
+  'credit.eligibility.historyNotRequired': '{{count}} — not required for an advance',
+  'credit.eligibility.averageIncome': 'Average monthly account',
+  'credit.eligibility.multiplier': 'Loan multiple',
+  'credit.eligibility.lastSettledMonth': 'Last settled month',
+  'credit.eligibility.settledRate': 'Rate per kg that priced it',
+  'credit.eligibility.pricedKgs.advance': 'This month’s leaf so far',
+  'credit.eligibility.pricedKgs.loan': 'Leaf priced',
+  'credit.eligibility.pricedKgs.manure': 'Last settled month’s leaf',
+
+  /* The server names the blocker with a key; the copy lives here (BR-110). */
+  'credit.reason.shortHistory':
+    'The supplier does not yet have enough closed months of income for this facility.',
+  'credit.reason.noSettledRate':
+    'No month has settled with an auction rate yet, so there is nothing to price a ceiling against.',
+  'credit.reason.noLeafThisMonth':
+    'No leaf has been recorded this month, and an advance is priced off leaf already delivered.',
+  'credit.reason.noCeiling': 'The rule produces no ceiling for this supplier.',
+  'credit.reason.fullyDrawn':
+    'The supplier has already drawn their whole ceiling on this facility.',
+
+  'credit.detail.title': '{{facility}} · {{amount}}',
+  'credit.detail.request': 'The request',
+  'credit.detail.reason': 'What the supplier said',
+  'credit.detail.manureType': 'Fertilizer',
+  'credit.detail.quantity': 'Quantity',
+  'credit.detail.decision': 'Decision',
+  'credit.detail.decidedAgainst': 'Decided against a ceiling of {{ceiling}}, worked out {{when}}.',
+  'credit.detail.auditTitle': 'Audit trail',
+  'credit.detail.otherRequests': 'Their other open requests',
+
+  'credit.approve': 'Approve',
+  'credit.reject': 'Reject',
+  'credit.approveTitle': 'Approve this credit',
+  'credit.rejectTitle': 'Reject this request',
+  'credit.approveBody':
+    'The supplier may draw {{amount}}, and it is added to their {{facility}} balance. It comes back as a deduction on their next account.',
+  'credit.rejectBody':
+    'Nothing is paid. The supplier sees your note as the reason, so write it for them.',
+  'credit.noteLabel': 'Decision note',
+  'credit.noteHelp': 'The supplier reads this. At least 10 characters.',
+  'credit.notePlaceholderApprove':
+    'e.g. Within the ceiling for the leaf already weighed this month. Paying at the counter.',
+  'credit.notePlaceholderReject':
+    'e.g. Above three times the average monthly account. Reapply once two more months are settled.',
+  'credit.approved': 'Approved. It will be deducted from the next account.',
+  'credit.rejected': 'Rejected. Nothing has been paid.',
+
+  'credit.managerDecides':
+    'A manager decides credit requests. You can read this one and everything behind it, but the approval is not yours to give.',
+  'credit.fourEyes.body':
+    'You raised this request on the supplier’s behalf, so someone else has to decide it. Credit is money, and money takes four eyes.',
+  'credit.overCeiling.title': 'More than they may draw',
+  'credit.overCeiling.body':
+    'This asks for {{amount}} and only {{available}} is available. It cannot be approved as it stands — reject it, or ask the supplier to raise a smaller one.',
+  'credit.stale.title': 'The figures have moved',
+  'credit.stale.body':
+    'The ceiling changed while this was open — leaf recorded, or a month published. The fresh figures are loading; read them before deciding.',
+
+  /* ─────────────────────────── M10 Inquiries ─────────────────────────── */
+  'inquiries.title': 'Inquiries',
+  'inquiries.subtitle': 'Messages from suppliers',
+  'inquiries.searchPlaceholder': 'Search supplier, subject or message',
+  'inquiries.column.subject': 'Message',
+  'inquiries.status.open': 'Open',
+  'inquiries.status.resolved': 'Answered',
+  'inquiries.status.closed': 'Closed',
+  'inquiries.filter.open': 'Open',
+  'inquiries.filter.resolved': 'Answered',
+  'inquiries.filter.closed': 'Closed unanswered',
+  'inquiries.empty': 'Nothing waiting',
+  'inquiries.emptyHint': 'Every message has been answered or closed.',
+
+  'inquiries.detail.message': 'What the supplier asked',
+  'inquiries.detail.reply': 'The answer',
+  'inquiries.detail.repliedBy': 'Answered by {{name}}, {{when}}',
+  'inquiries.detail.closed': 'Closed unanswered',
+  'inquiries.detail.closedBy': 'Closed by {{name}}, {{when}}',
+  'inquiries.detail.auditTitle': 'Audit trail',
+  'inquiries.detail.history': 'Their earlier messages',
+  'inquiries.detail.noPushYet':
+    'The supplier sees this the next time they open the app. Notifications are not built yet, so nothing has been sent to their phone.',
+
+  'inquiries.reply': 'Reply',
+  'inquiries.sendReply': 'Send reply',
+  'inquiries.close': 'Close unanswered',
+  'inquiries.replyTitle': 'Reply to the supplier',
+  'inquiries.closeTitle': 'Close without answering',
+  'inquiries.replyBody':
+    'This is what the supplier reads in the app. Write it to them, not about them.',
+  'inquiries.closeBody':
+    'Use this for a duplicate, a test message, or something meant for somewhere else. The supplier is not sent an answer.',
+  'inquiries.replyLabel': 'Your answer',
+  'inquiries.replyHelp': 'The supplier reads this. At least 20 characters.',
+  'inquiries.replyPlaceholder':
+    'e.g. We checked the 12th and found a second weighing of 96 kg that had not been entered. It is on your account now.',
+  'inquiries.closureNoteLabel': 'Why it is being closed',
+  'inquiries.closureNoteHelp': 'Only the office sees this. At least 10 characters.',
+  'inquiries.closurePlaceholder': 'e.g. Duplicate of the message answered on the 4th.',
+  'inquiries.replied': 'Answered. The supplier sees it next time they open the app.',
+  'inquiries.closed': 'Closed. No answer was sent.',
+  'inquiries.alreadyAnswered.title': 'Already answered',
+  'inquiries.alreadyAnswered.body':
+    'Someone else answered or closed this while it was open. Reloading to show what they said.',
+
   /* ─────────────────────────────── audit ─────────────────────────────── */
   'audit.title': 'Audit log',
   'audit.column.when': 'When',
@@ -315,6 +457,10 @@ export const en = {
   'audit.action.payoutRunApprove': 'Released a payout run',
   'audit.action.payoutLinePaid': 'Recorded a payment',
   'audit.action.payoutLineFailed': 'Recorded a failed payment',
+  'audit.action.creditApprove': 'Approved credit',
+  'audit.action.creditReject': 'Rejected a credit request',
+  'audit.action.inquiryReply': 'Answered a supplier',
+  'audit.action.inquiryClose': 'Closed a message unanswered',
 
   /* ───────────────────────────── validation ───────────────────────────── */
   'validation.required': 'This is required',
@@ -334,6 +480,8 @@ export const en = {
   'validation.noteRequired': 'A note is required',
   'validation.noteTooShort': 'Write at least 10 characters — the supplier reads this',
   'validation.reasonRequired': 'A reason is required',
+  'validation.replyRequired': 'An answer is required',
+  'validation.replyTooShort': 'Write at least 20 characters — this is the answer the supplier reads',
 
   /* ─────────────────────── M3 Leaf collection ─────────────────────── */
   'deliveries.title': 'Leaf collection',
@@ -802,6 +950,7 @@ export const en = {
   'error.runNotApproved': 'That run has not been released yet, so nothing in it has been paid.',
   'error.noPayableLines': 'There is nothing payable in that run.',
   'error.lineNotPayable': 'That line cannot be paid — it is held, or it has already been paid.',
+  'error.overCeiling': 'That is more than this supplier may draw on that facility.',
   'error.unknown': 'Unexpected error. If it keeps happening, tell the factory administrator.',
   'error.boundaryTitle': 'This screen could not be shown',
   'error.boundaryBody': 'The rest of the console still works. Reload this page to try again.',

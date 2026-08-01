@@ -112,7 +112,59 @@ The ids are fixed, because the integration tests name them:
 | `chg-13` | approved | so the non-pending filters are not empty |
 | `chg-14` | rejected | with a real rejection note |
 
-### Deliveries — four months
+### Credit requests — 14
+
+Ids fixed, because the integration tests name them. Amounts are **priced off each
+supplier's actual headroom** rather than picked as round numbers: a fixture whose
+asks are unrelated to the ceilings makes every row either trivially approvable or
+absurd, and the judgement in between is the queue's whole job.
+
+| Id | Facility | Notes |
+| --- | --- | --- |
+| `crd-1` | advance | comfortably inside — the approve, stale-eligibility and dialog tests |
+| `crd-2` | loan | inside — the AC-05 loan-arithmetic test |
+| `crd-3` | manure | inside — the note-required tests |
+| `crd-4` | advance | **asks for more than is available** — the `over-ceiling` tests |
+| `crd-5` | advance | 80 h old, so SLA colouring has something to show |
+| `crd-6` | loan | **raised by the manager** — the four-eyes test |
+| `crd-7` | manure | against a supplier who **already owes** on the facility, so "already drawn" is a real figure and not a column of zeroes |
+| `crd-9` | loan | a supplier with **no settled months** — the `shortHistory` reason |
+| `crd-8`, `crd-10`…`crd-12` | mixed | ages 2 h to 4 d |
+| `crd-13` | approved | so the non-pending filters are not empty |
+| `crd-14` | rejected | a loan above three times the average account |
+
+Two of those need their reason stated, because both were originally wrong and the
+test suite caught them:
+
+- **`crd-6` is raised by the *manager*, not the clerk.** §12.1 gives
+  `creditRequests: A` to the manager alone, so a clerk-raised request could never
+  trip BR-501 — the clerk cannot approve anything and every other role is innocent
+  of raising it. Attributing it to the manager is the only way the four-eyes refusal
+  is reachable at all.
+- **`crd-9`'s supplier is chosen on months of history**, which is the property the
+  rule reads. An earlier version used "has no bill in the open month" as a proxy and
+  picked the wrong supplier three days out of four: on the 1st only a fraction of the
+  round has delivered, so the proxy caught someone with seven settled months who
+  simply had not been in that morning.
+
+Eligibility on a **pending** row is recomputed on every read from the *live*
+delivery rows — so committing a weighing session in M3 moves an advance ceiling, and
+`stale-eligibility` is reachable by doing one's job rather than by sending a wrong
+number. A **decided** row keeps the figures it was decided against; recomputing them
+would make every past approval look wrong the moment a supplier's leaf changed.
+
+### Inquiries — 7
+
+Five open, one answered, one closed unanswered — so all three states and both
+channels are present without anyone creating them. Written as things a smallholder
+would actually send ("My July account shows 96 kg less than my own book"), because
+the queue is triaged by reading the subject, and lorem-ipsum rows make the triage
+columns look like they work when nobody has tried reading one.
+
+`inq-6` is a one-word test message closed with a reason, which is the case the
+close-unanswered path exists for.
+
+### Deliveries — eight months
 
 Generated per day per supplier rather than as a flat list, so the shape of a real
 fortnight is present: **Sundays are empty** (the factory does not weigh), about
@@ -145,11 +197,33 @@ The dashboard's "today's leaf" and 14-day trend are computed from these rows, so
 committing a session in M3 moves the dashboard — which is what
 `deliveries.test.ts` asserts, and what the real API must reproduce.
 
-### Months — 4, and exceptions derived from the data
+### Months — 8, and exceptions derived from the data
 
-The current month is `awaitingRate` with no rate; the three before it are
+The current month is `awaitingRate` with no rate; the seven before it are
 `published` with a rate and a publisher, so **`month-locked` has a date it can
-actually happen on**. Rates drift month to month rather than repeating one figure,
+actually happen on**.
+
+**Eight rather than four, and M7 is why.** A loan or manure ceiling is gated on
+`REQUIRED_MONTHS_OF_HISTORY` (six) closed months of income, so at four months every
+loan in the fixture was ineligible for the one reason that says nothing about the
+module — a queue whose every row is refused by the same rule cannot show that any of
+the others work. Seven published months also keeps the mix worth having: a supplier
+who has delivered throughout clears the bar, a dormant one does not, so
+`shortHistory` stays the honest minority rather than the universal answer.
+
+Widening the window moved two things that were sized against the old one, and both
+are now **derived from `MONTHS_OF_HISTORY`** rather than restated:
+
+- The **opening debts** that make `carriesDebt` reachable. A credit instalment is
+  capped as a share of the gross, so a debt is worked off at roughly a month's leaf
+  per month — a flat figure that survived four months is fully repaid by seven, and
+  the state quietly stops existing in the newest month.
+- The savings screen's **trend table**, which renders one row per month. Unbounded,
+  it made the summary card's height a function of how long the factory had been on
+  the platform, and squeezed the accounts grid below it to fifteen pixels of scroll
+  area — rows present, focusable and physically unclickable behind the pagination
+  bar. Caught by the e2e suite; a real factory reaches the same state by existing
+  for a year. Rates drift month to month rather than repeating one figure,
 because a bill screen showing the same LKR 122.50 for every month reads as a
 hardcoded placeholder — which is what it would be.
 
@@ -194,11 +268,24 @@ stand in for §21.10, which nobody has answered.
 **`highland` — the reduced-feature reference**: no loans, no manure, no push, no
 reports, **and no payouts**, mirroring mobile's `clientB`.
 
-`enablePayouts: false` on `highland` is the fixture's only *console-side* surface
-turned off, and it is there so AC-07's second half has something to be tested
-against: the sidebar loses the row **and** `GET /admin/payout-runs` answers
-`403 feature-disabled` for that tenant. Until one tenant had the flag off, the
-endpoint half was unassertable.
+`highland` is what makes AC-07's second half assertable, and it now covers two
+modules rather than one:
+
+- `enablePayouts: false` — the sidebar loses the row **and**
+  `GET /admin/payout-runs` answers `403 feature-disabled`.
+- `enableLoans: false` and `enableManure: false` — the credit queue still **opens**,
+  because the factory does lend against leaf, and it serves only advances. A loan
+  reached by its own URL answers `403 feature-disabled` rather than merely being
+  unlisted, and the facility filter offers only what the factory sells.
+
+That second case is the more interesting one: M7 is a single screen over three
+independently-sold facilities, so the row is gated on **any** of the three flags
+rather than on advances alone. Gating it on `enableAdvances` would have hidden the
+queue from a factory that lends against income history and not against leaf.
+
+**`enableInquiry` is `true` on all three tenants**, so M10's endpoint half of AC-07
+is built (`featureGate` guards every inquiry route) and **not asserted** — no fixture
+tenant has the flag off. Same gap as savings, and stated for the same reason.
 
 Switching to `highland` in the dev tenant switcher should visibly empty those rows
 out of the sidebar. It is the fastest check that no surface is hardcoded, and a

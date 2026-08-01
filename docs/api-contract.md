@@ -1204,7 +1204,130 @@ table**.
 
 ---
 
-## 14. Not yet called by the console
+## 14. M7 Credit queues
+
+Authorize on `creditRequests`, and read the level carefully: §12.1 gives `R` to the
+clerk and the accountant and **`A` to the manager alone**. Every list and detail is
+`R`; both decisions are `A`. That is the opposite of M9, where the clerk decides.
+
+Gate each row on the facility's own flag — `enableAdvances`, `enableLoans`,
+`enableManure`. A facility the factory does not sell is **absent from the list**, not
+returned with a zero, and a request reached by its own URL answers
+`403 feature-disabled` (AC-07).
+
+### 14.1 `GET /admin/credit-requests` → `Paged<AdminCreditRequest>`
+
+`?status=` · `?facility=` · `?supplierId=` · `?overCeiling=true` · `?q=`.
+**Oldest first** within a status, like every other queue.
+
+`overCeiling=true` filters to `amount > eligibility.available` — the rows an approver
+cannot simply wave through, and the filter an accountant reviewing the queue wants.
+
+### 14.2 `eligibility` — the field this module exists for
+
+Every row carries a full `CreditEligibility`, and it is **recomputed on read**, never
+served from storage. A ceiling is a function of leaf and rates, both of which move; a
+figure written when the request arrived is a figure that *was* true.
+
+**AC-05 is the requirement: these numbers, and the working behind them, must equal
+what `GET /advances|loans|manure/eligibility` told the supplier's app, byte for
+byte.** The only way to make that hold is for both to call
+`buildCreditEligibility` in `packages/domain/src/leafCredit.ts`. Import it. Do not
+reimplement it — two implementations of a ceiling agree until the first rounding
+decision, and then every rejection becomes a dispute the office cannot win.
+
+Send the working, not just the answer: `monthsOfHistory` / `requiredMonths`,
+`averageMonthlyIncome`, `limitMultiplier`, `lastSettledMonthKey`,
+`lastSettledRatePerKg`, `pricedKgs`, then `ceiling`, `outstanding`, `available`.
+`reasonKey` is an **i18n key**, never a sentence (BR-110) — the console owns the copy.
+
+`requiredMonths` is `0` for an advance. That means "no months are required", not
+"unset": an advance is priced off leaf already in the shed, not off a track record.
+
+A **decided** request keeps the eligibility it was decided against. Recomputing it
+would rewrite history every time the record is opened.
+
+### 14.3 `POST /admin/credit-requests/{id}/approve` · `/reject`
+
+Body: `{ note, ceilingSeen }`. Both fields on both verbs.
+
+Refusals, **in this order** — the order is part of the contract:
+
+| Code | When | Why the order matters |
+| --- | --- | --- |
+| `422 note-required` | note under 10 chars, either verb (AC-06) | — |
+| `409 already-decided` | already approved or rejected | Two people on one inbox is the normal case |
+| `409 four-eyes-violation` | the approver raised it (BR-501) | **Before** the figures: who may decide does not depend on what the ceiling says, and answering `stale-eligibility` here would tell the wrong person to reload rather than to hand it over |
+| `409 stale-eligibility` | **approve only**: `ceilingSeen` ≠ the freshly computed ceiling (BR-310) | The approver agreed to a specific number. Substituting a different one silently is the worst outcome available, because nobody finds out |
+| `409 over-ceiling` | **approve only**: `amount > available` | Eligibility that never moved, against an amount that was never inside it. A different fix from the one above: this request must be rejected or re-raised, not reloaded |
+
+**`stale-eligibility` and `over-ceiling` are approve-only, deliberately.** A rejection
+lends nothing, and gating it on fresh figures would trap the row: the numbers move
+again while the clerk reloads, and it could never be cleared.
+
+On approval, **raise `creditBalances[facility]` by the amount**. §11.3 makes an
+approved advance a `deductions.advance` line on the next bill, and the two have to
+agree. Without this write the module is a queue that decides things and changes
+nothing.
+
+Audit `creditRequest.approve` / `creditRequest.reject` with the ceiling and its
+`computedAt` in `after` — "approved against a ceiling of X worked out at Y" is the
+sentence that settles a dispute about a limit that has since moved.
+
+---
+
+## 15. M10 Inquiries
+
+Gate on `enableInquiry`. Authorize on `inquiries`, and this row is unusual: §12.1
+gives **`A` to the clerk and `R` to the manager**. Answering a supplier is counter
+work; a manager reading the queue is oversight. Reads are `R`, both writes are `A`.
+
+There is **no four-eyes rule**. BR-501 is about money, and an inquiry moves none.
+
+### 15.1 `GET /admin/inquiries` → `Paged<AdminInquiry>`
+
+`?status=open|resolved|closed` · `?supplierId=` · `?q=`. Oldest first; default
+`status=open`.
+
+`q` must match the **message body** as well as the supplier and the subject. The
+office searches for what somebody said, and a subject line of "help" is common.
+
+`status` is the console's vocabulary and not the app's. `AdminInquiry.status` is
+`open | resolved | closed`; the app's `Inquiry.status` is
+`pending | approved | rejected`. Map with `inquiryStatusForApp` from `@tfd/domain`
+so one record answers both, and do not invent a second mapping — status.md §21.18 is
+the open question about whether this pair is right at all, and it should change in
+one place.
+
+### 15.2 `POST /admin/inquiries/{id}/reply` → `AdminInquiry`
+
+Body `{ body }`, minimum 20 characters. Longer than a decision note on purpose: this
+is not a justification filed beside a record, it **is** the answer the supplier reads,
+and "Yes" is a reply that closes a ticket and produces a telephone call.
+
+Sets `status: 'resolved'` and fills `reply`. Refuse `409 already-decided` if the
+inquiry is not `open` — checked against **both** terminal states, so a closed message
+cannot be replied to either.
+
+### 15.3 `POST /admin/inquiries/{id}/close` → `AdminInquiry`
+
+Body `{ note }`, minimum 10 characters. For a duplicate, a test message, or something
+meant for the weighing point.
+
+**Closing is not replying**, and the record has to keep them apart: `closureNote` is
+seen only by the office, `reply` is what the supplier reads. Collapsing the two into
+one "resolve" makes *how many suppliers we actually answered* unrecoverable, which is
+the number §19.3's channel-shift KPI is about.
+
+Audit `inquiry.reply` and `inquiry.close`.
+
+When M13 exists, a reply should fire the `inquiryReplied` notification category. It
+does not yet, and the console says so on the screen rather than implying a message
+was sent.
+
+---
+
+## 16. Not yet called by the console
 
 These are in §17.6's scope and the console has no code for them yet, so the
 shapes are open. Requests from the front end when you get there:
@@ -1214,13 +1337,12 @@ shapes are open. Requests from the front end when you get there:
 | **M3 scale file** | The upload half of M3 is not built, because no factory has yet said what its weighbridge exports. Whatever the format, it should land as the **same batch** in §9.3 with `source: "scaleFile"` — a second write path for the same fact is a second set of refusals to keep in step |
 | **The bill PDF** | AC-03 names the PDF alongside the app's Home screen. §11.3 is the same data, so this is a renderer over an existing read model rather than a new shape — and it must be generated from the *published* bill, not re-derived at print time |
 | **The payout file** | §12.5's note: blocked on §21.17. It is an export over an existing run, and the run must not change shape to accommodate it |
-| **M7 Credit** | Eligibility in a queue row must be **byte-for-byte identical** to `GET /advances\|loans\|manure/eligibility` for that supplier (AC-05), including the working — months of history, rate × kilos, the ceiling. Re-check at the moment of approval and answer `stale-eligibility` (BR-310). `packages/domain/src/leafCredit.ts` is the shared implementation; import it rather than re-deriving. Note that an approved advance surfaces as a `deductions.advance` line on the next bill (§11.3), so the two have to agree |
 | **M13 Notifications** | Sends must carry a recognized `data.category` — the app drops anything else rather than opening an arbitrary screen — and must honour each device's opted-in categories, not only its topic subscriptions |
 | **M16 Reports** | Run off a read replica or nightly snapshot (§19.5). A month-close query must not compete with a clerk entering deliveries |
 
 ---
 
-## 15. A checklist for the first PR
+## 17. A checklist for the first PR
 
 Ordered so each step is independently useful to the console.
 

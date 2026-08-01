@@ -76,3 +76,26 @@ export function RequireFlag({ flag, children }: PropsWithChildren<{ flag: Featur
   }
   return <>{children}</>;
 }
+
+/**
+ * Open when **any** of the flags is on.
+ *
+ * For M7, which is one screen over three independently-sold facilities. A factory
+ * that lends against leaf but not against income history must still reach the
+ * credit queue — and `RequireFlag` on `enableAdvances` would have shut the door on
+ * the factory that does it the other way round. The rows themselves are filtered
+ * per facility by the API (AC-07), so opening the screen never leaks a facility
+ * that is off.
+ */
+export function RequireAnyFlag({
+  flags: needed,
+  children,
+}: PropsWithChildren<{ flags: FeatureFlagName[] }>) {
+  const { t } = useTranslation();
+  const flags = useFeatureFlags();
+
+  if (!needed.some((flag) => flags[flag])) {
+    return <EmptyState title={t('error.featureDisabled')} />;
+  }
+  return <>{children}</>;
+}

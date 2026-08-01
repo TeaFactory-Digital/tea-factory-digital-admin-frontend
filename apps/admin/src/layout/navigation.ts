@@ -15,7 +15,7 @@
  * shape of the whole console while being told plainly what is not there yet.
  */
 
-import type { Capability, FeatureFlagName } from '@tfd/domain';
+import type { Capability, FeatureFlagName, QueueKey } from '@tfd/domain';
 import type { LucideIcon } from 'lucide-react';
 import {
   BadgeDollarSign,
@@ -46,10 +46,32 @@ export interface NavItem {
   to: string;
   icon: LucideIcon;
   capability: Capability;
-  flag?: FeatureFlagName;
+  /**
+   * The flag this row needs. An **array means any one of them**, which exists for
+   * exactly one row: a factory may lend against leaf but not against income
+   * history, and gating the credit queue on `enableAdvances` alone would hide it
+   * from a factory that only does loans.
+   */
+  flag?: FeatureFlagName | FeatureFlagName[];
   status: NavStatus;
-  /** Reads the pending count for a badge from the dashboard summary. */
-  queue?: 'changeRequests' | 'advanceRequests' | 'loanRequests' | 'manureRequests' | 'inquiries';
+  /**
+   * Reads the pending count for a badge from the dashboard summary. An array is
+   * summed — the credit row is three queues behind one link, and a badge showing
+   * only the advances would under-report the inbox it opens.
+   */
+  queue?: QueueKey | QueueKey[];
+}
+
+/** Every flag a row needs, as a list, so callers do not branch on the shape. */
+export function flagsOf(item: NavItem): FeatureFlagName[] {
+  if (!item.flag) return [];
+  return Array.isArray(item.flag) ? item.flag : [item.flag];
+}
+
+/** Every queue a row's badge counts. */
+export function queuesOf(item: NavItem): QueueKey[] {
+  if (!item.queue) return [];
+  return Array.isArray(item.queue) ? item.queue : [item.queue];
 }
 
 export interface NavSection {
@@ -147,11 +169,13 @@ export const NAVIGATION: NavSection[] = [
         to: '/credit',
         icon: BadgeDollarSign,
         capability: 'creditRequests',
-        // Gated on advances alone would be wrong: a factory may lend against
-        // leaf but not against income history. The credit screen itself then
-        // shows only the facilities that are on.
-        flag: 'enableAdvances',
-        status: 'planned',
+        // **Any** of the three, not advances alone: a factory may lend against
+        // leaf but not against income history, or the other way round. The screen
+        // then offers only the facilities that are on, and the API refuses the
+        // rest with `feature-disabled` (AC-07).
+        flag: ['enableAdvances', 'enableLoans', 'enableManure'],
+        status: 'built',
+        queue: ['advanceRequests', 'loanRequests', 'manureRequests'],
       },
       {
         module: 'M10',
@@ -160,7 +184,7 @@ export const NAVIGATION: NavSection[] = [
         icon: MessageSquare,
         capability: 'inquiries',
         flag: 'enableInquiry',
-        status: 'planned',
+        status: 'built',
         queue: 'inquiries',
       },
     ],

@@ -20,6 +20,8 @@
 import type {
   AdminBill,
   AdminChangeRequest,
+  AdminCreditRequest,
+  AdminInquiry,
   AdminSavingsLedgerEntry,
   AdminSupplier,
   AuditEntry,
@@ -27,10 +29,14 @@ import type {
   CapabilityGrants,
   CollectionDaySummary,
   ConsoleUser,
+  CreditEligibility,
+  CreditFacility,
   DashboardSummary,
   DeductionLines,
   Delivery,
   FactoryInfo,
+  GreenLeafBill,
+  InquiryStatus,
   MonthCycleStage,
   MonthException,
   MonthExceptionType,
@@ -38,12 +44,18 @@ import type {
   PaymentMethod,
   PayoutLine,
   PayoutRun,
+  QueueCount,
+  QueueKey,
   RuntimeConfig,
   SupplierListItem,
 } from '@tfd/domain';
 import {
   OUTLIER_KG_FLOOR_KG,
+  QUEUE_SLA_HOURS,
+  REQUIRED_MONTHS_OF_HISTORY,
   billNumberFor,
+  buildCreditEligibility,
+  monthsOfHistory,
   colomboDayOf,
   computeBillAmounts,
   grantsFromRoles,
@@ -476,8 +488,20 @@ const COLLECTION_DAYS = 14;
  * rows and a monthly rate (api.md §16), so a published month with no leaf in it
  * generates no bills — and M5, M6 and M8 would each render an empty screen that
  * reads as a broken module rather than as a fixture with nothing in it.
+ *
+ * **Eight, because M7 needs seven settled months to be reachable.** A loan and a
+ * manure ceiling are gated on `REQUIRED_MONTHS_OF_HISTORY` closed months of income
+ * (§9.1), so at four months every loan in the fixture was ineligible for the one
+ * reason that says nothing about the module — and a queue whose every row is
+ * refused by the same rule cannot show that any of the others work. Same argument
+ * as the `held` payout line and `chg-6`: a state nothing in the fixture can reach
+ * is a state nobody notices is broken.
+ *
+ * Seven published months also leaves the mix worth having. A supplier who has
+ * delivered throughout clears the bar; a dormant one does not, so `shortHistory`
+ * stays reachable as the honest minority rather than the universal answer.
  */
-const MONTHS_OF_HISTORY = 4;
+const MONTHS_OF_HISTORY = 8;
 
 function monthKeyBack(months: number): string {
   const date = new Date(Date.UTC(NOW.getUTCFullYear(), NOW.getUTCMonth() - months, 15));
@@ -867,15 +891,43 @@ export function summariseDay(
  * the dashboard shows them thirty seconds later. Committing a weighing session
  * moves this card, which is the behaviour an integration test can hold onto.
  */
+/**
+ * One queue card, counted from the records rather than stated beside them.
+ *
+ * `ageHours` is re-derived from `createdAt` and the stored field ignored on
+ * purpose: the seeded value was true when the fixture was built, and a card that
+ * reported it would say a queue is inside its target hours after it stopped being.
+ */
+function queueCountFor(
+  queue: QueueKey,
+  pending: Array<{ createdAt: string }>,
+  now: number = Date.now(),
+): QueueCount {
+  const oldest = pending.reduce<string | null>(
+    (acc, item) => (acc === null || item.createdAt < acc ? item.createdAt : acc),
+    null,
+  );
+  const target = QUEUE_SLA_HOURS[queue];
+
+  return {
+    queue,
+    pending: pending.length,
+    oldestPendingAt: oldest,
+    breachingSla: pending.filter(
+      (item) => (now - new Date(item.createdAt).getTime()) / 3_600_000 > target,
+    ).length,
+  };
+}
+
 export function buildDashboard(
   changeRequests: AdminChangeRequest[],
   deliveries: Delivery[],
+  creditRequests: AdminCreditRequest[],
+  inquiries: AdminInquiry[],
 ): DashboardSummary {
   const pending = changeRequests.filter((r) => r.status === 'pending');
-  const oldest = pending.reduce<string | null>(
-    (acc, r) => (acc === null || r.createdAt < acc ? r.createdAt : acc),
-    null,
-  );
+  const pendingCredit = creditRequests.filter((r) => r.status === 'pending');
+  const openInquiries = inquiries.filter((i) => i.status === 'open');
 
   // Oldest first — charts read left to right (§4 of the contract).
   const intakeTrend = Array.from({ length: COLLECTION_DAYS }, (_, i) => {
@@ -886,20 +938,24 @@ export function buildDashboard(
   const today = summariseDay(deliveries, TODAY);
   const yesterday = summariseDay(deliveries, colomboDayOf(new Date(NOW.getTime() - 86_400_000)));
 
+  /**
+   * Every count derived from the records behind it.
+   *
+   * The four non-M9 queues were hardcoded here while M7 and M10 did not exist,
+   * which was honest then and became a lie the moment they did: the sidebar badge
+   * and the card would have said seven advances while the queue showed four. Two
+   * figures for one fact, and the disagreement visible on one screen.
+   */
+  const queues: QueueCount[] = [
+    queueCountFor('changeRequests', pending),
+    queueCountFor('advanceRequests', pendingCredit.filter((r) => r.facility === 'advance')),
+    queueCountFor('loanRequests', pendingCredit.filter((r) => r.facility === 'loan')),
+    queueCountFor('manureRequests', pendingCredit.filter((r) => r.facility === 'manure')),
+    queueCountFor('inquiries', openInquiries),
+  ];
+
   return {
-    queues: [
-      {
-        queue: 'changeRequests',
-        pending: pending.length,
-        oldestPendingAt: oldest,
-        // The §14.4 target for a change request is 3 working days.
-        breachingSla: pending.filter((r) => r.ageHours > 72).length,
-      },
-      { queue: 'advanceRequests', pending: 7, oldestPendingAt: hoursAgo(30), breachingSla: 1 },
-      { queue: 'loanRequests', pending: 3, oldestPendingAt: hoursAgo(52), breachingSla: 0 },
-      { queue: 'manureRequests', pending: 5, oldestPendingAt: hoursAgo(19), breachingSla: 0 },
-      { queue: 'inquiries', pending: 4, oldestPendingAt: hoursAgo(8), breachingSla: 0 },
-    ],
+    queues,
     cycle: {
       monthKey: currentMonthKey,
       /**
@@ -932,7 +988,8 @@ export function buildDashboard(
         id: 'alert-sla',
         severity: 'error',
         messageKey: 'dashboard.alert.slaBreach',
-        params: { count: pending.filter((r) => r.ageHours > 72).length },
+        // The card's own figure, not a second count of the same thing.
+        params: { count: queues[0]!.breachingSla },
         href: '/change-requests?status=pending',
       },
       {
@@ -1540,10 +1597,18 @@ function seedMoneyHistory() {
    * Sized to take several months of leaf to work off, which is what a large advance
    * against income actually looks like, and which keeps the state visible in the
    * newest published month rather than only the oldest.
+   *
+   * **Sized from the window, not as a fixed figure.** A credit instalment is capped
+   * as a share of the gross, so a debt is worked off at roughly a month's leaf per
+   * month — which means a flat figure that survived a four-month fixture is fully
+   * repaid by a seven-month one, and `carriesDebt` quietly stops being reachable in
+   * the newest month. Deriving it from `MONTHS_OF_HISTORY` keeps the *intent*
+   * (still owing at the end) true whatever the window becomes.
    */
+  const openingDebt = 130_000 * (MONTHS_OF_HISTORY - 1);
   for (const supplier of mockSuppliers) {
     if (supplierIndexOf(supplier.id) % 19 !== 0) continue;
-    debts.set(supplier.id, 380_000 + supplierIndexOf(supplier.id) * 1_000);
+    debts.set(supplier.id, openingDebt + supplierIndexOf(supplier.id) * 1_000);
   }
 
   /**
@@ -1720,3 +1785,481 @@ export const mockPayoutLines: PayoutLine[] = payouts.lines;
 
 /** The latest month with published bills — the default the money screens open on. */
 export const latestPublishedMonthKey: string | null = history.latestPublished;
+
+/* ─────────────────── M7 Credit queues · M10 Inquiries ─────────────────── */
+
+/**
+ * The month in progress, as bill rows — **for eligibility only**.
+ *
+ * `@tfd/domain`'s credit rules read a supplier's accounts newest first and treat
+ * the first as the month in progress: an advance ceiling is the last settled
+ * rate × *this* month's kilos, because an advance is cash against leaf already in
+ * the shed. Without a row for the open month the rule prices the wrong month — the
+ * ceiling silently becomes last month's kilos at the month-before's rate, which is
+ * a plausible number and a wrong one.
+ *
+ * Deliberately **not** pushed into `mockBills`. M5 holds generated output, and a
+ * month whose bills exist is a month that has been through a generation run — so
+ * adding these would tell the bills screen a run happened that never did, and would
+ * turn `bills-missing` for the open month from a real state into an unreachable one.
+ * The rate is `null`, so every derived figure on them is `null` too (BR-102).
+ */
+const openMonthBills: AdminBill[] = generateBills({
+  monthKey: currentMonthKey,
+  runId: `run-${currentMonthKey}-open`,
+  generatedAt: NOW.toISOString(),
+  generatedById: 'usr-accountant-1',
+  generatedByName: 'Dilani Fonseka',
+  publishedAt: null,
+  deliveries: mockDeliveries,
+  suppliers: mockSuppliers,
+  rate: null,
+  factory: billFactoryOf('galaboda'),
+  // Empty: the carried figures do not price a ceiling, and threading the real ones
+  // through would tie eligibility to a chain it does not read.
+  coinsBroughtForward: new Map(),
+  debtBroughtForward: new Map(),
+  savingsBefore: new Map(),
+});
+
+/**
+ * Every account a supplier holds, which is what the app's own history screen shows.
+ *
+ * `deliveries` defaults to the seed's rows but the handlers pass their **live**
+ * array, and that is what makes the module work rather than merely compile. An
+ * advance ceiling is priced off this month's leaf, so a history built from the
+ * immutable fixture would never move — the ceiling would be frozen at whatever it
+ * was when the module loaded, `stale-eligibility` could not happen, and the one
+ * refusal BR-310 exists for would be unreachable.
+ */
+export function creditHistoryFor(
+  supplierId: string,
+  deliveries: Delivery[] = mockDeliveries,
+): GreenLeafBill[] {
+  const supplier = mockSuppliers.find((s) => s.id === supplierId);
+  const open = supplier
+    ? generateBills({
+        monthKey: currentMonthKey,
+        runId: `run-${currentMonthKey}-open`,
+        generatedAt: new Date().toISOString(),
+        generatedById: 'usr-accountant-1',
+        generatedByName: 'Dilani Fonseka',
+        publishedAt: null,
+        deliveries,
+        suppliers: [supplier],
+        rate: null,
+        factory: billFactoryOf('galaboda'),
+        coinsBroughtForward: new Map(),
+        debtBroughtForward: new Map(),
+        savingsBefore: new Map(),
+      })
+    : [];
+
+  return [...open, ...mockBills.filter((bill) => bill.supplierId === supplierId)];
+}
+
+/**
+ * One supplier's eligibility for one facility, derived **now**.
+ *
+ * Takes the supplier record rather than an id so the caller passes the *live* one:
+ * approving an advance raises `creditBalances.advance`, which lowers what is still
+ * available, and a handler that looked the supplier up in the immutable seed would
+ * keep offering headroom the office has already lent (§11.3).
+ */
+export function eligibilityFor(
+  supplier: AdminSupplier,
+  facility: CreditFacility,
+  options: { deliveries?: Delivery[]; computedAt?: string } = {},
+): CreditEligibility {
+  return buildCreditEligibility({
+    facility,
+    bills: creditHistoryFor(supplier.id, options.deliveries),
+    outstanding: supplier.creditBalances[facility],
+    computedAt: options.computedAt ?? new Date().toISOString(),
+  });
+}
+
+/** What the office actually stocks. Free text on the wire — this is the fixture's list. */
+const MANURE_TYPES = ['Urea', 'T200 mixture', 'Dolomite', 'Eppawala rock phosphate'] as const;
+
+const SEED_AT = NOW.toISOString();
+
+/** Active suppliers with leaf in the open month — the ones an advance can be priced for. */
+const creditCandidates = mockSuppliers.filter(
+  (supplier) =>
+    supplier.status === 'active' && openMonthBills.some((bill) => bill.supplierId === supplier.id),
+);
+
+/**
+ * An active supplier short of the history rule, so `shortHistory` is reachable.
+ *
+ * Someone who has not delivered for months asking for a loan is not a contrived
+ * case — it is the request the six-month rule exists to refuse, and a fixture
+ * without one cannot show that the refusal is explained rather than merely applied.
+ *
+ * Selected on **months of history**, which is the property the rule reads. An
+ * earlier version used "has no bill in the open month" as a proxy and picked the
+ * wrong supplier for three days out of four: on the 1st only a fraction of the
+ * round has delivered yet, so the proxy caught someone with seven settled months
+ * who simply had not been in that morning.
+ */
+const shortHistoryCandidate = mockSuppliers.find(
+  (supplier) =>
+    supplier.status === 'active' &&
+    monthsOfHistory(creditHistoryFor(supplier.id)) < REQUIRED_MONTHS_OF_HISTORY,
+);
+
+/**
+ * What to ask for, given the headroom.
+ *
+ * Clamped to the available figure, and the clamp is what stops the floor from
+ * quietly producing an over-ceiling row: a supplier whose advance headroom is
+ * LKR 2,000 on the 1st of the month would otherwise be seeded asking for the
+ * LKR 2,500 minimum, and half the queue would be refusable for a reason the
+ * fixture never intended. Only `share > 1` is allowed past the ceiling.
+ */
+function askFor(available: number, share: number): number {
+  // Deliberately beyond the ceiling — the `over-ceiling` fixture.
+  if (share > 1) return round2(Math.max(5_000, available * share));
+  // A supplier with no headroom still asks. That request is the one the rule
+  // exists to refuse, and the queue has to contain it.
+  if (available <= 0) return 2_500;
+  // Otherwise a plausible share of the headroom, and **never more than it** — the
+  // floor is applied first and the clamp second, or a supplier whose advance
+  // headroom is LKR 2,000 on the 1st gets seeded asking for the 2,500 minimum and
+  // the row is refusable for a reason the fixture never intended.
+  return round2(Math.min(Math.max(2_500, available * share), available));
+}
+
+interface CreditSeedSpec {
+  facility: CreditFacility;
+  ageHours: number;
+  /**
+   * What to ask for, as a share of the headroom still available.
+   *
+   * Above `1` produces the **over-ceiling** row: a request for more than the
+   * supplier may draw. It has to exist, because `over-ceiling` is a refusal that
+   * moves money if it is wrong, and a refusal nothing in the fixture triggers is
+   * one nobody notices has stopped working.
+   */
+  share: number;
+  reason: string;
+  /** Raised by the clerk at the counter — the BR-501 four-eyes fixture. */
+  officeRaised?: boolean;
+  /**
+   * Prefer a supplier who already owes on this facility.
+   *
+   * So "already drawn" is a figure on at least one row rather than a zero on every
+   * one — the difference between a ceiling and what is left of it is the whole
+   * point of the panel, and a fixture where they are always equal cannot show it.
+   */
+  wantsOutstanding?: boolean;
+  /** Overrides the candidate rotation, for the short-history case. */
+  supplier?: AdminSupplier;
+}
+
+/**
+ * The pending queue, laid out so every state a clerk can meet is on the first page.
+ *
+ * The ids are fixed and the integration tests name them:
+ *   crd-1 advance (well inside) · crd-2 loan · crd-3 manure · crd-4 advance
+ *   **over ceiling** · crd-5 advance past its SLA · crd-6 loan **raised by the
+ *   manager** (four-eyes) · crd-7 manure against an existing balance · crd-9 loan
+ *   from a supplier with no settled months (**short history**)
+ */
+const CREDIT_SEED: CreditSeedSpec[] = [
+  { facility: 'advance', ageHours: 3, share: 0.35, reason: 'Wages for the plucking round.' },
+  { facility: 'loan', ageHours: 30, share: 0.5, reason: 'Re-roofing the drying shed before the monsoon.' },
+  { facility: 'manure', ageHours: 50, share: 0.6, reason: 'Top dressing for the lower field.' },
+  {
+    facility: 'advance',
+    ageHours: 8,
+    // Deliberately beyond the headroom.
+    share: 1.4,
+    reason: 'School fees — asked for more than the account can carry.',
+  },
+  { facility: 'advance', ageHours: 80, share: 0.4, reason: 'Hospital costs.' },
+  {
+    facility: 'loan',
+    ageHours: 20,
+    share: 0.45,
+    reason: 'Logged at the counter by the manager — the supplier has no phone.',
+    officeRaised: true,
+  },
+  {
+    facility: 'manure',
+    ageHours: 14,
+    share: 0.3,
+    reason: 'Second application for the young clearing.',
+    wantsOutstanding: true,
+  },
+  { facility: 'advance', ageHours: 5, share: 0.25, reason: 'Fuel for the transport lorry.' },
+  {
+    facility: 'loan',
+    ageHours: 44,
+    share: 0.5,
+    reason: 'Wants to replant, but has not supplied since the drought.',
+    supplier: shortHistoryCandidate,
+  },
+  { facility: 'advance', ageHours: 2, share: 0.5, reason: 'Household expenses before the account is paid.' },
+  { facility: 'manure', ageHours: 96, share: 0.55, reason: 'Dolomite for the upper block.' },
+  { facility: 'advance', ageHours: 26, share: 0.3, reason: 'Repair to the plucking shears and baskets.' },
+];
+
+function seedCreditRequests(): AdminCreditRequest[] {
+  const used = new Set<string>();
+
+  /** The first unused candidate that fits what the row is trying to show. */
+  function candidateFor(spec: CreditSeedSpec): AdminSupplier {
+    const free = (s: AdminSupplier) => !used.has(s.id);
+    const wants = (s: AdminSupplier) => {
+      const eligibility = eligibilityFor(s, spec.facility, { computedAt: SEED_AT });
+      if (spec.wantsOutstanding && eligibility.outstanding <= 0) return false;
+      // An over-ceiling row does not need headroom — it needs a ceiling to exceed.
+      return spec.share > 1 || eligibility.available > 5_000;
+    };
+
+    const supplier =
+      creditCandidates.find((s) => free(s) && wants(s)) ??
+      creditCandidates.find(free) ??
+      creditCandidates[0]!;
+    used.add(supplier.id);
+    return supplier;
+  }
+
+  const rows = CREDIT_SEED.map((spec, index): AdminCreditRequest => {
+    const supplier = spec.supplier ?? candidateFor(spec);
+    const eligibility = eligibilityFor(supplier, spec.facility, { computedAt: SEED_AT });
+
+    /**
+     * The ask, priced off the headroom rather than picked out of the air.
+     *
+     * A fixture of round numbers unrelated to the ceilings would make every row
+     * either trivially approvable or absurd, and the queue's whole job is the
+     * judgement in between.
+     */
+    const amount = askFor(eligibility.available, spec.share);
+    const manure = spec.facility === 'manure';
+
+    return {
+      id: `crd-${index + 1}`,
+      facility: spec.facility,
+      supplierId: supplier.id,
+      supplierCode: supplier.supplierCode,
+      supplierName: supplier.name,
+      amount,
+      reason: spec.reason,
+      manureType: manure ? MANURE_TYPES[index % MANURE_TYPES.length]! : null,
+      // Priced at roughly LKR 210/kg of fertilizer — a figure the office would set
+      // per season, and one nobody has been asked for (status.md §21.10).
+      quantityKg: manure ? Math.max(5, Math.round(amount / 210)) : null,
+      status: 'pending',
+      createdAt: hoursAgo(spec.ageHours),
+      channel: spec.officeRaised ? 'office' : 'app',
+      /**
+       * The **manager**, not the clerk, and that is the whole point of the row.
+       *
+       * §12.1 gives `creditRequests: A` to the manager alone — a clerk may read
+       * this queue and not decide it. So a request raised by a clerk could never
+       * trip BR-501: the clerk cannot approve anything, and every other role is
+       * innocent of raising it. Attributing it to the manager is the only way the
+       * four-eyes refusal is reachable at all, which is the same argument as the
+       * `held` payout line and `chg-6`.
+       */
+      createdById: spec.officeRaised ? 'usr-manager-1' : null,
+      createdByName: spec.officeRaised ? 'Ruwan Jayasuriya' : null,
+      decision: null,
+      eligibility,
+      ageHours: spec.ageHours,
+    };
+  });
+
+  /**
+   * Two decided rows, so the approved and rejected filters are not empty.
+   *
+   * Chosen with headroom rather than by position, because an *approved* request
+   * that sits above its own ceiling is a row that could never have been approved —
+   * it reads as a bug in the module rather than as a fixture, and on the 1st of the
+   * month (when an advance ceiling is one day of leaf) it is what an index-based
+   * pick produces about half the time.
+   */
+  const settledSupplier =
+    creditCandidates.find(
+      (s) => eligibilityFor(s, 'advance', { computedAt: SEED_AT }).available > 5_000,
+    ) ??
+    creditCandidates[20] ??
+    creditCandidates[0]!;
+  const settledEligibility = eligibilityFor(settledSupplier, 'advance', { computedAt: SEED_AT });
+
+  rows.push(
+    {
+      id: 'crd-13',
+      facility: 'advance',
+      supplierId: settledSupplier.id,
+      supplierCode: settledSupplier.supplierCode,
+      supplierName: settledSupplier.name,
+      amount: askFor(settledEligibility.available, 0.3),
+      reason: 'Wages ahead of the account being paid.',
+      manureType: null,
+      quantityKg: null,
+      status: 'approved',
+      createdAt: daysAgo(7),
+      channel: 'app',
+      createdById: null,
+      createdByName: null,
+      decision: {
+        note: 'Within the ceiling for the leaf already weighed this month. Paid at the counter.',
+        decidedById: 'usr-manager-1',
+        decidedByName: 'Ruwan Jayasuriya',
+        decidedAt: daysAgo(6),
+      },
+      eligibility: settledEligibility,
+      ageHours: 168,
+    },
+    {
+      id: 'crd-14',
+      facility: 'loan',
+      supplierId: settledSupplier.id,
+      supplierCode: settledSupplier.supplierCode,
+      supplierName: settledSupplier.name,
+      amount: 500_000,
+      reason: 'Buying the adjoining half acre.',
+      manureType: null,
+      quantityKg: null,
+      status: 'rejected',
+      createdAt: daysAgo(11),
+      channel: 'app',
+      createdById: null,
+      createdByName: null,
+      decision: {
+        note: 'Above three times the average monthly account. Reapply after the next two months are settled.',
+        decidedById: 'usr-manager-1',
+        decidedByName: 'Ruwan Jayasuriya',
+        decidedAt: daysAgo(10),
+      },
+      eligibility: eligibilityFor(settledSupplier, 'loan', { computedAt: SEED_AT }),
+      ageHours: 264,
+    },
+  );
+
+  return rows;
+}
+
+export const mockCreditRequests: AdminCreditRequest[] = seedCreditRequests();
+
+/**
+ * A pending credit request counts towards the supplier's open requests too.
+ *
+ * The field is "how many things is this supplier waiting on us for", and M2's
+ * detail page links off it. Counting only change requests was right while they were
+ * the only queue and would now under-report the suppliers who are waiting most.
+ * Inquiries are deliberately **not** counted: a question is not a request, and the
+ * detail page links to a queue that decides things.
+ */
+for (const request of mockCreditRequests) {
+  if (request.status !== 'pending') continue;
+  const supplier = mockSuppliers.find((s) => s.id === request.supplierId);
+  if (supplier) supplier.pendingRequests += 1;
+}
+
+/* ───────────────────────────── M10 Inquiries ───────────────────────────── */
+
+interface InquirySeedSpec {
+  subject: string;
+  message: string;
+  ageHours: number;
+  status?: InquiryStatus;
+  reply?: string;
+  closureNote?: string;
+  officeRaised?: boolean;
+}
+
+/**
+ * Seven messages, covering all three states and both channels.
+ *
+ * Written as things a smallholder would actually send, because the queue is read
+ * by a clerk deciding what to answer first, and lorem-ipsum rows make the triage
+ * columns look like they work when nobody has tried reading one.
+ */
+const INQUIRY_SEED: InquirySeedSpec[] = [
+  {
+    subject: 'July account is short',
+    message:
+      'My July account shows 96 kg less than my own book. I brought leaf on the 12th in the afternoon as well as the morning. Please check the second weighing.',
+    ageHours: 3,
+  },
+  {
+    subject: 'Savings deduction changed',
+    message:
+      'The savings on my account went from LKR 15 to LKR 20 a kilo. I did not ask for this. Please tell me who changed it.',
+    ageHours: 11,
+  },
+  {
+    subject: 'When is the August rate coming?',
+    message: 'The auction was last week. When will the August rate be entered so I know my account?',
+    ageHours: 30,
+  },
+  {
+    subject: 'Cheque not received',
+    message:
+      'The office said my cheque was ready on the 3rd. I have been twice and it is not there. My supplier code is on this message.',
+    ageHours: 58,
+  },
+  {
+    subject: 'Change my collection point',
+    message: 'I want to bring leaf to Makadura instead of Deniyaya from next month. What do I need to do?',
+    ageHours: 96,
+    status: 'resolved',
+    reply:
+      'You can start bringing leaf to Makadura from the 1st. Tell the weigher your supplier code on the first day so the route sheet is updated. Nothing changes on your account or your bank details.',
+  },
+  {
+    subject: 'test',
+    message: 'test message please ignore',
+    ageHours: 120,
+    status: 'closed',
+    closureNote: 'Empty test message from the app. Nothing to answer.',
+  },
+  {
+    subject: 'Asked at the counter about manure credit',
+    message:
+      'Walked in on Tuesday asking whether manure can be taken on credit against the September account. Logged here so it is not lost.',
+    ageHours: 22,
+    officeRaised: true,
+  },
+];
+
+function seedInquiries(): AdminInquiry[] {
+  return INQUIRY_SEED.map((spec, index) => {
+    const supplier = mockSuppliers[index * 5 + 2]!;
+    const status: InquiryStatus = spec.status ?? 'open';
+
+    return {
+      id: `inq-${index + 1}`,
+      supplierId: supplier.id,
+      supplierCode: supplier.supplierCode,
+      supplierName: supplier.name,
+      subject: spec.subject,
+      message: spec.message,
+      status,
+      channel: spec.officeRaised ? 'office' : 'app',
+      createdAt: hoursAgo(spec.ageHours),
+      createdById: spec.officeRaised ? 'usr-clerk-1' : null,
+      createdByName: spec.officeRaised ? 'Nadeeka Perera' : null,
+      reply: spec.reply
+        ? {
+            body: spec.reply,
+            repliedById: 'usr-clerk-1',
+            repliedByName: 'Nadeeka Perera',
+            repliedAt: hoursAgo(Math.max(1, spec.ageHours - 20)),
+          }
+        : null,
+      closedAt: spec.closureNote ? hoursAgo(Math.max(1, spec.ageHours - 30)) : null,
+      closedByName: spec.closureNote ? 'Nadeeka Perera' : null,
+      closureNote: spec.closureNote ?? null,
+      ageHours: spec.ageHours,
+    };
+  });
+}
+
+export const mockInquiries: AdminInquiry[] = seedInquiries();

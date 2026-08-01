@@ -46,6 +46,9 @@ const BY_CODE: Record<string, string> = {
   'run-not-approved': 'error.runNotApproved',
   'no-payable-lines': 'error.noPayableLines',
   'line-not-payable': 'error.lineNotPayable',
+  // M7. Both are refusals to lend: the ceiling moved under the approver
+  // (BR-310), or the amount was never inside it.
+  'over-ceiling': 'error.overCeiling',
   '403': 'error.forbidden',
   '404': 'error.notFound',
 };
@@ -56,10 +59,20 @@ export function errorMessageKey(error: unknown): string {
   return BY_CODE[error.code] ?? 'error.unknown';
 }
 
-/** Does this error deserve its own dialog rather than a toast? */
+/**
+ * Does this error deserve its own explanation rather than a toast?
+ *
+ * The set is "refusals a decision dialog can meet, where retrying the same click
+ * cannot help". Each one leaves the submit button disabled: the clerk has to read
+ * why and do something different — reload the figures, hand it to a colleague, or
+ * reject it. A toast that vanishes is the wrong shape for all four.
+ */
 export function isBlockingError(error: unknown): boolean {
+  if (!isApiError(error)) return false;
   return (
-    isApiError(error) &&
-    (error.code === 'four-eyes-violation' || error.code === 'already-decided')
+    error.code === 'four-eyes-violation' ||
+    error.code === 'already-decided' ||
+    error.code === 'stale-eligibility' ||
+    error.code === 'over-ceiling'
   );
 }

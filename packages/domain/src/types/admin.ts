@@ -11,13 +11,14 @@ import type {
   ChangeRequest,
   CreditFacility,
   GreenLeafBill,
+  Inquiry,
   NotificationCategory,
   PaymentMethod,
   RequestStatus,
   SavingsLedgerEntry,
   Supplier,
 } from './app';
-import type { LanguageCode, RequestChannel } from '../constants';
+import type { InquiryStatus, LanguageCode, RequestChannel } from '../constants';
 
 /* ─────────────────────────────── Identity ─────────────────────────────── */
 
@@ -385,6 +386,180 @@ export interface ChangeRequestQuery extends PageQuery {
 export interface DecisionBody {
   note: string;
   attachmentIds?: string[];
+}
+
+/* ───────────────────────── M7 Credit queues ───────────────────────── */
+
+/**
+ * The eligibility working behind one credit request.
+ *
+ * **Every intermediate figure is on the wire, not just the ceiling**, and that is
+ * AC-05: the console must show the same numbers the supplier's app showed them,
+ * byte for byte, including how they were reached. A payload carrying only
+ * `ceiling: 48200` would let the approver and the applicant look at the same
+ * limit and disagree about why — and "the app told me I could have more" is the
+ * dispute this module exists to prevent.
+ *
+ * Derived by `buildCreditEligibility` in `leafCredit.ts`, which the API imports
+ * rather than re-implements. Two implementations of a ceiling drift on the first
+ * rounding decision.
+ */
+export interface CreditEligibility {
+  facility: CreditFacility;
+  /** The most the supplier may draw. **Truncated, never rounded** (`floor2`). */
+  ceiling: number;
+  /** Already drawn on this facility and not yet repaid. */
+  outstanding: number;
+  /** `ceiling − outstanding`, floored at zero. What a new request may reach. */
+  available: number;
+  eligible: boolean;
+  /** i18n key naming the blocker, or `null` when eligible. Never a sentence. */
+  reasonKey: string | null;
+
+  /* The working, in the order the rule reads. */
+  monthsOfHistory: number;
+  requiredMonths: number;
+  /** Gross income averaged over `requiredMonths`. `null` when the history is short. */
+  averageMonthlyIncome: number | null;
+  /** The loan multiple. `null` for the facilities not priced off income. */
+  limitMultiplier: number | null;
+  lastSettledMonthKey: string | null;
+  /** The rate that priced the ceiling. `null` when no month has settled (BR-102). */
+  lastSettledRatePerKg: number | null;
+  /** The kilos the rate was multiplied by — this month's for an advance. */
+  pricedKgs: number | null;
+
+  /**
+   * When the server derived this.
+   *
+   * Rendered next to the figures so an approver knows how fresh they are, and
+   * carried into the audit entry — "approved against a ceiling computed at 09:12"
+   * is the sentence that settles a dispute about a limit that has since moved.
+   */
+  computedAt: string;
+}
+
+/**
+ * A credit request as the queue shows it.
+ *
+ * One type for all three facilities rather than three near-identical ones. They
+ * differ in how the ceiling is priced and in nothing the queue does: the same
+ * grid, the same four-eyes rule, the same note. `manureType` and `quantityKg` are
+ * the only facility-specific fields, and they are `null` on the other two rather
+ * than a discriminated union — a union would fork every consumer to read one
+ * field.
+ */
+export interface AdminCreditRequest {
+  id: string;
+  facility: CreditFacility;
+  supplierId: string;
+  supplierCode: string;
+  supplierName: string;
+  /** LKR asked for. On manure this is the **value** of the fertilizer, not its weight. */
+  amount: number;
+  reason: string | null;
+  /** Manure only; `null` on advance and loan. */
+  manureType: string | null;
+  quantityKg: number | null;
+  status: RequestStatus;
+  createdAt: string;
+  channel: RequestChannel;
+  /** Set when the office raised it, so four-eyes can be enforced (BR-501). */
+  createdById: string | null;
+  createdByName: string | null;
+  decision: Decision | null;
+  /**
+   * Re-derived at read time, never stored.
+   *
+   * A ceiling cached on the row is a ceiling that goes stale the moment a delivery
+   * is recorded, and the approver would be reading a figure from whenever the
+   * request happened to be written.
+   */
+  eligibility: CreditEligibility;
+  /** Hours waiting — drives queue-age colouring against `QUEUE_SLA_HOURS`. */
+  ageHours: number;
+}
+
+export interface CreditRequestQuery extends PageQuery {
+  status?: RequestStatus;
+  facility?: CreditFacility;
+  supplierId?: string;
+  q?: string;
+  /** The requests asking for more than the supplier may have. The queue's hard cases. */
+  overCeiling?: boolean;
+}
+
+/**
+ * A credit decision. The note, plus the ceiling the approver was looking at.
+ *
+ * `ceilingSeen` is what makes BR-310 enforceable. Eligibility moves — a delivery
+ * recorded this morning raises an advance ceiling, a month published lowers it —
+ * and a queue rendered twenty minutes ago is a screen showing a limit that may no
+ * longer exist. The server recomputes on approval and answers `stale-eligibility`
+ * rather than lending against the figure it happens to hold now: **the approver
+ * agreed to a specific number**, and silently substituting a different one is the
+ * worst outcome available, because nobody finds out.
+ */
+export interface CreditDecisionBody extends DecisionBody {
+  /** The `CreditEligibility.ceiling` on screen when the decision was made. */
+  ceilingSeen: number;
+}
+
+/* ───────────────────────── M10 Inquiries ───────────────────────── */
+
+/** The office's answer, rendered back to the supplier in the app. */
+export interface InquiryReply {
+  body: string;
+  repliedById: string;
+  repliedByName: string;
+  repliedAt: string;
+}
+
+/**
+ * A supplier's message to the office, as the queue works it.
+ *
+ * **`status` is deliberately not the app's `RequestStatus`.** The app models an
+ * inquiry with `pending | approved | rejected`, which is the vocabulary of a
+ * request for something — and an inquiry is a question. "Approved" is not an
+ * answer to "why was my July account short". `Omit`-ing the field and restating it
+ * is the honest version of a mapping that has to exist somewhere; keeping the
+ * app's word here would have spread it across every screen instead.
+ *
+ * `inquiryStatusForApp` converts, so the API has one implementation of the
+ * mapping and the app keeps the field it already reads (status.md §21.18).
+ */
+export interface AdminInquiry extends Omit<Inquiry, 'status' | 'reply'> {
+  supplierId: string;
+  supplierCode: string;
+  supplierName: string;
+  status: InquiryStatus;
+  channel: RequestChannel;
+  /** Set when a clerk logged a walk-in or a telephone call on the supplier's behalf. */
+  createdById: string | null;
+  createdByName: string | null;
+  reply: InquiryReply | null;
+  /** Closed without an answer — a duplicate, or a message for somewhere else. */
+  closedAt: string | null;
+  closedByName: string | null;
+  /** Why it was closed unanswered. Mandatory on close, `null` otherwise. */
+  closureNote: string | null;
+  ageHours: number;
+}
+
+export interface InquiryQuery extends PageQuery {
+  status?: InquiryStatus;
+  supplierId?: string;
+  q?: string;
+}
+
+/** The answer the supplier reads. Minimum length enforced for the same reason a note's is. */
+export interface InquiryReplyBody {
+  body: string;
+}
+
+/** Closing unanswered takes a reason, because "closed" with no why is a lost message. */
+export interface CloseInquiryBody {
+  note: string;
 }
 
 /* ───────────────────────────── M1 Dashboard ───────────────────────────── */
@@ -1036,6 +1211,13 @@ export const ADMIN_ERROR_CODES = [
   'run-not-approved',
   'no-payable-lines',
   'line-not-payable',
+
+  /* M7 Credit. `stale-eligibility` is above, with the two refusals that have to
+     exist — it is BR-310 and it predates this module. `over-ceiling` is its
+     companion: eligibility that has *not* moved, against an amount that was never
+     within it. Approving more than a supplier may draw is not a warning, because
+     the money leaves and the next month's bill carries a deduction for it. */
+  'over-ceiling',
 ] as const;
 
 export type AdminErrorCode = (typeof ADMIN_ERROR_CODES)[number];

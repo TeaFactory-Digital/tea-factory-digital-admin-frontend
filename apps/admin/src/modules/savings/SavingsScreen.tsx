@@ -218,13 +218,24 @@ export function SavingsScreen() {
                * reconciling this wants the numbers to read off and paste. A chart here
                * would be decoration over a four-row table.
                */}
+              {/**
+               * **Bounded, and it scrolls.** One row per month with no ceiling makes
+               * this card's height a function of how long the factory has been on the
+               * platform — and the accounts grid below it is `flex-1` inside a page
+               * body that never scrolls, so every extra month of history steals a row
+               * from the grid until the first one sits under the pagination bar and
+               * cannot be clicked. Caught by the e2e suite when the fixture grew from
+               * four months to eight; a real factory reaches the same state by
+               * existing for a year.
+               */}
               {data.trend.length > 0 ? (
-                <div className="overflow-x-auto">
+                <div className="max-h-40 overflow-auto">
                   <table
                     className="w-full border-collapse text-data-cell"
                     aria-label={t('savings.trendTitle')}
                   >
-                    <thead>
+                    {/* Sticky against the scroll box, so the columns stay named. */}
+                    <thead className="sticky top-0 z-10 bg-surface">
                       <tr>
                         <th scope="col" className="px-sm py-xs text-left text-data-header uppercase text-text-secondary">
                           {t('savings.column.month')}
@@ -278,7 +289,20 @@ export function SavingsScreen() {
         </CardBody>
       </Card>
 
-      <Card className="flex min-h-0 flex-1 flex-col">
+      {/**
+       * A **floor**, not `min-h-0`, and this is the one grid screen that needs one.
+       *
+       * The others are a filter bar and a grid; this one carries a summary card
+       * above it whose height grows with the factory's history. `min-h-0` means
+       * "shrink me to whatever is left", so on a 720 px laptop the scheme card took
+       * the page and the grid was left with fifteen pixels of scroll area — rows
+       * present, focusable, and physically unclickable behind the pagination bar.
+       *
+       * With a floor the grid keeps a usable height and `main` scrolls instead,
+       * which is exactly the fallback `AppShell` describes for a screen taller than
+       * the window.
+       */}
+      <Card className="flex min-h-96 flex-1 flex-col">
         <div className="flex shrink-0 flex-wrap items-end gap-sm border-b border-divider p-md">
           <SearchInput
             label={t('savings.searchPlaceholder')}

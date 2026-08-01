@@ -11,8 +11,10 @@ is exactly that.** Nothing here is quietly assumed to be solved.
 ## What is built
 
 Foundation plus M1, M2, M9 and M17 — the first agreed milestone — then **M3 and M4**,
-the pair §18.2 calls the ones the project succeeds or fails on, and now **M5, M6 and
-M8**: the money chain those two exist to feed.
+the pair §18.2 calls the ones the project succeeds or fails on, then **M5, M6 and
+M8**: the money chain those two exist to feed. Now **M7 and M10**, which finish the
+sidebar's Queues section — every `pending` in the supplier's app is a queue in the
+console, which is the promise the whole product rests on.
 
 | Area | State |
 | --- | --- |
@@ -21,7 +23,7 @@ M8**: the money chain those two exist to feed.
 | **Auth realm** | Separate from suppliers. Password → optional TOTP → in-memory access token + httpOnly refresh cookie, with refresh-on-401 |
 | **RBAC** | The §12.1 matrix as data, server grants overriding per capability, four-eyes, capability route guards |
 | **Transport** | Axios with domain-code-preserving errors, tenant header, idempotency keys, single-retry refresh |
-| **Mock API** | MSW: 84 suppliers, 14 change requests, **four months of delivery rows**, months with stored stages and derived exceptions, bills and savings ledgers chained month to month, payout runs in every state, 3 tenants, 4 console users — enforcing every refusal the real API must |
+| **Mock API** | MSW: 84 suppliers, 14 change requests, 14 credit requests, 7 inquiries, **eight months of delivery rows**, months with stored stages and derived exceptions, bills and savings ledgers chained month to month, payout runs in every state, 3 tenants, 4 console users — enforcing every refusal the real API must |
 | **UI kit** | 15 token-driven primitives, keyboard-navigable data grid, i18n throughout |
 | **M1 Dashboard** | Queue cards with age and SLA, month-cycle stage, today's leaf, server-composed alerts, 14-day trend — the leaf figures now derived from M3's rows, so committing a session moves the card |
 | **M2 Suppliers** | Search/filter/sort grid with URL state, detail, suspend/reactivate, the audited bank reveal |
@@ -30,9 +32,11 @@ M8**: the money chain those two exist to feed.
 | **M5 Bills** | A read model over M3's leaf × M4's rate, generated and re-generatable while the month is open, staleness derived at read time, the nine deduction lines with their total recomputed (BR-107), whole-rupee payment with the coins carried, and the slip rendered field-for-field for AC-03 |
 | **M6 Payouts** | One run per month per method, refused against an unpublished month, lines held rather than dropped when there is nowhere to pay, four-eyes on the release, and per-line reconciliation with a mandatory reason on a failure |
 | **M8 Savings** | Read-only. Balance as a liability, ledger derived from published bills only, oldest-first passbook, and the registry's balance following the ledger rather than sitting beside it |
+| **M7 Credit queues** | One queue over all three facilities, the **eligibility working printed rather than summarised** (AC-05), a decision that carries the ceiling it was made against so `stale-eligibility` is enforceable (BR-310), `over-ceiling` refused on both sides, and an approval that raises the supplier's balance so the next bill deducts against it |
 | **M9 Change requests** | Queue oldest-first, side-by-side comparison, approve/reject with mandatory note, four-eyes, already-decided |
+| **M10 Inquiries** | Open/answered/closed as data (§21.18), reply and close-unanswered as **different acts**, prose-first triage grid, and the console saying plainly that no notification is sent because M13 is not built |
 | **M17 Audit** | Filterable read-only log, plus per-record panels on M2 and M9. Every M3/M4/M5/M6 mutation writes to it |
-| **Tests** | 131 Vitest + 7 Playwright, all passing. Typecheck and lint clean |
+| **Tests** | 169 Vitest + 13 Playwright, all passing. Typecheck and lint clean |
 
 ## Acceptance criteria
 
@@ -50,7 +54,8 @@ assessed.
 | AC-12 | A new factory goes live without a code deploy | ⚠️ Mechanism met — subdomain + config + no bundled identity. Unprovable until M14 exists |
 | AC-03 | A bill matches the app's Home screen and the PDF field for field | ⚠️ **Console half met.** The slip renders every `GreenLeafBill` field in the printed account's order, and the derivation is shared (`packages/domain/src/bill.ts`) so the API cannot compute it differently. Integration-tested as identities — gross from kilos × rate, the nine lines summing to their total, whole rupees plus carried coins equalling the balance. **Unprovable end to end until the app reads the same endpoint**, and the PDF is not built |
 | AC-07 | A flag off removes the surface **and** the endpoint refuses | ⚠️ **Console half met, API half now met for the two flags that have an off-tenant.** `enablePayouts` is off for `highland`, and `GET /admin/payout-runs` answers `403 feature-disabled` for it — asserted with a raw request carrying an explicit `X-Tenant`, which is how a replayed request or a hand-typed URL would arrive. The mechanism (`featureGate`) is in place for savings too; no fixture tenant has that flag off. **The real backend still has none of this** |
-| AC-05, AC-08, AC-11 | Credit eligibility, content fallback, FAQ | ⛔ Not assessable — M7, M11, M12 are not built |
+| AC-05 | Credit eligibility matches the app's, byte for byte, including the working | ⚠️ **Console half met.** M7 renders every intermediate figure — months of history against the requirement, the average account and the multiple, the last settled rate and the kilos it priced — and the derivation is shared (`packages/domain/src/leafCredit.ts`), so the API cannot compute it differently. Integration-tested as identities rather than as fixed numbers: the ceiling equals its own arithmetic. **Unprovable end to end until the app reads the same endpoint** |
+| AC-08, AC-11 | Content fallback, FAQ | ⛔ Not assessable — M11 and M12 are not built |
 
 ---
 
@@ -148,8 +153,33 @@ Worst first: correctness, then plumbing, then polish.
 
 15. **The console's ceiling arithmetic is untested against the server's.** AC-05
     requires byte-for-byte agreement, and `packages/domain/src/leafCredit.ts` is
-    the shared implementation — but nothing yet compares it to a real
-    `/advances/eligibility` response. That comparison is the first test M7 needs.
+    the shared implementation — now rendered field for field by M7's eligibility
+    panel and asserted as an identity (the ceiling equals its own working) rather
+    than against a fixed number. **But nothing has yet compared it to a real
+    `/advances/eligibility` response**, because there is no backend. Both sides
+    calling one function is the mechanism; a live comparison is the proof, and it
+    is the first test to write the day the API answers.
+
+16. **An approved credit has no repayment schedule.** M7 raises
+    `creditBalances[facility]` on approval, and M5 deducts an instalment against it
+    next month — but the *share* it deducts (30% of gross for an advance, 20% for a
+    loan, 15% for manure) is the mock's guess, and it is the other half of §21.10.
+    Approving LKR 40,000 today therefore shows a plausible repayment and not a
+    promised one, which is not a number to quote at a supplier.
+
+17. **A supplier's pending requests are each priced against the same headroom.**
+    Two open advances both read as approvable when only one of them is. The detail
+    page links to the supplier's other open requests so an approver can see it, and
+    the server re-checks at the moment of approval — so the *second* approval is
+    refused with `over-ceiling` rather than paid. What is missing is the console
+    saying so before the first one is decided. §21.5 is the rule question behind it.
+
+18. **`enableInquiry` has no off-tenant.** M10's endpoint half of AC-07 is built —
+    `featureGate` guards every inquiry route — and no fixture tenant turns the flag
+    off, so it is unasserted. Exactly the same gap savings has, and it means the
+    flag is a UI preference for M10 until either a fixture tenant or the real API
+    refuses the call. M7's half **is** asserted: `highland` sells advances and not
+    loans or manure, and a loan reached by its own URL answers `feature-disabled`.
 
 ---
 
@@ -184,10 +214,10 @@ would look for it.
 
 | § | Question | Effect |
 | --- | --- | --- |
-| 21.6 | **Approval thresholds** — above what amount must a manager rather than a clerk approve? | M7. `canApproveAmount(…, null)` already treats "not configured" as "base capability suffices", so M7 can be built and the number added later |
-| 21.5 | **Stacking** — does a pending request block another of the same type? | M7's queue behaviour |
+| 21.6 | **Approval thresholds** — above what amount must a manager rather than a clerk approve? | M7, **now built without it**. `canApproveAmount(…, null)` treats "not configured" as "the base capability suffices", so the answer becomes tenant config rather than a rewrite. Note §12.1 already puts every credit decision with the manager, so the question is really about escalating *above* the manager |
+| 21.5 | **Stacking** — does a pending request block another of the same type? | M7's queue behaviour. The console currently allows it and prices each request against the same headroom, which means two pending advances can each look approvable and only one of them is. The detail page links to the supplier's other open requests so the approver can see it; whether the *rule* should refuse the second is the open question |
 | 21.13 | **Collection points** — first-class entities, or does the division suffix suffice? | Already modelled as first-class in the config and the supplier record. Reporting by route needs it, so this is the right guess — but it is a guess |
-| 21.18 | **Inquiry statuses** — is Resolved/Closed the right pair? | M10. Build with two and add states as data |
+| 21.18 | **Inquiry statuses** — is Resolved/Closed the right pair? | M10, **now built with both**. `INQUIRY_STATUSES` is data and `inquiryStatusForApp` is the single place the console's three states map onto the app's three words — an answer that adds `escalated` adds a row, not a migration. The mapping is knowingly imprecise: a closed message becomes the app's `rejected`, because those are the only words the app has |
 | 21.12 | **Retention** — for bills, payout records, delivery data | M17's retention policy, and §20.4 |
 
 ### Questions the console raises that §21 does not
@@ -224,23 +254,17 @@ after a month has been published on the wrong assumption:
 
 ## What I would build next
 
-1. **M7 Credit queues.** Nothing external blocks it, `leafCredit.ts` is already
-   shared, and AC-05 — the eligibility figures matching the app byte for byte — is
-   the criterion most likely to cause a real dispute if it is wrong. It also
-   exercises `stale-eligibility`, the only refusal the console has no path for yet.
-   The money chain it lands on top of is now real: an advance is a `deductions.advance`
-   line on next month's bill, so the eligibility figures have somewhere to be checked
-   against rather than only asserted.
-2. **M10 Inquiries.** Small, unblocked, and it completes the "every pending in the
-   app is a queue in the console" promise.
-3. **The bill PDF.** The slip renders every field in the printed account's order, so
+1. **The bill PDF.** The slip renders every field in the printed account's order, so
    this is a print stylesheet plus a renderer for the copy the supplier is handed — not
    a second layout. It is the last thing standing between the console and AC-03 being
    assessable end to end, and it is blocked on nothing.
-4. **The scale-file import for M3.** The entry grid is built; the other half of
+2. **The scale-file import for M3.** The entry grid is built; the other half of
    §18.2's data-entry story is a scale file the weighing point can upload, and
    `source: 'scaleFile'` is already in the data waiting for it.
-5. **The repo merge**, before the shared types drift far enough to hurt.
+3. **M11 / M12 Content.** Nothing external blocks them, and AC-08 — a missing
+   translation being visible to the editor rather than silently falling back — is the
+   last acceptance criterion with no screen behind it at all.
+4. **The repo merge**, before the shared types drift far enough to hurt.
 
 **Not next, and why:** M13 Notifications is tempting now that `month.publish` is a real
 event to fire "your bill is ready" from — but §21.24 has to say whether that send is

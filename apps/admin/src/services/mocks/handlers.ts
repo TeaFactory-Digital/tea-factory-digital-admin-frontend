@@ -20,6 +20,8 @@ import { HttpResponse, delay, http, type HttpHandler } from 'msw';
 import type {
   AdminBill,
   AdminChangeRequest,
+  AdminCreditRequest,
+  AdminInquiry,
   AdminSavingsLedgerEntry,
   AdminSupplier,
   AuditEntry,
@@ -27,6 +29,7 @@ import type {
   BillRun,
   Capability,
   ConsoleUser,
+  CreditFacility,
   Delivery,
   DeliveryBatch,
   DeliveryBatchResult,
@@ -44,11 +47,13 @@ import type {
   SavingsSummary,
 } from '@tfd/domain';
 import {
+  CREDIT_FACILITY_FLAGS,
   MAX_DELIVERY_BATCH_ROWS,
   MAX_DELIVERY_KG,
   can,
   deductionsBalance,
   isExactKg,
+  isInquiryClosed,
   isSelfApproval,
   monthKeyOf,
   round2,
@@ -63,13 +68,16 @@ import {
   buildDashboard,
   buildPayoutLines,
   currentMonthKey,
+  eligibilityFor,
   generateBills,
   mockAudit,
   mockBillRuns,
   mockBills,
   mockChangeRequests,
   mockConfigs,
+  mockCreditRequests,
   mockDeliveries,
+  mockInquiries,
   mockMonthExceptions,
   mockMonths,
   mockPayoutLines,
@@ -137,6 +145,13 @@ const state = {
   payoutRuns: mockPayoutRuns.map((run) => ({ ...run })),
   payoutLines: mockPayoutLines.map((line) => ({ ...line })),
   savingsLedger: mockSavingsLedger.map((entry) => ({ ...entry })),
+  /**
+   * M7's queue. The stored `eligibility` on each row is the fixture's snapshot and
+   * is **replaced on every read** — see `withCreditEligibility`. It is kept on the
+   * record only so a decided request retains the figures it was decided against.
+   */
+  creditRequests: mockCreditRequests.map((request) => ({ ...request })),
+  inquiries: mockInquiries.map((inquiry) => ({ ...inquiry })),
   sequence: 1000,
 };
 
@@ -598,12 +613,44 @@ function publicUser(user: MockUser): ConsoleUser {
   return rest;
 }
 
+/** Hours since an ISO timestamp — what every queue's age column is derived from. */
+const ageHoursOf = (createdAt: string): number =>
+  (Date.now() - new Date(createdAt).getTime()) / 3_600_000;
+
 /** Re-derives `ageHours` at read time, so a queue row's urgency is never stale. */
 function withAge(request: AdminChangeRequest): AdminChangeRequest {
+  return { ...request, ageHours: ageHoursOf(request.createdAt) };
+}
+
+/**
+ * A credit row with its age **and its eligibility** re-derived.
+ *
+ * The eligibility half is the one that matters: a ceiling is a function of leaf
+ * and rates, and both move under a queue that is left open. Recomputing on read is
+ * what makes `stale-eligibility` a refusal the console can actually meet, because
+ * the figures on the row and the figures the approval re-checks come from the same
+ * function seconds apart rather than from a write months old.
+ *
+ * A **decided** request keeps its stored figures: those are what the decision was
+ * made against, and recomputing them would rewrite history every time the page is
+ * opened.
+ */
+function withCreditEligibility(request: AdminCreditRequest): AdminCreditRequest {
+  const base = { ...request, ageHours: ageHoursOf(request.createdAt) };
+  if (request.status !== 'pending') return base;
+
+  const supplier = state.suppliers.find((s) => s.id === request.supplierId);
+  if (!supplier) return base;
+  // The **live** delivery rows: an advance ceiling is priced off this month's leaf,
+  // so a session committed a minute ago has to be in the figure.
   return {
-    ...request,
-    ageHours: (Date.now() - new Date(request.createdAt).getTime()) / 3_600_000,
+    ...base,
+    eligibility: eligibilityFor(supplier, request.facility, { deliveries: state.deliveries }),
   };
+}
+
+function withInquiryAge(inquiry: AdminInquiry): AdminInquiry {
+  return { ...inquiry, ageHours: ageHoursOf(inquiry.createdAt) };
 }
 
 /* ──────────────────────────────── handlers ──────────────────────────────── */
@@ -719,7 +766,12 @@ export const handlers: HttpHandler[] = [
     const auth = authorize(request, 'reports');
     if ('response' in auth) return auth.response;
 
-    const summary = buildDashboard(state.changeRequests, state.deliveries);
+    const summary = buildDashboard(
+      state.changeRequests,
+      state.deliveries,
+      state.creditRequests,
+      state.inquiries,
+    );
     const flags = flagsOf(request);
 
     /**
@@ -2317,6 +2369,387 @@ export const handlers: HttpHandler[] = [
     }),
   ),
 
+  /* ── M7 Credit queues ──────────────────────────────────────────────────── */
+
+  /**
+   * The queue.
+   *
+   * Every row's eligibility is **recomputed here**, never read from the stored
+   * record. A ceiling is a function of leaf and rates, both of which move: a
+   * figure written when the request arrived is a figure that was true then, and
+   * an approver reading it would be lending against history.
+   */
+  http.get('*/admin/credit-requests', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'creditRequests');
+    if ('response' in auth) return auth.response;
+
+    const url = new URL(request.url);
+    const status = url.searchParams.get('status');
+    const facility = url.searchParams.get('facility') as CreditFacility | null;
+    const supplierId = url.searchParams.get('supplierId');
+    const overCeiling = url.searchParams.get('overCeiling');
+    const q = url.searchParams.get('q')?.trim().toLowerCase();
+
+    // A facility this factory does not offer has no queue, and its rows are not
+    // hidden in the console — they are absent from the payload (AC-07).
+    const flags = flagsOf(request);
+    let rows = state.creditRequests
+      .filter((row) => flags[CREDIT_FACILITY_FLAGS[row.facility]])
+      .map(withCreditEligibility);
+
+    if (status) rows = rows.filter((r) => r.status === status);
+    if (facility) rows = rows.filter((r) => r.facility === facility);
+    if (supplierId) rows = rows.filter((r) => r.supplierId === supplierId);
+    if (overCeiling === 'true') rows = rows.filter((r) => r.amount > r.eligibility.available);
+    if (q) {
+      rows = rows.filter(
+        (r) =>
+          r.supplierCode.toLowerCase().includes(q) || r.supplierName.toLowerCase().includes(q),
+      );
+    }
+
+    // Oldest first, like every other inbox in the console.
+    rows = sortRows(rows, url, (a, b) => a.createdAt.localeCompare(b.createdAt));
+
+    return HttpResponse.json(paginate(rows, url));
+  }),
+
+  http.get('*/admin/credit-requests/:id', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'creditRequests');
+    if ('response' in auth) return auth.response;
+
+    const found = state.creditRequests.find((r) => r.id === params.id);
+    if (!found) return fail({ status: 404, code: '404', message: 'No such request.' });
+
+    const gate = featureGate(request, CREDIT_FACILITY_FLAGS[found.facility]);
+    if (gate) return gate;
+
+    return HttpResponse.json(withCreditEligibility(found));
+  }),
+
+  ...(['approve', 'reject'] as const).map((verb) =>
+    http.post(`*/admin/credit-requests/:id/${verb}`, async ({ request, params }) => {
+      await delay(LATENCY_MS);
+      const auth = authorize(request, 'creditRequests', 'approve');
+      if ('response' in auth) return auth.response;
+
+      const index = state.creditRequests.findIndex((r) => r.id === params.id);
+      if (index < 0) return fail({ status: 404, code: '404', message: 'No such request.' });
+
+      const before = state.creditRequests[index]!;
+
+      const gate = featureGate(request, CREDIT_FACILITY_FLAGS[before.facility]);
+      if (gate) return gate;
+
+      const body = (await request.json()) as { note?: string; ceilingSeen?: number };
+      const note = body.note?.trim() ?? '';
+
+      // AC-06, on both verbs.
+      if (note.length < 10) {
+        return fail({
+          status: 422,
+          code: 'note-required',
+          message: 'A decision note is required.',
+        });
+      }
+
+      if (before.status !== 'pending') {
+        return fail({
+          status: 409,
+          code: 'already-decided',
+          message: `This request was already ${before.status}.`,
+          details: { decidedByName: before.decision?.decidedByName ?? null },
+        });
+      }
+
+      // BR-501, before anything is derived: who may decide does not depend on
+      // what the figures say.
+      if (isSelfApproval(auth.user, before.createdById)) {
+        return fail({
+          status: 409,
+          code: 'four-eyes-violation',
+          message: 'You raised this request, so you cannot decide it.',
+          details: { createdByName: before.createdByName },
+        });
+      }
+
+      const supplier = state.suppliers.find((s) => s.id === before.supplierId);
+      if (!supplier) return fail({ status: 404, code: '404', message: 'No such supplier.' });
+
+      const fresh = eligibilityFor(supplier, before.facility, {
+        deliveries: state.deliveries,
+      });
+
+      /**
+       * BR-310, and **only on approval**.
+       *
+       * A rejection does not lend anything, so refusing one because the ceiling
+       * moved would trap a request in the queue: the figures shift again while the
+       * clerk reloads, and the row can never be cleared. An approval is the act
+       * that moves money against a specific number, and that number has to still
+       * be the one the approver agreed to.
+       */
+      if (verb === 'approve') {
+        if (body.ceilingSeen === undefined || round2(body.ceilingSeen) !== fresh.ceiling) {
+          return fail({
+            status: 409,
+            code: 'stale-eligibility',
+            message: 'The ceiling has changed since this queue was loaded.',
+            details: { ceilingSeen: body.ceilingSeen ?? null, ceilingNow: fresh.ceiling },
+          });
+        }
+
+        // Eligibility that never moved, against an amount that was never inside
+        // it. A separate refusal from the one above, because the fix is different:
+        // this request has to be rejected or re-raised, not reloaded.
+        if (before.amount > fresh.available) {
+          return fail({
+            status: 409,
+            code: 'over-ceiling',
+            message: 'The amount asked for is more than this supplier may draw.',
+            details: {
+              amount: before.amount,
+              available: fresh.available,
+              reasonKey: fresh.reasonKey,
+            },
+          });
+        }
+      }
+
+      const status = verb === 'approve' ? 'approved' : 'rejected';
+      const after: AdminCreditRequest = {
+        ...before,
+        status,
+        eligibility: fresh,
+        decision: {
+          note,
+          decidedById: auth.user.id,
+          decidedByName: auth.user.name,
+          decidedAt: new Date().toISOString(),
+        },
+      };
+      state.creditRequests[index] = after;
+
+      /**
+       * An approved facility becomes a balance the supplier owes.
+       *
+       * §11.3: an advance surfaces as a `deductions.advance` line on the next
+       * bill, so the two have to agree. Writing it here is what makes the chain
+       * real rather than decorative — the next eligibility read has less headroom,
+       * and the next bill deducts an instalment against it.
+       */
+      const supplierIndex = state.suppliers.findIndex((s) => s.id === before.supplierId);
+      if (status === 'approved' && supplierIndex >= 0) {
+        const current = state.suppliers[supplierIndex]!;
+        state.suppliers[supplierIndex] = {
+          ...current,
+          creditBalances: {
+            ...current.creditBalances,
+            [before.facility]: round2(current.creditBalances[before.facility] + before.amount),
+          },
+          pendingRequests: Math.max(0, current.pendingRequests - 1),
+        };
+      } else if (supplierIndex >= 0) {
+        const current = state.suppliers[supplierIndex]!;
+        state.suppliers[supplierIndex] = {
+          ...current,
+          pendingRequests: Math.max(0, current.pendingRequests - 1),
+        };
+      }
+
+      // AC-09, and the ceiling is part of the record: "approved against a ceiling
+      // of X computed at Y" is what settles a dispute about a limit that has moved.
+      record({
+        actorId: auth.user.id,
+        actorName: auth.user.name,
+        action: `creditRequest.${verb}`,
+        entity: 'creditRequest',
+        entityId: before.id,
+        before: { status: before.status },
+        after: {
+          status,
+          amount: before.amount,
+          facility: before.facility,
+          ceiling: fresh.ceiling,
+          computedAt: fresh.computedAt,
+          note,
+        },
+      });
+
+      return HttpResponse.json(after);
+    }),
+  ),
+
+  /* ── M10 Inquiries ─────────────────────────────────────────────────────── */
+  http.get('*/admin/inquiries', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enableInquiry');
+    if (gate) return gate;
+
+    const auth = authorize(request, 'inquiries');
+    if ('response' in auth) return auth.response;
+
+    const url = new URL(request.url);
+    const status = url.searchParams.get('status');
+    const supplierId = url.searchParams.get('supplierId');
+    const q = url.searchParams.get('q')?.trim().toLowerCase();
+
+    let rows = state.inquiries.map(withInquiryAge);
+    if (status) rows = rows.filter((r) => r.status === status);
+    if (supplierId) rows = rows.filter((r) => r.supplierId === supplierId);
+    if (q) {
+      rows = rows.filter(
+        (r) =>
+          r.supplierCode.toLowerCase().includes(q) ||
+          r.supplierName.toLowerCase().includes(q) ||
+          r.subject.toLowerCase().includes(q) ||
+          // The body too: the office searches for what somebody said, not only
+          // for who said it, and a subject line of "help" is common.
+          r.message.toLowerCase().includes(q),
+      );
+    }
+
+    rows = sortRows(rows, url, (a, b) => a.createdAt.localeCompare(b.createdAt));
+
+    return HttpResponse.json(paginate(rows, url));
+  }),
+
+  http.get('*/admin/inquiries/:id', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enableInquiry');
+    if (gate) return gate;
+
+    const auth = authorize(request, 'inquiries');
+    if ('response' in auth) return auth.response;
+
+    const found = state.inquiries.find((r) => r.id === params.id);
+    if (!found) return fail({ status: 404, code: '404', message: 'No such inquiry.' });
+    return HttpResponse.json(withInquiryAge(found));
+  }),
+
+  /**
+   * The answer the supplier reads.
+   *
+   * `approve` on the capability, not `write`: §12.1 gives inquiries `A` to the
+   * clerk and `R` to the manager, which is unusual and deliberate — answering a
+   * supplier is counter work, and a manager reading the queue is oversight rather
+   * than a second pair of hands.
+   */
+  http.post('*/admin/inquiries/:id/reply', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enableInquiry');
+    if (gate) return gate;
+
+    const auth = authorize(request, 'inquiries', 'approve');
+    if ('response' in auth) return auth.response;
+
+    const index = state.inquiries.findIndex((r) => r.id === params.id);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such inquiry.' });
+
+    const before = state.inquiries[index]!;
+    const { body } = (await request.json()) as { body?: string };
+    const text = body?.trim() ?? '';
+
+    if (text.length < 20) {
+      return fail({
+        status: 422,
+        code: 'note-required',
+        message: 'A reply is required.',
+      });
+    }
+
+    // Two clerks, one inbox — the same refusal M9 makes, for the same reason. A
+    // second reply would replace the first, and the supplier already read it.
+    if (isInquiryClosed(before.status)) {
+      return fail({
+        status: 409,
+        code: 'already-decided',
+        message: `This inquiry was already ${before.status}.`,
+        details: { repliedByName: before.reply?.repliedByName ?? null },
+      });
+    }
+
+    const after: AdminInquiry = {
+      ...before,
+      status: 'resolved',
+      reply: {
+        body: text,
+        repliedById: auth.user.id,
+        repliedByName: auth.user.name,
+        repliedAt: new Date().toISOString(),
+      },
+    };
+    state.inquiries[index] = after;
+
+    record({
+      actorId: auth.user.id,
+      actorName: auth.user.name,
+      action: 'inquiry.reply',
+      entity: 'inquiry',
+      entityId: before.id,
+      before: { status: before.status },
+      after: { status: 'resolved' },
+    });
+
+    return HttpResponse.json(after);
+  }),
+
+  /** Closing unanswered — a duplicate, a test message, something for the weighing point. */
+  http.post('*/admin/inquiries/:id/close', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enableInquiry');
+    if (gate) return gate;
+
+    const auth = authorize(request, 'inquiries', 'approve');
+    if ('response' in auth) return auth.response;
+
+    const index = state.inquiries.findIndex((r) => r.id === params.id);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such inquiry.' });
+
+    const before = state.inquiries[index]!;
+    const { note } = (await request.json()) as { note?: string };
+    const reason = note?.trim() ?? '';
+
+    if (reason.length < 10) {
+      return fail({
+        status: 422,
+        code: 'note-required',
+        message: 'A reason is required to close a message unanswered.',
+      });
+    }
+
+    if (isInquiryClosed(before.status)) {
+      return fail({
+        status: 409,
+        code: 'already-decided',
+        message: `This inquiry was already ${before.status}.`,
+      });
+    }
+
+    const after: AdminInquiry = {
+      ...before,
+      status: 'closed',
+      closedAt: new Date().toISOString(),
+      closedByName: auth.user.name,
+      closureNote: reason,
+    };
+    state.inquiries[index] = after;
+
+    record({
+      actorId: auth.user.id,
+      actorName: auth.user.name,
+      action: 'inquiry.close',
+      entity: 'inquiry',
+      entityId: before.id,
+      before: { status: before.status },
+      after: { status: 'closed', note: reason },
+    });
+
+    return HttpResponse.json(after);
+  }),
+
   /* ── M17 Audit ─────────────────────────────────────────────────────────── */
   http.get('*/admin/audit', async ({ request }) => {
     await delay(LATENCY_MS);
@@ -2406,6 +2839,13 @@ export function resetMockState(): void {
   state.payoutRuns = mockPayoutRuns.map((run) => ({ ...run }));
   state.payoutLines = mockPayoutLines.map((line) => ({ ...line }));
   state.savingsLedger = mockSavingsLedger.map((entry) => ({ ...entry }));
+  /**
+   * The queues too. A credit request approved in one test leaves the supplier's
+   * `creditBalances` raised, which lowers the headroom the next test asserts on —
+   * and the failure reads as a wrong ceiling rather than as leaked state.
+   */
+  state.creditRequests = mockCreditRequests.map((request) => ({ ...request }));
+  state.inquiries = mockInquiries.map((inquiry) => ({ ...inquiry }));
   state.audit = [...mockAudit];
   state.sessions.clear();
   state.challenges.clear();

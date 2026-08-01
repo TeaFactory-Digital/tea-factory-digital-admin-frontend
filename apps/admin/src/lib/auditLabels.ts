@@ -25,6 +25,10 @@ const ACTION_KEYS: Record<string, string> = {
   'payout.run.approve': 'audit.action.payoutRunApprove',
   'payout.line.paid': 'audit.action.payoutLinePaid',
   'payout.line.failed': 'audit.action.payoutLineFailed',
+  'creditRequest.approve': 'audit.action.creditApprove',
+  'creditRequest.reject': 'audit.action.creditReject',
+  'inquiry.reply': 'audit.action.inquiryReply',
+  'inquiry.close': 'audit.action.inquiryClose',
 };
 
 export function auditActionLabel(action: string, t: (key: string) => string): string {

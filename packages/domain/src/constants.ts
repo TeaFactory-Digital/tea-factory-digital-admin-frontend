@@ -143,3 +143,58 @@ export const SAVINGS_ENTRY_SOURCES = [
  * bill type at all. A payout of `LKR 4,213.47` is a figure no cheque is written for.
  */
 export const PAYOUT_ROUNDING_UNIT = 1;
+
+/* ─────────────────────── M7 Credit · M10 Inquiries ─────────────────────── */
+
+/**
+ * Which flag each facility hangs off.
+ *
+ * As data rather than a `switch`, because three places need the mapping — the
+ * queue's facility filter, the dashboard's queue list and the API's `feature-disabled`
+ * gate — and three switches over the same three cases is three places to forget
+ * a facility when a fourth is added.
+ */
+export const CREDIT_FACILITY_FLAGS = {
+  advance: 'enableAdvances',
+  loan: 'enableLoans',
+  manure: 'enableManure',
+} as const satisfies Record<(typeof CREDIT_FACILITIES)[number], string>;
+
+/**
+ * How an inquiry ends.
+ *
+ * **Three states, and §21.18 asked for two.** The question is whether
+ * Resolved/Closed is the right pair; `open` is not in dispute, so the vocabulary
+ * here is the two proposed outcomes plus the state everything starts in. They are
+ * genuinely different acts: `resolved` is "the supplier was answered", `closed` is
+ * "this needed no answer" — a duplicate, a wrong number, a message meant for the
+ * weighing point. Collapsing them would make "how many did we actually answer"
+ * unanswerable, which is the one number §19.3's channel-shift KPI needs.
+ *
+ * Statuses are **data**, so an answer that adds `escalated` adds a row here rather
+ * than a migration.
+ */
+export const INQUIRY_STATUSES = ['open', 'resolved', 'closed'] as const;
+
+export type InquiryStatus = (typeof INQUIRY_STATUSES)[number];
+
+/**
+ * The §14.4 service-level target per queue, in hours.
+ *
+ * Only the change-request figure is specified — three working days — and the other
+ * three are **this console's guess**, sized by how much a supplier is waiting on:
+ * an advance is cash against leaf already in the shed, so a day is already slow; an
+ * inquiry is a question, so a working day is the promise; a loan is underwritten
+ * against six months of history and nobody expects it the same afternoon.
+ *
+ * Offline defaults, like every other policy number here. Once `GET /config` serves
+ * them the console must display the served figure — a queue colouring red at a
+ * threshold the factory never agreed to is a console the office learns to ignore.
+ */
+export const QUEUE_SLA_HOURS = {
+  changeRequests: 72,
+  advanceRequests: 24,
+  loanRequests: 120,
+  manureRequests: 72,
+  inquiries: 24,
+} as const;

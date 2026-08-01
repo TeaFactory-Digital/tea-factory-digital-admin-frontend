@@ -22,9 +22,9 @@ build status, and the sidebar is generated from it.
 | M4 | **Rates & month close** | ✅ Built | `/rates` |
 | M5 | **Bills** | ✅ Built (no PDF) | `/bills`, `/bills/:id` |
 | M6 | **Payouts** | ✅ Built (no bank file) | `/payouts`, `/payouts/:id` |
-| M7 | Credit queues | ⏳ Planned | — |
+| M7 | **Credit queues** | ✅ Built | `/credit`, `/credit/:id` |
 | M8 | **Savings** | ✅ Built (read-only) | `/savings` |
-| M10 | Inquiries | ⏳ Planned | — |
+| M10 | **Inquiries** | ✅ Built | `/inquiries`, `/inquiries/:id` |
 | M11 | News (CMS) | ⏳ Planned | — |
 | M12 | Static content | ⏳ Planned | — |
 | M13 | Notifications | ⏳ Planned | — |
@@ -412,6 +412,83 @@ Three rules, each implemented rather than assumed:
 normal case, and the dialog stays open with an explanation and refetches rather
 than discarding the note the clerk just wrote.
 
+## M7 Credit queues
+
+*Advances, loans and manure on credit.* **One queue, filtered — not three screens.**
+The office does not have an advances clerk and a loans clerk; somebody works the
+credit inbox, and the three facilities differ only in how the ceiling is priced.
+Three screens would triple the navigation to save nobody a decision, and would hide
+the case that matters most: one supplier with two open facilities against one set of
+leaf.
+
+**The screen is the working, not the answer.** AC-05 requires the eligibility
+figures in a queue row to match `GET /advances|loans|manure/eligibility` for that
+supplier *byte for byte, including the working* — because the supplier is looking at
+the same numbers on their phone. So the detail page prints the arithmetic in the
+order the rule reads it: months of history against the requirement, the average
+monthly account and the multiple, the last settled rate and the kilos it was
+multiplied by, then the ceiling, what is already drawn, and what is left.
+
+`packages/domain/src/leafCredit.ts` is the single implementation. The console does
+not re-derive; it renders what the server sent, and the server built it with
+`buildCreditEligibility`. Two implementations of a ceiling agree until the first
+rounding decision.
+
+| Rule | How |
+| --- | --- |
+| **AC-05** — the figures match the app's | One shared function. The API imports it rather than reimplementing, and the integration suite asserts the ceiling against its own working rather than against a fixed number |
+| **BR-310** — eligibility must not go stale | The decision carries `ceilingSeen`, the figure that was on screen. The server recomputes and answers `stale-eligibility` rather than lending against a number the approver never agreed to. **Approval only** — gating a rejection on fresh figures would trap the row, because they move again while the clerk reloads |
+| **`over-ceiling`** — more than they may draw | Refused on both sides. The Approve button is *withheld* rather than disabled, with the reason above it: a disabled control invites "why?" and a hover title nobody reads |
+| **BR-501** — four eyes on money | Checked **before** the figures, because who may decide does not depend on what the ceiling says |
+| **§12.1** — read and decide are different roles | `creditRequests` is `R` for the clerk and the accountant, `A` for the manager alone. So the decision controls are capability-gated, unlike M9's — most people who open this screen cannot act on it, and they are told who can |
+
+**An approval is a balance.** It raises `creditBalances[facility]`, which the next
+eligibility read subtracts from the ceiling and the next bill deducts an instalment
+against (§11.3). Without that write the module would be a queue that decides things
+and changes nothing.
+
+§21.6's manager threshold — above what amount a manager rather than a clerk must
+approve — is **not** blocking: `canApproveAmount(…, null)` already treats "not
+configured" as "the base capability suffices", so the number becomes config rather
+than a rewrite.
+
+## M10 Inquiries
+
+*Messages from suppliers.* The module that completes the promise the rest of the
+console makes: **every `pending` in the app is a queue here**, and this is the last
+of them.
+
+It is also the only queue whose rows are prose, which changes the grid. The subject
+gets the width and the first line of the message sits under it, because reading
+"July account is short" is what decides whether this is answered now or after lunch
+— a row showing only a supplier code and a date makes every message look the same.
+
+**Reply and close are different acts, deliberately.** Replying writes something the
+supplier reads in the app; closing files a message that needed no answer — a
+duplicate, a test, something meant for the weighing point. A single "resolve" with an
+optional note would make the two indistinguishable in the record, and *how many
+suppliers we actually answered* is the number §19.3's channel-shift KPI wants.
+
+**No four-eyes rule, and that is not an omission.** BR-501 is about money: nobody
+approves a payment they raised. Answering a question moves nothing, and requiring a
+second clerk to release a reply would put a day between a supplier's question and its
+answer to guard against a risk that does not exist.
+
+§12.1 is unusual here and worth reading twice: inquiries are `A` for the **clerk**
+and `R` for the manager. Answering a supplier is counter work; a manager reading the
+queue is oversight. That is the opposite of every money module.
+
+**Statuses are data (§21.18).** The console says `open | resolved | closed`; the
+app's `Inquiry.status` has only `pending | approved | rejected`. The mapping is
+imprecise — a closed message is not one that was *rejected* — and that imprecision is
+exactly what §21.18 is being asked to resolve, so it lives in one function
+(`inquiryStatusForApp`) rather than spread across screens. An answer that adds
+`escalated` adds a row to `INQUIRY_STATUSES`, not a migration.
+
+**Nothing is pushed.** M13 is not built, so a reply lands in the app the next time it
+is opened — and the screen says so under the answer. A clerk who believes a text
+message went out is a clerk who does not follow up.
+
 ## M17 Audit log
 
 Filterable by entity, read-only, newest first. Built now rather than deferred
@@ -432,8 +509,6 @@ Ordered by what I would build next.
 
 | Module | Blocked on / needs |
 | --- | --- |
-| **M7 Credit queues** | Nothing external. AC-05 needs eligibility byte-for-byte identical to the app's endpoint, including the working — `packages/domain/src/leafCredit.ts` is already the shared implementation. §21.6 (manager threshold) shapes it but `canApproveAmount(…, null)` already handles "not configured" |
-| **M10 Inquiries** | Nothing external. §21.18 asks whether Resolved/Closed is the right pair — build with the two and add states as data |
 | **M11 / M12 Content** | Nothing external. si/en/ta tabs from `config.localization.contentLanguages`, with **missing translations visible to the editor** (AC-08) |
 | **M14 Configuration** | Nothing external. It is the other end of `GET /config`, and AC-12 says a new factory must go live through it without a code deploy |
 | **M13 Notifications** | **Blocked**: §21.24 — does the office compose every send by hand, or does bill-published fire automatically off the publish step, and who may send free-text. M5 now gives the trigger a real event to hang off: `month.publish` is the moment a bill becomes a document a supplier can see |

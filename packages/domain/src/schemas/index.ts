@@ -61,6 +61,56 @@ export const decisionSchema = z.object({
 
 export type DecisionInput = z.infer<typeof decisionSchema>;
 
+/* ───────────────────────────── M7 Credit ───────────────────────────── */
+
+/**
+ * A credit decision: the note, plus the ceiling the approver had on screen.
+ *
+ * `ceilingSeen` is required on **both** verbs even though only an approval can
+ * lend against a stale figure. Two bodies for one dialog is two chances for the
+ * field to be forgotten on the path that needs it, and a rejection carrying the
+ * ceiling it was made against is a better audit record than one that does not.
+ *
+ * `nonnegative` rather than `positive`: zero is a real ceiling — it is what a
+ * supplier who has not delivered this month has — and refusing to *transmit* it
+ * would make the one case that most needs recording the one case that cannot be.
+ */
+export const creditDecisionSchema = decisionSchema.extend({
+  ceilingSeen: z
+    .number()
+    .nonnegative('validation.min')
+    .refine((value) => round2(value) === value, 'validation.moneyScale'),
+});
+
+export type CreditDecisionInput = z.infer<typeof creditDecisionSchema>;
+
+/* ──────────────────────────── M10 Inquiries ──────────────────────────── */
+
+/**
+ * The reply the supplier reads in the app.
+ *
+ * Longer minimum than a decision note — twenty characters rather than ten —
+ * because this is not a justification filed beside a record, it **is** the answer.
+ * "Yes" and "Come to the office" are replies that close a ticket and produce a
+ * telephone call, which is the outcome this queue exists to remove.
+ */
+export const inquiryReplySchema = z.object({
+  body: requiredString('validation.replyRequired', 4000).min(20, 'validation.replyTooShort'),
+});
+
+export type InquiryReplyInput = z.infer<typeof inquiryReplySchema>;
+
+/**
+ * Closing a message unanswered.
+ *
+ * Takes a note for the same reason voiding a delivery does: the supplier sent
+ * something and got nothing back, and "closed on the 14th" with no reason is a
+ * message the office cannot account for when they ring about it.
+ */
+export const closeInquirySchema = z.object({
+  note: requiredString('validation.reasonRequired', 1000).min(10, 'validation.noteTooShort'),
+});
+
 /* ───────────────────────────── M2 Suppliers ───────────────────────────── */
 
 /** Sri Lankan NIC: old 9 digits + V/X, or the 12-digit form. */

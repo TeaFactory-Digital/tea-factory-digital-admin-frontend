@@ -17,7 +17,7 @@
 import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppShell } from '@/layout/AppShell';
-import { RequireAuth, RequireCapability, RequireFlag } from '@/auth/guards';
+import { RequireAnyFlag, RequireAuth, RequireCapability, RequireFlag } from '@/auth/guards';
 import { SignInScreen } from '@/auth/SignInScreen';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
 
@@ -65,9 +65,28 @@ const ChangeRequestDetailScreen = lazy(() =>
     default: m.ChangeRequestDetailScreen,
   })),
 );
+const CreditScreen = lazy(() =>
+  import('@/modules/credit/CreditScreen').then((m) => ({ default: m.CreditScreen })),
+);
+const CreditRequestDetailScreen = lazy(() =>
+  import('@/modules/credit/CreditRequestDetailScreen').then((m) => ({
+    default: m.CreditRequestDetailScreen,
+  })),
+);
+const InquiriesScreen = lazy(() =>
+  import('@/modules/inquiries/InquiriesScreen').then((m) => ({ default: m.InquiriesScreen })),
+);
+const InquiryDetailScreen = lazy(() =>
+  import('@/modules/inquiries/InquiryDetailScreen').then((m) => ({
+    default: m.InquiryDetailScreen,
+  })),
+);
 const AuditScreen = lazy(() =>
   import('@/modules/audit/AuditScreen').then((m) => ({ default: m.AuditScreen })),
 );
+
+/** The three facilities M7 covers. Any one of them opens the queue — see `RequireAnyFlag`. */
+const CREDIT_FLAGS = ['enableAdvances', 'enableLoans', 'enableManure'] as const;
 
 export const router = createBrowserRouter([
   {
@@ -190,6 +209,46 @@ export const router = createBrowserRouter([
           <RequireCapability capability="changeRequests">
             <ChangeRequestDetailScreen />
           </RequireCapability>
+        ),
+      },
+      {
+        path: 'credit',
+        element: (
+          <RequireAnyFlag flags={[...CREDIT_FLAGS]}>
+            <RequireCapability capability="creditRequests">
+              <CreditScreen />
+            </RequireCapability>
+          </RequireAnyFlag>
+        ),
+      },
+      {
+        path: 'credit/:id',
+        element: (
+          <RequireAnyFlag flags={[...CREDIT_FLAGS]}>
+            <RequireCapability capability="creditRequests">
+              <CreditRequestDetailScreen />
+            </RequireCapability>
+          </RequireAnyFlag>
+        ),
+      },
+      {
+        path: 'inquiries',
+        element: (
+          <RequireFlag flag="enableInquiry">
+            <RequireCapability capability="inquiries">
+              <InquiriesScreen />
+            </RequireCapability>
+          </RequireFlag>
+        ),
+      },
+      {
+        path: 'inquiries/:id',
+        element: (
+          <RequireFlag flag="enableInquiry">
+            <RequireCapability capability="inquiries">
+              <InquiryDetailScreen />
+            </RequireCapability>
+          </RequireFlag>
         ),
       },
       {
