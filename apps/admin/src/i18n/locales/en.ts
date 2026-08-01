@@ -104,7 +104,7 @@ export const en = {
   'auth.forgotPasswordHint':
     'Ask your factory administrator to reset it. The console cannot email a reset link.',
   'auth.supplierWrongPlace': 'Suppliers sign in on the mobile app, not here.',
-  'auth.demoCredentials': 'Mock sign-in — the role decides what you can do',
+  'auth.demoCredentials': 'Mock sign-in',
   'auth.demoMfa': '(two-factor: {{code}})',
   'auth.demoRole.clerk': 'Clerk — change requests, suppliers',
   'auth.demoRole.weigher': 'Weigher — records leaf',
