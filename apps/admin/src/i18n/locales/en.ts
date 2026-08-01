@@ -110,6 +110,8 @@ export const en = {
   'auth.demoRole.weigher': 'Weigher — records leaf',
   'auth.demoRole.accountant': 'Accountant — rate and month close',
   'auth.demoRole.manager': 'Manager — publishes the month',
+  'auth.demoRole.editor': 'Editor — writes news and static content',
+  'auth.demoRole.factoryAdmin': 'Factory admin — publishes content',
   'auth.sessionExpired': 'Your session ended. Please sign in again.',
 
   /* ────────────────────────────── dashboard ────────────────────────────── */
@@ -462,6 +464,15 @@ export const en = {
   'audit.action.inquiryReply': 'Answered a supplier',
   'audit.action.inquiryClose': 'Closed a message unanswered',
 
+  'audit.action.newsCreate': 'Created a news article',
+  'audit.action.newsUpdate': 'Edited a news article',
+  'audit.action.newsTranslationSave': 'Saved a translation',
+  'audit.action.newsPublish': 'Published a news article',
+  'audit.action.newsUnpublish': 'Took a news article down',
+  'audit.action.newsArchive': 'Archived a news article',
+  'audit.action.staticPageSave': 'Edited a static page',
+  'audit.action.staticPagePublish': 'Published a static page',
+
   /* ───────────────────────────── validation ───────────────────────────── */
   'validation.required': 'This is required',
   'validation.email': 'Enter a valid email address',
@@ -479,6 +490,8 @@ export const en = {
   'validation.mfaCode': 'Enter the six-digit code',
   'validation.noteRequired': 'A note is required',
   'validation.noteTooShort': 'Write at least 10 characters — the supplier reads this',
+  'validation.url': 'Enter a valid web address',
+  'validation.fallbackRequired': 'The English copy is required — everything falls back to it',
   'validation.reasonRequired': 'A reason is required',
   'validation.replyRequired': 'An answer is required',
   'validation.replyTooShort': 'Write at least 20 characters — this is the answer the supplier reads',
@@ -911,6 +924,149 @@ export const en = {
   'savings.withdrawalsPending':
     'No withdrawals or interest. Whether a supplier may withdraw at all — on what notice, and whether the factory pays interest — is still an open question with the factory (§21.9), and moving somebody’s savings on a guessed rule is not something the console will do.',
 
+  /* ─────────── M11 News · M12 Static content (shared) ─────────── */
+  /* AC-08 lives in this block: a missing translation must be visible to the editor,
+     and every string below exists to say *what the gap costs* rather than that one
+     exists. "Sinhala missing" is a fact; "a Sinhala supplier is reading English right
+     now" is the thing that gets it fixed. */
+  'content.languages': 'Languages',
+  'content.language.si': 'Sinhala',
+  'content.language.en': 'English',
+  'content.language.ta': 'Tamil',
+  'content.fallbackLanguageHint': 'The language everything falls back to. It cannot be left empty.',
+  'content.state.missing': '— not written yet',
+  'content.state.stale': '— older than the English copy',
+
+  'content.copyTitle': 'Copy',
+  'content.copyDescription': 'One language at a time. Saving one language does not touch the others.',
+  'content.field.title': 'Title',
+  'content.field.titleHint': 'What the supplier sees in the list.',
+  'content.field.excerpt': 'Summary',
+  'content.field.excerptHint': 'One line, shown under the title in the feed. Optional.',
+  'content.field.body': 'Body',
+  'content.field.bodyHint': 'Plain text. Line breaks are kept.',
+  'content.translateFrom': 'Translating from {{language}}',
+  'content.save': 'Save {{language}}',
+  'content.saved': '{{language}} saved',
+  'content.saveFailed': 'That copy was not saved',
+  'content.saveNeedsCopy': 'A title and a body are needed before this can be saved.',
+  'content.unsaved': 'Unsaved changes. Switching language will lose them.',
+  'content.savedAt': 'Saved {{when}} by {{name}}.',
+  'content.notWrittenYet': 'Nothing written in this language yet.',
+  'content.readOnly': 'Only an editor can change content.',
+  'content.lastEditedBy': 'Last edited by {{name}}, {{when}}',
+  'content.auditTitle': 'Changes to this record',
+
+  'content.gap.complete': 'Written in every language this factory publishes in.',
+  'content.gap.fallbackMissing':
+    'There is no {{language}} copy, so there is nothing to show a supplier in any language. This cannot be published until it is written.',
+  'content.gap.missingLive':
+    'Live with no copy in {{languages}}. Suppliers reading in those languages are being shown the {{fallback}} version right now.',
+  'content.gap.missingDraft': 'Not written yet in {{languages}}.',
+  'content.gap.stale':
+    'The {{languages}} copy is older than the English it was translated from. The app shows it as though it were current, so nothing looks wrong to the supplier.',
+  'content.badge.missing': '{{count}} missing',
+  'content.badge.stale': '{{count}} out of date',
+  'content.badge.gaps': '{{count}} to fix',
+  'content.column.languages': 'Languages',
+  'content.column.lastEdit': 'Last edit',
+  'content.complete': 'Complete',
+  'content.lens': 'Show',
+
+  'content.previewTitle': 'What the supplier sees',
+  'content.previewDescription': 'Resolved the way the app resolves it, for a reader in {{language}}.',
+  'content.previewFallback':
+    'There is no {{requested}} copy, so a {{requested}} reader is shown the {{fallback}} version.',
+  'content.previewEmpty': 'Nothing to show',
+  'content.previewEmptyHint':
+    'There is no copy in any language yet, so the app would have nothing to render.',
+
+  /* ───────────────────────────── M11 News ───────────────────────────── */
+  'news.title': 'News',
+  'news.subtitle': 'The feed suppliers read in the app',
+  'news.searchPlaceholder': 'Search titles and copy, in any language',
+  'news.untitled': 'Untitled article',
+  'news.backToList': 'Back to news',
+  'news.column.title': 'Article',
+  'news.column.published': 'Published',
+  'news.status.draft': 'Draft',
+  'news.status.published': 'Live',
+  'news.status.archived': 'Archived',
+  'news.lens.all': 'All articles',
+  'news.lens.incomplete': 'Live with a gap',
+  'news.empty': 'No articles yet',
+  'news.emptyHint': 'Anything published here appears in the app’s news feed.',
+  'news.noIncomplete': 'Nothing live is missing a translation',
+  'news.noIncompleteHint':
+    'Every published article is written in each language this factory publishes in.',
+
+  'news.create': 'New article',
+  'news.createTitle': 'New article',
+  'news.createDescription':
+    'Write the English copy first — it is what every other language falls back to until it is translated.',
+  'news.createDraftHint': 'It is created as a draft. Nothing reaches suppliers until it is published.',
+  'news.createConfirm': 'Create the draft',
+  'news.created': 'Draft created',
+  'news.createdHint': 'Add the other languages, then publish.',
+  'news.createFailed': 'The article was not created',
+
+  'news.lifecycleTitle': 'Publishing',
+  'news.lifecycleDraft': 'Nothing here has reached a supplier yet.',
+  'news.lifecyclePublished': 'This is live in the app.',
+  'news.publishedBy': 'Published by {{name}}, {{when}}.',
+  'news.publish': 'Publish',
+  'news.unpublish': 'Take it down',
+  'news.archive': 'Archive',
+  'news.published': 'Published — it is in the app’s feed now',
+  'news.unpublished': 'Taken down. It is no longer in the feed.',
+  'news.archived': 'Archived',
+  'news.publishFailed': 'The article was not published',
+  'news.unpublishFailed': 'The article was not taken down',
+  'news.archiveFailed': 'The article was not archived',
+  'news.publishNeedsAdmin': 'Publishing is the factory administrator’s decision.',
+  'news.noDeleteHint':
+    'Articles are archived, never deleted — a supplier may have read one and may ask about it.',
+  'news.confirm.publishTitle': 'Publish this article?',
+  'news.confirm.publishBody': 'It appears in the app’s feed for every supplier immediately.',
+  'news.confirm.publishAction': 'Publish it',
+  'news.confirm.publishWithGaps':
+    'You can publish with languages missing — the app falls back to English — but those suppliers will read it in English until it is translated.',
+  'news.confirm.unpublishTitle': 'Take this down?',
+  'news.confirm.unpublishBody':
+    'It leaves the feed. Suppliers who already read it keep what they read; the copy is not deleted.',
+  'news.confirm.unpublishAction': 'Take it down',
+  'news.confirm.archiveTitle': 'Archive this article?',
+  'news.confirm.archiveBody':
+    'It leaves the feed and the working list, and stays in the record. Nothing is deleted.',
+  'news.confirm.archiveAction': 'Archive it',
+
+  /* ───────────────────── M12 Static content ───────────────────── */
+  'staticContent.title': 'Static content',
+  'staticContent.subtitle': 'The app’s fixed pages',
+  'staticContent.pagesTitle': 'Pages',
+  'staticContent.page.faq': 'Frequently asked questions',
+  'staticContent.page.savingsScheme': 'The savings scheme',
+  'staticContent.page.creditTerms': 'Credit terms',
+  'staticContent.page.about': 'About the factory',
+  'staticContent.page.terms': 'Terms of supply',
+  'staticContent.page.privacy': 'Privacy',
+  'staticContent.status.draft': 'Not published',
+  'staticContent.status.published': 'Live',
+  'staticContent.notWritten': 'Never written',
+  'staticContent.draftDescription':
+    'This page has never been published, so the app shows its own built-in version.',
+  'staticContent.liveDescription': 'Live since {{when}}, published by {{name}}.',
+  'staticContent.publish': 'Publish this page',
+  'staticContent.publishHint':
+    'After this, saving an edit puts it in front of suppliers straight away — there is no second step.',
+  'staticContent.publishNeedsCopy': 'Write the {{language}} copy first.',
+  'staticContent.publishNeedsAdmin': 'Publishing is the factory administrator’s decision.',
+  'staticContent.published': '{{page}} is live',
+  'staticContent.publishFailed': 'The page was not published',
+  'staticContent.editsAreLive':
+    'This page is live. An edit reaches suppliers as soon as it is saved — every change is recorded in the audit log with the previous wording.',
+  'staticContent.savedLive': 'Suppliers see this now.',
+
   /* ─────────────────────────────── errors ─────────────────────────────── */
   'error.title': 'Something went wrong',
   'error.network': 'No connection to the factory server. Check the network and try again.',
@@ -951,6 +1107,11 @@ export const en = {
   'error.noPayableLines': 'There is nothing payable in that run.',
   'error.lineNotPayable': 'That line cannot be paid — it is held, or it has already been paid.',
   'error.overCeiling': 'That is more than this supplier may draw on that facility.',
+  'error.fallbackTranslationMissing':
+    'There is no English copy, so there would be nothing to show a supplier. Write it first.',
+  'error.slugTaken': 'An article with that title already exists.',
+  'error.contentNotPublished': 'That is not live, so there is nothing to take down.',
+  'error.url': 'Enter a valid web address',
   'error.unknown': 'Unexpected error. If it keeps happening, tell the factory administrator.',
   'error.boundaryTitle': 'This screen could not be shown',
   'error.boundaryBody': 'The rest of the console still works. Reload this page to try again.',

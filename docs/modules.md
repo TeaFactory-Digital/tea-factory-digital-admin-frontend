@@ -25,8 +25,8 @@ build status, and the sidebar is generated from it.
 | M7 | **Credit queues** | ✅ Built | `/credit`, `/credit/:id` |
 | M8 | **Savings** | ✅ Built (read-only) | `/savings` |
 | M10 | **Inquiries** | ✅ Built | `/inquiries`, `/inquiries/:id` |
-| M11 | News (CMS) | ⏳ Planned | — |
-| M12 | Static content | ⏳ Planned | — |
+| M11 | **News (CMS)** | ✅ Built | `/news`, `/news/:id` |
+| M12 | **Static content** | ✅ Built | `/content` |
 | M13 | Notifications | ⏳ Planned | — |
 | M14 | Configuration | ⏳ Planned | — |
 | M15 | Users & roles | ⏳ Planned | — |
@@ -65,6 +65,12 @@ the next slice should be argued the same way:
   payout amount derived a second time, a savings balance posted by hand — and every
   one of those inventions is a figure the office would later reconcile against itself.
   It also fills §13's `billsGenerated` stage, which M4 shipped empty.
+- **M11 and M12 are the fourth slice**, and they are the smallest one that closes an
+  acceptance criterion outright. **AC-08 — a missing translation falling back to English
+  *and the gap being visible to the editor* — was the last criterion with no screen behind
+  it at all.** The two modules are one slice because they are one problem: an article and
+  a fixed page differ in their lifecycle, not in their copy, and a second translation
+  editor would be a second place for the fallback rules to drift.
 - **What is left out of each rather than guessed at.** Three questions the factory has
   not answered would each have been a wrong build: §21.17 (what the bank accepts) is
   the payout *file*, §21.9 (may a supplier withdraw) is savings *movements*, and
@@ -365,6 +371,77 @@ would look for the control.
 
 ---
 
+## M11 News
+
+*The feed suppliers read in the app.* Authored in every language the tenant sells in.
+
+**The whole module is `content.ts` plus a way to see it.** AC-08 has two halves — copy
+falls back to English when a translation is missing, *and* the gap is visible to the
+editor — and both are only true if the console and the app resolve a translation with the
+**same function**. A console with its own fallback would show the editor a preview of
+something that is never rendered, which is a worse failure than having no preview: the
+editor signs off copy nobody sees. So `resolveTranslation` is shared, the preview is
+fetched from the **server**, and the gap lists come back on the record rather than being
+worked out locally.
+
+**Copy is saved one language at a time.** `PUT /news/{id}/translations/{lang}`, not a
+whole-record save, and the reason is not tidiness: two editors translating one article is
+the normal case in an office with a Sinhala speaker and a Tamil speaker, and a
+whole-record save means whoever presses the button second discards the other's work. It is
+also what makes staleness detectable — each translation carries its own `updatedAt`.
+
+**Three states, not two**, and the third is the one that earns the module:
+
+| State | What the supplier gets | Why it matters |
+| --- | --- | --- |
+| **Written** | Their language | — |
+| **Missing** | The English, by fallback | AC-08's case. Visible on the tab, in the list, and named in the publish confirmation |
+| **Stale** | Their language, saying the old thing | Written *before* the English it was translated from was corrected. **Nothing anywhere looks wrong** — the app renders it happily — so only this screen can catch it. AC-08's wording does not cover it and an office hits it second |
+
+**Publishing with a gap is allowed and loud.** That is the policy, not a compromise:
+`EDITORIAL_FALLBACK_LANGUAGE` is documented as "the fallback, not a default", which only
+means anything if content can go out incomplete. The one hard refusal is a record with
+**no fallback copy at all** — there would be nothing to fall back *to* — and the
+confirmation names every language that will fall back before anybody agrees to it. The
+publish audit entry records those languages, because "who decided a Sinhala supplier could
+read this in English" is the question AC-08 turns into an argument six months later.
+
+**Gaps are relative to the tenant.** A factory that authors in English and Tamil is not
+missing Sinhala — it never asked for it. Derived per request from
+`config.localization.contentLanguages`, because an office told it has work it does not
+have stops reading the warnings.
+
+**Nothing is deleted.** An article a supplier has read and may quote on the telephone is
+archived — the same rule that voids a delivery rather than removing it (§12.1).
+
+**§12.1 is the control.** `content: W` for the editor, `A` for the factory administrator:
+the person who writes a circular is not the person who puts it in front of every supplier
+the factory has. There is no four-eyes rule on top — unlike money there is no amount to
+escalate on, and the capability split is the whole of it.
+
+## M12 Static content
+
+*The app's fixed pages.* Same copy machinery, different lifecycle.
+
+**A closed set, not a collection.** Nobody creates a "terms" page; they edit the one that
+exists. The app links to `STATIC_PAGE_SLUGS` directly, so there is no create, no delete
+and no archive — a page that could be removed is a link to nowhere in a shipped binary.
+The list returns all six **including the ones nobody has written**, because an unwritten
+page is a state to be shown: the app is rendering its own bundled default, and an office
+that cannot see the page listed assumes it already filled it in.
+
+**An edit to a live page is live when it is saved**, and the asymmetry with M11 is
+deliberate. A *new* article must not appear half-written, while a correction to the FAQ
+sitting in an unpublished draft leaves the wrong answer in front of suppliers for as long
+as nobody remembers to press a second button. What makes that safe rather than merely
+convenient is the audit entry: every save records the **previous wording and the new one**,
+by name, which is what a review step would otherwise have been for. If the factory wants
+one, that is a versioning feature and a real piece of work — not a tweak.
+
+`publish` therefore exists once per page and means "the factory has written this at all".
+
+---
+
 ## What is deliberately not built
 
 Three questions would each have produced a wrong build, so each is an absence with a
@@ -509,7 +586,6 @@ Ordered by what I would build next.
 
 | Module | Blocked on / needs |
 | --- | --- |
-| **M11 / M12 Content** | Nothing external. si/en/ta tabs from `config.localization.contentLanguages`, with **missing translations visible to the editor** (AC-08) |
 | **M14 Configuration** | Nothing external. It is the other end of `GET /config`, and AC-12 says a new factory must go live through it without a code deploy |
 | **M13 Notifications** | **Blocked**: §21.24 — does the office compose every send by hand, or does bill-published fire automatically off the publish step, and who may send free-text. M5 now gives the trigger a real event to hang off: `month.publish` is the moment a bill becomes a document a supplier can see |
 | **M15 Users & roles** | Nothing external, but it must edit the §12.1 matrix **as data** (see [rbac.md](./rbac.md)), and MFA enrolment belongs here |

@@ -71,11 +71,17 @@ on real values.
 | `manager@galabodatea.lk` | `manager` | **yes** — code `123456` | Approves, publishes a month; exercises the MFA step |
 | `accountant@galabodatea.lk` | `accountant` | no | Enters the rate, resolves M4 exceptions |
 | `weigher@galabodatea.lk` | `weigher` | no | **The only one who can record leaf** |
+| `editor@galabodatea.lk` | `editor` | no | **The only one who can write content.** `content: W` and nothing else at all — not even `auditLog: R` |
+| `factoryadmin@galabodatea.lk` | `factoryAdmin` | no | **The only one who can publish it.** §12.1 splits writing from publishing, and that split *is* M11/M12's control |
 
-Password for all four: `demo1234`, and all four are **printed on the sign-in
+Password for all six: `demo1234`, and all six are **printed on the sign-in
 screen** while `VITE_USE_MOCK` is on — deliberate, because a demo credential that
 has to be looked up in a source file gets pasted into a chat thread and outlives
 the demo. The block cannot render in a production build.
+
+The editor is worth a second look: it is the **narrowest account the console has**, and it
+is why the news screen's audit panel tolerates a `403` instead of treating it as an error —
+the person most likely to be on that screen cannot read the log.
 
 **One identity per rule that needs two people.** AC-10 ("no console user can
 approve a record they created") cannot be demonstrated with one, and neither can
@@ -262,11 +268,38 @@ status.md gap 6. `savings` (kilos × the supplier's rate) and `previousDebts` (l
 month's shortfall) are real derivations the API must reproduce; the other seven lines
 stand in for §21.10, which nobody has answered.
 
+### News and static content — AC-08 in the fixture
+
+Five articles and the app's six fixed pages, and the middle three articles are the reason
+the fixture exists rather than decoration:
+
+| Fixture | State | Why |
+| --- | --- | --- |
+| `nws-1` | Live, all three languages | The good case, and the only one that proves a translated preview is *not* a fallback |
+| `nws-2` | **Live, no Sinhala or Tamil** | AC-08 itself: it is out there, a Sinhala supplier is reading English right now, and the office should see that from the list without opening anything |
+| `nws-3` | **Live, Sinhala and Tamil stale** | The English was corrected *after* both were written. The app renders them happily, so nothing looks wrong anywhere — the failure only this screen can catch |
+| `nws-4` | Draft, English only | The normal half-finished state |
+| `nws-5` | Archived | So archive is visible without anybody creating it |
+| `faq` | Live, all three | **AC-11 is about the FAQ**, and a criterion whose fixture is half-written cannot be signed off |
+| `savingsScheme`, `about`, `terms`, `privacy` | Live, English only | What a factory that has just gone live actually looks like |
+| `creditTerms` | **Never written** | The app falls back to its bundled default. A state the office must be able to see rather than mistake for a page it already filled in |
+
+**The Sinhala and Tamil copy has not been reviewed by a native speaker** (status.md gap
+19). It is real script rather than Latin placeholders on purpose — the `[lang="si"]` and
+`[lang="ta"]` rules in §20.2 cannot be exercised by English three times over — but it is
+approximate, and it must be replaced before the console is shown to the factory.
+
+Gaps are **never stored**. `missingLanguages` and `staleLanguages` are derived when a
+record is serialised, against the *requesting tenant's* `contentLanguages` — the same
+reason `stale` is not stored on a bill run. Galaboda authors in si/en/ta and highland in
+en/ta, so the two see different gaps on the same page, which is what the AC-08 tenant test
+asserts.
+
 ### Tenants — 3
 
 `galaboda` (full), `hillcountry` (full, different palette and radius), and
 **`highland` — the reduced-feature reference**: no loans, no manure, no push, no
-reports, **and no payouts**, mirroring mobile's `clientB`.
+reports, no payouts, **no news**, and it authors content in English and Tamil only, mirroring mobile's `clientB`.
 
 `highland` is what makes AC-07's second half assertable, and it now covers two
 modules rather than one:

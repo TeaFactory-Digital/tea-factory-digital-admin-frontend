@@ -12,8 +12,14 @@
 
 import { z } from 'zod';
 import {
+  EDITORIAL_FALLBACK_LANGUAGE,
+  MAX_CONTENT_BODY_CHARS,
+  MAX_CONTENT_EXCERPT_CHARS,
+  MAX_CONTENT_TITLE_CHARS,
   MAX_DELIVERY_BATCH_ROWS,
   MAX_DELIVERY_KG,
+  STATIC_PAGE_SLUGS,
+  SUPPORTED_LANGUAGES,
   REQUEST_STATUSES,
 } from '../constants';
 import { isExactKg } from '../leafCollection';
@@ -353,3 +359,48 @@ export const markPayoutLineSchema = z
   });
 
 export type MarkPayoutLineInput = z.infer<typeof markPayoutLineSchema>;
+
+/* ─────────────── M11 News · M12 Static content ─────────────── */
+
+export const languageCodeSchema = z.enum(SUPPORTED_LANGUAGES);
+
+export const staticPageSlugSchema = z.enum(STATIC_PAGE_SLUGS);
+
+/**
+ * One language's copy.
+ *
+ * `title` and `body` are both **required and non-blank**, which is the schema half of
+ * `isWritten` in `content.ts`: an editor who opens a tab, types nothing and saves would
+ * otherwise leave a translation that exists, counts as done, and renders to a supplier
+ * as a blank article. Refusing the save is kinder than flagging the record afterwards.
+ *
+ * `excerpt` is optional because a static page has no feed to appear in.
+ */
+export const contentTranslationSchema = z.object({
+  title: requiredString('validation.required', MAX_CONTENT_TITLE_CHARS),
+  excerpt: z.string().trim().max(MAX_CONTENT_EXCERPT_CHARS, 'validation.tooLong').optional(),
+  body: requiredString('validation.required', MAX_CONTENT_BODY_CHARS),
+});
+
+export type ContentTranslationInput = z.infer<typeof contentTranslationSchema>;
+
+/**
+ * Creating an article.
+ *
+ * At least one translation, and the **fallback language must be among them** — a record
+ * with nothing to fall back to cannot be shown to anybody, so creating one would only
+ * defer the error to the publish. Checked here as well as on the server because the
+ * editor is looking at the form, not at a response.
+ */
+export const newsArticleDraftSchema = z.object({
+  coverImageUrl: z.string().url('validation.url').optional().or(z.literal('')),
+  translations: z
+    .array(contentTranslationSchema.extend({ lang: languageCodeSchema }))
+    .min(1, 'validation.required')
+    .refine(
+      (translations) => translations.some((one) => one.lang === EDITORIAL_FALLBACK_LANGUAGE),
+      'validation.fallbackRequired',
+    ),
+});
+
+export type NewsArticleDraftInput = z.infer<typeof newsArticleDraftSchema>;

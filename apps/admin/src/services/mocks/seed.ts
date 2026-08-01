@@ -28,6 +28,9 @@ import type {
   BillRun,
   CapabilityGrants,
   CollectionDaySummary,
+  ContentStatus,
+  ContentTranslation,
+  ContentTranslations,
   ConsoleUser,
   CreditEligibility,
   CreditFacility,
@@ -37,6 +40,7 @@ import type {
   FactoryInfo,
   GreenLeafBill,
   InquiryStatus,
+  LanguageCode,
   MonthCycleStage,
   MonthException,
   MonthExceptionType,
@@ -47,9 +51,11 @@ import type {
   QueueCount,
   QueueKey,
   RuntimeConfig,
+  StaticPageSlug,
   SupplierListItem,
 } from '@tfd/domain';
 import {
+  EDITORIAL_FALLBACK_LANGUAGE,
   OUTLIER_KG_FLOOR_KG,
   QUEUE_SLA_HOURS,
   REQUIRED_MONTHS_OF_HISTORY,
@@ -65,6 +71,7 @@ import {
   round2,
   roundKg,
   savingsDeductionFor,
+  slugify,
   slipMonthLabel,
   summariseKgs,
 } from '@tfd/domain';
@@ -185,6 +192,46 @@ export const mockUsers: MockUser[] = [
     status: 'active',
     password: MOCK_PASSWORD,
     grants: grantsFromRoles(['accountant']),
+  },
+  {
+    /**
+     * The editor, and the only identity in the fixture with `content: W`.
+     *
+     * §12.1 gives writing to the editor and publishing to the factory administrator, so
+     * **M11 and M12's control is the split between these two accounts** — there is no
+     * four-eyes rule on content and no amount to escalate on, the capability boundary is
+     * the whole of it. Without both, the module would be read-only for everybody in the
+     * fixture and the refusal that matters would be unreachable.
+     *
+     * Note the shape of this role: `content: W` and *nothing else at all*, not even
+     * `auditLog: R`. It is the narrowest account the console has, and it is the reason
+     * the news screen's audit panel has to tolerate a `403` rather than treat it as an
+     * error — the person most likely to be on that screen cannot read the log.
+     */
+    id: 'usr-editor-1',
+    name: 'Tharindu Silva',
+    email: 'editor@galabodatea.lk',
+    factoryId: 'galaboda',
+    roles: ['editor'],
+    mfaEnrolled: false,
+    lastLoginAt: hoursAgo(9),
+    status: 'active',
+    password: MOCK_PASSWORD,
+    grants: grantsFromRoles(['editor']),
+  },
+  {
+    id: 'usr-factoryadmin-1',
+    name: 'Chandima Bandara',
+    email: 'factoryadmin@galabodatea.lk',
+    factoryId: 'galaboda',
+    roles: ['factoryAdmin'],
+    // Manager and above: MFA is mandatory, and a factory administrator holds
+    // `usersAndRoles: W` — the account that can widen anybody else's access.
+    mfaEnrolled: false,
+    lastLoginAt: daysAgo(2),
+    status: 'active',
+    password: MOCK_PASSWORD,
+    grants: grantsFromRoles(['factoryAdmin']),
   },
   {
     id: 'usr-weigher-1',
@@ -2263,3 +2310,357 @@ function seedInquiries(): AdminInquiry[] {
 }
 
 export const mockInquiries: AdminInquiry[] = seedInquiries();
+
+/* ─────────────── M11 News · M12 Static content ─────────────── */
+
+/**
+ * A news article as the mock holds it.
+ *
+ * **No `missingLanguages`, no `staleLanguages` and no `updatedAt`.** All three are
+ * derived when the record is serialised, and they have to be: the gaps are relative to
+ * the *requesting tenant's* `contentLanguages`, so one stored answer would be wrong for
+ * everybody but Galaboda. `highland` authors in English and Tamil, and is not missing
+ * Sinhala — it never asked for it. The same reasoning kept `stale` off `BillRunRecord`.
+ */
+export interface NewsRecord {
+  id: string;
+  slug: string;
+  translations: ContentTranslations;
+  coverImageUrl?: string;
+  status: ContentStatus;
+  publishedAt: string | null;
+  publishedByName: string | null;
+  createdAt: string;
+  createdByName: string;
+}
+
+export interface StaticPageRecord {
+  slug: StaticPageSlug;
+  translations: ContentTranslations;
+  status: 'draft' | 'published';
+  publishedAt: string | null;
+  publishedByName: string | null;
+}
+
+/**
+ * **The Sinhala and Tamil copy below has not been reviewed by a native speaker.**
+ *
+ * It is here so the language tabs, the `[lang="si"]` / `[lang="ta"]` line-height rules
+ * (§20.2) and the fallback machinery are exercised against real script rather than
+ * against Latin placeholders — a fixture in English three times over would let a
+ * right-to-length bug ship. Replace it before the console is shown to the factory:
+ * approximate Sinhala in front of a Sinhala-speaking office is worse than an obvious
+ * gap, because a gap is a question and bad copy is an answer.
+ */
+const translation = (
+  lang: LanguageCode,
+  title: string,
+  body: string,
+  hoursOld: number,
+  excerpt?: string,
+): ContentTranslation => ({
+  lang,
+  title,
+  excerpt,
+  body,
+  updatedAt: hoursAgo(hoursOld),
+  updatedByName: lang === EDITORIAL_FALLBACK_LANGUAGE ? 'Tharindu Silva' : 'Nadeeka Perera',
+});
+
+/**
+ * Five articles, and each one is a state the editor has to be able to tell apart.
+ *
+ * The middle three are the module's whole reason for existing:
+ *
+ *  - **`nws-2` is published with no Sinhala and no Tamil.** This is AC-08 in the
+ *    fixture: it is live, a Sinhala supplier is reading English, and the office should
+ *    be able to see that from the list without opening anything.
+ *  - **`nws-3`'s Sinhala is stale.** The English was corrected *after* the Sinhala was
+ *    written, so the app renders a Sinhala article that says the old thing. Nothing in
+ *    AC-08's wording covers this, and it is the second thing an office hits.
+ *  - **`nws-4` is a draft** with only its English written — the normal half-finished
+ *    state, and the one that must not be publishable in Sinhala's name.
+ */
+const NEWS_SEED: Array<{
+  id: string;
+  status: ContentStatus;
+  publishedHoursAgo?: number;
+  cover?: boolean;
+  translations: ContentTranslation[];
+}> = [
+  {
+    id: 'nws-1',
+    status: 'published',
+    publishedHoursAgo: 30,
+    cover: true,
+    translations: [
+      translation(
+        'en',
+        'August green leaf rate published',
+        'The August auction result is in and the account for August has been published. The rate is LKR 124.50 per kilo with an extra LKR 6.50 added by the factory. Accounts can be collected from the office from Monday, or will be transferred to your bank on the same day.',
+        40,
+        'The August rate is LKR 131.00 per kilo including the factory extra.',
+      ),
+      translation(
+        'si',
+        'අගෝස්තු මාසයේ දළු ගාස්තුව',
+        'අගෝස්තු මාසයේ වෙන්දේසි ප්‍රතිඵලය ලැබී ඇත. කිලෝ එකකට රු. 124.50 සහ කර්මාන්තශාලාව එකතු කරන අමතර රු. 6.50. සඳුදා සිට කාර්යාලයෙන් ගිණුම් ලබා ගත හැක.',
+        38,
+        'අගෝස්තු ගාස්තුව කිලෝ එකකට රු. 131.00 කි.',
+      ),
+      translation(
+        'ta',
+        'ஆகஸ்ட் மாத பசுந்தேயிலை விலை',
+        'ஆகஸ்ட் மாத ஏல முடிவு வந்துவிட்டது. ஒரு கிலோவுக்கு ரூ. 124.50 மற்றும் தொழிற்சாலை சேர்க்கும் கூடுதல் ரூ. 6.50. திங்கள் முதல் அலுவலகத்தில் கணக்குகளைப் பெறலாம்.',
+        37,
+        'ஆகஸ்ட் விலை ஒரு கிலோவுக்கு ரூ. 131.00.',
+      ),
+    ],
+  },
+  {
+    // Published with a gap. The AC-08 case.
+    id: 'nws-2',
+    status: 'published',
+    publishedHoursAgo: 8,
+    translations: [
+      translation(
+        'en',
+        'Makadura collection point closed on Poya day',
+        'The Makadura weighing point will not open on Poya day. Bring leaf to Deniyaya or Morawaka instead, and tell the weigher your supplier code so it is filed against your own account.',
+        10,
+        'Makadura does not weigh on Poya day. Use Deniyaya or Morawaka.',
+      ),
+    ],
+  },
+  {
+    // Published, translated, and then the English was corrected. The Sinhala is stale.
+    id: 'nws-3',
+    status: 'published',
+    publishedHoursAgo: 200,
+    translations: [
+      translation(
+        'en',
+        'Savings scheme rates updated',
+        'The savings rates you can choose from are now LKR 0, 5, 10, 15, 20, 25, 30, 35, 40, 45 and 50 per kilo. To change your rate, use the app or ask at the office counter. A change takes effect from the next month.',
+        // Corrected 4 hours ago — after both translations were written.
+        4,
+        'More savings rates are now available. Change yours in the app.',
+      ),
+      translation(
+        'si',
+        'ඉතුරුම් යෝජනා ක්‍රමයේ අනුපාත',
+        'ඔබට තෝරාගත හැකි ඉතුරුම් අනුපාත රු. 0, 10, 20, 30 සහ 40 වේ. ඔබේ අනුපාතය වෙනස් කිරීමට යෙදුම භාවිත කරන්න.',
+        190,
+        'නව ඉතුරුම් අනුපාත ලබා ගත හැක.',
+      ),
+      translation(
+        'ta',
+        'சேமிப்புத் திட்ட விகிதங்கள்',
+        'நீங்கள் தேர்ந்தெடுக்கக்கூடிய சேமிப்பு விகிதங்கள் ரூ. 0, 10, 20, 30 மற்றும் 40. உங்கள் விகிதத்தை மாற்ற செயலியைப் பயன்படுத்துங்கள்.',
+        188,
+        'புதிய சேமிப்பு விகிதங்கள் கிடைக்கின்றன.',
+      ),
+    ],
+  },
+  {
+    id: 'nws-4',
+    status: 'draft',
+    translations: [
+      translation(
+        'en',
+        'Fertilizer distribution — September',
+        'Fertilizer for the September round will be issued at the factory store from the 8th. Bring your supplier card. Quantities are limited to what was requested through the app by the 1st.',
+        2,
+        'September fertilizer is issued from the 8th at the factory store.',
+      ),
+    ],
+  },
+  {
+    id: 'nws-5',
+    status: 'archived',
+    publishedHoursAgo: 2200,
+    translations: [
+      translation(
+        'en',
+        'July green leaf rate published',
+        'The July auction result is in. The rate is LKR 118.75 per kilo with an extra LKR 6.00 added by the factory.',
+        2210,
+        'The July rate is LKR 124.75 per kilo including the factory extra.',
+      ),
+      translation(
+        'si',
+        'ජූලි මාසයේ දළු ගාස්තුව',
+        'ජූලි මාසයේ වෙන්දේසි ප්‍රතිඵලය ලැබී ඇත. කිලෝ එකකට රු. 118.75 සහ අමතර රු. 6.00.',
+        2208,
+      ),
+    ],
+  },
+];
+
+function seedNews(): NewsRecord[] {
+  return NEWS_SEED.map((spec) => {
+    const fallback = spec.translations.find((one) => one.lang === EDITORIAL_FALLBACK_LANGUAGE)!;
+    const translations: ContentTranslations = {};
+    for (const one of spec.translations) translations[one.lang] = one;
+
+    return {
+      id: spec.id,
+      // Derived from the **fallback** title, never from a translation: a slug is a link
+      // target and a Sinhala title transliterates to nothing useful.
+      slug: slugify(fallback.title),
+      translations,
+      coverImageUrl: spec.cover
+        ? 'https://mock-storage.invalid/news/august-rate-cover.jpg'
+        : undefined,
+      status: spec.status,
+      publishedAt: spec.publishedHoursAgo ? hoursAgo(spec.publishedHoursAgo) : null,
+      publishedByName: spec.publishedHoursAgo ? 'Ruwan Jayasuriya' : null,
+      createdAt: hoursAgo((spec.publishedHoursAgo ?? 2) + 12),
+      createdByName: 'Tharindu Silva',
+    } satisfies NewsRecord;
+  });
+}
+
+export const mockNews: NewsRecord[] = seedNews();
+
+/**
+ * The six fixed pages, in three states.
+ *
+ * `faq` is complete in all three languages because **AC-11 is about the FAQ** and a
+ * criterion whose fixture is half-written cannot be signed off. `savingsScheme` and
+ * `about` are English-only, which is the state a factory that has just gone live is
+ * actually in. `creditTerms` has **never been written** — its status is `draft` and the
+ * app falls back to the bundled default, which is a state the office has to be able to
+ * see rather than mistake for a page it already filled in.
+ */
+const STATIC_PAGE_SEED: Array<{
+  slug: StaticPageSlug;
+  published?: boolean;
+  translations: ContentTranslation[];
+}> = [
+  {
+    slug: 'faq',
+    published: true,
+    translations: [
+      translation(
+        'en',
+        'Frequently asked questions',
+        [
+          'When is my account ready?',
+          'The account for a month is published once the auction result is in, usually in the first week of the following month. Until then the app shows your kilos but no amount — the rate does not exist yet, so an amount would be a guess.',
+          '',
+          'Why is my amount blank?',
+          'Because the auction result for that month has not been entered. Your kilos are recorded and nothing is lost.',
+          '',
+          'How do I change my savings rate?',
+          'Ask through the app, or at the office counter. The office has to approve it, and it takes effect from the next month.',
+          '',
+          'How do I change my bank account?',
+          'Ask through the app and bring your passbook to the office. The office checks the name against your NIC before the change is made.',
+        ].join('\n'),
+        300,
+      ),
+      translation(
+        'si',
+        'නිතර අසන ප්‍රශ්න',
+        [
+          'මගේ ගිණුම කවදා සූදානම් වේද?',
+          'වෙන්දේසි ප්‍රතිඵලය ලැබුණු පසු මාසයේ ගිණුම ප්‍රකාශයට පත් කරයි. එය සාමාන්‍යයෙන් ඊළඟ මාසයේ පළමු සතියේ සිදු වේ.',
+          '',
+          'මගේ මුදල හිස් ලෙස පෙනෙන්නේ ඇයි?',
+          'එම මාසයේ වෙන්දේසි ප්‍රතිඵලය තවම ඇතුළත් කර නැත. ඔබේ කිලෝ ගණන සටහන් වී ඇත.',
+          '',
+          'ඉතුරුම් අනුපාතය වෙනස් කරන්නේ කෙසේද?',
+          'යෙදුම හරහා හෝ කාර්යාලයෙන් ඉල්ලන්න. කාර්යාලය අනුමත කළ පසු ඊළඟ මාසයේ සිට බලපැවැත්වේ.',
+        ].join('\n'),
+        290,
+      ),
+      translation(
+        'ta',
+        'அடிக்கடி கேட்கப்படும் கேள்விகள்',
+        [
+          'எனது கணக்கு எப்போது தயாராகும்?',
+          'ஏல முடிவு வந்த பிறகு மாதத்தின் கணக்கு வெளியிடப்படும். வழக்கமாக அடுத்த மாதத்தின் முதல் வாரத்தில்.',
+          '',
+          'எனது தொகை காலியாக இருப்பது ஏன்?',
+          'அந்த மாதத்தின் ஏல முடிவு இன்னும் பதிவு செய்யப்படவில்லை. உங்கள் கிலோ அளவு பதிவாகியுள்ளது.',
+          '',
+          'சேமிப்பு விகிதத்தை எவ்வாறு மாற்றுவது?',
+          'செயலி மூலம் அல்லது அலுவலகத்தில் கேளுங்கள். அலுவலகம் அனுமதித்த பிறகு அடுத்த மாதம் முதல் நடைமுறைக்கு வரும்.',
+        ].join('\n'),
+        288,
+      ),
+    ],
+  },
+  {
+    slug: 'savingsScheme',
+    published: true,
+    translations: [
+      translation(
+        'en',
+        'The savings scheme',
+        'You choose an amount per kilo, and the factory holds it for you out of each monthly account. The money is yours. Your balance is on the app, and it is also printed on every Green Leaf Account under "Savings". To change your rate, ask through the app — the office has to approve it and the change takes effect from the next month. Choosing LKR 0 opts out of the scheme entirely.',
+        260,
+      ),
+    ],
+  },
+  {
+    slug: 'about',
+    published: true,
+    translations: [
+      translation(
+        'en',
+        'About the factory',
+        'Galaboda Tea Factory has bought green leaf from smallholders in the Akuressa area since 1974. The factory weighs at four collection points and publishes a monthly account for every registered supplier.',
+        400,
+      ),
+    ],
+  },
+  {
+    slug: 'terms',
+    published: true,
+    translations: [
+      translation(
+        'en',
+        'Terms of supply',
+        'Leaf is bought by weight at the collection point, at the rate published for the month it was delivered in. Deductions for transport, savings and any credit taken are itemized on the monthly account. A published account is final; an error is adjusted on the following month.',
+        420,
+      ),
+    ],
+  },
+  {
+    slug: 'privacy',
+    published: true,
+    translations: [
+      translation(
+        'en',
+        'Privacy',
+        'The factory holds your name, NIC, contact details, bank details and your delivery and account history, and uses them only to buy leaf from you and to pay you. Bank details are shown to office staff in masked form; the full number is visible only to staff who need it, and every such view is recorded.',
+        420,
+      ),
+    ],
+  },
+  {
+    // Never written. The app falls back to its bundled default, and the office has to be
+    // able to see that rather than assume this page exists.
+    slug: 'creditTerms',
+    translations: [],
+  },
+];
+
+function seedStaticPages(): StaticPageRecord[] {
+  return STATIC_PAGE_SEED.map((spec) => {
+    const translations: ContentTranslations = {};
+    for (const one of spec.translations) translations[one.lang] = one;
+
+    return {
+      slug: spec.slug,
+      translations,
+      status: spec.published ? 'published' : 'draft',
+      publishedAt: spec.published ? daysAgo(12) : null,
+      publishedByName: spec.published ? 'Ruwan Jayasuriya' : null,
+    } satisfies StaticPageRecord;
+  });
+}
+
+export const mockStaticPages: StaticPageRecord[] = seedStaticPages();

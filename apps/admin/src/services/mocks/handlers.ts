@@ -19,6 +19,8 @@
 import { HttpResponse, delay, http, type HttpHandler } from 'msw';
 import type {
   AdminBill,
+  AdminNewsArticle,
+  AdminStaticPage,
   AdminChangeRequest,
   AdminCreditRequest,
   AdminInquiry,
@@ -28,6 +30,9 @@ import type {
   BillListItem,
   BillRun,
   Capability,
+  ContentPreview,
+  ContentTranslation,
+  ContentTranslations,
   ConsoleUser,
   CreditFacility,
   Delivery,
@@ -38,24 +43,36 @@ import type {
   MonthCycleStage,
   MonthException,
   MonthSummary,
+  LanguageCode,
   MonthlyRateEntry,
+  NewsListItem,
   Paged,
   PaymentMethod,
   PayoutLine,
   PayoutRun,
   SavingsAccount,
   SavingsSummary,
+  StaticPageSlug,
 } from '@tfd/domain';
 import {
   CREDIT_FACILITY_FLAGS,
+  EDITORIAL_FALLBACK_LANGUAGE,
+  MAX_CONTENT_BODY_CHARS,
+  MAX_CONTENT_TITLE_CHARS,
   MAX_DELIVERY_BATCH_ROWS,
   MAX_DELIVERY_KG,
+  STATIC_PAGE_SLUGS,
   can,
   deductionsBalance,
   isExactKg,
   isInquiryClosed,
   isSelfApproval,
+  missingTranslations,
   monthKeyOf,
+  publishability,
+  resolveTranslation,
+  slugify,
+  staleTranslations,
   round2,
   roundKg,
   summariseKgs,
@@ -80,11 +97,13 @@ import {
   mockInquiries,
   mockMonthExceptions,
   mockMonths,
+  mockNews,
   mockPayoutLines,
   mockPayoutRuns,
   mockSavingsLedger,
   monthStageOf,
   mockFullAccountNumbers,
+  mockStaticPages,
   mockSuppliers,
   mockUsers,
   summariseBillRun,
@@ -94,6 +113,8 @@ import {
   type BillRunRecord,
   type MockUser,
   type MonthRecord,
+  type NewsRecord,
+  type StaticPageRecord,
 } from './seed';
 
 /* ────────────────────────────── mutable state ────────────────────────────── */
@@ -152,6 +173,17 @@ const state = {
    */
   creditRequests: mockCreditRequests.map((request) => ({ ...request })),
   inquiries: mockInquiries.map((inquiry) => ({ ...inquiry })),
+  /**
+   * Content records, **deep-copied down to the translations map**.
+   *
+   * `{ ...record }` would share the `translations` object with the seed, so saving one
+   * language would mutate the fixture and `resetMockState()` would hand the mutated
+   * object back. That is the same trap `cloneMonths()` documents, and it bites harder
+   * here: the symptom is a test suite where the second case finds Sinhala already
+   * written and the AC-08 gap it was asserting on has quietly disappeared.
+   */
+  news: mockNews.map(cloneNews),
+  staticPages: mockStaticPages.map(cloneStaticPage),
   sequence: 1000,
 };
 
@@ -170,6 +202,157 @@ function cloneMonths(): Record<string, MonthRecord> {
       { ...record, rate: record.rate ? { ...record.rate } : null },
     ]),
   );
+}
+
+/** Deep enough to isolate the translations map — see the `state.news` comment. */
+function cloneNews(record: NewsRecord): NewsRecord {
+  return { ...record, translations: { ...record.translations } };
+}
+
+function cloneStaticPage(record: StaticPageRecord): StaticPageRecord {
+  return { ...record, translations: { ...record.translations } };
+}
+
+/* ─────────────────── M11 / M12 content helpers (AC-08) ─────────────────── */
+
+/**
+ * The languages **this tenant** authors in.
+ *
+ * Read per request rather than fixed, because it is what makes a gap a gap: `highland`
+ * authors in English and Tamil, so it is not missing Sinhala — it never asked for it. A
+ * server that reported gaps against the platform's three languages would tell that
+ * factory it had unfinished work it does not have, and an office told to ignore a
+ * warning stops reading warnings.
+ */
+function contentLanguagesOf(request: Request): LanguageCode[] {
+  const config = mockConfigs[tenantOf(request)] ?? mockConfigs.galaboda!;
+  return config.localization.contentLanguages;
+}
+
+/** The newest edit in any language — the record's own `updatedAt`. */
+function newestEdit(translations: ContentTranslations): ContentTranslation | null {
+  return Object.values(translations).reduce<ContentTranslation | null>(
+    (newest, one) => (!newest || (one && one.updatedAt > newest.updatedAt) ? (one ?? newest) : newest),
+    null,
+  );
+}
+
+/**
+ * Attach the gaps, derived against the requesting tenant's languages.
+ *
+ * Both lists come from `@tfd/domain/content.ts` rather than being recomputed here: the
+ * console renders the same warnings from the same functions, so a disagreement between
+ * what the API flags and what the editor sees is impossible by construction. That is the
+ * only version of AC-08 worth having.
+ */
+function serialiseNews(record: NewsRecord, request: Request): AdminNewsArticle {
+  const required = contentLanguagesOf(request);
+  const newest = newestEdit(record.translations);
+
+  return {
+    ...record,
+    missingLanguages: missingTranslations(record.translations, required),
+    staleLanguages: staleTranslations(record.translations, required),
+    updatedAt: newest?.updatedAt ?? record.createdAt,
+    updatedByName: newest?.updatedByName ?? record.createdByName,
+  };
+}
+
+function toNewsListItem(record: NewsRecord, request: Request): NewsListItem {
+  const full = serialiseNews(record, request);
+  const fallback = record.translations[EDITORIAL_FALLBACK_LANGUAGE];
+
+  return {
+    id: full.id,
+    slug: full.slug,
+    // The **fallback** title, always: a list whose titles changed with the selected tab
+    // would be unreadable while translating.
+    title: fallback?.title ?? '—',
+    status: full.status,
+    publishedAt: full.publishedAt,
+    updatedAt: full.updatedAt,
+    updatedByName: full.updatedByName,
+    hasCoverImage: Boolean(record.coverImageUrl),
+    missingLanguages: full.missingLanguages,
+    staleLanguages: full.staleLanguages,
+  };
+}
+
+function serialiseStaticPage(record: StaticPageRecord, request: Request): AdminStaticPage {
+  const required = contentLanguagesOf(request);
+  const newest = newestEdit(record.translations);
+
+  return {
+    ...record,
+    missingLanguages: missingTranslations(record.translations, required),
+    staleLanguages: staleTranslations(record.translations, required),
+    updatedAt: newest?.updatedAt ?? null,
+    updatedByName: newest?.updatedByName ?? null,
+  };
+}
+
+/**
+ * The preview: what a reader in `lang` actually gets.
+ *
+ * Resolved with the **shared** `resolveTranslation`, which is the same function the app
+ * will call. An editor signing off copy the app never renders is the AC-08 failure with
+ * the console's fingerprints on it, and this is what makes it structurally impossible.
+ */
+function contentPreview(translations: ContentTranslations, lang: LanguageCode): ContentPreview {
+  const resolved = resolveTranslation(translations, lang);
+  return {
+    lang,
+    translation: resolved?.translation ?? null,
+    usedFallback: resolved?.usedFallback ?? false,
+    fallbackLanguage: EDITORIAL_FALLBACK_LANGUAGE,
+  };
+}
+
+/**
+ * Refuse a publish with nothing to fall back to.
+ *
+ * The **only** hard requirement on content, and the AC-08 policy made operable: gaps are
+ * publishable because the app falls back, and no fallback is not publishable because
+ * there would be nothing to fall back *to*. Returning the gaps in `details` lets the
+ * console name the languages rather than saying "incomplete".
+ */
+function requireFallbackCopy(translations: ContentTranslations, request: Request): Response | null {
+  const required = contentLanguagesOf(request);
+  const check = publishability(translations, required);
+  if (check.ok) return null;
+
+  return fail({
+    status: 422,
+    code: 'fallback-translation-missing',
+    message: `There is no ${EDITORIAL_FALLBACK_LANGUAGE.toUpperCase()} copy, so nothing can be shown to a supplier.`,
+    details: { fallbackLanguage: EDITORIAL_FALLBACK_LANGUAGE, missing: check.missing },
+  });
+}
+
+/** A parsed, non-blank translation body, or the refusal to send. */
+function readTranslationBody(
+  body: { title?: string; excerpt?: string; body?: string },
+): { title: string; excerpt?: string; body: string } | Response {
+  const title = body.title?.trim() ?? '';
+  const text = body.body?.trim() ?? '';
+
+  // The server half of `isWritten`. A translation that exists and says nothing counts as
+  // written everywhere it is read, so the gap AC-08 requires to be visible disappears —
+  // and a supplier gets a blank article.
+  if (title.length === 0 || text.length === 0) {
+    return fail({
+      status: 422,
+      code: 'note-required',
+      message: 'A translation needs a title and a body.',
+      details: { title: title.length, body: text.length },
+    });
+  }
+  if (title.length > MAX_CONTENT_TITLE_CHARS || text.length > MAX_CONTENT_BODY_CHARS) {
+    return fail({ status: 422, code: 'invalid', message: 'That copy is longer than the limit.' });
+  }
+
+  const excerpt = body.excerpt?.trim();
+  return { title, excerpt: excerpt || undefined, body: text };
 }
 
 /**
@@ -2581,6 +2764,446 @@ export const handlers: HttpHandler[] = [
       return HttpResponse.json(after);
     }),
   ),
+
+  /* ── M11 News ──────────────────────────────────────────────────────────── */
+
+  http.get('*/admin/news', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enableNews');
+    if (gate) return gate;
+    const auth = authorize(request, 'content');
+    if ('response' in auth) return auth.response;
+
+    const url = new URL(request.url);
+    const status = url.searchParams.get('status');
+    const q = url.searchParams.get('q')?.trim().toLowerCase();
+    const incomplete = url.searchParams.get('incomplete');
+
+    let rows = state.news.map((record) => toNewsListItem(record, request));
+    if (status) rows = rows.filter((row) => row.status === status);
+    if (q) {
+      // Matched across **every** language, not the fallback title on the row: an editor
+      // searches for what they typed, and they may have typed it in Sinhala.
+      rows = rows.filter((row) => {
+        const record = state.news.find((candidate) => candidate.id === row.id)!;
+        return Object.values(record.translations).some(
+          (one) => one && (one.title.toLowerCase().includes(q) || one.body.toLowerCase().includes(q)),
+        );
+      });
+    }
+    // The AC-08 working list: live, and falling back for somebody.
+    if (incomplete === 'true') {
+      rows = rows.filter(
+        (row) =>
+          row.status === 'published' &&
+          (row.missingLanguages.length > 0 || row.staleLanguages.length > 0),
+      );
+    }
+
+    // Newest first: a feed is read from the top, and the article the office is asking
+    // about is almost always the one that just went out.
+    rows = sortRows(rows, url, (a, b) =>
+      (b.publishedAt ?? b.updatedAt).localeCompare(a.publishedAt ?? a.updatedAt),
+    );
+
+    return HttpResponse.json(paginate(rows, url));
+  }),
+
+  /**
+   * Create. Registered before `/news/:id` — a POST to the collection, so no conflict,
+   * but the specific-first habit in this file has already caught two routing bugs.
+   */
+  http.post('*/admin/news', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enableNews');
+    if (gate) return gate;
+    const auth = authorize(request, 'content', 'write');
+    if ('response' in auth) return auth.response;
+
+    const body = (await request.json()) as {
+      coverImageUrl?: string;
+      translations?: Array<{ lang?: LanguageCode; title?: string; excerpt?: string; body?: string }>;
+    };
+
+    const now = new Date().toISOString();
+    const translations: ContentTranslations = {};
+    for (const one of body.translations ?? []) {
+      if (!one.lang) continue;
+      const parsed = readTranslationBody(one);
+      if (parsed instanceof Response) return parsed;
+      translations[one.lang] = {
+        lang: one.lang,
+        ...parsed,
+        updatedAt: now,
+        updatedByName: auth.user.name,
+      };
+    }
+
+    // The fallback is required **at creation**, not only at publish: a record with
+    // nothing to fall back to cannot be shown to anybody, so allowing it would only
+    // defer the error to somebody else's screen.
+    const refusal = requireFallbackCopy(translations, request);
+    if (refusal) return refusal;
+
+    const fallback = translations[EDITORIAL_FALLBACK_LANGUAGE]!;
+    const base = slugify(fallback.title);
+    // Slugs are a link target and must be unique. Suffixed rather than refused: two
+    // articles called "August rate" in consecutive years is normal, and an editor
+    // should not have to invent a title to get past a validator.
+    const slug = state.news.some((record) => record.slug === base)
+      ? `${base}-${nextId()}`
+      : base;
+
+    const record: NewsRecord = {
+      id: `nws-${nextId()}`,
+      slug,
+      translations,
+      coverImageUrl: body.coverImageUrl || undefined,
+      status: 'draft',
+      publishedAt: null,
+      publishedByName: null,
+      createdAt: now,
+      createdByName: auth.user.name,
+    };
+    state.news = [record, ...state.news];
+
+    recordBy(auth, 'news.create', 'newsArticle', record.id, {
+      after: { slug, languages: Object.keys(translations) },
+    });
+
+    return HttpResponse.json(serialiseNews(record, request), { status: 201 });
+  }),
+
+  /** The preview. Before `/news/:id` so the literal segment wins. */
+  http.get('*/admin/news/:id/preview', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enableNews');
+    if (gate) return gate;
+    const auth = authorize(request, 'content');
+    if ('response' in auth) return auth.response;
+
+    const record = state.news.find((candidate) => candidate.id === params.id);
+    if (!record) return fail({ status: 404, code: '404', message: 'No such article.' });
+
+    const url = new URL(request.url);
+    const lang = (url.searchParams.get('lang') ?? EDITORIAL_FALLBACK_LANGUAGE) as LanguageCode;
+    return HttpResponse.json(contentPreview(record.translations, lang));
+  }),
+
+  /**
+   * Save one language.
+   *
+   * `PUT`, because writing the Sinhala copy twice is a correction rather than a second
+   * translation. Its `updatedAt` is stamped **now**, which is the mechanism staleness is
+   * detected by: correcting the English later leaves this timestamp behind it.
+   */
+  http.put('*/admin/news/:id/translations/:lang', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enableNews');
+    if (gate) return gate;
+    const auth = authorize(request, 'content', 'write');
+    if ('response' in auth) return auth.response;
+
+    const lang = String(params.lang) as LanguageCode;
+    if (!contentLanguagesOf(request).includes(lang)) {
+      // Not a language this factory authors in. Refused rather than stored, because a
+      // translation nothing reads is a gap report nobody can trust.
+      return fail({
+        status: 422,
+        code: 'invalid',
+        message: `This factory does not author content in ${lang}.`,
+        details: { lang, contentLanguages: contentLanguagesOf(request) },
+      });
+    }
+
+    const index = state.news.findIndex((candidate) => candidate.id === params.id);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such article.' });
+
+    const parsed = readTranslationBody(
+      (await request.json()) as { title?: string; excerpt?: string; body?: string },
+    );
+    if (parsed instanceof Response) return parsed;
+
+    const before = state.news[index]!;
+    const previous = before.translations[lang];
+    const after = cloneNews(before);
+    after.translations[lang] = {
+      lang,
+      ...parsed,
+      updatedAt: new Date().toISOString(),
+      updatedByName: auth.user.name,
+    };
+    state.news[index] = after;
+
+    recordBy(auth, 'news.translation.save', 'newsArticle', after.id, {
+      before: previous ? { lang, title: previous.title } : { lang, title: null },
+      after: { lang, title: parsed.title },
+    });
+
+    return HttpResponse.json(serialiseNews(after, request));
+  }),
+
+  ...(['publish', 'unpublish', 'archive'] as const).map((verb) =>
+    http.post(`*/admin/news/:id/${verb}`, async ({ request, params }) => {
+      await delay(LATENCY_MS);
+      const gate = featureGate(request, 'enableNews');
+      if (gate) return gate;
+      /**
+       * `approve`, not `write`.
+       *
+       * §12.1 gives `content: W` to the editor and `A` to the factory admin, so the
+       * person who writes a circular is not the person who puts it in front of every
+       * supplier the factory has. There is no four-eyes rule on top of that — the
+       * capability split *is* the control here, and unlike money there is no amount to
+       * escalate on.
+       */
+      const auth = authorize(request, 'content', 'approve');
+      if ('response' in auth) return auth.response;
+
+      const index = state.news.findIndex((candidate) => candidate.id === params.id);
+      if (index < 0) return fail({ status: 404, code: '404', message: 'No such article.' });
+
+      const before = state.news[index]!;
+
+      if (verb === 'publish') {
+        if (before.status === 'published') {
+          return fail({
+            status: 409,
+            code: 'already-published',
+            message: 'This article is already live.',
+            details: { publishedAt: before.publishedAt, publishedByName: before.publishedByName },
+          });
+        }
+        const refusal = requireFallbackCopy(before.translations, request);
+        if (refusal) return refusal;
+      }
+      if (verb === 'unpublish' && before.status !== 'published') {
+        return fail({
+          status: 409,
+          code: 'content-not-published',
+          message: 'This article is not live, so there is nothing to take down.',
+        });
+      }
+
+      const now = new Date().toISOString();
+      const after = cloneNews(before);
+      after.status = verb === 'publish' ? 'published' : verb === 'archive' ? 'archived' : 'draft';
+      if (verb === 'publish') {
+        after.publishedAt = now;
+        after.publishedByName = auth.user.name;
+      }
+      state.news[index] = after;
+
+      /**
+       * The gaps go **into the audit entry** on a publish.
+       *
+       * "Who decided a Sinhala supplier could read this in English, and when" is the
+       * question AC-08 turns into an argument six months later, and a log that recorded
+       * only the publish cannot answer it.
+       */
+      const gaps = serialiseNews(after, request);
+      recordBy(auth, `news.${verb}`, 'newsArticle', after.id, {
+        before: { status: before.status },
+        after: {
+          status: after.status,
+          ...(verb === 'publish'
+            ? { missingLanguages: gaps.missingLanguages, staleLanguages: gaps.staleLanguages }
+            : {}),
+        },
+      });
+
+      return HttpResponse.json(gaps);
+    }),
+  ),
+
+  http.patch('*/admin/news/:id', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enableNews');
+    if (gate) return gate;
+    const auth = authorize(request, 'content', 'write');
+    if ('response' in auth) return auth.response;
+
+    const index = state.news.findIndex((candidate) => candidate.id === params.id);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such article.' });
+
+    const patch = (await request.json()) as { coverImageUrl?: string | null };
+    const before = state.news[index]!;
+    const after = cloneNews(before);
+    // `null` clears it, `undefined` leaves it — a PATCH that could not remove a cover
+    // image would need a second endpoint to do it.
+    if ('coverImageUrl' in patch) after.coverImageUrl = patch.coverImageUrl || undefined;
+    state.news[index] = after;
+
+    recordBy(auth, 'news.update', 'newsArticle', after.id, {
+      before: { coverImageUrl: before.coverImageUrl ?? null },
+      after: { coverImageUrl: after.coverImageUrl ?? null },
+    });
+
+    return HttpResponse.json(serialiseNews(after, request));
+  }),
+
+  http.get('*/admin/news/:id', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enableNews');
+    if (gate) return gate;
+    const auth = authorize(request, 'content');
+    if ('response' in auth) return auth.response;
+
+    const record = state.news.find((candidate) => candidate.id === params.id);
+    if (!record) return fail({ status: 404, code: '404', message: 'No such article.' });
+    return HttpResponse.json(serialiseNews(record, request));
+  }),
+
+  /* ── M12 Static content ────────────────────────────────────────────────── */
+
+  /**
+   * Every page in the closed set, written or not.
+   *
+   * **No feature flag.** Terms, privacy and the FAQ are not a feature a factory buys or
+   * declines — the app links to them from its own settings screen, and a tenant that
+   * could turn them off would ship a binary with dead links in it.
+   */
+  http.get('*/admin/static-pages', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'content');
+    if ('response' in auth) return auth.response;
+
+    // In `STATIC_PAGE_SLUGS` order, which is the order the app's settings screen lists
+    // them and therefore the order the office thinks about them.
+    const rows = STATIC_PAGE_SLUGS.map((slug) => {
+      const record = state.staticPages.find((candidate) => candidate.slug === slug);
+      return serialiseStaticPage(
+        record ?? {
+          slug,
+          translations: {},
+          status: 'draft',
+          publishedAt: null,
+          publishedByName: null,
+        },
+        request,
+      );
+    });
+
+    return HttpResponse.json(rows);
+  }),
+
+  http.get('*/admin/static-pages/:slug/preview', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'content');
+    if ('response' in auth) return auth.response;
+
+    const record = state.staticPages.find((candidate) => candidate.slug === params.slug);
+    if (!record) return fail({ status: 404, code: '404', message: 'No such page.' });
+
+    const url = new URL(request.url);
+    const lang = (url.searchParams.get('lang') ?? EDITORIAL_FALLBACK_LANGUAGE) as LanguageCode;
+    return HttpResponse.json(contentPreview(record.translations, lang));
+  }),
+
+  http.put('*/admin/static-pages/:slug/translations/:lang', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'content', 'write');
+    if ('response' in auth) return auth.response;
+
+    const slug = String(params.slug) as StaticPageSlug;
+    if (!STATIC_PAGE_SLUGS.includes(slug)) {
+      // A closed set: the app links to these slugs, so one invented here is a page
+      // nothing can reach.
+      return fail({ status: 404, code: '404', message: 'No such page.' });
+    }
+
+    const lang = String(params.lang) as LanguageCode;
+    if (!contentLanguagesOf(request).includes(lang)) {
+      return fail({
+        status: 422,
+        code: 'invalid',
+        message: `This factory does not author content in ${lang}.`,
+        details: { lang, contentLanguages: contentLanguagesOf(request) },
+      });
+    }
+
+    const parsed = readTranslationBody(
+      (await request.json()) as { title?: string; excerpt?: string; body?: string },
+    );
+    if (parsed instanceof Response) return parsed;
+
+    const index = state.staticPages.findIndex((candidate) => candidate.slug === slug);
+    const before: StaticPageRecord =
+      index >= 0
+        ? state.staticPages[index]!
+        : { slug, translations: {}, status: 'draft', publishedAt: null, publishedByName: null };
+
+    const after = cloneStaticPage(before);
+    const previous = before.translations[lang];
+    after.translations[lang] = {
+      lang,
+      ...parsed,
+      updatedAt: new Date().toISOString(),
+      updatedByName: auth.user.name,
+    };
+    if (index >= 0) state.staticPages[index] = after;
+    else state.staticPages = [...state.staticPages, after];
+
+    /**
+     * Before **and** after on the copy itself, not just the title.
+     *
+     * This is the audit entry that makes "an edit to a published page is live
+     * immediately" a defensible design rather than a shortcut: a wrong change to the
+     * terms of supply is reconstructable from the log, by name and with the previous
+     * wording, which is what a review step would otherwise have been for.
+     */
+    recordBy(auth, 'staticPage.translation.save', 'staticPage', slug, {
+      before: previous ? { lang, title: previous.title, body: previous.body } : { lang, body: null },
+      after: { lang, title: parsed.title, body: parsed.body },
+    });
+
+    return HttpResponse.json(serialiseStaticPage(after, request));
+  }),
+
+  http.post('*/admin/static-pages/:slug/publish', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'content', 'approve');
+    if ('response' in auth) return auth.response;
+
+    const index = state.staticPages.findIndex((candidate) => candidate.slug === params.slug);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such page.' });
+
+    const before = state.staticPages[index]!;
+    if (before.status === 'published') {
+      return fail({
+        status: 409,
+        code: 'already-published',
+        message: 'This page is already live. Edits to it go out as they are saved.',
+        details: { publishedAt: before.publishedAt, publishedByName: before.publishedByName },
+      });
+    }
+    const refusal = requireFallbackCopy(before.translations, request);
+    if (refusal) return refusal;
+
+    const after = cloneStaticPage(before);
+    after.status = 'published';
+    after.publishedAt = new Date().toISOString();
+    after.publishedByName = auth.user.name;
+    state.staticPages[index] = after;
+
+    const gaps = serialiseStaticPage(after, request);
+    recordBy(auth, 'staticPage.publish', 'staticPage', after.slug, {
+      before: { status: 'draft' },
+      after: { status: 'published', missingLanguages: gaps.missingLanguages },
+    });
+
+    return HttpResponse.json(gaps);
+  }),
+
+  http.get('*/admin/static-pages/:slug', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'content');
+    if ('response' in auth) return auth.response;
+
+    const record = state.staticPages.find((candidate) => candidate.slug === params.slug);
+    if (!record) return fail({ status: 404, code: '404', message: 'No such page.' });
+    return HttpResponse.json(serialiseStaticPage(record, request));
+  }),
 
   /* ── M10 Inquiries ─────────────────────────────────────────────────────── */
   http.get('*/admin/inquiries', async ({ request }) => {

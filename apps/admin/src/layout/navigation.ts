@@ -199,7 +199,7 @@ export const NAVIGATION: NavSection[] = [
         icon: Newspaper,
         capability: 'content',
         flag: 'enableNews',
-        status: 'planned',
+        status: 'built',
       },
       {
         module: 'M12',
@@ -207,7 +207,7 @@ export const NAVIGATION: NavSection[] = [
         to: '/content',
         icon: ScrollText,
         capability: 'content',
-        status: 'planned',
+        status: 'built',
       },
       {
         module: 'M13',

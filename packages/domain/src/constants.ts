@@ -69,6 +69,51 @@ export type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number];
  */
 export const EDITORIAL_FALLBACK_LANGUAGE: LanguageCode = 'en';
 
+/* ──────────────────── M11 News · M12 Static content ──────────────────── */
+
+/**
+ * `draft` never seen by a supplier · `published` live in the app · `archived` taken
+ * out of the feed without being deleted.
+ *
+ * There is no `deleted`. An article a supplier has already read and may refer to on the
+ * telephone is a record, so it is archived — the same rule that voids a delivery rather
+ * than removing it (§12.1).
+ */
+export const CONTENT_STATUSES = ['draft', 'published', 'archived'] as const;
+
+export type ContentStatus = (typeof CONTENT_STATUSES)[number];
+
+/**
+ * The app's fixed pages.
+ *
+ * A **closed set, not a collection**, and that is the whole difference between M12 and
+ * M11: nobody creates a "terms" page, they edit the one that exists. The app links to
+ * these slugs directly, so adding one is a mobile release and inventing one in the
+ * console would be a link to nowhere.
+ *
+ * `faq` is first because AC-11 is about it.
+ */
+export const STATIC_PAGE_SLUGS = [
+  'faq',
+  'savingsScheme',
+  'creditTerms',
+  'about',
+  'terms',
+  'privacy',
+] as const;
+
+export type StaticPageSlug = (typeof STATIC_PAGE_SLUGS)[number];
+
+/**
+ * How long a news body may be.
+ *
+ * Generous, because the office pastes a circular in. It is a guard against a paste that
+ * ran away rather than an editorial limit — the app scrolls.
+ */
+export const MAX_CONTENT_BODY_CHARS = 20_000;
+export const MAX_CONTENT_TITLE_CHARS = 160;
+export const MAX_CONTENT_EXCERPT_CHARS = 300;
+
 /**
  * Whether a request came from the app or was entered by the office.
  *

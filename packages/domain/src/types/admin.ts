@@ -18,7 +18,14 @@ import type {
   SavingsLedgerEntry,
   Supplier,
 } from './app';
-import type { InquiryStatus, LanguageCode, RequestChannel } from '../constants';
+import type {
+  ContentStatus,
+  InquiryStatus,
+  LanguageCode,
+  RequestChannel,
+  StaticPageSlug,
+} from '../constants';
+import type { ContentTranslation, ContentTranslations } from '../content';
 
 /* ─────────────────────────────── Identity ─────────────────────────────── */
 
@@ -1033,6 +1040,141 @@ export interface SavingsSummary {
   trend: Array<{ monthKey: string; contributed: number; balanceTotal: number }>;
 }
 
+/* ─────────────── M11 News · M12 Static content ─────────────── */
+
+/**
+ * The **per-language gaps** on a content record, carried on the wire.
+ *
+ * Derived server-side rather than computed by each consumer, for the reason every
+ * derived field in this file is: AC-08 says the gap must be visible to the editor, and a
+ * console that worked it out itself would be the only thing that knew. The API renders
+ * the same warning into a content report; the app decides a fallback from it.
+ *
+ * Both lists are **relative to the tenant's `contentLanguages`** — a factory that
+ * authors in English and Tamil is not missing Sinhala, it never asked for it.
+ */
+export interface ContentGaps {
+  /** Nothing written. The app falls back to `EDITORIAL_FALLBACK_LANGUAGE`. */
+  missingLanguages: LanguageCode[];
+  /** Written, but older than the fallback it was translated from. */
+  staleLanguages: LanguageCode[];
+}
+
+/**
+ * A news article as the office authors it: **every language at once**.
+ *
+ * The app's `NewsArticle` is a single-language projection of this — "localized
+ * server-side by `lang`" (types/app.ts) — and that asymmetry is right. A supplier reads
+ * one language; an editor is responsible for all of them, and cannot see a gap in a
+ * shape that only ever holds one.
+ */
+export interface AdminNewsArticle extends ContentGaps {
+  id: string;
+  /** Stable link target. Derived from the fallback title, never from a translation. */
+  slug: string;
+  translations: ContentTranslations;
+  coverImageUrl?: string;
+  status: ContentStatus;
+  publishedAt: string | null;
+  publishedByName: string | null;
+  createdAt: string;
+  createdByName: string;
+  /** The most recent edit in **any** language — see `ContentTranslation.updatedAt`. */
+  updatedAt: string;
+  updatedByName: string;
+}
+
+/**
+ * The grid row.
+ *
+ * `title` is the **fallback** language's, deliberately: the office needs one column it
+ * can scan, and a row whose title changed with the selected tab would make the list
+ * unreadable while translating.
+ */
+export interface NewsListItem extends ContentGaps {
+  id: string;
+  slug: string;
+  title: string;
+  status: ContentStatus;
+  publishedAt: string | null;
+  updatedAt: string;
+  updatedByName: string;
+  hasCoverImage: boolean;
+}
+
+export interface NewsQuery extends PageQuery {
+  status?: ContentStatus;
+  /** Matches the title in any language — an editor searches in what they typed. */
+  q?: string;
+  /** `true` for the records AC-08 is about: published with a gap. */
+  incomplete?: boolean;
+}
+
+/** One language's copy, as the editor saves it. `lang` travels in the path. */
+export interface ContentTranslationBody {
+  title: string;
+  excerpt?: string;
+  body: string;
+}
+
+/**
+ * Creating an article.
+ *
+ * The fallback language's copy is **required at creation**, which is the same rule as
+ * publishing seen earlier: a record with nothing to fall back to is a record that cannot
+ * be shown to anybody, and creating one would only defer the error.
+ */
+export interface NewsArticleDraft {
+  translations: Array<ContentTranslationBody & { lang: LanguageCode }>;
+  coverImageUrl?: string;
+}
+
+/** What may be changed without touching copy. */
+export interface NewsArticlePatch {
+  coverImageUrl?: string | null;
+}
+
+/**
+ * One of the app's fixed pages.
+ *
+ * No `archived`, no create and no delete, because the set is closed
+ * (`STATIC_PAGE_SLUGS`): the app links to these slugs, so a page that could be removed
+ * is a link to nowhere in a shipped binary.
+ *
+ * **`draft` here means "never published"**, not "has unpublished edits". A page the
+ * factory has not written yet is one the app renders its bundled default for; once
+ * published, an edit is live. That asymmetry with M11 is deliberate — a *new* article
+ * must not appear half-written, while a correction to the FAQ that sat in a draft would
+ * leave the wrong answer live for as long as nobody remembered to publish it. Every
+ * edit is audited with before/after, so a bad one is traceable.
+ */
+export interface AdminStaticPage extends ContentGaps {
+  slug: StaticPageSlug;
+  translations: ContentTranslations;
+  status: Extract<ContentStatus, 'draft' | 'published'>;
+  publishedAt: string | null;
+  publishedByName: string | null;
+  updatedAt: string | null;
+  updatedByName: string | null;
+}
+
+/**
+ * What a reader in one language actually gets — the console's preview of the app.
+ *
+ * Returned by its own endpoint rather than assembled in the console, so the preview is
+ * the **server's** resolution. A preview the console composed would be a second
+ * implementation of the fallback, and the editor would be signing off copy the app never
+ * renders (AC-08).
+ */
+export interface ContentPreview {
+  lang: LanguageCode;
+  /** `null` when even the fallback is unwritten — nothing can be shown at all. */
+  translation: ContentTranslation | null;
+  /** True when the reader is being shown the fallback instead of their language. */
+  usedFallback: boolean;
+  fallbackLanguage: LanguageCode;
+}
+
 /* ───────────────────────────── M17 Audit log ───────────────────────────── */
 
 /**
@@ -1202,6 +1344,13 @@ export const ADMIN_ERROR_CODES = [
   'bills-unbalanced',
   /** The leaf moved after the run: publishing would freeze the wrong figures. */
   'bills-stale',
+
+  /* M11 / M12 Content. The fallback language is the only hard requirement — content
+     with gaps is publishable because the app falls back (AC-08), and content with no
+     fallback is not, because there would be nothing to fall back to. */
+  'fallback-translation-missing',
+  'slug-taken',
+  'content-not-published',
 
   /* M6 Payouts. `month-not-published` is the load-bearing one: a run against an
      open month pays against figures that can still change. */

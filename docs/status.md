@@ -14,7 +14,9 @@ Foundation plus M1, M2, M9 and M17 — the first agreed milestone — then **M3 
 the pair §18.2 calls the ones the project succeeds or fails on, then **M5, M6 and
 M8**: the money chain those two exist to feed. Now **M7 and M10**, which finish the
 sidebar's Queues section — every `pending` in the supplier's app is a queue in the
-console, which is the promise the whole product rests on.
+console, which is the promise the whole product rests on. And now **M11 and M12**, the
+Content section — the smallest slice that closes an acceptance criterion outright, because
+AC-08 was the last one with no screen behind it at all.
 
 | Area | State |
 | --- | --- |
@@ -23,7 +25,7 @@ console, which is the promise the whole product rests on.
 | **Auth realm** | Separate from suppliers. Password → optional TOTP → in-memory access token + httpOnly refresh cookie, with refresh-on-401 |
 | **RBAC** | The §12.1 matrix as data, server grants overriding per capability, four-eyes, capability route guards |
 | **Transport** | Axios with domain-code-preserving errors, tenant header, idempotency keys, single-retry refresh |
-| **Mock API** | MSW: 84 suppliers, 14 change requests, 14 credit requests, 7 inquiries, **eight months of delivery rows**, months with stored stages and derived exceptions, bills and savings ledgers chained month to month, payout runs in every state, 3 tenants, 4 console users — enforcing every refusal the real API must |
+| **Mock API** | MSW: 84 suppliers, 14 change requests, 14 credit requests, 7 inquiries, **eight months of delivery rows**, months with stored stages and derived exceptions, bills and savings ledgers chained month to month, payout runs in every state, 3 tenants, **6 console users**, five news articles and the app's six fixed pages in si/en/ta — enforcing every refusal the real API must |
 | **UI kit** | 15 token-driven primitives, keyboard-navigable data grid, i18n throughout |
 | **M1 Dashboard** | Queue cards with age and SLA, month-cycle stage, today's leaf, server-composed alerts, 14-day trend — the leaf figures now derived from M3's rows, so committing a session moves the card |
 | **M2 Suppliers** | Search/filter/sort grid with URL state, detail, suspend/reactivate, the audited bank reveal |
@@ -35,8 +37,10 @@ console, which is the promise the whole product rests on.
 | **M7 Credit queues** | One queue over all three facilities, the **eligibility working printed rather than summarised** (AC-05), a decision that carries the ceiling it was made against so `stale-eligibility` is enforceable (BR-310), `over-ceiling` refused on both sides, and an approval that raises the supplier's balance so the next bill deducts against it |
 | **M9 Change requests** | Queue oldest-first, side-by-side comparison, approve/reject with mandatory note, four-eyes, already-decided |
 | **M10 Inquiries** | Open/answered/closed as data (§21.18), reply and close-unanswered as **different acts**, prose-first triage grid, and the console saying plainly that no notification is sent because M13 is not built |
-| **M17 Audit** | Filterable read-only log, plus per-record panels on M2 and M9. Every M3/M4/M5/M6 mutation writes to it |
-| **Tests** | 169 Vitest + 13 Playwright, all passing. Typecheck and lint clean |
+| **M11 News** | Per-language authoring with the fallback and the gap lists shared with the app (`content.ts`), a server-resolved preview, a "live with a gap" working list, and publish/unpublish/archive split from writing by §12.1 |
+| **M12 Static content** | The app's six fixed pages, unwritten ones shown as a state rather than omitted, and every edit to a live page audited with its previous wording |
+| **M17 Audit** | Filterable read-only log, plus per-record panels on M2, M9 and M11. Every mutation in every built module writes to it |
+| **Tests** | 189 Vitest + 16 Playwright, all passing. Typecheck and lint clean |
 
 ## Acceptance criteria
 
@@ -55,7 +59,8 @@ assessed.
 | AC-03 | A bill matches the app's Home screen and the PDF field for field | ⚠️ **Console half met.** The slip renders every `GreenLeafBill` field in the printed account's order, and the derivation is shared (`packages/domain/src/bill.ts`) so the API cannot compute it differently. Integration-tested as identities — gross from kilos × rate, the nine lines summing to their total, whole rupees plus carried coins equalling the balance. **Unprovable end to end until the app reads the same endpoint**, and the PDF is not built |
 | AC-07 | A flag off removes the surface **and** the endpoint refuses | ⚠️ **Console half met, API half now met for the two flags that have an off-tenant.** `enablePayouts` is off for `highland`, and `GET /admin/payout-runs` answers `403 feature-disabled` for it — asserted with a raw request carrying an explicit `X-Tenant`, which is how a replayed request or a hand-typed URL would arrive. The mechanism (`featureGate`) is in place for savings too; no fixture tenant has that flag off. **The real backend still has none of this** |
 | AC-05 | Credit eligibility matches the app's, byte for byte, including the working | ⚠️ **Console half met.** M7 renders every intermediate figure — months of history against the requirement, the average account and the multiple, the last settled rate and the kilos it priced — and the derivation is shared (`packages/domain/src/leafCredit.ts`), so the API cannot compute it differently. Integration-tested as identities rather than as fixed numbers: the ceiling equals its own arithmetic. **Unprovable end to end until the app reads the same endpoint** |
-| AC-08, AC-11 | Content fallback, FAQ | ⛔ Not assessable — M11 and M12 are not built |
+| AC-08 | Content falls back to English, and the gap is visible to the editor | ✅ **Met.** The fallback is `resolveTranslation` in `@tfd/domain`, shared so the API cannot resolve it differently, and the preview is fetched from the server rather than composed by the console. The gap appears on the tab for the language that has it, on the list row, in a "live with a gap" filter, in the publish confirmation, and in the publish audit entry. Integration-tested as identities between the preview and the shared function. Also flags **stale** copy — written before the English it was translated from — which AC-08's wording does not cover and an office hits second |
+| AC-11 | The FAQ | ✅ Met — M12 carries the app's six fixed pages, and the FAQ is written in all three languages in the fixture. A page the factory has never written is shown as such rather than omitted, because the app is rendering its own bundled default |
 
 ---
 
@@ -181,6 +186,29 @@ Worst first: correctness, then plumbing, then polish.
     refuses the call. M7's half **is** asserted: `highland` sells advances and not
     loans or manure, and a loan reached by its own URL answers `feature-disabled`.
 
+19. **The Sinhala and Tamil fixture copy has not been reviewed by a native speaker.**
+    It is real script rather than Latin placeholders on purpose — the `[lang="si"]` and
+    `[lang="ta"]` line-height and wrapping rules (§20.2) cannot be exercised by English
+    three times over, and a right-to-length bug would ship. But it is approximate, and
+    **approximate Sinhala in front of a Sinhala-speaking office is worse than an obvious
+    gap**: a gap is a question and bad copy is an answer. *To close:* have the factory's
+    own staff write the fixture's five articles and six pages, which is a copy deliverable
+    and half an hour of somebody's time. Do it before the console is demonstrated.
+
+20. **Content is plain text, and the FAQ is the case that strains it.** A body keeps its
+    line breaks and nothing else — no headings, no links, no lists. The fixture's FAQ is
+    therefore questions and answers separated by blank lines inside one field, which reads
+    acceptably and is not what it is. Whether the app renders Markdown, a subset of HTML,
+    or structured Q&A pairs is a **mobile** decision the console has to follow, not lead:
+    a rich editor built against a guess produces copy the app renders as literal asterisks.
+    *To close:* ask what the app's content renderer does today.
+
+21. **A published article cannot be scheduled, and a cover image cannot be uploaded.**
+    Publishing is immediate, and `coverImageUrl` is on the type and settable through the
+    API with no way to put a file behind it — `uploadRepository` exists and does presign +
+    PUT for M9's evidence, so this is wiring rather than design. Both are absent rather
+    than half-built. Neither is blocked on anything.
+
 ---
 
 ## Blocking business questions
@@ -261,9 +289,10 @@ after a month has been published on the wrong assumption:
 2. **The scale-file import for M3.** The entry grid is built; the other half of
    §18.2's data-entry story is a scale file the weighing point can upload, and
    `source: 'scaleFile'` is already in the data waiting for it.
-3. **M11 / M12 Content.** Nothing external blocks them, and AC-08 — a missing
-   translation being visible to the editor rather than silently falling back — is the
-   last acceptance criterion with no screen behind it at all.
+3. **M14 Configuration.** The other end of `GET /config`, and the only thing standing
+   between AC-12 ("a new factory goes live without a code deploy") and being provable
+   rather than merely mechanised. It is also where `contentLanguages` is set, which M11
+   and M12 now read on every request.
 4. **The repo merge**, before the shared types drift far enough to hurt.
 
 **Not next, and why:** M13 Notifications is tempting now that `month.publish` is a real

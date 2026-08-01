@@ -29,6 +29,14 @@ const ACTION_KEYS: Record<string, string> = {
   'creditRequest.reject': 'audit.action.creditReject',
   'inquiry.reply': 'audit.action.inquiryReply',
   'inquiry.close': 'audit.action.inquiryClose',
+  'news.create': 'audit.action.newsCreate',
+  'news.update': 'audit.action.newsUpdate',
+  'news.translation.save': 'audit.action.newsTranslationSave',
+  'news.publish': 'audit.action.newsPublish',
+  'news.unpublish': 'audit.action.newsUnpublish',
+  'news.archive': 'audit.action.newsArchive',
+  'staticPage.translation.save': 'audit.action.staticPageSave',
+  'staticPage.publish': 'audit.action.staticPagePublish',
 };
 
 export function auditActionLabel(action: string, t: (key: string) => string): string {

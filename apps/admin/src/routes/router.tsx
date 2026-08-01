@@ -81,6 +81,17 @@ const InquiryDetailScreen = lazy(() =>
     default: m.InquiryDetailScreen,
   })),
 );
+const NewsScreen = lazy(() =>
+  import('@/modules/news/NewsScreen').then((m) => ({ default: m.NewsScreen })),
+);
+const NewsArticleScreen = lazy(() =>
+  import('@/modules/news/NewsArticleScreen').then((m) => ({ default: m.NewsArticleScreen })),
+);
+const StaticContentScreen = lazy(() =>
+  import('@/modules/static-content/StaticContentScreen').then((m) => ({
+    default: m.StaticContentScreen,
+  })),
+);
 const AuditScreen = lazy(() =>
   import('@/modules/audit/AuditScreen').then((m) => ({ default: m.AuditScreen })),
 );
@@ -249,6 +260,40 @@ export const router = createBrowserRouter([
               <InquiryDetailScreen />
             </RequireCapability>
           </RequireFlag>
+        ),
+      },
+      /**
+       * M11 is flag-gated (a factory that does not run a feed has no News row); **M12 is
+       * not**. Terms, privacy and the FAQ are not a feature a factory buys or declines —
+       * the app links to them from its own settings screen, and a tenant that could turn
+       * them off would ship a binary with dead links in it.
+       */
+      {
+        path: 'news',
+        element: (
+          <RequireFlag flag="enableNews">
+            <RequireCapability capability="content">
+              <NewsScreen />
+            </RequireCapability>
+          </RequireFlag>
+        ),
+      },
+      {
+        path: 'news/:id',
+        element: (
+          <RequireFlag flag="enableNews">
+            <RequireCapability capability="content">
+              <NewsArticleScreen />
+            </RequireCapability>
+          </RequireFlag>
+        ),
+      },
+      {
+        path: 'content',
+        element: (
+          <RequireCapability capability="content">
+            <StaticContentScreen />
+          </RequireCapability>
         ),
       },
       {

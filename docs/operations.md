@@ -17,8 +17,8 @@ From the workspace root:
 | `npm run preview`    | Serves the built bundle                                                                   |
 | `npm run typecheck`  | `tsc --build` across all three projects                                                   |
 | `npm run lint`       | ESLint, including the white-label and layering rules                                      |
-| `npm run test`       | Vitest — 131 tests                                                                        |
-| `npm run e2e`        | Playwright — 4 specs against the dev server. Needs `npx playwright install chromium` once |
+| `npm run test`       | Vitest — 189 tests                                                                        |
+| `npm run e2e`        | Playwright — 16 specs against the dev server. Needs `npx playwright install chromium` once |
 | `npm run e2e:demo`   | The same specs against the built demo bundle on a static server                           |
 | `npm run format`     | Prettier                                                                                  |
 
@@ -140,7 +140,7 @@ old binaries are in the field, and feature flags are the release valve.
 
 Layered so each layer tests what only it can.
 
-### Vitest — 131 tests
+### Vitest — 189 tests
 
 | File                           | Covers                                                                    |
 | ------------------------------ | ------------------------------------------------------------------------- |
@@ -153,6 +153,7 @@ Layered so each layer tests what only it can.
 | `monthClose.test.ts` (12)      | M4: the rate, exception resolution, and all seven publish refusals        |
 | `savings.test.ts` (11)         | M8: the balance tying to the ledger, the ledger tying to published bills, the registry tying to both (AC-01) — and AC-07's endpoint half |
 | `deliveries.test.ts` (9)       | M3: batch commit and its idempotent replay, per-row rejections, the void, `month-locked`, and the day totals the dashboard reads |
+| `content.test.ts` (20)         | M11/M12 and **AC-08 end to end**: the preview resolving as `content.ts` does, gaps derived against the tenant's own languages, stale copy, and the write/publish split |
 | `listSorting.test.ts` (5)      | Server-side sort and pagination parameters                                |
 
 `rbac.test.ts` and `money.test.ts` are the highest-value files. The matrix is what
@@ -164,7 +165,7 @@ place a bug produces a dispute rather than a crash.
 the server is a stand-in. A test that stubbed the repository would pass while the
 interceptor flattened every error code.
 
-### Playwright — 4 specs
+### Playwright — 16 specs
 
 Narrow on purpose: only what jsdom cannot prove.
 

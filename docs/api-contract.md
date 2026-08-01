@@ -1327,7 +1327,155 @@ was sent.
 
 ---
 
-## 16. Not yet called by the console
+## 16. M11 News · M12 Static content
+
+Both modules are one problem — copy in several languages, with the gaps visible — and
+`packages/domain/src/content.ts` is the shared implementation. **Import it rather than
+re-deriving.** AC-08 has two halves, "the app falls back to English" and "the gap is
+visible to the editor", and they are only simultaneously true if this API and the app
+resolve a translation with the same function.
+
+### 16.1 The translation model
+
+Copy is held **per language**, and each translation carries its own `updatedAt`:
+
+```json
+{
+  "translations": {
+    "en": { "lang": "en", "title": "…", "excerpt": "…", "body": "…",
+            "updatedAt": "2026-08-01T09:00:00.000Z", "updatedByName": "Tharindu Silva" },
+    "si": { "lang": "si", "…": "…" }
+  },
+  "missingLanguages": ["ta"],
+  "staleLanguages": ["si"]
+}
+```
+
+Three rules the console depends on:
+
+- **A present translation is not a written one.** Empty strings must be refused on save
+  (`422 note-required`), not stored. Stored, they count as written everywhere they are
+  read, the gap disappears from the list AC-08 requires it to appear in, and the supplier
+  gets a blank article.
+- **`missingLanguages` and `staleLanguages` are derived per request against the
+  *requesting tenant's* `localization.contentLanguages`** — never against the platform's
+  three. A factory that authors in English and Tamil is not missing Sinhala, and an office
+  told it has work it does not have stops reading the warnings.
+- **Stale = written, and older than the fallback it was translated from.** This is the
+  failure the criterion's wording does not cover and the office hits second: the English
+  is corrected, the Sinhala still says the old thing, and the app renders it as though it
+  were current so nothing anywhere looks wrong. A translation exactly as new as the
+  fallback is *not* stale — saving a corrected pair together is legitimate, and flagging
+  it would train the office to ignore the flag.
+
+### 16.2 `GET /admin/news` → `Paged<NewsListItem>`
+
+Filters: `status`, `q`, `incomplete`. Newest first.
+
+`q` matches **every language's** title and body, not the row's fallback title: an editor
+searches for what they typed, and they may have typed it in Sinhala.
+
+`incomplete=true` is AC-08's working list — published **and** carrying a gap. It is the
+same kind of control as M4's exception queue: a criterion satisfied by a warning nobody
+can enumerate is satisfied on paper only.
+
+`title` on the row is always the **fallback** language's. A list whose titles changed with
+the selected tab would be unreadable while translating.
+
+### 16.3 `PUT /admin/news/{id}/translations/{lang}` → `AdminNewsArticle`
+
+```json
+→ { "title": "…", "excerpt": "…", "body": "…" }
+```
+
+**One language at a time**, and this is the load-bearing shape of the module. Two editors
+translating one article is the normal case in an office with a Sinhala speaker and a Tamil
+speaker; a whole-record `PUT` means whoever saves second discards the other's work. It is
+also what makes staleness detectable at all — stamp `updatedAt` on **this translation**.
+
+```
+422 note-required   a blank title or body
+422 invalid         a language outside this tenant's contentLanguages   + details.contentLanguages
+404                 no such article
+```
+
+Refusing an unrequested language matters: stored, it is copy nothing renders and a gap
+report nobody can trust.
+
+### 16.4 `POST /admin/news` → 201 `AdminNewsArticle`
+
+Created as a **draft**. The fallback language's copy is required *at creation*, not only
+at publish (`422 fallback-translation-missing`): a record with nothing to fall back to
+cannot be shown to anybody, so allowing it only defers the error to somebody else's screen.
+
+`slug` is derived from the **fallback** title — a Sinhala title transliterates to nothing
+useful, and a slug is a link target the supplier never reads. Suffix a collision rather
+than refusing it: two articles called "August rate" in consecutive years is normal, and an
+editor should not have to invent a title to satisfy a validator.
+
+### 16.5 `GET /admin/news/{id}/preview?lang=` → `ContentPreview`
+
+```json
+{ "lang": "si", "translation": { … }, "usedFallback": true, "fallbackLanguage": "en" }
+```
+
+**Its own endpoint, and the console must not compose it.** The preview is only worth
+showing if it is the resolution the app performs; a console that applied its own fallback
+would show the editor copy that is never rendered, and they would sign it off. `translation`
+is `null` when even the fallback is unwritten — the one state that must never reach a
+supplier.
+
+### 16.6 The lifecycle — `publish` · `unpublish` · `archive`
+
+Three verbs, not a `PATCH { status }`: a client must not be able to put a record into a
+state the server never agreed to, and publish is the one with a refusal behind it.
+
+`content: approve` — §12.1 gives `W` to the editor and `A` to the factory administrator,
+so the person who writes a circular is not the person who puts it in front of every
+supplier. There is no four-eyes rule on top; unlike money there is no amount to escalate
+on, and the capability split is the whole control.
+
+```
+422 fallback-translation-missing   no copy in the fallback language   + details.missing
+409 already-published
+409 content-not-published          unpublish on something that is not live
+```
+
+**Publishing with a gap is allowed**, and that is the AC-08 policy rather than a
+compromise: `EDITORIAL_FALLBACK_LANGUAGE` is documented as "the fallback, not a default",
+which only means anything if content can go out incomplete.
+
+Audit `news.publish` **with the gap lists in `after`**. "Who decided a Sinhala supplier
+could read this in English, and when" is the question this turns into an argument six
+months later, and an entry recording only the publish cannot answer it.
+
+There is no delete. An article a supplier has read and may quote on the telephone is
+archived — the rule that voids a delivery rather than removing it (§12.1).
+
+### 16.7 Static pages
+
+`GET /admin/static-pages` → **every slug in `STATIC_PAGE_SLUGS`, written or not.** A closed
+set: the app links to these directly, so a page missing from the list is a link to nowhere
+and one invented here is copy nothing renders. An unwritten page comes back with empty
+translations and `status: "draft"` — a **state to be shown**, because the app is rendering
+its own bundled default and an office that cannot see the page listed assumes otherwise.
+
+`PUT /admin/static-pages/{slug}/translations/{lang}` and
+`POST /admin/static-pages/{slug}/publish` behave as §16.3 and §16.6 do, with two
+differences:
+
+- **No feature flag.** Terms, privacy and the FAQ are not a feature a factory buys or
+  declines. A tenant that could turn them off would ship a binary with dead links.
+- **Publish happens once**, and means "the factory has written this at all". After that an
+  edit is **live when it is saved**. The asymmetry with news is deliberate: a new article
+  must not appear half-written, while a correction to the FAQ sitting in an unpublished
+  draft leaves the wrong answer in front of suppliers until somebody remembers a second
+  button. What makes that safe is the audit entry — record the **previous body and the new
+  one**, which is what a review step would otherwise have been for.
+
+---
+
+## 17. Not yet called by the console
 
 These are in §17.6's scope and the console has no code for them yet, so the
 shapes are open. Requests from the front end when you get there:
@@ -1342,7 +1490,7 @@ shapes are open. Requests from the front end when you get there:
 
 ---
 
-## 17. A checklist for the first PR
+## 18. A checklist for the first PR
 
 Ordered so each step is independently useful to the console.
 
@@ -1368,6 +1516,9 @@ Ordered so each step is independently useful to the console.
       lines counted rather than dropped
 - [ ] `/admin/savings/*` — read-only, with the ledger posted by the publish in §10.5
       and nothing else
+- [ ] `/admin/news/*` and `/admin/static-pages/*` — per-language saves, gaps derived
+      against the tenant's `contentLanguages`, and a preview endpoint that resolves the
+      fallback the way `content.ts` does
 
 Point `VITE_API_BASE_URL` at it and set `VITE_USE_MOCK=0`; the console needs no
 other change. If a shape differs from this document, the seam that absorbs it is

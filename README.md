@@ -14,9 +14,10 @@ npm run dev          # http://localhost:5273 — runs on a mock API, no backend 
 
 Sign in with the credentials printed on the screen (`clerk@galabodatea.lk` /
 `demo1234`). Which one you pick decides what you can see: the §12.1 matrix gives
-**leaf entry to the weigher**, the **month close to the accountant**, and the
-**publish to the manager**, so a walkthrough of M3 and M4 needs more than the
-clerk. All four demo accounts are on the sign-in screen.
+**leaf entry to the weigher**, the **month close to the accountant**, the **publish
+to the manager**, and **content to the editor and the factory admin** — so a
+walkthrough needs more than the clerk. All six demo accounts are on the sign-in
+screen.
 
 ---
 
@@ -33,12 +34,13 @@ apps/
 docs/         Architecture, the API contract, and what is deliberately unfinished
 ```
 
-**Built:** M1 Dashboard · M2 Suppliers · **M3 Leaf collection** · **M4 Rates &
-month close** · **M5 Bills** · **M6 Payouts** · **M8 Savings** · M9 Change
-requests · M17 Audit log, on a foundation of runtime white-labelling, a separate
-console auth realm with MFA, and capability-based access control. The other 8
-modules from §18.1 appear in the sidebar as _Planned_ rows — see
-[docs/modules.md](./docs/modules.md).
+**Built: 13 of the 17 modules.** M1 Dashboard · M2 Suppliers · **M3 Leaf
+collection** · **M4 Rates & month close** · **M5 Bills** · **M6 Payouts** ·
+**M7 Credit queues** · **M8 Savings** · M9 Change requests · **M10 Inquiries** ·
+**M11 News** · **M12 Static content** · M17 Audit log — on a foundation of runtime
+white-labelling, a separate console auth realm with MFA, and capability-based access
+control. The remaining four (Notifications, Configuration, Users & roles, Reports)
+appear in the sidebar as _Planned_ rows — see [docs/modules.md](./docs/modules.md).
 
 M3 and M4 are the pair §18.2 calls the ones the project succeeds or fails on: the
 leaf is recorded at the weighing point in one keyboard-driven session per day, and
@@ -49,6 +51,12 @@ M5, M6 and M8 are the chain those two feed, and they are one slice because they 
 one fact: a bill is a read model over the leaf and the rate, a payout line pays a
 bill, and a savings contribution *is* a bill's savings deduction. Nothing is derived
 twice — which is what stops the office reconciling the console against itself.
+
+M7 and M10 finish the Queues section, so **every `pending` in the supplier's app is a
+queue here** — the promise the whole product rests on. M11 and M12 are the Content
+section, and they close AC-08: editorial copy falls back to English when a translation
+is missing, and the console makes that gap visible on the tab for the language that has
+it, in a "live with a gap" working list, and in the audit entry for the publish.
 
 **The backend does not exist yet.** The console runs against an in-browser mock
 that enforces every rule the real API must, and
@@ -67,8 +75,8 @@ switch to it.
 | `npm run build:demo` | Demo bundle — production build, mock API on, for preview hosting |
 | `npm run typecheck`  | `tsc --build`, all three projects                                |
 | `npm run lint`       | Includes the white-label and layering rules                      |
-| `npm run test`       | Vitest — 131 tests                                               |
-| `npm run e2e`        | Playwright — 7 specs (`npx playwright install chromium` once)    |
+| `npm run test`       | Vitest — 189 tests                                               |
+| `npm run e2e`        | Playwright — 16 specs (`npx playwright install chromium` once)    |
 | `npm run e2e:demo`   | The same specs against the built demo bundle                     |
 
 ---

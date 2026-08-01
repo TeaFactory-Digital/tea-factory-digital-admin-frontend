@@ -49,6 +49,11 @@ const BY_CODE: Record<string, string> = {
   // M7. Both are refusals to lend: the ceiling moved under the approver
   // (BR-310), or the amount was never inside it.
   'over-ceiling': 'error.overCeiling',
+  // M11 / M12. The fallback language is the only hard requirement on content — gaps
+  // are publishable because the app falls back (AC-08), and no fallback is not.
+  'fallback-translation-missing': 'error.fallbackTranslationMissing',
+  'slug-taken': 'error.slugTaken',
+  'content-not-published': 'error.contentNotPublished',
   '403': 'error.forbidden',
   '404': 'error.notFound',
 };

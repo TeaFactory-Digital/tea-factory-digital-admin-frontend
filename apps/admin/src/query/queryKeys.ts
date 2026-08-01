@@ -19,6 +19,7 @@ import type {
   CreditRequestQuery,
   DeliveryQuery,
   InquiryQuery,
+  NewsQuery,
   PayoutLineQuery,
   PayoutRunQuery,
   SavingsAccountQuery,
@@ -124,6 +125,32 @@ export const qk = {
     all: ['inquiries'] as const,
     list: (query: InquiryQuery) => ['inquiries', 'list', query] as const,
     detail: (id: string) => ['inquiries', 'detail', id] as const,
+  },
+
+  /**
+   * Saving one language invalidates the whole record, not that language's key.
+   *
+   * Because it changes more than the copy: the record's `missingLanguages` and
+   * `staleLanguages` are derived from every translation at once, and writing the English
+   * copy can make the Sinhala one **stale** without touching it. A key per language
+   * would leave the gap warnings AC-08 is about showing the state before the edit.
+   *
+   * The preview is keyed by language, because that is the one thing that genuinely
+   * differs per language — and it is the server's resolution, so it must be refetched
+   * rather than recomputed.
+   */
+  news: {
+    all: ['news'] as const,
+    list: (query: NewsQuery) => ['news', 'list', query] as const,
+    detail: (id: string) => ['news', 'detail', id] as const,
+    preview: (id: string, lang: string) => ['news', 'preview', id, lang] as const,
+  },
+
+  staticPages: {
+    all: ['static-pages'] as const,
+    list: ['static-pages', 'list'] as const,
+    detail: (slug: string) => ['static-pages', 'detail', slug] as const,
+    preview: (slug: string, lang: string) => ['static-pages', 'preview', slug, lang] as const,
   },
 
   audit: {
