@@ -32,6 +32,12 @@ const SupplierDetailScreen = lazy(() =>
     default: m.SupplierDetailScreen,
   })),
 );
+const DeliveriesScreen = lazy(() =>
+  import('@/modules/deliveries/DeliveriesScreen').then((m) => ({ default: m.DeliveriesScreen })),
+);
+const MonthCloseScreen = lazy(() =>
+  import('@/modules/months/MonthCloseScreen').then((m) => ({ default: m.MonthCloseScreen })),
+);
 const ChangeRequestsScreen = lazy(() =>
   import('@/modules/change-requests/ChangeRequestsScreen').then((m) => ({
     default: m.ChangeRequestsScreen,
@@ -82,6 +88,22 @@ export const router = createBrowserRouter([
         element: (
           <RequireCapability capability="suppliers">
             <SupplierDetailScreen />
+          </RequireCapability>
+        ),
+      },
+      {
+        path: 'deliveries',
+        element: (
+          <RequireCapability capability="deliveries">
+            <DeliveriesScreen />
+          </RequireCapability>
+        ),
+      },
+      {
+        path: 'rates',
+        element: (
+          <RequireCapability capability="ratesAndMonthClose">
+            <MonthCloseScreen />
           </RequireCapability>
         ),
       },

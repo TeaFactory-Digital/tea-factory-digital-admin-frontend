@@ -83,7 +83,7 @@ export const NAVIGATION: NavSection[] = [
         to: '/deliveries',
         icon: Scale,
         capability: 'deliveries',
-        status: 'planned',
+        status: 'built',
       },
     ],
   },
@@ -96,7 +96,7 @@ export const NAVIGATION: NavSection[] = [
         to: '/rates',
         icon: Gauge,
         capability: 'ratesAndMonthClose',
-        status: 'planned',
+        status: 'built',
       },
       {
         module: 'M5',

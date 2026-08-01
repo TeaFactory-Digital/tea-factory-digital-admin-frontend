@@ -14,10 +14,16 @@ import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { qk } from '@/query/queryKeys';
 
-export function useSuppliers(query: SupplierQuery) {
+/**
+ * `enabled` is here for M3's code lookup, which must not search on an empty box:
+ * the first keystroke of a supplier code would otherwise ask the server for the
+ * whole registry, on the connection the weighing point is sharing.
+ */
+export function useSuppliers(query: SupplierQuery, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: qk.suppliers.list(query),
     queryFn: () => supplierRepository.list(query),
+    enabled: options.enabled ?? true,
     // Keeps the previous page on screen while the next loads, so paging does not
     // flash an empty grid — the single biggest perceived-speed win in a data table.
     placeholderData: (previous) => previous,

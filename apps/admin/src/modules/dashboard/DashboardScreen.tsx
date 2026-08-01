@@ -164,7 +164,7 @@ function MonthCycleCard({ cycle }: { cycle: MonthCycleStatus }) {
     <Card>
       <CardHeader title={t('dashboard.monthCycle')} description={formatMonthKey(cycle.monthKey)} />
       <CardBody className="flex flex-col gap-sm">
-        <Badge tone={tone}>{t(`dashboard.stage.${cycle.stage}`)}</Badge>
+        <Badge tone={tone}>{t(`month.stage.${cycle.stage}`)}</Badge>
 
         {/* The stage hint exists because "awaiting rate" is the reason the app is
             showing blanks instead of amounts, and the office is the one who has

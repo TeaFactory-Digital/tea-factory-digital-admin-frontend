@@ -18,8 +18,8 @@ build status, and the sidebar is generated from it.
 | M2 | **Suppliers** | ✅ Built | `/suppliers`, `/suppliers/:id` |
 | M9 | **Change requests** | ✅ Built | `/change-requests`, `/change-requests/:id` |
 | M17 | **Audit log** | ✅ Built (no export) | `/audit` |
-| M3 | Leaf collection | ⏳ Planned | — |
-| M4 | Rates & month close | ⏳ Planned | — |
+| M3 | **Leaf collection** | ✅ Built (no scale-file import) | `/deliveries` |
+| M4 | **Rates & month close** | ✅ Built (bills not generated) | `/rates` |
 | M5 | Bills | ⏳ Planned | — |
 | M6 | Payouts | ⏳ Planned | — |
 | M7 | Credit queues | ⏳ Planned | — |
@@ -54,10 +54,15 @@ the next slice should be argued the same way:
 - **M1 is where a clerk starts the day**, and it is the only place the month-cycle
   stage is visible — which is the console's most-asked question, because it decides
   what every other module will let you do.
-- **M3 and M4 were deliberately not first.** §18.2 names them as where the project
-  succeeds or fails, and M4 is gated on business answers that are still open
-  (status.md §21.1–21.2). Building a month-close checklist before the factory has
-  answered whether a published bill may be corrected is building it twice.
+- **M3 and M4 were deliberately not first**, and are now the second slice. §18.2
+  names them as where the project succeeds or fails, which is the argument for
+  building them on a foundation that was already proven end to end rather than at
+  the same time as it.
+- **What was left out of M4 rather than guessed at.** §21.8 — may a published bill
+  be corrected? — decides whether `bills` is immutable, so bill *generation* is not
+  built and the `billsGenerated` stage is unoccupied. The month close itself does
+  not depend on that answer: a rate, a resolved exception list and a second pair of
+  eyes are required whatever the answer turns out to be.
 
 ---
 
@@ -119,6 +124,104 @@ The revealed number is **never cached** — the dialog holds it and drops it on
 close. In the query cache it would stay in memory for the session, readable by any
 component that guessed the key.
 
+## M3 Leaf collection
+
+*Where the leaf is recorded.* §18.2 calls this the module the project succeeds or
+fails on, and it is built as **a data-entry product, not a screen**.
+
+**The day is the unit**, not the delivery list: a point opens, records leaf until it
+closes, and the figure that matters at the end is the day's total. The date and the
+collection point are the primary controls and they live in the URL, so "look at
+Makadura yesterday" is a link a supervisor can send.
+
+**Entry is two fields and the Enter key.** Code → Tab → kilos → Enter, and the
+caret returns to the code field; the mouse is not on the path. The code matches with
+or without its division suffix (`5708` or `5708 (MAKADURA)`) through the same search
+the registry uses, and the grower's name appears as confirmation *before* the line
+is added — "did I type the right supplier" is the question the office actually asks.
+A code that matches nothing is refused on the line, and a bare prefix never
+silently picks a grower.
+
+**A big figure is questioned, not refused.** `isOutlierKg` catches `1250` typed for
+`125.0` — invisible in a column of numbers, very visible in next month's bill — and
+asks for a second Enter. A genuinely heavy load must still be enterable.
+
+**A session is one request** (api-contract.md §9.3), and the batch id the console
+generates travels as the `Idempotency-Key`. That is what makes a re-sent commit
+safe: a dropped connection and a second click replay the original result instead of
+recording sixty deliveries twice.
+
+**Partial acceptance.** Per-row rejections come back inside a `200`; the refused
+lines stay in the grid with the server's reason on each, and the accepted ones
+leave. All-or-nothing would send fifty-nine good rows back to be re-typed at a
+counter with a queue at it.
+
+**Nothing is deleted.** A withdrawn weighing is voided with a mandatory reason
+(§12.1) — out of the day's totals, out of the default list, still in the record and
+returned by `includeVoided`. The supplier holds a slip for it and will ask.
+
+**A published month refuses everything** (BR-108), for entry and voiding alike. The
+screen reads `locked` from the day summary and does not render an entry grid at all,
+because a form that fails on submit is a worse way to say the same thing.
+
+**Totals are the server's.** The day summary is its own endpoint rather than a sum
+of the page on screen — a busy point is more than one page, and a console adding up
+what it happens to be holding would print a figure the month close disagrees with.
+
+**Not built yet:** the scale-file import (`source: 'scaleFile'` exists in the data
+and the fixture, but there is no upload path), and a supplier's own delivery history
+on the M2 detail page.
+
+---
+
+## M4 Rates & month close
+
+*The gate every other money module reads.* §13's cycle stage decides what M3 will
+accept and what a bill can be built from, so this screen's job is to make the
+month's state — and what is blocking it — impossible to misread.
+
+**The stage is state, not a calendar calculation.** This is the load-bearing
+decision of the module: publishing is irreversible, so a stage recomputed per
+request would revert the publish on the next call and M3 would keep accepting leaf
+into a closed month. The mock keeps a record per month for the same reason the API
+must.
+
+**The rate is two figures** — the auction rate and the extra the factory adds. The
+app shows the sum and the bill itemizes both, so collapsing them would lose a
+number the supplier is entitled to see. Entering it again before the publish is a
+**correction**, not a second rate (`PUT`), because the auction result gets mistyped
+and the alternative is closing the month on the wrong figure.
+
+**Exceptions are records, not a count** (api-contract.md §10.4). AC-04 requires the
+accountant to resolve each one, so each has an id, a type, a link to the record it
+is about, and a mandatory note on resolution — "who decided this was acceptable,
+and why" is what an auditor asks about a month that closed with exceptions on it.
+They are **derived from the data**: leaf with no bank details, leaf from an inactive
+supplier, an open change request that would change the bill, a weighing far outside
+the month's spread. A hand-written list would disagree with the registry.
+
+**The checklist states what is blocking it**, in words, next to the disabled
+control. "Publish (disabled)" with no reason is a support call, and a tooltip is a
+reason nobody reads. The steps only render while the month is open — a closed month
+owes the reader the rate it closed on and who closed it, not a re-litigation.
+
+**Publishing needs a second person.** `ratesAndMonthClose` is `W` for the
+accountant and `A` for the manager, and because `approve` implies `write` a manager
+*could* enter a rate and close the month on it — so the four-eyes rule (BR-501) is
+checked on the rate's `enteredById`. The console says so before the attempt; the
+server refuses regardless.
+
+**Four refusals guard the publish:** `rate-missing`, `exceptions-open` (AC-04),
+`already-published`, and `four-eyes-violation`. A month the factory has no records
+for is a `404`, never an empty month rendered from a URL.
+
+**Not built yet:** bill generation. The stage enum has `billsGenerated` between
+`rateEntered` and `published`, and nothing occupies it — publishing currently goes
+straight from the rate and a clear exception list. That is M5, and §21.8 (may a
+published bill be corrected?) shapes it.
+
+---
+
 ## M9 Change requests
 
 *Payout and savings-rate approvals.* The module that closes the loop.
@@ -174,11 +277,9 @@ Ordered by what I would build next.
 | --- | --- |
 | **M7 Credit queues** | Nothing external. AC-05 needs eligibility byte-for-byte identical to the app's endpoint, including the working — `packages/domain/src/leafCredit.ts` is already the shared implementation. §21.6 (manager threshold) shapes it but `canApproveAmount(…, null)` already handles "not configured" |
 | **M10 Inquiries** | Nothing external. §21.18 asks whether Resolved/Closed is the right pair — build with the two and add states as data |
-| **M3 Leaf collection** | Nothing external, but it is **a data-entry product, not a screen**: keyboard-only entry (tab code → kg, Enter commits), supplier-code autocomplete tolerating the division suffix, running totals that catch a mistyped kilo, undo, and a scale-file import. Needs the batch endpoint in [api-contract.md](./api-contract.md) §9 |
 | **M11 / M12 Content** | Nothing external. si/en/ta tabs from `config.localization.contentLanguages`, with **missing translations visible to the editor** (AC-08) |
 | **M14 Configuration** | Nothing external. It is the other end of `GET /config`, and AC-12 says a new factory must go live through it without a code deploy |
-| **M4 Rates & month close** | **Blocked**: §21.8 (may a published bill be corrected?) decides whether `bills` is immutable. Also irreversible — needs a checklist that will not let the accountant past an unresolved exception, and manager approval (BR-501) |
-| **M5 Bills** | Depends on M4. AC-03 requires field-for-field identity with the app's Home screen and the PDF |
+| **M5 Bills** | M4 is built, so the rate and the close exist. Still open: §21.8 — may a published bill be corrected? That decides whether `bills` is immutable. AC-03 requires field-for-field identity with the app's Home screen and the PDF |
 | **M6 Payouts** | **Blocked**: §21.17 — what format the factory's bank accepts (SLIPS / CEFTS / bank-specific CSV), and whether cheques print on pre-printed stock |
 | **M8 Savings** | **Blocked**: §21.9 — may a supplier withdraw, with what notice, is interest paid |
 | **M13 Notifications** | **Blocked**: §21.24 — does the office compose every send by hand, or does bill-published fire automatically off the publish step, and who may send free-text |

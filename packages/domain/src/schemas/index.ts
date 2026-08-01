@@ -17,6 +17,7 @@ import {
   REQUEST_STATUSES,
 } from '../constants';
 import { isExactKg } from '../leafCollection';
+import { round2 } from '../money';
 
 /** Reusable: a non-empty, trimmed string carrying a key for its own error. */
 const requiredString = (key: string, max = 200) =>
@@ -199,3 +200,53 @@ export const pageQuerySchema = z.object({
 export const monthKeySchema = z
   .string()
   .refine((v) => /^\d{4}-(0[1-9]|1[0-2])$/.test(v), 'validation.monthKey');
+
+/* ─────────────────────── M4 Rates & month close ─────────────────────── */
+
+/**
+ * The auction result, as the office types it.
+ *
+ * `positive` on the rate and `nonnegative` on the extra, deliberately different:
+ * a month with no auction rate is a month with no rate *entered*, which is a
+ * different state from zero — while an extra of zero is a real answer the factory
+ * gives most months. The precision guard is `round2`, because a rate is money and
+ * money is two places (§16).
+ */
+export const monthlyRateSchema = z.object({
+  ratePerKg: z
+    .number()
+    .positive('validation.ratePositive')
+    .max(10_000, 'validation.rateTooLarge')
+    .refine((value) => round2(value) === value, 'validation.moneyScale'),
+  extraRatePerKg: z
+    .number()
+    .nonnegative('validation.rateNonNegative')
+    .max(10_000, 'validation.rateTooLarge')
+    .refine((value) => round2(value) === value, 'validation.moneyScale'),
+});
+
+export type MonthlyRateInput = z.infer<typeof monthlyRateSchema>;
+
+/**
+ * Resolving an exception takes a note, and the note is the whole point.
+ *
+ * A month that closed with eleven exceptions marked resolved and no reasons is a
+ * month nobody can defend six months later — which is exactly when it is asked
+ * about (AC-04).
+ */
+export const resolveExceptionSchema = z.object({
+  note: requiredString('validation.noteRequired', 1000).min(10, 'validation.noteTooShort'),
+});
+
+/**
+ * Publishing is irreversible, so the confirmation carries the month key the
+ * accountant is looking at.
+ *
+ * Not ceremony: the screen can be left open on July while somebody else publishes
+ * June, and a publish that took "the current month" from the server would close
+ * the wrong one. The key travels from the screen and the server must match it.
+ */
+export const publishMonthSchema = z.object({
+  monthKey: monthKeySchema,
+  note: z.string().max(1000).optional(),
+});

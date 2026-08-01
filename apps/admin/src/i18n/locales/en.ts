@@ -104,9 +104,12 @@ export const en = {
   'auth.forgotPasswordHint':
     'Ask your factory administrator to reset it. The console cannot email a reset link.',
   'auth.supplierWrongPlace': 'Suppliers sign in on the mobile app, not here.',
-  'auth.demoCredentials': 'Mock sign-in',
-  'auth.demoClerk': 'Clerk (no two-factor)',
-  'auth.demoManager': 'Manager (two-factor: {{code}})',
+  'auth.demoCredentials': 'Mock sign-in — the role decides what you can do',
+  'auth.demoMfa': '(two-factor: {{code}})',
+  'auth.demoRole.clerk': 'Clerk — change requests, suppliers',
+  'auth.demoRole.weigher': 'Weigher — records leaf',
+  'auth.demoRole.accountant': 'Accountant — rate and month close',
+  'auth.demoRole.manager': 'Manager — publishes the month',
   'auth.sessionExpired': 'Your session ended. Please sign in again.',
 
   /* ────────────────────────────── dashboard ────────────────────────────── */
@@ -302,7 +305,11 @@ export const en = {
   'audit.action.supplierSuspend': 'Suspended a supplier',
   'audit.action.supplierReactivate': 'Reactivated a supplier',
   'audit.action.supplierReveal': 'Viewed a full account number',
+  'audit.action.deliveryBatchCommit': 'Recorded a weighing session',
+  'audit.action.deliveryVoid': 'Voided a delivery',
   'audit.action.rateSet': 'Entered a monthly rate',
+  'audit.action.monthExceptionResolve': 'Resolved a month-close exception',
+  'audit.action.monthPublish': 'Published a month',
 
   /* ───────────────────────────── validation ───────────────────────────── */
   'validation.required': 'This is required',
@@ -314,6 +321,10 @@ export const en = {
   'validation.phone': 'Enter a valid Sri Lankan number',
   'validation.supplierCode': 'Enter a code like 5708 or 5708 (MAKADURA)',
   'validation.monthKey': 'Enter a month like 2026-07',
+  'validation.ratePositive': 'A rate must be more than 0',
+  'validation.rateNonNegative': 'This cannot be negative',
+  'validation.rateTooLarge': 'That rate is larger than the factory can record',
+  'validation.moneyScale': 'Money takes at most two decimals',
   'validation.mfaCode': 'Enter the six-digit code',
   'validation.noteRequired': 'A note is required',
   'validation.noteTooShort': 'Write at least 10 characters — the supplier reads this',
@@ -329,7 +340,7 @@ export const en = {
   'deliveries.pickPointToEnter':
     'Pick a collection point to start recording — a delivery is filed against the point where it was weighed.',
   'deliveries.monthLocked':
-    '{{month}} is published, so its leaf can no longer be changed. Pick a day in the current month to record or void.',
+    '{{month}} is published, so nothing more can be recorded or voided in it. Bills and payouts are built from the leaf as it stands.',
   'deliveries.empty': 'Nothing weighed yet',
   'deliveries.emptyHint': 'Rows appear here as soon as a weighing session is committed.',
 
@@ -385,6 +396,91 @@ export const en = {
   'deliveries.voided': 'Voided {{kgs}}',
   'deliveries.voidFailed': 'The delivery was not voided',
 
+  /* ─────────────────── M4 Rates & month close ─────────────────── */
+  'months.title': 'Rates & month close',
+  'months.subtitle': 'The auction rate, and what is stopping the month closing',
+  'months.pickMonth': 'Month',
+  'months.totalKgs': 'Leaf this month',
+  'months.suppliers': 'Suppliers',
+  'months.perKg': 'per kg',
+
+  'months.rateTitle': 'Auction rate',
+  'months.rateDescription': 'What the factory pays per kilo for this month.',
+  'months.ratePerKg': 'Rate per kg',
+  'months.ratePerKgHint': 'From the auction result.',
+  'months.extraRatePerKg': 'Extra per kg',
+  'months.extraHint': 'What the factory adds on top. 0 is a real answer.',
+  'months.totalPerKg': 'Total per kg',
+  'months.saveRate': 'Save the rate',
+  'months.updateRate': 'Correct the rate',
+  'months.enteredBy': 'Entered by',
+  'months.noRateYet':
+    'No rate entered for {{month}} yet, so every rate-derived figure in the app is blank rather than zero.',
+  'months.rateLocked':
+    'This month is published, so the rate is part of the record and cannot be changed.',
+  'months.rateReadOnly': 'Only the accountant enters the rate.',
+  'months.rateSaved': 'Rate saved for {{month}}',
+  'months.rateFailed': 'The rate was not saved',
+
+  'months.error.ratePositive': 'A rate must be more than 0.',
+  'months.error.extraNonNegative': 'The extra cannot be negative.',
+  'months.error.moneyScale': 'Money takes at most two decimals.',
+
+  'months.closeTitle': 'Month close',
+  'months.closeDescription': 'Every step has to pass before the month can be published.',
+  'months.closedDescription': 'This month is closed. Its figures are the record now.',
+  'months.step.leaf': 'Leaf recorded',
+  'months.step.leafDetail': '{{kgs}} from {{suppliers}} suppliers, {{deliveries}} deliveries.',
+  'months.step.rate': 'Auction rate entered',
+  'months.step.rateDetail': '{{total}} per kg, entered by {{name}}.',
+  'months.step.rateMissing': 'No rate yet — bills cannot be built without one.',
+  'months.step.exceptions': 'Exceptions resolved',
+  'months.step.exceptionsClear': 'All {{total}} resolved.',
+  'months.step.exceptionsOpen': '{{count}} still open.',
+  'months.stepDone': '— done',
+  'months.stepBlocked': '— not done yet',
+  'months.publish': 'Publish {{month}}',
+  'months.blockedHint': 'Finish the steps above first.',
+  'months.irreversibleHint':
+    'Publishing cannot be undone: the leaf locks, and bills and payouts are built from these figures.',
+  'months.fourEyesHint':
+    'You entered this month’s rate, so somebody else has to publish it (BR-501).',
+  'months.publishNeedsManager': 'Publishing a month is a manager’s decision.',
+  'months.alreadyPublished': 'Published by {{name}} on {{date}}.',
+  'months.confirmTitle': 'Publish {{month}}?',
+  'months.confirmDescription':
+    'This cannot be undone. The month’s leaf is locked against further entry, and every bill and payout is built from the figures below.',
+  'months.confirmPublish': 'Publish the month',
+  'months.publishNoteHint': 'Optional. Anything the office should know about this close.',
+  'months.published': 'Published {{month}}',
+  'months.publishFailed': 'The month was not published',
+
+  'months.exceptionsTitle': 'Exceptions',
+  'months.exceptionsDescription': 'Each one has to be resolved, or explained, before the close.',
+  'months.filterExceptions': 'Which exceptions',
+  'months.filter.open': 'Open ({{count}})',
+  'months.filter.resolved': 'Resolved',
+  'months.filter.all': 'All',
+  'months.column.type': 'Exception',
+  'months.column.supplier': 'Supplier',
+  'months.column.detail': 'Detail',
+  'months.column.raised': 'Raised',
+  'months.exception.missingBankDetails': 'No bank details',
+  'months.exception.inactiveSupplierWithLeaf': 'Leaf from an inactive supplier',
+  'months.exception.pendingChangeRequest': 'Change request still open',
+  'months.exception.outlierDelivery': 'Unusual weighing',
+  'months.openRecord': 'Open the record',
+  'months.resolve': 'Resolve',
+  'months.resolveTitle': 'Resolve this exception',
+  'months.resolveConfirm': 'Mark it resolved',
+  'months.resolveNoteHint':
+    'At least {{min}} characters. This is what an auditor reads when they ask why the month closed with this on it.',
+  'months.resolvedByNote': 'Resolved by {{name}}: {{note}}',
+  'months.exceptionResolved': 'Exception resolved',
+  'months.exceptionResolveFailed': 'The exception was not resolved',
+  'months.noOpenExceptions': 'Nothing is blocking the close',
+  'months.noOpenExceptionsHint': 'Every exception raised for this month has been resolved.',
+
   /* ─────────────────────────────── errors ─────────────────────────────── */
   'error.title': 'Something went wrong',
   'error.network': 'No connection to the factory server. Check the network and try again.',
@@ -397,6 +493,14 @@ export const en = {
   'error.noteRequired': 'A note is required before this can be recorded.',
   'error.fourEyesViolation': 'You raised this record, so you cannot approve it.',
   'error.alreadyDecided': 'Someone else has already decided this.',
+  'error.alreadyPublished': 'That month was already published.',
+  'error.exceptionsOpen':
+    'The month still has open exceptions. Resolve each one before publishing.',
+  'error.rateMissing': 'The auction rate has not been entered for this month yet.',
+  'error.invalidRate': 'That is not a rate the factory can record.',
+  'error.alreadyResolved': 'Someone else has already resolved this.',
+  'error.monthMismatch':
+    'The screen is showing a different month from the one being published. Reload and check.',
   'error.monthLocked': 'That month is published, so its figures can no longer be changed.',
   'error.alreadyVoided': 'This delivery was already voided.',
   'error.invalidBatch':

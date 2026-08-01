@@ -17,7 +17,7 @@ From the workspace root:
 | `npm run preview`    | Serves the built bundle                                                                   |
 | `npm run typecheck`  | `tsc --build` across all three projects                                                   |
 | `npm run lint`       | ESLint, including the white-label and layering rules                                      |
-| `npm run test`       | Vitest — 72 tests                                                                         |
+| `npm run test`       | Vitest — 91 tests                                                                         |
 | `npm run e2e`        | Playwright — 4 specs against the dev server. Needs `npx playwright install chromium` once |
 | `npm run e2e:demo`   | The same specs against the built demo bundle on a static server                           |
 | `npm run format`     | Prettier                                                                                  |
@@ -140,15 +140,17 @@ old binaries are in the field, and feature flags are the release valve.
 
 Layered so each layer tests what only it can.
 
-### Vitest — 72 tests
+### Vitest — 91 tests
 
-| File                           | Covers                                                                   |
-| ------------------------------ | ------------------------------------------------------------------------ |
-| `brand.test.ts` (22)           | Tenant resolution, CSS-variable emission, dp→px, served-value validation |
-| `changeRequests.test.tsx` (17) | M9 and M2 end to end against the mock API, through the real transport    |
-| `rbac.test.ts` (15)            | The §12.1 matrix, grant merging, four-eyes, the approval threshold       |
-| `money.test.ts` (13)           | `floor2`/`round2`, the credit basis, BR-107, account masking             |
-| `listSorting.test.ts` (5)      | Server-side sort and pagination parameters                               |
+| File                           | Covers                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------- |
+| `brand.test.ts` (22)           | Tenant resolution, CSS-variable emission, dp→px, served-value validation  |
+| `changeRequests.test.tsx` (17) | M9 and M2 end to end against the mock API, through the real transport     |
+| `rbac.test.ts` (15)            | The §12.1 matrix, grant merging, four-eyes, the approval threshold        |
+| `money.test.ts` (13)           | `floor2`/`round2`, the credit basis, BR-107, account masking              |
+| `monthClose.test.ts` (10)      | M4: the rate, exception resolution, and all five publish refusals         |
+| `deliveries.test.ts` (9)       | M3: batch commit and its idempotent replay, per-row rejections, the void, `month-locked`, and the day totals the dashboard reads |
+| `listSorting.test.ts` (5)      | Server-side sort and pagination parameters                                |
 
 `rbac.test.ts` and `money.test.ts` are the highest-value files. The matrix is what
 a factory will ask to change, and status.md §10 item 10 records that **no tests

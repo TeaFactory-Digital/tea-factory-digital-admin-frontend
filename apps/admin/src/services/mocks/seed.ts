@@ -27,12 +27,17 @@ import type {
   DashboardSummary,
   Delivery,
   MonthCycleStage,
+  MonthException,
+  MonthExceptionType,
+  MonthlyRate,
   RuntimeConfig,
   SupplierListItem,
 } from '@tfd/domain';
 import {
+  OUTLIER_KG_FLOOR_KG,
   colomboDayOf,
   grantsFromRoles,
+  isOutlierKg,
   maskAccountNumber,
   monthKeyOf,
   roundKg,
@@ -141,6 +146,20 @@ export const mockUsers: MockUser[] = [
     status: 'active',
     password: MOCK_PASSWORD,
     grants: grantsFromRoles(['manager']),
+  },
+  {
+    id: 'usr-accountant-1',
+    name: 'Dilani Fonseka',
+    email: 'accountant@galabodatea.lk',
+    factoryId: 'galaboda',
+    roles: ['accountant'],
+    // MFA is mandatory for manager and above; the accountant sits below that line
+    // and works from a desk in the office, not a shared shed terminal.
+    mfaEnrolled: false,
+    lastLoginAt: hoursAgo(6),
+    status: 'active',
+    password: MOCK_PASSWORD,
+    grants: grantsFromRoles(['accountant']),
   },
   {
     id: 'usr-weigher-1',
@@ -399,7 +418,10 @@ export const mockAudit: AuditEntry[] = [
     at: daysAgo(2),
     actorId: 'usr-manager-1',
     actorName: 'Ruwan Jayasuriya',
-    action: 'rate.set',
+    // The same verb M4 writes today, so the log does not carry two names for one
+    // act — a fixture with its own vocabulary is a fixture that teaches the wrong
+    // thing to whoever reads the audit screen first.
+    action: 'month.rate.enter',
     entity: 'monthlyRate',
     entityId: '2026-06',
     before: { ratePerKg: null },
@@ -543,6 +565,200 @@ for (const supplier of supplyingSuppliers) {
   if (latest) supplier.lastDeliveryAt = latest;
 }
 
+/* ────────────────────── M4 rates & month close ────────────────────── */
+
+/**
+ * The month record, as the mock holds it.
+ *
+ * The **stage is state, not a calendar calculation**. It has to be: publishing is
+ * the one irreversible act in M4, and a stage recomputed from the date would mean
+ * a month that was just published reverts on the next request, M3 keeps accepting
+ * leaf into it, and the console's most-asked question has two answers.
+ */
+export interface MonthRecord {
+  monthKey: string;
+  stage: MonthCycleStage;
+  rate: MonthlyRate | null;
+  publishedAt: string | null;
+  publishedByName: string | null;
+  publishedById: string | null;
+}
+
+/** How many months of history the fixture carries, current one included. */
+const MONTHS_OF_HISTORY = 4;
+
+function monthKeyBack(months: number): string {
+  const date = new Date(Date.UTC(NOW.getUTCFullYear(), NOW.getUTCMonth() - months, 15));
+  return date.toISOString().slice(0, 7);
+}
+
+/**
+ * Closed months carry a rate and a publisher; the month in progress carries
+ * neither.
+ *
+ * The rates drift a little month to month rather than being one repeated figure —
+ * a bill screen showing the same LKR 122.50 for every month reads as a hardcoded
+ * placeholder, which is exactly what it would be.
+ */
+function makeMonths(): Record<string, MonthRecord> {
+  const out: Record<string, MonthRecord> = {};
+
+  for (let back = MONTHS_OF_HISTORY - 1; back >= 0; back -= 1) {
+    const monthKey = monthKeyBack(back);
+    const current = back === 0;
+
+    out[monthKey] = current
+      ? {
+          monthKey,
+          // `awaitingRate` is the honest default: the auction result is not in,
+          // which is exactly why every rate-derived figure in the app is blank
+          // rather than zero.
+          stage: 'awaitingRate',
+          rate: null,
+          publishedAt: null,
+          publishedByName: null,
+          publishedById: null,
+        }
+      : {
+          monthKey,
+          stage: 'published',
+          rate: {
+            monthKey,
+            ratePerKg: roundMoney(118 + back * 2.25),
+            extraRatePerKg: roundMoney(6 + back * 0.5),
+            enteredById: 'usr-accountant-1',
+            enteredByName: 'Dilani Fonseka',
+            enteredAt: daysAgo(back * 30 + 6),
+          },
+          publishedAt: daysAgo(back * 30 + 4),
+          publishedByName: 'Ruwan Jayasuriya',
+          publishedById: 'usr-manager-1',
+        };
+  }
+
+  return out;
+}
+
+/** Money rounds to two places (§16) — the same rule the rate schema enforces. */
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+export const mockMonths: Record<string, MonthRecord> = makeMonths();
+
+export const monthKeys = Object.keys(mockMonths).sort().reverse();
+
+/**
+ * The exceptions blocking the current month, **derived from the data** rather than
+ * invented beside it.
+ *
+ * That is the whole point of them: an exception list a developer wrote by hand
+ * would say "12 suppliers have no bank details" while the registry said something
+ * else, and the accountant would be reconciling the console against itself. Each
+ * row here is a query anyone can re-run.
+ */
+function makeMonthExceptions(): MonthException[] {
+  const monthKey = currentMonthKey;
+  const out: MonthException[] = [];
+  let sequence = 0;
+
+  const push = (
+    type: MonthExceptionType,
+    entity: MonthException['entity'],
+    entityId: string,
+    detail: string,
+    supplier?: { supplierCode: string; name: string },
+    resolved?: { byName: string; note: string },
+  ) => {
+    sequence += 1;
+    out.push({
+      id: `exc-${sequence}`,
+      monthKey,
+      type,
+      entity,
+      entityId,
+      supplierCode: supplier?.supplierCode ?? null,
+      supplierName: supplier?.name ?? null,
+      detail,
+      raisedAt: daysAgo(2),
+      resolvedAt: resolved ? daysAgo(1) : null,
+      resolvedByName: resolved?.byName ?? null,
+      resolutionNote: resolved?.note ?? null,
+    });
+  };
+
+  // 1. Leaf delivered, nowhere to pay it. The blocker AC-04 is written about.
+  const deliveringIds = new Set(
+    mockDeliveries.filter((row) => row.monthKey === monthKey && !row.voidedAt).map((row) => row.supplierId),
+  );
+  for (const supplier of mockSuppliers) {
+    if (!supplier.hasBankDetails && deliveringIds.has(supplier.id)) {
+      push(
+        'missingBankDetails',
+        'supplier',
+        supplier.id,
+        `${supplier.paymentMethod === 'cash' ? 'Paid in cash' : 'No account on file'} — cannot be included in a payout run.`,
+        supplier,
+      );
+    }
+  }
+
+  // 2. Leaf recorded against somebody who is not active any more.
+  for (const supplier of mockSuppliers) {
+    if (supplier.status !== 'active' && deliveringIds.has(supplier.id)) {
+      push(
+        'inactiveSupplierWithLeaf',
+        'supplier',
+        supplier.id,
+        `Status is ${supplier.status}, but leaf was weighed in this month.`,
+        supplier,
+      );
+    }
+  }
+
+  // 3. A pending change request whose outcome would change this month's bill —
+  //    a savings rate or a payment method decided after publishing is decided too
+  //    late.
+  for (const request of mockChangeRequests.filter((r) => r.status === 'pending').slice(0, 3)) {
+    push(
+      'pendingChangeRequest',
+      'changeRequest',
+      request.id,
+      `${request.type} requested ${request.currentSummary} → ${request.requestedSummary}.`,
+      { supplierCode: request.supplierCode, name: request.supplierName },
+    );
+  }
+
+  // 4. A weighing far outside its day's spread. Not a refusal at entry — the grid
+  //    asks and the clerk may confirm — so the month close asks once more, when
+  //    there is time to check the slip.
+  const month = mockDeliveries.filter((row) => row.monthKey === monthKey && !row.voidedAt);
+  const meanKgs = month.length === 0 ? 0 : summariseKgs(month).meanKgs;
+  for (const row of month) {
+    if (isOutlierKg(row.kgs, meanKgs) && row.kgs > OUTLIER_KG_FLOOR_KG) {
+      push(
+        'outlierDelivery',
+        'delivery',
+        row.id,
+        `${row.kgs} kg on ${row.date} — more than three times the month's average.`,
+        { supplierCode: row.supplierCode, name: row.supplierName },
+      );
+    }
+  }
+
+  // One already resolved, so the resolved filter and the "3 of 11 done" reading
+  // have something in the fixture rather than only after a click.
+  if (out[0]) {
+    out[0].resolvedAt = daysAgo(1);
+    out[0].resolvedByName = 'Dilani Fonseka';
+    out[0].resolutionNote = 'Bank details collected at the counter and entered on the record.';
+  }
+
+  return out;
+}
+
+export const mockMonthExceptions: MonthException[] = makeMonthExceptions();
+
 /**
  * A day's leaf, at one collection point or across all of them.
  *
@@ -554,6 +770,14 @@ export function summariseDay(
   deliveries: Delivery[],
   date: string,
   collectionPoint?: string | null,
+  /**
+   * The month's stage, passed in rather than derived here.
+   *
+   * It has to be the *live* one: once M4 publishes a month, every day in it locks
+   * (BR-108), and a summary that recomputed the stage from the calendar would keep
+   * offering an entry grid the server has started refusing.
+   */
+  stage?: MonthCycleStage,
 ): CollectionDaySummary {
   const rows = deliveries.filter(
     (row) =>
@@ -564,6 +788,7 @@ export function summariseDay(
   );
   const totals = summariseKgs(rows.map((row) => ({ supplierId: row.supplierId, kgs: row.kgs })));
   const month = monthKeyOf(date);
+  const monthStage = stage ?? monthStageOf(month);
 
   return {
     date,
@@ -572,8 +797,8 @@ export function summariseDay(
     totalKgs: totals.totalKgs,
     supplierCount: totals.supplierCount,
     deliveryCount: totals.rowCount,
-    monthStage: monthStageOf(month),
-    locked: isMonthLocked(month),
+    monthStage,
+    locked: monthStage === 'published',
   };
 }
 

@@ -125,11 +125,23 @@ copy interpolates.
 | `note-required` | 422 | A decision, suspension or reveal arrived without a reason (AC-06) |
 | `stale-eligibility` | 409 | Credit eligibility moved since the queue rendered (BR-310). **Refuse, do not warn** |
 | `supplier-code-taken` | 409 | The code exists **for this factory** (§16.2) |
-| `month-locked` | 409 | The month is published and immutable (BR-108) |
-| `exceptions-unresolved` | 409 | Publish attempted with open M4 exceptions (AC-04) |
+| `month-locked` | 409 | The month is published, so nothing in it may change — a delivery, a void, a rate (BR-108). `details: { monthKey }` |
+| `batch-too-large` | 422 | More than 200 rows in one weighing session (§9.3) |
+| `already-voided` | 409 | The delivery has already been withdrawn (§9.4) |
+| `invalid-rate` | 422 | A rate that is not money: negative, zero or more than two decimals (§10.3) |
+| `rate-missing` | 409 | Publish attempted before the auction rate was entered (§10.5) |
+| `exceptions-open` | 409 | Publish attempted with unresolved M4 exceptions (AC-04). `details: { open }` |
+| `already-resolved` | 409 | Two accountants worked the same exception list (§10.4) |
+| `already-published` | 409 | The month was closed while this screen was open. `details: { publishedAt, publishedByName }` |
+| `month-mismatch` | 409 | The month in the body disagrees with the month in the path (§10.5) |
 
 Anything else the console renders as a generic failure, so an unknown code is
 safe but unhelpful.
+
+One code is the console's own and never comes from the server: `invalid-batch`,
+which the repository raises when a weighing session fails validation before it
+leaves the browser. It is spelled like a wire code deliberately, so the screen has
+one error path whether the refusal came from the grid or from the API.
 
 ---
 
@@ -348,6 +360,12 @@ with the phones. Serve this from indexes.
   `dashboard.alert.awaitingRate`. An unknown key renders as the key, so add
   console copy in the same PR as a new alert.
 - `intakeTrend` is **oldest first** — charts read left to right. 14 days.
+- **`today`, `intakeTrend` and `cycle` are the same facts §9 and §10 serve, and
+  must be derived from the same rows** — not from a nightly rollup or a cached
+  total. A clerk who commits a weighing session and then opens the dashboard is
+  looking at leaf they entered thirty seconds ago; a figure that lags is a figure
+  they will report as a bug, and then stop trusting. Voided rows count for
+  nothing here, exactly as in §9.2.
 - All dates are Colombo-local days (BR-104).
 
 ---
@@ -614,27 +632,329 @@ Newest first.
   through to the raw string, so a new action shows up in the log the day it ships.
   Current set: `changeRequest.approve`, `changeRequest.reject`,
   `supplier.update`, `supplier.suspend`, `supplier.reactivate`,
-  `supplier.bankDetails.reveal`, `rate.set`.
+  `supplier.bankDetails.reveal`, `delivery.batch.commit`, `delivery.void`,
+  `month.rate.enter`, `month.exception.resolve`, `month.publish`.
+- **A weighing session is one entry, not one per row** (§9.3). Two hundred lines
+  for one commit would bury every other action in the log on a busy day.
 - The log **outlives everything it describes** (§20.4). Do not cascade-delete it.
 
 ---
 
-## 9. Not yet called by the console
+## 9. M3 Leaf collection — `/admin/deliveries`
+
+Capability: `deliveries`. `read` for the day and its rows, **`write`** to record
+or void. Note who that is in §12.1: the **weigher and the accountant** hold `W`,
+and the clerk and manager hold `R` — the opposite way round from most of the
+console, because entry happens at the weighing shed and not at the office desk.
+
+A delivery is the **fact every money figure downstream is derived from**: a bill
+is a read model over these rows and a monthly rate (api.md §16). Three
+consequences run through everything below — rows are never deleted, kilos are
+never silently rounded, and a published month refuses all of it.
+
+### 9.1 The record
+
+```json
+{
+  "id": "del-1041",
+  "date": "2026-07-30",
+  "monthKey": "2026-07",
+  "supplierId": "sup-7", "supplierCode": "5049 (MAKADURA)", "supplierName": "Kamal Perera",
+  "collectionPoint": "MAKADURA",
+  "kgs": 42.50,
+  "source": "manual",
+  "batchId": "8f1c…",
+  "recordedById": "usr-weigher-1", "recordedByName": "Sunil Rathnayake",
+  "recordedAt": "2026-07-30T03:14:22.104Z",
+  "voidedAt": null, "voidedByName": null, "voidedReason": null
+}
+```
+
+- **`date` is a Colombo-local calendar day** (BR-104), not a timestamp truncated
+  in UTC. Leaf weighed at 23:30 local belongs to that day, and getting this wrong
+  moves a delivery into a month that may already be published.
+- **`collectionPoint` is where it was weighed**, which is the session's point —
+  not the supplier's registered one. A grower may deliver anywhere, and the
+  route-level reporting in §19.2 needs the place the scale was.
+- `kgs` is `NUMERIC(10,2)`. See §9.3 on why a third decimal is refused rather
+  than rounded.
+- `source` ∈ `manual | scaleFile`.
+
+### 9.2 `GET /admin/deliveries` · `GET /admin/deliveries/summary`
+
+List query: `date`, `from`, `to`, `collectionPoint`, `supplierId`,
+`includeVoided`, plus the §1.4 paging parameters. **Newest first** by
+`recordedAt` — a clerk watches the row they just entered arrive at the top.
+
+**A voided row is omitted unless `includeVoided=true`.** It is evidence, not
+data: leaving it in the default list would make a day's rows disagree with the
+day's total.
+
+The summary is its own endpoint, and the console never adds up the page it
+happens to be holding:
+
+```json
+GET /admin/deliveries/summary?date=2026-07-30&collectionPoint=MAKADURA
+200 {
+  "date": "2026-07-30",
+  "collectionPoint": "MAKADURA",
+  "monthKey": "2026-07",
+  "totalKgs": 3184.75,
+  "supplierCount": 47,
+  "deliveryCount": 52,
+  "monthStage": "awaitingRate",
+  "locked": false
+}
+```
+
+`collectionPoint` is `null` when the summary spans every point. `supplierCount`
+and `deliveryCount` are both required and are genuinely different figures — a
+grower who brings a second load in the afternoon is one supplier and two
+deliveries.
+
+**`locked` is what the screen reads before it offers an entry grid at all.** A
+form that fails on submit is a worse way to say "this month is closed".
+
+### 9.3 `POST /admin/deliveries` — a whole session in one call
+
+```json
+→ { "date": "2026-07-30", "collectionPoint": "MAKADURA",
+    "batchId": "8f1c…",
+    "rows": [ { "supplierId": "sup-7", "kgs": 42.5 },
+              { "supplierId": "sup-9", "kgs": 17.25 } ] }
+```
+
+**One request for the whole grid.** A row-per-request design turns a 200-row
+weighing session into 200 round trips on a connection shared with the office
+telephones, which is how a data-entry product loses to a paper ledger. At most
+`200` rows — more is `422 batch-too-large`, refused before anything is recorded.
+
+**`batchId` is the idempotency scope.** The console generates it when the session
+starts and sends it as the `Idempotency-Key` header as well. Honour it: a clerk
+whose connection dropped mid-commit clicks again, and the original response must
+be replayed — *including its rejections*, because a second, different answer is a
+second thing to reconcile. This is the single worst failure available in M3;
+without it a dropped response records sixty deliveries twice.
+
+Two refusals apply to the batch as a whole, because there is nothing to partially
+accept:
+
+```
+409 month-locked      the month is published (BR-108)      + details.monthKey
+422 batch-too-large   more than 200 rows                   + details.limit, submitted
+```
+
+**Everything else is a per-row rejection inside a `200`:**
+
+```json
+200 {
+  "accepted": [ { "…": "the full Delivery record, one per recorded row" } ],
+  "rejected": [ { "index": 1, "supplierId": "sup-9",
+                  "code": "supplier-inactive",
+                  "message": "5063 (DENIYAYA) is suspended." } ],
+  "day": { "…": "the CollectionDaySummary from §9.2, after the commit" }
+}
+```
+
+| Row code | When |
+| --- | --- |
+| `supplier-unknown` | No supplier with that id **at this factory** |
+| `supplier-inactive` | The supplier is suspended or closed. Not a courtesy check: leaf against a closed account becomes a bill nobody can be paid for |
+| `invalid-kg` | Zero, negative, above `MAX_DELIVERY_KG` (5000), or more than two decimals |
+
+**Partial acceptance is deliberate.** All-or-nothing would send fifty-nine good
+rows back to be re-typed at a counter with a queue at it, because one code was
+wrong. `index` is the row's position in the submitted array — it is the only
+thing the grid can map back to a line the clerk is looking at.
+
+A third decimal is **refused, not rounded**: a weight the database stores as
+something else is a figure that will not match the slip handed over at the
+counter, and nobody was told it changed.
+
+`day` comes back with the result so the running totals above the grid are the
+server's arithmetic rather than the console's.
+
+**One audit entry per batch**, not per row: `delivery.batch.commit` on entity
+`deliveryBatch`, with `after: { date, collectionPoint, rows, totalKgs }`. Per-row
+entries would put 200 lines in the log for one session and bury everything else;
+the rows themselves each carry `recordedById`, so nothing is lost.
+
+### 9.4 `POST /admin/deliveries/{id}/void`
+
+```json
+→ { "reason": "Weighed twice — the same sack is on the next line." }
+200 → the updated Delivery, with voidedAt / voidedByName / voidedReason set
+```
+
+**Void, never delete** (§12.1). The row survives, drops out of every total and out
+of the default list, and stays reachable through `includeVoided`. The reason is
+mandatory (≥10 characters): the supplier is holding a weighing slip for leaf the
+factory now says it did not receive, and they will ask.
+
+```
+409 month-locked   the delivery's month is published (BR-108)
+409 already-voided the row was already withdrawn
+422 note-required  reason missing or under 10 characters
+```
+
+Order matters — check the month before the reason, so a clerk is told the month
+is closed rather than being asked for a reason that cannot help.
+
+---
+
+## 10. M4 Rates & month close — `/admin/months`
+
+Capability: `ratesAndMonthClose`. **`write`** to enter a rate and resolve
+exceptions (the accountant), **`approve`** to publish (the manager). That split is
+BR-501 made structural: the person who types the auction rate is not the person
+who closes the month on it.
+
+**The stage is stored state, not a calendar calculation.** This is the
+load-bearing decision of the module. Publishing is irreversible, so a stage
+recomputed per request would revert on the next call — and M3 would go on
+accepting leaf into a closed month.
+
+### 10.1 `GET /admin/months` → `Paged<MonthSummary>`, newest first
+
+### 10.2 `GET /admin/months/{monthKey}` → `MonthSummary`
+
+```json
+200 {
+  "monthKey": "2026-07",
+  "stage": "rateEntered",
+  "rate": { "monthKey": "2026-07", "ratePerKg": 122.50, "extraRatePerKg": 8.00,
+            "enteredById": "usr-accountant-1", "enteredByName": "Dilani Fonseka",
+            "enteredAt": "2026-08-02T04:10:00.000Z" },
+  "totalKgs": 96421.25, "supplierCount": 71, "deliveryCount": 1284,
+  "openExceptions": 3, "totalExceptions": 11,
+  "ratePerKg": 122.50, "extraRatePerKg": 8.00,
+  "publishedAt": null, "publishedByName": null,
+  "open": true
+}
+```
+
+- **Totals are derived from the delivery rows at read time, never stored.** The
+  leaf is the fact; a cached total is a second answer that goes stale the moment
+  a row is voided.
+- **A month the factory has no records for is `404`, not an empty month.** A
+  typo'd or stale `?month=` must not render a plausible published month with zero
+  leaf in it.
+- `stage` ∈ the §13 cycle. `open` is `false` once published — the same flag M3
+  reads as `locked`.
+
+### 10.3 `PUT /admin/months/{monthKey}/rate`
+
+```json
+→ { "ratePerKg": 122.50, "extraRatePerKg": 8.00 }
+200 → the updated MonthSummary
+```
+
+**`PUT`, not `POST`.** Entering the rate again before publishing is a
+*correction*, not a second rate — the auction result does get mistyped, and the
+alternative is closing the month on the wrong figure. Entering it moves the stage
+from `awaitingRate` to `rateEntered`; the server derives the stage from what has
+happened and never takes it from the client.
+
+**Two figures, not one.** The auction rate and the extra the factory adds. The app
+shows the sum and the bill itemizes both, so collapsing them loses a number the
+supplier is entitled to see. `extraRatePerKg: 0` is a real answer, not "unset".
+
+```
+422 invalid-rate   not money: negative, zero, or more than two decimals
+409 month-locked   the month is published (BR-108)
+404                no records for that month
+```
+
+Audit: `month.rate.enter`, with the previous rate in `before` — a corrected rate
+is exactly the thing an auditor asks about by name six months later.
+
+### 10.4 Exceptions — `GET /admin/months/{monthKey}/exceptions`
+
+**First-class records, not a count.** AC-04 requires the accountant to resolve
+each one, and a number on a dashboard cannot be worked through.
+
+```json
+200 { "items": [{
+  "id": "exc-14",
+  "monthKey": "2026-07",
+  "type": "missingBankDetails",
+  "entity": "supplier", "entityId": "sup-9",
+  "supplierCode": "5063 (DENIYAYA)", "supplierName": "Nimal Silva",
+  "detail": "412.50 kg delivered, no bank details on file",
+  "raisedAt": "2026-08-01T02:00:00.000Z",
+  "resolvedAt": null, "resolvedByName": null, "resolutionNote": null
+}], "page": 0, "pageSize": 50, "total": 11, "nextPage": null }
+```
+
+- `type` ∈ `missingBankDetails | inactiveSupplierWithLeaf | pendingChangeRequest |
+  outlierDelivery`. **Derive them from the data** rather than storing a queue: an
+  exception that was fixed at source must stop appearing without anyone
+  dismissing it.
+- Query `resolved` (`true` | `false`); omit for both. Order **unresolved first,
+  then oldest first** — it is a work queue, and it is worked front to back.
+- `detail` is English-only and a fallback (§1.1). The console renders its copy
+  from `type`; `detail` carries the specifics, like the kilos.
+
+`POST /admin/months/{monthKey}/exceptions/{id}/resolve` takes `{ note }`,
+mandatory and ≥10 characters:
+
+```
+422 note-required     no note, or under 10 characters
+409 already-resolved  two accountants on one list
+409 month-locked      the month is published
+```
+
+Resolved, never deleted — "who decided this was acceptable, and why" is the
+question asked about a month that closed with exceptions on it.
+
+### 10.5 `POST /admin/months/{monthKey}/publish` — irreversible
+
+```json
+→ { "monthKey": "2026-07", "note": "Checked against the auction sheet." }
+200 → the updated MonthSummary, stage `published`
+```
+
+The refusals **are** the module. In order:
+
+```
+409 month-mismatch       body.monthKey ≠ the path         + details.expected, received
+409 already-published    someone closed it first          + details.publishedAt, publishedByName
+409 rate-missing         no auction rate entered
+409 exceptions-open      unresolved exceptions remain     + details.open   (AC-04)
+409 four-eyes-violation  the publisher entered the rate   + details.enteredByName  (BR-501)
+```
+
+`month-mismatch` exists because the close screen can sit open on July while a
+colleague publishes June; publishing what the accountant is *looking at* is the
+only safe reading of the button. And the four-eyes check is reachable precisely
+because `approve` implies `write` — a manager *could* enter a rate and then close
+the month on it, and this is what stops them.
+
+**Publishing locks the month everywhere**: from that moment M3 refuses entries and
+voids in it with `month-locked`, and the rate can no longer be corrected. If the
+factory answers §21.8 with "a published bill may be corrected", that becomes a new
+endpoint and an audited reversal — never a relaxation of this lock.
+
+Audit: `month.publish`, with the rate and the note in `after`.
+
+---
+
+## 11. Not yet called by the console
 
 These are in §17.6's scope and the console has no code for them yet, so the
-shapes are open. Two requests from the front end when you get there:
+shapes are open. Requests from the front end when you get there:
 
 | Area | Ask |
 | --- | --- |
-| **M3 Deliveries** | `POST /admin/deliveries` must accept a **batch** of rows in one call, not one row per request. The grid commits a whole weighing session, and a row-per-request design makes a 200-row entry session 200 round trips on office wifi |
-| **M4 Month close** | `GET /admin/months/{monthKey}/exceptions` as a first-class list, not a count. AC-04 requires the accountant to resolve each one, which means each needs an id, a type and a link to the record |
+| **M3 scale file** | The upload half of M3 is not built, because no factory has yet said what its weighbridge exports. Whatever the format, it should land as the **same batch** in §9.3 with `source: "scaleFile"` — a second write path for the same fact is a second set of refusals to keep in step |
+| **M5 Bills** | A bill is a read model over §9's delivery rows and §10's rate (api.md §16), not a table to be written. Field-for-field identity with the app's Home screen and the PDF is AC-03 |
 | **M7 Credit** | Eligibility in a queue row must be **byte-for-byte identical** to `GET /advances\|loans\|manure/eligibility` for that supplier (AC-05), including the working — months of history, rate × kilos, the ceiling. Re-check at the moment of approval and answer `stale-eligibility` (BR-310). `packages/domain/src/leafCredit.ts` is the shared implementation; import it rather than re-deriving |
 | **M13 Notifications** | Sends must carry a recognized `data.category` — the app drops anything else rather than opening an arbitrary screen — and must honour each device's opted-in categories, not only its topic subscriptions |
 | **M16 Reports** | Run off a read replica or nightly snapshot (§19.5). A month-close query must not compete with a clerk entering deliveries |
 
 ---
 
-## 10. A checklist for the first PR
+## 12. A checklist for the first PR
 
 Ordered so each step is independently useful to the console.
 
@@ -649,6 +969,11 @@ Ordered so each step is independently useful to the console.
       with all three refusals
 - [ ] Audit rows written by every mutation above, and `GET /admin/audit`
 - [ ] `GET /admin/dashboard`
+- [ ] `POST /admin/deliveries` — the **batch**, keyed on `batchId` for
+      idempotency, with per-row rejections inside the `200` — plus the day
+      summary and the void
+- [ ] `/admin/months/*`: the summary with totals derived from the delivery rows,
+      the rate `PUT`, the exception list, and `publish` with all five refusals
 
 Point `VITE_API_BASE_URL` at it and set `VITE_USE_MOCK=0`; the console needs no
 other change. If a shape differs from this document, the seam that absorbs it is

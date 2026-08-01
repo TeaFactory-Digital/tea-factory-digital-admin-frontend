@@ -215,20 +215,34 @@ function MfaForm() {
  * fixtures. It cannot render in a real production build: `env.useMock` is false
  * there and `assertEnvUsable()` refuses to boot if it is not.
  */
+/**
+ * Every mock identity, not a chosen two.
+ *
+ * Which account you sign in as decides what the console will let you do, and
+ * §12.1 spreads that across four roles: the **weigher** records leaf, the
+ * **accountant** enters the rate, the **manager** publishes the month, and the
+ * **clerk** works the change-request queue. Listing only two left the two roles
+ * M3 and M4 need undiscoverable, and a reviewer concluding "leaf entry is broken"
+ * when they were signed in as a clerk is the matrix working and the screen
+ * failing to say so.
+ *
+ * Derived from `mockUsers` rather than written out, so an identity added to the
+ * fixture cannot go missing here.
+ */
 function MockCredentials() {
   const { t } = useTranslation();
-  const [clerk, manager] = mockUsers;
 
   return (
     <Card>
       <CardBody className="flex flex-col gap-xs">
         <p className="text-label text-text-primary">{t('auth.demoCredentials')}</p>
-        <p className="numeric text-caption text-text-secondary">
-          {t('auth.demoClerk')}: {clerk?.email} / {MOCK_PASSWORD}
-        </p>
-        <p className="numeric text-caption text-text-secondary">
-          {t('auth.demoManager', { code: MOCK_MFA_CODE })}: {manager?.email} / {MOCK_PASSWORD}
-        </p>
+        {mockUsers.map((user) => (
+          <p key={user.id} className="numeric text-caption text-text-secondary">
+            {t(`auth.demoRole.${user.roles[0]}`)}
+            {user.mfaEnrolled ? ` ${t('auth.demoMfa', { code: MOCK_MFA_CODE })}` : ''}:{' '}
+            {user.email} / {MOCK_PASSWORD}
+          </p>
+        ))}
       </CardBody>
     </Card>
   );

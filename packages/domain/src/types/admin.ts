@@ -463,6 +463,100 @@ export interface DashboardSummary {
   intakeTrend: Array<{ date: string; totalKgs: number }>;
 }
 
+/* ──────────────────── M4 Rates & month close ──────────────────── */
+
+/**
+ * The auction result for a month, as the office enters it.
+ *
+ * Two figures rather than one because the factory pays two: the rate derived from
+ * the auction, and an `extra` it adds at its own discretion. The app shows the sum
+ * and the bill itemizes both, so collapsing them here would lose a number the
+ * supplier is entitled to see.
+ *
+ * `enteredBy` is on the record, not in a side table, because it is half of the
+ * four-eyes rule: the person who entered a rate may not be the one who publishes
+ * the month it belongs to (BR-501).
+ */
+export interface MonthlyRate {
+  monthKey: string;
+  /** LKR per kilo, from the auction. */
+  ratePerKg: number;
+  /** LKR per kilo the factory adds on top. `0` is a real answer, not "unset". */
+  extraRatePerKg: number;
+  enteredById: string;
+  enteredByName: string;
+  enteredAt: string;
+}
+
+/** What the office is being asked to enter. `monthKey` travels in the path. */
+export interface MonthlyRateEntry {
+  ratePerKg: number;
+  extraRatePerKg: number;
+}
+
+/**
+ * Why a month cannot close yet.
+ *
+ * A **first-class record**, not a count (api-contract.md §9): AC-04 requires the
+ * accountant to resolve each one, which means each needs an id, a type, and a link
+ * to the record it is about. A number on a dashboard cannot be worked through.
+ */
+export type MonthExceptionType =
+  /** Leaf delivered, nowhere to pay it — blocks the payout run (AC-04). */
+  | 'missingBankDetails'
+  /** Leaf recorded against a supplier who is suspended or closed. */
+  | 'inactiveSupplierWithLeaf'
+  /** A change request still open, whose outcome would change this month's bill. */
+  | 'pendingChangeRequest'
+  /** A weighing far outside the day's spread — `1250` typed for `125.0`. */
+  | 'outlierDelivery';
+
+export interface MonthException {
+  id: string;
+  monthKey: string;
+  type: MonthExceptionType;
+  /** The record to go and fix, so the row can link straight to it. */
+  entity: 'supplier' | 'delivery' | 'changeRequest';
+  entityId: string;
+  supplierCode: string | null;
+  supplierName: string | null;
+  /**
+   * English-only detail, treated as a fallback (§17.4). The console renders from
+   * `type` so the copy is localized; this carries the specifics, like the kilos.
+   */
+  detail: string;
+  raisedAt: string;
+  /**
+   * Resolved, never deleted. "Who decided this was acceptable, and why" is the
+   * question an auditor asks about a month that closed with exceptions on it.
+   */
+  resolvedAt: string | null;
+  resolvedByName: string | null;
+  resolutionNote: string | null;
+}
+
+export interface MonthExceptionQuery extends PageQuery {
+  /** Omit for everything; `false` is the accountant's working list. */
+  resolved?: boolean;
+}
+
+/**
+ * A month, with everything the close screen decides from.
+ *
+ * Extends the dashboard's cycle status rather than restating it: the badge on the
+ * dashboard and the stage on this screen must never be two different answers.
+ */
+export interface MonthSummary extends MonthCycleStatus {
+  rate: MonthlyRate | null;
+  totalKgs: number;
+  supplierCount: number;
+  deliveryCount: number;
+  /** Resolved and unresolved together, so the screen can show "3 of 11 left". */
+  totalExceptions: number;
+  /** `false` once published (BR-108) — the same flag M3 reads before offering entry. */
+  open: boolean;
+}
+
 /* ───────────────────────────── M17 Audit log ───────────────────────────── */
 
 /**
@@ -606,11 +700,24 @@ export const ADMIN_ERROR_CODES = [
   'stale-eligibility',
   'note-required',
   'month-locked',
-  'exceptions-unresolved',
   'mfa-required',
   'mfa-invalid',
   'supplier-code-taken',
   'already-decided',
+
+  /* M3 Leaf collection. */
+  'batch-too-large',
+  'already-voided',
+  /** Raised by the console's own guard before a bad session leaves the browser. */
+  'invalid-batch',
+
+  /* M4 Rates & month close. */
+  'invalid-rate',
+  'rate-missing',
+  'exceptions-open',
+  'already-resolved',
+  'already-published',
+  'month-mismatch',
 ] as const;
 
 export type AdminErrorCode = (typeof ADMIN_ERROR_CODES)[number];

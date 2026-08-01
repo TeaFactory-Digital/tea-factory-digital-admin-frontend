@@ -27,6 +27,10 @@ import type {
   DeliveryBatch,
   DeliveryBatchResult,
   DeliveryRejection,
+  MonthCycleStage,
+  MonthException,
+  MonthSummary,
+  MonthlyRateEntry,
   Paged,
 } from '@tfd/domain';
 import {
@@ -44,17 +48,20 @@ import {
   MOCK_PASSWORD,
   TODAY,
   buildDashboard,
-  isMonthLocked,
   mockAudit,
   mockChangeRequests,
   mockConfigs,
   mockDeliveries,
+  mockMonthExceptions,
+  mockMonths,
+  monthStageOf,
   mockFullAccountNumbers,
   mockSuppliers,
   mockUsers,
   summariseDay,
   toListItem,
   type MockUser,
+  type MonthRecord,
 } from './seed';
 
 /* ────────────────────────────── mutable state ────────────────────────────── */
@@ -84,8 +91,100 @@ const state = {
    * on `Idempotency-Key` the same way (§1.3).
    */
   batches: new Map<string, DeliveryBatchResult>(),
+  /**
+   * The months, keyed by `monthKey`.
+   *
+   * Here rather than derived from the calendar because **publishing is state**:
+   * M4 closes a month, and from that moment M3 must refuse leaf in it (BR-108).
+   * A stage recomputed per request would revert the publish on the next call.
+   */
+  months: cloneMonths(),
+  monthExceptions: mockMonthExceptions.map((e) => ({ ...e })),
   sequence: 1000,
 };
+
+/**
+ * A per-record copy of the month fixture.
+ *
+ * `{ ...mockMonths }` would be a **shallow** copy: the `MonthRecord` objects would
+ * be shared with the seed, so publishing a month would mutate the fixture itself
+ * and `resetMockState()` would hand the mutated object straight back. The symptom
+ * is a test suite where the second test finds no open month.
+ */
+function cloneMonths(): Record<string, MonthRecord> {
+  return Object.fromEntries(
+    Object.entries(mockMonths).map(([key, record]) => [
+      key,
+      { ...record, rate: record.rate ? { ...record.rate } : null },
+    ]),
+  );
+}
+
+/**
+ * The live stage of a month.
+ *
+ * Falls back to the calendar for a month outside the fixture's window — a clerk
+ * scrolling back two years should see "published", not a month with no state.
+ */
+function stageOf(monthKey: string): MonthCycleStage {
+  return state.months[monthKey]?.stage ?? monthStageOf(monthKey);
+}
+
+function lockedMonth(monthKey: string): boolean {
+  return stageOf(monthKey) === 'published';
+}
+
+/**
+ * The record for a month the API knows about, or `null`.
+ *
+ * Deliberately **not** materialized on demand. An earlier version created a record
+ * for whatever arrived in the path, which meant a typo'd or stale `?month=` — or a
+ * key from another screen's select — rendered a plausible published month with zero
+ * leaf in it. A month the factory has no records for is a `404`, not an empty one.
+ */
+function monthRecord(monthKey: string): MonthRecord | null {
+  return state.months[monthKey] ?? null;
+}
+
+/** `404` for a month outside the records, so no screen can invent one. */
+function noSuchMonth(monthKey: string) {
+  return fail({
+    status: 404,
+    code: '404',
+    message: `No records for ${monthKey}.`,
+    details: { monthKey },
+  });
+}
+
+/**
+ * A month as the close screen reads it.
+ *
+ * Totals come from the delivery rows, never from a stored figure: the leaf is the
+ * fact every money number is derived from (§16), and a cached total is a second
+ * answer waiting to disagree with it.
+ */
+function monthSummary(record: MonthRecord): MonthSummary {
+  const monthKey = record.monthKey;
+  const rows = state.deliveries.filter((row) => row.monthKey === monthKey && !row.voidedAt);
+  const totals = summariseKgs(rows.map((row) => ({ supplierId: row.supplierId, kgs: row.kgs })));
+  const exceptions = state.monthExceptions.filter((e) => e.monthKey === monthKey);
+
+  return {
+    monthKey,
+    stage: record.stage,
+    openExceptions: exceptions.filter((e) => e.resolvedAt === null).length,
+    totalExceptions: exceptions.length,
+    ratePerKg: record.rate?.ratePerKg ?? null,
+    extraRatePerKg: record.rate?.extraRatePerKg ?? null,
+    publishedAt: record.publishedAt,
+    publishedByName: record.publishedByName,
+    rate: record.rate,
+    totalKgs: totals.totalKgs,
+    supplierCount: totals.supplierCount,
+    deliveryCount: totals.rowCount,
+    open: record.stage !== 'published',
+  };
+}
 
 const nextId = () => String(++state.sequence);
 
@@ -235,6 +334,31 @@ function sortRows<T>(rows: T[], url: URL, fallback: (a: T, b: T) => number): T[]
     // `localeCompare` rather than `<`: supplier codes carry a division suffix and
     // actor names are Sinhala-transliterated, and both sort wrongly by code point.
     return String(left ?? '').localeCompare(String(right ?? '')) * dir;
+  });
+}
+
+/**
+ * `record`, with the actor filled in from the authorized user.
+ *
+ * Every M4 mutation writes one, and the entry is the module's whole defence: a
+ * month that closed on a rate somebody typed is a decision an auditor will ask
+ * about by name six months later (AC-09).
+ */
+function recordBy(
+  auth: { user: MockUser },
+  action: string,
+  entity: string,
+  entityId: string,
+  change: { before?: unknown; after?: unknown },
+): AuditEntry {
+  return record({
+    actorId: auth.user.id,
+    actorName: auth.user.name,
+    action,
+    entity,
+    entityId,
+    before: change.before,
+    after: change.after,
   });
 }
 
@@ -577,6 +701,493 @@ export const handlers: HttpHandler[] = [
     });
   }),
 
+  /* ── M3 Leaf collection ────────────────────────────────────────────────── */
+
+  /**
+   * The day's totals. Registered **before** the list route so the literal path
+   * wins: first match wins, and the wildcard list pattern would otherwise swallow
+   * `/deliveries/summary` and answer it with a page of rows.
+   */
+  http.get('*/admin/deliveries/summary', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'deliveries');
+    if ('response' in auth) return auth.response;
+
+    const url = new URL(request.url);
+    const date = url.searchParams.get('date') ?? TODAY;
+    const point = url.searchParams.get('collectionPoint');
+
+    return HttpResponse.json(summariseDay(state.deliveries, date, point, stageOf(monthKeyOf(date))));
+  }),
+
+  http.get('*/admin/deliveries', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'deliveries');
+    if ('response' in auth) return auth.response;
+
+    const url = new URL(request.url);
+    const date = url.searchParams.get('date');
+    const from = url.searchParams.get('from');
+    const to = url.searchParams.get('to');
+    const point = url.searchParams.get('collectionPoint');
+    const supplierId = url.searchParams.get('supplierId');
+    const includeVoided = url.searchParams.get('includeVoided') === 'true';
+
+    let rows = state.deliveries;
+    if (date) rows = rows.filter((row) => row.date === date);
+    if (from) rows = rows.filter((row) => row.date >= from);
+    if (to) rows = rows.filter((row) => row.date <= to);
+    if (point) rows = rows.filter((row) => row.collectionPoint === point);
+    if (supplierId) rows = rows.filter((row) => row.supplierId === supplierId);
+    // A voided row is evidence, not data (§12.1) — it is returned when asked for
+    // and never by default, so a day's total and its list agree.
+    if (!includeVoided) rows = rows.filter((row) => row.voidedAt === null);
+
+    // Newest first: a clerk watches the row they just entered arrive at the top.
+    rows = sortRows(rows, url, (a, b) => b.recordedAt.localeCompare(a.recordedAt));
+
+    return HttpResponse.json(paginate(rows, url));
+  }),
+
+  /**
+   * Commit a weighing session — one request for the whole grid
+   * (api-contract.md §9.3).
+   *
+   * Three refusals, and which kind each is matters:
+   *
+   *  - `409 month-locked` for the **whole batch**: a published month is immutable
+   *    (BR-108), so there is nothing to partially accept.
+   *  - `422 batch-too-large` for the whole batch, before anything is recorded.
+   *  - **Per-row rejections inside a `200`** for everything else. All-or-nothing
+   *    would send sixty good rows back to be re-typed because one code was wrong.
+   */
+  http.post('*/admin/deliveries', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'deliveries', 'write');
+    if ('response' in auth) return auth.response;
+
+    const batch = (await request.json()) as DeliveryBatch;
+    const monthKey = monthKeyOf(batch.date);
+
+    /**
+     * Idempotency, keyed on the session's own id (§1.3).
+     *
+     * The failure this prevents is the worst one in M3: a clerk whose connection
+     * dropped mid-commit clicks again and sixty deliveries are recorded twice.
+     * The original result is replayed instead — including its rejections, because
+     * a second answer that differed would be a second thing to reconcile.
+     */
+    const replay = state.batches.get(batch.batchId);
+    if (replay) return HttpResponse.json(replay);
+
+    if (lockedMonth(monthKey)) {
+      return fail({
+        status: 409,
+        code: 'month-locked',
+        message: `${monthKey} is published and can no longer be changed.`,
+        details: { monthKey },
+      });
+    }
+
+    if (batch.rows.length > MAX_DELIVERY_BATCH_ROWS) {
+      return fail({
+        status: 422,
+        code: 'batch-too-large',
+        message: `A session carries at most ${MAX_DELIVERY_BATCH_ROWS} rows.`,
+        details: { limit: MAX_DELIVERY_BATCH_ROWS, submitted: batch.rows.length },
+      });
+    }
+
+    const accepted: Delivery[] = [];
+    const rejected: DeliveryRejection[] = [];
+
+    batch.rows.forEach((row, index) => {
+      const supplier = state.suppliers.find((s) => s.id === row.supplierId);
+      if (!supplier) {
+        rejected.push({
+          index,
+          supplierId: row.supplierId,
+          code: 'supplier-unknown',
+          message: 'No supplier with that code.',
+        });
+        return;
+      }
+      if (supplier.status !== 'active') {
+        // Not a courtesy check: leaf recorded against a closed account becomes a
+        // bill nobody can be paid for.
+        rejected.push({
+          index,
+          supplierId: row.supplierId,
+          code: 'supplier-inactive',
+          message: `${supplier.supplierCode} is ${supplier.status}.`,
+        });
+        return;
+      }
+      if (!isExactKg(row.kgs) || row.kgs <= 0 || row.kgs > MAX_DELIVERY_KG) {
+        rejected.push({
+          index,
+          supplierId: row.supplierId,
+          code: 'invalid-kg',
+          message: `Kilos must be between 0 and ${MAX_DELIVERY_KG}, to two decimals.`,
+        });
+        return;
+      }
+
+      accepted.push({
+        id: `del-${nextId()}`,
+        date: batch.date,
+        monthKey,
+        supplierId: supplier.id,
+        supplierCode: supplier.supplierCode,
+        supplierName: supplier.name,
+        // Where it was **weighed**, which is the session's point — not the
+        // supplier's registered one. A grower may deliver anywhere.
+        collectionPoint: batch.collectionPoint,
+        kgs: roundKg(row.kgs),
+        source: 'manual',
+        batchId: batch.batchId,
+        recordedById: auth.user.id,
+        recordedByName: auth.user.name,
+        recordedAt: new Date().toISOString(),
+        voidedAt: null,
+        voidedByName: null,
+        voidedReason: null,
+      });
+    });
+
+    state.deliveries = [...accepted, ...state.deliveries];
+
+    if (accepted.length > 0) {
+      record({
+        actorId: auth.user.id,
+        actorName: auth.user.name,
+        action: 'delivery.batch.commit',
+        entity: 'deliveryBatch',
+        entityId: batch.batchId,
+        after: {
+          date: batch.date,
+          collectionPoint: batch.collectionPoint,
+          rows: accepted.length,
+          totalKgs: summariseKgs(accepted).totalKgs,
+        },
+      });
+    }
+
+    const result: DeliveryBatchResult = {
+      accepted,
+      rejected,
+      // The day's figures as the **server** has them after the commit, so the
+      // running totals above the grid are never the console's own addition.
+      day: summariseDay(state.deliveries, batch.date, batch.collectionPoint, stageOf(monthKey)),
+    };
+    state.batches.set(batch.batchId, result);
+    return HttpResponse.json(result);
+  }),
+
+  /**
+   * Void, never delete (§12.1). The row survives with who withdrew it and why.
+   */
+  http.post('*/admin/deliveries/:id/void', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'deliveries', 'write');
+    if ('response' in auth) return auth.response;
+
+    const { reason } = (await request.json()) as { reason?: string };
+    const index = state.deliveries.findIndex((row) => row.id === params.id);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such delivery.' });
+
+    const before = state.deliveries[index]!;
+
+    if (lockedMonth(before.monthKey)) {
+      return fail({
+        status: 409,
+        code: 'month-locked',
+        message: `${before.monthKey} is published and can no longer be changed.`,
+        details: { monthKey: before.monthKey },
+      });
+    }
+    if (before.voidedAt !== null) {
+      return fail({
+        status: 409,
+        code: 'already-voided',
+        message: 'This delivery was already voided.',
+      });
+    }
+    if (!reason || reason.trim().length < 10) {
+      return fail({ status: 422, code: 'note-required', message: 'A reason is required.' });
+    }
+
+    const after: Delivery = {
+      ...before,
+      voidedAt: new Date().toISOString(),
+      voidedByName: auth.user.name,
+      voidedReason: reason.trim(),
+    };
+    state.deliveries[index] = after;
+
+    record({
+      actorId: auth.user.id,
+      actorName: auth.user.name,
+      action: 'delivery.void',
+      entity: 'delivery',
+      entityId: before.id,
+      before: { kgs: before.kgs, voidedAt: null },
+      after: { kgs: after.kgs, voidedAt: after.voidedAt, reason: after.voidedReason },
+    });
+
+    return HttpResponse.json(after);
+  }),
+
+  /* ── M4 Rates & month close ────────────────────────────────────────────── */
+
+  http.get('*/admin/months', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'ratesAndMonthClose');
+    if ('response' in auth) return auth.response;
+
+    const url = new URL(request.url);
+    // Newest first, and the month in progress is the one the office works in.
+    const rows = Object.keys(state.months)
+      .sort()
+      .reverse()
+      .map((key) => monthSummary(state.months[key]!));
+
+    return HttpResponse.json(paginate(rows, url));
+  }),
+
+  /**
+   * The exceptions of one month. Registered before `/months/:monthKey` so the
+   * literal segment wins — first match wins, and the parameterized route would
+   * otherwise answer this with a month summary.
+   */
+  http.get('*/admin/months/:monthKey/exceptions', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'ratesAndMonthClose');
+    if ('response' in auth) return auth.response;
+
+    const url = new URL(request.url);
+    const resolved = url.searchParams.get('resolved');
+    let rows = state.monthExceptions.filter((e) => e.monthKey === params.monthKey);
+    if (resolved === 'true') rows = rows.filter((e) => e.resolvedAt !== null);
+    if (resolved === 'false') rows = rows.filter((e) => e.resolvedAt === null);
+
+    // Unresolved first, then oldest first inside each group: this is a work queue,
+    // and the accountant is working it front to back before a publish.
+    rows = sortRows(rows, url, (a, b) => {
+      if ((a.resolvedAt === null) !== (b.resolvedAt === null)) return a.resolvedAt === null ? -1 : 1;
+      return a.raisedAt.localeCompare(b.raisedAt);
+    });
+
+    return HttpResponse.json(paginate(rows, url));
+  }),
+
+  http.get('*/admin/months/:monthKey', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'ratesAndMonthClose');
+    if ('response' in auth) return auth.response;
+
+    const record = monthRecord(String(params.monthKey));
+    if (!record) return noSuchMonth(String(params.monthKey));
+    return HttpResponse.json(monthSummary(record));
+  }),
+
+  /**
+   * Enter or correct the auction rate.
+   *
+   * `PUT`, not `POST`: entering the rate twice before publishing is a correction,
+   * not a second rate, and the office does correct a mistyped figure. Once the
+   * month is published it is immutable (BR-108) and this answers `409`.
+   */
+  http.put('*/admin/months/:monthKey/rate', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'ratesAndMonthClose', 'write');
+    if ('response' in auth) return auth.response;
+
+    const monthKey = String(params.monthKey);
+    const record = monthRecord(monthKey);
+    if (!record) return noSuchMonth(monthKey);
+    if (record.stage === 'published') {
+      return fail({
+        status: 409,
+        code: 'month-locked',
+        message: `${monthKey} is published and its rate can no longer be changed.`,
+        details: { monthKey },
+      });
+    }
+
+    const body = (await request.json()) as MonthlyRateEntry;
+    if (
+      typeof body.ratePerKg !== 'number' ||
+      body.ratePerKg <= 0 ||
+      typeof body.extraRatePerKg !== 'number' ||
+      body.extraRatePerKg < 0
+    ) {
+      return fail({
+        status: 422,
+        code: 'invalid-rate',
+        message: 'A rate must be a positive amount, and the extra cannot be negative.',
+      });
+    }
+
+    const before = record.rate;
+    record.rate = {
+      monthKey,
+      ratePerKg: body.ratePerKg,
+      extraRatePerKg: body.extraRatePerKg,
+      enteredById: auth.user.id,
+      enteredByName: auth.user.name,
+      enteredAt: new Date().toISOString(),
+    };
+    // Entering the rate is what moves the month on from `awaitingRate` — the stage
+    // is derived from what has happened, never set by the client.
+    if (record.stage === 'collecting' || record.stage === 'awaitingRate') {
+      record.stage = 'rateEntered';
+    }
+
+    recordBy(auth, 'month.rate.enter', 'monthlyRate', monthKey, {
+      before: before ? { ratePerKg: before.ratePerKg, extraRatePerKg: before.extraRatePerKg } : { ratePerKg: null },
+      after: { ratePerKg: record.rate.ratePerKg, extraRatePerKg: record.rate.extraRatePerKg },
+    });
+
+    return HttpResponse.json(monthSummary(record));
+  }),
+
+  http.post('*/admin/months/:monthKey/exceptions/:id/resolve', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'ratesAndMonthClose', 'write');
+    if ('response' in auth) return auth.response;
+
+    const { note } = (await request.json()) as { note?: string };
+    const index = state.monthExceptions.findIndex(
+      (e) => e.id === params.id && e.monthKey === params.monthKey,
+    );
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such exception.' });
+
+    const before = state.monthExceptions[index]!;
+    if (lockedMonth(before.monthKey)) {
+      return fail({
+        status: 409,
+        code: 'month-locked',
+        message: `${before.monthKey} is already published.`,
+      });
+    }
+    if (before.resolvedAt !== null) {
+      return fail({
+        status: 409,
+        code: 'already-resolved',
+        message: 'Someone else has already resolved this.',
+      });
+    }
+    // The note is the whole point: a month closed with eleven exceptions marked
+    // resolved and no reasons is a month nobody can defend six months later.
+    if (!note || note.trim().length < 10) {
+      return fail({ status: 422, code: 'note-required', message: 'A note is required.' });
+    }
+
+    const after: MonthException = {
+      ...before,
+      resolvedAt: new Date().toISOString(),
+      resolvedByName: auth.user.name,
+      resolutionNote: note.trim(),
+    };
+    state.monthExceptions[index] = after;
+
+    recordBy(auth, 'month.exception.resolve', 'monthException', after.id, {
+      before: { resolvedAt: null },
+      after: { type: after.type, note: after.resolutionNote },
+    });
+
+    return HttpResponse.json(after);
+  }),
+
+  /**
+   * Publish the month. **Irreversible**, and the four refusals are the point.
+   *
+   * `approve`, not `write`: §12.1 gives `ratesAndMonthClose: A` to the manager and
+   * `W` to the accountant, so the person who enters the rate is not the person who
+   * closes the month on it.
+   */
+  http.post('*/admin/months/:monthKey/publish', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'ratesAndMonthClose', 'approve');
+    if ('response' in auth) return auth.response;
+
+    const monthKey = String(params.monthKey);
+    const body = (await request.json().catch(() => ({}))) as { monthKey?: string; note?: string };
+
+    // The screen can be left open on July while somebody else publishes June, so
+    // the month the accountant is looking at has to match the one in the path.
+    if (body.monthKey && body.monthKey !== monthKey) {
+      return fail({
+        status: 409,
+        code: 'month-mismatch',
+        message: 'The screen is showing a different month. Reload and check before publishing.',
+        details: { expected: monthKey, received: body.monthKey },
+      });
+    }
+
+    const record = monthRecord(monthKey);
+    if (!record) return noSuchMonth(monthKey);
+    if (record.stage === 'published') {
+      return fail({
+        status: 409,
+        code: 'already-published',
+        message: `${monthKey} was already published.`,
+        details: { publishedAt: record.publishedAt, publishedByName: record.publishedByName },
+      });
+    }
+    if (!record.rate) {
+      return fail({
+        status: 409,
+        code: 'rate-missing',
+        message: 'The auction rate has not been entered for this month.',
+      });
+    }
+
+    const open = state.monthExceptions.filter(
+      (e) => e.monthKey === monthKey && e.resolvedAt === null,
+    );
+    // AC-04: the accountant resolves each one. A count that could be clicked past
+    // is not a control.
+    if (open.length > 0) {
+      return fail({
+        status: 409,
+        code: 'exceptions-open',
+        message: `${open.length} exceptions are still open.`,
+        details: { open: open.length },
+      });
+    }
+
+    // BR-501, the four-eyes rule. Reachable because a manager holds `approve`,
+    // which implies `write` — so the same person *could* enter a rate and close the
+    // month on it, and this is what stops them.
+    if (isSelfApproval(auth.user, record.rate.enteredById)) {
+      return fail({
+        status: 409,
+        code: 'four-eyes-violation',
+        message: 'You entered this month’s rate, so you cannot publish it.',
+        details: { enteredByName: record.rate.enteredByName },
+      });
+    }
+
+    record.stage = 'published';
+    record.publishedAt = new Date().toISOString();
+    record.publishedByName = auth.user.name;
+    record.publishedById = auth.user.id;
+
+    recordBy(auth, 'month.publish', 'monthlyRate', monthKey, {
+      before: { stage: 'billsGenerated' },
+      after: {
+        stage: 'published',
+        ratePerKg: record.rate.ratePerKg,
+        extraRatePerKg: record.rate.extraRatePerKg,
+        note: body.note ?? null,
+      },
+    });
+
+    return HttpResponse.json(monthSummary(record));
+  }),
+
   /* ── M9 Change requests ────────────────────────────────────────────────── */
   http.get('*/admin/change-requests', async ({ request }) => {
     await delay(LATENCY_MS);
@@ -784,6 +1395,19 @@ export const handlers: HttpHandler[] = [
 export function resetMockState(): void {
   state.suppliers = mockSuppliers.map((s) => ({ ...s }));
   state.changeRequests = mockChangeRequests.map((r) => ({ ...r }));
+  /**
+   * The delivery rows and the idempotency store reset with everything else.
+   *
+   * Not optional, and the failure it prevents is a subtle one: `sequence` restarts
+   * at 1000, so a row left over from an earlier test carries an id the *next* test
+   * will hand out again. Two rows then share `del-1002`, and an assertion about
+   * one of them silently reads the other.
+   */
+  state.deliveries = mockDeliveries.map((d) => ({ ...d }));
+  state.batches.clear();
+  // A published month leaking into the next test would lock M3 for it.
+  state.months = cloneMonths();
+  state.monthExceptions = mockMonthExceptions.map((e) => ({ ...e }));
   state.audit = [...mockAudit];
   state.sessions.clear();
   state.challenges.clear();

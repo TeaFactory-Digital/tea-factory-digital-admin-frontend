@@ -15,7 +15,11 @@ const ACTION_KEYS: Record<string, string> = {
   'supplier.suspend': 'audit.action.supplierSuspend',
   'supplier.reactivate': 'audit.action.supplierReactivate',
   'supplier.bankDetails.reveal': 'audit.action.supplierReveal',
-  'rate.set': 'audit.action.rateSet',
+  'delivery.batch.commit': 'audit.action.deliveryBatchCommit',
+  'delivery.void': 'audit.action.deliveryVoid',
+  'month.rate.enter': 'audit.action.rateSet',
+  'month.exception.resolve': 'audit.action.monthExceptionResolve',
+  'month.publish': 'audit.action.monthPublish',
 };
 
 export function auditActionLabel(action: string, t: (key: string) => string): string {

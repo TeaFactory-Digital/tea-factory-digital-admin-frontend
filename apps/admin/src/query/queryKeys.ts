@@ -41,6 +41,20 @@ export const qk = {
       ['deliveries', 'day', date, collectionPoint ?? null] as const,
   },
 
+  /**
+   * Publishing a month invalidates far more than the month: M3's day summaries
+   * lock, the dashboard's cycle badge changes, and the audit trail gains an entry.
+   * `months.all` covers this module; the others are invalidated by name at the
+   * call site, because a key that swept everything would refetch the registry too.
+   */
+  months: {
+    all: ['months'] as const,
+    list: ['months', 'list'] as const,
+    detail: (monthKey: string) => ['months', 'detail', monthKey] as const,
+    exceptions: (monthKey: string, resolved: boolean | undefined) =>
+      ['months', 'exceptions', monthKey, resolved ?? 'any'] as const,
+  },
+
   changeRequests: {
     all: ['change-requests'] as const,
     list: (query: ChangeRequestQuery) => ['change-requests', 'list', query] as const,
