@@ -1,0 +1,9 @@
+# Cloudflare Pages — SPA fallback (operations.md → Deployment, host requirement 1).
+#
+# Without it a refresh on /change-requests/chg-2 is a 404: the router owns that
+# path, but the host has no file there.
+#
+# Existing static assets win over this rule, so /assets/* and the service worker
+# are still served as themselves. Lives in `public/` because Pages reads this file
+# from the *build output*, and Vite copies `public/` into `dist/` verbatim.
+/*  /index.html  200

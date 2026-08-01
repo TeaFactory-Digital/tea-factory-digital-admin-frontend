@@ -85,32 +85,46 @@ Host requirements:
    credentials, and the refresh cookie needs them.
 5. **`noindex`** — already in `index.html`.
 
-### Vercel — the hosted demo
+### The hosted demo
 
-`vercel.json` at the repo root configures this, and it deploys the **demo** bundle:
+The demo bundle is plain static files, so any static host serves it. Both configs
+below are committed; they say the same thing in two dialects.
 
-```
-installCommand    npm ci                 (workspace root; devDependencies needed — vite is one)
-buildCommand      npm run build:demo
-outputDirectory   apps/admin/dist
-rewrites          /(.*) → /index.html    (requirement 1; Vercel checks the filesystem first,
-                                          so /assets/* and /mockServiceWorker.js still win)
-headers           /assets/* immutable, index.html and the worker no-cache (requirement 3)
-```
+|                    | Cloudflare Pages                           | Vercel                  |
+| ------------------ | ------------------------------------------ | ----------------------- |
+| Config             | `apps/admin/public/_redirects`, `_headers` | `vercel.json`           |
+| Build command      | `npm run build:demo`                       | same (in `vercel.json`) |
+| Output directory   | `apps/admin/dist`                          | same (in `vercel.json`) |
+| Root directory     | repo root                                  | repo root               |
+| Cost for this repo | free                                       | **Pro plan required**   |
 
-Connect the GitHub repo once in the Vercel dashboard and leave the root directory
-at the repo root — the monorepo is handled by the commands above, not by pointing
-Vercel at `apps/admin`. **No environment variables need setting**; `.env.demo` is
-committed, and adding a `VITE_*` override in the dashboard cannot promote the demo
-to a real deployment (see Environments).
+**Cloudflare Pages is what this deploys on**, for one reason: Vercel's Hobby plan
+refuses a private repo owned by a GitHub _organization_, which this is. The Vercel
+config is kept because it is correct and costs nothing to keep — if the repo ever
+moves to a Vercel Pro team, it works as written.
+
+The Pages files live in `apps/admin/public/` because Pages reads them from the
+build _output_, and Vite copies `public/` into `dist/` verbatim. Vercel ignores
+them; Pages consumes them rather than serving them.
+
+Either way: **set the root directory to the repo root, not `apps/admin`.** Both
+hosts offer to "helpfully" detect the app directory, and both configs are written
+for a workspace-root build — `npm run build:demo` is a root script, and the Vite
+aliases reach `packages/` above `apps/admin`. **No environment variables need
+setting**; `.env.demo` is committed, and adding a `VITE_*` override in a dashboard
+cannot promote the demo to a real deployment (see Environments).
+
+`.node-version` pins 22.11.0 to match `engines`, so a host defaulting to an older
+Node fails at install rather than at some subtler place later.
 
 Two things this hosting cannot give you, both by design:
 
-- **No tenant from the hostname.** The leading label of `*.vercel.app` is a
-  deployment name, not a factory, so `@tfd/brand` refuses to read it as a tenant
-  (`PLATFORM_DOMAINS`) and the demo falls back to `VITE_DEFAULT_TENANT`. A real
-  per-tenant deployment needs the wildcard domain in requirement 2. The switcher in
-  the topbar is how the demo shows a rebrand instead.
+- **No tenant from the hostname.** The leading label of `*.pages.dev` or
+  `*.vercel.app` is a deployment name, not a factory, so `@tfd/brand` refuses to
+  read it as a tenant (`PLATFORM_DOMAINS`) and the demo falls back to
+  `VITE_DEFAULT_TENANT`. A real per-tenant deployment needs the wildcard domain in
+  requirement 2. The switcher in the topbar is how the demo shows a rebrand
+  instead.
 - **No real records.** Every request is answered by MSW in the page, so the demo is
   a UI review, never a data review. Nothing survives a reload.
 
