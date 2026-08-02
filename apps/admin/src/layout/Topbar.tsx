@@ -7,6 +7,7 @@
  * common console support question after "which month is open".
  */
 
+import { useState } from 'react';
 import { ChevronDown, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore, useCurrentUser } from '@/auth/authStore';
@@ -16,6 +17,7 @@ import { MOCK_TENANT_IDS } from '@/services/mocks/seed';
 import { Logo } from '@/brand/Logo';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +32,11 @@ export function Topbar() {
   const user = useCurrentUser();
   const factory = useFactory();
   const logout = useAuthStore((s) => s.logout);
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
+
+  async function submitLogout() {
+    await logout();
+  }
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between gap-md border-b border-border bg-surface px-lg">
@@ -90,8 +97,8 @@ export function Topbar() {
               </div>
               <DropdownMenuSeparator className="my-xs h-px bg-divider" />
               <DropdownMenuItem
-                onSelect={() => void logout()}
-                className="flex cursor-pointer items-center gap-sm rounded-sm px-sm py-xs text-body-small text-text-primary outline-none data-[highlighted]:bg-surface-variant"
+                onSelect={() => setConfirmingSignOut(true)}
+                className="flex cursor-pointer items-center gap-sm rounded-sm px-sm py-xs text-body-small text-text-primary outline-none data-highlighted:bg-surface-variant"
               >
                 <LogOut className="size-icon-sm" aria-hidden />
                 {t('common.signOut')}
@@ -100,6 +107,16 @@ export function Topbar() {
           </DropdownMenu>
         ) : null}
       </div>
+
+      <ConfirmDialog
+        open={confirmingSignOut}
+        onOpenChange={setConfirmingSignOut}
+        title={t('common.signOut')}
+        description={t('shell.signOutConfirmBody')}
+        confirmLabel={t('common.signOut')}
+        confirmVariant="danger"
+        onConfirm={() => void submitLogout()}
+      />
     </header>
   );
 }

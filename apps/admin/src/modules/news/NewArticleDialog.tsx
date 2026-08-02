@@ -20,6 +20,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EDITORIAL_FALLBACK_LANGUAGE } from '@tfd/domain';
 import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Dialog } from '@/components/ui/Dialog';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
@@ -42,6 +43,7 @@ export function NewArticleDialog({
   const [title, setTitle] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [body, setBody] = useState('');
+  const [confirmingCreate, setConfirmingCreate] = useState(false);
 
   // Cleared on open, not on close: a dialog that kept the last article's text would
   // invite an editor to publish a circular they only half-rewrote.
@@ -56,6 +58,10 @@ export function NewArticleDialog({
   const complete = title.trim().length > 0 && body.trim().length > 0;
 
   async function submit() {
+    setConfirmingCreate(true);
+  }
+
+  async function confirmCreate() {
     try {
       const article = await create.mutateAsync({
         translations: [
@@ -67,6 +73,7 @@ export function NewArticleDialog({
           },
         ],
       });
+      setConfirmingCreate(false);
       toast.success(t('news.created'), t('news.createdHint'));
       onClose();
       // Straight into the editor: the next thing the office does is translate it, and
@@ -78,71 +85,87 @@ export function NewArticleDialog({
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) onClose();
-      }}
-      size="md"
-      title={t('news.createTitle')}
-      description={t('news.createDescription', {
-        language: t(`content.language.${EDITORIAL_FALLBACK_LANGUAGE}`),
-      })}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            {t('common.cancel')}
-          </Button>
-          <Button disabled={!complete} loading={create.isPending} onClick={() => void submit()}>
-            {t('news.createConfirm')}
-          </Button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-md">
-        <Field label={t('content.field.title')} required>
-          {({ id, describedBy, required }) => (
-            <Input
-              id={id}
-              aria-describedby={describedBy}
-              required={required}
-              autoFocus
-              lang={EDITORIAL_FALLBACK_LANGUAGE}
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-            />
-          )}
-        </Field>
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (!next) onClose();
+        }}
+        size="md"
+        title={t('news.createTitle')}
+        description={t('news.createDescription', {
+          language: t(`content.language.${EDITORIAL_FALLBACK_LANGUAGE}`),
+        })}
+        footer={
+          <>
+            <Button variant="secondary" onClick={onClose}>
+              {t('common.cancel')}
+            </Button>
+            <Button disabled={!complete} loading={create.isPending} onClick={() => void submit()}>
+              {t('news.createConfirm')}
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-md">
+          <Field label={t('content.field.title')} required>
+            {({ id, describedBy, required }) => (
+              <Input
+                id={id}
+                aria-describedby={describedBy}
+                required={required}
+                autoFocus
+                lang={EDITORIAL_FALLBACK_LANGUAGE}
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+              />
+            )}
+          </Field>
 
-        <Field label={t('content.field.excerpt')} hint={t('content.field.excerptHint')}>
-          {({ id, describedBy }) => (
-            <Textarea
-              id={id}
-              aria-describedby={describedBy}
-              rows={2}
-              lang={EDITORIAL_FALLBACK_LANGUAGE}
-              value={excerpt}
-              onChange={(event) => setExcerpt(event.target.value)}
-            />
-          )}
-        </Field>
+          <Field label={t('content.field.excerpt')} hint={t('content.field.excerptHint')}>
+            {({ id, describedBy }) => (
+              <Textarea
+                id={id}
+                aria-describedby={describedBy}
+                rows={2}
+                lang={EDITORIAL_FALLBACK_LANGUAGE}
+                value={excerpt}
+                onChange={(event) => setExcerpt(event.target.value)}
+              />
+            )}
+          </Field>
 
-        <Field label={t('content.field.body')} required>
-          {({ id, describedBy, required }) => (
-            <Textarea
-              id={id}
-              aria-describedby={describedBy}
-              required={required}
-              rows={10}
-              lang={EDITORIAL_FALLBACK_LANGUAGE}
-              value={body}
-              onChange={(event) => setBody(event.target.value)}
-            />
-          )}
-        </Field>
+          <Field label={t('content.field.body')} required>
+            {({ id, describedBy, required }) => (
+              <Textarea
+                id={id}
+                aria-describedby={describedBy}
+                required={required}
+                rows={10}
+                lang={EDITORIAL_FALLBACK_LANGUAGE}
+                value={body}
+                onChange={(event) => setBody(event.target.value)}
+              />
+            )}
+          </Field>
 
-        <p className="text-caption text-text-secondary">{t('news.createDraftHint')}</p>
-      </div>
-    </Dialog>
+          <p className="text-caption text-text-secondary">{t('news.createDraftHint')}</p>
+        </div>
+      </Dialog>
+
+      <ConfirmDialog
+        open={confirmingCreate}
+        onOpenChange={setConfirmingCreate}
+        title={t('news.createTitle')}
+        description={t('news.createDescription', {
+          language: t(`content.language.${EDITORIAL_FALLBACK_LANGUAGE}`),
+        })}
+        confirmLabel={t('news.createConfirm')}
+        onConfirm={() => void confirmCreate()}
+        loading={create.isPending}
+      >
+        <p className="text-body-small text-text-secondary">{t('news.createDraftHint')}</p>
+      </ConfirmDialog>
+    </>
   );
 }

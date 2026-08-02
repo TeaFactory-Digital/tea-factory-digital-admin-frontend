@@ -23,6 +23,7 @@
  * `configImpact` the API refuses with — see `ImpactList`.
  */
 
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -37,6 +38,7 @@ import type { ConfigPatch } from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover';
 import { ErrorState, Spinner } from '@/components/ui/states';
@@ -69,6 +71,7 @@ export function ConfigurationScreen() {
   const { t } = useTranslation();
   const toast = useToast();
   const [params, setParams] = useSearchParams();
+  const [confirmingSave, setConfirmingSave] = useState<ConfigPatch | null>(null);
 
   // §12.1: `flagsAndBranding` is `W` for the factory and platform admins, `R` for the
   // manager. A manager may read the configuration and not change it.
@@ -101,8 +104,14 @@ export function ConfigurationScreen() {
   const { config, usage } = query.data;
 
   async function submit(patch: ConfigPatch) {
+    setConfirmingSave(patch);
+  }
+
+  async function confirmSave() {
+    if (!confirmingSave) return;
     try {
-      await save.mutateAsync({ patch, config, usage });
+      await save.mutateAsync({ patch: confirmingSave, config, usage });
+      setConfirmingSave(null);
       /**
        * The toast says what *else* changed, because a config save is the only edit in the
        * console whose effect is mostly somewhere the reader is not looking — the sidebar,
@@ -213,6 +222,18 @@ export function ConfigurationScreen() {
       <p className="rounded-md bg-surface-variant px-lg py-sm text-caption text-text-secondary">
         {t('config.ac12Note')}
       </p>
+
+      <ConfirmDialog
+        open={confirmingSave !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmingSave(null);
+        }}
+        title={t('config.confirmSaveTitle')}
+        description={t('config.confirmSaveBody')}
+        confirmLabel={t('config.save')}
+        confirmVariant="primary"
+        onConfirm={() => void confirmSave()}
+      />
     </>
   );
 }

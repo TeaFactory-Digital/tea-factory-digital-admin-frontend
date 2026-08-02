@@ -23,6 +23,7 @@ import {
 } from '@tfd/domain';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Dialog } from '@/components/ui/Dialog';
 import { Label } from '@/components/ui/Label';
 import { Field, Input, Textarea } from '@/components/ui/Field';
@@ -60,6 +61,7 @@ export function UserDialog({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [roles, setRoles] = useState<ConsoleRole[]>([]);
+  const [confirmingSubmit, setConfirmingSubmit] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -73,6 +75,10 @@ export function UserDialog({
   const complete = name.trim() && (editing || email.trim()) && roles.length > 0;
 
   async function submit() {
+    setConfirmingSubmit(true);
+  }
+
+  async function confirmSubmit() {
     try {
       if (editing) {
         await update.mutateAsync({ id: user.id, body: { name: name.trim(), roles }, context });
@@ -81,6 +87,7 @@ export function UserDialog({
         await create.mutateAsync({ name: name.trim(), email: email.trim(), roles });
         toast.success(t('users.created', { name: name.trim() }), t('users.createdHint'));
       }
+      setConfirmingSubmit(false);
       onClose();
     } catch (cause) {
       // The dialog stays open: `last-admin` and `email-taken` are both information about
@@ -90,31 +97,32 @@ export function UserDialog({
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) onClose();
-      }}
-      size="md"
-      title={editing ? t('users.editTitle', { name: user.name }) : t('users.inviteTitle')}
-      description={editing ? t('users.editBody') : t('users.inviteBody')}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            {t('common.cancel')}
-          </Button>
-          <Button
-            variant="primary"
-            disabled={!complete}
-            loading={create.isPending || update.isPending}
-            onClick={() => void submit()}
-          >
-            {editing ? t('common.save') : t('users.invite')}
-          </Button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-md">
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (!next) onClose();
+        }}
+        size="md"
+        title={editing ? t('users.editTitle', { name: user.name }) : t('users.inviteTitle')}
+        description={editing ? t('users.editBody') : t('users.inviteBody')}
+        footer={
+          <>
+            <Button variant="secondary" onClick={onClose}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              disabled={!complete}
+              loading={create.isPending || update.isPending}
+              onClick={() => void submit()}
+            >
+              {editing ? t('common.save') : t('users.invite')}
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-md">
         <Field label={t('users.field.name')} required>
           {({ id, required }) => (
             <Input id={id} required={required} value={name} onChange={(e) => setName(e.target.value)} />
@@ -169,21 +177,37 @@ export function UserDialog({
           ) : null}
         </fieldset>
 
-        {/**
-         * The MFA obligation, stated rather than enforced at this point.
-         *
-         * A user cannot enrol before they have an account, so refusing to create a manager
-         * without a second factor would make the senior roles unassignable. The console says
-         * what is now owed; the sign-in is what insists on it.
-         */}
-        {requiresMfa(roles) ? (
-          <p className="flex items-start gap-xs rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
-            <ShieldAlert className="mt-xxs size-icon-sm shrink-0" aria-hidden />
-            {t('users.mfaObligation')}
-          </p>
-        ) : null}
-      </div>
-    </Dialog>
+          {/**
+           * The MFA obligation, stated rather than enforced at this point.
+           *
+           * A user cannot enrol before they have an account, so refusing to create a manager
+           * without a second factor would make the senior roles unassignable. The console says
+           * what is now owed; the sign-in is what insists on it.
+           */}
+          {requiresMfa(roles) ? (
+            <p className="flex items-start gap-xs rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
+              <ShieldAlert className="mt-xxs size-icon-sm shrink-0" aria-hidden />
+              {t('users.mfaObligation')}
+            </p>
+          ) : null}
+        </div>
+      </Dialog>
+
+      <ConfirmDialog
+        open={confirmingSubmit}
+        onOpenChange={setConfirmingSubmit}
+        title={editing ? t('users.editTitle', { name: user?.name ?? '' }) : t('users.inviteTitle')}
+        description={editing ? t('users.editBody') : t('users.inviteBody')}
+        confirmLabel={editing ? t('common.save') : t('users.invite')}
+        confirmVariant="primary"
+        onConfirm={() => void confirmSubmit()}
+        loading={create.isPending || update.isPending}
+      >
+        <p className="text-body-small text-text-secondary">
+          {editing ? t('users.confirmEditBody') : t('users.confirmCreateBody')}
+        </p>
+      </ConfirmDialog>
+    </>
   );
 }
 
@@ -211,15 +235,22 @@ export function UserActionDialog({
   const run = useUserAction();
 
   const [reason, setReason] = useState('');
+  const [confirmingAction, setConfirmingAction] = useState(false);
   useEffect(() => setReason(''), [user?.id, action]);
 
   const blocked = reason.trim().length < REASON_MIN;
 
   async function submit() {
     if (!user) return;
+    setConfirmingAction(true);
+  }
+
+  async function confirmAction() {
+    if (!user) return;
     try {
       await run.mutateAsync({ id: user.id, action, reason: reason.trim(), context });
       toast.success(t(`users.${action}Done`, { name: user.name }));
+      setConfirmingAction(false);
       onClose();
     } catch (cause) {
       toast.error(t(`users.${action}Failed`), t(errorMessageKey(cause)));
@@ -227,55 +258,77 @@ export function UserActionDialog({
   }
 
   return (
-    <Dialog
-      open={user !== null}
-      onOpenChange={(next) => {
-        if (!next) onClose();
-      }}
-      title={user ? t(`users.${action}Title`, { name: user.name }) : ''}
-      description={t(`users.${action}Body`)}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            {t('common.cancel')}
-          </Button>
-          <Button
-            variant={action === 'reactivate' ? 'primary' : 'danger'}
-            disabled={blocked}
-            loading={run.isPending}
-            onClick={() => void submit()}
-          >
-            {t(`users.${action}Confirm`)}
-          </Button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-md">
-        {user ? (
-          <p className="rounded-md bg-surface-variant px-md py-sm text-body-small text-text-primary">
-            {user.name} · {user.email} · {user.roles.map((role) => t(`users.role.${role}`)).join(', ')}
-          </p>
-        ) : null}
+    <>
+      <Dialog
+        open={user !== null && !confirmingAction}
+        onOpenChange={(next) => {
+          if (!next) onClose();
+        }}
+        title={user ? t(`users.${action}Title`, { name: user.name }) : ''}
+        description={t(`users.${action}Body`)}
+        footer={
+          <>
+            <Button variant="secondary" onClick={onClose}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant={action === 'reactivate' ? 'primary' : 'danger'}
+              disabled={blocked}
+              loading={run.isPending}
+              onClick={() => void submit()}
+            >
+              {t(`users.${action}Confirm`)}
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-md">
+          {user ? (
+            <p className="rounded-md bg-surface-variant px-md py-sm text-body-small text-text-primary">
+              {user.name} · {user.email} · {user.roles.map((role) => t(`users.role.${role}`)).join(', ')}
+            </p>
+          ) : null}
 
-        <Field
-          label={t('common.reason')}
-          required
-          hint={t('users.reasonHint', { min: REASON_MIN })}
-        >
-          {({ id, describedBy, invalid, required }) => (
-            <Textarea
-              id={id}
-              aria-describedby={describedBy}
-              invalid={invalid}
-              required={required}
-              autoFocus
-              rows={3}
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-            />
-          )}
-        </Field>
-      </div>
-    </Dialog>
+          <Field
+            label={t('common.reason')}
+            required
+            hint={t('users.reasonHint', { min: REASON_MIN })}
+          >
+            {({ id, describedBy, invalid, required }) => (
+              <Textarea
+                id={id}
+                aria-describedby={describedBy}
+                invalid={invalid}
+                required={required}
+                autoFocus
+                rows={3}
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+              />
+            )}
+          </Field>
+        </div>
+      </Dialog>
+
+      <ConfirmDialog
+        open={confirmingAction && user !== null}
+        onOpenChange={(open) => {
+          setConfirmingAction(open);
+          if (!open && !user) {
+            onClose();
+          }
+        }}
+        title={user ? t(`users.${action}Title`, { name: user.name }) : ''}
+        description={t(`users.${action}Body`)}
+        confirmLabel={t(`users.${action}Confirm`)}
+        confirmVariant={action === 'reactivate' ? 'primary' : 'danger'}
+        onConfirm={() => void confirmAction()}
+        loading={run.isPending}
+      >
+        <p className="text-body-small text-text-secondary">
+          {t('users.confirmActionBody', { action: t(`users.${action}Confirm`) })}
+        </p>
+      </ConfirmDialog>
+    </>
   );
 }

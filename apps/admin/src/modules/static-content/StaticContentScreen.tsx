@@ -35,6 +35,7 @@ import {
 import { useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, Spinner } from '@/components/ui/states';
@@ -75,6 +76,7 @@ export function StaticContentScreen() {
     requested && STATIC_PAGE_SLUGS.includes(requested) ? requested : STATIC_PAGE_SLUGS[0];
 
   const [lang, setLang] = useState<LanguageCode>(EDITORIAL_FALLBACK_LANGUAGE);
+  const [confirmingPublish, setConfirmingPublish] = useState(false);
 
   const preview = useStaticPagePreview(slug, lang);
   const save = useSaveStaticPageTranslation(slug);
@@ -119,8 +121,13 @@ export function StaticContentScreen() {
   }
 
   async function submitPublish() {
+    setConfirmingPublish(true);
+  }
+
+  async function confirmPublish() {
     try {
       await publish.mutateAsync();
+      setConfirmingPublish(false);
       toast.success(t('staticContent.published', { page: t(`staticContent.page.${slug}`) }));
     } catch (cause) {
       toast.error(t('staticContent.publishFailed'), t(errorMessageKey(cause)));
@@ -236,6 +243,17 @@ export function StaticContentScreen() {
           />
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmingPublish}
+        onOpenChange={setConfirmingPublish}
+        title={t('staticContent.publishConfirmTitle', { page: t(`staticContent.page.${slug}`) })}
+        description={t('staticContent.publishConfirmBody')}
+        confirmLabel={t('staticContent.publish')}
+        confirmVariant="primary"
+        onConfirm={() => void confirmPublish()}
+        loading={publish.isPending}
+      />
     </>
   );
 }
