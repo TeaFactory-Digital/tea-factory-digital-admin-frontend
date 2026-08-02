@@ -124,6 +124,12 @@ export function FactorySection(props: SectionProps) {
   const [draft, setDraft] = useState(props.config.factory);
   useEffect(() => setDraft(props.config.factory), [props.config.factory]);
 
+  const supportEmail = draft.supportEmail?.trim() ?? '';
+  const supportEmailError =
+    supportEmail.length > 0 && !emailSchema.safeParse(supportEmail).success
+      ? t('validation.email')
+      : undefined;
+
   const dirty = !same(draft, props.config.factory);
   const field = (key: keyof typeof draft) => ({
     value: draft[key] ?? '',
@@ -150,8 +156,10 @@ export function FactorySection(props: SectionProps) {
         <Field label={t('config.factory.location')}>
           {({ id }) => <Input id={id} disabled={props.readOnly} {...field('location')} />}
         </Field>
-        <Field label={t('config.factory.supportEmail')}>
-          {({ id }) => <Input id={id} type="email" disabled={props.readOnly} {...field('supportEmail')} />}
+        <Field label={t('config.factory.supportEmail')} error={supportEmailError}>
+          {({ id, invalid }) => (
+            <Input id={id} type="email" invalid={invalid} disabled={props.readOnly} {...field('supportEmail')} />
+          )}
         </Field>
         <Field label={t('config.factory.supportHours')}>
           {({ id }) => <Input id={id} disabled={props.readOnly} {...field('supportHours')} />}
@@ -167,7 +175,7 @@ export function FactorySection(props: SectionProps) {
       <SectionFooter
         {...props}
         patch={{ factory: draft }}
-        dirty={dirty}
+        dirty={dirty && !supportEmailError}
         onRevert={() => setDraft(props.config.factory)}
       />
     </CardBody>

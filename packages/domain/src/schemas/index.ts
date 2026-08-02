@@ -31,16 +31,34 @@ import { round2 } from '../money';
 const requiredString = (key: string, max = 200) =>
   z.string().trim().min(1, key).max(max, 'validation.tooLong');
 
-/* ───────────────────────────────── Auth ───────────────────────────────── */
+export const emailSchema = z.string().trim().min(1, 'validation.required').email('validation.email');
 
 export const loginSchema = z.object({
-  email: z.string().trim().min(1, 'validation.required').email('validation.email'),
+  email: emailSchema,
   password: z.string().min(1, 'validation.required'),
   /** Kept for the session-lifetime choice; never stores the password itself. */
   rememberDevice: z.boolean().optional(),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
+
+/* ───────────────────────────────── Users ───────────────────────────────── */
+
+export const createUserSchema = z.object({
+  name: requiredString('validation.required', 120),
+  email: emailSchema,
+  roles: z.array(z.string()).min(1, 'validation.required'),
+});
+
+export type CreateUserInput = z.infer<typeof createUserSchema>;
+
+export const updateUserSchema = z.object({
+  name: requiredString('validation.required', 120),
+  roles: z.array(z.string()).min(1, 'validation.required'),
+});
+
+export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+
 
 export const mfaSchema = z.object({
   /** TOTP: exactly six digits. A trimmed paste with a space must still pass. */

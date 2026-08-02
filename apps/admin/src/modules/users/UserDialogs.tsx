@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { ShieldAlert } from 'lucide-react';
 import {
   DEFAULT_ROLE_MATRIX,
+  emailSchema,
   requiresMfa,
   type AdminConsoleUser,
   type ConsoleRole,
@@ -40,6 +41,23 @@ import {
 const ROLES = Object.keys(DEFAULT_ROLE_MATRIX) as ConsoleRole[];
 const REASON_MIN = 10;
 
+function getNameError(name: string): string | null {
+  const trimmed = name.trim();
+  if (!trimmed) return 'validation.required';
+  if (trimmed.length > 120) return 'validation.tooLong';
+  return null;
+}
+
+function getEmailError(email: string): string | null {
+  const trimmed = email.trim();
+  if (!trimmed) return 'validation.required';
+  const result = emailSchema.safeParse(trimmed);
+  if (!result.success) {
+    return result.error.issues[0]?.message ?? 'validation.email';
+  }
+  return null;
+}
+
 /** Invite, or change a name and roles. `user` null means invite. */
 export function UserDialog({
   open,
@@ -61,6 +79,9 @@ export function UserDialog({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [roles, setRoles] = useState<ConsoleRole[]>([]);
+  const [touchedName, setTouchedName] = useState(false);
+  const [touchedEmail, setTouchedEmail] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [confirmingSubmit, setConfirmingSubmit] = useState(false);
 
   useEffect(() => {
@@ -68,13 +89,25 @@ export function UserDialog({
     setName(user?.name ?? '');
     setEmail(user?.email ?? '');
     setRoles(user?.roles ?? []);
+    setTouchedName(false);
+    setTouchedEmail(false);
+    setSubmitted(false);
   }, [open, user]);
 
   const editing = user !== null;
   const isSelf = editing && user.id === context.actingUserId;
-  const complete = name.trim() && (editing || email.trim()) && roles.length > 0;
+
+  const nameError = getNameError(name);
+  const emailError = editing ? null : getEmailError(email);
+
+  const showNameError = (touchedName || submitted) && nameError;
+  const showEmailError = !editing && (touchedEmail || submitted) && emailError;
+
+  const complete = !nameError && !emailError && roles.length > 0;
 
   async function submit() {
+    setSubmitted(true);
+    if (!complete) return;
     setConfirmingSubmit(true);
   }
 
@@ -123,28 +156,38 @@ export function UserDialog({
         }
       >
         <div className="flex flex-col gap-md">
-        <Field label={t('users.field.name')} required>
-          {({ id, required }) => (
-            <Input id={id} required={required} value={name} onChange={(e) => setName(e.target.value)} />
+        <Field label={t('users.field.name')} required error={showNameError ? t(showNameError) : undefined}>
+          {({ id, required, invalid }) => (
+            <Input
+              id={id}
+              required={required}
+              invalid={invalid}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onBlur={() => setTouchedName(true)}
+            />
           )}
         </Field>
 
         <Field
           label={t('users.field.email')}
           required={!editing}
+          error={showEmailError ? t(showEmailError) : undefined}
           hint={editing ? t('users.field.emailLocked') : t('users.field.emailHint')}
         >
-          {({ id, describedBy, required }) => (
+          {({ id, describedBy, required, invalid }) => (
             <Input
               id={id}
               aria-describedby={describedBy}
               required={required}
+              invalid={invalid}
               type="email"
               // The identity a session is issued against. Changing it would be creating a
               // different person while keeping their audit trail.
               disabled={editing}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => setTouchedEmail(true)}
             />
           )}
         </Field>
