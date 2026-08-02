@@ -117,7 +117,7 @@ export const Input = forwardRef<
       className={cn(
         CONTROL,
         width(fullWidth),
-        'h-11',
+        'h-10',
         invalid ? CONTROL_BAD : CONTROL_OK,
         className,
       )}
@@ -151,21 +151,39 @@ export const Select = forwardRef<
   HTMLSelectElement,
   SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean; fullWidth?: boolean }
 >(function Select({ invalid, fullWidth = true, className, children, ...rest }, ref) {
+  const selectClassName = cn(
+    CONTROL,
+    width(fullWidth),
+    'h-10 appearance-none pr-10',
+    invalid ? CONTROL_BAD : CONTROL_OK,
+    className,
+  );
+
   return (
-    <select
-      ref={ref}
-      aria-invalid={invalid || undefined}
-      className={cn(
-        CONTROL,
-        width(fullWidth),
-        'h-11 pr-lg',
-        invalid ? CONTROL_BAD : CONTROL_OK,
-        className,
-      )}
-      {...rest}
-    >
-      {children}
-    </select>
+    <div className={cn('relative', width(fullWidth))}>
+      <select
+        ref={ref}
+        aria-invalid={invalid || undefined}
+        className={selectClassName}
+        {...rest}
+      >
+        {children}
+      </select>
+      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="size-3.5 text-text-secondary"
+          aria-hidden="true"
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </div>
+    </div>
   );
 });
 
@@ -185,7 +203,7 @@ export const SearchInput = forwardRef<
       type="search"
       aria-label={label}
       placeholder={label}
-      className={cn(CONTROL, CONTROL_OK, width(fullWidth), 'h-11', className)}
+      className={cn(CONTROL, CONTROL_OK, width(fullWidth), 'h-10', className)}
       {...rest}
     />
   );
