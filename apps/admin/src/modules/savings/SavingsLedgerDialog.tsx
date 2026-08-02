@@ -17,6 +17,7 @@ import type { SavingsAccount } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { cn } from '@/lib/cn';
 import { EmptyState, ErrorState, Spinner } from '@/components/ui/states';
 import { formatAmount, formatMoney, formatMonthKey } from '@/lib/format';
 import { useSavingsLedger } from './hooks';
@@ -82,7 +83,7 @@ export function SavingsLedgerDialog({
           {/* A real table: the office pastes this into a spreadsheet, which is where
               the office lives (§19.5). */}
           <table className="w-full border-collapse text-data-cell" aria-label={t('savings.ledgerTable')}>
-            <thead className="sticky top-0 bg-table-header shadow-[inset_0_-1px_0_0_var(--color-border)]">
+            <thead className="sticky top-0 z-10 bg-table-header shadow-[inset_0_-1px_0_0_var(--color-border)]">
               <tr>
                 <th scope="col" className="px-sm py-xs text-left text-data-header uppercase text-text-secondary">
                   {t('savings.column.month')}
@@ -102,7 +103,7 @@ export function SavingsLedgerDialog({
               {rows.map((entry, index) => (
                 <tr
                   key={entry.id}
-                  className={index % 2 === 1 ? 'border-b border-divider bg-table-row-alt' : 'border-b border-divider'}
+                  className={cn(index % 2 === 1 && 'bg-table-row-alt', 'border-b border-divider')}
                 >
                   <td className="px-sm py-xs whitespace-nowrap">
                     {entry.billId ? (

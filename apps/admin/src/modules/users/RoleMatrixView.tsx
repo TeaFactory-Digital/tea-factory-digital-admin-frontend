@@ -31,6 +31,7 @@ import { useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Select } from '@/components/ui/Field';
+import { cn } from '@/lib/cn';
 import { ErrorState, Spinner } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
@@ -143,7 +144,7 @@ export function RoleMatrixView() {
               return (
                 <tr
                   key={capability}
-                  className={index % 2 === 1 ? 'border-b border-divider bg-table-row-alt' : 'border-b border-divider'}
+                  className={cn(index % 2 === 1 && 'bg-table-row-alt', 'border-b border-divider')}
                 >
                   <th
                     scope="row"

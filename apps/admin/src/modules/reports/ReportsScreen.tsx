@@ -34,6 +34,7 @@ import {
 } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { DataTable } from '@/components/ui/DataTable';
 import { Field, Input, Select } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState, ErrorState, Spinner } from '@/components/ui/states';
@@ -308,14 +309,9 @@ export function ReportsScreen() {
                 <EmptyState title={t('reports.empty')} body={t('reports.emptyHint')} />
               </CardBody>
             ) : (
-              // A real table so the office can select it and paste it into a spreadsheet —
-              // which is the export, until §18.1's CSV exists.
               <div className="overflow-x-auto">
-                <table
-                  className="w-full border-collapse text-data-cell"
-                  aria-label={t(`reports.name.${id}`)}
-                >
-                  <thead className="bg-table-header">
+                <table className="w-full border-collapse text-data-cell" aria-label={t(`reports.name.${id}`)}>
+                  <thead className="sticky top-0 z-10 bg-table-header shadow-[inset_0_-1px_0_0_var(--color-border)]">
                     <tr>
                       {result.columns.map((column) => (
                         <th
@@ -336,11 +332,7 @@ export function ReportsScreen() {
                     {result.rows.map((row, index) => (
                       <tr
                         key={index}
-                        className={
-                          index % 2 === 1
-                            ? 'border-b border-divider bg-table-row-alt'
-                            : 'border-b border-divider'
-                        }
+                        className={index % 2 === 1 ? 'border-b border-divider bg-table-row-alt' : 'border-b border-divider'}
                       >
                         {result.columns.map((column) => (
                           <td
@@ -352,31 +344,18 @@ export function ReportsScreen() {
                                 : 'text-text-primary',
                             )}
                           >
-                            {
-                              // `monthSummary`'s one exception: the `value` column holds a
-                              // month-cycle stage for the `stage` row and a plain number for
-                              // every other row, so it stays typed `text` and this is the one
-                              // place that knows to read the stage under the namespace the
-                              // rest of the console already uses for it — not a second copy
-                              // of the same labels under `reports.metric.*`.
-                              id === 'monthSummary' && column.key === 'value' && row.metric === 'stage'
-                                ? row.value === null || row.value === undefined
-                                  ? NOT_AVAILABLE
-                                  : t(`month.stage.${row.value}`)
-                                : cell(row[column.key] ?? null, column, t)
-                            }
+                            {id === 'monthSummary' && column.key === 'value' && row.metric === 'stage'
+                              ? row.value === null || row.value === undefined
+                                ? NOT_AVAILABLE
+                                : t(`month.stage.${row.value}`)
+                              : cell(row[column.key] ?? null, column, t)}
                           </td>
                         ))}
                       </tr>
                     ))}
                   </tbody>
 
-                  {/* Totals only where the server sent one. A report that omits a column here
-                      is saying that column does not add up — a share of a share is not a
-                      share, and a supplier counted at two points is not two suppliers. */}
-                  {result.totals ? (
-                    <ReportTotals columns={result.columns} totals={result.totals} />
-                  ) : null}
+                  {result.totals ? <ReportTotals columns={result.columns} totals={result.totals} /> : null}
                 </table>
               </div>
             )}
