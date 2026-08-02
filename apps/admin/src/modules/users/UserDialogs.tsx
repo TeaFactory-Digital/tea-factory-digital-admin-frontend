@@ -22,7 +22,9 @@ import {
   type LockoutCandidate,
 } from '@tfd/domain';
 import { Button } from '@/components/ui/Button';
+import { Checkbox } from '@/components/ui/Checkbox';
 import { Dialog } from '@/components/ui/Dialog';
+import { Label } from '@/components/ui/Label';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
@@ -144,24 +146,22 @@ export function UserDialog({
           <p className="text-caption text-text-secondary">{t('users.field.rolesHint')}</p>
 
           {ROLES.map((role) => (
-            <label key={role} className="flex items-center gap-sm text-body-small text-text-primary">
-              <input
-                type="checkbox"
-                className="size-4 accent-primary"
+            <Label key={role} className="flex items-center gap-sm text-body-small text-text-primary">
+              <Checkbox
                 checked={roles.includes(role)}
                 // Editing your own roles mid-session is never what was meant, and the
                 // server refuses it (`self-modification`).
                 disabled={isSelf}
-                onChange={(event) =>
+                onCheckedChange={(checked) =>
                   setRoles(
-                    event.target.checked
+                    checked === true
                       ? [...roles, role]
                       : roles.filter((one) => one !== role),
                   )
                 }
               />
               {t(`users.role.${role}`)}
-            </label>
+            </Label>
           ))}
 
           {isSelf ? (

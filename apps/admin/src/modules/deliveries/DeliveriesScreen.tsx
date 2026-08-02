@@ -30,6 +30,8 @@ import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { Label } from '@/components/ui/Label';
 import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
 import { Input } from '@/components/ui/Input';
@@ -237,15 +239,15 @@ export function DeliveriesScreen() {
             </Select>
           </label>
 
-          <label className="flex items-center gap-xs pb-sm text-body-small text-text-primary">
-            <input
-              type="checkbox"
-              className="size-4 accent-primary"
+          <Label className="flex items-center gap-xs pb-sm text-body-small text-text-primary">
+            <Checkbox
               checked={includeVoided}
-              onChange={(event) => setParam('includeVoided', event.target.checked ? 'true' : null)}
+              onCheckedChange={(checked) =>
+                setParam('includeVoided', checked === true ? 'true' : null)
+              }
             />
             {t('deliveries.showVoided')}
-          </label>
+          </Label>
         </div>
 
         {/**

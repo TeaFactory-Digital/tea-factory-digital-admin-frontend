@@ -243,15 +243,15 @@ export function CreditScreen() {
 
           {/* The hard cases, one click away. This is the filter an accountant
               reviewing the queue actually wants. */}
-          <label className="flex items-center gap-xs text-body-small text-text-primary">
-            <input
-              type="checkbox"
+          <Label className="flex items-center gap-xs text-body-small text-text-primary">
+            <Checkbox
               checked={overCeiling}
-              onChange={(event) => setParam('overCeiling', event.target.checked ? 'true' : null)}
-              className="size-4 rounded-sm border-border"
+              onCheckedChange={(checked) =>
+                setParam('overCeiling', checked === true ? 'true' : null)
+              }
             />
             {t('credit.filter.overCeiling')}
-          </label>
+          </Label>
         </div>
 
         <DataTable

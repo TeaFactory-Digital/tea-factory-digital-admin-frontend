@@ -27,7 +27,9 @@ import {
 } from '@tfd/domain';
 import { Button } from '@/components/ui/Button';
 import { CardBody } from '@/components/ui/Card';
+import { Checkbox } from '@/components/ui/Checkbox';
 import { Field, Input, Select } from '@/components/ui/Field';
+import { Label } from '@/components/ui/Label';
 import { adminConfigRepository } from '@/services/repositories/adminConfigRepository';
 import { ImpactList } from './ImpactList';
 import { RevertButton, StringListEditor } from './StringListEditor';
@@ -209,13 +211,12 @@ export function FeaturesSection(props: SectionProps) {
       <ul className="flex flex-col divide-y divide-divider">
         {names.map((name) => (
           <li key={name} className="flex flex-wrap items-start gap-sm py-sm">
-            <label className="flex min-w-0 flex-1 items-start gap-sm">
-              <input
-                type="checkbox"
-                className="mt-xxs size-4 shrink-0 accent-primary"
+            <Label className="flex min-w-0 flex-1 items-start gap-sm">
+              <Checkbox
+                className="mt-xxs shrink-0"
                 checked={draft[name]}
                 disabled={props.readOnly}
-                onChange={(event) => setDraft({ ...draft, [name]: event.target.checked })}
+                onCheckedChange={(checked) => setDraft({ ...draft, [name]: checked === true })}
               />
               <span className="flex min-w-0 flex-col">
                 <span className="text-body-small font-medium text-text-primary">
@@ -227,7 +228,7 @@ export function FeaturesSection(props: SectionProps) {
                   {t('config.flagGates', { module: FLAG_MODULES[name] })}
                 </span>
               </span>
-            </label>
+            </Label>
           </li>
         ))}
       </ul>
@@ -407,17 +408,15 @@ export function AppearanceSection(props: SectionProps) {
         <p className="text-caption text-text-secondary">{t('config.contentLanguagesHint')}</p>
 
         {SUPPORTED_LANGUAGES.map((lang) => (
-          <label key={lang} className="flex items-center gap-sm text-body-small text-text-primary">
-            <input
-              type="checkbox"
-              className="size-4 accent-primary"
+          <Label key={lang} className="flex items-center gap-sm text-body-small text-text-primary">
+            <Checkbox
               checked={content.includes(lang)}
               // English is the fallback everything resolves to, so it is not optional. The
               // API refuses dropping it too (`fallback-language-required`).
               disabled={props.readOnly || lang === 'en'}
-              onChange={(event) =>
+              onCheckedChange={(checked) =>
                 setContent(
-                  event.target.checked
+                  checked === true
                     ? [...content, lang].filter((one, i, all) => all.indexOf(one) === i)
                     : content.filter((one) => one !== lang),
                 )
@@ -434,7 +433,7 @@ export function AppearanceSection(props: SectionProps) {
                 {t('config.recordsWritten', { count: props.usage.contentByLanguage[lang] })}
               </span>
             ) : null}
-          </label>
+          </Label>
         ))}
       </fieldset>
 
@@ -591,43 +590,39 @@ export function PushSection(props: SectionProps) {
           const enabled = categories.includes(category);
           return (
             <div key={category} className="flex flex-wrap items-center gap-md">
-              <label className="flex min-w-56 items-center gap-sm text-body-small text-text-primary">
-                <input
-                  type="checkbox"
-                  className="size-4 accent-primary"
+              <Label className="flex min-w-56 items-center gap-sm text-body-small text-text-primary">
+                <Checkbox
                   checked={enabled}
                   disabled={props.readOnly}
-                  onChange={(event) => {
-                    const next = event.target.checked
+                  onCheckedChange={(checked) => {
+                    const next = checked === true
                       ? [...categories, category]
                       : categories.filter((one) => one !== category);
                     setCategories(next);
                     // Kept a subset: a default the factory cannot send is a device
                     // consenting to something that never arrives.
-                    if (!event.target.checked) {
+                    if (checked !== true) {
                       setDefaults(defaults.filter((one) => one !== category));
                     }
                   }}
                 />
                 {t(`notifications.category.${category}`)}
-              </label>
+              </Label>
 
-              <label className="flex items-center gap-sm text-caption text-text-secondary">
-                <input
-                  type="checkbox"
-                  className="size-4 accent-primary"
+              <Label className="flex items-center gap-sm text-caption text-text-secondary">
+                <Checkbox
                   checked={defaults.includes(category)}
                   disabled={props.readOnly || !enabled}
-                  onChange={(event) =>
+                  onCheckedChange={(checked) =>
                     setDefaults(
-                      event.target.checked
+                      checked === true
                         ? [...defaults, category]
                         : defaults.filter((one) => one !== category),
                     )
                   }
                 />
                 {t('config.optedInByDefault')}
-              </label>
+              </Label>
             </div>
           );
         })}

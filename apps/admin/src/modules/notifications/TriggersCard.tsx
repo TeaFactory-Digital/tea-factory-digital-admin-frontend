@@ -23,6 +23,8 @@ import type { NotificationTrigger } from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { Label } from '@/components/ui/Label';
 import { ErrorState, Spinner } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
@@ -104,16 +106,14 @@ export function TriggersCard() {
                   // factory turned it off" are different answers.
                   <Badge tone="neutral">{t('notifications.notConfigured')}</Badge>
                 ) : canChange ? (
-                  <label className="flex shrink-0 items-center gap-xs text-label text-text-primary">
-                    <input
-                      type="checkbox"
-                      className="size-4 accent-primary"
+                  <Label className="flex shrink-0 items-center gap-xs text-label text-text-primary">
+                    <Checkbox
                       checked={trigger.enabled}
                       disabled={set.isPending}
-                      onChange={(event) => void toggle(trigger, event.target.checked)}
+                      onCheckedChange={(checked) => void toggle(trigger, checked === true)}
                     />
                     {trigger.enabled ? t('notifications.on') : t('notifications.off')}
-                  </label>
+                  </Label>
                 ) : (
                   <Badge tone={trigger.enabled ? 'success' : 'neutral'}>
                     {trigger.enabled ? t('notifications.on') : t('notifications.off')}
