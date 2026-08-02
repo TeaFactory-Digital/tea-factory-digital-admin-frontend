@@ -31,7 +31,7 @@ import { DataTable } from '@/components/ui/DataTable';
 import { SearchInput, Select } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/states';
-import { cn } from '@/lib/cn';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { useDebounced } from '@/lib/useDebounced';
 import { formatDateTime } from '@/lib/format';
 import { RoleMatrixView } from './RoleMatrixView';
@@ -244,27 +244,18 @@ export function UsersScreen() {
         }
       />
 
-      {/* A real tab list: ← → move between the two views, and a screen reader announces which
-          of two this is. */}
-      <div role="tablist" aria-label={t('users.views')} className="flex shrink-0 flex-wrap gap-xs">
-        {(['users', 'roles'] as View[]).map((one) => (
-          <button
-            key={one}
-            type="button"
-            role="tab"
-            aria-selected={view === one}
-            onClick={() => setParam('view', one === 'users' ? null : one)}
-            className={cn(
-              'rounded-md border px-md py-sm text-label',
-              view === one
-                ? 'border-primary bg-primary-muted font-semibold text-primary'
-                : 'border-border bg-surface text-text-primary hover:bg-surface-variant',
-            )}
-          >
-            {t(`users.view.${one}`)}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        value={view}
+        onValueChange={(value) => setParam('view', value === 'users' ? null : (value as View))}
+      >
+        <TabsList aria-label={t('users.views')}>
+          {(['users', 'roles'] as View[]).map((one) => (
+            <TabsTrigger key={one} value={one}>
+              {t(`users.view.${one}`)}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       {view === 'roles' ? (
         <RoleMatrixView />

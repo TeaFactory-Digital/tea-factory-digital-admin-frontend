@@ -38,6 +38,7 @@ import { useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover';
 import { ErrorState, Spinner } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/cn';
@@ -131,10 +132,20 @@ export function ConfigurationScreen() {
             {/* The tenant id, shown and **not editable**: it comes from the subdomain, and
                 everything else is keyed on it. The API refuses a patch containing it
                 (`tenant-immutable`). */}
-            <span className="flex flex-col">
-              <span className="text-caption text-text-secondary">{t('config.tenantId')}</span>
-              <span className="numeric text-subtitle text-text-primary">{config.tenantId}</span>
-            </span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="flex flex-col rounded-md border border-border bg-surface px-md py-sm text-left"
+                >
+                  <span className="text-caption text-text-secondary">{t('config.tenantId')}</span>
+                  <span className="numeric text-subtitle text-text-primary">{config.tenantId}</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64">
+                <p className="text-body-small text-text-primary">{t('config.tenantIdHint')}</p>
+              </PopoverContent>
+            </Popover>
             {!canEdit ? <Badge tone="neutral">{t('config.readOnlyBadge')}</Badge> : null}
           </div>
         }

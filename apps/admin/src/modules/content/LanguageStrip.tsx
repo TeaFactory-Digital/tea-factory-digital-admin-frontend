@@ -23,7 +23,7 @@
 import { useTranslation } from 'react-i18next';
 import { CircleAlert, Clock, Star } from 'lucide-react';
 import { EDITORIAL_FALLBACK_LANGUAGE, type LanguageCode } from '@tfd/domain';
-import { cn } from '@/lib/cn';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 
 type LanguageState = 'written' | 'missing' | 'stale' | 'fallbackMissing';
 
@@ -60,59 +60,40 @@ export function LanguageStrip({
   const { t } = useTranslation();
 
   return (
-    /**
-     * A real tab list, so ← → move between languages and a screen reader announces
-     * which of three this is. An editor translating a circular switches tabs dozens of
-     * times, and a row of buttons makes that a mouse journey each time.
-     */
-    <div role="tablist" aria-label={t('content.languages')} className="flex flex-wrap gap-xs">
-      {languages.map((lang) => {
-        const state = languageStateOf(lang, missing, stale);
-        const isActive = lang === active;
+    <Tabs value={active} onValueChange={(value) => onSelect(value as LanguageCode)}>
+      <TabsList aria-label={t('content.languages')}>
+        {languages.map((lang) => {
+          const state = languageStateOf(lang, missing, stale);
 
-        return (
-          <button
-            key={lang}
-            type="button"
-            role="tab"
-            aria-selected={isActive}
-            onClick={() => onSelect(lang)}
-            className={cn(
-              'inline-flex items-center gap-xs rounded-md border px-md py-sm text-label',
-              isActive
-                ? 'border-primary bg-primary-muted font-semibold text-primary'
-                : 'border-border bg-surface text-text-primary hover:bg-surface-variant',
-            )}
-          >
-            <span>{t(`content.language.${lang}`)}</span>
+          return (
+            <TabsTrigger key={lang} value={lang} className="gap-xs">
+              <span>{t(`content.language.${lang}`)}</span>
 
-            {lang === EDITORIAL_FALLBACK_LANGUAGE ? (
-              <span
-                title={t('content.fallbackLanguageHint')}
-                className="inline-flex items-center text-text-secondary"
-              >
-                <Star className="size-icon-xs" aria-hidden />
-                <span className="sr-only">{t('content.fallbackLanguageHint')}</span>
-              </span>
-            ) : null}
+              {lang === EDITORIAL_FALLBACK_LANGUAGE ? (
+                <span
+                  title={t('content.fallbackLanguageHint')}
+                  className="inline-flex items-center text-text-secondary"
+                >
+                  <Star className="size-icon-xs" aria-hidden />
+                  <span className="sr-only">{t('content.fallbackLanguageHint')}</span>
+                </span>
+              ) : null}
 
-            {/* The state, as an icon **and** a screen-reader sentence. Colour is never
-                the only signal (see `Badge`), and here it must not be the only signal
-                either — the gap is the whole point of the control. */}
-            {state === 'missing' || state === 'fallbackMissing' ? (
-              <span className="inline-flex items-center text-warning">
-                <CircleAlert className="size-icon-xs" aria-hidden />
-                <span className="sr-only">{t('content.state.missing')}</span>
-              </span>
-            ) : state === 'stale' ? (
-              <span className="inline-flex items-center text-error">
-                <Clock className="size-icon-xs" aria-hidden />
-                <span className="sr-only">{t('content.state.stale')}</span>
-              </span>
-            ) : null}
-          </button>
-        );
-      })}
-    </div>
+              {state === 'missing' || state === 'fallbackMissing' ? (
+                <span className="inline-flex items-center text-warning">
+                  <CircleAlert className="size-icon-xs" aria-hidden />
+                  <span className="sr-only">{t('content.state.missing')}</span>
+                </span>
+              ) : state === 'stale' ? (
+                <span className="inline-flex items-center text-error">
+                  <Clock className="size-icon-xs" aria-hidden />
+                  <span className="sr-only">{t('content.state.stale')}</span>
+                </span>
+              ) : null}
+            </TabsTrigger>
+          );
+        })}
+      </TabsList>
+    </Tabs>
   );
 }
