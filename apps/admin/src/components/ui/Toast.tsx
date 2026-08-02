@@ -71,7 +71,8 @@ export function ToastProvider({ children }: PropsWithChildren) {
                 if (!open) setItems((current) => current.filter((i) => i.id !== item.id));
               }}
               className={cn(
-                'flex items-start gap-sm rounded-md border-l-4 border border-border bg-surface px-md py-sm shadow-lg',
+                'flex items-start gap-sm rounded-md border border-border bg-surface px-md py-sm shadow-lg',
+                'border-l-4',
                 TONES[item.tone],
               )}
             >

@@ -11,7 +11,7 @@
  * Radix is used where the platform has no equivalent — dialogs, toasts, menus.
  */
 
-import { forwardRef, useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
+import { forwardRef, useId, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 
 const CONTROL =
@@ -106,25 +106,7 @@ export function Field({ label, error, hint, required, children, className }: Fie
   );
 }
 
-export const Input = forwardRef<
-  HTMLInputElement,
-  InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean; fullWidth?: boolean }
->(function Input({ invalid, fullWidth = true, className, ...rest }, ref) {
-  return (
-    <input
-      ref={ref}
-      aria-invalid={invalid || undefined}
-      className={cn(
-        CONTROL,
-        width(fullWidth),
-        'h-10',
-        invalid ? CONTROL_BAD : CONTROL_OK,
-        className,
-      )}
-      {...rest}
-    />
-  );
-});
+export { Input } from './Input';
 
 export const Textarea = forwardRef<
   HTMLTextAreaElement,
@@ -147,45 +129,7 @@ export const Textarea = forwardRef<
   );
 });
 
-export const Select = forwardRef<
-  HTMLSelectElement,
-  SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean; fullWidth?: boolean }
->(function Select({ invalid, fullWidth = true, className, children, ...rest }, ref) {
-  const selectClassName = cn(
-    CONTROL,
-    width(fullWidth),
-    'h-10 appearance-none pr-10',
-    invalid ? CONTROL_BAD : CONTROL_OK,
-    className,
-  );
-
-  return (
-    <div className={cn('relative', width(fullWidth))}>
-      <select
-        ref={ref}
-        aria-invalid={invalid || undefined}
-        className={selectClassName}
-        {...rest}
-      >
-        {children}
-      </select>
-      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="size-3.5 text-text-secondary"
-          aria-hidden="true"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </div>
-    </div>
-  );
-});
+export { Select } from './Select';
 
 /**
  * A search box that submits as you type.

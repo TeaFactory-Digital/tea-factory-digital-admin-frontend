@@ -29,7 +29,9 @@ import {
 } from '@tfd/domain';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { Field, Input, Select, Textarea } from '@/components/ui/Field';
+import { Field, Textarea } from '@/components/ui/Field';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { Spinner } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';

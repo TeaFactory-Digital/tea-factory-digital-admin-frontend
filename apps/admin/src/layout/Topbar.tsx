@@ -7,7 +7,6 @@
  * common console support question after "which month is open".
  */
 
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { ChevronDown, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore, useCurrentUser } from '@/auth/authStore';
@@ -15,8 +14,16 @@ import { useFactory } from '@/config/RuntimeConfigProvider';
 import { allowTenantOverride, tenantId, tenantSource, switchTenantByReload } from '@/config/tenant';
 import { MOCK_TENANT_IDS } from '@/services/mocks/seed';
 import { Logo } from '@/brand/Logo';
-import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/DropdownMenu';
+import { Select } from '@/components/ui/Select';
 
 export function Topbar() {
   const { t } = useTranslation();
@@ -46,24 +53,25 @@ export function Topbar() {
         {allowTenantOverride ? (
           <label className="hidden items-center gap-xs text-caption text-text-secondary md:flex">
             {t('shell.tenantSwitcher')}
-            <select
+            <Select
               value={tenantId}
               onChange={(event) => switchTenantByReload(event.target.value)}
-              className="h-9 rounded-md border border-border bg-surface px-sm text-caption text-text-primary"
+              className="h-9 min-w-24 px-sm text-caption"
+              fullWidth={false}
             >
               {[...new Set([tenantId, ...MOCK_TENANT_IDS])].map((id) => (
                 <option key={id} value={id}>
                   {id}
                 </option>
               ))}
-            </select>
+            </Select>
             {tenantSource === 'fallback' ? <Badge tone="warning">fallback</Badge> : null}
           </label>
         ) : null}
 
         {user ? (
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
@@ -74,28 +82,22 @@ export function Topbar() {
                   <span className="text-caption text-text-secondary">{user.roles.join(', ')}</span>
                 </span>
               </Button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content
-                align="end"
-                sideOffset={4}
-                className="z-50 min-w-56 rounded-md border border-border bg-surface p-xs shadow-lg"
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" sideOffset={4} className="min-w-56 p-xs">
+              <div className="px-sm py-xs">
+                <p className="text-body-small text-text-primary">{user.name}</p>
+                <p className="text-caption text-text-secondary">{user.email}</p>
+              </div>
+              <DropdownMenuSeparator className="my-xs h-px bg-divider" />
+              <DropdownMenuItem
+                onSelect={() => void logout()}
+                className="flex cursor-pointer items-center gap-sm rounded-sm px-sm py-xs text-body-small text-text-primary outline-none data-[highlighted]:bg-surface-variant"
               >
-                <div className="px-sm py-xs">
-                  <p className="text-body-small text-text-primary">{user.name}</p>
-                  <p className="text-caption text-text-secondary">{user.email}</p>
-                </div>
-                <DropdownMenu.Separator className="my-xs h-px bg-divider" />
-                <DropdownMenu.Item
-                  onSelect={() => void logout()}
-                  className="flex cursor-pointer items-center gap-sm rounded-sm px-sm py-xs text-body-small text-text-primary outline-none data-highlighted:bg-surface-variant"
-                >
-                  <LogOut className="size-icon-sm" aria-hidden />
-                  {t('common.signOut')}
-                </DropdownMenu.Item>
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
+                <LogOut className="size-icon-sm" aria-hidden />
+                {t('common.signOut')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : null}
       </div>
     </header>
