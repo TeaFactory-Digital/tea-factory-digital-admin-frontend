@@ -15,6 +15,7 @@ import { useFactory } from '@/config/RuntimeConfigProvider';
 import { allowTenantOverride, tenantId, tenantSource, switchTenantByReload } from '@/config/tenant';
 import { MOCK_TENANT_IDS } from '@/services/mocks/seed';
 import { Logo } from '@/brand/Logo';
+import { LanguageSwitcher } from '@/i18n/LanguageSwitcher';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -53,6 +54,11 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-md">
+        {/* Always visible, and to the left of the account menu on purpose: a clerk
+            who cannot read the current language needs to reach this without opening
+            a menu whose trigger they cannot read either. */}
+        <LanguageSwitcher />
+
         {/* Tenant switcher, in development and the hosted demo only (see
             config/tenant.ts). Reloads rather than mutating state: a tenant change
             invalidates every cached query and the applied theme, and in production

@@ -64,11 +64,24 @@ export const en = {
   'shell.mockBanner':
     'Mock data. Nothing here is a real record, and nothing is saved past a page reload.',
   'shell.tenantSwitcher': 'Tenant (dev/demo only)',
+  /* The accessible name of the language pill. The options inside it are *not*
+     translated — see i18n/languages.ts for why. */
+  'shell.language': 'Language',
 
   /* ──────────────────────────────── splash ─────────────────────────────── */
   // The factory's name is the headline on the boot splash; this is the line under
   // it, and it says what is happening rather than naming the product again.
   'splash.subtitle': 'Preparing the office console…',
+
+  /* ─────────────────────────────── viewport ────────────────────────────── */
+  // Shown instead of the console below tablet width (see layout/ViewportGate).
+  // It has to name the device to use, not just report a problem: whoever reads
+  // this is holding the wrong one.
+  'viewport.tooSmallTitle': 'This screen is too small',
+  'viewport.tooSmallBody':
+    'The office console is built for tablets, laptops and desktops — its grids and side-by-side forms do not fit a phone. Open it on a tablet or a computer; a small tablet may need to be turned sideways.',
+  'viewport.tooSmallSize':
+    'This window is {{width}} × {{height}}. The console needs at least {{minWidth}} × {{minHeight}}.',
 
   /* ──────────────────────────── navigation ──────────────────────────── */
   'nav.dashboard': 'Dashboard',

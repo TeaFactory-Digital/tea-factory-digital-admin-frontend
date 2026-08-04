@@ -21,6 +21,7 @@ import { useAuthStore } from './authStore';
 import { env } from '@/config/env';
 import { useFactory } from '@/config/RuntimeConfigProvider';
 import { Logo } from '@/brand/Logo';
+import { LanguageSwitcher } from '@/i18n/LanguageSwitcher';
 import { Button } from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
 import { Card, CardBody } from '@/components/ui/Card';
@@ -52,6 +53,16 @@ export function SignInScreen() {
           <p className="text-body-small text-text-secondary">
             {t('auth.signInSubtitle', { factory: factory.name })}
           </p>
+        </div>
+
+        {/* Before the form, not in a corner of it.
+            The chrome language is a `localStorage` preference, so it survives from
+            whoever used this machine last — which means the person who most needs to
+            change it arrives at a screen they cannot read. Tab reaches this before
+            the email field, and it is the one control here that works without a
+            session. */}
+        <div className="flex justify-center">
+          <LanguageSwitcher />
         </div>
 
         <Card>
@@ -243,8 +254,8 @@ function MockCredentials() {
         {mockUsers.map((user) => (
           <p key={user.id} className="numeric text-caption text-text-secondary">
             {t(`auth.demoRole.${user.roles[0]}`)}
-            {user.mfaEnrolled ? ` ${t('auth.demoMfa', { code: MOCK_MFA_CODE })}` : ''}:{' '}
-            {user.email} / {MOCK_PASSWORD}
+            {user.mfaEnrolled ? ` ${t('auth.demoMfa', { code: MOCK_MFA_CODE })}` : ''}: {user.email}{' '}
+            / {MOCK_PASSWORD}
           </p>
         ))}
       </CardBody>

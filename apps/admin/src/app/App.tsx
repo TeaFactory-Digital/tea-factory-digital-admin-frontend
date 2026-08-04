@@ -12,7 +12,11 @@
  *  5. `BootSplash` — shows the mark and the factory's name over the app until the
  *     config and the session have settled. An overlay rather than a gate, so the
  *     router below mounts and starts fetching while it is up.
- *  6. `RouterProvider` — the screens, which read all of the above.
+ *  6. `ViewportGate` — refuses anything narrower than a tablet. Inside the splash
+ *     rather than around it, because `BootSplash` is what retires the static splash
+ *     in `index.html`: gating above it would leave a phone looking at that white
+ *     panel forever.
+ *  7. `RouterProvider` — the screens, which read all of the above.
  *
  * Auth is deliberately **not** a provider. It is a Zustand store, so the
  * transport's 401 interceptor can reach the session without a React tree — an
@@ -27,6 +31,7 @@ import { RuntimeConfigProvider } from '@/config/RuntimeConfigProvider';
 import { BrandProvider } from '@/brand/BrandProvider';
 import { BootSplash } from '@/brand/SplashScreen';
 import { ToastProvider } from '@/components/ui/Toast';
+import { ViewportGate } from '@/layout/ViewportGate';
 import { useAuthStore } from '@/auth/authStore';
 import { router } from '@/routes/router';
 
@@ -49,7 +54,9 @@ export function App() {
         <BrandProvider>
           <ToastProvider>
             <BootSplash>
-              <RouterProvider router={router} />
+              <ViewportGate>
+                <RouterProvider router={router} />
+              </ViewportGate>
             </BootSplash>
           </ToastProvider>
         </BrandProvider>
