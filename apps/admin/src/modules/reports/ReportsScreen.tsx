@@ -34,7 +34,6 @@ import {
 } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
-import { DataTable } from '@/components/ui/DataTable';
 import { Field, Input, Select } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState, ErrorState, Spinner } from '@/components/ui/states';

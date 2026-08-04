@@ -75,7 +75,21 @@ describe('ConfirmDialog', () => {
 
     renderWithI18n(
       <UserActionDialog
-        user={{ id: '1', name: 'Ada', email: 'ada@example.com', roles: [] }}
+        user={{
+          id: '1',
+          name: 'Ada',
+          email: 'ada@example.com',
+          roles: [],
+          factoryId: 'galaboda',
+          mfaEnrolled: true,
+          lastLoginAt: null,
+          status: 'active',
+          // The three flags the row carries so the dialog can withhold "suspend"
+          // from the last way back into the console. Ada is not that person.
+          canAdministerUsers: false,
+          owesMfa: false,
+          isLastAdministrator: false,
+        }}
         action="suspend"
         users={[]}
         onClose={() => undefined}

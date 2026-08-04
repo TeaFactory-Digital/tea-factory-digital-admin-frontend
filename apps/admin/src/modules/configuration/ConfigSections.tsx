@@ -18,6 +18,7 @@ import { Save } from 'lucide-react';
 import {
   NOTIFICATION_CATEGORIES,
   SUPPORTED_LANGUAGES,
+  emailSchema,
   type ConfigPatch,
   type ConfigUsage,
   type FeatureFlagName,

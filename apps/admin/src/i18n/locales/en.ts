@@ -1187,6 +1187,12 @@ export const en = {
   'configuration.title': 'Configuration',
   'configuration.subtitle': 'Everything about this factory that is data rather than code',
   'config.tenantId': 'Factory id',
+  /* Why the id is shown but greyed: it comes from the subdomain and every record in
+     the factory is keyed on it, so the API refuses a patch that contains it
+     (`tenant-immutable`). Without this the popover that exists to say so rendered
+     its own key. */
+  'config.tenantIdHint':
+    'This comes from the factory’s web address and cannot be changed here — every record is filed under it.',
   'config.readOnlyBadge': 'Read only',
   'config.readOnly': 'Only the factory administrator can change the configuration.',
   'config.sections': 'Settings',

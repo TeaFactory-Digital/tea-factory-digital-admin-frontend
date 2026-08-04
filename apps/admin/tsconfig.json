@@ -7,7 +7,12 @@
     "outDir": "./dist/types",
     "noEmit": false,
     "emitDeclarationOnly": true,
-    "ignoreDeprecations": "6.0",
+    // Do not reintroduce `ignoreDeprecations` here. It carried "6.0", which the
+    // installed TypeScript (5.9) rejects as an invalid value — and it rejects it
+    // *before* checking any file, so `npm run typecheck` exited 2 on the config
+    // and checked nothing at all. Two screens shipped a missing import and went
+    // blank in front of the office while the command "failed" for what looked
+    // like a config nit. Nothing in this project needs the flag.
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
