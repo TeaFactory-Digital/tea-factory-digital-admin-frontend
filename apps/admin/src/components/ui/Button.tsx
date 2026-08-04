@@ -13,6 +13,7 @@
 
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
+import { SpinnerMark } from './SpinnerMark';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md';
@@ -71,13 +72,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   );
 });
 
+/**
+ * The in-button spinner. Decorative: `aria-busy` on the button is what tells a
+ * screen reader the action is running, and the button keeps its own label, so a
+ * second "Loading…" here would only interrupt it.
+ *
+ * No colour class — the mark inherits the button's foreground, which is white on
+ * primary and danger and the text colour on secondary and ghost.
+ */
 function Spinner() {
-  return (
-    <span
-      aria-hidden
-      className="size-icon-sm animate-spin rounded-full border-2 border-current border-t-transparent"
-    />
-  );
+  return <SpinnerMark className="size-icon-sm" />;
 }
 
 /**

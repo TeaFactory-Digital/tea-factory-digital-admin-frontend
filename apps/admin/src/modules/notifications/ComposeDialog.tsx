@@ -223,7 +223,7 @@ export function ComposeDialog({
             <div className="flex flex-col gap-xs rounded-md bg-surface-variant px-md py-sm">
               {reach.isPending && !reach.data ? (
                 <span className="flex items-center gap-xs text-body-small text-text-secondary">
-                  <Spinner className="size-icon-sm" />
+                  <Spinner size="sm" />
                   {t('notifications.reachLoading')}
                 </span>
               ) : reach.data ? (

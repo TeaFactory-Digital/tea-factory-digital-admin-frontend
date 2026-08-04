@@ -43,7 +43,11 @@ export function SignInScreen() {
     <div className="flex min-h-screen items-center justify-center bg-background p-lg">
       <div className="flex w-full max-w-card flex-col gap-lg">
         <div className="flex flex-col items-center gap-sm text-center">
-          <Logo showName={false} className="justify-center" />
+          {/* Larger here than in the chrome: this is the one screen where the
+              mark is the subject rather than a label, and it is how a clerk on a
+              shared machine confirms which factory's console they are signing
+              into before they type a password. */}
+          <Logo showName={false} size="lg" className="justify-center" />
           <h1 className="text-h3 text-text-primary">{t('auth.signInTitle')}</h1>
           <p className="text-body-small text-text-secondary">
             {t('auth.signInSubtitle', { factory: factory.name })}

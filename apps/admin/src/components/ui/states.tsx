@@ -13,18 +13,43 @@ import { TriangleAlert } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { Button } from './Button';
+import { SpinnerMark } from './SpinnerMark';
 
-export function Spinner({ className }: { className?: string }) {
+/**
+ * The standalone spinner: a screen is fetching, and nothing else on it is worth
+ * announcing yet.
+ *
+ * `role="status"` with a label rather than a bare graphic, because this is often
+ * the only thing on the screen — a clerk on a screen reader hears "Loading…"
+ * instead of silence. The arc itself is `aria-hidden` inside `SpinnerMark`, so the
+ * name comes from here and is announced once.
+ *
+ * The arc is `text-primary`, so it follows the tenant's brand rather than the
+ * artwork's fixed blue.
+ *
+ * Size is a variant, not a class the caller appends. `cn` joins without resolving
+ * conflicts, on purpose (see `lib/cn`), so a caller passing `size-icon-sm` next to
+ * the default `size-icon-lg` gets whichever Tailwind happens to emit last — which
+ * is `lg`, silently. The prop is the version that works.
+ */
+const SPINNER_SIZES = {
+  sm: 'size-icon-sm',
+  md: 'size-icon-md',
+  lg: 'size-icon-lg',
+} as const;
+
+export function Spinner({
+  size = 'lg',
+  className,
+}: {
+  size?: keyof typeof SPINNER_SIZES;
+  className?: string;
+}) {
   const { t } = useTranslation();
   return (
-    <span
-      role="status"
-      aria-label={t('common.loading')}
-      className={cn(
-        'inline-block size-icon-lg animate-spin rounded-full border-2 border-border border-t-primary',
-        className,
-      )}
-    />
+    <span role="status" aria-label={t('common.loading')} className={cn('inline-flex', className)}>
+      <SpinnerMark className={cn(SPINNER_SIZES[size], 'text-primary')} />
+    </span>
   );
 }
 

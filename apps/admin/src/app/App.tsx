@@ -9,7 +9,10 @@
  *     brand and the routes.
  *  3. `BrandProvider` — reads that config to apply the theme, title and favicon.
  *  4. `ToastProvider` — needs the brand's tokens to be applied before it paints.
- *  5. `RouterProvider` — the screens, which read all of the above.
+ *  5. `BootSplash` — shows the mark and the factory's name over the app until the
+ *     config and the session have settled. An overlay rather than a gate, so the
+ *     router below mounts and starts fetching while it is up.
+ *  6. `RouterProvider` — the screens, which read all of the above.
  *
  * Auth is deliberately **not** a provider. It is a Zustand store, so the
  * transport's 401 interceptor can reach the session without a React tree — an
@@ -22,6 +25,7 @@ import { RouterProvider } from 'react-router-dom';
 import { createQueryClient } from '@/query/queryClient';
 import { RuntimeConfigProvider } from '@/config/RuntimeConfigProvider';
 import { BrandProvider } from '@/brand/BrandProvider';
+import { BootSplash } from '@/brand/SplashScreen';
 import { ToastProvider } from '@/components/ui/Toast';
 import { useAuthStore } from '@/auth/authStore';
 import { router } from '@/routes/router';
@@ -44,7 +48,9 @@ export function App() {
       <RuntimeConfigProvider>
         <BrandProvider>
           <ToastProvider>
-            <RouterProvider router={router} />
+            <BootSplash>
+              <RouterProvider router={router} />
+            </BootSplash>
           </ToastProvider>
         </BrandProvider>
       </RuntimeConfigProvider>

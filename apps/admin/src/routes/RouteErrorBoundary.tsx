@@ -9,6 +9,7 @@
 import { useRouteError } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { TriangleAlert } from 'lucide-react';
+import { Logo } from '@/brand/Logo';
 import { Button } from '@/components/ui/Button';
 
 export function RouteErrorBoundary() {
@@ -25,6 +26,9 @@ export function RouteErrorBoundary() {
       role="alert"
       className="flex min-h-screen flex-col items-center justify-center gap-sm bg-background p-lg text-center"
     >
+      {/* The mark, because this screen replaces the whole shell: without it a
+          clerk cannot tell a broken console apart from a page that is not theirs. */}
+      <Logo className="mb-md" />
       <TriangleAlert className="size-icon-xxl text-error" aria-hidden />
       <h1 className="text-h3 text-text-primary">{t('error.boundaryTitle')}</h1>
       <p className="max-w-prose text-body-small text-text-secondary">{t('error.boundaryBody')}</p>

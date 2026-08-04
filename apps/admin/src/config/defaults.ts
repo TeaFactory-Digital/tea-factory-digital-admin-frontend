@@ -16,6 +16,7 @@
 
 import type { RuntimeConfig } from '@tfd/domain';
 import { brandForTenant } from '@tfd/brand';
+import { BUNDLED_LOGO_URL } from '@/brand/assets';
 import { tenantId } from './tenant';
 
 const brand = brandForTenant(tenantId);
@@ -73,8 +74,15 @@ export const bundledConfig: RuntimeConfig = {
 
   theme: undefined,
 
+  /**
+   * The bundled mark is the default logo, for the same reason the bundled palette
+   * is the default colour: a mark cannot be *wrong* in a way that misleads
+   * anyone, and two grey initials on the login screen of a tea factory is a
+   * visible regression. A tenant with its own artwork overrides it through
+   * `branding.logoUrl` in `GET /config` (see brand/assets.ts).
+   */
   branding: {
-    logoUrl: brand.logoUrl,
+    logoUrl: brand.logoUrl ?? BUNDLED_LOGO_URL,
     logoDarkUrl: brand.logoDarkUrl,
   },
 

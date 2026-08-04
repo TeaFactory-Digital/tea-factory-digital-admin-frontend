@@ -121,10 +121,11 @@ native elements everywhere else.
 | `Dialog` | Radix. Focus trap and scroll lock are exactly what a hand-rolled modal gets subtly wrong, and this is where irreversible decisions are confirmed |
 | `Toast` / `useToast` | Confirmations only |
 | `DataTable` | See below |
-| `Spinner` `Skeleton` `TableSkeleton` `EmptyState` `ErrorState` `Notice` | See below |
+| `Spinner` `SpinnerMark` `Skeleton` `TableSkeleton` `EmptyState` `ErrorState` `Notice` | See below |
 | `PageHeader` | One `<h1>` per page, here — so the document outline is right |
 | `AuditPanel` | Renders nothing without `auditLog` access |
-| `Logo` | Served image, or a themed wordmark from the factory's initials |
+| `Logo` | The factory's mark, `served → bundled → initials`. Three sizes: `md` for the chrome (an icon token, so it re-scales with `iconSizes`), `lg` for sign-in and `xl` for the splash, where the mark is the subject rather than a label |
+| `SplashScreen` / `BootSplash` | The mark and the factory's name while `/config` and the session settle. An **overlay, not a gate** — the router mounts behind it — with a 700 ms floor so a fast boot is not a flicker and a 2.5 s cap so a slow `/config` can never hold the console back. `index.html` carries a static twin that covers the stretch before the bundle has evaluated, which `BootSplash` removes after React paints |
 
 ### Forms use native controls
 
@@ -191,6 +192,27 @@ them.**
 `ErrorState` maps the domain code to specific copy via `errorMessageKey()` — which
 is only possible because the transport preserves the code instead of flattening it
 to the HTTP status.
+
+**One spinner mark, two meanings.** `SpinnerMark` is the artwork alone — a
+three-quarter arc, `fill="currentColor"`, turning on the `--animate-spinner` token
+(0.75 s; Tailwind's own `animate-spin` reads as slow for an arc, and a slow spinner
+reads as a hung request). It carries no `role`, because its two callers mean
+different things: `Spinner` wraps it in a `role="status"` labelled "Loading…", for
+the common case where it is the only thing on the screen, while a loading `Button`
+renders it decorative — that button already has `aria-busy` and its own label, and
+a second announcement would talk over them. `currentColor` is what lets the same
+file sit on a white panel as `text-primary` and inside a primary button as its
+contrast colour; the artwork shipped with a hardcoded blue that would have been
+near-invisible there and would have ignored the tenant's brand.
+
+The animation is CSS rather than the SMIL `<animateTransform>` the artwork came
+with, because the `prefers-reduced-motion` rule in `theme.css` stops CSS animations
+and cannot touch SMIL — and an indefinite spin is exactly the motion someone who
+asked for less of it meant.
+
+`Spinner`'s **size is a variant** (`sm md lg`, default `lg`), for the reason
+`fullWidth` is — `cn` does not resolve conflicts, so a caller appending
+`size-icon-sm` next to the default `size-icon-lg` silently rendered at `lg`.
 
 ---
 

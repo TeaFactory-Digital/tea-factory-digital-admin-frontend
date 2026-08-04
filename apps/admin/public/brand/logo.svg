@@ -1,0 +1,49 @@
+<!-- viewBox is trimmed to the artwork's own bounds (no padding): the containers
+     that draw this — sidebar, topbar, sign-in, splash, favicon — all size it by
+     the box, so slack inside the file would show up as a mark that renders
+     smaller than the space reserved for it. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="3 4 122 104" width="122" height="104" role="img" aria-label="Tea factory">
+  <!--
+    The bundled default mark: two tea leaves over a cup.
+
+    Vector, not a raster, for three reasons that all matter here: it is the
+    favicon as well as the logo (16 px to 96 px off one file), it stays sharp on
+    the office's 1366×768 laptops, and it is under 2 kB so it paints in the
+    static splash before any JavaScript has parsed.
+
+    A tenant that uploads its own artwork overrides this at runtime through
+    `branding.logoUrl` in `GET /config` — see apps/admin/src/brand/assets.ts.
+    The colours are literal on purpose: this is artwork, not a themed surface,
+    and a mark that changed hue per tenant would stop being a mark.
+  -->
+  <title>Tea factory</title>
+
+  <!-- The cup, drawn first so the leaves overlap it. -->
+  <g fill="none" stroke="#6C9B52" stroke-width="7" stroke-linecap="round">
+    <!-- Handle. Behind the body, so the join needs no mitre. -->
+    <path d="M108 66c14-5 20 15 3 24" />
+    <!-- Rim, as a ring: the far edge reads as the top arc, the near edge as the
+         line across the bowl. -->
+    <ellipse cx="80" cy="57" rx="31" ry="10.5" />
+    <!-- Bowl. -->
+    <path d="M49 57c0 25 14 46 31 46s31-21 31-46" />
+  </g>
+
+  <!-- The leaves. -->
+  <g fill="#AECB4F">
+    <path d="M65 7c19 22 14 58-20 84C30 62 39 26 65 7Z" />
+    <path d="M6 61c17-12 38-4 51 25C41 82 20 76 6 61Z" />
+  </g>
+
+  <!-- Midribs. White rather than a darker green: the mark sits on a white
+       surface, so the vein is a cut through the leaf, not a line on it.
+
+       Both are held a few units short of the leaf's own start and end points.
+       A round cap adds half the stroke width past the coordinate, and at the
+       tapered tip that is enough to leak a white spur outside the leaf — which
+       at 16 px reads as a rendering fault rather than a vein. -->
+  <g fill="none" stroke="#FFFFFF" stroke-linecap="round">
+    <path d="M47 85C47 59 50 33 63 14" stroke-width="3.5" />
+    <path d="M52 81C40 74 25 68 14 63" stroke-width="3" />
+  </g>
+</svg>

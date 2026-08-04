@@ -228,6 +228,19 @@
   --size-icon-lg: var(--brand-icon-lg);
   --size-icon-xl: var(--brand-icon-xl);
   --size-icon-xxl: var(--brand-icon-xxl);
+
+  /* ── Animation ────────────────────────────────────────────────────────────
+   * The spinner's own rate. Faster than Tailwind's 1s `animate-spin`, because
+   * the mark is a single arc: at one revolution a second an arc reads as slow,
+   * and a slow spinner reads as a hung request. Declared here rather than as an
+   * arbitrary value at the call site so both spinners turn at one rate.
+   *
+   * A CSS animation, not the SMIL `<animateTransform>` the artwork shipped with:
+   * the reduced-motion rule in this file stops CSS animations and cannot touch
+   * SMIL, and a spinner is exactly the motion someone who asked for less of it
+   * means.
+   */
+  --animate-spinner: spin 0.75s linear infinite;
 }
 
 /**

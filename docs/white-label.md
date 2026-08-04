@@ -123,12 +123,25 @@ served /config    ──►┘
 config with `degraded: true`, and the shell shows one honest line — "showing
 bundled defaults" — instead of an error page where a working console should be.
 
-Two things are bundled, for different reasons:
+Three things are bundled, for different reasons:
 
 | Bundled | Why |
 | --- | --- |
 | **Brand colours** per tenant (`@tfd/brand`'s registry) | A grey login screen is a visible regression, and a colour cannot be wrong in a way that misleads anyone |
+| **One default mark** (`public/brand/logo.svg`, wired up in `brand/assets.ts`) | Same argument as the colours: artwork cannot be wrong in a way that misleads anyone, and two grey initials on the login screen of a tea factory is a visible regression. It is *one* generic mark, never a factory's own — see below |
 | **Neutral identity + all flags on** (`config/defaults.ts`) | A per-tenant name and telephone number here would be a second source of truth, and *a wrong telephone number in a shipped bundle is exactly what serving config was meant to fix* |
+
+The bundled mark is the **default**, not a source of truth. `branding.logoUrl` from
+`GET /config` wins wherever it is set, so a factory that uploads artwork in M14
+sees its own without a deploy. `Logo` walks the chain
+`served → bundled → initials`: the last step is what keeps the promise that a new
+factory can be brought live *without waiting on artwork*, and it is also what a
+404'd CDN link degrades to instead of a broken-image glyph in the sidebar.
+
+Note what is deliberately **not** bundled per tenant: there is no `galaboda.svg`.
+A tenant-specific image file in the bundle would be a second source of truth for
+that factory's identity, which is the mistake the neutral-identity row above
+exists to avoid.
 
 Flags default **on**. The alternative hides queues from a clerk whenever `/config`
 is slow, which reads as "the manure requests have disappeared". Defaulting on

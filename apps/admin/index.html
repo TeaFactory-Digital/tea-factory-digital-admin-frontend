@@ -9,11 +9,49 @@
       favicon cannot be baked in — `BrandProvider` sets both from the resolved
       config once the tenant is known. A hardcoded factory name here would
       appear in every other factory's browser tab.
+
+      The icon below is the *bundled default* rather than any factory's: it is
+      what the tab shows on the first paint, before `/config` has answered, and
+      `BrandProvider` replaces it the moment a tenant has one of its own. With no
+      link element at all the browser asks for `/favicon.ico`, is handed the SPA's
+      index.html instead, and draws a blank page icon.
     -->
     <title>Tea Factory Console</title>
+    <link rel="icon" type="image/svg+xml" href="/brand/logo.svg" />
   </head>
   <body>
     <div id="root"></div>
+
+    <!--
+      The static half of the splash.
+
+      It covers the one stretch no React component can: downloading and evaluating
+      the bundle — and, in development and the demo build, the service-worker
+      registration `main.tsx` deliberately awaits before rendering. That stretch is
+      a blank white page today.
+
+      Markup and inline styles only, because the stylesheet is inside the bundle
+      that has not loaded yet; and no factory name, because that lives in a config
+      nobody has fetched yet. `BootSplash` removes this element once React has
+      painted its own splash, which does carry the name.
+
+      White and 105 px wide to match that second panel exactly (`bg-surface`,
+      `Logo size="xl"`), so the handover is invisible rather than a jump.
+    -->
+    <div
+      id="boot-splash"
+      style="
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+      "
+    >
+      <img src="/brand/logo.svg" alt="" width="105" height="90" />
+    </div>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

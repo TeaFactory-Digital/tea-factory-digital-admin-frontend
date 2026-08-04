@@ -29,6 +29,7 @@ import {
 } from '@tfd/brand';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { tenantId } from '@/config/tenant';
+import { BUNDLED_LOGO_URL } from './assets';
 
 /**
  * Light only, for now.
@@ -70,8 +71,11 @@ export function BrandProvider({ children }: PropsWithChildren) {
   }, [config.factory.name]);
 
   useEffect(() => {
-    const href = config.branding.faviconUrl;
-    if (!href) return;
+    // Falls back to the bundled mark rather than returning early. `index.html`
+    // already points at it, so this is belt and braces — but it is also what
+    // restores the default icon if a factory *clears* its `faviconUrl` in M14,
+    // which a bail-out here would leave showing the old one until a reload.
+    const href = config.branding.faviconUrl?.trim() || BUNDLED_LOGO_URL;
     const link = document.querySelector<HTMLLinkElement>("link[rel='icon']") ?? createIconLink();
     link.href = href;
   }, [config.branding.faviconUrl]);

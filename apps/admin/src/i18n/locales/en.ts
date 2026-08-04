@@ -65,6 +65,11 @@ export const en = {
     'Mock data. Nothing here is a real record, and nothing is saved past a page reload.',
   'shell.tenantSwitcher': 'Tenant (dev/demo only)',
 
+  /* ──────────────────────────────── splash ─────────────────────────────── */
+  // The factory's name is the headline on the boot splash; this is the line under
+  // it, and it says what is happening rather than naming the product again.
+  'splash.subtitle': 'Preparing the office console…',
+
   /* ──────────────────────────── navigation ──────────────────────────── */
   'nav.dashboard': 'Dashboard',
   'nav.suppliers': 'Suppliers',
@@ -1260,7 +1265,7 @@ export const en = {
   'config.defaultLanguage': 'Default language in the app',
   'config.defaultLanguageHint': 'What a supplier sees before they choose one.',
   'config.logoUrl': 'Logo address',
-  'config.logoUrlHint': 'A web address. Left empty, the factory name is drawn instead.',
+  'config.logoUrlHint': 'A web address. Left empty, the bundled tea mark is used.',
   'config.faviconUrl': 'Browser icon address',
   'config.colour.primary': 'Main colour',
   'config.colour.secondary': 'Second colour',
