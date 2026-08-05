@@ -140,7 +140,7 @@ old binaries are in the field, and feature flags are the release valve.
 
 Layered so each layer tests what only it can.
 
-### Vitest — 252 tests
+### Vitest — 284 tests
 
 | File                           | Covers                                                                    |
 | ------------------------------ | ------------------------------------------------------------------------- |
@@ -161,6 +161,11 @@ Layered so each layer tests what only it can.
 | `inquiries.test.tsx` (15)      | M10: reply and close as different acts, §21.18's status mapping, and the reply screen reading M13's trigger |
 | `reports.test.ts` (12)         | M16: each report tied to the module its figures come from, `null` kept as `null`, totals only where they mean something, and a factory administrator running a month report without a `billing` grant |
 | `listSorting.test.ts` (5)      | Server-side sort and pagination parameters                                |
+| `languageSwitcher.test.tsx` (9) | The si/en/ta picker: every option staying in **its own script** whatever the active language is (the regression that would strand the reader the control exists for), the choice surviving a reload, `<html lang>` following it, one tab stop rather than three, and the arrow keys wrapping. Installs a working `localStorage` per test — this environment's is an empty object while `sessionStorage` is real, which the guards in `src/i18n` swallow by design |
+| `viewportGate.test.tsx` (6)    | The 768×480 floor: a phone getting the notice, the office's own 1366×768 laptop **not** getting it, a landscape phone that clears the width but not the height, and the notice retiring when a dragged window comes back over the floor |
+| `logo.test.tsx` (6)            | The mark's `served → bundled → initials` fallback as each source fails — and the **boot splash** with it: naming the factory, covering the app rather than gating it, and giving up on a boot that never settles |
+| `spinner.test.tsx` (4)         | `Spinner`/`SpinnerMark`: announced once and not per frame, the arc drawn in the brand colour, size from the variant |
+| `confirmDialog.test.tsx` (2) · `userDialogValidation.test.tsx` (2) · `configurationScreen.test.tsx` (2) · `screenSmoke.test.tsx` (1) | The confirm step standing between a click and a user action, email-format validation surfacing and clearing in the user dialog, M14 opening on its factory section and refusing an office email that is not one, and a render pass over a list screen's filters and rows |
 
 `rbac.test.ts` and `money.test.ts` are the highest-value files. The matrix is what
 a factory will ask to change, and status.md §10 item 10 records that **no tests
@@ -240,15 +245,34 @@ clerk re-downloads after a release.
 
 | Chunk                        | gzip    | Loaded           |
 | ---------------------------- | ------- | ---------------- |
-| `index`                      | ~82 kB  | Always           |
+| `index`                      | ~171 kB | Always           |
 | `charts` (Recharts)          | ~105 kB | Only with M1/M16 |
 | `data` (Query, Table, axios) | ~44 kB  | Always           |
-| `ui` (Radix)                 | ~33 kB  | Always           |
+| `ui` (Radix)                 | ~37 kB  | Always           |
 | `react`                      | ~32 kB  | Always           |
 | `forms` (RHF, Zod)           | ~29 kB  | Always           |
-| `i18n`                       | ~16 kB  | Always           |
+| `i18n` (i18next)             | ~16 kB  | Always           |
 | Each module screen           | 1–9 kB  | On navigation    |
-| CSS                          | ~6 kB   | Always           |
+| CSS                          | ~7 kB   | Always           |
+
+**`index` grew by half when the chrome was translated, and the `i18n` chunk did not
+move.** Worth knowing which is which: the `i18n` chunk is the i18next *library*; the
+string **tables** are in `index`. Building with only `en` registered puts `index` at
+**116 kB** against the **171 kB** above, so Sinhala and Tamil cost **~54 kB gzip
+between them** — more than two-thirds of what English costs each, because Indic
+script is multi-byte UTF-8 and compresses worse than the Latin it mirrors. Two extra
+languages are not two-thirds of the price; they are roughly the price again.
+
+Every clerk therefore downloads all three languages to use one. Left that way
+deliberately, and for the reason that governs the rest of this section: the console
+is a desktop product on office broadband, and 54 kB once is not what office staff are
+waiting for. The fix, if that stops being true, is small and already shaped — drop
+si/ta from `resources` at init and `addResourceBundle` the chosen table from a dynamic
+import inside `setLanguage`. Tracked as a gap in [status.md](./status.md) (#14) rather
+than left as a surprise for whoever next reads this table.
+
+Re-measure with `npx vite build`; the numbers above are its own reported gzip figures,
+not `gzip -c` on the files, which disagrees by a few kB.
 
 Module screens are lazy, so a sign-in form does not arrive with a charting library
 attached. MSW is **eliminated** from production, not merely unloaded — the guard is

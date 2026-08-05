@@ -192,21 +192,68 @@ Playwright spec asserts exactly that.
 
 ## Localization
 
-**English chrome, si/en/ta content.** The decision and its reason:
+**si/en/ta chrome, si/en/ta content.** Both halves, for different reasons:
 
-- Office staff work in English, so every console label is English — but resolved
-  through `t()`, never a literal. That is the difference between adding Sinhala
-  later as a **copy deliverable** and adding it as a refactor of every screen.
-  M3's leaf-entry grid, used by weighing-point staff rather than office staff, is
-  the surface most likely to need it.
+- **The chrome ships in all three.** Every label resolved through `t()` from the
+  start — never a literal — and that is the whole reason Sinhala and Tamil arrived
+  as a **copy deliverable** rather than a refactor of every screen. `src/i18n/locales/`
+  holds one table per language, and the two additions are typed
+  `Record<TranslationKey, string>` against `en`: **a key present in English and
+  missing from another language is a compile error**, not a screen that quietly
+  falls back in front of a weighing-point clerk. `fallbackLng` stays as a runtime
+  net for a build that ships anyway; it is not the guard.
 - **Editorial content is authored in all three**, driven by
   `config.localization.contentLanguages`, because a Sinhala supplier reading an
   English-only FAQ is the app failing. Missing translations must be visible to the
   editor (AC-08).
 
-Base CSS gives `[lang="si"]` and `[lang="ta"]` `overflow-wrap: anywhere` and a
-looser line height — Sinhala and Tamil run longer than English and must not clip
-(§20.2).
+### Choosing a language
+
+`LanguageSwitcher` — a three-segment pill in the topbar **and on the sign-in
+screen**. Sign-in is not a courtesy: the preference lives in `localStorage`, so it
+survives from whoever used the shared machine last, which means the person who most
+needs to change it arrives at a screen they cannot read. It is also the one control
+there that works without a session.
+
+Three rules the control has to hold:
+
+- **The options never go through `t()`.** `src/i18n/languages.ts` is the single
+  source of truth for the labels, and they are literals on purpose. A picker must
+  show every option in its own script whatever the active language is — a Tamil
+  clerk on a Sinhala console finds the way out by recognising தமிழ், not by reading
+  a Sinhala word for "Tamil". (`content.language.*` in the string tables is a
+  different job and stays translated: that is for *talking about* a language in
+  prose, where the reader's own language is the right one.)
+- **It is one tab stop, not three.** `radiogroup` semantics with a roving tabindex
+  and wrapping arrow keys. Three `aria-pressed` buttons would announce as three
+  unrelated controls in a topbar that already has several.
+- **`<html lang>` follows the choice.** Not cosmetic: it selects the screen
+  reader's voice — an English synthesiser reading Sinhala is unintelligible, not
+  merely accented — and lets the browser resolve the Sinhala or Tamil face out of
+  the font stack instead of guessing per glyph run.
+
+The default is **English**, and it is not sniffed from `navigator.language`: office
+machines report `en-*` near-universally regardless of who is sitting at them, so
+detection would be a coin toss dressed as a preference. `config.localization.defaultLanguage`
+is not it either — that is the *supplier app's* default, a different audience.
+
+### What the scripts cost
+
+The font stack in `packages/brand` carries `Noto Sans Sinhala` and `Noto Sans Tamil`
+as fallbacks after the system faces, so no glyph resolves to tofu. Base CSS gives
+`[lang="si"]` and `[lang="ta"]` `overflow-wrap: anywhere` and a looser line height —
+Sinhala and Tamil run longer than English and must not clip (§20.2).
+
+Two things measured rather than assumed:
+
+- **Indic line boxes are taller at the same font size.** Left to a token's own line
+  height, a Sinhala or Tamil row is a pixel or two taller than the Latin one, so a
+  long list's total height becomes a function of which language is active. Anywhere
+  that matters, the line height is pinned rather than inherited.
+- **12px is not enough.** Sinhala and Tamil carry meaning in diacritics and conjunct
+  forms where Latin puts it in letter outlines, so the same pixel height buys
+  materially less legibility. Chrome controls that would be 12px in English are
+  14px here.
 
 ---
 

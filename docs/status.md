@@ -163,11 +163,34 @@ Worst first: correctness, then plumbing, then polish.
     `aria-sort`, `role="alert"`, a clean accessible name on every field, a global
     focus ring — but nobody has driven NVDA or VoiceOver over it.
 
-14. **The i18n table is English-only.** By decision, not omission (see
-    [white-label.md](./white-label.md) → Localization). Every label goes through
-    `t()`, so adding Sinhala is a copy deliverable. **M3's leaf-entry grid is now
-    the surface that most needs it**, since weighing-point staff are not office
-    staff — and it is the one screen a supplier stands in front of.
+14. **The chrome is translated; its dates, numbers and money are not.** ~~The i18n
+    table is English-only.~~ **Closed** — `src/i18n/locales/` now carries si/en/ta,
+    typed against English so a missing key fails the build, with a picker in the
+    topbar and on sign-in (see [white-label.md](./white-label.md) → Localization).
+    What did *not* come with it: `src/lib/format.ts` builds its `Intl` formatters as
+    module constants pinned to `en-GB` and `en-LK`, so a Tamil console still reads
+    "04 Aug 2026" and "3,549.16 kg" — the unit suffix is a hardcoded English string
+    too. Arguably right for an audit trail, where a figure that reads the same in
+    every language is a figure two people can agree on over the phone; but it is a
+    **decision nobody has actually taken**, and it should be taken rather than
+    inherited from the order the work happened in. *To close:* decide, then either
+    thread the active language into those formatters or write down why not.
+
+    Two consequences of the tables themselves, both measured:
+
+    - **Every clerk downloads all three languages.** The tables sit in the
+      always-loaded `index` chunk, and si + ta are **~54 kB gzip** of it — measured
+      as the difference between an en-only build and this one (see
+      [operations.md](./operations.md) → Performance). Splitting them per language
+      is a `resources` change plus a lazy `addResourceBundle`; it has not been done
+      because the console is a desktop product on office broadband, and that is the
+      reason to leave it rather than an excuse not to notice.
+    - **Nothing enforces cross-script correctness.** The type system guarantees a
+      Tamil key *exists*; it cannot guarantee the value is Tamil. Sinhala and Tamil
+      share glyph shapes across unrelated code points — U+0DD2 and U+0BBF are near
+      enough visually that a wrong one is invisible in review — and two such slips
+      were caught by comparing code points, not by reading. *To close:* a unit test
+      asserting each table's values fall in its own script range.
 
 15. **The console's ceiling arithmetic is untested against the server's.** AC-05
     requires byte-for-byte agreement, and `packages/domain/src/leafCredit.ts` is
@@ -200,14 +223,28 @@ Worst first: correctness, then plumbing, then polish.
     the process: the mock's flag gate read the seed while `GET /config` served live state, so
     the surface disappeared and the endpoints did not.
 
-19. **The Sinhala and Tamil fixture copy has not been reviewed by a native speaker.**
+19. **No Sinhala or Tamil in this repository has been reviewed by a native speaker —
+    and that is now the whole chrome, not just the fixtures.** It was five articles and
+    six pages; it is now those **plus ~1,250 console labels in each language**, which is
+    the largest unreviewed surface in the project by a wide margin.
+
     It is real script rather than Latin placeholders on purpose — the `[lang="si"]` and
     `[lang="ta"]` line-height and wrapping rules (§20.2) cannot be exercised by English
     three times over, and a right-to-length bug would ship. But it is approximate, and
     **approximate Sinhala in front of a Sinhala-speaking office is worse than an obvious
-    gap**: a gap is a question and bad copy is an answer. *To close:* have the factory's
-    own staff write the fixture's five articles and six pages, which is a copy deliverable
-    and half an hour of somebody's time. Do it before the console is demonstrated.
+    gap**: a gap is a question and bad copy is an answer. The chrome raises the stakes,
+    because a clerk cannot route around a mistranslated button the way they can skip a
+    news article — and the domain words are exactly where a translator without the
+    printed account in hand will go wrong. The tables follow the paper — `bills.detailTitle`
+    is දළු ගිණුම in Sinhala and கொழுந்து கணக்கு in Tamil, the words a supplier reads on
+    their own account every month, not a dictionary rendering of "Green Leaf Account" —
+    and that is a judgement which needs confirming rather than trusting.
+
+    *To close:* two deliverables, and the second is no longer half an hour. (a) The
+    factory's staff write the fixture's five articles and six pages. (b) Somebody who
+    works in the office reads the si and ta tables against the screens — cheapest as a
+    walkthrough in each language, since the labels only make sense in place. **Do both
+    before the console is demonstrated in either language.**
 
 20. **Content is plain text, and the FAQ is the case that strains it.** A body keeps its
     line breaks and nothing else — no headings, no links, no lists. The fixture's FAQ is

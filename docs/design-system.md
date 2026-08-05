@@ -125,6 +125,7 @@ native elements everywhere else.
 | `PageHeader` | One `<h1>` per page, here — so the document outline is right |
 | `AuditPanel` | Renders nothing without `auditLog` access |
 | `Logo` | The factory's mark, `served → bundled → initials`. Three sizes: `md` for the chrome (an icon token, so it re-scales with `iconSizes`), `lg` for sign-in and `xl` for the splash, where the mark is the subject rather than a label |
+| `LanguageSwitcher` (`src/i18n/`) | The si/en/ta pill, in the topbar **and** on sign-in. Lives beside the tables rather than in `components/ui/` because it is not a reusable primitive — it is the one control that renders `LANGUAGES`. A three-segment `radiogroup` with a sliding knob: one tab stop, arrow keys wrap, and each segment carries its own `lang` so the label resolves out of the right face. **Its options are the only user-facing strings in the console that do not go through `t()`** — see [white-label.md](./white-label.md) → Localization for why that is deliberate. 14px where the surrounding chrome captions are 12px, because Indic script needs the height |
 | `SplashScreen` / `BootSplash` | The mark and the factory's name while `/config` and the session settle. An **overlay, not a gate** — the router mounts behind it — with a 700 ms floor so a fast boot is not a flicker and a 2.5 s cap so a slow `/config` can never hold the console back. `index.html` carries a static twin that covers the stretch before the bundle has evaluated, which `BootSplash` removes after React paints |
 
 ### Forms use native controls
@@ -271,8 +272,14 @@ Following the app's bar (§20.3), adapted for the web:
 
 - **Focus is styled once, globally** (`:focus-visible` in the base layer), so no
   component has to remember it and none can opt out by forgetting.
-- **Touch targets ≥44px** on their short axis. The console is mouse-and-keyboard,
-  but the same office uses a touchscreen all-in-one often enough.
+- **Touch targets: the chrome is 34–41px, not the 44px this section used to claim.**
+  Measured, because the claim was inherited from the app's bar (§20.3) and never held
+  here: the sign-in button is 41px, inputs and the tenant select 37.5px, the language
+  pill 37px, a sidebar row 36px, the account menu trigger 34px. Nothing reaches 44.
+  That is defensible for a mouse-and-keyboard product on office desktops — 44px is a
+  *finger* bar — but the same office does use a touchscreen all-in-one, and
+  `ViewportGate` admits tablets at 768px, so it is a **gap and not a decision** until
+  somebody takes it. Recorded here rather than quietly restated.
 - **Colour is never the only signal.** Every badge carries its own text. A queue
   coloured red with no words is unreadable to a colour-blind clerk *and* in a
   printed screenshot pasted into an email — which is how the office escalates.
@@ -282,6 +289,12 @@ Following the app's bar (§20.3), adapted for the web:
   announced and not only shown.
 - **Skip-to-content** link in the shell.
 - **Sinhala/Tamil** get `overflow-wrap: anywhere` and looser line height.
+- **`<html lang>` tracks the chosen language**, set by `src/i18n` on every change.
+  It selects the screen reader's voice — an English synthesiser reading Sinhala is
+  unintelligible rather than accented — and lets the browser resolve the right face
+  from the font stack instead of guessing per glyph run. Individual labels that are
+  *not* in the document language (the language picker's own options) carry their own
+  `lang` for the same reason.
 
 ---
 
