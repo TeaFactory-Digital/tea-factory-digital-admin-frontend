@@ -1149,10 +1149,49 @@ the office stops looking at. They stay counted on it, which is what keeps them v
 Audit: `payout.line.paid` / `payout.line.failed`, with the supplier code, the amount and
 the reason.
 
-**Not specified here: the file.** §21.17 — SLIPS, CEFTS or a bank-specific CSV, and
-whether cheques print on pre-printed stock — is unanswered, so there is no export
-endpoint and the console does not offer one. When it is answered, it is a new endpoint
-over an existing run, not a change to any of the above.
+### 12.6 `GET /admin/payout-runs/{id}/file` → `text/csv`
+
+The run as a delimited file, serialised through **the tenant's own layout** (§18.3), not a
+format this contract names. §21.17 is unanswered — SLIPS, CEFTS or the bank's own sheet —
+and three coded serialisers behind a dropdown would invent two of the three layouts. A file
+the bank rejects is two hundred suppliers unpaid until the run is re-sent.
+
+`packages/domain/src/payoutExport.ts` is the shared serialiser. Import it: the console
+previews the template on the configuration screen and you write the bytes, and a preview
+that disagreed with the file would be worse than no preview.
+
+```
+Content-Type: text/csv; charset=utf-8
+Content-Disposition: attachment; filename="payout-bankTransfer-2026-07.csv"
+```
+
+```
+409 run-not-approved         a draft                        + details.status
+409 export-template-invalid  the layout could not work      + details.problems
+403 feature-disabled
+```
+
+Four rules, each of which is the answer to *"why is this not just the grid the console
+already has?"*:
+
+1. **Full account numbers.** Every other payload masks them (§20.4); a payment file cannot.
+   That single fact is why this is an endpoint at all.
+2. **Therefore audited** — `payout.run.export`, with the run, the line count and the total.
+   Two hundred account numbers leaving an office is an event, not a page view.
+3. **Only `pending` lines.** A held line has nowhere to pay to and a paid one is done;
+   either in a file to the bank is a rejection or a double payment.
+4. **Refused on a draft.** A file taken before the four-eyes release (§12.4) and uploaded to
+   the bank walks straight around BR-501 — the approval would be a formality performed after
+   the money moved.
+
+Serve the name in `Content-Disposition` rather than letting the console invent one: the
+month and the method are how an office files a payment run, and two clients guessing would
+produce two conventions in one shared folder.
+
+**Still not specified, and still open:** a **fixed-width** layout with record types and
+control totals — that is rules rather than a column order, and a template cannot express it
+— and **cheque printing on pre-printed stock**. Both are stated on the console's screens
+rather than implied by a button that produces the wrong thing.
 
 ---
 
@@ -1643,6 +1682,30 @@ refusal.
 Audit the save with **only the blocks that changed**, before and after. A configuration diff
 that lists every field makes the one that moved impossible to find six months later.
 
+### 18.3 `payouts.export` — the block that answers §21.17
+
+```json
+{ "payouts": { "export": {
+    "delimiter": "comma", "headerRow": true,
+    "columns": [ { "field": "accountNumber", "label": "A/C No" },
+                 { "field": "amount", "label": "Amount" } ],
+    "amountFormat": "decimal2", "accountFormat": "plain",
+    "referenceTemplate": "GL{month}-{code}" } } }
+```
+
+`field` is a closed set (`payoutExport.ts` → `PAYOUT_EXPORT_FIELDS`); `label` is the one
+string in this contract that is **deliberately not an i18n key** (BR-110), because a bank's
+upload sheet matches on the literal header text.
+
+Validate with the shared `payoutTemplateProblems` and **block on every problem** — no
+columns, no amount column, a duplicated field, an unknown field, or a blank heading while
+headings are switched on. This section is on the money side of §18.2's line for a blunter
+reason than the others: the output of a bad layout is a file the bank rejects, and the
+person who discovers that is a supplier who was not paid.
+
+Replace the block wholesale rather than merging it. The column list *is* the value, and two
+merged column arrays produce an order nobody chose.
+
 ---
 
 ## 19. M15 Users & roles
@@ -1845,6 +1908,8 @@ Ordered so each step is independently useful to the console.
       §17.5 rather than from a job
 - [ ] `/admin/config` — the `PATCH` visible on the next public `GET /config` with a new
       `ETag`, `usage` computed live, and the money-bearing refusals from §18.2
+- [ ] `/admin/payout-runs/{id}/file` — the tenant's layout, full account numbers, an audit
+      row, and the draft refusal
 - [ ] `/admin/users/*` and `/admin/roles/*` — the three derived fields, the mandatory
       reasons, and **both** `last-admin` refusals, including the matrix one
 - [ ] `/admin/reports/*` — the catalogue with its months behind the `reports` grant, columns

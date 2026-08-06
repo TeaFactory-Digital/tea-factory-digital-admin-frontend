@@ -84,6 +84,11 @@ import {
   isExactKg,
   isInquiryClosed,
   DEFAULT_ROLE_MATRIX,
+  DEFAULT_PAYOUT_EXPORT,
+  payoutFileName,
+  payoutTemplateProblems,
+  serialisePayoutFile,
+  type PayoutExportLine,
   REPORT_DEFINITIONS,
   REPORT_IDS,
   audienceMatches,
@@ -1902,7 +1907,9 @@ export const handlers: HttpHandler[] = [
         ? 'point-in-use'
         : first.messageKey.includes('fallbackLanguage')
           ? 'fallback-language-required'
-          : 'flag-has-records';
+          : first.field === 'payouts.export'
+            ? 'export-template-invalid'
+            : 'flag-has-records';
       return fail({
         status: code === 'fallback-language-required' ? 422 : 409,
         code,
@@ -1939,6 +1946,16 @@ export const handlers: HttpHandler[] = [
         defaultCategories: (patch.push.defaultCategories ??
           config.push?.defaultCategories ??
           []) as NotificationCategory[],
+      };
+    }
+    if (patch.payouts) {
+      // Replaced wholesale, not merged: the column list *is* the value, and merging two
+      // column arrays would produce an order nobody chose.
+      config.payouts = {
+        export: {
+          ...patch.payouts.export,
+          columns: patch.payouts.export.columns.map((column) => ({ ...column })),
+        },
       };
     }
     if (patch.collectionPoints) config.collectionPoints = patch.collectionPoints.map((p) => ({ ...p }));
@@ -3195,6 +3212,94 @@ export const handlers: HttpHandler[] = [
     });
 
     return HttpResponse.json(serialisePayoutRun(run));
+  }),
+
+  /**
+   * The run as a file (§21.17). Registered before `/payout-runs/:id`.
+   *
+   * **Three things make this a server act rather than a console one**, and each is the
+   * reason it is not simply the on-screen grid written to a `Blob`:
+   *
+   *  1. **The account numbers are real.** Every other payload in this API masks them
+   *     (§20.4) — a payment file cannot. So producing one joins to the full numbers, which
+   *     is a thing only the server may do.
+   *  2. **It is therefore audited**, with the run, the line count and the total. A file of
+   *     two hundred account numbers left an office; that is an event, not a page view.
+   *  3. **The layout is the tenant's**, and the tenant's row is here. The console renders a
+   *     preview from the same shared `serialisePayoutFile`, so what is previewed and what
+   *     is downloaded cannot drift.
+   *
+   * Only **payable** lines: a held line has nowhere to pay to and a paid one has already
+   * been paid, so both in a file to the bank would be a double payment or a rejection.
+   */
+  http.get('*/admin/payout-runs/:id/file', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gated = featureGate(request, 'enablePayouts');
+    if (gated) return gated;
+    const auth = authorize(request, 'payouts');
+    if ('response' in auth) return auth.response;
+
+    const run = state.payoutRuns.find((candidate) => candidate.id === params.id);
+    if (!run) return fail({ status: 404, code: '404', message: 'No such payout run.' });
+
+    /**
+     * A draft cannot be downloaded, and this is the refusal that matters here.
+     *
+     * The four-eyes rule (BR-501) exists so that no one person can move money alone. A file
+     * generated from an unapproved run and uploaded to the bank walks straight around it —
+     * the approval step would be reduced to a formality performed after the payment.
+     */
+    if (run.status === 'draft') {
+      return fail({
+        status: 409,
+        code: 'run-not-approved',
+        message: 'A run has to be approved before it can be paid.',
+        details: { status: run.status },
+      });
+    }
+
+    const template = tenantConfig(request).payouts?.export ?? DEFAULT_PAYOUT_EXPORT;
+    const problems = payoutTemplateProblems(template);
+    if (problems.length > 0) {
+      // Refused rather than served malformed: a file the bank rejects costs a re-send, and
+      // the fix is on a screen this message can name.
+      return fail({
+        status: 409,
+        code: 'export-template-invalid',
+        message: 'The payout file layout is not usable.',
+        details: { problems },
+      });
+    }
+
+    const payable = linesOf(run.id).filter((line) => line.status === 'pending');
+    const rows: PayoutExportLine[] = payable.map((line) => ({
+      supplierCode: line.supplierCode,
+      supplierName: line.supplierName,
+      // The **full** number, joined here and nowhere else in the API.
+      accountNumber: mockFullAccountNumbers.get(line.supplierId) ?? null,
+      bankName: line.bankName,
+      branchName: line.branchName,
+      amount: line.amount,
+      monthKey: run.monthKey,
+      method: run.method,
+    }));
+
+    recordBy(auth, 'payout.run.export', 'payoutRun', run.id, {
+      after: {
+        monthKey: run.monthKey,
+        method: run.method,
+        lines: rows.length,
+        total: round2(rows.reduce((sum, row) => sum + row.amount, 0)),
+      },
+    });
+
+    const filename = payoutFileName(run.monthKey, run.method, template.delimiter);
+    return new HttpResponse(serialisePayoutFile(rows, template), {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      },
+    });
   }),
 
   /**

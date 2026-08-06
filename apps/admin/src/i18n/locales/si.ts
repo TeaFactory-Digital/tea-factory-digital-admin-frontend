@@ -871,7 +871,15 @@ export const si: Record<TranslationKey, string> = {
     '{{month}} සඳහා බිල්පත් සාදා නැත, එබැවින් ගෙවීමට පදනමක් නැත.',
   'payouts.allMethodsPrepared': 'මෙම මාසය සඳහා සෑම ගෙවීම් ක්‍රමයකටම දැනටමත් වටයක් ඇත.',
   'payouts.noFileExport':
-    'තවම බැංකු ලිපිගොනුවක් නැත. කර්මාන්තශාලාවේ බැංකුව පිළිගන්නා ආකෘතිය — SLIPS, CEFTS හෝ එහිම CSV — සහ චෙක්පත් පෙර මුද්‍රිත පත්‍රවල මුද්‍රණය කරන්නේද යන්න තවම විසඳා නැති ප්‍රශ්නයකි (§21.17), එබැවින් වටය ඔබට ලැයිස්තුව, එකතුව සහ බැංකුව එය සමඟ කළ දේ වාර්තා කිරීමට තැනක් ලබා දෙයි.',
+    'වටයක් නිකුත් කළ පසු ඔබට එය ගොනුවක් ලෙස බාගත හැක, වින්‍යාසය → ගෙවීම් ගොනුව හි සඳහන් පිරිසැලසුමට අනුව. තවමත් විවෘතව ඇත්තේ (§21.17) පාලන එකතු සහිත ස්ථිර-පළල බැංකු ආකෘතියක් සහ කලින් මුද්‍රිත චෙක්පත් මත මුද්‍රණය කිරීමයි — දෙකටම ඔබේ බැංකුවේම පිරිවිතර අවශ්‍යයි.',
+
+  'payouts.downloadFile': 'ගොනුව බාගන්න',
+  'payouts.fileHint':
+    'මෙම වටයේ පැතුරුම්පතක්, වින්‍යාසය → ගෙවීම් ගොනුව හි සඳහන් පිරිසැලසුමට අනුව. පාලන එකතු සහිත ස්ථිර-පළල බැංකු ගොනුවක් තවම නොවේ, චෙක්පත් මුද්‍රණයද නොවේ — ඒවාට තවමත් ඔබේ බැංකුවේම පිරිවිතර අවශ්‍යයි (§21.17).',
+  'payouts.fileDownloaded': 'ගොනුව බාගත කළා',
+  'payouts.fileDownloadedHint':
+    'එහි සම්පූර්ණ ගිණුම් අංක ඇත, එබැවින් මෙම බාගැනීම ඔබේ නමට එරෙහිව විගණන ලොගයේ සටහන් වේ.',
+  'payouts.fileFailed': 'ගොනුව සාදන ලද්දේ නැත',
 
   'payouts.runTitle': '{{method}} · {{month}}',
   'payouts.runSubtitle': 'ගෙවිය යුතු පේළි {{lines}}ක්, මුළු {{total}}',
@@ -1344,6 +1352,80 @@ export const si: Record<TranslationKey, string> = {
   'config.impact.languageDropped': '{{lang}} භාෂාවෙන් අන්තර්ගතයක් ලියා නැත, එබැවින් කිසිවක් අහිමි නොවේ.',
   'config.impact.languageDroppedWithCopy':
     'වාර්තා {{count}}ක් {{lang}} භාෂාවෙන් ලියා ඇත. පිටපත ඉතිරි වේ, නමුත් එය නොමැති ලෙස ගණන් ගැනීම නවතී — එබැවින් එය කල් ඉකුත් වී ඇති බව කිසිවක් ඔබට නොකියයි.',
+  'config.section.payoutFile': 'ගෙවීම් ගොනුව',
+  'config.sectionHint.payoutFile': 'ගෙවීම් වටයක් ලියා දමන ආකාරය',
+  'config.sectionDescription.payoutFile':
+    'ඔබ බැංකුවට උඩුගත කරන ගොනුවේ පිරිසැලසුම — කුමන තීරු, කුමන අනුපිළිවෙළින්, කුමන ශීර්ෂ සමඟද යන්න.',
+
+  /* §21.17, වින්‍යාසය ලෙස. මෙම පිටපත කළ යුතු ප්‍රධානම දෙය: තීරු අච්චුවක් සකසා
+     SLIPS ගොනුවක් සෑදුවා යැයි කිසිවෙකු විශ්වාස කිරීම වැළැක්වීමයි. */
+  'config.payoutFile.scope':
+    'ඔබේ බැංකුව ඉල්ලන පත්‍රිකාවට ගැළපෙන ලෙස මෙය සකසන්න. එය වෙන් කළ (delimited) ගොනුවක් ලියයි — බොහෝ බැංකුවල තොග-උඩුගත පත්‍රිකා එබඳුය. පාලන එකතු සහිත ස්ථිර-පළල ගොනුවක් හෝ කලින් මුද්‍රිත චෙක්පත් මත මුද්‍රණය කිරීම තවම කළ නොහැක; ඒවාට තවමත් බැංකුවේම පිරිවිතර අවශ්‍යයි (§21.17).',
+  'config.payoutFile.preset': 'ආරම්භ කරන්නේ',
+  'config.payoutFile.presetHint':
+    'පසුව ඔබ සකසන ආරම්භක ලක්ෂ්‍යයක්. සම්පූර්ණ වන්නේ “සරල පැතුරුම්පත” පමණයි — අනෙක් දෙක එම ක්‍රමවලට සාමාන්‍යයෙන් අවශ්‍ය තීරු වන අතර, ශීර්ෂ ඔබේ බැංකුවේ පිරිවිතරයෙන් පුරවා ගැනීමට හිස්ව තබා ඇත.',
+  'config.payoutFile.preset.genericCsv': 'සරල පැතුරුම්පත',
+  'config.payoutFile.preset.slipsSkeleton': 'SLIPS (පුරවන්න)',
+  'config.payoutFile.preset.ceftsSkeleton': 'CEFTS (පුරවන්න)',
+
+  'config.payoutFile.delimiter': 'වෙන් කරන්නේ',
+  'config.payoutFile.delimiter.comma': 'කොමාව  ,',
+  'config.payoutFile.delimiter.semicolon': 'තිත්කොමාව  ;',
+  'config.payoutFile.delimiter.pipe': 'සිරස් ඉරි  |',
+  'config.payoutFile.delimiter.tab': 'ටැබ්',
+  'config.payoutFile.headerRow': 'ශීර්ෂ පළමු පේළිය ලෙස ලියන්න',
+  'config.payoutFile.amountFormat': 'මුදල් ලියන ආකාරය',
+  'config.payoutFile.amountFormatHint':
+    'මෙය ඔබේ බැංකුවේ පත්‍රිකාවට එරෙහිව පරීක්ෂා කරන්න. සත අපේක්ෂා කරන තැනකට රුපියල් යැවීමෙන් සෑම සැපයුම්කරුවෙකුටම ඔවුන්ට හිමි මුදලින් සියයෙන් එකක් ගෙවේ, සහ බැංකුව එය සතුටින් ක්‍රියාත්මක කරයි.',
+  'config.payoutFile.amountFormat.decimal2': '4213.50  — රුපියල් සහ සත',
+  'config.payoutFile.amountFormat.cents': '421350  — සත, දශම ලක්ෂ්‍යයක් නැත',
+  'config.payoutFile.amountFormat.whole': '4214  — පූර්ණ රුපියල්',
+  'config.payoutFile.accountFormat': 'ගිණුම් අංක ලියන ආකාරය',
+  'config.payoutFile.accountFormat.plain': 'සටහන් කර ඇති ආකාරයටම',
+  'config.payoutFile.accountFormat.digitsOnly': 'ඉලක්කම් පමණයි — ඉරි සහ හිස්තැන් ඉවත් කර',
+  'config.payoutFile.reference': 'යොමුව',
+  'config.payoutFile.referenceHint':
+    'සැපයුම්කරු ඔවුන්ගේ බැංකු ප්‍රකාශනයේ දකින දේ. {{code}} ඔවුන්ගේ සැපයුම්කරු කේතය බවටත් {{month}} මාසය බවටත් පත් වේ.',
+
+  'config.payoutFile.columns': 'තීරු, අනුපිළිවෙළින්',
+  'config.payoutFile.columnsHint':
+    'මෙහි අනුපිළිවෙළ ගොනුවේ අනුපිළිවෙළයි. ශීර්ෂය ඔබ ටයිප් කරන ආකාරයටම බැංකුව ගළපයි, එබැවින් එය පරිවර්තනය කරනවා වෙනුවට ඔවුන්ගේ පත්‍රිකාවෙන් පිටපත් කරන්න.',
+  'config.payoutFile.headingFor': '{{field}} සඳහා ශීර්ෂය',
+  'config.payoutFile.headingPlaceholder': 'බැංකුව ලියන ආකාරයට',
+  'config.payoutFile.moveUp': 'ඉහළට ගෙනයන්න',
+  'config.payoutFile.moveDown': 'පහළට ගෙනයන්න',
+  'config.payoutFile.removeColumn': '{{field}} ඉවත් කරන්න',
+  'config.payoutFile.bankOnly': '· චෙක්පත් සහ මුදල් වටවල හිස්ය',
+
+  'config.payoutFile.field.supplierCode': 'සැපයුම්කරු කේතය',
+  'config.payoutFile.field.supplierName': 'සැපයුම්කරුගේ නම',
+  'config.payoutFile.field.accountNumber': 'ගිණුම් අංකය',
+  'config.payoutFile.field.bankName': 'බැංකුව',
+  'config.payoutFile.field.branchName': 'ශාඛාව',
+  'config.payoutFile.field.amount': 'මුදල',
+  'config.payoutFile.field.reference': 'යොමුව',
+  'config.payoutFile.field.monthKey': 'මාසය',
+  'config.payoutFile.field.method': 'ගෙවීම් ක්‍රමය',
+
+  'config.payoutFile.preview': 'ගොනුව පෙනෙන ආකාරය',
+  'config.payoutFile.previewHint':
+    'ගොතන ලද සැපයුම්කරුවන් දෙදෙනෙක්, දෙවැන්නාට බැංකු විස්තර නැත — එවිට චෙක්පත් හෝ මුදල් පේළියක් එක් එක් තීරුවට කරන දේ ඔබට පෙනේ. සැබෑ ගොනුව ලියන එම කේතයෙන්ම ලියා ඇත.',
+  'config.payoutFile.previewBlocked': 'ඉහත ගැටලු නිවැරදි කළ විට නියැදිය දිස් වේ.',
+
+  /* මේ සෑම එකක්ම සුරැකීම නවත්වයි: වැරදි පිරිසැලසුමක ප්‍රතිඵලය බැංකුව ප්‍රතික්ෂේප
+     කරන ගොනුවක් වන අතර, එය සොයාගන්නේ නොගෙවුණු සැපයුම්කරුවෙකි. */
+  'config.impact.payoutTemplate.no-columns':
+    'ගොනුවේ තීරු නැත, එබැවින් එය හිස් වනු ඇත. අවම වශයෙන් මුදල එක් කරන්න.',
+  'config.impact.payoutTemplate.no-amount':
+    'මුදල් තීරුවක් නැත. එය නොමැති ගොනුවක් යනු ගෙවීම් උපදෙසක් නොව නම් ලැයිස්තුවකි.',
+  'config.impact.payoutTemplate.duplicate-field':
+    'එකම අගය තීරු දෙකක දිස් වේ. බොහෝ බැංකු උඩුගත කිරීම් එය ප්‍රතික්ෂේප කරයි.',
+  'config.impact.payoutTemplate.unknown-field': 'තීරුවක් ගෙවීම් පේළියක නොමැති දෙයකට යොමු වේ.',
+  'config.impact.payoutTemplate.missing-label':
+    'තීරුවකට ශීර්ෂයක් නැත, සහ ශීර්ෂ සක්‍රීයයි. එය පුරවන්න, නැතහොත් ශීර්ෂ පේළිය අක්‍රීය කරන්න.',
+  'config.impact.payoutTemplateBankColumns':
+    'තීරු {{count}}ක් බැංකු විස්තර දරයි, එබැවින් චෙක්පත් සහ මුදල් වටවල ඒවා හිස්ව පිටවේ. එය සාමාන්‍යයෙන් කම් නැත — එම වටවල ඒවා පිරී ඇතැයි පමණක් අපේක්ෂා නොකරන්න.',
+
   'config.impact.fallbackLanguageRequired':
     'ඉංග්‍රීසි ඉවත් කළ නොහැක. පරිවර්තනයක් නොමැති විට සෑම ලිපියක් සහ පිටුවක් එය වෙත ආපසු යොමු වේ.',
 

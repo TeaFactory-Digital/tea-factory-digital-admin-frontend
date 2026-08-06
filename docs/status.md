@@ -53,7 +53,7 @@ which is a named absence inside a built module.
 | **M15 Users & roles** | Invite, re-role, suspend and reactivate with a mandatory reason, the §12.1 matrix **editable as data**, and three lockout guards including the one nobody thinks of: a matrix in which no role grants `usersAndRoles` is refused, because every user keeps their roles while nobody can ever manage users again |
 | **M16 Reports** | Four reports, each carrying the citation that justifies it, computed from live records at request time; self-describing columns so one screen renders any report; totals only under the columns that add up; and the month list served behind the `reports` grant rather than `billing` |
 | **M17 Audit** | Filterable read-only log, plus per-record panels on M2, M9 and M11. Every mutation in every built module writes to it |
-| **Tests** | 252 Vitest + 28 Playwright, all passing. Typecheck and lint clean |
+| **Tests** | 305 Vitest + 29 Playwright, all passing. Typecheck and lint clean |
 
 ## Acceptance criteria
 
@@ -103,11 +103,11 @@ Worst first: correctness, then plumbing, then polish.
    specified in [api-contract.md](./api-contract.md) §2.3 and testable only
    against the real backend.
 
-4. **M17 has no export.** §18.1 says "read-only, exportable" and the export is not
-   built. Same for M16's CSV/XLSX, **and now M6's payout file and M5's bill PDF** — the
-   console has four places a document should come out of and produces none of them. The
-   payout file is blocked on §21.17 rather than on effort; the other three are not
-   blocked on anything. Deliberately not disabled buttons — a control that does nothing
+4. **M17 has no export, and neither has M16.** §18.1 says "read-only, exportable" and
+   neither is built. **M6's payout file now is** — through a configurable layout rather than
+   a guessed format (see §21.17 below) — which leaves M5's bill PDF as the other document
+   the console should produce and does not. So: four places a document should come out of,
+   one of which now does. None of the remaining three is blocked on anything. Deliberately not disabled buttons — a control that does nothing
    is worse than an absent one.
 
    *To close M5's:* the slip already renders every field in the printed account's
@@ -318,6 +318,15 @@ Worst first: correctness, then plumbing, then polish.
     matrix already says whether it has diverged. If it is wanted, it should be a confirm
     dialog naming what changes, not a button.
 
+30. **The payout template covers the CSV family and not the fixed-width one.** §21.17 is
+    now half answered — a factory sets its own column order, headings, delimiter and number
+    formats in M14, and M6 writes the file through them. What a column template cannot
+    express is a **fixed-width record layout with control totals or a checksum**, which is
+    what SLIPS may turn out to need, and it cannot print a cheque on pre-printed stationery
+    at all. The presets named `SLIPS` and `CEFTS` are therefore **headerless skeletons with
+    the labels left blank**, not claims about those layouts — and the screen says so above
+    the editor. *To close:* one sample file, or the bank's specification page.
+
 ---
 
 ## Blocking business questions
@@ -346,7 +355,7 @@ would look for it.
 
 | § | Question | Blocks |
 | --- | --- | --- |
-| 21.17 | **Payout files** — SLIPS, CEFTS or a bank-specific CSV? Cheques on pre-printed stock? | M6's **file export**, not M6. The run, the release and the reconciliation are built; a serialiser against a guessed format is one that gets thrown away |
+| 21.17 | **Payout files** — SLIPS, CEFTS or a bank-specific CSV? Cheques on pre-printed stock? | **Half answered, as configuration.** M6 now writes a delimited file through a layout the factory sets in M14 (`payoutExport.ts`), which covers the family most banks' bulk-upload sheets belong to — so "SLIPS" is a preset somebody completes once their bank confirms it, not a release. Still open: a **fixed-width** format with control totals (rules, not a column order) and **cheques on pre-printed stock** (millimetres on a specific cheque book). Both are stated on the screen |
 | 21.9 | **Savings** — may a supplier withdraw, with what notice, is interest paid? | M8's **movements**, not M8. The balance, the passbook and the totals are built; `SavingsEntrySource` already carries `withdrawal` and `interest`, so the answer adds endpoints rather than migrating a money table |
 | 21.10 | **Deduction authority** — which lines may the office set per supplier per month, and **who may set them**? | M5's **deduction editor**. The nine lines are on the slip and seven of their values are the mock's invention (gap 6). It is a permission question as much as a form, which is why it is not a guess worth making |
 | 21.8 | **Corrections** — may a published bill be corrected, or is an error always adjusted on the next account? | Nothing today. The console **assumes not**, which is BR-108's lock already in place, and says so on a published slip. If the answer is yes, that is a new audited reversal endpoint — never a relaxation of the lock |

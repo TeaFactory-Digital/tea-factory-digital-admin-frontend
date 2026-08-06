@@ -23,6 +23,11 @@
 
 import type { FeatureFlagName, FeatureFlagSet } from './types/admin';
 import type { LanguageCode } from './constants';
+import {
+  BANK_ONLY_FIELDS,
+  payoutTemplateProblems,
+  type PayoutExportTemplate,
+} from './payoutExport';
 
 /**
  * What the office may change. `tenantId` is **not** here, and that is deliberate: it is
@@ -50,6 +55,8 @@ export interface ConfigPatch {
   branding?: { logoUrl?: string; logoDarkUrl?: string; faviconUrl?: string };
   theme?: { colors?: { light?: Record<string, string>; dark?: Record<string, string> } };
   push?: { topicPrefix?: string; categories?: string[]; defaultCategories?: string[] };
+  /** M6's file layout — §21.17 as configuration. See `payoutExport.ts`. */
+  payouts?: { export: PayoutExportTemplate };
   collectionPoints?: Array<{ id: string; name: string }>;
 }
 
@@ -237,6 +244,48 @@ export function configImpact(
         messageKey: 'config.impact.fallbackLanguageRequired',
         params: {},
         field: 'localization.contentLanguages',
+      });
+    }
+  }
+
+  /* ── The payout file layout (§21.17) ──────────────────────────────────── */
+  if (patch.payouts?.export) {
+    const template = patch.payouts.export;
+
+    /**
+     * Every template problem **blocks**, and none of them warns.
+     *
+     * The rest of this function draws its line at money the factory owes. This section is
+     * on the same side of it for a blunter reason: the output of a bad template is a file
+     * the bank rejects, and the person who discovers that is a supplier who was not paid.
+     * There is no version of "save it anyway and see" that is cheap here.
+     */
+    for (const problem of payoutTemplateProblems(template)) {
+      out.push({
+        severity: 'blocks',
+        messageKey: `config.impact.payoutTemplate.${problem}`,
+        params: {},
+        field: 'payouts.export',
+      });
+    }
+
+    /**
+     * A bank column on a template that also serves cheque and cash runs.
+     *
+     * A warning, not a block: one template for all three methods is a perfectly reasonable
+     * thing to want, and the column simply comes out empty on the runs that have no bank
+     * details. But an empty column in a file somebody is about to upload should not be a
+     * surprise, so it is said here rather than discovered in Excel.
+     */
+    const bankColumns = template.columns.filter((column) =>
+      BANK_ONLY_FIELDS.includes(column.field),
+    );
+    if (bankColumns.length > 0) {
+      out.push({
+        severity: 'warns',
+        messageKey: 'config.impact.payoutTemplateBankColumns',
+        params: { count: bankColumns.length },
+        field: 'payouts.export',
       });
     }
   }

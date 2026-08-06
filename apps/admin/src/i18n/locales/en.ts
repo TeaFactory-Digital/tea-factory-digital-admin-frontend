@@ -850,7 +850,15 @@ export const en = {
   'payouts.noBills': 'No bills have been generated for {{month}}, so there is nothing to pay against.',
   'payouts.allMethodsPrepared': 'Every payment method already has a run for this month.',
   'payouts.noFileExport':
-    'No bank file yet. What format the factory’s bank accepts — SLIPS, CEFTS or its own CSV — and whether cheques print on pre-printed stock is still an open question (§21.17), so the run gives you the list, the total and somewhere to record what the bank did with it.',
+    'Once a run is released you can download it as a file, laid out the way Configuration → Payout file says. What is still open (§21.17) is a fixed-width bank format with control totals, and printing cheques on pre-printed stationery — both need your bank’s own specification.',
+
+  'payouts.downloadFile': 'Download the file',
+  'payouts.fileHint':
+    'A spreadsheet of this run, laid out the way Configuration → Payout file says. Not yet a fixed-width bank file with control totals, and not cheque printing — those still need your bank’s own specification (§21.17).',
+  'payouts.fileDownloaded': 'File downloaded',
+  'payouts.fileDownloadedHint':
+    'It carries full account numbers, so the download is recorded in the audit log against your name.',
+  'payouts.fileFailed': 'The file was not produced',
 
   'payouts.runTitle': '{{method}} · {{month}}',
   'payouts.runSubtitle': '{{lines}} payable lines, {{total}} in total',
@@ -1316,6 +1324,80 @@ export const en = {
   'config.impact.languageDropped': 'No content is written in {{lang}}, so nothing is lost.',
   'config.impact.languageDroppedWithCopy':
     '{{count}} records are written in {{lang}}. The copy stays, but it stops being counted as missing — so nothing will tell you it is out of date.',
+  'config.section.payoutFile': 'Payout file',
+  'config.sectionHint.payoutFile': 'How a payout run is written out',
+  'config.sectionDescription.payoutFile':
+    'The layout of the file you upload to the bank — which columns, in what order, with what headings.',
+
+  /* §21.17 as configuration. The copy has to do one thing above all: stop somebody
+     configuring a column template and believing they have produced a SLIPS file. */
+  'config.payoutFile.scope':
+    'Set this up to match the sheet your bank asks for. It writes a delimited file — which is what most banks’ bulk-upload sheets are. It cannot yet produce a fixed-width file with control totals, or print cheques on pre-printed stationery; those still need the bank’s own specification (§21.17).',
+  'config.payoutFile.preset': 'Start from',
+  'config.payoutFile.presetHint':
+    'A starting point you then adjust. Only “Plain spreadsheet” is complete — the other two are the columns those schemes usually ask for, with the headings left blank for you to fill in from your bank’s specification.',
+  'config.payoutFile.preset.genericCsv': 'Plain spreadsheet',
+  'config.payoutFile.preset.slipsSkeleton': 'SLIPS (fill in)',
+  'config.payoutFile.preset.ceftsSkeleton': 'CEFTS (fill in)',
+
+  'config.payoutFile.delimiter': 'Separated by',
+  'config.payoutFile.delimiter.comma': 'Comma  ,',
+  'config.payoutFile.delimiter.semicolon': 'Semicolon  ;',
+  'config.payoutFile.delimiter.pipe': 'Pipe  |',
+  'config.payoutFile.delimiter.tab': 'Tab',
+  'config.payoutFile.headerRow': 'Write the headings as the first line',
+  'config.payoutFile.amountFormat': 'Amounts written as',
+  'config.payoutFile.amountFormatHint':
+    'Check this against your bank’s sheet. Sending rupees where cents were expected pays every supplier a hundredth of what they are owed, and the bank will process it.',
+  'config.payoutFile.amountFormat.decimal2': '4213.50  — rupees and cents',
+  'config.payoutFile.amountFormat.cents': '421350  — cents, no decimal point',
+  'config.payoutFile.amountFormat.whole': '4214  — whole rupees',
+  'config.payoutFile.accountFormat': 'Account numbers written as',
+  'config.payoutFile.accountFormat.plain': 'Exactly as recorded',
+  'config.payoutFile.accountFormat.digitsOnly': 'Digits only — dashes and spaces removed',
+  'config.payoutFile.reference': 'Reference',
+  'config.payoutFile.referenceHint':
+    'What the supplier sees on their bank statement. {{code}} becomes their supplier code and {{month}} the month.',
+
+  'config.payoutFile.columns': 'Columns, in order',
+  'config.payoutFile.columnsHint':
+    'The order here is the order in the file. The heading is matched by the bank exactly as you type it, so copy it from their sheet rather than translating it.',
+  'config.payoutFile.headingFor': 'Heading for {{field}}',
+  'config.payoutFile.headingPlaceholder': 'As the bank writes it',
+  'config.payoutFile.moveUp': 'Move up',
+  'config.payoutFile.moveDown': 'Move down',
+  'config.payoutFile.removeColumn': 'Remove {{field}}',
+  'config.payoutFile.bankOnly': '· empty on cheque and cash runs',
+
+  'config.payoutFile.field.supplierCode': 'Supplier code',
+  'config.payoutFile.field.supplierName': 'Supplier name',
+  'config.payoutFile.field.accountNumber': 'Account number',
+  'config.payoutFile.field.bankName': 'Bank',
+  'config.payoutFile.field.branchName': 'Branch',
+  'config.payoutFile.field.amount': 'Amount',
+  'config.payoutFile.field.reference': 'Reference',
+  'config.payoutFile.field.monthKey': 'Month',
+  'config.payoutFile.field.method': 'Payment method',
+
+  'config.payoutFile.preview': 'What the file will look like',
+  'config.payoutFile.previewHint':
+    'Two made-up suppliers, the second with no bank details — so you can see what a cheque or cash line does to each column. Written by the same code that writes the real file.',
+  'config.payoutFile.previewBlocked': 'Fix the problems above and the sample will appear.',
+
+  /* Every one of these blocks the save: the output of a bad layout is a file the bank
+     rejects, and the person who finds out is a supplier who was not paid. */
+  'config.impact.payoutTemplate.no-columns':
+    'The file has no columns, so it would be empty. Add at least the amount.',
+  'config.impact.payoutTemplate.no-amount':
+    'No amount column. A file without one is a list of names, not a payment instruction.',
+  'config.impact.payoutTemplate.duplicate-field':
+    'The same value appears in two columns. Most bank uploads reject that.',
+  'config.impact.payoutTemplate.unknown-field': 'A column refers to something a payout line does not have.',
+  'config.impact.payoutTemplate.missing-label':
+    'A column has no heading, and headings are switched on. Either fill it in or turn the heading row off.',
+  'config.impact.payoutTemplateBankColumns':
+    '{{count}} columns hold bank details, so they come out empty on cheque and cash runs. That is usually fine — just do not expect them filled on those.',
+
   'config.impact.fallbackLanguageRequired':
     'English cannot be removed. Every article and page falls back to it when a translation is missing.',
 

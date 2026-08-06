@@ -21,6 +21,7 @@ import type { PayoutLine, PayoutLineQuery, PayoutLineStatus } from '@tfd/domain'
 import { useAuthStore, useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { DownloadPayoutFile } from './DownloadPayoutFile';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
@@ -274,12 +275,25 @@ export function PayoutRunDetailScreen() {
           </p>
 
           {data.status !== 'draft' ? (
-            <p className="flex items-start gap-xs rounded-md bg-surface-variant px-md py-sm text-body-small text-text-secondary">
-              <Lock className="mt-xxs size-icon-sm shrink-0" aria-hidden />
-              {data.status === 'completed'
-                ? t('payouts.completedNotice', { when: formatDateTime(data.completedAt) })
-                : t('payouts.approvedNotice')}
-            </p>
+            <>
+              <p className="flex items-start gap-xs rounded-md bg-surface-variant px-md py-sm text-body-small text-text-secondary">
+                <Lock className="mt-xxs size-icon-sm shrink-0" aria-hidden />
+                {data.status === 'completed'
+                  ? t('payouts.completedNotice', { when: formatDateTime(data.completedAt) })
+                  : t('payouts.approvedNotice')}
+              </p>
+
+              {/**
+               * The file, and immediately under it what the file is not (§21.17).
+               *
+               * Released runs only — a draft has not been through the four-eyes release,
+               * and a file taken before it would make that release ceremonial.
+               */}
+              <div className="flex flex-col gap-xs border-t border-divider pt-md">
+                <DownloadPayoutFile run={data} />
+                <p className="text-caption text-text-secondary">{t('payouts.fileHint')}</p>
+              </div>
+            </>
           ) : canApprove ? (
             <div className="flex flex-col gap-xs border-t border-divider pt-md">
               <Button

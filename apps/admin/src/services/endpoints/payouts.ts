@@ -1,13 +1,17 @@
 /**
  * M6 Payouts — preparing, releasing and reconciling money that leaves the factory.
  *
- * **What is deliberately not here: the payout file.** §21.17 — SLIPS, CEFTS or a
- * bank-specific CSV, and whether cheques print on pre-printed stock — is unanswered,
- * and a serialiser written against a guessed format is a serialiser that gets thrown
- * away. What the office needs whatever the answer turns out to be is this: which
- * suppliers, how much each, by which method, which of them cannot be paid, who
- * released it, and what the bank actually did. That is a record, not a file format,
- * so it is built now and the export lands on top of it later.
+ * **The file (§21.17) is here now, and the shape of it is the interesting part.** The
+ * question the factory has not answered is *"what format does your bank accept?"* — SLIPS,
+ * CEFTS, or its own bulk-upload sheet — and the wrong answer was three coded serialisers
+ * behind a dropdown, two of whose layouts would be invented. So what a factory configures
+ * in M14 is the **layout** (`payoutExport.ts`), and a format's name becomes a preset
+ * somebody completes once their bank confirms it. `file` below serialises a run through
+ * that template.
+ *
+ * What is still open, and still stated on the screen: a **fixed-width** format with control
+ * totals, and **cheques on pre-printed stock**. Neither is a column order, so neither is
+ * something this template can honestly claim to produce.
  *
  * The three writes map onto three different people:
  *
@@ -29,6 +33,18 @@ import type {
 } from '@tfd/domain';
 import { apiClient } from '../api/client';
 import { toParams } from './params';
+
+/**
+ * The name the browser should save the file under, read from the response.
+ *
+ * The server names it, not the console: the month and the method are what an office files
+ * a payment run by, and two consoles guessing at the convention would produce two naming
+ * schemes in one shared folder. Falls back only if the header is missing.
+ */
+function filenameFrom(disposition: unknown): string {
+  const match = typeof disposition === 'string' ? /filename="?([^"]+)"?/.exec(disposition) : null;
+  return match?.[1] ?? 'payout.csv';
+}
 
 export const payoutEndpoints = {
   list: (query: PayoutRunQuery = {}) =>
@@ -62,6 +78,24 @@ export const payoutEndpoints = {
     apiClient
       .post<PayoutRun>(`/admin/payout-runs/${id}/approve`, { note })
       .then((response) => response.data),
+
+  /**
+   * The run as a delimited file, shaped by the tenant's template.
+   *
+   * `responseType: 'text'` because this is the one endpoint that does not answer JSON, and
+   * axios would otherwise try to parse a CSV whose first field happens to look numeric.
+   *
+   * `409 run-not-approved` for a draft — a file generated before the four-eyes release and
+   * uploaded to the bank walks straight around BR-501. `409 export-template-invalid` when
+   * the configured layout could not produce a usable file.
+   */
+  file: (id: string) =>
+    apiClient
+      .get<string>(`/admin/payout-runs/${id}/file`, { responseType: 'text' })
+      .then((response) => ({
+        body: response.data,
+        filename: filenameFrom(response.headers['content-disposition']),
+      })),
 
   /**
    * What the bank or the counter actually did.

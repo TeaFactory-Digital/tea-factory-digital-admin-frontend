@@ -253,3 +253,45 @@ test('reports describe themselves, and total only the columns that add up', asyn
   // A supplier code is data, not a key — the other `text` column this bug reached.
   await expect(dormant.getByText(/reports\.metric\./)).toHaveCount(0);
 });
+
+
+test('configures the payout file layout and previews what the bank will get', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/configuration?section=payoutFile');
+  await expect(page.getByRole('heading', { name: /^configuration$/i })).toBeVisible({
+    timeout: 15_000,
+  });
+
+  /**
+   * What the screen says it cannot do, before anything is edited.
+   *
+   * §21.17 is only *half* answered — a column template covers the CSV family and not a
+   * fixed-width scheme with control totals, and somebody arriving here has been told their
+   * bank wants "SLIPS". Configuring a template and believing it produced a SLIPS file is
+   * the failure this sentence exists to prevent.
+   */
+  await expect(page.getByText(/cannot yet produce a fixed-width file/i)).toBeVisible();
+
+  // The preview is the point of the screen: rendered from the same serialiser the API
+  // writes the real file with, so a reader can check it against their bank's sheet.
+  const preview = page.locator('pre').first();
+  await expect(preview).toContainText('Supplier Code,Name,Account Number');
+  // A supplier whose name carries a comma is quoted — the defect that shifts every
+  // subsequent column and lands an amount in the branch field.
+  await expect(preview).toContainText('"Perera, K."');
+
+  // Change the amount format, and the sample follows immediately.
+  await expect(preview).toContainText('4213.50');
+  await page.getByLabel(/amounts written as/i).selectOption('cents');
+  await expect(preview).toContainText('421350');
+  await expect(preview).not.toContainText('4213.50');
+
+  /**
+   * The refusal, computed in the browser from the same `configImpact` the API refuses
+   * with: a file with no amount column is a mailing list, not a payment instruction.
+   */
+  await page.getByRole('button', { name: /^remove amount$/i }).click();
+  await expect(page.getByText(/not a payment instruction/i)).toBeVisible();
+  await expect(page.getByRole('button', { name: /save this section/i })).toBeDisabled();
+  await expect(page.getByText(/fix the problems above/i)).toBeVisible();
+});

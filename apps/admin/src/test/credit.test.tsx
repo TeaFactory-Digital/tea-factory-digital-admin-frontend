@@ -30,6 +30,7 @@ import {
   REQUIRED_MONTHS_OF_HISTORY,
   buildCreditEligibility,
   colomboDayOf,
+  floor2,
   round2,
 } from '@tfd/domain';
 import { CreditRequestDetailScreen } from '@/modules/credit/CreditRequestDetailScreen';
@@ -88,8 +89,20 @@ describe('M7 eligibility (AC-05)', () => {
      */
     expect(eligibility.lastSettledRatePerKg).not.toBeNull();
     expect(eligibility.pricedKgs).not.toBeNull();
+    /**
+     * **`floor2`, not `round2`** — and that is the assertion, not an implementation detail.
+     *
+     * money.ts: *"Never `round2` a limit: `floor2` makes the displayed maximum exactly the
+     * maximum, so the number on screen is a number the validator accepts."* Rounding a
+     * ceiling **up** by a cent puts a figure on the eligibility panel that `over-ceiling`
+     * then refuses — the supplier is told they may borrow 11,809.30 and the approval is
+     * rejected for asking 11,809.30.
+     *
+     * This test asserted `round2` and passed only while the fixture's rate × kilos happened
+     * to land where the two agree.
+     */
     expect(eligibility.ceiling).toBe(
-      round2(eligibility.lastSettledRatePerKg! * eligibility.pricedKgs!),
+      floor2(eligibility.lastSettledRatePerKg! * eligibility.pricedKgs!),
     );
 
     // And the headroom is the ceiling less what is already drawn.

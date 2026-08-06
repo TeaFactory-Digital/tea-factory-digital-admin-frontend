@@ -28,6 +28,7 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import {
   Building2,
+  FileSpreadsheet,
   Languages,
   Bell as BellIcon,
   SlidersHorizontal,
@@ -51,8 +52,9 @@ import {
   FeaturesSection,
   OperationsSection,
   PushSection,
-  type SectionProps,
 } from './ConfigSections';
+import { PayoutFileSection } from './PayoutFileSection';
+import type { SectionProps } from './SectionFooter';
 import { useAdminConfig, useSaveConfig } from './hooks';
 
 const SECTIONS: Array<{
@@ -65,6 +67,9 @@ const SECTIONS: Array<{
   { id: 'operations', icon: Warehouse, Component: OperationsSection },
   { id: 'appearance', icon: Languages, Component: AppearanceSection },
   { id: 'push', icon: BellIcon, Component: PushSection },
+  // Last, because it is the only section that is an *answer to an open question* rather
+  // than a setting — see §21.17 and `payoutExport.ts`.
+  { id: 'payoutFile', icon: FileSpreadsheet, Component: PayoutFileSection },
 ];
 
 export function ConfigurationScreen() {

@@ -21,14 +21,14 @@ build status, and the sidebar is generated from it.
 | M3 | **Leaf collection** | ✅ Built (no scale-file import) | `/deliveries` |
 | M4 | **Rates & month close** | ✅ Built | `/rates` |
 | M5 | **Bills** | ✅ Built (no PDF) | `/bills`, `/bills/:id` |
-| M6 | **Payouts** | ✅ Built (no bank file) | `/payouts`, `/payouts/:id` |
+| M6 | **Payouts** | ✅ Built (file layout configurable; no fixed-width or cheque printing) | `/payouts`, `/payouts/:id` |
 | M7 | **Credit queues** | ✅ Built | `/credit`, `/credit/:id` |
 | M8 | **Savings** | ✅ Built (read-only) | `/savings` |
 | M10 | **Inquiries** | ✅ Built | `/inquiries`, `/inquiries/:id` |
 | M11 | **News (CMS)** | ✅ Built | `/news`, `/news/:id` |
 | M12 | **Static content** | ✅ Built | `/content` |
 | M13 | **Notifications** | ✅ Built (§21.24 answered as config) | `/notifications` |
-| M14 | **Configuration** | ✅ Built (AC-12) | `/configuration` |
+| M14 | **Configuration** | ✅ Built (AC-12), 6 sections | `/configuration` |
 | M15 | **Users & roles** | ✅ Built | `/users` |
 | M16 | **Reports** | ✅ Built (4 reports, no export) | `/reports` |
 
@@ -84,9 +84,11 @@ the next slice should be argued the same way:
 - **What is left out of each rather than guessed at.** Three questions the factory has
   not answered would each have been a wrong build: §21.17 (what the bank accepts) is
   the payout *file*, §21.9 (may a supplier withdraw) is savings *movements*, and
-  §21.10 (who may set which deduction line) is a deduction *editor*. All three are
-  absent, and each is stated on the screen where somebody would look for the control —
-  see "What is deliberately not built" below.
+  §21.10 (who may set which deduction line) is a deduction *editor*. Each is stated on the
+  screen where somebody would look for the control — see "What is deliberately not built"
+  below. **§21.17 has since been half answered** by making the layout configurable rather
+  than guessing the format, which is the pattern worth reusing: when a question is about
+  *shape* rather than *policy*, the answer can often be a config row.
 
 ---
 
@@ -309,13 +311,31 @@ renders the same fields, but nothing produces a printable file yet.
 *Money leaving the factory.* Prepared by the accountant, released by a manager,
 reconciled against what the bank actually did.
 
-**Blocked on §21.17, and built anyway around the part that is not blocked.** What
-format the factory's bank accepts — SLIPS, CEFTS or its own CSV — and whether cheques
-print on pre-printed stock decides the *file*. What the office needs whatever the
-answer turns out to be is the **run**: which suppliers, how much each, by which method,
-which of them cannot be paid, who released it, and what came back. That is a record
-rather than a serialiser, so it exists now and the export lands on top of it. The
-absence is stated on the screen where somebody would look for a download button.
+**§21.17 is answered as configuration, which is the module's most interesting decision.**
+The factory has not said what its bank accepts — SLIPS, CEFTS or its own bulk-upload sheet
+— and the tempting build was three coded serialisers behind a dropdown. That is wrong
+twice: two of the three layouts would be invented, and **a file the bank rejects is two
+hundred suppliers unpaid** until the run is re-sent. A wrong file is worse than no file.
+
+So what a factory configures in M14 is the **layout** — which columns, in what order, with
+what headings, what delimiter, whether amounts are rupees or cents, whether account numbers
+keep their dashes — and a format's *name* becomes a preset somebody completes once their
+bank confirms it. `payoutExport.ts` holds the serialiser, shared so the preview on the
+configuration screen and the bytes the API writes cannot drift. Same shape as M13's answer
+to §21.24: the factory's eventual answer is a config row, not a release.
+
+**What that still does not cover, and the screen says so in both places:** a *fixed-width*
+format with record types and control totals is rules rather than a column order, and
+printing cheques on pre-printed stock is millimetres on a specific cheque book. The
+`SLIPS` and `CEFTS` presets are therefore headerless skeletons with blank labels, named for
+what they are *for* rather than as a claim about the layout.
+
+**Producing the file is a server act, and audited.** Every payload in this API masks account
+numbers (§20.4) and a payment file cannot — so the export joins to the full numbers, which
+means it is an event worth recording, and the console cannot assemble the file from the grid
+it already has. It is also **refused on a draft**: a file taken before the four-eyes release
+and uploaded to the bank would reduce that release to a formality performed after the money
+moved.
 
 **A run is one month and one method.** A bank transfer file, a cheque book and a cash
 counter are three different jobs done on three different days and reconciled from three
@@ -634,7 +654,7 @@ and a guessed one reads as a decision the factory never made.
 
 | § | Question | What is missing | Why not guess |
 | --- | --- | --- | --- |
-| 21.17 | What format does the bank accept? | The payout **file** | A serialiser written against a guessed format is a serialiser that gets thrown away |
+| 21.17 | What format does the bank accept? | A **fixed-width** bank file, and cheque printing | Half answered as configuration: the CSV family is a layout the factory sets in M14. A fixed-width scheme is rules and control totals, which a column order cannot express |
 | 21.9 | May a supplier withdraw savings? | Withdrawals, interest | Moving somebody's savings on a rule nobody approved |
 | 21.10 | Who may set which deduction line? | A deduction **editor** | It decides who can change what a supplier is paid, which is a permission, not a form |
 | 21.8 | May a published bill be corrected? | Any post-publish change | The console assumes not. If the answer is yes, that is a new audited reversal endpoint — never a relaxation of BR-108's lock |

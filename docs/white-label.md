@@ -267,7 +267,7 @@ app stores demand binaries, browsers do not.
 **Since M14, the row is editable from inside the console** — which is what turns AC-12 from a
 mechanism into something you can watch happen. `/configuration` has a control for every block
 of the row: identity, the ten flags, collection points, banks, savings rates, languages,
-branding, the push block. That completeness is the criterion: one field still requiring a
+branding, the push block, and the payout file's layout. That completeness is the criterion: one field still requiring a
 developer would make AC-12 false however good the rest of the screen was.
 
 Two consequences worth knowing before you use it:
@@ -275,6 +275,11 @@ Two consequences worth knowing before you use it:
 - **`tenantId` is not editable.** It comes from the subdomain and every other row is keyed on
   it, so the API refuses a patch containing it (`tenant-immutable`). Renaming a factory is a
   new row and a new DNS record, not an edit.
+- **The payout file's layout is configuration, not code.** It is the clearest case of what
+  this row is *for*: nobody has told us what any factory's bank accepts, so rather than
+  guessing a format, the columns, headings, delimiter and number formats are per-tenant
+  values. A second factory with a different bank is a different row, not a different build —
+  which is the same sentence as AC-12, applied to an unanswered question.
 - **Turning a flag off is refused when the module behind it holds money.** Savings balances,
   unfinished payout runs and outstanding credit each block their flag, with the figure in the
   message. The screen computes this from the same `configImpact` the API refuses with, so

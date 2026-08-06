@@ -69,8 +69,10 @@ test('reads a payout run and its lines', async ({ page }) => {
   const runs = page.getByRole('table', { name: /^payouts$/i });
   await expect(runs.locator('tbody tr').first()).toBeVisible({ timeout: 15_000 });
 
-  // §21.17 stated where somebody would look for a download button.
-  await expect(page.getByText(/no bank file yet/i)).toBeVisible();
+  // §21.17 as it now stands: the file exists, and what it is *not* is stated where
+  // somebody would otherwise assume it was a SLIPS file.
+  await expect(page.getByText(/download it as a file/i)).toBeVisible();
+  await expect(page.getByText(/fixed-width bank format/i)).toBeVisible();
 
   await runs.locator('tbody tr').first().click();
   await expect(page.getByRole('heading', { name: /bank transfer|cheque|cash/i })).toBeVisible({

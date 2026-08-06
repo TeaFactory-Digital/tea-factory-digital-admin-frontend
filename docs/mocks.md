@@ -51,6 +51,8 @@ what makes `handlers.ts` readable as an executable version of
 | `409 last-admin` on a **role matrix** in which no role grants `usersAndRoles` | The same lockout with no user record changing — a check written per user misses it entirely |
 | `422 unknown-category` on a notification the app would drop | M13. A send the console called successful, reaching nobody, reporting nothing |
 | `422 invalid` on a report run missing a parameter | M16. An empty grid reads as "no leaf that month", which is the one wrong answer that screen can give |
+| `409 run-not-approved` on a payout **file** taken from a draft | A file generated before the four-eyes release and uploaded to the bank walks straight around BR-501 |
+| Full account numbers in the payout file, and **nowhere else** | §20.4. A payment file cannot be masked, which is why producing one is audited (`payout.run.export`) and the console cannot assemble it from the grid |
 
 Two structural choices worth copying into the backend:
 

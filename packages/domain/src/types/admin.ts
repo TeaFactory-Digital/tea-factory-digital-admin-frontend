@@ -29,6 +29,7 @@ import type {
 } from '../constants';
 import type { ContentTranslation, ContentTranslations } from '../content';
 import type { NotificationAudience } from '../notifications';
+import type { PayoutExportTemplate } from '../payoutExport';
 
 /* ─────────────────────────────── Identity ─────────────────────────────── */
 
@@ -1408,6 +1409,15 @@ export interface RuntimeConfig {
     categories: NotificationCategory[];
     defaultCategories: NotificationCategory[];
   };
+  /**
+   * How M6 writes a payout run out as a file — **§21.17 as configuration** rather than as
+   * three guessed serialisers behind a dropdown. See `payoutExport.ts` for why the layout
+   * is configured and the format's name is not.
+   *
+   * Optional: a factory that has never opened the screen gets `DEFAULT_PAYOUT_EXPORT`,
+   * which is a readable spreadsheet rather than anything claiming to be a bank's format.
+   */
+  payouts?: { export: PayoutExportTemplate };
   /** Collection points / divisions this factory weighs at. */
   collectionPoints: Array<{ id: string; name: string }>;
 }

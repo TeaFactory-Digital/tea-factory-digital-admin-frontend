@@ -48,6 +48,17 @@ export const payoutRepository = {
   approve: (id: string, note?: string): Promise<PayoutRun> => payoutEndpoints.approve(id, note),
 
   /**
+   * The run as a file, and the bytes are the server's.
+   *
+   * **Deliberately not composed here**, even though the console is holding the lines
+   * already: the grid's account numbers are masked (§20.4) and a payment file cannot be,
+   * so the full numbers have to come from an endpoint that audits handing them out. A
+   * console-side exporter would be a file of `••••4432`, which is not a payment file — or
+   * it would need the unmasked numbers on screen, which is worse.
+   */
+  file: (id: string): Promise<{ body: string; filename: string }> => payoutEndpoints.file(id),
+
+  /**
    * Reconcile a line.
    *
    * The guard is the asymmetry the schema encodes: a failure needs a reason and a

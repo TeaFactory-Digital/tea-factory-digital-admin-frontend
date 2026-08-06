@@ -139,6 +139,27 @@ function isAuthEndpoint(url: string | undefined): boolean {
  * `403` could be `feature-disabled`, `forbidden` or `four-eyes-violation`, and
  * the console renders three different things for those.
  */
+/**
+ * The error envelope, even when axios did not parse it.
+ *
+ * A request made with `responseType: 'text'` — M6's payout file is the one — gets its
+ * **error** body handed over as a string too, so the domain `code` never reached the line
+ * below and every refusal from that endpoint degraded to its bare HTTP status. `409` is
+ * `run-not-approved` *and* `export-template-invalid`, and the console shows different
+ * things for those, so losing the code loses the message the office needed.
+ */
+function asErrorBody(data: unknown): { code?: string; message?: string; details?: unknown } | undefined {
+  if (typeof data === 'string') {
+    try {
+      return JSON.parse(data) as { code?: string };
+    } catch {
+      // A genuinely non-JSON body (an HTML error page from a proxy). The status stands.
+      return undefined;
+    }
+  }
+  return data as { code?: string; message?: string; details?: unknown } | undefined;
+}
+
 export function normalizeError(error: AxiosError): ApiError {
   if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
     return new ApiError({ code: TRANSPORT_CODES.timeout, message: 'The request timed out.' });
@@ -151,7 +172,7 @@ export function normalizeError(error: AxiosError): ApiError {
   }
 
   const { status, data } = error.response;
-  const body = data as { code?: string; message?: string; details?: unknown } | undefined;
+  const body = asErrorBody(data);
 
   return new ApiError({
     code: body?.code ?? String(status),
