@@ -243,6 +243,8 @@ export const si: Record<TranslationKey, string> = {
   'suppliers.detail.creditLoan': 'ණය ශේෂය',
   'suppliers.detail.creditManure': 'පොහොර ශේෂය',
   'suppliers.detail.pendingRequests': 'විවෘත ඉල්ලීම්',
+  'suppliers.detail.counterActionsHint':
+    'සැපයුම්කරුවෙකු අත්හිටුවීම සහ ඔවුන්ගේ යෙදුම් මුරපදය නැවත සැකසීම කවුන්ටර කාර්යයන් වන බැවින් ඒවා කළ හැක්කේ ලිපිකරුවාට පමණි. මෙම කර්මාන්තශාලාව වෙනස් ලෙස ක්‍රියා කරන්නේ නම්, පරිශීලකයන් සහ භූමිකා යටතේ එය වෙනස් කරන්න.',
   'suppliers.detail.suspendedBecause': 'අත්හිටුවා ඇත: {{reason}}',
   'suppliers.detail.auditTitle': 'මෙම වාර්තාවේ මෑත ක්‍රියාකාරකම්',
 
@@ -267,9 +269,27 @@ export const si: Record<TranslationKey, string> = {
   'suppliers.reactivate.body': 'දළු භාර සහ ඉල්ලීම් වහාම නැවත ආරම්භ වේ.',
   'suppliers.reasonLabel': 'හේතුව (විගණන ලොගයේ සටහන් වේ)',
 
-  'suppliers.resetPassword.title': 'යෙදුමේ මුරපදය නැවත සකසන්න',
-  'suppliers.resetPassword.pending':
-    'කාර්යාලය සැපයුම්කරුගේ මුරපදය නැවත සකසන ආකාරය — කවුරු ඔවුන්ගේ අනන්‍යතාව පරීක්ෂා කරන්නේද, සැපයුම්කරුට ලැබෙන්නේ කුමක්ද — කර්මාන්තශාලාව සමඟ තවම විසඳා නැති ප්‍රශ්නයකි (§21.16). එය විසඳන තුරු මෙම ක්‍රියාව අක්‍රීයයි.',
+  'suppliers.resetPassword.title': 'යෙදුම් මුරපදය නැවත සකසන්න',
+  'suppliers.resetPassword.body':
+    'මෙය {{name}} සඳහා නව මුරපදයක් සාදන අතර ඔවුන්ට විවෘතව ඇති ඕනෑම සැසියක් අවසන් කරයි. ඔවුන්ගේ පැරණි මුරපදය වහාම ක්‍රියා විරහිත වේ.',
+  'suppliers.resetPassword.beforeYouStart':
+    'ඔබ කතා කරන්නේ කවුරුන් සමඟද යන්න ස්ථිර නම් පමණක් මෙය කරන්න. සැපයුම්කරු කේතයක් දන්නා ඕනෑම කෙනෙකුට දුරකථනයෙන් ඇමතිය හැක.',
+  'suppliers.resetPassword.identityCheck': 'එය ඔවුන් බව ඔබ පරීක්ෂා කළේ කෙසේද?',
+  'suppliers.resetPassword.identityCheckHint':
+    'අවම වශයෙන් අකුරු {{min}}ක්, සහ එය ඔබේ නමට එරෙහිව සටහන් වේ. "ඔවුන් ඉල්ලුවා" යනු පරීක්ෂාවක් නොවේ.',
+  'suppliers.resetPassword.identityCheckPlaceholder':
+    'සැපයුම්කරු පොත 5091 සමඟ කවුන්ටරයට පැමිණියා, එස්. ප්‍රනාන්දු හඳුනාගත්තා',
+  'suppliers.resetPassword.confirm': 'නව මුරපදයක් සාදන්න',
+  'suppliers.resetPassword.failed': 'මුරපදයක් සාදන ලද්දේ නැත',
+  'suppliers.resetPassword.issuedBody': 'මෙය දැන් ලියාගෙන සැපයුම්කරුට දෙන්න.',
+  'suppliers.resetPassword.passwordLabel': 'නව මුරපදය',
+  'suppliers.resetPassword.onceWarning':
+    'මෙය පෙන්වන එකම අවස්ථාව මෙයයි. මෙය වසා දැමුවහොත් එය නැති වේ — ඔබට තවත් එකක් සෑදීමට සිදු වේ.',
+  'suppliers.resetPassword.oneTime':
+    'මෙයින් පළමු වරට පිවිසෙන විට සැපයුම්කරු තමන්ගේම මුරපදයක් තෝරාගත යුතුය, එබැවින් ඔවුන් එසේ කළ පසු මෙය ක්‍රියා විරහිත වේ. ඒ දක්වා, එය දරන ඕනෑම කෙනෙකුට ඔවුන් ලෙස පිවිසිය හැක.',
+  'suppliers.resetPassword.recorded': '{{name}} ට එරෙහිව සටහන් විය, {{when}} · විගණනය {{audit}}.',
+  'suppliers.resetPassword.sessionsEnded': 'විවෘත සැසි {{count}}ක් අවසන් කරන ලදී.',
+  'suppliers.resetPassword.done': 'මම එය ලියාගත්තා',
 
   /* ──────────────────────── M9 change requests ──────────────────────── */
   'changeRequests.title': 'වෙනස් කිරීමේ ඉල්ලීම්',

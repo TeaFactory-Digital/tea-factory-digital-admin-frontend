@@ -98,7 +98,7 @@ switch to it.
 | `npm run build:demo` | Demo bundle — production build, mock API on, for preview hosting |
 | `npm run typecheck`  | `tsc --build`, all three projects                                |
 | `npm run lint`       | Includes the white-label and layering rules                      |
-| `npm run test`       | Vitest — 342 tests                                               |
+| `npm run test`       | Vitest — 351 tests                                               |
 | `npm run e2e`        | Playwright — 29 specs (`npx playwright install chromium` once)    |
 | `npm run e2e:demo`   | The same specs against the built demo bundle                     |
 

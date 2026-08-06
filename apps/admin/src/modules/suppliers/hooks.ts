@@ -104,3 +104,22 @@ export function useRevealBankDetails(id: string) {
     gcTime: 0,
   });
 }
+
+/**
+ * Issue a new app password (§21.16).
+ *
+ * Invalidates the supplier, because the reset sets `owesPasswordChange` and stamps
+ * `lastPasswordResetAt` — a detail page still showing neither would be showing a record
+ * that is one request out of date, on the one screen where a pattern of resets is visible.
+ */
+export function useResetSupplierCredentials(supplierId: string) {
+  const client = useQueryClient();
+
+  return useMutation({
+    mutationFn: (reason: string) => supplierRepository.resetCredentials(supplierId, reason),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: qk.suppliers.detail(supplierId) });
+      void client.invalidateQueries({ queryKey: qk.audit.all });
+    },
+  });
+}

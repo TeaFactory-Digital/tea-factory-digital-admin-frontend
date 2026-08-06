@@ -172,6 +172,16 @@ export interface AdminSupplier extends Supplier {
   /** Open request counts, so the detail page can link straight into a queue. */
   pendingRequests: number;
   suspendedReason?: string;
+  /**
+   * The supplier has a password the office issued and has not yet replaced (§21.16).
+   *
+   * **The app must force a change at first sign-in while this is true.** It is what makes
+   * an office-issued credential one-time rather than one the office knows for ever — see
+   * `supplierCredentials.ts`.
+   */
+  owesPasswordChange?: boolean;
+  /** When the office last issued one, so a pattern of resets is visible on the record. */
+  lastPasswordResetAt?: string | null;
 }
 
 /** The grid row. Deliberately smaller than the detail — thousands are listed. */

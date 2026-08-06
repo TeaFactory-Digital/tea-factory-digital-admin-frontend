@@ -84,6 +84,10 @@ import {
   isExactKg,
   isInquiryClosed,
   DEFAULT_ROLE_MATRIX,
+  IDENTITY_CHECK_MIN,
+  SUPPLIER_PASSWORD_ALPHABET,
+  SUPPLIER_PASSWORD_LENGTH,
+  identityCheckProblem,
   DEFAULT_DEDUCTION_RATES,
   deductionRateProblems,
   type DeductionRateChange,
@@ -2384,6 +2388,108 @@ export const handlers: HttpHandler[] = [
    * between "we log this" as a policy statement and as something the person
    * looking at the number can see happening.
    */
+  /**
+   * Issue a supplier a new app password (§21.15, §21.16).
+   *
+   * **The password is generated here, never by the console.** A client that minted
+   * credentials would be one whose randomness nobody can audit, and the office would be
+   * trusting a number their own browser produced.
+   *
+   * Three properties make this safe rather than an account-takeover path, and all three are
+   * in the response or the state it writes:
+   *
+   *  1. `owesPasswordChange` is set, so the app forces a change at first sign-in and the
+   *     credential the office knows dies the moment it is used.
+   *  2. The identity check is **mandatory and audited** — the reason is the office saying
+   *     how they knew it was the supplier, which is the whole guard on a telephone request.
+   *  3. Any session the supplier had **ends**, because a reset that leaves the previous
+   *     holder signed in has not reset anything.
+   *
+   * The plain password is in this response and nowhere else. It is not stored readably, not
+   * re-fetchable, and not in the audit entry — an audit trail that carried passwords would
+   * be a list of live credentials.
+   */
+  http.post('*/admin/suppliers/:id/credentials/reset', async ({ request, params }) => {
+    await delay(LATENCY_MS * 2);
+    // `suppliers: write` — issuing somebody a credential is not a read.
+    const auth = authorize(request, 'suppliers', 'write');
+    if ('response' in auth) return auth.response;
+
+    const supplier = state.suppliers.find((one) => one.id === params.id);
+    if (!supplier) return fail({ status: 404, code: '404', message: 'No such supplier.' });
+
+    // A closed supplier has left. Issuing them a login is issuing a way into a factory they
+    // no longer supply — the same reasoning that keeps them out of a notification audience.
+    if (supplier.status === 'closed') {
+      return fail({
+        status: 409,
+        code: 'supplier-closed',
+        message: 'That supplier has left the factory.',
+      });
+    }
+
+    const { reason } = (await request.json()) as { reason?: string };
+    if (identityCheckProblem(reason ?? '')) {
+      return fail({
+        status: 422,
+        code: 'note-required',
+        message: 'Record how the supplier’s identity was checked.',
+        details: { min: IDENTITY_CHECK_MIN },
+      });
+    }
+
+    /**
+     * `crypto.getRandomValues`, not `Math.random`.
+     *
+     * The rest of this fixture is seeded and deterministic on purpose — a screenshot in a
+     * bug report matches what the next developer sees. A credential is the one thing that
+     * must not be: a predictable password is not a password.
+     */
+    const bytes = new Uint32Array(SUPPLIER_PASSWORD_LENGTH);
+    crypto.getRandomValues(bytes);
+    const password = [...bytes]
+      .map((value) => SUPPLIER_PASSWORD_ALPHABET[value % SUPPLIER_PASSWORD_ALPHABET.length])
+      .join('');
+
+    const issuedAt = new Date().toISOString();
+    const index = state.suppliers.findIndex((one) => one.id === supplier.id);
+    state.suppliers[index] = {
+      ...supplier,
+      owesPasswordChange: true,
+      lastPasswordResetAt: issuedAt,
+    };
+
+    /**
+     * Sessions ended. The mock has no supplier sessions to end — this is the console's auth
+     * realm, and the app's is a different table (§12) — so the count is what the real API
+     * must report. Sent rather than omitted so the console can say it happened, and so a
+     * backend that forgets to implement it fails a test rather than passing silently.
+     */
+    const sessionsEnded = 0;
+
+    const entry = record({
+      actorId: auth.user.id,
+      actorName: auth.user.name,
+      action: 'supplier.credentials.reset',
+      entity: 'supplier',
+      entityId: supplier.id,
+      // The reason and the fact — never the password. An audit trail carrying credentials
+      // would be a list of live logins.
+      after: { reason: reason!.trim(), owesPasswordChange: true, sessionsEnded },
+    });
+
+    return HttpResponse.json({
+      supplierId: supplier.id,
+      supplierCode: supplier.supplierCode,
+      password,
+      owesPasswordChange: true,
+      issuedAt,
+      issuedByName: auth.user.name,
+      sessionsEnded,
+      auditId: entry.id,
+    });
+  }),
+
   http.post('*/admin/suppliers/:id/bank-details/reveal', async ({ request, params }) => {
     await delay(LATENCY_MS);
     const auth = authorize(request, 'suppliers');

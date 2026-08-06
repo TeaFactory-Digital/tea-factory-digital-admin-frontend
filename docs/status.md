@@ -53,7 +53,7 @@ which is a named absence inside a built module.
 | **M15 Users & roles** | Invite, re-role, suspend and reactivate with a mandatory reason, the §12.1 matrix **editable as data**, and three lockout guards including the one nobody thinks of: a matrix in which no role grants `usersAndRoles` is refused, because every user keeps their roles while nobody can ever manage users again |
 | **M16 Reports** | Four reports, each carrying the citation that justifies it, computed from live records at request time; self-describing columns so one screen renders any report; totals only under the columns that add up; and the month list served behind the `reports` grant rather than `billing` |
 | **M17 Audit** | Filterable read-only log, plus per-record panels on M2, M9 and M11. Every mutation in every built module writes to it |
-| **Tests** | 342 Vitest + 29 Playwright. Typecheck and lint clean |
+| **Tests** | 351 Vitest + 29 Playwright. Typecheck and lint clean |
 
 ## Acceptance criteria
 
@@ -352,6 +352,18 @@ Worst first: correctness, then plumbing, then polish.
     requests fall back to the cap alone. The tea request has no console queue yet either.
     Both are app work first.
 
+34. **The one-time password is only one-time if the app enforces it.** §21.16's flow is safe
+    because `owesPasswordChange` forces a supplier to replace the office-issued credential at
+    first sign-in — and **nothing in this repository can make that happen.** The console sets
+    the flag, the API must return it, and the *app* must refuse to go further until the
+    supplier has chosen their own. Until it does, every password the office has ever issued
+    stays valid, and a clerk who wrote one down can sign in as that supplier and raise a
+    change request as them. This is the highest-value item on the mobile side.
+
+35. **A supplier code is still issued by nobody.** §21.15's login half is answered; the code
+    half is not. M2's create form waits on who assigns a code and how it is chosen — the
+    endpoint and types have existed since the first slice.
+
 ---
 
 ## Blocking business questions
@@ -367,8 +379,8 @@ no flow:
 
 | § | Question | Blocks |
 | --- | --- | --- |
-| 21.15 | **Registration** — how does a new supplier get a code and a login? Who creates it, and what does the supplier receive? | M2 create. The endpoint and types exist; no screen calls them, because the form is the *flow* and the flow is the question |
-| 21.16 | **Password reset** — the app says "contact the factory". What does the office actually do, and how is the supplier's identity checked? | M2's reset action, currently disabled with an explanation. The wrong flow here is an account-takeover path |
+| 21.15 | **Registration** — how does a new supplier get a code and a login? | **Half answered.** The *login* is settled: a random one-time password the office issues and hands over at the counter, built and audited. The **code** is not — who issues a supplier code and how it is chosen is still open, which is what M2's create form waits on |
+| 21.16 | ~~**Password reset**~~ | **Answered and built.** A random password from an unambiguous alphabet, shown **once**, handed over at the counter — with the identity check recorded against the clerk's name and audited. Safe rather than a takeover path because of one property: `owesPasswordChange` makes it **one-time**, so the credential the office knows dies when the supplier replaces it at first sign-in. **The app must enforce that** — see gap 34 |
 | 21.24 | **Notifications** — does the office compose every send, or does bill-published fire automatically off the publish step? Who may send free text? | **Nothing.** Built as configuration instead: every trigger is a row and "who may send free text" is `content: approve`, stated on the screen so it can be contested. This is what an unanswered question should cost — a switch to flip, not a rewrite. See gap 22 |
 
 ### Stops one control inside a module that is otherwise built

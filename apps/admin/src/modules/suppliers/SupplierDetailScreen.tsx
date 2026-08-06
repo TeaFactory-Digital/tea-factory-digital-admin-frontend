@@ -26,6 +26,7 @@ import { useToast } from '@/components/ui/Toast';
 import { AuditPanel } from '@/components/AuditPanel';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatAmount, formatDate, formatMoney } from '@/lib/format';
+import { ResetPasswordDialog } from './ResetPasswordDialog';
 import { RevealBankDetailsDialog } from './RevealBankDetailsDialog';
 import {
   useReactivateSupplier,
@@ -61,8 +62,29 @@ export function SupplierDetailScreen() {
             <Badge tone={STATUS_TONES[supplier.status as SupplierStatus]}>
               {t(`suppliers.status.${supplier.status}`)}
             </Badge>
-            {canEdit && supplier.status !== 'closed' ? (
-              <StatusAction supplierId={supplier.id} name={supplier.name} status={supplier.status} />
+            {supplier.status !== 'closed' ? (
+              canEdit ? (
+                <>
+                  {/* §21.16, answered: a random one-time password, handed over at the
+                      counter, with the identity check recorded. */}
+                  <ResetPasswordDialog supplierId={supplier.id} supplierName={supplier.name} />
+                  <StatusAction supplierId={supplier.id} name={supplier.name} status={supplier.status} />
+                </>
+              ) : (
+                /**
+                 * **Withheld and explained**, not withheld silently.
+                 *
+                 * §12.1 gives `suppliers: write` to the clerk alone — right, because these
+                 * are counter acts and the clerk is who sees the supplier's face. But a
+                 * manager or a factory administrator looking for the password reset and
+                 * finding *nothing at all* concludes the feature is missing, which is the
+                 * failure every other withheld control in this console avoids by saying
+                 * whose job it is.
+                 */
+                <span className="text-caption text-text-secondary">
+                  {t('suppliers.detail.counterActionsHint')}
+                </span>
+              )
             ) : null}
           </>
         }

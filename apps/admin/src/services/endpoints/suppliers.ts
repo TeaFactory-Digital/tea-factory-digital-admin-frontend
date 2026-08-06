@@ -10,6 +10,7 @@
  */
 
 import type {
+  SupplierCredentialReset,
   AdminSupplier,
   Paged,
   RevealedBankDetails,
@@ -92,4 +93,13 @@ export const supplierEndpoints = {
         { reason },
       )
       .then((response) => response.data),
+  /**
+   * Issue a new app password (§21.16). Answers it **once** — not stored readably, not
+   * re-fetchable. `422 note-required` without an identity check · `409 supplier-closed`.
+   */
+  resetCredentials: (id: string, reason: string) =>
+    apiClient
+      .post<SupplierCredentialReset>(`/admin/suppliers/${id}/credentials/reset`, { reason })
+      .then((response) => response.data),
+
 };

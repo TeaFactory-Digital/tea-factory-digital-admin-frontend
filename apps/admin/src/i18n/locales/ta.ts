@@ -245,6 +245,8 @@ export const ta: Record<TranslationKey, string> = {
   'suppliers.detail.creditLoan': 'கடன் நிலுவை',
   'suppliers.detail.creditManure': 'உர நிலுவை',
   'suppliers.detail.pendingRequests': 'திறந்த வேண்டுகோள்கள்',
+  'suppliers.detail.counterActionsHint':
+    'சப்ளையரை இடைநிறுத்துவதும் அவர்களின் செயலி கடவுச்சொல்லை மீட்டமைப்பதும் கவுண்டர் வேலைகள், எனவே அவற்றை எழுத்தர் மட்டுமே செய்ய முடியும். இந்தத் தொழிற்சாலை வேறுவிதமாகச் செயல்பட்டால், பயனர்கள் & பாத்திரங்கள் பகுதியில் அதை மாற்றவும்.',
   'suppliers.detail.suspendedBecause': 'இடைநிறுத்தப்பட்டது: {{reason}}',
   'suppliers.detail.auditTitle': 'இந்தப் பதிவில் சமீபத்திய நடவடிக்கைகள்',
 
@@ -270,9 +272,27 @@ export const ta: Record<TranslationKey, string> = {
   'suppliers.reactivate.body': 'ஒப்படைப்புகளும் வேண்டுகோள்களும் உடனே மீண்டும் தொடங்கும்.',
   'suppliers.reasonLabel': 'காரணம் (தணிக்கைப் பதிவில் குறிக்கப்படும்)',
 
-  'suppliers.resetPassword.title': 'செயலியின் கடவுச்சொல்லை மீட்டமை',
-  'suppliers.resetPassword.pending':
-    'அலுவலகம் வழங்குநரின் கடவுச்சொல்லை மீட்டமைக்கும் முறை — அவர்களின் அடையாளத்தை யார் சரிபார்க்கிறார், வழங்குநருக்கு என்ன கிடைக்கிறது — தொழிற்சாலையுடன் இன்னும் தீர்க்கப்படாத கேள்வி (§21.16). அது தீரும் வரை இந்தச் செயல் முடக்கப்பட்டுள்ளது.',
+  'suppliers.resetPassword.title': 'செயலி கடவுச்சொல்லை மீட்டமை',
+  'suppliers.resetPassword.body':
+    'இது {{name}} க்குப் புதிய கடவுச்சொல்லை உருவாக்கி, அவர்களுக்குத் திறந்திருக்கும் அமர்வுகளை முடிக்கிறது. அவர்களின் பழைய கடவுச்சொல் உடனடியாக வேலை செய்யாது.',
+  'suppliers.resetPassword.beforeYouStart':
+    'நீங்கள் யாருடன் பேசுகிறீர்கள் என்பது உறுதியாகத் தெரிந்தால் மட்டுமே இதைச் செய்யவும். சப்ளையர் குறியீடு தெரிந்த யாரும் தொலைபேசியில் கேட்கலாம்.',
+  'suppliers.resetPassword.identityCheck': 'அது அவர்கள்தான் என்பதை எப்படிச் சரிபார்த்தீர்கள்?',
+  'suppliers.resetPassword.identityCheckHint':
+    'குறைந்தது {{min}} எழுத்துகள், உங்கள் பெயருடன் பதிவு செய்யப்படும். "அவர்கள் கேட்டார்கள்" என்பது சரிபார்ப்பு அல்ல.',
+  'suppliers.resetPassword.identityCheckPlaceholder':
+    'சப்ளையர் புத்தகம் 5091 உடன் கவுண்டருக்கு வந்தார், எஸ். பெர்னாண்டோ அடையாளம் கண்டார்',
+  'suppliers.resetPassword.confirm': 'புதிய கடவுச்சொல்லை உருவாக்கு',
+  'suppliers.resetPassword.failed': 'கடவுச்சொல் உருவாக்கப்படவில்லை',
+  'suppliers.resetPassword.issuedBody': 'இதை இப்போதே எழுதிக்கொண்டு சப்ளையரிடம் கொடுங்கள்.',
+  'suppliers.resetPassword.passwordLabel': 'புதிய கடவுச்சொல்',
+  'suppliers.resetPassword.onceWarning':
+    'இது காட்டப்படும் ஒரே தருணம் இதுதான். இதை மூடினால் போய்விடும் — வேறொன்றை உருவாக்க வேண்டியிருக்கும்.',
+  'suppliers.resetPassword.oneTime':
+    'இதைக் கொண்டு முதன்முதலில் உள்நுழையும்போது சப்ளையர் தமது சொந்தக் கடவுச்சொல்லைத் தேர்ந்தெடுக்க வேண்டும், எனவே அதன் பிறகு இது வேலை செய்யாது. அதுவரை, இதை வைத்திருக்கும் யாரும் அவர்களாக உள்நுழையலாம்.',
+  'suppliers.resetPassword.recorded': '{{name}} உடன் பதிவு செய்யப்பட்டது, {{when}} · தணிக்கை {{audit}}.',
+  'suppliers.resetPassword.sessionsEnded': '{{count}} திறந்த அமர்வுகள் முடிக்கப்பட்டன.',
+  'suppliers.resetPassword.done': 'நான் எழுதிக்கொண்டேன்',
 
   /* ──────────────────────── M9 change requests ──────────────────────── */
   'changeRequests.title': 'மாற்ற வேண்டுகோள்கள்',

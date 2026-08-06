@@ -16,8 +16,11 @@ import type {
   SupplierListItem,
   SupplierQuery,
   SupplierRegistration,
+  SupplierCredentialReset,
 } from '@tfd/domain';
+import { IDENTITY_CHECK_MIN, identityCheckProblem } from '@tfd/domain';
 import { supplierEndpoints } from '../endpoints/suppliers';
+import { ApiError } from '../api/errors';
 
 export const supplierRepository = {
   list: (query: SupplierQuery = {}): Promise<Paged<SupplierListItem>> =>
@@ -50,4 +53,22 @@ export const supplierRepository = {
     supplierEndpoints.revealBankDetails(id, reason),
 
   resetPassword: (id: string, reason: string) => supplierEndpoints.resetPassword(id, reason),
+  /**
+   * Issue a new app password.
+   *
+   * The identity check is guarded here as well as on the server, because it is the only
+   * thing standing between a telephone request and an account takeover — and a clerk should
+   * be stopped at the field, not after the credential has already been minted.
+   */
+  resetCredentials: async (id: string, reason: string): Promise<SupplierCredentialReset> => {
+    if (identityCheckProblem(reason)) {
+      throw new ApiError({
+        code: 'note-required',
+        message: 'Record how the supplier’s identity was checked.',
+        details: { min: IDENTITY_CHECK_MIN },
+      });
+    }
+    return supplierEndpoints.resetCredentials(id, reason.trim());
+  },
+
 };

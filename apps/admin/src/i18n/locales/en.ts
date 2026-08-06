@@ -226,6 +226,8 @@ export const en = {
   'suppliers.detail.creditLoan': 'Loan balance',
   'suppliers.detail.creditManure': 'Manure balance',
   'suppliers.detail.pendingRequests': 'Open requests',
+  'suppliers.detail.counterActionsHint':
+    'Suspending a supplier and resetting their app password are counter jobs, so only the clerk can do them. Change that under Users & roles if this factory works differently.',
   'suppliers.detail.suspendedBecause': 'Suspended: {{reason}}',
   'suppliers.detail.auditTitle': 'Recent activity on this record',
 
@@ -251,8 +253,26 @@ export const en = {
   'suppliers.reasonLabel': 'Reason (recorded in the audit log)',
 
   'suppliers.resetPassword.title': 'Reset app password',
-  'suppliers.resetPassword.pending':
-    'How the office resets a supplier password — who checks their identity and what the supplier receives — is still an open question with the factory (§21.16). Until it is answered this action is disabled.',
+  'suppliers.resetPassword.body':
+    'This creates a new password for {{name}} and ends any session they have open. Their old password stops working immediately.',
+  'suppliers.resetPassword.beforeYouStart':
+    'Only do this if you are sure who you are talking to. Anyone who knows a supplier code can telephone and ask.',
+  'suppliers.resetPassword.identityCheck': 'How did you check it was them?',
+  'suppliers.resetPassword.identityCheckHint':
+    'At least {{min}} characters, and it is recorded against your name. "They asked" is not a check.',
+  'suppliers.resetPassword.identityCheckPlaceholder':
+    'Came to the counter with supplier book 5091, recognised by S. Fernando',
+  'suppliers.resetPassword.confirm': 'Create a new password',
+  'suppliers.resetPassword.failed': 'No password was created',
+  'suppliers.resetPassword.issuedBody': 'Write this down now and give it to the supplier.',
+  'suppliers.resetPassword.passwordLabel': 'The new password',
+  'suppliers.resetPassword.onceWarning':
+    'This is the only time it is shown. Close this and it is gone — you would have to create another one.',
+  'suppliers.resetPassword.oneTime':
+    'The supplier has to choose their own password the first time they sign in with this, so it stops working once they do. Until then, anyone holding it can sign in as them.',
+  'suppliers.resetPassword.recorded': 'Recorded against {{name}}, {{when}} · audit {{audit}}.',
+  'suppliers.resetPassword.sessionsEnded': '{{count}} open sessions were ended.',
+  'suppliers.resetPassword.done': 'I have written it down',
 
   /* ──────────────────────── M9 change requests ──────────────────────── */
   'changeRequests.title': 'Change requests',
