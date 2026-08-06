@@ -42,7 +42,7 @@ which is a named absence inside a built module.
 | **M4 Rates & month close** | Stored stage per month, the rate as two figures with correction before publish, exceptions as a resolvable work queue, and a publish gated on **six** refusals including four-eyes and the bill run |
 | **M5 Bills** | A read model over M3's leaf × M4's rate, generated and re-generatable while the month is open, staleness derived at read time, the nine deduction lines with their total recomputed (BR-107), whole-rupee payment with the coins carried, and the slip rendered field-for-field for AC-03 |
 | **M6 Payouts** | One run per month per method, refused against an unpublished month, lines held rather than dropped when there is nowhere to pay, four-eyes on the release, and per-line reconciliation with a mandatory reason on a failure |
-| **M8 Savings** | Read-only. Balance as a liability, ledger derived from published bills only, oldest-first passbook, and the registry's balance following the ledger rather than sitting beside it |
+| **M8 Savings** | Balance as a liability, ledger derived from published bills only, oldest-first passbook, and the registry's balance following the ledger rather than sitting beside it. **Withdrawals (§21.9)**: asked for in a configurable window (April by default), paid on the next Green Leaf Account, and posted to the passbook only when that account is published — so there is still exactly one thing that moves a balance |
 | **M7 Credit queues** | One queue over all three facilities, the **eligibility working printed rather than summarised** (AC-05), a decision that carries the ceiling it was made against so `stale-eligibility` is enforceable (BR-310), `over-ceiling` refused on both sides, and an approval that raises the supplier's balance so the next bill deducts against it |
 | **M9 Change requests** | Queue oldest-first, side-by-side comparison, approve/reject with mandatory note, four-eyes, already-decided |
 | **M10 Inquiries** | Open/answered/closed as data (§21.18), reply and close-unanswered as **different acts**, prose-first triage grid, and the reply screen reading M13's `inquiryReplied` trigger so it says whether a notification actually goes out rather than a sentence that was true when it was written |
@@ -53,7 +53,7 @@ which is a named absence inside a built module.
 | **M15 Users & roles** | Invite, re-role, suspend and reactivate with a mandatory reason, the §12.1 matrix **editable as data**, and three lockout guards including the one nobody thinks of: a matrix in which no role grants `usersAndRoles` is refused, because every user keeps their roles while nobody can ever manage users again |
 | **M16 Reports** | Four reports, each carrying the citation that justifies it, computed from live records at request time; self-describing columns so one screen renders any report; totals only under the columns that add up; and the month list served behind the `reports` grant rather than `billing` |
 | **M17 Audit** | Filterable read-only log, plus per-record panels on M2, M9 and M11. Every mutation in every built module writes to it |
-| **Tests** | 305 Vitest + 29 Playwright, all passing. Typecheck and lint clean |
+| **Tests** | 323 Vitest + 29 Playwright. Typecheck and lint clean |
 
 ## Acceptance criteria
 
@@ -327,6 +327,16 @@ Worst first: correctness, then plumbing, then polish.
     the labels left blank**, not claims about those layouts — and the screen says so above
     the editor. *To close:* one sample file, or the bank's specification page.
 
+31. **Interest has a rate and no basis.** §21.9's answer set both the withdrawal month and
+    an interest rate, and the console stores and shows the rate — but it **applies nothing**,
+    because nobody has said what the rate is calculated on. Closing balance rewards a
+    supplier who paid in late as much as one who held a balance all year; the year's minimum
+    balance is the usual passbook rule and cannot be gamed. On a 5% rate those differ by a
+    lot, and this is the supplier's own money. Harmless today — the default is 0% — and the
+    screen says so where somebody would expect the console to start accruing. *To close:* ask
+    which of the two, then it is one posting job and an `interest` ledger entry, which the
+    ledger's vocabulary already has a word for.
+
 ---
 
 ## Blocking business questions
@@ -356,7 +366,7 @@ would look for it.
 | § | Question | Blocks |
 | --- | --- | --- |
 | 21.17 | **Payout files** — SLIPS, CEFTS or a bank-specific CSV? Cheques on pre-printed stock? | **Half answered, as configuration.** M6 now writes a delimited file through a layout the factory sets in M14 (`payoutExport.ts`), which covers the family most banks' bulk-upload sheets belong to — so "SLIPS" is a preset somebody completes once their bank confirms it, not a release. Still open: a **fixed-width** format with control totals (rules, not a column order) and **cheques on pre-printed stock** (millimetres on a specific cheque book). Both are stated on the screen |
-| 21.9 | **Savings** — may a supplier withdraw, with what notice, is interest paid? | M8's **movements**, not M8. The balance, the passbook and the totals are built; `SavingsEntrySource` already carries `withdrawal` and `interest`, so the answer adds endpoints rather than migrating a money table |
+| 21.9 | ~~**Savings** — may a supplier withdraw, with what notice, is interest paid?~~ | **Answered and built.** *Yes, normally in April, but the month must be changeable; interest is changeable too and starts at 0% a year; the money is paid on the next Green Leaf Account.* Both values are `client_config`, so the month is a row rather than a release. `SavingsEntrySource` already carried `withdrawal`, so it was endpoints rather than a migration — exactly what that vocabulary was reserved for. **Still open: what interest is calculated *on*** — closing balance or the year's minimum, simple or compound. Those pay different money, so the console records the rate and posts nothing of its own |
 | 21.10 | **Deduction authority** — which lines may the office set per supplier per month, and **who may set them**? | M5's **deduction editor**. The nine lines are on the slip and seven of their values are the mock's invention (gap 6). It is a permission question as much as a form, which is why it is not a guess worth making |
 | 21.8 | **Corrections** — may a published bill be corrected, or is an error always adjusted on the next account? | Nothing today. The console **assumes not**, which is BR-108's lock already in place, and says so on a published slip. If the answer is yes, that is a new audited reversal endpoint — never a relaxation of the lock |
 

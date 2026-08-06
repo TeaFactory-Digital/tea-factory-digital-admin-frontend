@@ -1295,6 +1295,13 @@ export interface BillGenerationContext {
   debtBroughtForward: Map<string, number>;
   /** Savings balance as at the start of this month, per supplier id. */
   savingsBefore: Map<string, number>;
+  /**
+   * Savings asked back and not yet settled, per supplier (§21.9).
+   *
+   * Optional because the seed's own historical months predate any withdrawal — a bill
+   * generated for a month nobody asked in simply carries `0`.
+   */
+  savingsWithdrawals?: Map<string, number>;
 }
 
 /**
@@ -1321,14 +1328,27 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
     else bySupplier.set(row.supplierId, [row]);
   }
 
+  /**
+   * Everyone with leaf this month — **and everyone owed a savings withdrawal** (§21.9).
+   *
+   * That second clause is a direct consequence of the factory's answer that a withdrawal is
+   * paid on the next bill: a supplier who asked for their savings and happened to pluck
+   * nothing that month would otherwise have no account for it to be paid on, and the money
+   * would sit unpaid with nothing on any screen to explain why. Their slip reads zero kilos
+   * and one payment, which is exactly what happened.
+   */
   const suppliers = context.suppliers
-    .filter((supplier) => bySupplier.has(supplier.id))
+    .filter(
+      (supplier) =>
+        bySupplier.has(supplier.id) || (context.savingsWithdrawals?.get(supplier.id) ?? 0) > 0,
+    )
     .sort((a, b) => a.supplierCode.localeCompare(b.supplierCode));
 
   const dayCount = daysInMonth(context.monthKey);
 
   return suppliers.map((supplier, index) => {
-    const deliveries = bySupplier.get(supplier.id)!;
+    // May be empty: a supplier included only because they are owed a withdrawal.
+    const deliveries = bySupplier.get(supplier.id) ?? [];
     const totalKgs = summariseKgs(deliveries).totalKgs;
 
     /**
@@ -1366,11 +1386,21 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
       round2(context.debtBroughtForward.get(supplier.id) ?? 0),
     );
 
+    /**
+     * Savings asked back and not yet paid (§21.9).
+     *
+     * The fixture seeds none, and that is the honest default: withdrawals open in one month
+     * a year, so most months' bills carry `0` here. The path is exercised by the tests and
+     * by anybody who records one on the savings screen during the window.
+     */
+    const savingsWithdrawal = round2(context.savingsWithdrawals?.get(supplier.id) ?? 0);
+
     const amounts = computeBillAmounts({
       totalKgs,
       ratePerKg: context.rate?.ratePerKg ?? null,
       extraRatePerKg: context.rate?.extraRatePerKg ?? null,
       coinsBroughtForward,
+      savingsWithdrawal,
       deductions,
     });
 
@@ -1401,6 +1431,7 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
       totalKgs,
 
       coinsBroughtForward,
+      savingsWithdrawal,
       greenLeafAmount: amounts.greenLeafAmount,
       extraPayment: amounts.extraPayment,
       grossAmount: amounts.grossAmount,

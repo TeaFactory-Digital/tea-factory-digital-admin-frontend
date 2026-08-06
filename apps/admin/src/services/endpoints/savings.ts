@@ -7,15 +7,21 @@
  * ledger is **derived from published bills**, and there is exactly one write path
  * for a contribution — the bill it came from.
  *
- * **What is deliberately not here.** §21.9 asks whether a supplier may withdraw,
- * with what notice, and whether interest is paid. Until it is answered:
+ * **§21.9 has been answered, and the shape held.** The factory's answer: a supplier may
+ * take their savings out, normally in April but the month must be changeable; interest is
+ * changeable too and starts at 0% a year. `SavingsEntrySource` already carried `withdrawal`
+ * and `interest` for exactly this, so it added the two endpoints below rather than a
+ * migration on money data.
  *
- *  - there is no withdrawal endpoint, because "the office can take money out of a
- *    supplier's savings" is a policy nobody has approved;
- *  - there is no interest posting, because the rate and the compounding period are
- *    the whole of the question;
- *  - `SavingsEntrySource` already carries `withdrawal` and `interest`, so answering
- *    §21.9 adds endpoints rather than migrating a money table.
+ * Two properties of that answer shape everything here:
+ *
+ *  - **A withdrawal is paid on the next Green Leaf Account**, so `requestWithdrawal` moves
+ *    nothing. It records an intention; M5 puts it on a bill; the passbook moves when that
+ *    bill is published. One rule — the ledger is derived from published bills — rather than
+ *    a second write path for the same money.
+ *  - **Interest is stored and never applied.** Nobody has said simple or compound, closing
+ *    balance or the year's minimum, and those pay materially different amounts. So there is
+ *    still no interest posting: the accountant records one when the factory decides.
  *
  * The savings **rate** is not set here either — it belongs to the supplier and moves
  * through M9's change-request queue (AC-01), which is where the four-eyes rule and
@@ -28,6 +34,8 @@ import type {
   SavingsAccount,
   SavingsAccountQuery,
   SavingsSummary,
+  SavingsWithdrawal,
+  SavingsWithdrawalState,
 } from '@tfd/domain';
 import { apiClient } from '../api/client';
 import { toParams } from './params';
@@ -56,5 +64,29 @@ export const savingsEndpoints = {
       .get<Paged<AdminSavingsLedgerEntry>>(`/admin/savings/accounts/${supplierId}/ledger`, {
         params: toParams(query),
       })
+      .then((response) => response.data),
+
+  /** The scheme's rules and this supplier's outstanding requests, in one answer. */
+  withdrawals: (supplierId: string) =>
+    apiClient
+      .get<SavingsWithdrawalState>(`/admin/savings/accounts/${supplierId}/withdrawals`)
+      .then((response) => response.data),
+
+  /**
+   * Record a request. `422 note-required` · `409 window-closed` ·
+   * `422 exceeds-available` · `422 no-balance` · `422 not-positive`.
+   */
+  requestWithdrawal: (supplierId: string, amount: number, reason: string) =>
+    apiClient
+      .post<SavingsWithdrawal>(`/admin/savings/accounts/${supplierId}/withdrawals`, {
+        amount,
+        reason,
+      })
+      .then((response) => response.data),
+
+  /** `409 already-settled` once the bill that paid it is published. */
+  cancelWithdrawal: (id: string, reason: string) =>
+    apiClient
+      .post<SavingsWithdrawal>(`/admin/savings/withdrawals/${id}/cancel`, { reason })
       .then((response) => response.data),
 };

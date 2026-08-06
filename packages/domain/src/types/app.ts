@@ -132,6 +132,18 @@ export interface GreenLeafBill {
   totalKgs: number;
 
   coinsBroughtForward: number;
+  /**
+   * Savings the supplier asked back this month, paid on this account (§21.9).
+   *
+   * **An addition, not a negative deduction**, and it sits here beside
+   * `coinsBroughtForward` because the two behave the same way: neither is money the leaf
+   * earned, and both are added after the nine lines have been taken off. Folding it into
+   * `deductions` would break BR-107, which balances those nine against their own total.
+   *
+   * `0` when nothing was asked for — a real zero, not a missing value: every account has a
+   * savings position, and most months it is untouched.
+   */
+  savingsWithdrawal: number;
   greenLeafAmount: number | null;
   extraPayment: number | null;
   grossAmount: number | null;

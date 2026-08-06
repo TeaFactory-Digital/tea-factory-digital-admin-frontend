@@ -1388,7 +1388,13 @@ export interface RuntimeConfig {
   };
   /** Same flags the app reads, so turning off manure empties the office queue too. */
   flags: FeatureFlagSet;
-  savings: { perKgOptions: number[] };
+  /**
+   * The savings scheme's own rules (§21.9), not just the rates a supplier may pick.
+   *
+   * `withdrawalMonth` and `annualInterestRate` are optional so an existing `client_config`
+   * row keeps working — `DEFAULT_SAVINGS_POLICY` fills them, which is April and 0%.
+   */
+  savings: { perKgOptions: number[]; withdrawalMonth?: number; annualInterestRate?: number };
   banks: Array<{ name: string; branches: string[] }>;
   localization: {
     defaultLanguage: LanguageCode;

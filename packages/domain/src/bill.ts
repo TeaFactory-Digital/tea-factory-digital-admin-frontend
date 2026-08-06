@@ -42,6 +42,13 @@ export interface BillFacts {
   extraRatePerKg: number | null;
   /** Cents the previous account could not pay in whole rupees. */
   coinsBroughtForward: number;
+  /**
+   * Savings asked back this month and paid on this account (§21.9). `0` when none.
+   *
+   * A fact rather than something derived here: which withdrawals are outstanding is M8's
+   * question, and a bill that decided it for itself would be a second answer.
+   */
+  savingsWithdrawal: number;
   deductions: DeductionLines;
 }
 
@@ -97,6 +104,13 @@ export function computeBillAmounts(facts: BillFacts): BillAmounts {
    * being spent against a balance that does not exist yet.
    */
   if (facts.ratePerKg === null || facts.extraRatePerKg === null) {
+    /**
+     * A withdrawal waits for a rate too, and that is the honest answer rather than the
+     * kind one. It could be paid now — it is the supplier's own money and owes nothing to
+     * the auction — but paying it on an account with no figures on it would mean a second
+     * payment for the same month once the rate lands, and M6 builds one run per month per
+     * method. So the request stays pending and lands on the account that can carry it.
+     */
     return {
       auctionResultAvailable: false,
       totalRatePerKg: null,
@@ -115,7 +129,14 @@ export function computeBillAmounts(facts: BillFacts): BillAmounts {
   const extraPayment = round2(facts.totalKgs * facts.extraRatePerKg);
   const grossAmount = round2(greenLeafAmount + extraPayment);
   const balanceAmount = round2(grossAmount - deductions.total);
-  const payable = round2(balanceAmount + facts.coinsBroughtForward);
+  /**
+   * The withdrawal joins **after** the balance, with the coins.
+   *
+   * `balanceAmount` means "what the leaf earned, less what was taken off", and a supplier's
+   * own savings coming back is neither. Keeping it out of that figure is what lets the slip
+   * print a balance a supplier can check against their kilos.
+   */
+  const payable = round2(balanceAmount + facts.coinsBroughtForward + facts.savingsWithdrawal);
 
   /**
    * An account that owes more than it earned pays nothing and carries the

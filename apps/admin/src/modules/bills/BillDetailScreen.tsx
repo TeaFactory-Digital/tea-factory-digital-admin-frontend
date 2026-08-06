@@ -210,6 +210,22 @@ export function BillDetailScreen() {
                 value={formatAmount(data.coinsBroughtForward)}
                 numeric
               />
+              {/**
+               * Savings taken back (§21.9), shown **only when there is one**.
+               *
+               * The one row on this slip that is conditional, and deliberately so: a zero
+               * here every month would read as "your savings were touched and came to
+               * nothing", which is the opposite of what happened. The nine deduction lines
+               * above print their zeros because their absence would look like an omission
+               * from a document the supplier checks line by line; this is not one of them.
+               */}
+              {data.savingsWithdrawal > 0 ? (
+                <DetailRow
+                  label={t('bills.savingsWithdrawal')}
+                  value={formatAmount(data.savingsWithdrawal)}
+                  numeric
+                />
+              ) : null}
               <DetailRow
                 label={t('bills.coinsCarriedForward')}
                 value={formatAmount(data.coinsCarriedForward)}

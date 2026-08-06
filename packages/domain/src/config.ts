@@ -45,7 +45,7 @@ export interface ConfigPatch {
     legalFooter?: string;
   };
   flags?: Partial<FeatureFlagSet>;
-  savings?: { perKgOptions: number[] };
+  savings?: { perKgOptions: number[]; withdrawalMonth?: number; annualInterestRate?: number };
   banks?: Array<{ name: string; branches: string[] }>;
   localization?: {
     defaultLanguage?: LanguageCode;

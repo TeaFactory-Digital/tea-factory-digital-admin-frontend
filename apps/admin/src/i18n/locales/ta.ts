@@ -815,6 +815,7 @@ export const ta: Record<TranslationKey, string> = {
     'தொழிற்சாலை முழு ரூபாயையே செலுத்துகிறது. சதங்கள் அடுத்த மாதத்திற்கு எடுத்துச் செல்லப்படும்.',
   'bills.balanceAmount': 'நிலுவைத் தொகை',
   'bills.coinsBroughtForward': 'முன்னிருந்து வந்த சதங்கள்',
+  'bills.savingsWithdrawal': 'திரும்பப் பெற்ற சேமிப்பு',
   'bills.coinsCarriedForward': 'அடுத்ததற்கு எடுத்துச் செல்லும் சதங்கள்',
   'bills.finalBalance': 'இறுதி நிலுவை',
   'bills.carriesDebtNotice':
@@ -1007,8 +1008,40 @@ export const ta: Record<TranslationKey, string> = {
   'savings.noLedger': 'இந்தச் சேமிப்புப் புத்தகத்தில் இன்னும் எதுவும் இல்லை',
   'savings.noLedgerHint':
     'இந்த வழங்குநரின் பில்லில் சேமிப்புக் கழிவுடன் ஒரு மாதம் வெளியிடப்படும்போது ஒரு நடமாட்டம் இங்கே தோன்றும்.',
-  'savings.withdrawalsPending':
-    'எடுத்தல்களோ வட்டியோ இல்லை. வழங்குநர் எடுக்கவே முடியுமா — எத்தனை நாள் அறிவிப்பில், தொழிற்சாலை வட்டி செலுத்துமா — என்பது தொழிற்சாலையுடன் இன்னும் தீர்க்கப்படாத கேள்வி (§21.9), மேலும் ஊகித்த விதியின் அடிப்படையில் ஒருவரின் சேமிப்பை நகர்த்துவது கன்சோல் செய்யும் வேலை அல்ல.',
+  'savings.withdrawalsTitle': 'சேமிப்பை எடுத்தல்',
+  'savings.windowOpen': 'திறந்துள்ளது — {{month}}',
+  'savings.windowClosed': '{{month}} இல் திறக்கும்',
+  'savings.windowClosedHint':
+    'சேமிப்பை {{month}} மாதத்தில் எடுக்கலாம். அதுவரை எதுவும் பதிவு செய்ய முடியாது.',
+  'savings.availableAfterPending':
+    'இன்னும் {{available}} கேட்கலாம் — {{pending}} ஏற்கெனவே செலுத்தப்படக் காத்திருக்கிறது.',
+  'savings.awaitingBill': 'அடுத்த கணக்குக்காகக் காத்திருக்கிறது',
+  'savings.requestedBy': '{{name}} பதிவு செய்தார், {{when}}',
+  'savings.cancelWithdrawal': 'இதை ரத்துச்செய்',
+  'savings.cancelReasonHint': 'ஏற்பாடு செய்யப்பட்டதாகச் சப்ளையரிடம் கூறப்பட்டது. குறைந்தது 10 எழுத்துகள்.',
+  'savings.cancelConfirm': 'எடுத்தலை ரத்துச்செய்',
+  'savings.withdrawalCancelled': 'எடுத்தல் ரத்துச்செய்யப்பட்டது',
+  'savings.withdrawalCancelFailed': 'எதுவும் மாற்றப்படவில்லை',
+  'savings.withdrawalReadOnly': 'கணக்காளர் மட்டுமே சேமிப்பை எடுக்க முடியும்.',
+  'savings.nothingToWithdraw': 'இந்தச் சப்ளையரிடம் எடுப்பதற்குச் சேமிப்பு இல்லை.',
+  'savings.withdrawAmount': 'எடுக்கும் தொகை',
+  'savings.withdrawAmountHint': '{{available}} வரை.',
+  'savings.withdrawReasonHint': 'குறைந்தது {{min}} எழுத்துகள். மாதங்களுக்குப் பிறகு சப்ளையர் காரணம் கேட்பார்.',
+  'savings.recordWithdrawal': 'எடுத்தலைப் பதிவு செய்',
+  'savings.paidOnNextBill':
+    'இப்போது எதுவும் நகரவில்லை. சப்ளையரின் அடுத்த பச்சையிலைக் கணக்கில் இது செலுத்தப்படும், அந்தக் கணக்கு வெளியிடப்படும்போது சேமிப்புப் புத்தகம் மாறும்.',
+  'savings.withdrawalRecorded': '{{amount}} அடுத்த கணக்கில் செலுத்தப்படும்',
+  'savings.withdrawalRecordedHint':
+    'இருப்பு இன்னும் மாறவில்லை — இதைச் செலுத்தும் கணக்கு வெளியிடப்படும்போது மாறும்.',
+  'savings.withdrawalFailed': 'எதுவும் பதிவு செய்யப்படவில்லை',
+  'savings.paidOn': '{{month}} கணக்கில் செலுத்தப்பட்டது',
+  'savings.wasCancelled': 'ரத்துச்செய்யப்பட்டது',
+  'savings.interestNote':
+    'இந்தத் தொழிற்சாலை ஆண்டுக்கு {{rate}}% பதிவு செய்கிறது. கன்சோல் அதைக் கணக்கிடுவதில்லை — கணக்காளர் அதை இடுவார் (§21.9).',
+  'savings.problem.not-positive': 'பூஜ்ஜியத்தை விட அதிகமான தொகையை உள்ளிடவும்.',
+  'savings.problem.exceeds-available': 'இந்தச் சப்ளையரிடம் எடுக்க மீதமுள்ளதை விட இது அதிகம்.',
+  'savings.problem.window-closed': 'இந்த மாதத்தில் சேமிப்பை எடுக்க முடியாது.',
+  'savings.problem.no-balance': 'எடுப்பதற்குச் சேமிப்பு இல்லை.',
 
   /* ─────────── M11 News · M12 Static content (shared) ─────────── */
   /* AC-08 lives in this block: a missing translation must be visible to the editor,
@@ -1338,6 +1371,12 @@ export const ta: Record<TranslationKey, string> = {
   'config.addBank': 'வங்கி ஒன்றைச் சேர்',
   'config.branchesOf': '{{bank}} இன் கிளைகள்',
   'config.addBranch': 'கிளை ஒன்றைச் சேர்',
+  'config.withdrawalMonth': 'சேமிப்பை எடுக்கக்கூடிய மாதம்',
+  'config.withdrawalMonthHint': 'ஒவ்வொரு ஆண்டும் இந்த மாதத்தில் சப்ளையர்கள் தமது சேமிப்பைத் திரும்பக் கேட்கலாம்.',
+  'config.interestRate': 'வழங்கும் வட்டி (ஆண்டுக்கு %)',
+  'config.interestRateHint': 'அலுவலகம் கூறுவதற்காகப் பதிவு செய்யப்படுகிறது. எதுவும் வழங்கவில்லை எனில் 0 ஆக விடவும்.',
+  'config.interestNotApplied':
+    'கன்சோல் வட்டியைத் தானாகக் கணக்கிடுவதில்லை. அது இறுதி இருப்பில் வழங்கப்படுகிறதா அல்லது ஆண்டின் மிகக் குறைந்த இருப்பில் வழங்கப்படுகிறதா என்பதை யாரும் கூறவில்லை, அவை வெவ்வேறு தொகைகளைத் தரும் — எனவே தொழிற்சாலை முடிவெடுத்ததும், கணக்காளர் அந்தத் தொகையைச் சேமிப்புப் புத்தகத்தில் ஒரு பதிவாக இடுவார் (§21.9).',
   'config.savingsRates': 'வழங்குநர் தேர்ந்தெடுக்கக்கூடிய சேமிப்பு வீதங்கள் (கிலோவுக்கு ரூ.)',
   'config.addRate': 'வீதம் ஒன்றைச் சேர்',
 

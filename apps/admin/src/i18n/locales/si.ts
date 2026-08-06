@@ -802,6 +802,7 @@ export const si: Record<TranslationKey, string> = {
   'bills.balanceDescription': 'කර්මාන්තශාලාව ගෙවන්නේ පූර්ණ රුපියල්. කාසි ඊළඟ මාසයට ගෙන යයි.',
   'bills.balanceAmount': 'ශේෂ මුදල',
   'bills.coinsBroughtForward': 'පෙරට ගෙන ආ කාසි',
+  'bills.savingsWithdrawal': 'ආපසු ගත් ඉතුරුම්',
   'bills.coinsCarriedForward': 'ඉදිරියට ගෙන යන කාසි',
   'bills.finalBalance': 'අවසාන ශේෂය',
   'bills.carriesDebtNotice':
@@ -986,8 +987,40 @@ export const si: Record<TranslationKey, string> = {
   'savings.noLedger': 'මෙම ඉතුරුම් පොතේ තවම කිසිවක් නැත',
   'savings.noLedgerHint':
     'මෙම සැපයුම්කරුගේ බිල්පතේ ඉතුරුම් අඩු කිරීමක් සමඟ මාසයක් ප්‍රකාශයට පත් වූ විට චලනයක් මෙහි දිස් වේ.',
-  'savings.withdrawalsPending':
-    'ආපසු ගැනීම් හෝ පොලියක් නැත. සැපයුම්කරුවෙකුට ආපසු ගත හැකිද — කුමන දැනුම්දීමකින්, කර්මාන්තශාලාව පොලී ගෙවනවාද — යන්න කර්මාන්තශාලාව සමඟ තවම විසඳා නැති ප්‍රශ්නයකි (§21.9), තවද අනුමාන කළ නීතියක් මත යමෙකුගේ ඉතුරුම් චලනය කිරීම කොන්සෝලය කරන දෙයක් නොවේ.',
+  'savings.withdrawalsTitle': 'ඉතුරුම් ආපසු ගැනීම',
+  'savings.windowOpen': 'විවෘතයි — {{month}}',
+  'savings.windowClosed': '{{month}} මාසයේ විවෘත වේ',
+  'savings.windowClosedHint':
+    'ඉතුරුම් ආපසු ගත හැක්කේ {{month}} මාසයේදීය. ඒ දක්වා කිසිවක් සටහන් කළ නොහැක.',
+  'savings.availableAfterPending':
+    'තවත් {{available}}ක් ඉල්ලා සිටිය හැක — {{pending}}ක් දැනටමත් ගෙවීම බලාපොරොත්තුවෙන් සිටී.',
+  'savings.awaitingBill': 'ලබන ගිණුම බලාපොරොත්තුවෙන්',
+  'savings.requestedBy': '{{name}} විසින් සටහන් කරන ලදී, {{when}}',
+  'savings.cancelWithdrawal': 'මෙය අවලංගු කරන්න',
+  'savings.cancelReasonHint': 'එය සකසා ඇති බව සැපයුම්කරුට කියා ඇත. අවම වශයෙන් අකුරු 10ක්.',
+  'savings.cancelConfirm': 'ආපසු ගැනීම අවලංගු කරන්න',
+  'savings.withdrawalCancelled': 'ආපසු ගැනීම අවලංගු කරන ලදී',
+  'savings.withdrawalCancelFailed': 'කිසිවක් වෙනස් කළේ නැත',
+  'savings.withdrawalReadOnly': 'ඉතුරුම් ආපසු ගත හැක්කේ ගණකාධිකාරීවරයාට පමණි.',
+  'savings.nothingToWithdraw': 'මෙම සැපයුම්කරුට ආපසු ගැනීමට ඉතුරුම් නැත.',
+  'savings.withdrawAmount': 'ආපසු ගන්නා මුදල',
+  'savings.withdrawAmountHint': '{{available}} දක්වා.',
+  'savings.withdrawReasonHint': 'අවම වශයෙන් අකුරු {{min}}ක්. මාස කිහිපයකට පසු සැපයුම්කරු ඇයි දැයි අසයි.',
+  'savings.recordWithdrawal': 'ආපසු ගැනීම සටහන් කරන්න',
+  'savings.paidOnNextBill':
+    'තවම කිසිවක් සිදු නොවේ. එය සැපයුම්කරුගේ ලබන දළු ගිණුමෙන් ගෙවේ, සහ එම ගිණුම ප්‍රකාශයට පත් කළ විට ඉතුරුම් පොත වෙනස් වේ.',
+  'savings.withdrawalRecorded': '{{amount}} ලබන ගිණුමෙන් ගෙවනු ලැබේ',
+  'savings.withdrawalRecordedHint':
+    'ශේෂය තවම වෙනස් වී නැත — මෙය ගෙවන ගිණුම ප්‍රකාශයට පත් කළ විට එය වෙනස් වේ.',
+  'savings.withdrawalFailed': 'කිසිවක් සටහන් කළේ නැත',
+  'savings.paidOn': '{{month}} ගිණුමෙන් ගෙවා ඇත',
+  'savings.wasCancelled': 'අවලංගු කරන ලදී',
+  'savings.interestNote':
+    'මෙම කර්මාන්තශාලාව වසරකට {{rate}}%ක් සටහන් කරයි. කොන්සෝලය එය ගණනය නොකරයි — ගණකාධිකාරී එය ඇතුළත් කරයි (§21.9).',
+  'savings.problem.not-positive': 'බිංදුවට වඩා වැඩි මුදලක් ඇතුළත් කරන්න.',
+  'savings.problem.exceeds-available': 'මෙම සැපයුම්කරුට ආපසු ගැනීමට ඉතිරිව ඇති ප්‍රමාණයට වඩා එය වැඩිය.',
+  'savings.problem.window-closed': 'මෙම මාසයේ ඉතුරුම් ආපසු ගත නොහැක.',
+  'savings.problem.no-balance': 'ආපසු ගැනීමට ඉතුරුම් නැත.',
 
   /* ─────────── M11 News · M12 Static content (shared) ─────────── */
   /* AC-08 lives in this block: a missing translation must be visible to the editor,
@@ -1309,6 +1342,12 @@ export const si: Record<TranslationKey, string> = {
   'config.addBank': 'බැංකුවක් එකතු කරන්න',
   'config.branchesOf': '{{bank}} හි ශාඛා',
   'config.addBranch': 'ශාඛාවක් එකතු කරන්න',
+  'config.withdrawalMonth': 'ඉතුරුම් ආපසු ගත හැකි මාසය',
+  'config.withdrawalMonthHint': 'සෑම වසරකම මෙම මාසය තුළ සැපයුම්කරුවන්ට තම ඉතුරුම් ඉල්ලා සිටිය හැක.',
+  'config.interestRate': 'ගෙවන පොලිය (වසරකට %)',
+  'config.interestRateHint': 'කාර්යාලයට කිව හැකි වන පරිදි සටහන් කර ඇත. කිසිවක් නොගෙවන්නේ නම් 0 ලෙස තබන්න.',
+  'config.interestNotApplied':
+    'කොන්සෝලය පොලිය තනිවම ගණනය නොකරයි. එය ගෙවෙන්නේ අවසන් ශේෂය මතද, නැතහොත් වසරේ අවම ශේෂය මතද යන්න කිසිවෙකු පවසා නැත, සහ ඒ දෙක වෙනස් මුදල් ගෙවයි — එබැවින් කර්මාන්තශාලාව තීරණය කළ පසු, ගණකාධිකාරී එම මුදල ඉතුරුම් පොතට සටහනක් ලෙස ඇතුළත් කරයි (§21.9).',
   'config.savingsRates': 'සැපයුම්කරුවෙකු තෝරා ගත හැකි ඉතුරුම් අනුපාත (කිලෝවකට රු.)',
   'config.addRate': 'අනුපාතයක් එකතු කරන්න',
 

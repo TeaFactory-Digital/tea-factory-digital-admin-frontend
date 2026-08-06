@@ -100,6 +100,14 @@ test('reads the savings scheme and one supplier’s passbook', async ({ page }) 
   await accounts.locator('tbody tr').first().click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.getByRole('table', { name: /savings movements/i })).toBeVisible();
-  // §21.9 stated where somebody would look for a withdrawal button.
-  await expect(page.getByText(/no withdrawals or interest/i)).toBeVisible();
+  /**
+   * §21.9 as answered: the control is here, and the rule is stated whether or not the
+   * window is open — an office that only sees it in April cannot answer the question in
+   * March. The test runs in whatever month it runs in, so it asserts the badge that is
+   * always there rather than the form that is seasonal.
+   */
+  await expect(page.getByRole('heading', { name: /taking savings out/i })).toBeVisible();
+  await expect(page.getByText(/^(open — April|Opens in April)$/i)).toBeVisible();
+  // Interest is recorded and never applied — the half of §21.9 still open.
+  await expect(page.getByText(/no withdrawals or interest/i)).toHaveCount(0);
 });

@@ -1243,6 +1243,54 @@ table**.
 
 ---
 
+### 13.4 `GET /admin/savings/accounts/{supplierId}/withdrawals` → `SavingsWithdrawalState`
+
+```json
+{ "policy": { "withdrawalMonth": 4, "annualInterestRate": 0 },
+  "windowOpen": true, "balance": 18430.00, "pendingTotal": 0, "available": 18430.00,
+  "items": [] }
+```
+
+`windowOpen` is **the server's answer**, computed Colombo-local (BR-104). A console in
+another timezone must not decide the window is shut on the evening the office says it is
+open. `available` is the balance less what is already pending — a request does not reduce
+the balance, so without it the same savings could be asked for twice in one window.
+
+### 13.5 `POST /admin/savings/accounts/{supplierId}/withdrawals` → 201 `SavingsWithdrawal`
+
+`billing: write`. Body `{ amount, reason }`.
+
+```
+422 note-required       under 10 characters
+409 window-closed       not this factory's month   + details.withdrawalMonth
+422 exceeds-available   more than balance − pending + details.available
+422 no-balance · 422 not-positive
+```
+
+**This endpoint moves no money and writes no ledger entry**, which is the whole shape of
+§21.9's answer: a withdrawal is paid on the supplier's next Green Leaf Account. It records
+an intention; §11.5's generation puts it on the bill as `savingsWithdrawal`; §10.5's publish
+posts the passbook entry and marks it `settled`. Keep it that way — the savings ledger being
+derived from published bills and nothing else is what stops a passbook and an account
+disagreeing.
+
+Two consequences to implement rather than discover:
+
+- **Generate a bill for a supplier with no deliveries but a pending withdrawal.** Otherwise
+  the money has nothing to be paid on. Zero kilos, one payment.
+- **`savingsWithdrawal` is an addition after `balanceAmount`, with the coins** — never a
+  tenth deduction line, which would break BR-107.
+
+`POST /admin/savings/withdrawals/{id}/cancel` reverses one that has not been paid, with a
+mandatory reason, and answers `409 already-settled` once it has. Cancelled, never deleted:
+the supplier was told it was arranged.
+
+**Interest is still not computed anywhere.** `annualInterestRate` is recorded so the office
+can quote it. What it is calculated *on* — closing balance or the year's minimum — is
+unanswered, and those pay different money on the same rate.
+
+---
+
 ## 14. M7 Credit queues
 
 Authorize on `creditRequests`, and read the level carefully: §12.1 gives `R` to the
@@ -1898,8 +1946,8 @@ Ordered so each step is independently useful to the console.
       month is open, with `stale` derived at read time
 - [ ] `/admin/payout-runs/*` — prepare, approve with four-eyes, and mark, with held
       lines counted rather than dropped
-- [ ] `/admin/savings/*` — read-only, with the ledger posted by the publish in §10.5
-      and nothing else
+- [ ] `/admin/savings/*` — the ledger posted by the publish in §10.5 and nothing else,
+      plus the withdrawal request/cancel pair that deliberately posts nothing itself
 - [ ] `/admin/news/*` and `/admin/static-pages/*` — per-language saves, gaps derived
       against the tenant's `contentLanguages`, and a preview endpoint that resolves the
       fallback the way `content.ts` does

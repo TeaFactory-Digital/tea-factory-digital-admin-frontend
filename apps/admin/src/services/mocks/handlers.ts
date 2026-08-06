@@ -85,6 +85,14 @@ import {
   isInquiryClosed,
   DEFAULT_ROLE_MATRIX,
   DEFAULT_PAYOUT_EXPORT,
+  DEFAULT_SAVINGS_POLICY,
+  availableToWithdraw,
+  colomboMonthKey,
+  isWithdrawalWindowOpen,
+  pendingWithdrawalTotal,
+  withdrawalProblems,
+  type SavingsPolicy,
+  type SavingsWithdrawal,
   payoutFileName,
   payoutTemplateProblems,
   serialisePayoutFile,
@@ -179,6 +187,13 @@ const state = {
    */
   users: mockUsers.map((user) => ({ ...user, roles: [...user.roles] })),
   /** `null` until the factory edits it, at which point it becomes the authority. */
+  /**
+   * Savings withdrawals asked for and not yet paid (§21.9).
+   *
+   * Requests, not movements: the balance does not change until the bill that pays one is
+   * published, because the savings ledger is derived from published bills and nothing else.
+   */
+  savingsWithdrawals: [] as SavingsWithdrawal[],
   roleMatrix: null as Record<ConsoleRole, Record<Capability, AccessLevel>> | null,
   roleMatrixUpdatedAt: null as string | null,
   roleMatrixUpdatedByName: null as string | null,
@@ -1093,6 +1108,78 @@ function savingsBalanceOf(supplierId: string): number {
  * bill would put money in a passbook against a figure the office might still
  * re-generate.
  */
+/** This factory's savings rules, defaulted for a row that predates §21.9's answer. */
+function savingsPolicyOf(request: Request): SavingsPolicy {
+  const savings = tenantConfig(request).savings;
+  return {
+    withdrawalMonth: savings.withdrawalMonth ?? DEFAULT_SAVINGS_POLICY.withdrawalMonth,
+    annualInterestRate: savings.annualInterestRate ?? DEFAULT_SAVINGS_POLICY.annualInterestRate,
+  };
+}
+
+/** Outstanding requests for one supplier — what the next bill will have to carry. */
+function pendingWithdrawalsFor(supplierId: string): SavingsWithdrawal[] {
+  return state.savingsWithdrawals.filter(
+    (one) => one.supplierId === supplierId && one.status === 'pending',
+  );
+}
+
+/**
+ * Withdrawals settled by publishing a month (§21.9).
+ *
+ * Runs beside `postSavingsFor` and for the same reason: publishing is the one event that
+ * turns a bill into something the supplier has been given, so it is the only moment a
+ * passbook should move. A withdrawal credited at *request* time would take a supplier's
+ * balance down weeks before they were paid.
+ *
+ * The entry is **negative**, which is what `SavingsLedgerEntry` documents — positive is a
+ * contribution, negative a withdrawal — so the running balance needs no special case.
+ */
+function settleWithdrawalsFor(monthKey: string, publishedAt: string): number {
+  let settled = 0;
+
+  for (const bill of state.bills.filter((one) => one.monthKey === monthKey)) {
+    if (bill.savingsWithdrawal <= 0) continue;
+
+    for (const request of pendingWithdrawalsFor(bill.supplierId)) {
+      // Idempotent, like the contribution above: a replayed publish must not take a
+      // supplier's savings twice, and this is money.
+      if (state.savingsLedger.some((entry) => entry.note === request.id)) continue;
+
+      const balance = round2(savingsBalanceOf(bill.supplierId) - request.amount);
+      state.savingsLedger.push({
+        id: `sav-${nextId()}`,
+        supplierId: bill.supplierId,
+        monthKey,
+        month: bill.month,
+        amount: -request.amount,
+        balance,
+        source: 'withdrawal',
+        billId: bill.id,
+        recordedAt: publishedAt,
+        // The request id, so the passbook row and the request are one another's evidence.
+        note: request.id,
+      });
+
+      const index = state.suppliers.findIndex((supplier) => supplier.id === bill.supplierId);
+      if (index >= 0) state.suppliers[index] = { ...state.suppliers[index]!, savingsBalance: balance };
+
+      const at = state.savingsWithdrawals.findIndex((one) => one.id === request.id);
+      if (at >= 0) {
+        state.savingsWithdrawals[at] = {
+          ...request,
+          status: 'settled',
+          settledBillId: bill.id,
+          settledMonthKey: monthKey,
+        };
+      }
+      settled += 1;
+    }
+  }
+
+  return settled;
+}
+
 function postSavingsFor(monthKey: string, publishedAt: string): number {
   const bills = state.bills
     .filter((bill) => bill.monthKey === monthKey && bill.deductions.savings > 0)
@@ -2686,6 +2773,14 @@ export const handlers: HttpHandler[] = [
       coinsBroughtForward: carried.coins,
       debtBroughtForward: carried.debts,
       savingsBefore: carried.savings,
+      // §21.9: what each supplier has asked back and not yet been paid. Re-read on every
+      // generation, so a withdrawal recorded after a draft run appears when it is re-run.
+      savingsWithdrawals: new Map(
+        state.suppliers.map((supplier) => [
+          supplier.id,
+          pendingWithdrawalTotal(pendingWithdrawalsFor(supplier.id)),
+        ]),
+      ),
     });
 
     /**
@@ -2979,6 +3074,8 @@ export const handlers: HttpHandler[] = [
       if (bill.monthKey === monthKey) state.bills[index] = { ...bill, publishedAt };
     }
     const credited = postSavingsFor(monthKey, publishedAt);
+    // And the other direction (§21.9): withdrawals this month's accounts paid out.
+    settleWithdrawalsFor(monthKey, publishedAt);
 
     /**
      * M13, if this factory has the trigger on.
@@ -3591,6 +3688,170 @@ export const handlers: HttpHandler[] = [
     };
 
     return HttpResponse.json(summary);
+  }),
+
+  /**
+   * The scheme's rules, and what this supplier may ask for right now (§21.9).
+   *
+   * Served rather than derived on the client, because the *window* depends on the factory's
+   * Colombo-local month and the *available* figure depends on requests the console has not
+   * necessarily fetched. One answer, so the screen and the refusal agree.
+   */
+  http.get('*/admin/savings/accounts/:supplierId/withdrawals', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gated = featureGate(request, 'enableSavings');
+    if (gated) return gated;
+    const auth = authorize(request, 'billing');
+    if ('response' in auth) return auth.response;
+
+    const supplier = state.suppliers.find((candidate) => candidate.id === params.supplierId);
+    if (!supplier) return fail({ status: 404, code: '404', message: 'No such supplier.' });
+
+    const policy = savingsPolicyOf(request);
+    const pending = pendingWithdrawalsFor(supplier.id);
+    const pendingTotal = pendingWithdrawalTotal(pending);
+
+    return HttpResponse.json({
+      policy,
+      windowOpen: isWithdrawalWindowOpen(policy, new Date()),
+      balance: supplier.savingsBalance,
+      pendingTotal,
+      available: availableToWithdraw(supplier.savingsBalance, pendingTotal),
+      // Newest first: the office is looking at what was asked for most recently.
+      items: state.savingsWithdrawals
+        .filter((one) => one.supplierId === supplier.id)
+        .sort((a, b) => b.requestedAt.localeCompare(a.requestedAt)),
+    });
+  }),
+
+  /**
+   * Ask for savings back.
+   *
+   * **Nothing moves here.** The balance does not change and no ledger entry is written: the
+   * factory's answer to §21.9 is that a withdrawal is paid on the next Green Leaf Account,
+   * so this records an intention and M5 turns it into a line. The passbook moves when that
+   * account is published, which keeps one rule — *the ledger is derived from published
+   * bills* — rather than two.
+   */
+  http.post('*/admin/savings/accounts/:supplierId/withdrawals', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gated = featureGate(request, 'enableSavings');
+    if (gated) return gated;
+    // `billing: write` — §12.1 calls the capability "Bills & savings", and the accountant
+    // holds it. A clerk may read a passbook and not move what is in it.
+    const auth = authorize(request, 'billing', 'write');
+    if ('response' in auth) return auth.response;
+
+    const supplier = state.suppliers.find((candidate) => candidate.id === params.supplierId);
+    if (!supplier) return fail({ status: 404, code: '404', message: 'No such supplier.' });
+
+    const { amount, reason } = (await request.json()) as { amount?: number; reason?: string };
+
+    /**
+     * A reason, like every other movement of somebody else's money in this console.
+     *
+     * The supplier will ask why their passbook dropped, months later, and "withdrawal" with
+     * no sentence beside it is a conversation nobody in the office can have — the same
+     * argument AC-06 makes about a rejection note.
+     */
+    if (!reason || reason.trim().length < 10) {
+      return fail({
+        status: 422,
+        code: 'note-required',
+        message: 'A reason is required to record a withdrawal.',
+      });
+    }
+
+    const policy = savingsPolicyOf(request);
+    const pendingTotal = pendingWithdrawalTotal(pendingWithdrawalsFor(supplier.id));
+    const problems = withdrawalProblems({
+      amount: Number(amount),
+      balance: supplier.savingsBalance,
+      pendingTotal,
+      policy,
+      now: new Date(),
+    });
+
+    if (problems.length > 0) {
+      // The first problem names the code, so the screen says *which* rule stopped it —
+      // "the window is shut until April" and "that is more than is held" are different
+      // conversations and a single `invalid` would flatten them into one.
+      const first = problems[0]!;
+      return fail({
+        status: first === 'window-closed' ? 409 : 422,
+        code: first,
+        message: 'That withdrawal cannot be recorded.',
+        details: {
+          problems,
+          withdrawalMonth: policy.withdrawalMonth,
+          available: availableToWithdraw(supplier.savingsBalance, pendingTotal),
+        },
+      });
+    }
+
+    const now = new Date();
+    const record_: SavingsWithdrawal = {
+      id: `wd-${nextId()}`,
+      supplierId: supplier.id,
+      supplierCode: supplier.supplierCode,
+      supplierName: supplier.name,
+      amount: round2(Number(amount)),
+      status: 'pending',
+      requestedMonth: colomboMonthKey(now),
+      requestedAt: now.toISOString(),
+      requestedByName: auth.user.name,
+      reason: reason.trim(),
+      settledBillId: null,
+      settledMonthKey: null,
+    };
+    state.savingsWithdrawals.push(record_);
+
+    recordBy(auth, 'savings.withdrawal.request', 'supplier', supplier.id, {
+      after: { amount: record_.amount, reason: record_.reason, month: record_.requestedMonth },
+    });
+
+    return HttpResponse.json(record_, { status: 201 });
+  }),
+
+  /**
+   * Cancel one that has not been paid yet.
+   *
+   * Cancelled rather than deleted — a request the office recorded and then withdrew is a
+   * thing that happened, and a supplier who was told "it is arranged" and then finds no
+   * payment will ask. Same rule that voids a delivery rather than removing it.
+   */
+  http.post('*/admin/savings/withdrawals/:id/cancel', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gated = featureGate(request, 'enableSavings');
+    if (gated) return gated;
+    const auth = authorize(request, 'billing', 'write');
+    if ('response' in auth) return auth.response;
+
+    const index = state.savingsWithdrawals.findIndex((one) => one.id === params.id);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such withdrawal.' });
+
+    const existing = state.savingsWithdrawals[index]!;
+    if (existing.status !== 'pending') {
+      return fail({
+        status: 409,
+        code: 'already-settled',
+        message: 'That withdrawal has already been paid.',
+        details: { status: existing.status, billId: existing.settledBillId },
+      });
+    }
+
+    const { reason } = (await request.json().catch(() => ({}))) as { reason?: string };
+    if (!reason || reason.trim().length < 10) {
+      return fail({ status: 422, code: 'note-required', message: 'A reason is required.' });
+    }
+
+    state.savingsWithdrawals[index] = { ...existing, status: 'cancelled' };
+    recordBy(auth, 'savings.withdrawal.cancel', 'supplier', existing.supplierId, {
+      before: { amount: existing.amount, status: 'pending' },
+      after: { status: 'cancelled', reason: reason.trim() },
+    });
+
+    return HttpResponse.json(state.savingsWithdrawals[index]);
   }),
 
   /**
@@ -5015,6 +5276,7 @@ export function resetMockState(): void {
   state.news = mockNews.map(cloneNews);
   state.staticPages = mockStaticPages.map(cloneStaticPage);
   state.users = mockUsers.map((user) => ({ ...user, roles: [...user.roles] }));
+  state.savingsWithdrawals = [];
   state.roleMatrix = null;
   state.roleMatrixUpdatedAt = null;
   state.roleMatrixUpdatedByName = null;

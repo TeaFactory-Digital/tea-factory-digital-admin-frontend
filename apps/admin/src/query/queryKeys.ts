@@ -114,6 +114,7 @@ export const qk = {
     summary: (monthKey: string | undefined) => ['savings', 'summary', monthKey ?? 'latest'] as const,
     accounts: (query: SavingsAccountQuery) => ['savings', 'accounts', query] as const,
     ledger: (supplierId: string) => ['savings', 'ledger', supplierId] as const,
+    withdrawals: (supplierId: string) => ['savings', 'withdrawals', supplierId] as const,
   },
 
   changeRequests: {

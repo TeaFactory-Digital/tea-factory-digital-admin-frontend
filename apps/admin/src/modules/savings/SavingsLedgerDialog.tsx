@@ -21,6 +21,7 @@ import { cn } from '@/lib/cn';
 import { EmptyState, ErrorState, Spinner } from '@/components/ui/states';
 import { formatAmount, formatMoney, formatMonthKey } from '@/lib/format';
 import { useSavingsLedger } from './hooks';
+import { WithdrawalPanel } from './WithdrawalPanel';
 
 export function SavingsLedgerDialog({
   account,
@@ -135,17 +136,8 @@ export function SavingsLedgerDialog({
             </tbody>
           </table>
 
-          {/**
-           * §21.9, stated where somebody would look for the control.
-           *
-           * The office will ask where the withdrawal button is, and the honest answer
-           * is that whether a supplier may withdraw at all — on what notice, and
-           * whether interest is paid — has not been decided. A button built on a guess
-           * would move somebody's savings on a rule nobody approved.
-           */}
-          <p className="mt-md rounded-md bg-surface-variant px-md py-sm text-caption text-text-secondary">
-            {t('savings.withdrawalsPending')}
-          </p>
+          {/* §21.9, answered: the withdrawal control lives under the passbook it moves. */}
+          <WithdrawalPanel account={account!} />
         </div>
       )}
     </Dialog>

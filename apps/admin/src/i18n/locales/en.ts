@@ -783,6 +783,7 @@ export const en = {
   'bills.balanceDescription': 'The factory pays whole rupees. The coins carry to next month.',
   'bills.balanceAmount': 'Balance amount',
   'bills.coinsBroughtForward': 'Coins brought forward',
+  'bills.savingsWithdrawal': 'Savings taken back',
   'bills.coinsCarriedForward': 'Coins carried forward',
   'bills.finalBalance': 'Final balance',
   'bills.carriesDebtNotice':
@@ -965,8 +966,40 @@ export const en = {
   'savings.noLedger': 'Nothing in this passbook yet',
   'savings.noLedgerHint':
     'A movement appears here when a month is published with a savings deduction on this supplier’s bill.',
-  'savings.withdrawalsPending':
-    'No withdrawals or interest. Whether a supplier may withdraw at all — on what notice, and whether the factory pays interest — is still an open question with the factory (§21.9), and moving somebody’s savings on a guessed rule is not something the console will do.',
+  'savings.withdrawalsTitle': 'Taking savings out',
+  'savings.windowOpen': 'Open — {{month}}',
+  'savings.windowClosed': 'Opens in {{month}}',
+  'savings.windowClosedHint':
+    'Savings can be taken out in {{month}}. Nothing can be recorded until then.',
+  'savings.availableAfterPending':
+    '{{available}} can still be asked for — {{pending}} is already waiting to be paid.',
+  'savings.awaitingBill': 'Waiting for the next account',
+  'savings.requestedBy': 'Recorded by {{name}}, {{when}}',
+  'savings.cancelWithdrawal': 'Cancel this',
+  'savings.cancelReasonHint': 'The supplier was told it was arranged. At least 10 characters.',
+  'savings.cancelConfirm': 'Cancel the withdrawal',
+  'savings.withdrawalCancelled': 'The withdrawal was cancelled',
+  'savings.withdrawalCancelFailed': 'Nothing was changed',
+  'savings.withdrawalReadOnly': 'Only the accountant can take savings out.',
+  'savings.nothingToWithdraw': 'This supplier has no savings to take out.',
+  'savings.withdrawAmount': 'Amount to take out',
+  'savings.withdrawAmountHint': 'Up to {{available}}.',
+  'savings.withdrawReasonHint': 'At least {{min}} characters. The supplier will ask why, months later.',
+  'savings.recordWithdrawal': 'Record the withdrawal',
+  'savings.paidOnNextBill':
+    'Nothing moves yet. It is paid on the supplier’s next Green Leaf Account, and the passbook changes when that account is published.',
+  'savings.withdrawalRecorded': '{{amount}} will be paid on the next account',
+  'savings.withdrawalRecordedHint':
+    'The balance has not changed yet — it changes when the account that pays this is published.',
+  'savings.withdrawalFailed': 'Nothing was recorded',
+  'savings.paidOn': 'paid on the {{month}} account',
+  'savings.wasCancelled': 'cancelled',
+  'savings.interestNote':
+    'This factory records {{rate}}% a year. The console does not work it out — the accountant posts it (§21.9).',
+  'savings.problem.not-positive': 'Enter an amount above zero.',
+  'savings.problem.exceeds-available': 'That is more than this supplier has left to take out.',
+  'savings.problem.window-closed': 'Savings cannot be taken out this month.',
+  'savings.problem.no-balance': 'There are no savings to take out.',
 
   /* ─────────── M11 News · M12 Static content (shared) ─────────── */
   /* AC-08 lives in this block: a missing translation must be visible to the editor,
@@ -1281,6 +1314,12 @@ export const en = {
   'config.addBank': 'Add a bank',
   'config.branchesOf': 'Branches of {{bank}}',
   'config.addBranch': 'Add a branch',
+  'config.withdrawalMonth': 'Savings can be taken out in',
+  'config.withdrawalMonthHint': 'Suppliers may ask for their savings back during this month each year.',
+  'config.interestRate': 'Interest paid (% a year)',
+  'config.interestRateHint': 'Recorded so the office can quote it. Leave at 0 if the factory pays none.',
+  'config.interestNotApplied':
+    'The console does not work interest out by itself. Nobody has said whether it is paid on the closing balance or on the lowest balance of the year, and those pay different amounts — so when the factory decides, the accountant records the figure as an entry in the passbook (§21.9).',
   'config.savingsRates': 'Savings rates a supplier may choose (LKR per kg)',
   'config.addRate': 'Add a rate',
 

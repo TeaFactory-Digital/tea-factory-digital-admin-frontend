@@ -78,6 +78,9 @@ const monthFmt = new Intl.DateTimeFormat('en-GB', {
   year: 'numeric',
 });
 
+/** No year and no timezone: a bare month name for a rule that recurs every year. */
+const monthNameFmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', month: 'long' });
+
 /** `30 Jul 2026`, in Colombo time. */
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return NOT_AVAILABLE;
@@ -98,6 +101,17 @@ export function formatMonthKey(monthKey: string | null | undefined): string {
   const [year, month] = monthKey.split('-').map(Number);
   if (!year || !month) return NOT_AVAILABLE;
   return monthFmt.format(new Date(Date.UTC(year, month - 1, 15)));
+}
+
+/**
+ * `4` → `April`. The month on its own, with no year attached.
+ *
+ * For a setting that is *"every year, in this month"* rather than a date — M14's savings
+ * withdrawal window (§21.9). Rendering it as `April 2026` there would read as a one-off.
+ */
+export function formatMonthName(month: number): string {
+  if (!Number.isInteger(month) || month < 1 || month > 12) return NOT_AVAILABLE;
+  return monthNameFmt.format(new Date(Date.UTC(2000, month - 1, 15)));
 }
 
 /**

@@ -23,7 +23,7 @@ build status, and the sidebar is generated from it.
 | M5 | **Bills** | ✅ Built (no PDF) | `/bills`, `/bills/:id` |
 | M6 | **Payouts** | ✅ Built (file layout configurable; no fixed-width or cheque printing) | `/payouts`, `/payouts/:id` |
 | M7 | **Credit queues** | ✅ Built | `/credit`, `/credit/:id` |
-| M8 | **Savings** | ✅ Built (read-only) | `/savings` |
+| M8 | **Savings** | ✅ Built, with withdrawals (§21.9) | `/savings` |
 | M10 | **Inquiries** | ✅ Built | `/inquiries`, `/inquiries/:id` |
 | M11 | **News (CMS)** | ✅ Built | `/news`, `/news/:id` |
 | M12 | **Static content** | ✅ Built | `/content` |
@@ -401,6 +401,44 @@ would look for the control.
 
 ---
 
+
+### Withdrawals — §21.9, as the factory answered it
+
+*A supplier may take their savings out, normally in April; the month must be changeable;
+interest is changeable too and starts at 0% a year; the money is paid on the next Green Leaf
+Account.*
+
+**The last clause is the design.** A withdrawal is not a movement — it is a request that
+becomes a bill line that becomes a passbook entry:
+
+| Step | What changes |
+| --- | --- |
+| The accountant records it, in the window | Nothing. The balance is untouched; the amount is subtracted from what may be asked for *again* |
+| M5 generates the month's bills | The account carries `savingsWithdrawal`, added to what is payable |
+| A manager publishes the month | *Now* the passbook moves — a negative `withdrawal` entry beside that month's contribution |
+
+That shape exists to keep **one rule**: the savings ledger is derived from published bills
+and nothing else. Taking the money out at request time would have been simpler and would
+have told a supplier their savings were gone a month before they were paid.
+
+**The window is Colombo-local** (BR-104) and out of season the control is withheld with the
+month named, rather than offered and refused. **The month and the rate are `client_config`**,
+so a factory that pays out in September changes a row.
+
+**A supplier with no leaf that month still gets an account**, reading zero kilos and one
+payment — otherwise their withdrawal would have nothing to be paid on, and the money would
+sit unpaid with nothing on any screen saying why.
+
+**The withdrawal is an addition beside `coinsBroughtForward`, not a tenth deduction line.**
+BR-107 balances the nine against their own total, and `balanceAmount` means "what the leaf
+earned, less what was taken off" — a supplier's own money coming back is neither. On an
+account that owes more than it earned the withdrawal goes against the debt, which falls out
+of the arithmetic rather than being a special case.
+
+**Interest is recorded and never applied.** The factory set a rate; nobody has said whether
+it is paid on the closing balance or the year's minimum, and those differ materially. So the
+console stores it, shows it, and posts nothing — the accountant records an `interest` entry
+when the factory decides. Stated on both the savings screen and M14.
 ## M11 News
 
 *The feed suppliers read in the app.* Authored in every language the tenant sells in.
@@ -655,7 +693,7 @@ and a guessed one reads as a decision the factory never made.
 | § | Question | What is missing | Why not guess |
 | --- | --- | --- | --- |
 | 21.17 | What format does the bank accept? | A **fixed-width** bank file, and cheque printing | Half answered as configuration: the CSV family is a layout the factory sets in M14. A fixed-width scheme is rules and control totals, which a column order cannot express |
-| 21.9 | May a supplier withdraw savings? | Withdrawals, interest | Moving somebody's savings on a rule nobody approved |
+| 21.9 | On what basis is interest calculated? | **Interest accrual only** — withdrawals are built | Closing balance and the year's minimum pay different money on the same rate, and it is the supplier's savings |
 | 21.10 | Who may set which deduction line? | A deduction **editor** | It decides who can change what a supplier is paid, which is a permission, not a form |
 | 21.8 | May a published bill be corrected? | Any post-publish change | The console assumes not. If the answer is yes, that is a new audited reversal endpoint — never a relaxation of BR-108's lock |
 | 19.1 | What shape is the reporting warehouse? | The reports beyond the four whose definition already exists here | A report nobody asked for is a query somebody maintains and nobody reads. §19.1 is in the mobile repo, not this one |

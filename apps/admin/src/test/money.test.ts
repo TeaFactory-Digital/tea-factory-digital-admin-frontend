@@ -39,6 +39,7 @@ function bill(monthKey: string, gross: number | null, kgs = 500, rate: number | 
     totalRatePerKg: gross === null ? null : rate,
     totalKgs: kgs,
     coinsBroughtForward: 0,
+    savingsWithdrawal: 0,
     greenLeafAmount: gross,
     extraPayment: null,
     grossAmount: gross,

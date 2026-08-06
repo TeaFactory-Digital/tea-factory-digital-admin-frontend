@@ -17,7 +17,7 @@ From the workspace root:
 | `npm run preview`    | Serves the built bundle                                                                   |
 | `npm run typecheck`  | `tsc --build` across all three projects                                                   |
 | `npm run lint`       | ESLint, including the white-label and layering rules                                      |
-| `npm run test`       | Vitest — 305 tests                                                                        |
+| `npm run test`       | Vitest — 323 tests                                                                        |
 | `npm run e2e`        | Playwright — 29 specs against the dev server. Needs `npx playwright install chromium` once |
 | `npm run e2e:demo`   | The same specs against the built demo bundle on a static server                           |
 | `npm run format`     | Prettier                                                                                  |
@@ -161,6 +161,7 @@ Layered so each layer tests what only it can.
 | `inquiries.test.tsx` (15)      | M10: reply and close as different acts, §21.18's status mapping, and the reply screen reading M13's trigger |
 | `reports.test.ts` (12)         | M16: each report tied to the module its figures come from, `null` kept as `null`, totals only where they mean something, and a factory administrator running a month report without a `billing` grant |
 | `payoutExport.test.ts` (21)    | §21.17 as configuration: the serialiser asserted **byte for byte** (a file is read by a parser, not a person), the three amount formats, quoting only where needed, and the endpoint's full account numbers, audit row and draft refusal |
+| `savingsWithdrawal.test.ts` (18) | §21.9 as answered: the Colombo-local window on both of its midnight edges, the arithmetic that keeps a withdrawal out of BR-107's nine lines, and the **round trip** — ask, close the month for real, publish, and only then does the passbook move |
 | `listSorting.test.ts` (5)      | Server-side sort and pagination parameters                                |
 | `languageSwitcher.test.tsx` (9) | The si/en/ta picker: every option staying in **its own script** whatever the active language is (the regression that would strand the reader the control exists for), the choice surviving a reload, `<html lang>` following it, one tab stop rather than three, and the arrow keys wrapping. Installs a working `localStorage` per test — this environment's is an empty object while `sessionStorage` is real, which the guards in `src/i18n` swallow by design |
 | `viewportGate.test.tsx` (6)    | The 768×480 floor: a phone getting the notice, the office's own 1366×768 laptop **not** getting it, a landscape phone that clears the width but not the height, and the notice retiring when a dragged window comes back over the floor |

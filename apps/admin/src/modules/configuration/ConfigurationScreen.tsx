@@ -13,9 +13,11 @@
  *    one in the URL, matching M12. A single form would mean one save carrying every field
  *    an administrator did not touch, which is exactly what `PATCH`-per-section avoids on
  *    the wire.
- *  - **No grid, so no fill-height column.** This page scrolls naturally. Worth stating
- *    because the short-screen bug came from stacking a tall card above a grid in a column
- *    that fills the window — there is no grid here to crush.
+ *  - **The rail is static and only the editor scrolls.** A rail that scrolls away is a rail
+ *    you have to scroll back to before you can switch sections, and the payout-file section
+ *    is several windows tall. So the two columns fill the window and the editor owns the
+ *    scrollbar — see `SECTION_PANE` below for the short-screen floor that keeps this from
+ *    repeating the bug `GRID_CARD` documents.
  *
  * The dangerous part is not the editing, it is that these edits reach across every other
  * module and the person making them cannot see any of them from here. So every section
@@ -71,6 +73,20 @@ const SECTIONS: Array<{
   // than a setting — see §21.17 and `payoutExport.ts`.
   { id: 'payoutFile', icon: FileSpreadsheet, Component: PayoutFileSection },
 ];
+
+/**
+ * The two columns, filling what `AppShell` leaves and no more.
+ *
+ * `lg:` only: one column on a narrow window, where an inner scroller nested in the page
+ * scroller is the worse of the two behaviours.
+ *
+ * The floor is the same lesson as `GRID_CARD` — a `flex-1` child that opts out of
+ * `min-height: auto` will happily shrink to nothing on a short window, and here that would
+ * take the rail with it. 30 rem clears the six rail entries with room to spare; below that
+ * the pane keeps a usable height and `main` scrolls the page as it did before.
+ */
+const SECTION_PANE =
+  'grid gap-lg lg:min-h-[30rem] lg:flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]';
 
 export function ConfigurationScreen() {
   const { t } = useTranslation();
@@ -165,7 +181,10 @@ export function ConfigurationScreen() {
         }
       />
 
-      <div className="grid gap-lg lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
+      <div className={SECTION_PANE}>
+        {/* Static, and deliberately without an `overflow` of its own: a rail that clips is a
+            section an administrator cannot reach and has no scrollbar to look for. If this
+            ever outgrows `SECTION_PANE`'s floor, raise the floor. */}
         <Card>
           <CardHeader title={t('config.sections')} />
           <CardBody className="p-0">
@@ -211,14 +230,20 @@ export function ConfigurationScreen() {
           </CardBody>
         </Card>
 
-        <Card>
+        <Card className="lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden">
           <CardHeader
             title={t(`config.section.${section.id}`)}
             description={t(`config.sectionDescription.${section.id}`)}
+            className="lg:shrink-0"
           />
-          {/* Keyed by section, so switching remounts the editor and cannot carry one
-              section's unsaved draft into another's fields. */}
-          <section.Component key={section.id} {...sectionProps} />
+          {/* The one scroller on the screen. `min-h-0` is what lets it shrink below its own
+              content — without it the editor pushes the pane taller and the rail scrolls
+              away with it, which is the whole thing this layout is avoiding. */}
+          <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+            {/* Keyed by section, so switching remounts the editor and cannot carry one
+                section's unsaved draft into another's fields. */}
+            <section.Component key={section.id} {...sectionProps} />
+          </div>
         </Card>
       </div>
 

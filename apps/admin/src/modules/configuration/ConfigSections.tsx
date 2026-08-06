@@ -15,6 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  DEFAULT_SAVINGS_POLICY,
   NOTIFICATION_CATEGORIES,
   SUPPORTED_LANGUAGES,
   emailSchema,
@@ -22,15 +23,28 @@ import {
   type FeatureFlagName,
   type LanguageCode,
   type NotificationCategory,
+  type SavingsPolicy,
 } from '@tfd/domain';
 import { CardBody } from '@/components/ui/Card';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Field, Input, Select } from '@/components/ui/Field';
 import { Label } from '@/components/ui/Label';
+import { formatMonthName } from '@/lib/format';
 import { SectionFooter, type SectionProps } from './SectionFooter';
 import { StringListEditor } from './StringListEditor';
 
 export type { SectionProps };
+
+const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+/** The savings policy this row carries, defaulted for one written before §21.9 was answered. */
+function policyOf(config: SectionProps['config']): SavingsPolicy {
+  return {
+    withdrawalMonth: config.savings.withdrawalMonth ?? DEFAULT_SAVINGS_POLICY.withdrawalMonth,
+    annualInterestRate:
+      config.savings.annualInterestRate ?? DEFAULT_SAVINGS_POLICY.annualInterestRate,
+  };
+}
 
 /** Deep-equality by serialisation. Config values are plain JSON, so this is exact. */
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -192,18 +206,24 @@ export function OperationsSection(props: SectionProps) {
   const [points, setPoints] = useState(props.config.collectionPoints.map((point) => point.name));
   const [banks, setBanks] = useState(props.config.banks);
   const [rates, setRates] = useState(props.config.savings.perKgOptions);
+  // §21.9's answer, as two values: the month withdrawals may be asked for, and the rate the
+  // factory records. Defaulted for a `client_config` row written before it was answered.
+  const savedPolicy = policyOf(props.config);
+  const [policy, setPolicy] = useState(savedPolicy);
 
   useEffect(() => {
     setPoints(props.config.collectionPoints.map((point) => point.name));
     setBanks(props.config.banks);
     setRates(props.config.savings.perKgOptions);
-  }, [props.config.collectionPoints, props.config.banks, props.config.savings]);
+    setPolicy(policyOf(props.config));
+  }, [props.config, props.config.collectionPoints, props.config.banks, props.config.savings]);
 
   const currentPoints = props.config.collectionPoints.map((point) => point.name);
   const dirty =
     !same(points, currentPoints) ||
     !same(banks, props.config.banks) ||
-    !same(rates, props.config.savings.perKgOptions);
+    !same(rates, props.config.savings.perKgOptions) ||
+    !same(policy, savedPolicy);
 
   const patch: ConfigPatch = {
     // An id is derived for a new point and preserved for an existing one, because M3's
@@ -215,7 +235,7 @@ export function OperationsSection(props: SectionProps) {
       name,
     })),
     banks,
-    savings: { perKgOptions: rates },
+    savings: { perKgOptions: rates, ...policy },
   };
 
   return (
@@ -282,6 +302,61 @@ export function OperationsSection(props: SectionProps) {
         readOnly={props.readOnly}
       />
 
+      {/**
+       * The scheme's rules (§21.9), beside the rates they govern.
+       *
+       * Here rather than in a section of their own because an administrator setting up the
+       * savings scheme is answering one question — *how does this factory's savings work* —
+       * and splitting the rates from the month they can be taken out in would make that two
+       * screens.
+       */}
+      <div className="grid gap-md md:grid-cols-2">
+        <Field label={t('config.withdrawalMonth')} hint={t('config.withdrawalMonthHint')}>
+          {({ id, describedBy }) => (
+            <Select
+              id={id}
+              aria-describedby={describedBy}
+              disabled={props.readOnly}
+              value={String(policy.withdrawalMonth)}
+              onChange={(event) =>
+                setPolicy({ ...policy, withdrawalMonth: Number(event.target.value) })
+              }
+            >
+              {MONTHS.map((month) => (
+                <option key={month} value={month}>
+                  {formatMonthName(month)}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+
+        <Field label={t('config.interestRate')} hint={t('config.interestRateHint')}>
+          {({ id, describedBy }) => (
+            <Input
+              id={id}
+              aria-describedby={describedBy}
+              type="number"
+              min={0}
+              max={100}
+              step={0.25}
+              className="numeric"
+              disabled={props.readOnly}
+              value={policy.annualInterestRate}
+              onChange={(event) =>
+                setPolicy({ ...policy, annualInterestRate: Number(event.target.value) || 0 })
+              }
+            />
+          )}
+        </Field>
+      </div>
+
+      {/* The half of §21.9 that is still open, said where somebody would expect the console
+          to start paying interest by itself. */}
+      <p className="rounded-md bg-surface-variant px-md py-sm text-caption text-text-secondary">
+        {t('config.interestNotApplied')}
+      </p>
+
       <SectionFooter
         {...props}
         patch={patch}
@@ -290,6 +365,7 @@ export function OperationsSection(props: SectionProps) {
           setPoints(currentPoints);
           setBanks(props.config.banks);
           setRates(props.config.savings.perKgOptions);
+          setPolicy(policyOf(props.config));
         }}
       />
     </CardBody>

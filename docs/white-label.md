@@ -275,6 +275,10 @@ Two consequences worth knowing before you use it:
 - **`tenantId` is not editable.** It comes from the subdomain and every other row is keyed on
   it, so the API refuses a patch containing it (`tenant-immutable`). Renaming a factory is a
   new row and a new DNS record, not an edit.
+- **The savings scheme's rules are configuration.** §21.9's answer — withdrawals in April,
+  0% interest — arrived as *"but the month must be changeable, and so must the rate"*, which
+  is this row's whole purpose: a factory that pays out at the start of the school year is a
+  value, not a build.
 - **The payout file's layout is configuration, not code.** It is the clearest case of what
   this row is *for*: nobody has told us what any factory's bank accepts, so rather than
   guessing a format, the columns, headings, delimiter and number formats are per-tenant
