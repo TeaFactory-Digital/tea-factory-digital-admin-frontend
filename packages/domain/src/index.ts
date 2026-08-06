@@ -19,6 +19,7 @@ export * from './inquiry';
 export * from './content';
 export * from './notifications';
 export * from './savings';
+export * from './deductionRates';
 export * from './payoutExport';
 export * from './config';
 export * from './rbac';

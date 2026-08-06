@@ -84,6 +84,10 @@ import {
   isExactKg,
   isInquiryClosed,
   DEFAULT_ROLE_MATRIX,
+  DEFAULT_DEDUCTION_RATES,
+  deductionRateProblems,
+  type DeductionRateChange,
+  type DeductionRates,
   DEFAULT_PAYOUT_EXPORT,
   DEFAULT_SAVINGS_POLICY,
   availableToWithdraw,
@@ -194,6 +198,15 @@ const state = {
    * published, because the savings ledger is derived from published bills and nothing else.
    */
   savingsWithdrawals: [] as SavingsWithdrawal[],
+  /**
+   * §21.10's rates, and the changes waiting for a second person.
+   *
+   * `null` until a factory sets its own — `DEFAULT_DEDUCTION_RATES` is what a factory that
+   * has never touched them is running on, and the screen says as much rather than
+   * presenting a guess as the factory's own decision.
+   */
+  deductionRates: null as DeductionRates | null,
+  deductionRateChanges: [] as DeductionRateChange[],
   roleMatrix: null as Record<ConsoleRole, Record<Capability, AccessLevel>> | null,
   roleMatrixUpdatedAt: null as string | null,
   roleMatrixUpdatedByName: null as string | null,
@@ -1108,6 +1121,11 @@ function savingsBalanceOf(supplierId: string): number {
  * bill would put money in a passbook against a figure the office might still
  * re-generate.
  */
+/** The rates in force. Read-only — must not materialise, or `customised` would lie. */
+function activeDeductionRates(): DeductionRates {
+  return state.deductionRates ?? DEFAULT_DEDUCTION_RATES;
+}
+
 /** This factory's savings rules, defaulted for a row that predates §21.9's answer. */
 function savingsPolicyOf(request: Request): SavingsPolicy {
   const savings = tenantConfig(request).savings;
@@ -2035,6 +2053,7 @@ export const handlers: HttpHandler[] = [
           []) as NotificationCategory[],
       };
     }
+    if (patch.manureProducts) config.manureProducts = patch.manureProducts.map((one) => ({ ...one }));
     if (patch.payouts) {
       // Replaced wholesale, not merged: the column list *is* the value, and merging two
       // column arrays would produce an order nobody chose.
@@ -2775,6 +2794,32 @@ export const handlers: HttpHandler[] = [
       savingsBefore: carried.savings,
       // §21.9: what each supplier has asked back and not yet been paid. Re-read on every
       // generation, so a withdrawal recorded after a draft run appears when it is re-run.
+      // §21.10: the factory's approved rates, and each supplier's chosen repayment period.
+      deductionRates: activeDeductionRates(),
+      repaymentMonths: new Map(
+        state.suppliers.map((supplier) => [
+          supplier.id,
+          Object.fromEntries(
+            (['advance', 'loan', 'manure'] as const)
+              .map((facility) => {
+                // The plan is priced off what was **borrowed**, so the instalment is fixed
+                // and the debt actually clears — see `creditInstalment`.
+                const approved = state.creditRequests.find(
+                  (one) =>
+                    one.supplierId === supplier.id &&
+                    one.facility === facility &&
+                    one.status === 'approved' &&
+                    one.repaymentMonths,
+                );
+                return [
+                  facility,
+                  approved ? { amount: approved.amount, months: approved.repaymentMonths! } : null,
+                ];
+              })
+              .filter(([, plan]) => plan),
+          ),
+        ]),
+      ),
       savingsWithdrawals: new Map(
         state.suppliers.map((supplier) => [
           supplier.id,
@@ -3106,6 +3151,174 @@ export const handlers: HttpHandler[] = [
     });
 
     return HttpResponse.json(monthSummary(record));
+  }),
+
+  /* ── §21.10 deduction rates ─────────────────────────────────────────────── */
+
+  /**
+   * What the factory charges, and what is waiting for a second person.
+   *
+   * `customised: false` means this factory is still running on the figures the console
+   * shipped with — which are the mock's old invented ones. Said out loud rather than
+   * presented as the factory's own decision, because a transport charge nobody chose is
+   * still on every account.
+   */
+  http.get('*/admin/deduction-rates', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'ratesAndMonthClose');
+    if ('response' in auth) return auth.response;
+
+    return HttpResponse.json({
+      rates: activeDeductionRates(),
+      customised: state.deductionRates !== null,
+      pending: state.deductionRateChanges.find((one) => one.status === 'pending') ?? null,
+      history: state.deductionRateChanges
+        .filter((one) => one.status !== 'pending')
+        .sort((a, b) => (b.decidedAt ?? '').localeCompare(a.decidedAt ?? ''))
+        .slice(0, 10),
+    });
+  }),
+
+  /**
+   * Propose a change. `ratesAndMonthClose: write` — the accountant's.
+   *
+   * Nothing takes effect here, which is the answer to §21.10's "does it need a second
+   * person?". Transport at LKR 2.50/kg against LKR 4.50/kg is a different sum on every
+   * account in the factory and nobody would notice for a month, so it is proposed and
+   * approved exactly like M4's monthly rate.
+   */
+  http.post('*/admin/deduction-rates', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'ratesAndMonthClose', 'write');
+    if ('response' in auth) return auth.response;
+
+    const { rates, reason } = (await request.json()) as {
+      rates?: DeductionRates;
+      reason?: string;
+    };
+
+    if (!reason || reason.trim().length < 10) {
+      return fail({
+        status: 422,
+        code: 'note-required',
+        message: 'A reason is required — the approver has to know what changed and why.',
+      });
+    }
+    if (!rates) {
+      return fail({ status: 422, code: 'invalid', message: 'No rates were sent.' });
+    }
+
+    const problems = deductionRateProblems(rates);
+    if (problems.length > 0) {
+      return fail({
+        status: 422,
+        code: 'invalid-rates',
+        message: 'Those rates could not be applied to an account.',
+        details: { problems },
+      });
+    }
+
+    // One at a time: two pending proposals would mean an approver deciding one set of
+    // figures while a second waited to overwrite them.
+    if (state.deductionRateChanges.some((one) => one.status === 'pending')) {
+      return fail({
+        status: 409,
+        code: 'change-pending',
+        message: 'A rate change is already waiting for approval.',
+      });
+    }
+
+    const change: DeductionRateChange = {
+      id: `drc-${nextId()}`,
+      status: 'pending',
+      proposed: rates,
+      // Frozen at proposal time, so the diff the approver reads cannot drift under them.
+      current: activeDeductionRates(),
+      reason: reason.trim(),
+      proposedAt: new Date().toISOString(),
+      proposedById: auth.user.id,
+      proposedByName: auth.user.name,
+      decidedAt: null,
+      decidedByName: null,
+      decisionNote: null,
+    };
+    state.deductionRateChanges.push(change);
+
+    recordBy(auth, 'deductionRates.propose', 'deductionRates', change.id, {
+      before: change.current,
+      after: { rates, reason: change.reason },
+    });
+
+    return HttpResponse.json(change, { status: 201 });
+  }),
+
+  /** Approve or reject one. `ratesAndMonthClose: approve` — the manager's (§12.1). */
+  http.post('*/admin/deduction-rates/:id/:verb', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'ratesAndMonthClose', 'approve');
+    if ('response' in auth) return auth.response;
+
+    const verb = String(params.verb);
+    if (verb !== 'approve' && verb !== 'reject') {
+      return fail({ status: 404, code: '404', message: 'No such action.' });
+    }
+
+    const index = state.deductionRateChanges.findIndex((one) => one.id === params.id);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such rate change.' });
+
+    const change = state.deductionRateChanges[index]!;
+    if (change.status !== 'pending') {
+      return fail({
+        status: 409,
+        code: 'already-decided',
+        message: 'That rate change has already been decided.',
+        details: { status: change.status, decidedByName: change.decidedByName },
+      });
+    }
+
+    /**
+     * BR-501, and it is reachable here because `approve` implies `write`: a manager
+     * *could* propose a rate and then approve it, and this is what stops them. The same
+     * check M4 makes on publishing a month whose rate you entered.
+     */
+    if (verb === 'approve' && change.proposedById === auth.user.id) {
+      return fail({
+        status: 409,
+        code: 'four-eyes-violation',
+        message: 'The person who proposed a rate change cannot approve it.',
+        details: { proposedByName: change.proposedByName },
+      });
+    }
+
+    const { note } = (await request.json().catch(() => ({}))) as { note?: string };
+    if (verb === 'reject' && (!note || note.trim().length < 10)) {
+      return fail({ status: 422, code: 'note-required', message: 'A reason is required.' });
+    }
+
+    state.deductionRateChanges[index] = {
+      ...change,
+      status: verb === 'approve' ? 'approved' : 'rejected',
+      decidedAt: new Date().toISOString(),
+      decidedByName: auth.user.name,
+      decisionNote: note?.trim() ?? null,
+    };
+
+    /**
+     * Approved rates apply to the **next generation**, not retrospectively.
+     *
+     * A published month is the record (BR-108), and a rate change that silently re-priced
+     * accounts a supplier is already holding would be the worst kind of correction. An open
+     * month picks them up the next time its bills are run, which is what re-generation is
+     * for.
+     */
+    if (verb === 'approve') state.deductionRates = change.proposed;
+
+    recordBy(auth, `deductionRates.${verb}`, 'deductionRates', change.id, {
+      before: change.current,
+      after: verb === 'approve' ? change.proposed : { rejected: true, note: note?.trim() },
+    });
+
+    return HttpResponse.json(state.deductionRateChanges[index]);
   }),
 
   /* ── M5 Bills ──────────────────────────────────────────────────────────── */
@@ -5277,6 +5490,8 @@ export function resetMockState(): void {
   state.staticPages = mockStaticPages.map(cloneStaticPage);
   state.users = mockUsers.map((user) => ({ ...user, roles: [...user.roles] }));
   state.savingsWithdrawals = [];
+  state.deductionRates = null;
+  state.deductionRateChanges = [];
   state.roleMatrix = null;
   state.roleMatrixUpdatedAt = null;
   state.roleMatrixUpdatedByName = null;

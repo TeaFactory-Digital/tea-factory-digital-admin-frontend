@@ -694,7 +694,7 @@ and a guessed one reads as a decision the factory never made.
 | --- | --- | --- | --- |
 | 21.17 | What format does the bank accept? | A **fixed-width** bank file, and cheque printing | Half answered as configuration: the CSV family is a layout the factory sets in M14. A fixed-width scheme is rules and control totals, which a column order cannot express |
 | 21.9 | On what basis is interest calculated? | **Interest accrual only** — withdrawals are built | Closing balance and the year's minimum pay different money on the same rate, and it is the supplier's savings |
-| 21.10 | Who may set which deduction line? | A deduction **editor** | It decides who can change what a supplier is paid, which is a permission, not a form |
+| 21.10 | What is `otherCards`? | The **ninth** deduction line, and only that one | The other eight are answered: two are the factory's approved rates, three are the supplier's repayment plan, savings is M9, previous debts is derived, tea is an app request |
 | 21.8 | May a published bill be corrected? | Any post-publish change | The console assumes not. If the answer is yes, that is a new audited reversal endpoint — never a relaxation of BR-108's lock |
 | 19.1 | What shape is the reporting warehouse? | The reports beyond the four whose definition already exists here | A report nobody asked for is a query somebody maintains and nobody reads. §19.1 is in the mobile repo, not this one |
 | 21.24 | Which notifications fire, and who may compose one? | Nothing — it is answered as **configuration** | The one question that did not need an absence: triggers are rows, so the factory's answer is a switch rather than a rewrite |

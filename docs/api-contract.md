@@ -1051,6 +1051,39 @@ correct the symptom and leave the cause to reappear on the next run.
 
 ---
 
+### 11.6 `/admin/deduction-rates` — §21.10's standing rates
+
+`ratesAndMonthClose`: `read` to see, `write` to propose, `approve` to release. **Not
+`flagsAndBranding`** — these are money figures that need two people, which is M4's shape and
+not M14's.
+
+```json
+{ "rates": { "transportPerKg": 2.5, "stamps": 25,
+             "instalmentShares": { "advance": 0.3, "loan": 0.2, "manure": 0.15 } },
+  "customised": false, "pending": null, "history": [] }
+```
+
+`customised: false` means the factory is running on the figures the console shipped with.
+Send it: an invented transport charge presented as a decision is one that gets quoted at a
+supplier.
+
+`POST /admin/deduction-rates` proposes (`422 note-required` · `422 invalid-rates` ·
+`409 change-pending` — one at a time). `POST /admin/deduction-rates/{id}/approve|reject`
+decides, with **`409 four-eyes-violation` when the approver proposed it** (BR-501, reachable
+because `approve` implies `write`).
+
+**Approved rates apply to the next generation, never retrospectively.** A published month is
+the record (BR-108), and silently re-pricing accounts a supplier is already holding is the
+worst kind of correction.
+
+`instalmentShares` is a **cap, not a schedule**. The supplier chooses the repayment period
+(`AdminCreditRequest.repaymentMonths`) and the instalment is
+`min(borrowed ÷ months, gross × share, balance)` — see `creditInstalment`. Price the plan off
+what was **borrowed**, not off the current balance: `balance ÷ months` decays geometrically
+and never clears the debt.
+
+---
+
 ## 12. M6 Payouts
 
 Gate every endpoint on `enablePayouts` and answer `403 feature-disabled` (AC-07) — the

@@ -27,6 +27,7 @@ import { ErrorState, Spinner } from '@/components/ui/states';
 import { formatCount, formatKg, formatMonthKey } from '@/lib/format';
 import { CloseChecklist } from './CloseChecklist';
 import { ExceptionsQueue } from './ExceptionsQueue';
+import { DeductionRatesCard } from './DeductionRatesCard';
 import { RateCard } from './RateCard';
 import { useMonth, useMonths } from './hooks';
 
@@ -112,6 +113,10 @@ export function MonthCloseScreen() {
       </div>
 
       <ExceptionsQueue month={current} />
+
+      {/* §21.10's standing rates, under the month's own rate: both are figures that decide
+          what a supplier is paid, and both need a second person. */}
+      <DeductionRatesCard />
     </>
   );
 }

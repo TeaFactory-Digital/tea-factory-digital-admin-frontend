@@ -1273,9 +1273,9 @@ export const en = {
   'config.sectionDescription.features':
     'Turning a feature off removes it completely — the menu row, the screens, and the app.',
   'config.section.operations': 'Collection & payment',
-  'config.sectionHint.operations': 'Points, banks, savings rates',
+  'config.sectionHint.operations': 'Points, banks, fertilizer, savings',
   'config.sectionDescription.operations':
-    'The lists the weighing points, the payout runs and the savings scheme choose from.',
+    'The lists the weighing points, the payout runs, the fertilizer requests and the savings scheme choose from.',
   'config.section.appearance': 'Languages & branding',
   'config.sectionHint.appearance': 'Languages, logo, colours',
   'config.sectionDescription.appearance':
@@ -1320,9 +1320,61 @@ export const en = {
   'config.interestRateHint': 'Recorded so the office can quote it. Leave at 0 if the factory pays none.',
   'config.interestNotApplied':
     'The console does not work interest out by itself. Nobody has said whether it is paid on the closing balance or on the lowest balance of the year, and those pay different amounts — so when the factory decides, the accountant records the figure as an entry in the passbook (§21.9).',
+  'config.manureProducts': 'Fertilizer a supplier may ask for',
+  'config.manureProductsHint':
+    'Name, kilos in a bag, and what one bag costs. A request is priced from this list — the office never types an amount, so a supplier can check what they were charged against it.',
+  'config.manure.name': 'Fertilizer name',
+  'config.manure.packKg': 'Kg in a bag',
+  'config.manure.pricePerPack': 'Price a bag (LKR)',
+  'config.manure.remove': 'Remove {{name}}',
+  'config.manure.example':
+    'One bag is {{pack}} at {{price}}. A supplier asking for {{quantity}} is issued 2 bags and owes {{amount}}.',
+  'config.manure.problem.no-name': 'A fertilizer needs a name — the app shows it in the list.',
+  'config.manure.problem.bad-pack': 'A bag has to hold something. Zero kilos cannot be priced.',
+  'config.manure.problem.negative-price': 'A price cannot be below zero.',
+  'config.manure.problem.duplicate-name': 'Two fertilizers share a name, so a request could not say which.',
+  'config.addManureType': 'Add a type',
   'config.savingsRates': 'Savings rates a supplier may choose (LKR per kg)',
   'config.addRate': 'Add a rate',
 
+  /* §21.10's standing rates. On M4 rather than M14 because they are approved by a second
+     person, not saved — a transport charge re-prices every account in the factory. */
+  'rates.deduction.title': 'What comes off every account',
+  'rates.deduction.description':
+    'The charges the factory sets, and the most any credit may take back in one month. A change needs a second person.',
+  'rates.deduction.customised': 'Set by this factory',
+  'rates.deduction.shipped': 'Never set',
+  'rates.deduction.shippedHint':
+    'These are the figures the console shipped with, not this factory’s — transport at LKR {{transport}} a kilo is a placeholder. Until somebody sets them, they are on every account and nobody chose them.',
+  'rates.deduction.transportPerKg': 'Transport (LKR per kg)',
+  'rates.deduction.stamps': 'Stamps (LKR)',
+  'rates.deduction.caps': 'Most a credit may take in one month (%)',
+  'rates.deduction.capsHint':
+    'The supplier chooses how many months to repay over. This is the ceiling that stops a bad plucking month disappearing into a repayment they agreed to when they were doing well.',
+  'rates.deduction.field.transportPerKg': 'Transport per kg',
+  'rates.deduction.field.stamps': 'Stamps',
+  'rates.deduction.field.instalmentShares.advance': 'Advance cap',
+  'rates.deduction.field.instalmentShares.loan': 'Loan cap',
+  'rates.deduction.field.instalmentShares.manure': 'Fertilizer cap',
+  'rates.deduction.propose': 'Send for approval',
+  'rates.deduction.reasonHint': 'At least 10 characters. The approver reads this before deciding.',
+  'rates.deduction.needsApproval': 'A second person has to approve this before it takes effect.',
+  'rates.deduction.nothingChanged': 'Nothing has changed.',
+  'rates.deduction.proposed': 'Sent for approval',
+  'rates.deduction.proposedHint': 'Nothing has changed yet. A manager has to approve it.',
+  'rates.deduction.proposeFailed': 'Nothing was sent',
+  'rates.deduction.pendingTitle': 'Waiting for approval — proposed by {{name}}, {{when}}',
+  'rates.deduction.approve': 'Approve',
+  'rates.deduction.reject': 'Reject',
+  'rates.deduction.approved': 'The new rates are in force',
+  'rates.deduction.rejectd': 'The change was rejected',
+  'rates.deduction.decideFailed': 'Nothing was changed',
+  'rates.deduction.noteHint': 'Required to reject. The person who proposed it will read it.',
+  'rates.deduction.fourEyes': 'You proposed this, so somebody else has to approve it (BR-501).',
+  'rates.deduction.awaitingManager': 'A manager has to approve this before it takes effect.',
+  'rates.deduction.readOnly': 'Only the accountant can propose a change to these.',
+  'rates.deduction.elsewhere':
+    'The other lines are not set here. Savings is the supplier’s (change requests); tea, fertilizer and the advance are asked for from the app; previous debts is carried from last month. Approved rates apply to the next bill run, never to a month already published.',
   'config.contentLanguages': 'Languages content is written in',
   'config.contentLanguagesHint':
     'News articles and the app’s fixed pages are written in each of these. A language that is not ticked stops being counted as missing.',

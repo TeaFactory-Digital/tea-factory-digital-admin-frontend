@@ -18,6 +18,8 @@
  */
 
 import type {
+  DeductionRates,
+  RepaymentPlan,
   AdminBill,
   AdminChangeRequest,
   AdminCreditRequest,
@@ -58,6 +60,8 @@ import type {
   SupplierListItem,
 } from '@tfd/domain';
 import {
+  DEFAULT_DEDUCTION_RATES,
+  creditInstalment,
   EDITORIAL_FALLBACK_LANGUAGE,
   NOTIFICATION_CATEGORIES,
   OUTLIER_KG_FLOOR_KG,
@@ -1064,6 +1068,22 @@ export function buildDashboard(
  * should visibly empty those queues out of the sidebar, which is the fastest way
  * to check that no surface is hardcoded.
  */
+/**
+ * The fertilizer a factory sells on credit (§21.10).
+ *
+ * One list, feeding **both** the tenants' catalogues below and M7's request fixtures — so a
+ * queue can never name a type the configuration screen does not offer.
+ */
+const MANURE_PRODUCTS = [
+  { name: 'Urea', packKg: 50, pricePerPack: 8500 },
+  { name: 'T200 mixture', packKg: 50, pricePerPack: 9200 },
+  { name: 'Dolomite', packKg: 50, pricePerPack: 3400 },
+  { name: 'Eppawala rock phosphate', packKg: 50, pricePerPack: 4100 },
+] as const;
+
+/** The names alone, for the request fixtures that only pick a type. */
+const MANURE_TYPES = MANURE_PRODUCTS.map((one) => one.name);
+
 export const mockConfigs: Record<string, RuntimeConfig> = {
   galaboda: {
     tenantId: 'galaboda',
@@ -1090,6 +1110,9 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
       enableReports: true,
     },
     savings: { perKgOptions: [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50] },
+    // §21.10: the same list M7's requests are drawn from, so the catalogue and the queue
+    // cannot name different fertilizers.
+    manureProducts: MANURE_PRODUCTS.map((one) => ({ ...one })),
     banks: BANKS.map((b) => ({ name: b.name, branches: [...b.branches] })),
     localization: {
       defaultLanguage: 'en',
@@ -1134,6 +1157,7 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
       enableReports: true,
     },
     savings: { perKgOptions: [0, 10, 20, 30, 40] },
+    manureProducts: MANURE_PRODUCTS.map((one) => ({ ...one })),
     banks: BANKS.slice(0, 3).map((b) => ({ name: b.name, branches: [...b.branches] })),
     localization: {
       defaultLanguage: 'en',
@@ -1242,36 +1266,45 @@ const daysInMonth = (monthKey: string): number => {
  *  - **`previousDebts`** is last month's unpaid balance. It is what makes a debt
  *    actually carry rather than quietly vanish at the month boundary.
  */
+/**
+ * The nine lines, and **who decides each one** (§21.10, as the factory answered it).
+ *
+ * | Line | Decided by |
+ * | --- | --- |
+ * | `transportCharges`, `stamps` | The factory's rates — manager, second-person approved |
+ * | `loansAdvance`, `advance`, `manure` | The supplier's repayment period, under the factory's cap |
+ * | `savings` | The supplier, through M9 |
+ * | `previousDebts` | Derived from last month |
+ * | `tea` | The supplier asks, from the app — **not built here yet** |
+ * | `otherCards` | **Still unanswered.** §21.10 remains open for this one line |
+ *
+ * The last two are still the fixture's invention, and they are the only two left.
+ */
 function deductionLinesFor(
   supplier: AdminSupplier,
   totalKgs: number,
   grossAmount: number,
   previousDebts: number,
+  rates: DeductionRates,
+  plans: Partial<Record<CreditFacility, RepaymentPlan>> = {},
 ): DeductionLines {
   const index = supplierIndexOf(supplier.id);
 
-  /**
-   * Credit is settled in instalments against the account it was advanced on,
-   * capped as a share of the gross.
-   *
-   * The cap is what stops a facility swallowing a whole month: a supplier whose
-   * entire account went to a loan repayment is paid nothing, telephones the
-   * office, and is right to.
-   */
-  const instalment = (balance: number, share: number) =>
-    balance <= 0 ? 0 : round2(Math.min(balance, grossAmount * share));
+  const instalment = (facility: CreditFacility, balance: number) =>
+    creditInstalment(balance, grossAmount, rates.instalmentShares[facility], plans[facility]);
 
   return {
-    // A per-kilo transport charge for collection from the estate.
-    transportCharges: round2(totalKgs * 2.5),
-    // Made tea issued to the supplier against their account.
+    transportCharges: round2(totalKgs * rates.transportPerKg),
+    // Made tea issued against the account. The supplier asks for this from the app
+    // (§21.10) and that request type is not built, so the figure is still the fixture's.
     tea: index % 5 === 0 ? 450 : 0,
     savings: savingsDeductionFor(totalKgs, supplier.savingsPerKg),
-    loansAdvance: instalment(supplier.creditBalances.loan, 0.2),
-    advance: instalment(supplier.creditBalances.advance, 0.3),
-    manure: instalment(supplier.creditBalances.manure, 0.15),
+    loansAdvance: instalment('loan', supplier.creditBalances.loan),
+    advance: instalment('advance', supplier.creditBalances.advance),
+    manure: instalment('manure', supplier.creditBalances.manure),
+    // The one line nobody has explained. Still invented, and still §21.10.
     otherCards: index % 7 === 0 ? 260 : 0,
-    stamps: 25,
+    stamps: rates.stamps,
     previousDebts,
   };
 }
@@ -1302,6 +1335,10 @@ export interface BillGenerationContext {
    * generated for a month nobody asked in simply carries `0`.
    */
   savingsWithdrawals?: Map<string, number>;
+  /** The factory's approved deduction rates (§21.10). Defaulted for a run before any were set. */
+  deductionRates?: DeductionRates;
+  /** Repayment periods the suppliers chose, per facility. Absent → the cap alone. */
+  repaymentMonths?: Map<string, Partial<Record<CreditFacility, RepaymentPlan>>>;
 }
 
 /**
@@ -1384,6 +1421,8 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
       totalKgs,
       grossEstimate,
       round2(context.debtBroughtForward.get(supplier.id) ?? 0),
+      context.deductionRates ?? DEFAULT_DEDUCTION_RATES,
+      context.repaymentMonths?.get(supplier.id),
     );
 
     /**
@@ -1962,7 +2001,6 @@ export function eligibilityFor(
 }
 
 /** What the office actually stocks. Free text on the wire — this is the fixture's list. */
-const MANURE_TYPES = ['Urea', 'T200 mixture', 'Dolomite', 'Eppawala rock phosphate'] as const;
 
 const SEED_AT = NOW.toISOString();
 
@@ -2130,6 +2168,14 @@ function seedCreditRequests(): AdminCreditRequest[] {
       supplierCode: supplier.supplierCode,
       supplierName: supplier.name,
       amount,
+      /**
+       * The repayment period the supplier chose in the app (§21.10).
+       *
+       * Every third request carries one, so both paths are in the fixture: a period the
+       * supplier picked, and the older requests that have none and fall back to the
+       * factory's cap alone.
+       */
+      repaymentMonths: index % 3 === 0 ? 6 : null,
       reason: spec.reason,
       manureType: manure ? MANURE_TYPES[index % MANURE_TYPES.length]! : null,
       // Priced at roughly LKR 210/kg of fertilizer — a figure the office would set
@@ -2177,6 +2223,7 @@ function seedCreditRequests(): AdminCreditRequest[] {
     {
       id: 'crd-13',
       facility: 'advance',
+      repaymentMonths: null,
       supplierId: settledSupplier.id,
       supplierCode: settledSupplier.supplierCode,
       supplierName: settledSupplier.name,
@@ -2201,6 +2248,7 @@ function seedCreditRequests(): AdminCreditRequest[] {
     {
       id: 'crd-14',
       facility: 'loan',
+      repaymentMonths: null,
       supplierId: settledSupplier.id,
       supplierCode: settledSupplier.supplierCode,
       supplierName: settledSupplier.name,

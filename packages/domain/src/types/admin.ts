@@ -30,6 +30,7 @@ import type {
 import type { ContentTranslation, ContentTranslations } from '../content';
 import type { NotificationAudience } from '../notifications';
 import type { PayoutExportTemplate } from '../payoutExport';
+import type { ManureProduct } from '../deductionRates';
 
 /* ─────────────────────────────── Identity ─────────────────────────────── */
 
@@ -469,9 +470,18 @@ export interface AdminCreditRequest {
   /** LKR asked for. On manure this is the **value** of the fertilizer, not its weight. */
   amount: number;
   reason: string | null;
-  /** Manure only; `null` on advance and loan. */
+  /** Manure only; `null` on advance and loan. One of the factory's configured types. */
   manureType: string | null;
   quantityKg: number | null;
+  /**
+   * Accounts the supplier chose to repay over (§21.10).
+   *
+   * **Their decision, not the office's** — which is most of what §21.10 turned out to be.
+   * `null` for a request raised before the app could ask, and those fall back to the
+   * factory's share-of-gross cap alone. The approver sees it because it decides what comes
+   * off every account until the balance is clear.
+   */
+  repaymentMonths: number | null;
   status: RequestStatus;
   createdAt: string;
   channel: RequestChannel;
@@ -1395,6 +1405,14 @@ export interface RuntimeConfig {
    * row keeps working — `DEFAULT_SAVINGS_POLICY` fills them, which is April and 0%.
    */
   savings: { perKgOptions: number[]; withdrawalMonth?: number; annualInterestRate?: number };
+  /**
+   * The fertilizer a supplier may ask for on credit, with its bag size and price (§21.10).
+   *
+   * Beside the banks and the collection points because it is a catalogue a supplier chooses
+   * from, not a charge imposed on every account — see `ManureProduct`. The app's
+   * `ManureRequest.manureType` names one of these, and its `quantityKg` prices against it.
+   */
+  manureProducts?: ManureProduct[];
   banks: Array<{ name: string; branches: string[] }>;
   localization: {
     defaultLanguage: LanguageCode;

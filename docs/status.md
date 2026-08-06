@@ -53,7 +53,7 @@ which is a named absence inside a built module.
 | **M15 Users & roles** | Invite, re-role, suspend and reactivate with a mandatory reason, the §12.1 matrix **editable as data**, and three lockout guards including the one nobody thinks of: a matrix in which no role grants `usersAndRoles` is refused, because every user keeps their roles while nobody can ever manage users again |
 | **M16 Reports** | Four reports, each carrying the citation that justifies it, computed from live records at request time; self-describing columns so one screen renders any report; totals only under the columns that add up; and the month list served behind the `reports` grant rather than `billing` |
 | **M17 Audit** | Filterable read-only log, plus per-record panels on M2, M9 and M11. Every mutation in every built module writes to it |
-| **Tests** | 323 Vitest + 29 Playwright. Typecheck and lint clean |
+| **Tests** | 342 Vitest + 29 Playwright. Typecheck and lint clean |
 
 ## Acceptance criteria
 
@@ -337,6 +337,21 @@ Worst first: correctness, then plumbing, then polish.
     which of the two, then it is one posting job and an `interest` ledger entry, which the
     ledger's vocabulary already has a word for.
 
+32. **`otherCards` is the last invented deduction line.** §21.10's answer covered eight of
+    the nine: transport and stamps are the factory's approved rates, the three credit
+    instalments are the supplier's chosen period under a cap, savings is M9, previous debts
+    is derived, and tea becomes an app request. Nobody has said what *other cards* is, so it
+    is still `LKR 260 for every seventh supplier` and still uneditable. Harmless in the
+    fixture and wrong in production. *To close:* one sentence from the office.
+
+33. **The app cannot yet ask for tea, or choose a repayment period.** §21.10's answer puts
+    three things in the mobile app that are not there: a **tea-packet request**, and a
+    **repayment period** on the loan and fertilizer requests. The console is ready for the
+    second — `AdminCreditRequest.repaymentMonths` is on the type, the fixture carries it on
+    every third request, and `creditInstalment` honours it — but nothing sends it, so live
+    requests fall back to the cap alone. The tea request has no console queue yet either.
+    Both are app work first.
+
 ---
 
 ## Blocking business questions
@@ -367,7 +382,7 @@ would look for it.
 | --- | --- | --- |
 | 21.17 | **Payout files** — SLIPS, CEFTS or a bank-specific CSV? Cheques on pre-printed stock? | **Half answered, as configuration.** M6 now writes a delimited file through a layout the factory sets in M14 (`payoutExport.ts`), which covers the family most banks' bulk-upload sheets belong to — so "SLIPS" is a preset somebody completes once their bank confirms it, not a release. Still open: a **fixed-width** format with control totals (rules, not a column order) and **cheques on pre-printed stock** (millimetres on a specific cheque book). Both are stated on the screen |
 | 21.9 | ~~**Savings** — may a supplier withdraw, with what notice, is interest paid?~~ | **Answered and built.** *Yes, normally in April, but the month must be changeable; interest is changeable too and starts at 0% a year; the money is paid on the next Green Leaf Account.* Both values are `client_config`, so the month is a row rather than a release. `SavingsEntrySource` already carried `withdrawal`, so it was endpoints rather than a migration — exactly what that vocabulary was reserved for. **Still open: what interest is calculated *on*** — closing balance or the year's minimum, simple or compound. Those pay different money, so the console records the rate and posts nothing of its own |
-| 21.10 | **Deduction authority** — which lines may the office set per supplier per month, and **who may set them**? | M5's **deduction editor**. The nine lines are on the slip and seven of their values are the mock's invention (gap 6). It is a permission question as much as a form, which is why it is not a guess worth making |
+| 21.10 | ~~**Deduction authority**~~ | **Answered, and it reshaped the question.** *Almost nothing is typed per supplier.* Transport-per-kg and stamps are one factory figure each, changed by the manager **with a second person approving** (the factory asked for that). The credit instalments are the supplier's own repayment period under a share-of-gross cap the factory sets. Tea, fertilizer and the advance are asked for **from the app**. Fertilizer is a console catalogue with **bag size and price**, so a request is priced from the list rather than typed. **Still open: `otherCards`** — the one line nobody has explained, and the only one still invented |
 | 21.8 | **Corrections** — may a published bill be corrected, or is an error always adjusted on the next account? | Nothing today. The console **assumes not**, which is BR-108's lock already in place, and says so on a published slip. If the answer is yes, that is a new audited reversal endpoint — never a relaxation of the lock |
 
 ### Shapes a module without stopping it

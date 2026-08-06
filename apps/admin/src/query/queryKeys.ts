@@ -42,6 +42,12 @@ export const qk = {
    */
   adminConfig: ['admin-config'] as const,
 
+  /**
+   * §21.10's deduction rates — M4's, not M14's, because they are approved rather than saved.
+   * An approval changes every bill the next run produces, so it sweeps `bills` too.
+   */
+  deductionRates: ['deduction-rates'] as const,
+
   session: {
     me: ['session', 'me'] as const,
   },

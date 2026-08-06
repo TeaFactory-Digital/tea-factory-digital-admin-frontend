@@ -31,6 +31,7 @@ import { Field, Input, Select } from '@/components/ui/Field';
 import { Label } from '@/components/ui/Label';
 import { formatMonthName } from '@/lib/format';
 import { SectionFooter, type SectionProps } from './SectionFooter';
+import { ManureCatalogue } from './ManureCatalogue';
 import { StringListEditor } from './StringListEditor';
 
 export type { SectionProps };
@@ -210,12 +211,15 @@ export function OperationsSection(props: SectionProps) {
   // factory records. Defaulted for a `client_config` row written before it was answered.
   const savedPolicy = policyOf(props.config);
   const [policy, setPolicy] = useState(savedPolicy);
+  // §21.10: the fertilizer catalogue a supplier's app request picks from.
+  const [manureProducts, setManureProducts] = useState(props.config.manureProducts ?? []);
 
   useEffect(() => {
     setPoints(props.config.collectionPoints.map((point) => point.name));
     setBanks(props.config.banks);
     setRates(props.config.savings.perKgOptions);
     setPolicy(policyOf(props.config));
+    setManureProducts(props.config.manureProducts ?? []);
   }, [props.config, props.config.collectionPoints, props.config.banks, props.config.savings]);
 
   const currentPoints = props.config.collectionPoints.map((point) => point.name);
@@ -223,7 +227,8 @@ export function OperationsSection(props: SectionProps) {
     !same(points, currentPoints) ||
     !same(banks, props.config.banks) ||
     !same(rates, props.config.savings.perKgOptions) ||
-    !same(policy, savedPolicy);
+    !same(policy, savedPolicy) ||
+    !same(manureProducts, props.config.manureProducts ?? []);
 
   const patch: ConfigPatch = {
     // An id is derived for a new point and preserved for an existing one, because M3's
@@ -236,6 +241,7 @@ export function OperationsSection(props: SectionProps) {
     })),
     banks,
     savings: { perKgOptions: rates, ...policy },
+    manureProducts,
   };
 
   return (
@@ -299,6 +305,14 @@ export function OperationsSection(props: SectionProps) {
         label={t('config.savingsRates')}
         addLabel={t('config.addRate')}
         placeholder="25"
+        readOnly={props.readOnly}
+      />
+
+      {/* §21.10: what a supplier may ask for on credit. A catalogue, so it sits with the
+          banks and the collection points — the *rates* need two people and live on M4. */}
+      <ManureCatalogue
+        products={manureProducts}
+        onChange={setManureProducts}
         readOnly={props.readOnly}
       />
 
@@ -366,6 +380,7 @@ export function OperationsSection(props: SectionProps) {
           setBanks(props.config.banks);
           setRates(props.config.savings.perKgOptions);
           setPolicy(policyOf(props.config));
+          setManureProducts(props.config.manureProducts ?? []);
         }}
       />
     </CardBody>

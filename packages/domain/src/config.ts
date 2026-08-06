@@ -23,6 +23,7 @@
 
 import type { FeatureFlagName, FeatureFlagSet } from './types/admin';
 import type { LanguageCode } from './constants';
+import type { ManureProduct } from './deductionRates';
 import {
   BANK_ONLY_FIELDS,
   payoutTemplateProblems,
@@ -46,6 +47,8 @@ export interface ConfigPatch {
   };
   flags?: Partial<FeatureFlagSet>;
   savings?: { perKgOptions: number[]; withdrawalMonth?: number; annualInterestRate?: number };
+  /** The fertilizer catalogue with bag sizes and prices (§21.10). */
+  manureProducts?: ManureProduct[];
   banks?: Array<{ name: string; branches: string[] }>;
   localization?: {
     defaultLanguage?: LanguageCode;

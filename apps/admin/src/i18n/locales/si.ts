@@ -1301,9 +1301,10 @@ export const si: Record<TranslationKey, string> = {
   'config.sectionDescription.features':
     'විශේෂාංගයක් අක්‍රීය කිරීමෙන් එය සම්පූර්ණයෙන් ඉවත් වේ — මෙනු පේළිය, තිර, සහ යෙදුම.',
   'config.section.operations': 'එකතු කිරීම සහ ගෙවීම',
-  'config.sectionHint.operations': 'ස්ථාන, බැංකු, ඉතුරුම් අනුපාත',
+  'config.sectionHint.operations':
+    'ස්ථාන, බැංකු, පොහොර, ඉතුරුම්',
   'config.sectionDescription.operations':
-    'බර කිරීමේ ස්ථාන, ගෙවීම් වට සහ ඉතුරුම් යෝජනා ක්‍රමය තෝරා ගන්නා ලැයිස්තු.',
+    'කිරුම් ස්ථාන, ගෙවීම් වට, පොහොර ඉල්ලීම් සහ ඉතුරුම් යෝජනා ක්‍රමය තෝරා ගන්නා ලැයිස්තු.',
   'config.section.appearance': 'භාෂා සහ සන්නාමය',
   'config.sectionHint.appearance': 'භාෂා, ලාංඡනය, වර්ණ',
   'config.sectionDescription.appearance':
@@ -1348,9 +1349,59 @@ export const si: Record<TranslationKey, string> = {
   'config.interestRateHint': 'කාර්යාලයට කිව හැකි වන පරිදි සටහන් කර ඇත. කිසිවක් නොගෙවන්නේ නම් 0 ලෙස තබන්න.',
   'config.interestNotApplied':
     'කොන්සෝලය පොලිය තනිවම ගණනය නොකරයි. එය ගෙවෙන්නේ අවසන් ශේෂය මතද, නැතහොත් වසරේ අවම ශේෂය මතද යන්න කිසිවෙකු පවසා නැත, සහ ඒ දෙක වෙනස් මුදල් ගෙවයි — එබැවින් කර්මාන්තශාලාව තීරණය කළ පසු, ගණකාධිකාරී එම මුදල ඉතුරුම් පොතට සටහනක් ලෙස ඇතුළත් කරයි (§21.9).',
+  'config.manureProducts': 'සැපයුම්කරුවෙකුට ඉල්ලිය හැකි පොහොර',
+  'config.manureProductsHint':
+    'නම, මල්ලක කිලෝ ගණන, සහ එක් මල්ලක මිල. ඉල්ලීමක් මෙම ලැයිස්තුවෙන් මිල ගණන් කරයි — කාර්යාලය කිසිදා මුදලක් ටයිප් නොකරයි, එබැවින් සැපයුම්කරුට තමන්ගෙන් අය කළ දේ මෙයට එරෙහිව පරීක්ෂා කළ හැක.',
+  'config.manure.name': 'පොහොර නම',
+  'config.manure.packKg': 'මල්ලක කිලෝ',
+  'config.manure.pricePerPack': 'මල්ලක මිල (රු.)',
+  'config.manure.remove': '{{name}} ඉවත් කරන්න',
+  'config.manure.example':
+    'එක් මල්ලක් {{pack}}, මිල {{price}}. {{quantity}} ඉල්ලන සැපයුම්කරුවෙකුට මලු 2ක් ලබා දෙන අතර {{amount}} ගෙවිය යුතුය.',
+  'config.manure.problem.no-name': 'පොහොරකට නමක් අවශ්‍යයි — යෙදුම එය ලැයිස්තුවේ පෙන්වයි.',
+  'config.manure.problem.bad-pack': 'මල්ලක යමක් තිබිය යුතුය. කිලෝ බිංදුවක් මිල ගණන් කළ නොහැක.',
+  'config.manure.problem.negative-price': 'මිලක් බිංදුවට වඩා අඩු විය නොහැක.',
+  'config.manure.problem.duplicate-name': 'පොහොර දෙකක් එකම නමක් දරයි, එබැවින් ඉල්ලීමකට කුමන එකදැයි කිව නොහැක.',
+  'config.addManureType': 'වර්ගයක් එක් කරන්න',
   'config.savingsRates': 'සැපයුම්කරුවෙකු තෝරා ගත හැකි ඉතුරුම් අනුපාත (කිලෝවකට රු.)',
   'config.addRate': 'අනුපාතයක් එකතු කරන්න',
 
+  'rates.deduction.title': 'සෑම ගිණුමකින්ම අඩු වන දේ',
+  'rates.deduction.description':
+    'කර්මාන්තශාලාව නියම කරන ගාස්තු, සහ එක් මාසයකදී ණයකින් උපරිම වශයෙන් අඩු කළ හැකි ප්‍රමාණය. වෙනසකට දෙවන පුද්ගලයෙකු අවශ්‍යයි.',
+  'rates.deduction.customised': 'මෙම කර්මාන්තශාලාව නියම කළා',
+  'rates.deduction.shipped': 'කිසිදා නියම කර නැත',
+  'rates.deduction.shippedHint':
+    'මේවා කොන්සෝලය සමඟ පැමිණි අගයන් මිස මෙම කර්මාන්තශාලාවේ ඒවා නොවේ — කිලෝවකට රු. {{transport}} ප්‍රවාහනය ස්ථානගත අගයකි. කවුරුන් හෝ ඒවා නියම කරන තුරු, ඒවා සෑම ගිණුමකම ඇති අතර කිසිවෙකු ඒවා තෝරා නැත.',
+  'rates.deduction.transportPerKg': 'ප්‍රවාහනය (කිලෝවකට රු.)',
+  'rates.deduction.stamps': 'මුද්දර (රු.)',
+  'rates.deduction.caps': 'එක් මාසයකදී ණයකින් අඩු කළ හැකි උපරිමය (%)',
+  'rates.deduction.capsHint':
+    'මාස කීයකින් ආපසු ගෙවනවාද යන්න සැපයුම්කරු තෝරයි. හොඳින් දළු නෙළන කාලයේ එකඟ වූ ආපසු ගෙවීමකට දුර්වල මාසයක් සම්පූර්ණයෙන් යාම නවත්වන සීමාව මෙයයි.',
+  'rates.deduction.field.transportPerKg': 'කිලෝවකට ප්‍රවාහනය',
+  'rates.deduction.field.stamps': 'මුද්දර',
+  'rates.deduction.field.instalmentShares.advance': 'අත්තිකාරම් සීමාව',
+  'rates.deduction.field.instalmentShares.loan': 'ණය සීමාව',
+  'rates.deduction.field.instalmentShares.manure': 'පොහොර සීමාව',
+  'rates.deduction.propose': 'අනුමැතියට යවන්න',
+  'rates.deduction.reasonHint': 'අවම වශයෙන් අකුරු 10ක්. අනුමත කරන්නා තීරණය කිරීමට පෙර මෙය කියවයි.',
+  'rates.deduction.needsApproval': 'මෙය ක්‍රියාත්මක වීමට පෙර දෙවන පුද්ගලයෙකු අනුමත කළ යුතුය.',
+  'rates.deduction.nothingChanged': 'කිසිවක් වෙනස් වී නැත.',
+  'rates.deduction.proposed': 'අනුමැතියට යවන ලදී',
+  'rates.deduction.proposedHint': 'තවම කිසිවක් වෙනස් වී නැත. කළමනාකරුවෙකු එය අනුමත කළ යුතුය.',
+  'rates.deduction.proposeFailed': 'කිසිවක් යවා නැත',
+  'rates.deduction.pendingTitle': 'අනුමැතිය බලාපොරොත්තුවෙන් — {{name}} විසින් යෝජනා කරන ලදී, {{when}}',
+  'rates.deduction.approve': 'අනුමත කරන්න',
+  'rates.deduction.reject': 'ප්‍රතික්ෂේප කරන්න',
+  'rates.deduction.approved': 'නව අනුපාත බලාත්මකයි',
+  'rates.deduction.rejectd': 'වෙනස ප්‍රතික්ෂේප කරන ලදී',
+  'rates.deduction.decideFailed': 'කිසිවක් වෙනස් කළේ නැත',
+  'rates.deduction.noteHint': 'ප්‍රතික්ෂේප කිරීමට අවශ්‍යයි. යෝජනා කළ පුද්ගලයා එය කියවයි.',
+  'rates.deduction.fourEyes': 'මෙය යෝජනා කළේ ඔබයි, එබැවින් වෙනත් අයෙකු එය අනුමත කළ යුතුය (BR-501).',
+  'rates.deduction.awaitingManager': 'මෙය ක්‍රියාත්මක වීමට පෙර කළමනාකරුවෙකු අනුමත කළ යුතුය.',
+  'rates.deduction.readOnly': 'මේවාට වෙනසක් යෝජනා කළ හැක්කේ ගණකාධිකාරීවරයාට පමණි.',
+  'rates.deduction.elsewhere':
+    'අනෙක් පේළි මෙහි නියම නොවේ. ඉතුරුම් සැපයුම්කරුගේය (වෙනස් කිරීමේ ඉල්ලීම්); තේ, පොහොර සහ අත්තිකාරම් යෙදුමෙන් ඉල්ලනු ලැබේ; පෙර ණය පසුගිය මාසයෙන් ගෙන එනු ලැබේ. අනුමත අනුපාත ලබන බිල් ජනනයට අදාළ වේ, දැනටමත් ප්‍රකාශයට පත් කළ මාසයකට කිසිදා නොවේ.',
   'config.contentLanguages': 'අන්තර්ගතය ලියන භාෂා',
   'config.contentLanguagesHint':
     'පුවත් ලිපි සහ යෙදුමේ ස්ථිර පිටු මේ සෑම භාෂාවකින්ම ලියනු ලැබේ. සලකුණු නොකළ භාෂාවක් නොමැති ලෙස ගණන් ගැනීම නවතී.',

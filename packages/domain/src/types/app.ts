@@ -190,6 +190,8 @@ export interface AdvanceRequest {
   status: RequestStatus;
   createdAt: string;
   note?: string;
+  /** Accounts the supplier chose to repay over. See `LoanRequest.repaymentMonths`. */
+  repaymentMonths?: number;
 }
 
 /** Cash against a track record of income, repaid over later accounts. */
@@ -200,17 +202,29 @@ export interface LoanRequest {
   status: RequestStatus;
   createdAt: string;
   note?: string;
+  /**
+   * How many accounts the supplier chose to spread the repayment over (§21.10).
+   *
+   * **The supplier's decision, not the office's** — which is most of what §21.10 turned out
+   * to be about. Optional because it arrives from the app, and every credit approved before
+   * the app could ask for it has none: those fall back to the factory's share-of-gross cap
+   * alone, which is what the console did before.
+   */
+  repaymentMonths?: number;
 }
 
 /** Fertilizer taken on credit. */
 export interface ManureRequest {
   id: string;
+  /** One of the factory's configured types (§21.10). */
   manureType: string;
   quantityKg: number;
   deliveryNotes?: string;
   status: RequestStatus;
   createdAt: string;
   note?: string;
+  /** Accounts the supplier chose to repay over. See `LoanRequest.repaymentMonths`. */
+  repaymentMonths?: number;
 }
 
 /** The three credit facilities, as a discriminator. */
