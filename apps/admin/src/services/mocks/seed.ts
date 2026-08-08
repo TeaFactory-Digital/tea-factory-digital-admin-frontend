@@ -514,6 +514,18 @@ for (const request of mockChangeRequests) {
 
 /* ─────────────────────────────── audit log ─────────────────────────────── */
 
+/**
+ * The supplier an audit entry is about, read out of the registry the console renders.
+ *
+ * `sup-7` is `mockSuppliers[6]` — the array is built with `makeSupplier(i + 1)`, so the
+ * id and the index are off by one, which is exactly the sort of thing a hand-written
+ * fixture gets wrong once and nobody notices until two screens disagree.
+ */
+function supplierActor(n: number): { id: string; name: string } {
+  const supplier = mockSuppliers[n - 1]!;
+  return { id: supplier.id, name: supplier.name };
+}
+
 export const mockAudit: AuditEntry[] = [
   {
     id: 'aud-1',
@@ -574,12 +586,21 @@ export const mockAudit: AuditEntry[] = [
   {
     id: 'aud-4',
     at: daysAgo(3),
-    actorId: 'sup-7',
-    actorName: 'Kamala Wijesinghe',
+    /**
+     * Derived from the registry, **not typed in**.
+     *
+     * The names here are generated per supplier by a seeded PRNG, so a hardcoded
+     * `actorName` would put one name on the audit row and a different one in the page
+     * header directly above it — on the screen whose entire subject is *who did this*.
+     * The fixture has to be coherent with itself or it teaches the wrong thing to
+     * whoever reads the audit screen first.
+     */
+    actorId: supplierActor(7).id,
+    actorName: supplierActor(7).name,
     actorType: 'supplier',
     action: 'supplier.profile.update',
     entity: 'supplier',
-    entityId: 'sup-7',
+    entityId: supplierActor(7).id,
     before: { homeAddress: 'No 12, DENIYAYA Road, Akuressa' },
     after: { homeAddress: 'No 88, Temple Road, Akuressa' },
     ip: null,
@@ -587,12 +608,12 @@ export const mockAudit: AuditEntry[] = [
   {
     id: 'aud-5',
     at: daysAgo(11),
-    actorId: 'sup-7',
-    actorName: 'Kamala Wijesinghe',
+    actorId: supplierActor(7).id,
+    actorName: supplierActor(7).name,
     actorType: 'supplier',
     action: 'supplier.profile.update',
     entity: 'supplier',
-    entityId: 'sup-7',
+    entityId: supplierActor(7).id,
     before: { phone: '0771234567' },
     after: { phone: '0759876543' },
     ip: null,
@@ -608,12 +629,12 @@ export const mockAudit: AuditEntry[] = [
      */
     id: 'aud-6',
     at: daysAgo(1),
-    actorId: 'sup-12',
-    actorName: 'Sunil Bandara',
+    actorId: supplierActor(12).id,
+    actorName: supplierActor(12).name,
     actorType: 'supplier',
     action: 'supplier.password.change',
     entity: 'supplier',
-    entityId: 'sup-12',
+    entityId: supplierActor(12).id,
     before: { owesPasswordChange: true },
     after: { owesPasswordChange: false },
     ip: null,
