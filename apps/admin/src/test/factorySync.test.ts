@@ -12,12 +12,21 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { FACTORY_SYNC_STALE_HOURS, factorySyncState } from '@tfd/domain';
+import {
+  DEFAULT_SYNC_WINDOW,
+  FACTORY_SYNC_STALE_HOURS,
+  factorySyncState,
+  openMinutesBetween,
+} from '@tfd/domain';
 import { factorySyncRepository } from '@/services/repositories/factorySyncRepository';
 import { signInAs, signOut } from './render';
 
-const NOW = '2026-08-08T12:00:00.000Z';
+const NOW = '2026-08-08T12:00:00.000Z'; // 17:30 Colombo — inside the polling window
 const hoursBefore = (h: number) => new Date(Date.parse(NOW) - h * 3_600_000).toISOString();
+
+/** Colombo local wall time as an instant. Colombo is UTC+05:30 all year. */
+const colombo = (day: string, hh: number, mm = 0) =>
+  new Date(Date.parse(`${day}T00:00:00.000Z`) + (hh * 60 + mm - 330) * 60_000).toISOString();
 
 describe('factorySyncState', () => {
   it('is fresh inside the threshold and stale beyond it', () => {
@@ -51,6 +60,55 @@ describe('factorySyncState', () => {
     // Three hours ≈ three failed attempts. A threshold that fired on a single slow poll
     // would show a red banner most mornings.
     expect(FACTORY_SYNC_STALE_HOURS).toBeGreaterThanOrEqual(2);
+  });
+
+  it('does not call the overnight gap a fault, because nobody was going to poll', () => {
+    /**
+     * **The reason this file grew a polling window.** Pulling around the clock buys
+     * nothing — the factory's data only moves while the factory is open — so the
+     * schedule stops at eight in the evening and resumes at half past five.
+     *
+     * Measured in wall-clock hours, the first clerk in at six every morning would find a
+     * red banner over a perfectly healthy console: the last success really is ten hours
+     * old. Correct, useless, and read by nobody after the first week.
+     */
+    const lastNight = colombo('2026-08-07', 20, 0);
+    const thisMorning = colombo('2026-08-08', 6, 0);
+
+    const wallClockHours = (Date.parse(thisMorning) - Date.parse(lastNight)) / 3_600_000;
+    expect(wallClockHours).toBe(10); // what the old rule saw, and shouted about
+
+    // What the schedule actually skipped: half an hour of polling time.
+    expect(openMinutesBetween(lastNight, thisMorning)).toBe(30);
+    expect(factorySyncState({ lastSucceededAt: lastNight }, thisMorning)).toBe('fresh');
+  });
+
+  it('still reports a genuinely skipped day', () => {
+    /**
+     * The other half of the bargain. Discounting the night must not discount a failure
+     * that happened *during* the day, or the banner never fires at all — which is a
+     * worse outcome than firing every morning.
+     */
+    const twoNightsAgo = colombo('2026-08-06', 20, 0);
+    const thisMorning = colombo('2026-08-08', 6, 0);
+
+    // A full working day of polls missed, plus this morning's.
+    const { openMinute, closeMinute } = DEFAULT_SYNC_WINDOW;
+    expect(openMinutesBetween(twoNightsAgo, thisMorning)).toBe(closeMinute - openMinute + 30);
+    expect(factorySyncState({ lastSucceededAt: twoNightsAgo }, thisMorning)).toBe('stale');
+  });
+
+  it('counts nothing at all across a night with no polling in it', () => {
+    // Eight in the evening to five in the morning: entirely outside the window.
+    expect(openMinutesBetween(colombo('2026-08-07', 20, 30), colombo('2026-08-08', 5, 0))).toBe(0);
+  });
+
+  it('keeps the numeric third argument working', () => {
+    // `factorySyncState(status, now, 6)` predates the options object and still reads
+    // clearly at the call site. Silently ignoring it would loosen the banner, not tighten
+    // it — the failure would be a banner that never appears.
+    expect(factorySyncState({ lastSucceededAt: hoursBefore(4) }, NOW, 6)).toBe('fresh');
+    expect(factorySyncState({ lastSucceededAt: hoursBefore(4) }, NOW, 2)).toBe('stale');
   });
 });
 

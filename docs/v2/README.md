@@ -94,7 +94,8 @@ Three arguments for that, in order of weight:
 | [modules.md](./modules.md) | The v2 module map, what each decides, and what moved out |
 | [white-label.md](./white-label.md) | Runtime brand resolution, the Tailwind ↔ token bridge, and **the fourteen flags** |
 | [api-contract.md](./api-contract.md) | Base URL, auth realm, every endpoint with payloads, the error envelope |
-| [factory-integration-spec.md](./factory-integration-spec.md) | **The document to share with the factory's own dev team and the BA.** Self-contained: both endpoints, the JSON, the duplicate-prevention handshake, and the one decision to settle first |
+| [factory-integration-spec.md](./factory-integration-spec.md) | **The document to share with the factory's own dev team and the BA.** Self-contained: the endpoint, the JSON, the duplicate-prevention handshake, and the office workflow |
+| [factory-updates-sample.json](./factory-updates-sample.json) | A complete, valid, arithmetically-consistent sample response for that endpoint. Send it with the spec |
 | [integration.md](./integration.md) | The same subject from *this* repository's side — what the console assumes, and why replication rather than import |
 | [architecture.md](./architecture.md) | The workspace, the layer boundaries, the provider stack, state |
 | [rbac.md](./rbac.md) | The §12.1 permission matrix as data, four-eyes, where authorization is enforced |

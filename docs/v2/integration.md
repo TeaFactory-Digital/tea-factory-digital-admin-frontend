@@ -21,7 +21,7 @@ Four answers arrived, and the last one changes the shape of everything:
 | --- | --- |
 | Format | **JSON**, not CSV |
 | Window | **A date range**, not a daily delta |
-| Trigger | **Automatic hourly pull**, no human upload |
+| Trigger | **Automatic hourly pull during office hours** (05:30–20:00 Colombo), no human upload |
 | **The Factory System's business logic does not change** | ⚠️ **This overrides §4–§6 below** |
 
 That last constraint rules out everything this document proposed for direction 2: no

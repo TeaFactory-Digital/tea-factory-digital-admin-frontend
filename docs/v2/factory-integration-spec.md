@@ -209,13 +209,13 @@ Factory System, pulled automatically.
 │   (unchanged)        │                        │    (new)             │
 └──────────────────────┘                        └──────────────────────┘
            │                                               │
-           │   GET /api/updates?from=&to=                  │
-           │◄──────────────────────────────────────────────┤  every hour
+           │   GET /api/updates?from=&to=&include=&limit=  │
+           │◄──────────────────────────────────────────────┤  hourly, 05:30–20:00
            │                                               │  automatic
            ├──────────────────────────────────────────────►│  no human step
            │   suppliers · deliveries · months             │
-           │   bills · requests · balances                 │
-           │                                               │
+           │   bills · requests · balances                 │  ~8–40 KB gzipped
+           │                                               │  (§5.6)
            └───────────────────────────────────────────────┘
 
            ◄── requests travel back on paper, not on wire ──►
@@ -240,18 +240,66 @@ Authorization: Bearer <token issued to the App Platform>
 Accept: application/json
 ```
 
-| Parameter | Format | Meaning |
-| --- | --- | --- |
-| `from` | `YYYY-MM-DD` | Inclusive, Colombo local date |
-| `to` | `YYYY-MM-DD` | Inclusive |
+| Parameter | Format | Required | Meaning |
+| --- | --- | --- | --- |
+| `from` | `YYYY-MM-DD` | yes | Inclusive, Colombo local date |
+| `to` | `YYYY-MM-DD` | yes | Inclusive |
+| `include` | comma list | no | Which collections to return. Default: all five |
+| `limit` | integer | no | Maximum **records per collection**. Default 500, maximum 2000 |
+| `cursor` | opaque string | no | Continue a previous response. Copied verbatim from `nextCursor` |
 
 **A date range, not "what changed yesterday".** If the platform is down for a day it
 simply widens the window and catches up. A "changes since last call" endpoint cannot
 recover from a missed call, and cannot express a *correction* to a day already sent.
 
-Return everything **created or modified** within the range.
+Return everything **created or modified** within the range — filter on the row's
+`updated_at`, not on its business date. A July bill corrected in August must appear in an
+August window, or the correction never reaches the app.
+
+**`from`/`to` are a filter, not a dump.** An hourly call passes a one-hour window and
+receives only what moved in that hour, which is usually nothing. See
+[§5.6](#56-volume-and-cadence) for what the sizes actually are at 2,000 suppliers.
+
+#### Paging
+
+Three of the five collections have days when they move all at once — the whole supplier
+register on migration day, every bill on publication day. Those are the responses worth
+bounding, and `limit` bounds them.
+
+```http
+GET /api/updates?from=2026-08-01&to=2026-08-08&limit=500
+   → { ..., "nextCursor": "eyJvIjo1MDB9" }
+
+GET /api/updates?from=2026-08-01&to=2026-08-08&limit=500&cursor=eyJvIjo1MDB9
+   → { ..., "nextCursor": null }        ← last page
+```
+
+The platform keeps calling while `nextCursor` is non-`null`. `nextCursor: null` means
+the window is complete.
+
+The cursor is **opaque to us** — encode whatever suits the Factory System (an offset, a
+`(updated_at, id)` pair, a keyset). The only requirements are that the same cursor with
+the same `from`/`to` returns the same page, and that ordering is **stable**: sort by
+`updated_at` then by the row's own id, so a row is never skipped when two share a
+timestamp.
+
+If paging is genuinely difficult to add, say so at the first meeting. It is not needed
+for a normal day — it is needed for publication day and for the first-ever backfill, and
+we can work around it with narrower windows.
 
 ### 5.2 Response
+
+> **A complete, valid sample is in [`factory-updates-sample.json`](./factory-updates-sample.json)**
+> — send that file with this document. Its figures are internally consistent (gross =
+> kilos × rate, the nine deduction lines sum to their own total, and payable + coins
+> reconciles), so it can be used as a fixture rather than only as a picture.
+>
+> It deliberately contains six cases that are easy to get wrong:
+> a supplier with **no bank details**, a **voided** weighing, a month with **`null`**
+> rates, all four request types, all three request statuses, and a bill with **coins
+> carried forward**.
+
+Abbreviated here; the sample file has the whole thing.
 
 ```json
 {
@@ -393,6 +441,83 @@ before the rate is.
 The one thing that must not happen is **inventing a value to fill a gap** — a `0`
 where the truth is "we don't track that" becomes a figure somebody quotes back.
 
+### 5.6 Volume and cadence
+
+**The concern this section answers:** *at 2,000 suppliers this JSON will be enormous, and
+calling it every hour around the clock will cost the Factory System's server dearly.*
+
+Half right. Here is the measurement.
+
+#### The window is a delta, so an ordinary call is tiny
+
+Because `from`/`to` filter on `updated_at`, an hourly call returns **one hour of
+changes** — not 2,000 suppliers. Sizes below are gzipped, measured on generated data with
+realistic variation in names, branches and amounts:
+
+| Call | Records | Gzipped |
+| --- | --- | --- |
+| Quiet hour — nothing moved | 0 | **~100 bytes** |
+| Ordinary weighing hour | 500 deliveries | **8 KB** |
+| Busiest weighing hour | 2,500 deliveries | **40 KB** |
+| Whole day, if pulled in one call | 20,000 deliveries | 319 KB |
+| **Publication day** | 2,000 bills at once | **230 KB** |
+| Publication day at 5× growth | 10,000 bills | **1.1 MB** ← the one to bound |
+| First-ever backfill | everything | 733 KB |
+| One page with `limit=500` | 500 bills | 58 KB |
+
+So the steady state is 8–40 KB an hour, and most calls return nothing at all. **The two
+responses worth bounding are publication day and the first backfill** — which is what
+`limit`/`cursor` in §5.1 are for, and why they are worth the trouble even though no
+ordinary day needs them.
+
+> **`months` is one row per calendar month for the whole factory — about 12 a year.**
+> Not one per supplier per month. A supplier's month is a **bill**, and there are as many
+> of those as there are suppliers. If the Factory System holds monthly rows *per
+> supplier*, they belong in `bills`.
+
+#### Don't poll through the night
+
+**Correct — around-the-clock polling buys nothing.** The Factory System's data only moves
+while the factory is open: leaf is weighed at the collection points, requests are raised
+at the counter. Between eight at night and half past five in the morning every call is
+answered "nothing changed".
+
+| Colombo time | Cadence | Collections |
+| --- | --- | --- |
+| 05:30 | once, window widened to cover the night | all five |
+| 05:30 – 20:00 | hourly | `deliveries`, `requests` |
+| 20:00 – 05:30 | **no calls** | — |
+| 05:30 daily | once | `suppliers`, `months` |
+| On publication day | until `nextCursor` is `null` | `bills` |
+
+That is roughly **15 calls a day instead of 24**, and the expensive collections are
+fetched at their own pace rather than at the pace of the fastest one. The `include`
+parameter is what makes the split possible — without it, every hourly delivery poll drags
+the supplier register along behind it.
+
+> **Built:** the console's freshness indicator now measures staleness in *polling* hours
+> rather than wall-clock hours. Without that change, the first clerk in at six every
+> morning would meet a red "figures may be out of date" banner over a perfectly healthy
+> console — the last sync genuinely being ten hours old — and would have learned to
+> ignore it by the end of the first week. A day of polls actually missed still raises it.
+
+#### The two things that actually control the cost
+
+Call count is not the expense; these are.
+
+1. **Index `updated_at` on every table in the payload.** An indexed lookup that returns
+   nothing costs about a millisecond. The same query as a full table scan across 2,000
+   suppliers × years of deliveries is the entire problem, and it will not be visible in
+   testing against a small database. **This is the one performance request in this
+   document.**
+2. **Enable gzip** (`Content-Encoding: gzip`). This data is repetitive JSON and
+   compresses six- to twelvefold — the 1.1 MB publication-day response is 6.8 MB without
+   it. One line of server configuration.
+
+Optional, if easy: respond `304 Not Modified` to a conditional request when nothing in
+the window changed. Worth little — an empty response is already ~100 bytes — so do not
+spend a meeting on it.
+
 ---
 
 ## 6. What the App Platform does with it
@@ -489,6 +614,9 @@ manual step in §3.3. None is needed for the first release, and none should dela
 ### Existing Factory System team
 
 - [ ] Build **`GET /api/updates?from=&to=`** (§5). This is the only item
+- [ ] **Index `updated_at`** on every table in the payload (§5.6) — the one performance ask
+- [ ] **Enable gzip** on the response (§5.6) — one line of configuration
+- [ ] Support `limit`/`cursor` paging, for publication day and the backfill (§5.1)
 - [ ] Issue an access token for the App Platform
 - [ ] Provide the Green Leaf Account schema, field by field
 
@@ -497,7 +625,8 @@ to who approves what.
 
 ### Platform team
 
-- [ ] Hourly automatic pull; upsert by id
+- [ ] Hourly pull during office hours only, 05:30–20:00 Colombo (§5.6); upsert by id
+- [ ] Follow `nextCursor` to the end of every window
 - [ ] Request screens **record** the factory's decision rather than making one (§3.4)
 - [ ] Never compute a credit ceiling or re-derive an account figure
 - [ ] Freshness indicator (§7)
@@ -515,3 +644,7 @@ to who approves what.
    that one was withdrawn — see §5.3)
 6. How far back can the endpoint serve? The platform needs an initial backfill
 7. Who is on call when a sync fails?
+8. Is `limit`/`cursor` paging feasible? If not, the platform will narrow its windows
+   instead — but publication day sends every supplier's account at once (§5.6)
+9. What hours does the factory actually weigh? The 05:30–20:00 polling window is a
+   guess, and the freshness banner is calibrated against it

@@ -1,0 +1,265 @@
+{
+  "from": "2026-08-01",
+  "to": "2026-08-08",
+  "generatedAt": "2026-08-08T10:00:00+05:30",
+  "limit": 500,
+  "nextCursor": null,
+  "counts": {
+    "suppliers": 2,
+    "deliveries": 4,
+    "months": 2,
+    "bills": 2,
+    "requests": 4
+  },
+
+  "suppliers": [
+    {
+      "supplierId": "SUP-000412",
+      "supplierCode": "5147 (DENIYAYA)",
+      "name": "Kamal Perera",
+      "nic": "883210456V",
+      "phone": "0771234567",
+      "email": "kamal.perera@example.lk",
+      "dateOfBirth": "1988-11-17",
+      "collectionPoint": "DENIYAYA",
+      "status": "active",
+      "homeAddress": "No 12, Deniyaya Road, Akuressa",
+      "estateAddress": "Lot 4, Deniyaya Estate",
+      "bankName": "Bank of Ceylon",
+      "bankBranch": "Akuressa",
+      "accountNumber": "0071234567890",
+      "paymentMethod": "bankTransfer",
+      "savingsPerKg": 20.00,
+      "savingsBalance": 48200.00,
+      "outstandingAdvance": 10000.00,
+      "outstandingLoan": 0.00,
+      "outstandingManure": 8500.00,
+      "registeredAt": "2019-04-02",
+      "updatedAt": "2026-08-07T14:22:00+05:30"
+    },
+    {
+      "supplierId": "SUP-000517",
+      "supplierCode": "5203 (MORAWAKA)",
+      "name": "Nimali Fernando",
+      "nic": "199274500821",
+      "phone": "0759876543",
+      "email": null,
+      "dateOfBirth": "1992-03-04",
+      "collectionPoint": "MORAWAKA",
+      "status": "active",
+      "homeAddress": "No 88, Temple Road, Morawaka",
+      "estateAddress": "Kirimetiya Watta, Morawaka",
+      "bankName": null,
+      "bankBranch": null,
+      "accountNumber": null,
+      "paymentMethod": "cheque",
+      "savingsPerKg": 10.00,
+      "savingsBalance": 6300.00,
+      "outstandingAdvance": 0.00,
+      "outstandingLoan": 0.00,
+      "outstandingManure": 0.00,
+      "registeredAt": "2024-09-15",
+      "updatedAt": "2026-08-06T09:10:00+05:30"
+    }
+  ],
+
+  "deliveries": [
+    {
+      "deliveryId": "DEL-2026-08-02-000318",
+      "supplierId": "SUP-000412",
+      "date": "2026-08-02",
+      "collectionPoint": "DENIYAYA",
+      "kg": 24.50,
+      "voided": false,
+      "voidReason": null,
+      "updatedAt": "2026-08-02T16:05:00+05:30"
+    },
+    {
+      "deliveryId": "DEL-2026-08-03-000355",
+      "supplierId": "SUP-000517",
+      "date": "2026-08-03",
+      "collectionPoint": "MORAWAKA",
+      "kg": 12.75,
+      "voided": false,
+      "voidReason": null,
+      "updatedAt": "2026-08-03T15:40:00+05:30"
+    },
+    {
+      "deliveryId": "DEL-2026-08-05-000412",
+      "supplierId": "SUP-000412",
+      "date": "2026-08-05",
+      "collectionPoint": "DENIYAYA",
+      "kg": 31.25,
+      "voided": false,
+      "voidReason": null,
+      "updatedAt": "2026-08-05T16:10:00+05:30"
+    },
+    {
+      "deliveryId": "DEL-2026-08-05-000413",
+      "supplierId": "SUP-000412",
+      "date": "2026-08-05",
+      "collectionPoint": "DENIYAYA",
+      "kg": 18.00,
+      "voided": true,
+      "voidReason": "Weighed twice by mistake at the afternoon session.",
+      "updatedAt": "2026-08-05T17:02:00+05:30"
+    }
+  ],
+
+  "months": [
+    {
+      "monthKey": "2026-07",
+      "stage": "published",
+      "ratePerKg": 118.75,
+      "extraRatePerKg": 6.00,
+      "publishedAt": "2026-08-05T09:00:00+05:30"
+    },
+    {
+      "monthKey": "2026-08",
+      "stage": "collecting",
+      "ratePerKg": null,
+      "extraRatePerKg": null,
+      "publishedAt": null
+    }
+  ],
+
+  "bills": [
+    {
+      "billId": "BIL-2026-07-SUP-000412",
+      "billNo": "07/5147",
+      "supplierId": "SUP-000412",
+      "monthKey": "2026-07",
+      "billDate": "2026-08-05",
+      "auctionResultAvailable": true,
+      "totalKg": 245.00,
+      "ratePerKg": 118.75,
+      "extraRatePerKg": 6.00,
+      "grossAmount": 30563.75,
+      "deductions": {
+        "transportCharges": 612.50,
+        "tea": 4800.00,
+        "savings": 4900.00,
+        "loansAdvance": 0.00,
+        "advance": 2000.00,
+        "manure": 1700.00,
+        "otherCards": 0.00,
+        "stamps": 25.00,
+        "previousDebts": 0.00,
+        "total": 14037.50
+      },
+      "balanceAmount": 16526.25,
+      "coinsBroughtForward": 0.35,
+      "coinsCarriedForward": 0.60,
+      "finalBalance": 16526.00,
+      "carryForward": {
+        "nextMonthDeb": 0.00,
+        "loanBalance": 8000.00,
+        "manureBalance": 6800.00,
+        "loanInterest": 0.00
+      },
+      "publishedAt": "2026-08-05T09:00:00+05:30"
+    },
+    {
+      "billId": "BIL-2026-07-SUP-000517",
+      "billNo": "07/5203",
+      "supplierId": "SUP-000517",
+      "monthKey": "2026-07",
+      "billDate": "2026-08-05",
+      "auctionResultAvailable": true,
+      "totalKg": 88.00,
+      "ratePerKg": 118.75,
+      "extraRatePerKg": 6.00,
+      "grossAmount": 10978.00,
+      "deductions": {
+        "transportCharges": 220.00,
+        "tea": 0.00,
+        "savings": 880.00,
+        "loansAdvance": 0.00,
+        "advance": 0.00,
+        "manure": 0.00,
+        "otherCards": 0.00,
+        "stamps": 25.00,
+        "previousDebts": 0.00,
+        "total": 1125.00
+      },
+      "balanceAmount": 9853.00,
+      "coinsBroughtForward": 0.00,
+      "coinsCarriedForward": 0.00,
+      "finalBalance": 9853.00,
+      "carryForward": {
+        "nextMonthDeb": 0.00,
+        "loanBalance": 0.00,
+        "manureBalance": 0.00,
+        "loanInterest": 0.00
+      },
+      "publishedAt": "2026-08-05T09:00:00+05:30"
+    }
+  ],
+
+  "requests": [
+    {
+      "requestId": "ADV-2026-08-0042",
+      "supplierId": "SUP-000412",
+      "type": "advance",
+      "amount": 10000.00,
+      "packets": null,
+      "quantityKg": null,
+      "manureType": null,
+      "status": "approved",
+      "raisedAt": "2026-08-02T10:15:00+05:30",
+      "decidedAt": "2026-08-03T11:00:00+05:30",
+      "decidedBy": "Ruwan Jayasuriya",
+      "note": "Within the ceiling for leaf already weighed this month.",
+      "source": "counter",
+      "platformRequestId": null
+    },
+    {
+      "requestId": "LON-2026-08-0009",
+      "supplierId": "SUP-000517",
+      "type": "loan",
+      "amount": 25000.00,
+      "packets": null,
+      "quantityKg": null,
+      "manureType": null,
+      "status": "pending",
+      "raisedAt": "2026-08-06T09:20:00+05:30",
+      "decidedAt": null,
+      "decidedBy": null,
+      "note": null,
+      "source": "counter",
+      "platformRequestId": null
+    },
+    {
+      "requestId": "MAN-2026-08-0031",
+      "supplierId": "SUP-000412",
+      "type": "manure",
+      "amount": 8500.00,
+      "packets": null,
+      "quantityKg": 50.00,
+      "manureType": "Urea",
+      "status": "approved",
+      "raisedAt": "2026-08-04T08:45:00+05:30",
+      "decidedAt": "2026-08-04T15:30:00+05:30",
+      "decidedBy": "Ruwan Jayasuriya",
+      "note": "One 50 kg sack issued from the store.",
+      "source": "counter",
+      "platformRequestId": null
+    },
+    {
+      "requestId": "TEA-2026-08-0114",
+      "supplierId": "SUP-000517",
+      "type": "teaPacket",
+      "amount": 4800.00,
+      "packets": 4,
+      "quantityKg": null,
+      "manureType": null,
+      "status": "rejected",
+      "raisedAt": "2026-08-05T11:05:00+05:30",
+      "decidedAt": "2026-08-05T16:20:00+05:30",
+      "decidedBy": "Nadeeka Perera",
+      "note": "Store is out of 400 g packs until the next milling run. Please ask again after the 15th.",
+      "source": "counter",
+      "platformRequestId": null
+    }
+  ]
+}
