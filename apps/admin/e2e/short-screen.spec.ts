@@ -38,10 +38,14 @@ const MFA_CODE = '123456';
 const SCREENS = [
   { path: '/notifications', label: 'Notifications' },
   { path: '/suppliers', label: 'Suppliers' },
-  { path: '/savings', label: 'Savings accounts' },
-  { path: '/payouts', label: 'Payouts' },
   { path: '/news', label: 'News' },
+  { path: '/banners', label: 'Promo banners' },
+  { path: '/tea-packets', label: 'Tea packets' },
   { path: '/inquiries', label: 'Inquiries' },
+  /* v1's routed grids, gone with their modules:
+   *   { path: '/savings', label: 'Savings accounts' },
+   *   { path: '/payouts', label: 'Payouts' },
+   */
 ];
 
 const VIEWPORTS = [

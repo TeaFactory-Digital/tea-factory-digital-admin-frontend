@@ -55,6 +55,24 @@ export function formatCount(value: number | null | undefined): string {
   return integer.format(value);
 }
 
+const percent = new Intl.NumberFormat('en-LK', {
+  style: 'percent',
+  maximumFractionDigits: 0,
+});
+
+/**
+ * A 0–1 ratio as a whole percentage — the app-adoption figures (M1, M16).
+ *
+ * `null` renders as an em dash and **never as `0%`** (BR-102). The two are different
+ * facts: a month in which no request was raised at all has no adoption share, and a
+ * console printing zero would report a collapse that did not happen. That distinction is
+ * the reason `appRequestShare` is nullable on the wire in the first place.
+ */
+export function formatPercent(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return NOT_AVAILABLE;
+  return percent.format(value);
+}
+
 const dateFmt = new Intl.DateTimeFormat('en-GB', {
   timeZone: FACTORY_TIME_ZONE,
   day: '2-digit',

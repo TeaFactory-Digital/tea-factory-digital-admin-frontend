@@ -26,6 +26,7 @@ import { useSearchParams } from 'react-router-dom';
 import { FileBarChart } from 'lucide-react';
 import {
   REPORT_DEFINITIONS,
+  REPORT_IDS,
   isReportId,
   missingReportParams,
   type ReportColumn,
@@ -90,7 +91,11 @@ export function ReportsScreen() {
   const catalogue = useReportCatalogue();
 
   const requested = params.get('report');
-  const id: ReportId = requested && isReportId(requested) ? requested : 'monthSummary';
+  /**
+   * v2's default is the only report left. `REPORT_IDS[0]` rather than a literal, so the
+   * default follows the catalogue if the factory's own reporting ever adds to it again.
+   */
+  const id: ReportId = requested && isReportId(requested) ? requested : REPORT_IDS[0];
   const definition = REPORT_DEFINITIONS[id];
 
   /** Parameter state, defaulted so the common case runs on arrival. */
@@ -343,11 +348,12 @@ export function ReportsScreen() {
                                 : 'text-text-primary',
                             )}
                           >
-                            {id === 'monthSummary' && column.key === 'value' && row.metric === 'stage'
-                              ? row.value === null || row.value === undefined
-                                ? NOT_AVAILABLE
-                                : t(`month.stage.${row.value}`)
-                              : cell(row[column.key] ?? null, column, t)}
+                            {/* v1: `monthSummary` rendered its `stage` row through the
+                                month vocabulary rather than as a bare string —
+                                  id === 'monthSummary' && column.key === 'value' && row.metric === 'stage'
+                                    ? t(`month.stage.${row.value}`) : …
+                                Commented out with the report; see `REPORT_IDS`. */}
+                            {cell(row[column.key] ?? null, column, t)}
                           </td>
                         ))}
                       </tr>

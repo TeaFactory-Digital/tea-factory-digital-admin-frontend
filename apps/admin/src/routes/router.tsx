@@ -3,8 +3,12 @@
  *
  * Only built modules have routes. A route that rendered "coming soon" is worse
  * than no route: it is a URL a clerk can bookmark, share and then report as
- * broken. The planned modules appear in the sidebar as disabled rows with a chip,
- * which says the same thing without pretending to be a screen.
+ * broken.
+ *
+ * **v2 scope.** The internal-process routes — deliveries, rates, payouts, savings —
+ * are commented out below rather than deleted, along with their lazy imports. The
+ * factory's own console runs those; this one manages the mobile app. See
+ * `navigation.ts` for the full argument and for what stayed.
  *
  * Every route is wrapped in the capability gate, so a bookmarked or emailed URL is
  * refused the same way the sidebar would have hidden it.
@@ -32,29 +36,35 @@ const SupplierDetailScreen = lazy(() =>
     default: m.SupplierDetailScreen,
   })),
 );
-const DeliveriesScreen = lazy(() =>
-  import('@/modules/deliveries/DeliveriesScreen').then((m) => ({ default: m.DeliveriesScreen })),
-);
-const MonthCloseScreen = lazy(() =>
-  import('@/modules/months/MonthCloseScreen').then((m) => ({ default: m.MonthCloseScreen })),
-);
 const BillsScreen = lazy(() =>
   import('@/modules/bills/BillsScreen').then((m) => ({ default: m.BillsScreen })),
 );
 const BillDetailScreen = lazy(() =>
   import('@/modules/bills/BillDetailScreen').then((m) => ({ default: m.BillDetailScreen })),
 );
-const PayoutsScreen = lazy(() =>
-  import('@/modules/payouts/PayoutsScreen').then((m) => ({ default: m.PayoutsScreen })),
-);
-const PayoutRunDetailScreen = lazy(() =>
-  import('@/modules/payouts/PayoutRunDetailScreen').then((m) => ({
-    default: m.PayoutRunDetailScreen,
-  })),
-);
-const SavingsScreen = lazy(() =>
-  import('@/modules/savings/SavingsScreen').then((m) => ({ default: m.SavingsScreen })),
-);
+/* ──────────────────────────────────────────────────────────────────────────────
+ * v1 internal-process screens. Still in the tree, no longer routed — see
+ * `navigation.ts` for why. The imports go with the routes: a lazy chunk nothing
+ * can reach is weight in the build for a URL that answers 404 anyway.
+ *
+ *   const DeliveriesScreen = lazy(() =>
+ *     import('@/modules/deliveries/DeliveriesScreen').then((m) => ({ default: m.DeliveriesScreen })),
+ *   );
+ *   const MonthCloseScreen = lazy(() =>
+ *     import('@/modules/months/MonthCloseScreen').then((m) => ({ default: m.MonthCloseScreen })),
+ *   );
+ *   const PayoutsScreen = lazy(() =>
+ *     import('@/modules/payouts/PayoutsScreen').then((m) => ({ default: m.PayoutsScreen })),
+ *   );
+ *   const PayoutRunDetailScreen = lazy(() =>
+ *     import('@/modules/payouts/PayoutRunDetailScreen').then((m) => ({
+ *       default: m.PayoutRunDetailScreen,
+ *     })),
+ *   );
+ *   const SavingsScreen = lazy(() =>
+ *     import('@/modules/savings/SavingsScreen').then((m) => ({ default: m.SavingsScreen })),
+ *   );
+ * ────────────────────────────────────────────────────────────────────────────── */
 const ChangeRequestsScreen = lazy(() =>
   import('@/modules/change-requests/ChangeRequestsScreen').then((m) => ({
     default: m.ChangeRequestsScreen,
@@ -73,6 +83,9 @@ const CreditRequestDetailScreen = lazy(() =>
     default: m.CreditRequestDetailScreen,
   })),
 );
+const TeaPacketsScreen = lazy(() =>
+  import('@/modules/tea-packets/TeaPacketsScreen').then((m) => ({ default: m.TeaPacketsScreen })),
+);
 const InquiriesScreen = lazy(() =>
   import('@/modules/inquiries/InquiriesScreen').then((m) => ({ default: m.InquiriesScreen })),
 );
@@ -86,6 +99,12 @@ const NewsScreen = lazy(() =>
 );
 const NewsArticleScreen = lazy(() =>
   import('@/modules/news/NewsArticleScreen').then((m) => ({ default: m.NewsArticleScreen })),
+);
+const BannersScreen = lazy(() =>
+  import('@/modules/banners/BannersScreen').then((m) => ({ default: m.BannersScreen })),
+);
+const BannerEditorScreen = lazy(() =>
+  import('@/modules/banners/BannerEditorScreen').then((m) => ({ default: m.BannerEditorScreen })),
 );
 const StaticContentScreen = lazy(() =>
   import('@/modules/static-content/StaticContentScreen').then((m) => ({
@@ -154,22 +173,14 @@ export const router = createBrowserRouter([
           </RequireCapability>
         ),
       },
-      {
-        path: 'deliveries',
-        element: (
-          <RequireCapability capability="deliveries">
-            <DeliveriesScreen />
-          </RequireCapability>
-        ),
-      },
-      {
-        path: 'rates',
-        element: (
-          <RequireCapability capability="ratesAndMonthClose">
-            <MonthCloseScreen />
-          </RequireCapability>
-        ),
-      },
+      /**
+       * M5, read-only. A supplier telephones about the figure on their phone and the
+       * clerk needs the same account in front of them — that is app support, and it is
+       * why this route survived the v2 scope cut when the four below it did not.
+       * Generating and publishing are the factory's own console's; the controls are
+       * commented out on `BillsScreen` rather than merely hidden here, because a route
+       * that renders a screen with live mutation buttons is not read-only.
+       */
       {
         path: 'bills',
         element: (
@@ -186,42 +197,67 @@ export const router = createBrowserRouter([
           </RequireCapability>
         ),
       },
-      /**
-       * Payouts and savings are **flag-gated as well as capability-gated**, and the
-       * flag is checked first — a factory that does not use a feature is not a
+      /* ──────────────────────────────────────────────────────────────────────────
+       * v1 internal-process routes, commented out in v2.
+       *
+       * Not left behind a capability nobody holds, and not rendering a "moved" notice
+       * either: this console has no way to know where the factory's own console lives,
+       * and a screen that guessed would be a broken link somebody maintains. An unknown
+       * path inside the shell already goes home (the `*` route at the foot of this
+       * list), which is the honest answer to a bookmark that no longer resolves.
+       *
+       * Payouts and savings were **flag-gated as well as capability-gated**, and the
+       * flag was checked first — a factory that does not use a feature is not a
        * permission question, and asking it in the other order shows a manager at a
        * cash-only factory a bank-transfer screen they are entitled to but cannot use.
-       */
-      {
-        path: 'payouts',
-        element: (
-          <RequireFlag flag="enablePayouts">
-            <RequireCapability capability="payouts">
-              <PayoutsScreen />
-            </RequireCapability>
-          </RequireFlag>
-        ),
-      },
-      {
-        path: 'payouts/:id',
-        element: (
-          <RequireFlag flag="enablePayouts">
-            <RequireCapability capability="payouts">
-              <PayoutRunDetailScreen />
-            </RequireCapability>
-          </RequireFlag>
-        ),
-      },
-      {
-        path: 'savings',
-        element: (
-          <RequireFlag flag="enableSavings">
-            <RequireCapability capability="billing">
-              <SavingsScreen />
-            </RequireCapability>
-          </RequireFlag>
-        ),
-      },
+       *
+       *   {
+       *     path: 'deliveries',
+       *     element: (
+       *       <RequireCapability capability="deliveries">
+       *         <DeliveriesScreen />
+       *       </RequireCapability>
+       *     ),
+       *   },
+       *   {
+       *     path: 'rates',
+       *     element: (
+       *       <RequireCapability capability="ratesAndMonthClose">
+       *         <MonthCloseScreen />
+       *       </RequireCapability>
+       *     ),
+       *   },
+       *   {
+       *     path: 'payouts',
+       *     element: (
+       *       <RequireFlag flag="enablePayouts">
+       *         <RequireCapability capability="payouts">
+       *           <PayoutsScreen />
+       *         </RequireCapability>
+       *       </RequireFlag>
+       *     ),
+       *   },
+       *   {
+       *     path: 'payouts/:id',
+       *     element: (
+       *       <RequireFlag flag="enablePayouts">
+       *         <RequireCapability capability="payouts">
+       *           <PayoutRunDetailScreen />
+       *         </RequireCapability>
+       *       </RequireFlag>
+       *     ),
+       *   },
+       *   {
+       *     path: 'savings',
+       *     element: (
+       *       <RequireFlag flag="enableSavings">
+       *         <RequireCapability capability="billing">
+       *           <SavingsScreen />
+       *         </RequireCapability>
+       *       </RequireFlag>
+       *     ),
+       *   },
+       * ────────────────────────────────────────────────────────────────────────── */
       {
         path: 'change-requests',
         element: (
@@ -256,6 +292,23 @@ export const router = createBrowserRouter([
               <CreditRequestDetailScreen />
             </RequireCapability>
           </RequireAnyFlag>
+        ),
+      },
+      /**
+       * M18. One route, not a list-plus-detail pair: a tea-packet request is a supplier,
+       * a number of packets and a delivery method, and every one of those fits in the
+       * grid. M7 needs a detail page because AC-05 makes it print the eligibility
+       * working; there is no working here to print, and a detail page whose only job was
+       * to repeat three columns would be a click between a clerk and a decision.
+       */
+      {
+        path: 'tea-packets',
+        element: (
+          <RequireFlag flag="enableTeaPackets">
+            <RequireCapability capability="creditRequests">
+              <TeaPacketsScreen />
+            </RequireCapability>
+          </RequireFlag>
         ),
       },
       {
@@ -304,6 +357,34 @@ export const router = createBrowserRouter([
           </RequireFlag>
         ),
       },
+      /**
+       * Banners are gated on `enablePromoBanner` and **not** on `enableNews`.
+       *
+       * They sit inside M11 in §18.1's module table and share its capability, but they
+       * are a separate purchase: a factory that runs no feed may still want to announce
+       * that the store is closed on Friday. Gating them behind the feed would make the
+       * flag the app reads and the flag the console honours two different things.
+       */
+      {
+        path: 'banners',
+        element: (
+          <RequireFlag flag="enablePromoBanner">
+            <RequireCapability capability="content">
+              <BannersScreen />
+            </RequireCapability>
+          </RequireFlag>
+        ),
+      },
+      {
+        path: 'banners/:id',
+        element: (
+          <RequireFlag flag="enablePromoBanner">
+            <RequireCapability capability="content">
+              <BannerEditorScreen />
+            </RequireCapability>
+          </RequireFlag>
+        ),
+      },
       {
         path: 'content',
         element: (
@@ -335,14 +416,17 @@ export const router = createBrowserRouter([
           </RequireCapability>
         ),
       },
+      /**
+       * No flag in v2. `enableReports` was console-only and went with M6's `enablePayouts`
+       * (see `FeatureFlagSet`), and what is left of M16 is `channelShift` — whether the
+       * factory's own app is being used. That is not a feature a factory declines.
+       */
       {
         path: 'reports',
         element: (
-          <RequireFlag flag="enableReports">
-            <RequireCapability capability="reports">
-              <ReportsScreen />
-            </RequireCapability>
-          </RequireFlag>
+          <RequireCapability capability="reports">
+            <ReportsScreen />
+          </RequireCapability>
         ),
       },
       /**
@@ -365,8 +449,8 @@ export const router = createBrowserRouter([
           </RequireCapability>
         ),
       },
-      // Anything else inside the shell — including a planned module someone typed
-      // by hand — goes home rather than to a blank screen.
+      // Anything else inside the shell — including a v1 URL somebody bookmarked before
+      // the scope cut — goes home rather than to a blank screen.
       { path: '*', element: <Navigate to="/" replace /> },
     ],
   },

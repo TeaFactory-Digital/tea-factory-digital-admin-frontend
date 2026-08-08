@@ -28,12 +28,12 @@ import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SearchInput, Select } from '@/components/ui/Field';
-import { EmptyState } from '@/components/ui/states';
+import { EmptyState, Notice } from '@/components/ui/states';
 import { useDebounced } from '@/lib/useDebounced';
 import { formatAmount, formatKg, formatMoney } from '@/lib/format';
 import { MonthSelect } from '@/modules/money/MonthSelect';
 import { resolveMonthKey, useBillMonths } from '@/modules/money/monthOptions';
-import { BillRunCard } from './BillRunCard';
+/* v1: `BillRunCard` — still in the tree, no longer rendered. See below. */
 import { useBillRun, useBills } from './hooks';
 
 type Lens = 'all' | 'missingBankDetails' | 'carriesDebt';
@@ -211,7 +211,19 @@ export function BillsScreen() {
         }
       />
 
-      <BillRunCard monthKey={monthKey} month={month} run={run.data} runError={run.error} />
+      {/**
+        * v2: **read-only.** The office still needs this screen — a supplier telephones
+        * about the figure on their phone and the clerk has to see the same account — but
+        * generating a run and publishing a month are the factory's own console's work.
+        *
+        * `BillRunCard` is commented out rather than passed a `readOnly` prop, because the
+        * card is a *control*: its whole subject is which of three states the run is in
+        * and which button to press about it. A disabled version would be a card
+        * explaining a decision nobody on this screen can make.
+        *
+        *   <BillRunCard monthKey={monthKey} month={month} run={run.data} runError={run.error} />
+        */}
+      <Notice tone="info">{t('bills.readOnlyNotice')}</Notice>
 
       <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-end gap-sm border-b border-divider p-md">

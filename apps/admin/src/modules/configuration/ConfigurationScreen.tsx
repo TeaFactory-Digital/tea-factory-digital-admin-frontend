@@ -30,12 +30,13 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import {
   Building2,
-  FileSpreadsheet,
   Languages,
   Bell as BellIcon,
+  Package,
   SlidersHorizontal,
   Warehouse,
 } from 'lucide-react';
+/* v1: FileSpreadsheet, for the payout-file section commented out below. */
 import type { LucideIcon } from 'lucide-react';
 import type { ConfigPatch } from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
@@ -55,7 +56,8 @@ import {
   OperationsSection,
   PushSection,
 } from './ConfigSections';
-import { PayoutFileSection } from './PayoutFileSection';
+/* v1: `PayoutFileSection` — still in the tree, no longer a section. See `SECTIONS`. */
+import { TeaPacketSection } from './TeaPacketSection';
 import type { SectionProps } from './SectionFooter';
 import { useAdminConfig, useSaveConfig } from './hooks';
 
@@ -69,9 +71,25 @@ const SECTIONS: Array<{
   { id: 'operations', icon: Warehouse, Component: OperationsSection },
   { id: 'appearance', icon: Languages, Component: AppearanceSection },
   { id: 'push', icon: BellIcon, Component: PushSection },
-  // Last, because it is the only section that is an *answer to an open question* rather
-  // than a setting — see §21.17 and `payoutExport.ts`.
-  { id: 'payoutFile', icon: FileSpreadsheet, Component: PayoutFileSection },
+  /**
+   * v2. Beside the other things a supplier chooses from the app rather than under
+   * *Operations*, because a price buried under a heading about collection points is a
+   * price nobody sets — and M18 then quotes the bundled default at real suppliers.
+   */
+  { id: 'teaPackets', icon: Package, Component: TeaPacketSection },
+  /* ──────────────────────────────────────────────────────────────────────────────
+   * v1 — the payout file's layout (§21.17 as configuration).
+   *
+   * Commented out with M6: payouts are the factory's own console in v2, so a console
+   * that went on editing the bank file's column order would be configuring a module it
+   * no longer contains. `PayoutFileSection.tsx` and `payoutExport.ts` both stay — the
+   * serialiser is still the shared answer to §21.17, and whoever owns payouts next needs
+   * it rather than a second guess at the format.
+   *
+   *   // Last, because it is the only section that is an *answer to an open question*
+   *   // rather than a setting — see §21.17 and `payoutExport.ts`.
+   *   { id: 'payoutFile', icon: FileSpreadsheet, Component: PayoutFileSection },
+   * ────────────────────────────────────────────────────────────────────────────── */
 ];
 
 /**

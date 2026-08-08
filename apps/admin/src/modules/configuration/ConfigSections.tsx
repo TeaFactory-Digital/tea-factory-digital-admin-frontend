@@ -124,25 +124,48 @@ export function FactorySection(props: SectionProps) {
 
 /* ─────────────────────────── 2. Feature flags ─────────────────────────── */
 
-/** Which module each flag gates, so a toggle is not an unexplained switch. */
-const FLAG_MODULES: Record<FeatureFlagName, string> = {
+/**
+ * What each flag gates, so a toggle is not an unexplained switch.
+ *
+ * **Two kinds of answer now, and the distinction is v2's.** Some flags remove a console
+ * module *and* an app screen; the rest remove only an app screen, because the console is
+ * the app's management surface and most of what the app can be told to hide has no office
+ * equivalent. Saying "M7" against `enableManure` and "the app" against
+ * `enableBiometricLogin` is more honest than inventing a module id for a phone setting.
+ */
+const FLAG_GATES: Record<FeatureFlagName, string> = {
   enableSavings: 'M8',
   enableAdvances: 'M7',
   enableLoans: 'M7',
   enableManure: 'M7',
+  enableTeaPackets: 'M18',
   enableInquiry: 'M10',
   enableNews: 'M11',
   enablePushNotifications: 'M13',
   enablePromoBanner: 'M11',
-  enablePayouts: 'M6',
-  enableReports: 'M16',
+
+  // App-only. `app` is resolved through `config.flagGatesApp` rather than being a
+  // module id, so the caption reads as a sentence instead of a citation to nothing.
+  enableOnboarding: 'app',
+  enableBiometricLogin: 'app',
+  enableDarkModeToggle: 'app',
+  enableProfileTab: 'app',
+  enableAutoLock: 'app',
+
+  /* v1: enablePayouts: 'M6', enableReports: 'M16' — both gone with the modules. */
 };
 
 /**
- * The ten flags, and the module each one removes.
+ * The fourteen flags, and what each one removes.
  *
- * This is the section with teeth. A flag turns a surface off **end to end** (AC-07) — the
- * sidebar row goes, the route refuses, the dashboard omits the queue, and the API answers
+ * This is the section with teeth, and in v2 it is **the point of the whole console**:
+ * these are the app's flags, and this screen is the only place they can be changed
+ * without a release. v1 held ten of them — six of the app's were missing entirely and two
+ * were console-only — so a factory that wanted to turn off biometric sign-in had to ask a
+ * developer, which is precisely what AC-12 says must not be true.
+ *
+ * A flag turns a surface off **end to end** (AC-07): the sidebar row goes where there is
+ * one, the route refuses, the app hides the screen, and the API answers
  * `403 feature-disabled`. For most flags that is a choice a factory is entitled to make.
  * For the ones holding money it is refused, and the footer says why with the figure.
  */
@@ -170,10 +193,13 @@ export function FeaturesSection(props: SectionProps) {
                 <span className="text-body-small font-medium text-text-primary">
                   {t(`config.flag.${name}`)}
                 </span>
-                {/* The module, named. "enableManure — off" is a setting; "removes the
-                    manure credit queue (M7)" is a decision. */}
+                {/* What it removes, named. "enableManure — off" is a setting; "removes
+                    the manure credit queue (M7)" is a decision. An app-only flag says so
+                    rather than citing a module that does not exist. */}
                 <span className="text-caption text-text-secondary">
-                  {t('config.flagGates', { module: FLAG_MODULES[name] })}
+                  {FLAG_GATES[name] === 'app'
+                    ? t('config.flagGatesApp')
+                    : t('config.flagGates', { module: FLAG_GATES[name] })}
                 </span>
               </span>
             </Label>

@@ -14,6 +14,7 @@
 
 import type {
   AuditQuery,
+  BannerQuery,
   BillQuery,
   ChangeRequestQuery,
   CreditRequestQuery,
@@ -26,6 +27,7 @@ import type {
   SavingsAccountQuery,
   ReportRunParams,
   SupplierQuery,
+  TeaPacketRequestQuery,
   UserQuery,
 } from '@tfd/domain';
 
@@ -141,10 +143,38 @@ export const qk = {
     detail: (id: string) => ['credit-requests', 'detail', id] as const,
   },
 
+  /**
+   * M18. Its own key rather than a facility inside `credit`, for the same reason it is
+   * its own queue: a decision here changes no `creditBalances` entry and no eligibility
+   * ceiling, so sweeping `credit.all` would refetch three queues that cannot have moved.
+   * What it *does* change is the supplier's outstanding tea, which the detail page shows.
+   */
+  teaPackets: {
+    all: ['tea-packet-requests'] as const,
+    list: (query: TeaPacketRequestQuery) => ['tea-packet-requests', 'list', query] as const,
+    detail: (id: string) => ['tea-packet-requests', 'detail', id] as const,
+  },
+
   inquiries: {
     all: ['inquiries'] as const,
     list: (query: InquiryQuery) => ['inquiries', 'list', query] as const,
     detail: (id: string) => ['inquiries', 'detail', id] as const,
+  },
+
+  /**
+   * M11's banners, keyed separately from its articles.
+   *
+   * They share the translation machinery and nothing else: an article is a feed entry
+   * and a banner is an interruption with a live window, so a publish on one must not
+   * refetch the other's list. `live` is the office's "what is in front of suppliers
+   * right now" read, and it is separate because it depends on the clock rather than
+   * on any argument the caller passes.
+   */
+  banners: {
+    all: ['banners'] as const,
+    list: (query: BannerQuery) => ['banners', 'list', query] as const,
+    detail: (id: string) => ['banners', 'detail', id] as const,
+    preview: (id: string, lang: string) => ['banners', 'preview', id, lang] as const,
   },
 
   /**

@@ -29,6 +29,7 @@ import {
   payoutTemplateProblems,
   type PayoutExportTemplate,
 } from './payoutExport';
+import { teaPacketPolicyProblems, type TeaPacketPolicy } from './teaPackets';
 
 /**
  * What the office may change. `tenantId` is **not** here, and that is deliberate: it is
@@ -49,6 +50,8 @@ export interface ConfigPatch {
   savings?: { perKgOptions: number[]; withdrawalMonth?: number; annualInterestRate?: number };
   /** The fertilizer catalogue with bag sizes and prices (§21.10). */
   manureProducts?: ManureProduct[];
+  /** What a packet of made tea is and what it costs (`enableTeaPackets`). */
+  teaPackets?: TeaPacketPolicy;
   banks?: Array<{ name: string; branches: string[] }>;
   localization?: {
     defaultLanguage?: LanguageCode;
@@ -67,10 +70,24 @@ export interface ConfigPatch {
 export interface ConfigUsage {
   /** Suppliers holding a non-zero savings balance. */
   savingsBalances: number;
-  /** Payout runs that are not `completed`. */
+  /**
+   * Payout runs that are not `completed`.
+   *
+   * v2 keeps the field and drops the flag it guarded: payouts are the factory's own
+   * console now, but the count is still supplied by the same `GET /config/usage` and
+   * removing it from the type would fork the payload. See `MONEY_BEARING_FLAGS`.
+   */
   openPayoutRuns: number;
   /** Outstanding balance per credit facility. */
   outstandingCredit: { advance: number; loan: number; manure: number };
+  /**
+   * LKR of tea packets issued and not yet recovered on a `deductions.tea` line.
+   *
+   * Its own field rather than a fourth key on `outstandingCredit`, because that record is
+   * `CreditFacility`-shaped and tea packets are deliberately not a facility — see
+   * `AdminTeaPacketRequest`.
+   */
+  teaPacketsOutstanding: number;
   /** Delivery rows per collection point name. */
   deliveriesByPoint: Record<string, number>;
   /** Suppliers whose bank details name each bank. */
@@ -93,10 +110,21 @@ export interface ConfigUsage {
  */
 export const MONEY_BEARING_FLAGS: Partial<Record<FeatureFlagName, keyof ConfigUsage | 'credit'>> = {
   enableSavings: 'savingsBalances',
-  enablePayouts: 'openPayoutRuns',
   enableAdvances: 'credit',
   enableLoans: 'credit',
   enableManure: 'credit',
+  /**
+   * Packets issued and not yet recovered. The same argument as the three above: the
+   * supplier has the tea, the factory has not been paid for it, and a flag that hid the
+   * queue would hide the debt with it.
+   */
+  enableTeaPackets: 'teaPacketsOutstanding',
+
+  /* v1, kept for reference. `enablePayouts` no longer exists — M6 is the factory's own
+   * console in v2 — so `openPayoutRuns` above guards nothing here any more:
+   *
+   *   enablePayouts: 'openPayoutRuns',
+   */
 };
 
 export type ConfigImpactSeverity = 'blocks' | 'warns';
@@ -162,12 +190,20 @@ export function configImpact(
     if (money) {
       const count = usage[money] as number;
       if (count > 0) {
+        /**
+         * A key per source, not a default. `count` means a different thing in each — 23
+         * suppliers, LKR 41,200 of tea — and one shared sentence would have to be vague
+         * enough to cover both, which is the opposite of what this message is for.
+         */
+        const messageKey =
+          money === 'savingsBalances'
+            ? 'config.impact.savingsHeld'
+            : money === 'teaPacketsOutstanding'
+              ? 'config.impact.teaPacketsOutstanding'
+              : 'config.impact.payoutRunsOpen';
         out.push({
           severity: 'blocks',
-          messageKey:
-            money === 'savingsBalances'
-              ? 'config.impact.savingsHeld'
-              : 'config.impact.payoutRunsOpen',
+          messageKey,
           params: { count },
           field: `flags.${name}`,
         });
@@ -289,6 +325,24 @@ export function configImpact(
         messageKey: 'config.impact.payoutTemplateBankColumns',
         params: { count: bankColumns.length },
         field: 'payouts.export',
+      });
+    }
+  }
+
+  /* ── The tea-packet policy ────────────────────────────────────────────── */
+  if (patch.teaPackets) {
+    /**
+     * All three problems block, and the reason is the same as the payout template's: the
+     * output is a figure on a supplier's account. A zero pack size or a negative price
+     * does not fail visibly — it prices every request in the queue at something wrong,
+     * and the person who finds out is holding a slip with it deducted.
+     */
+    for (const problem of teaPacketPolicyProblems(patch.teaPackets)) {
+      out.push({
+        severity: 'blocks',
+        messageKey: `config.impact.teaPacketPolicy.${problem}`,
+        params: {},
+        field: 'teaPackets',
       });
     }
   }

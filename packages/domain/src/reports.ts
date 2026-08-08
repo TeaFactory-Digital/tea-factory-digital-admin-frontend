@@ -24,10 +24,24 @@
 
 /** The four reports this codebase can define without guessing. */
 export const REPORT_IDS = [
-  'monthSummary',
-  'leafByCollectionPoint',
-  'dormantSuppliers',
   'channelShift',
+  /* ──────────────────────────────────────────────────────────────────────────────
+   * v1's three factory-operations reports.
+   *
+   * Commented out rather than deleted: their definitions were the whole argument for
+   * this module's shortness — each was a report whose definition *already existed in
+   * this codebase*, and that constraint is worth keeping legible for whoever builds
+   * the factory's own reporting.
+   *
+   * What is left is `channelShift`, and it is left because §19.3 calls app adoption and
+   * channel shift **"the two KPIs that justify the project"** — the one report an
+   * app-management console owes anybody, and the one nothing else in the factory can
+   * answer.
+   *
+   *   'monthSummary',
+   *   'leafByCollectionPoint',
+   *   'dormantSuppliers',
+   * ────────────────────────────────────────────────────────────────────────────── */
 ] as const;
 
 export type ReportId = (typeof REPORT_IDS)[number];
@@ -49,26 +63,21 @@ export interface ReportDefinition {
 }
 
 export const REPORT_DEFINITIONS: Record<ReportId, ReportDefinition> = {
-  monthSummary: {
-    id: 'monthSummary',
-    params: ['month'],
-    definedBy: "M4's rate and M5's bill run",
-  },
-  leafByCollectionPoint: {
-    id: 'leafByCollectionPoint',
-    params: ['month'],
-    definedBy: "M3's delivery rows",
-  },
-  dormantSuppliers: {
-    id: 'dormantSuppliers',
-    params: ['dormantMonths'],
-    definedBy: '§19.2, via SupplierQuery.dormantMonths',
-  },
   channelShift: {
     id: 'channelShift',
     params: ['monthRange'],
     definedBy: '§19.3 — app adoption and channel shift',
   },
+
+  /* v1's three, with their citations, kept beside the ids above:
+   *
+   *   monthSummary: { id: 'monthSummary', params: ['month'],
+   *     definedBy: "M4's rate and M5's bill run" },
+   *   leafByCollectionPoint: { id: 'leafByCollectionPoint', params: ['month'],
+   *     definedBy: "M3's delivery rows" },
+   *   dormantSuppliers: { id: 'dormantSuppliers', params: ['dormantMonths'],
+   *     definedBy: '§19.2, via SupplierQuery.dormantMonths' },
+   */
 };
 
 /**

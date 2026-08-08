@@ -20,13 +20,18 @@
 import type {
   DeductionRates,
   RepaymentPlan,
+  RequestChannel,
   AdminBill,
   AdminChangeRequest,
   AdminCreditRequest,
   AdminInquiry,
   AdminSavingsLedgerEntry,
   AdminSupplier,
+  AdminTeaPacketRequest,
   AuditEntry,
+  BannerAction,
+  BannerTranslation,
+  BannerTranslations,
   BillRun,
   CapabilityGrants,
   CollectionDaySummary,
@@ -61,6 +66,7 @@ import type {
 } from '@tfd/domain';
 import {
   DEFAULT_DEDUCTION_RATES,
+  DEFAULT_TEA_PACKET_POLICY,
   creditInstalment,
   EDITORIAL_FALLBACK_LANGUAGE,
   NOTIFICATION_CATEGORIES,
@@ -74,7 +80,10 @@ import {
   computeBillAmounts,
   grantsFromRoles,
   isOutlierKg,
+  isWritten,
   maskAccountNumber,
+  missingTranslations,
+  bannerWindowState,
   monthKeyOf,
   round2,
   roundKg,
@@ -82,6 +91,7 @@ import {
   slugify,
   slipMonthLabel,
   summariseKgs,
+  teaPacketAmount,
 } from '@tfd/domain';
 
 /* ───────────────────────── deterministic randomness ───────────────────────── */
@@ -106,6 +116,8 @@ const intBetween = (min: number, max: number) => Math.floor(between(min, max + 1
 const NOW = new Date();
 const hoursAgo = (hours: number) => new Date(NOW.getTime() - hours * 3_600_000).toISOString();
 const daysAgo = (days: number) => hoursAgo(days * 24);
+/** Forward, for a banner scheduled ahead of its window — a state only the office sees. */
+const daysAhead = (days: number) => hoursAgo(-days * 24);
 
 /* ──────────────────────────────── names ──────────────────────────────── */
 
@@ -274,6 +286,18 @@ function makeSupplier(index: number): AdminSupplier {
   const status = index % 17 === 0 ? 'suspended' : index % 41 === 0 ? 'closed' : 'active';
   const dormant = index % 13 === 0;
 
+  /**
+   * Who has the app, matching `mockDevicesBySupplier` exactly.
+   *
+   * The same `index % 5 === 0` rule, and it has to stay the same rule: the dashboard
+   * counts adoption from the device registry and the registry grid reads `hasApp`, so
+   * two different predicates would put a percentage on one screen that the list on the
+   * next screen disagrees with — which is the failure the queue-count comment in
+   * `buildDashboard` is about, in a different module.
+   */
+  const hasApp = status !== 'closed' && index % 5 !== 0;
+  const deviceCount = hasApp ? (index % 23 === 0 ? 2 : 1) : 0;
+
   return {
     id: `sup-${index}`,
     supplierCode: code,
@@ -321,6 +345,11 @@ function makeSupplier(index: number): AdminSupplier {
     lastDeliveryAt: dormant || status === 'closed' ? daysAgo(intBetween(95, 400)) : daysAgo(intBetween(0, 4)),
     pendingRequests: 0, // recomputed below, once the queues exist
     dateOfBirth: `19${intBetween(55, 95)}-${String(intBetween(1, 12)).padStart(2, '0')}-${String(intBetween(1, 28)).padStart(2, '0')}`,
+    hasApp,
+    deviceCount,
+    // Spread over the last few weeks so "who has gone quiet" is a question the fixture
+    // can actually be asked; `null` for anybody who never signed in.
+    lastAppSignInAt: hasApp ? hoursAgo(intBetween(1, 900)) : null,
   };
 }
 
@@ -346,6 +375,8 @@ export function toListItem(supplier: AdminSupplier): SupplierListItem {
     hasBankDetails: supplier.hasBankDetails,
     lastDeliveryAt: supplier.lastDeliveryAt,
     pendingRequests: supplier.pendingRequests,
+    hasApp: supplier.hasApp,
+    lastAppSignInAt: supplier.lastAppSignInAt,
   };
 }
 
@@ -979,10 +1010,27 @@ export function buildDashboard(
   deliveries: Delivery[],
   creditRequests: AdminCreditRequest[],
   inquiries: AdminInquiry[],
+  /**
+   * v2's collections, passed in rather than read off the module.
+   *
+   * The four above were already parameters and these follow the same rule for the same
+   * reason: this function is called with **live state**, not with the fixtures, so
+   * reaching for `mockBanners` here would compute a dashboard from the seed while every
+   * other screen showed the mutated copy — a disagreement visible on one screen.
+   */
+  v2: {
+    teaPacketRequests: AdminTeaPacketRequest[];
+    news: NewsRecord[];
+    banners: BannerRecord[];
+    staticPages: StaticPageRecord[];
+    devicesBySupplier: Record<string, RegisteredDevice[]>;
+    contentLanguages: readonly LanguageCode[];
+  },
 ): DashboardSummary {
   const pending = changeRequests.filter((r) => r.status === 'pending');
   const pendingCredit = creditRequests.filter((r) => r.status === 'pending');
   const openInquiries = inquiries.filter((i) => i.status === 'open');
+  const pendingTeaPackets = v2.teaPacketRequests.filter((r) => r.status === 'pending');
 
   // Oldest first — charts read left to right (§4 of the contract).
   const intakeTrend = Array.from({ length: COLLECTION_DAYS }, (_, i) => {
@@ -1006,11 +1054,94 @@ export function buildDashboard(
     queueCountFor('advanceRequests', pendingCredit.filter((r) => r.facility === 'advance')),
     queueCountFor('loanRequests', pendingCredit.filter((r) => r.facility === 'loan')),
     queueCountFor('manureRequests', pendingCredit.filter((r) => r.facility === 'manure')),
+    queueCountFor('teaPacketRequests', pendingTeaPackets),
     queueCountFor('inquiries', openInquiries),
   ];
 
+  /* ── v2's lead figures ─────────────────────────────────────────────────── */
+
+  const activeSuppliers = mockSuppliers.filter((one) => one.status !== 'closed');
+  const suppliersWithApp = Object.entries(v2.devicesBySupplier).filter(
+    ([, devices]) => devices.length > 0,
+  ).length;
+  const devicesRegistered = Object.values(v2.devicesBySupplier).reduce(
+    (sum, devices) => sum + devices.length,
+    0,
+  );
+
+  /**
+   * The channel split, over every request the app can raise.
+   *
+   * All four kinds together rather than per module, because §19.3's KPI is about the
+   * *supplier's* habit — somebody who asks for an advance in the app and walks in about
+   * their bank details has half adopted it. `null` rather than `0` when nothing was
+   * raised at all (BR-102).
+   */
+  const shareOf = (rows: Array<{ channel: RequestChannel; createdAt: string }>, monthKey: string) => {
+    const inMonth = rows.filter((row) => row.createdAt.slice(0, 7) === monthKey);
+    if (inMonth.length === 0) return null;
+    return round2(inMonth.filter((row) => row.channel === 'app').length / inMonth.length);
+  };
+
+  const allRequests = [
+    ...changeRequests.map((r) => ({ channel: r.channel, createdAt: r.createdAt })),
+    ...creditRequests.map((r) => ({ channel: r.channel, createdAt: r.createdAt })),
+    ...v2.teaPacketRequests.map((r) => ({ channel: r.channel, createdAt: r.createdAt })),
+    ...inquiries.map((r) => ({ channel: r.channel, createdAt: r.createdAt })),
+  ];
+
+  const nowIso = NOW.toISOString();
+
+  /**
+   * Content that is quietly wrong.
+   *
+   * Only **published** records count. A draft with no Sinhala is unfinished work, not a
+   * supplier reading the wrong language, and counting it here would fill the card with
+   * rows nobody needs to act on — which is how an office learns to ignore the card.
+   */
+  const articlesWithGaps = v2.news.filter(
+    (record) =>
+      record.status === 'published' &&
+      missingTranslations(record.translations, v2.contentLanguages).some(
+        (lang) => lang !== EDITORIAL_FALLBACK_LANGUAGE,
+      ),
+  ).length;
+
+  const publishedBanners = v2.banners.filter((one) => one.status === 'published');
+
   return {
     queues,
+
+    app: {
+      suppliersWithApp,
+      totalSuppliers: activeSuppliers.length,
+      devicesRegistered,
+      appRequestShare: shareOf(allRequests, currentMonthKey),
+    },
+
+    content: {
+      articlesWithGaps,
+      bannersLive: publishedBanners.filter((one) => bannerWindowState(one, nowIso) === 'live')
+        .length,
+      /**
+       * Published and finished. Its own figure rather than folded into "not live", because
+       * it is the state that catches an office out: every badge says published, and no
+       * supplier has seen it for a fortnight.
+       */
+      bannersExpired: publishedBanners.filter(
+        (one) => bannerWindowState(one, nowIso) === 'expired',
+      ).length,
+      staticPagesUnwritten: v2.staticPages.filter(
+        (page) => !isWritten(page.translations[EDITORIAL_FALLBACK_LANGUAGE]),
+      ).length,
+    },
+
+    // Twelve months, oldest first. A month with no requests carries `null` rather than a
+    // zero, so the line breaks rather than dropping to the floor.
+    adoptionTrend: Array.from({ length: 12 }, (_, i) => {
+      const monthKey = monthKeyBack(11 - i);
+      return { monthKey, appShare: shareOf(allRequests, monthKey) };
+    }),
     cycle: {
       monthKey: currentMonthKey,
       /**
@@ -1097,17 +1228,23 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
       legalFooter:
         'Issued under the Tea Control Act No. 51 of 1957. Retain this account for your records.',
     },
+    // The full-feature reference: every flag on, so a screen that is hidden here is
+    // hidden by a bug rather than by configuration.
     flags: {
       enableSavings: true,
       enableAdvances: true,
       enableLoans: true,
       enableManure: true,
+      enableTeaPackets: true,
       enableInquiry: true,
       enableNews: true,
       enablePushNotifications: true,
       enablePromoBanner: true,
-      enablePayouts: true,
-      enableReports: true,
+      enableOnboarding: true,
+      enableBiometricLogin: true,
+      enableDarkModeToggle: true,
+      enableProfileTab: true,
+      enableAutoLock: true,
     },
     savings: { perKgOptions: [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50] },
     // §21.10: the same list M7's requests are drawn from, so the catalogue and the queue
@@ -1149,12 +1286,16 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
       enableAdvances: true,
       enableLoans: true,
       enableManure: true,
+      enableTeaPackets: true,
       enableInquiry: true,
       enableNews: true,
       enablePushNotifications: true,
       enablePromoBanner: false,
-      enablePayouts: true,
-      enableReports: true,
+      enableOnboarding: true,
+      enableBiometricLogin: true,
+      enableDarkModeToggle: false,
+      enableProfileTab: true,
+      enableAutoLock: true,
     },
     savings: { perKgOptions: [0, 10, 20, 30, 40] },
     manureProducts: MANURE_PRODUCTS.map((one) => ({ ...one })),
@@ -1202,12 +1343,21 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
       enableAdvances: true,
       enableLoans: false,
       enableManure: false,
+      // The reduced-feature reference gains a fifth empty row in v2: no tea packets, so
+      // switching to `highland` in the dev switcher should visibly drop M18 out of the
+      // sidebar. That is still the fastest way to check nothing is hardcoded.
+      enableTeaPackets: false,
       enableInquiry: true,
       enableNews: false,
       enablePushNotifications: false,
       enablePromoBanner: false,
-      enablePayouts: false,
-      enableReports: false,
+      // App-only, and deliberately not all-off: a tenant with every app flag false would
+      // be a phone with almost no screens, which tests nothing anybody ships.
+      enableOnboarding: false,
+      enableBiometricLogin: false,
+      enableDarkModeToggle: false,
+      enableProfileTab: true,
+      enableAutoLock: true,
     },
     savings: { perKgOptions: [0, 15, 30] },
     banks: BANKS.slice(0, 2).map((b) => ({ name: b.name, branches: [...b.branches] })),
@@ -2277,6 +2427,151 @@ function seedCreditRequests(): AdminCreditRequest[] {
 
 export const mockCreditRequests: AdminCreditRequest[] = seedCreditRequests();
 
+/* ────────────────────── M18 Tea packet requests ────────────────────── */
+
+/**
+ * The queue v1 had no fixture for, because it had no module.
+ *
+ * Six rows, chosen so every state the screen renders has something in it: a pending
+ * request over the per-request cap (the one the clerk has to reject with a useful
+ * sentence), one raised at the counter by a clerk so BR-501 has something to withhold,
+ * an approved-and-recovered row and an approved-and-outstanding one — the second is what
+ * `teaPacketsOutstanding` counts and therefore what blocks turning the flag off.
+ */
+function seedTeaPacketRequests(): AdminTeaPacketRequest[] {
+  const policy = DEFAULT_TEA_PACKET_POLICY;
+  const priced = (packets: number) => ({
+    packets,
+    unitPrice: policy.pricePerPacket,
+    amount: teaPacketAmount(policy, packets),
+  });
+
+  const supplierAt = (index: number) => {
+    const supplier = mockSuppliers[index]!;
+    return {
+      supplierId: supplier.id,
+      supplierCode: supplier.supplierCode,
+      supplierName: supplier.name,
+    };
+  };
+
+  return [
+    {
+      id: 'tea-1',
+      ...supplierAt(2),
+      ...priced(4),
+      deliveryMethod: 'transportVehicle',
+      notes: 'Send with the Makadura vehicle on Friday.',
+      status: 'pending',
+      createdAt: daysAgo(1),
+      channel: 'app',
+      createdById: null,
+      createdByName: null,
+      decision: null,
+      recoveredOnMonthKey: null,
+      ageHours: 26,
+    },
+    {
+      id: 'tea-2',
+      ...supplierAt(7),
+      ...priced(2),
+      deliveryMethod: 'factoryCollection',
+      notes: null,
+      status: 'pending',
+      createdAt: daysAgo(4),
+      channel: 'app',
+      createdById: null,
+      createdByName: null,
+      decision: null,
+      recoveredOnMonthKey: null,
+      // Past the three-day target, so the queue has a red age badge to render.
+      ageHours: 97,
+    },
+    {
+      /** Over `maxPacketsPerRequest`. The row the decision dialog exists for. */
+      id: 'tea-3',
+      ...supplierAt(11),
+      ...priced(24),
+      deliveryMethod: 'factoryCollection',
+      notes: 'For my daughter\'s wedding.',
+      status: 'pending',
+      createdAt: daysAgo(2),
+      channel: 'app',
+      createdById: null,
+      createdByName: null,
+      decision: null,
+      recoveredOnMonthKey: null,
+      ageHours: 51,
+    },
+    {
+      /** Raised at the counter, so BR-501 has a row to withhold the button on. */
+      id: 'tea-4',
+      ...supplierAt(15),
+      ...priced(3),
+      deliveryMethod: 'factoryCollection',
+      notes: 'Walked in; no telephone on file.',
+      status: 'pending',
+      createdAt: daysAgo(1),
+      channel: 'office',
+      createdById: 'usr-clerk-1',
+      createdByName: 'Nadeesha Perera',
+      decision: null,
+      recoveredOnMonthKey: null,
+      ageHours: 20,
+    },
+    {
+      /** Approved and already off an account — no longer outstanding. */
+      id: 'tea-5',
+      ...supplierAt(4),
+      ...priced(5),
+      deliveryMethod: 'transportVehicle',
+      notes: null,
+      status: 'approved',
+      createdAt: daysAgo(46),
+      channel: 'app',
+      createdById: null,
+      createdByName: null,
+      decision: {
+        note: 'Issued from the store on the 12th, collected by the Deniyaya vehicle.',
+        decidedById: 'usr-manager-1',
+        decidedByName: 'Ruwan Jayasuriya',
+        decidedAt: daysAgo(45),
+      },
+      recoveredOnMonthKey: monthKeyBack(1),
+      ageHours: 1104,
+    },
+    {
+      /**
+       * Approved and **not** yet recovered.
+       *
+       * This single row is what makes `enableTeaPackets` refusable in M14: the factory
+       * has handed over the tea and has not been paid for it, so turning the queue off
+       * would hide a debt. Without it the block would be untestable.
+       */
+      id: 'tea-6',
+      ...supplierAt(9),
+      ...priced(6),
+      deliveryMethod: 'factoryCollection',
+      notes: null,
+      status: 'approved',
+      createdAt: daysAgo(8),
+      channel: 'app',
+      createdById: null,
+      createdByName: null,
+      decision: {
+        note: 'Collected from the store on the 3rd.',
+        decidedById: 'usr-manager-1',
+        decidedByName: 'Ruwan Jayasuriya',
+        decidedAt: daysAgo(7),
+      },
+      recoveredOnMonthKey: null,
+      ageHours: 192,
+    },
+  ];
+}
+
+export const mockTeaPacketRequests: AdminTeaPacketRequest[] = seedTeaPacketRequests();
+
 /**
  * A pending credit request counts towards the supplier's open requests too.
  *
@@ -2605,6 +2900,153 @@ function seedNews(): NewsRecord[] {
 }
 
 export const mockNews: NewsRecord[] = seedNews();
+
+/* ────────────────────────── M11 Promo banners ────────────────────────── */
+
+export interface BannerRecord {
+  id: string;
+  translations: BannerTranslations;
+  imageUrl?: string;
+  imageAspectRatio?: number;
+  action: BannerAction;
+  startsAt: string;
+  endsAt: string | null;
+  status: ContentStatus;
+  publishedAt: string | null;
+  publishedByName: string | null;
+  createdAt: string;
+  createdByName: string;
+}
+
+function bannerCopy(
+  lang: LanguageCode,
+  title: string,
+  /** `undefined` here means "headline only" and is stored as `''` — see `BannerTranslation`. */
+  body: string | undefined,
+  buttonLabel: string,
+  hoursAgoUpdated: number,
+): BannerTranslation {
+  return {
+    lang,
+    title,
+    body: body ?? '',
+    buttonLabel,
+    updatedAt: hoursAgo(hoursAgoUpdated),
+    updatedByName: 'Tharindu Silva',
+  };
+}
+
+/**
+ * Four banners, and the three that are **not** live are the point.
+ *
+ * The mobile repo's fixture keeps one live and one expired on purpose — "it is what
+ * proves the live window is honoured rather than every row in the table being shown"
+ * (`banners.md`). The console needs two more states that the app never sees, because they
+ * are states only the office can be in: a **draft** nobody has published, and a
+ * **scheduled** banner published in advance of its window. The second is the one that
+ * catches an office out — published, correct, and in front of nobody — and it is why the
+ * editor screen leads with a window notice rather than a status badge.
+ *
+ * **No `imageUrl` anywhere**, for the same reason the app's fixture has none: there is no
+ * bundled artwork in this repository, and pointing a demo at a third-party image host
+ * makes the feature look broken the moment the machine is offline.
+ */
+const BANNER_SEED: BannerRecord[] = [
+  {
+    id: 'ban-1',
+    translations: {
+      en: bannerCopy(
+        'en',
+        'Fertilizer issue — August',
+        'Urea and TSP are in the store. Apply through the app and collect from the office.',
+        'Request manure',
+        30,
+      ),
+      si: bannerCopy(
+        'si',
+        'පොහොර නිකුත් කිරීම — අගෝස්තු',
+        'යූරියා සහ TSP ගබඩාවේ ඇත. යෙදුම හරහා ඉල්ලුම් කර කාර්යාලයෙන් ලබා ගන්න.',
+        'පොහොර ඉල්ලන්න',
+        28,
+      ),
+      // Tamil deliberately absent: this is the live banner AC-08's fallback rule is
+      // demonstrated on, so a Tamil supplier is reading the English right now.
+    },
+    action: { type: 'screen', path: 'manure' },
+    startsAt: daysAgo(3),
+    endsAt: daysAhead(11),
+    status: 'published',
+    publishedAt: daysAgo(3),
+    publishedByName: 'Ruwan Jayasuriya',
+    createdAt: daysAgo(4),
+    createdByName: 'Tharindu Silva',
+  },
+  {
+    /** Published, and its window closed on Tuesday. Kept, because it is how the next
+     *  one gets written — and because a list that hid it would look like it never ran. */
+    id: 'ban-2',
+    translations: {
+      en: bannerCopy('en', 'July account is ready', undefined, 'View my account', 800),
+      si: bannerCopy('si', 'ජූලි ගිණුම සූදානම්', undefined, 'ගිණුම බලන්න', 800),
+      ta: bannerCopy('ta', 'ஜூலை கணக்கு தயார்', undefined, 'கணக்கைப் பார்க்க', 798),
+    },
+    action: { type: 'screen', path: 'home' },
+    startsAt: daysAgo(30),
+    endsAt: daysAgo(9),
+    status: 'published',
+    publishedAt: daysAgo(30),
+    publishedByName: 'Ruwan Jayasuriya',
+    createdAt: daysAgo(31),
+    createdByName: 'Tharindu Silva',
+  },
+  {
+    /**
+     * Published **before** its window. The state the editor screen's notice exists for:
+     * every badge says "published" and no supplier can see it for another five days.
+     */
+    id: 'ban-3',
+    translations: {
+      en: bannerCopy(
+        'en',
+        'Factory closed for Poya',
+        'The weighing points will not open on the 12th.',
+        'Call the office',
+        20,
+      ),
+    },
+    action: { type: 'url', url: 'tel:+94812234567' },
+    startsAt: daysAhead(5),
+    endsAt: daysAhead(7),
+    status: 'published',
+    publishedAt: hoursAgo(20),
+    publishedByName: 'Ruwan Jayasuriya',
+    createdAt: hoursAgo(22),
+    createdByName: 'Tharindu Silva',
+  },
+  {
+    /** A draft with English only — where a banner starts, and what the editor opens. */
+    id: 'ban-4',
+    translations: {
+      en: bannerCopy(
+        'en',
+        'Savings withdrawals open in April',
+        'Ask at the office before the 20th to be paid on the April account.',
+        'About the scheme',
+        6,
+      ),
+    },
+    action: { type: 'screen', path: 'savings' },
+    startsAt: daysAhead(30),
+    endsAt: null,
+    status: 'draft',
+    publishedAt: null,
+    publishedByName: null,
+    createdAt: hoursAgo(6),
+    createdByName: 'Tharindu Silva',
+  },
+];
+
+export const mockBanners: BannerRecord[] = BANNER_SEED;
 
 /**
  * The six fixed pages, in three states.

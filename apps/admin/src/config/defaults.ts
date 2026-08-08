@@ -48,12 +48,28 @@ export const bundledConfig: RuntimeConfig = {
     enableAdvances: true,
     enableLoans: true,
     enableManure: true,
+    enableTeaPackets: true,
     enableInquiry: true,
     enableNews: true,
     enablePushNotifications: true,
     enablePromoBanner: true,
-    enablePayouts: true,
-    enableReports: true,
+
+    /**
+     * The app-only flags. On for the same reason as the rest, and with **less** at
+     * stake: nothing in this console renders behind them, so a wrong default here
+     * shows the office a switch in the wrong position for one paint rather than
+     * hiding a queue. M14 reads the served value the moment it arrives.
+     */
+    enableOnboarding: true,
+    enableBiometricLogin: true,
+    enableDarkModeToggle: true,
+    enableProfileTab: true,
+    enableAutoLock: true,
+
+    /* v1 console-only flags, gone with M6 and M16's gate:
+     *   enablePayouts: true,
+     *   enableReports: true,
+     */
   },
 
   savings: { perKgOptions: [] },

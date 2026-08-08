@@ -241,6 +241,12 @@ export const QUEUE_SLA_HOURS = {
   advanceRequests: 24,
   loanRequests: 120,
   manureRequests: 72,
+  /**
+   * Tea packets sit with manure at three days, and for the same reason: it is stock
+   * leaving a store rather than money leaving an account. The supplier is waiting on a
+   * storekeeper to have it ready, not on a decision about their creditworthiness.
+   */
+  teaPacketRequests: 72,
   inquiries: 24,
 } as const;
 

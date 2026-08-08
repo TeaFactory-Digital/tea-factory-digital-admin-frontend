@@ -26,15 +26,21 @@ import type {
   AdminChangeRequest,
   AdminCreditRequest,
   AdminInquiry,
+  AdminPromoBanner,
   AdminSavingsLedgerEntry,
   AdminSupplier,
+  AdminTeaPacketRequest,
   AuditEntry,
+  BannerAction,
+  BannerListItem,
+  BannerTranslations,
   BillListItem,
   BillRun,
   Capability,
   ConfigPatch,
   ConfigUsage,
   ContentPreview,
+  ContentStatus,
   ContentTranslation,
   ContentTranslations,
   ConsoleRole,
@@ -79,6 +85,8 @@ import {
   MAX_DELIVERY_BATCH_ROWS,
   MAX_DELIVERY_KG,
   STATIC_PAGE_SLUGS,
+  bannerActionProblem,
+  bannerWindowState,
   can,
   deductionsBalance,
   isExactKg,
@@ -94,6 +102,9 @@ import {
   type DeductionRates,
   DEFAULT_PAYOUT_EXPORT,
   DEFAULT_SAVINGS_POLICY,
+  DEFAULT_TEA_PACKET_POLICY,
+  teaPacketAmount,
+  teaPacketRequestProblems,
   availableToWithdraw,
   colomboMonthKey,
   isWithdrawalWindowOpen,
@@ -114,7 +125,10 @@ import {
   grantsFromRoles,
   isRecognizedCategory,
   isReportId,
+  isBannerWritten,
   isSelfApproval,
+  missingBannerTranslations,
+  staleBannerTranslations,
   partitionDevices,
   matrixKeepsRecovery,
   missingReportParams,
@@ -141,6 +155,7 @@ import {
   eligibilityFor,
   generateBills,
   mockAudit,
+  mockBanners,
   mockBillRuns,
   mockBills,
   mockChangeRequests,
@@ -161,11 +176,13 @@ import {
   mockFullAccountNumbers,
   mockStaticPages,
   mockSuppliers,
+  mockTeaPacketRequests,
   mockUsers,
   summariseBillRun,
   summariseDay,
   summarisePayoutRun,
   toListItem,
+  type BannerRecord,
   type BillRunRecord,
   type MockUser,
   type MonthRecord,
@@ -283,6 +300,14 @@ const state = {
   notificationSends: mockNotificationSends.map((send) => ({ ...send })),
   news: mockNews.map(cloneNews),
   staticPages: mockStaticPages.map(cloneStaticPage),
+  /**
+   * M11's banners, deep-copied down to the translations map for the same reason the
+   * news records are: a shallow spread shares `translations` with the fixture, so saving
+   * one language mutates the seed and `resetMockState()` hands the mutated object back.
+   */
+  banners: mockBanners.map(cloneBanner),
+  /** M18's queue. */
+  teaPacketRequests: mockTeaPacketRequests.map((request) => ({ ...request })),
   sequence: 1000,
 };
 
@@ -322,160 +347,169 @@ function runReport(
   params: { monthKey?: string; from?: string; to?: string; dormantMonths?: number },
 ): Pick<ReportResult, 'id' | 'columns' | 'rows' | 'totals'> {
   switch (id) {
-    /**
-     * The month's own figures, in the order the office asks for them: how much leaf, at what
-     * rate, worth what, of which how much is payable and how much is held as savings.
-     */
-    case 'monthSummary': {
-      const monthKey = params.monthKey!;
-      const record = state.months[monthKey];
-      const bills = state.bills.filter((bill) => bill.monthKey === monthKey);
-      const rows = state.deliveries.filter((row) => row.monthKey === monthKey && !row.voidedAt);
-      const totals = summariseKgs(rows.map((row) => ({ supplierId: row.supplierId, kgs: row.kgs })));
-
-      return {
-        id,
-        columns: [
-          // `metricKey`, not `text`: the row label is a key under `reports.metric.*`, and
-          // running it through the console as literal prose is how `reports.metric.5091`
-          // happened to a completely different column that was also typed `text`.
-          { key: 'metric', labelKey: 'reports.column.metric', type: 'metricKey' },
-          { key: 'value', labelKey: 'reports.column.value', type: 'text' },
-        ],
-        // A two-column shape, because this report is a set of unrelated figures rather than a
-        // table of like things — one row per metric reads as a summary, and a single wide row
-        // reads as a spreadsheet nobody scrolls.
-        rows: [
-          // `null` rather than the string `'unknown'`: the console already renders a `null`
-          // value as an em dash, and a month record should always exist for a month this
-          // picker offered — inventing a translatable "unknown" state for a case that should
-          // not occur is worse than the em dash.
-          { metric: 'stage', value: record?.stage ?? null },
-          { metric: 'totalKgs', value: totals.totalKgs },
-          { metric: 'supplierCount', value: totals.supplierCount },
-          { metric: 'deliveryCount', value: totals.rowCount },
-          { metric: 'ratePerKg', value: record?.rate?.ratePerKg ?? null },
-          { metric: 'extraRatePerKg', value: record?.rate?.extraRatePerKg ?? null },
-          { metric: 'billCount', value: bills.length },
-          {
-            metric: 'grossTotal',
-            value: round2(bills.reduce((sum, bill) => sum + (bill.grossAmount ?? 0), 0)),
-          },
-          {
-            metric: 'payableTotal',
-            value: round2(bills.reduce((sum, bill) => sum + (bill.finalBalance ?? 0), 0)),
-          },
-          {
-            metric: 'savingsTotal',
-            value: round2(bills.reduce((sum, bill) => sum + bill.deductions.savings, 0)),
-          },
-        ],
-      };
-    }
-
-    /** Where the leaf came from. The one report a weighing supervisor asks for by name. */
-    case 'leafByCollectionPoint': {
-      const monthKey = params.monthKey!;
-      const rows = state.deliveries.filter((row) => row.monthKey === monthKey && !row.voidedAt);
-
-      const byPoint = new Map<string, { kgs: number; suppliers: Set<string>; deliveries: number }>();
-      for (const row of rows) {
-        const entry = byPoint.get(row.collectionPoint) ?? {
-          kgs: 0,
-          suppliers: new Set<string>(),
-          deliveries: 0,
-        };
-        entry.kgs = roundKg(entry.kgs + row.kgs);
-        entry.suppliers.add(row.supplierId);
-        entry.deliveries += 1;
-        byPoint.set(row.collectionPoint, entry);
-      }
-
-      const out = [...byPoint.entries()]
-        .map(([point, entry]) => ({
-          collectionPoint: point,
-          totalKgs: entry.kgs,
-          supplierCount: entry.suppliers.size,
-          deliveryCount: entry.deliveries,
-          // Mean kilos per delivery: the figure that shows one point weighing very
-          // differently from the others, which is what a supervisor is looking for.
-          meanKgs: entry.deliveries === 0 ? 0 : roundKg(entry.kgs / entry.deliveries),
-        }))
-        .sort((a, b) => b.totalKgs - a.totalKgs);
-
-      return {
-        id,
-        columns: [
-          { key: 'collectionPoint', labelKey: 'reports.column.point', type: 'text' },
-          { key: 'totalKgs', labelKey: 'reports.column.kgs', type: 'kg' },
-          { key: 'supplierCount', labelKey: 'reports.column.suppliers', type: 'count' },
-          { key: 'deliveryCount', labelKey: 'reports.column.deliveries', type: 'count' },
-          { key: 'meanKgs', labelKey: 'reports.column.meanKgs', type: 'kg' },
-        ],
-        rows: out,
-        totals: {
-          totalKgs: roundKg(out.reduce((sum, row) => sum + row.totalKgs, 0)),
-          deliveryCount: out.reduce((sum, row) => sum + row.deliveryCount, 0),
-          // Deliberately **no `supplierCount` total**: a supplier who delivers to two points
-          // would be counted twice, and a sum that double-counts people is worse than none.
-        },
-      };
-    }
-
-    /**
-     * Registered and not supplying (§19.2).
+    /* ──────────────────────────────────────────────────────────────────────────
+     * v1's three factory-operations reports.
      *
-     * The report the office uses to decide who to telephone, so it carries the balances too —
-     * a dormant supplier who is owed savings is a different conversation from one who is not.
-     */
-    case 'dormantSuppliers': {
-      const months = params.dormantMonths!;
-      const cutoff = new Date(Date.now() - months * 30 * 86_400_000).toISOString();
+     * Commented out with their ids (`REPORT_IDS`), not deleted: these branches are the
+     * executable definition of what each report *is*, and mocks.md calls the handlers
+     * the specification the server has to satisfy rather than a stand-in for one.
+     * Whoever builds the factory's own reporting needs them.
+     * ────────────────────────────────────────────────────────────────────────── */
+    // /**
+    // * The month's own figures, in the order the office asks for them: how much leaf, at what
+    // * rate, worth what, of which how much is payable and how much is held as savings.
+    // */
+    // case 'monthSummary': {
+    // const monthKey = params.monthKey!;
+    // const record = state.months[monthKey];
+    // const bills = state.bills.filter((bill) => bill.monthKey === monthKey);
+    // const rows = state.deliveries.filter((row) => row.monthKey === monthKey && !row.voidedAt);
+    // const totals = summariseKgs(rows.map((row) => ({ supplierId: row.supplierId, kgs: row.kgs })));
+    //
+    // return {
+    // id,
+    // columns: [
+    // // `metricKey`, not `text`: the row label is a key under `reports.metric.*`, and
+    // // running it through the console as literal prose is how `reports.metric.5091`
+    // // happened to a completely different column that was also typed `text`.
+    // { key: 'metric', labelKey: 'reports.column.metric', type: 'metricKey' },
+    // { key: 'value', labelKey: 'reports.column.value', type: 'text' },
+    // ],
+    // // A two-column shape, because this report is a set of unrelated figures rather than a
+    // // table of like things — one row per metric reads as a summary, and a single wide row
+    // // reads as a spreadsheet nobody scrolls.
+    // rows: [
+    // // `null` rather than the string `'unknown'`: the console already renders a `null`
+    // // value as an em dash, and a month record should always exist for a month this
+    // // picker offered — inventing a translatable "unknown" state for a case that should
+    // // not occur is worse than the em dash.
+    // { metric: 'stage', value: record?.stage ?? null },
+    // { metric: 'totalKgs', value: totals.totalKgs },
+    // { metric: 'supplierCount', value: totals.supplierCount },
+    // { metric: 'deliveryCount', value: totals.rowCount },
+    // { metric: 'ratePerKg', value: record?.rate?.ratePerKg ?? null },
+    // { metric: 'extraRatePerKg', value: record?.rate?.extraRatePerKg ?? null },
+    // { metric: 'billCount', value: bills.length },
+    // {
+    // metric: 'grossTotal',
+    // value: round2(bills.reduce((sum, bill) => sum + (bill.grossAmount ?? 0), 0)),
+    // },
+    // {
+    // metric: 'payableTotal',
+    // value: round2(bills.reduce((sum, bill) => sum + (bill.finalBalance ?? 0), 0)),
+    // },
+    // {
+    // metric: 'savingsTotal',
+    // value: round2(bills.reduce((sum, bill) => sum + bill.deductions.savings, 0)),
+    // },
+    // ],
+    // };
+    // }
+    //
+    // /** Where the leaf came from. The one report a weighing supervisor asks for by name. */
+    // case 'leafByCollectionPoint': {
+    // const monthKey = params.monthKey!;
+    // const rows = state.deliveries.filter((row) => row.monthKey === monthKey && !row.voidedAt);
+    //
+    // const byPoint = new Map<string, { kgs: number; suppliers: Set<string>; deliveries: number }>();
+    // for (const row of rows) {
+    // const entry = byPoint.get(row.collectionPoint) ?? {
+    // kgs: 0,
+    // suppliers: new Set<string>(),
+    // deliveries: 0,
+    // };
+    // entry.kgs = roundKg(entry.kgs + row.kgs);
+    // entry.suppliers.add(row.supplierId);
+    // entry.deliveries += 1;
+    // byPoint.set(row.collectionPoint, entry);
+    // }
+    //
+    // const out = [...byPoint.entries()]
+    // .map(([point, entry]) => ({
+    // collectionPoint: point,
+    // totalKgs: entry.kgs,
+    // supplierCount: entry.suppliers.size,
+    // deliveryCount: entry.deliveries,
+    // // Mean kilos per delivery: the figure that shows one point weighing very
+    // // differently from the others, which is what a supervisor is looking for.
+    // meanKgs: entry.deliveries === 0 ? 0 : roundKg(entry.kgs / entry.deliveries),
+    // }))
+    // .sort((a, b) => b.totalKgs - a.totalKgs);
+    //
+    // return {
+    // id,
+    // columns: [
+    // { key: 'collectionPoint', labelKey: 'reports.column.point', type: 'text' },
+    // { key: 'totalKgs', labelKey: 'reports.column.kgs', type: 'kg' },
+    // { key: 'supplierCount', labelKey: 'reports.column.suppliers', type: 'count' },
+    // { key: 'deliveryCount', labelKey: 'reports.column.deliveries', type: 'count' },
+    // { key: 'meanKgs', labelKey: 'reports.column.meanKgs', type: 'kg' },
+    // ],
+    // rows: out,
+    // totals: {
+    // totalKgs: roundKg(out.reduce((sum, row) => sum + row.totalKgs, 0)),
+    // deliveryCount: out.reduce((sum, row) => sum + row.deliveryCount, 0),
+    // // Deliberately **no `supplierCount` total**: a supplier who delivers to two points
+    // // would be counted twice, and a sum that double-counts people is worse than none.
+    // },
+    // };
+    // }
+    //
+    // /**
+    // * Registered and not supplying (§19.2).
+    // *
+    // * The report the office uses to decide who to telephone, so it carries the balances too —
+    // * a dormant supplier who is owed savings is a different conversation from one who is not.
+    // */
+    // case 'dormantSuppliers': {
+    // const months = params.dormantMonths!;
+    // const cutoff = new Date(Date.now() - months * 30 * 86_400_000).toISOString();
+    //
+    // const out = state.suppliers
+    // .filter((supplier) => supplier.status !== 'closed')
+    // .filter((supplier) => !supplier.lastDeliveryAt || supplier.lastDeliveryAt < cutoff)
+    // .map((supplier) => ({
+    // supplierCode: supplier.supplierCode,
+    // name: supplier.name,
+    // collectionPoint: supplier.collectionPoint,
+    // // `null` is a real value here, and the one that matters most: a supplier who has
+    // // *never* delivered is a registration that never became a supply relationship.
+    // lastDeliveryAt: supplier.lastDeliveryAt,
+    // savingsBalance: supplier.savingsBalance,
+    // creditOutstanding: round2(
+    // supplier.creditBalances.advance +
+    // supplier.creditBalances.loan +
+    // supplier.creditBalances.manure,
+    // ),
+    // }))
+    // .sort((a, b) => (a.lastDeliveryAt ?? '').localeCompare(b.lastDeliveryAt ?? ''));
+    //
+    // return {
+    // id,
+    // columns: [
+    // { key: 'supplierCode', labelKey: 'reports.column.code', type: 'text' },
+    // { key: 'name', labelKey: 'reports.column.name', type: 'text' },
+    // { key: 'collectionPoint', labelKey: 'reports.column.point', type: 'text' },
+    // { key: 'lastDeliveryAt', labelKey: 'reports.column.lastDelivery', type: 'date' },
+    // { key: 'savingsBalance', labelKey: 'reports.column.savings', type: 'money' },
+    // { key: 'creditOutstanding', labelKey: 'reports.column.credit', type: 'money' },
+    // ],
+    // rows: out,
+    // totals: {
+    // savingsBalance: round2(out.reduce((sum, row) => sum + row.savingsBalance, 0)),
+    // creditOutstanding: round2(out.reduce((sum, row) => sum + row.creditOutstanding, 0)),
+    // },
+    // };
+    // }
+    //
+    // /**
+    // * App adoption and channel shift — *"the two KPIs that justify the project"* (§19.3).
+    // *
+    // * Measured as the share of requests that arrived from the app rather than being keyed in
+    // * by the office, which is only measurable because every request carries `channel`. That
+    // * column exists for this report and nothing else.
+    // */
 
-      const out = state.suppliers
-        .filter((supplier) => supplier.status !== 'closed')
-        .filter((supplier) => !supplier.lastDeliveryAt || supplier.lastDeliveryAt < cutoff)
-        .map((supplier) => ({
-          supplierCode: supplier.supplierCode,
-          name: supplier.name,
-          collectionPoint: supplier.collectionPoint,
-          // `null` is a real value here, and the one that matters most: a supplier who has
-          // *never* delivered is a registration that never became a supply relationship.
-          lastDeliveryAt: supplier.lastDeliveryAt,
-          savingsBalance: supplier.savingsBalance,
-          creditOutstanding: round2(
-            supplier.creditBalances.advance +
-              supplier.creditBalances.loan +
-              supplier.creditBalances.manure,
-          ),
-        }))
-        .sort((a, b) => (a.lastDeliveryAt ?? '').localeCompare(b.lastDeliveryAt ?? ''));
-
-      return {
-        id,
-        columns: [
-          { key: 'supplierCode', labelKey: 'reports.column.code', type: 'text' },
-          { key: 'name', labelKey: 'reports.column.name', type: 'text' },
-          { key: 'collectionPoint', labelKey: 'reports.column.point', type: 'text' },
-          { key: 'lastDeliveryAt', labelKey: 'reports.column.lastDelivery', type: 'date' },
-          { key: 'savingsBalance', labelKey: 'reports.column.savings', type: 'money' },
-          { key: 'creditOutstanding', labelKey: 'reports.column.credit', type: 'money' },
-        ],
-        rows: out,
-        totals: {
-          savingsBalance: round2(out.reduce((sum, row) => sum + row.savingsBalance, 0)),
-          creditOutstanding: round2(out.reduce((sum, row) => sum + row.creditOutstanding, 0)),
-        },
-      };
-    }
-
-    /**
-     * App adoption and channel shift — *"the two KPIs that justify the project"* (§19.3).
-     *
-     * Measured as the share of requests that arrived from the app rather than being keyed in
-     * by the office, which is only measurable because every request carries `channel`. That
-     * column exists for this report and nothing else.
-     */
     case 'channelShift': {
       const { from, to } = params;
       const inWindow = (createdAt: string) => {
@@ -631,6 +665,19 @@ function configUsage(): ConfigUsage {
       loan: round2(state.suppliers.reduce((sum, s) => sum + s.creditBalances.loan, 0)),
       manure: round2(state.suppliers.reduce((sum, s) => sum + s.creditBalances.manure, 0)),
     },
+    /**
+     * Approved and not yet recovered on a `deductions.tea` line.
+     *
+     * Derived from the requests rather than from a balance on the supplier, because
+     * unlike credit there is no facility to hold one — the value goes straight onto the
+     * next account. Approved-but-unpublished is exactly the window in which turning the
+     * flag off would hide tea the factory has already handed over.
+     */
+    teaPacketsOutstanding: round2(
+      state.teaPacketRequests
+        .filter((row) => row.status === 'approved' && !row.recoveredOnMonthKey)
+        .reduce((sum, row) => sum + row.amount, 0),
+    ),
     deliveriesByPoint,
     suppliersByBank,
     contentByLanguage,
@@ -820,6 +867,60 @@ function cloneNews(record: NewsRecord): NewsRecord {
 
 function cloneStaticPage(record: StaticPageRecord): StaticPageRecord {
   return { ...record, translations: { ...record.translations } };
+}
+
+/**
+ * Attach the gaps to a banner, against the requesting tenant's languages.
+ *
+ * `missingBannerTranslations` rather than `missingTranslations`, and the difference is
+ * load-bearing: the article rule requires a title and a **body**, a banner's rule requires
+ * a title and a **button label**. Using the article's here would mark a perfectly good
+ * headline-only banner as missing and a label-less one as written — both halves of AC-08
+ * pointing the wrong way at once.
+ *
+ * Staleness reuses `staleTranslations` unchanged, because "written before the English it
+ * was translated from" is the same question whatever the fields are.
+ */
+function serialiseBanner(record: BannerRecord, request: Request): AdminPromoBanner {
+  const required = contentLanguagesOf(request);
+  const newest = newestEdit(record.translations);
+
+  return {
+    ...record,
+    missingLanguages: missingBannerTranslations(record.translations, required),
+    // The banner-shaped stale check: `staleTranslations` asks `isWritten`, which a
+    // headline-only banner fails, so its staleness would never be reported.
+    staleLanguages: staleBannerTranslations(record.translations, required),
+    updatedAt: newest?.updatedAt ?? record.createdAt,
+    updatedByName: newest?.updatedByName ?? record.createdByName,
+  };
+}
+
+function toBannerListItem(record: BannerRecord, request: Request): BannerListItem {
+  const full = serialiseBanner(record, request);
+  const fallback = record.translations[EDITORIAL_FALLBACK_LANGUAGE];
+
+  return {
+    id: record.id,
+    // The fallback's headline, as `NewsListItem` uses the fallback's title: the office
+    // needs one column it can scan, and a row whose text changed with the selected tab
+    // would make the list unreadable while translating.
+    title: fallback?.title ?? '',
+    status: record.status,
+    window: bannerWindowState(record, new Date().toISOString()),
+    startsAt: record.startsAt,
+    endsAt: record.endsAt,
+    hasImage: Boolean(record.imageUrl),
+    missingLanguages: full.missingLanguages,
+    staleLanguages: full.staleLanguages,
+    updatedAt: full.updatedAt,
+    updatedByName: full.updatedByName,
+  };
+}
+
+function cloneBanner(record: BannerRecord): BannerRecord {
+  // `action` too: it is an object, and the editor patches it in place.
+  return { ...record, translations: { ...record.translations }, action: { ...record.action } };
 }
 
 /* ─────────────────── M11 / M12 content helpers (AC-08) ─────────────────── */
@@ -1538,6 +1639,10 @@ function withCreditEligibility(request: AdminCreditRequest): AdminCreditRequest 
   };
 }
 
+function withTeaPacketAge(request: AdminTeaPacketRequest): AdminTeaPacketRequest {
+  return { ...request, ageHours: ageHoursOf(request.createdAt) };
+}
+
 function withInquiryAge(inquiry: AdminInquiry): AdminInquiry {
   return { ...inquiry, ageHours: ageHoursOf(inquiry.createdAt) };
 }
@@ -1556,8 +1661,13 @@ export const handlers: HttpHandler[] = [
    */
   http.get('*/admin/reports', async ({ request }) => {
     await delay(LATENCY_MS);
-    const gate = featureGate(request, 'enableReports');
-    if (gate) return gate;
+    /* v2: M16 has no flag. `enableReports` was console-only and went with M6's
+     * `enablePayouts` — what is left of the module is `channelShift`, the app-adoption
+     * KPI, which is not a feature a factory declines. See `FeatureFlagSet`.
+     *
+     *   const gate = featureGate(request, 'enableReports');
+     *   if (gate) return gate;
+     */
     const auth = authorize(request, 'reports');
     if ('response' in auth) return auth.response;
 
@@ -1588,8 +1698,13 @@ export const handlers: HttpHandler[] = [
    */
   http.get('*/admin/reports/:id', async ({ request, params }) => {
     await delay(LATENCY_MS * 2);
-    const gate = featureGate(request, 'enableReports');
-    if (gate) return gate;
+    /* v2: M16 has no flag. `enableReports` was console-only and went with M6's
+     * `enablePayouts` — what is left of the module is `channelShift`, the app-adoption
+     * KPI, which is not a feature a factory declines. See `FeatureFlagSet`.
+     *
+     *   const gate = featureGate(request, 'enableReports');
+     *   if (gate) return gate;
+     */
     const auth = authorize(request, 'reports');
     if ('response' in auth) return auth.response;
 
@@ -2223,6 +2338,16 @@ export const handlers: HttpHandler[] = [
       state.deliveries,
       state.creditRequests,
       state.inquiries,
+      {
+        teaPacketRequests: state.teaPacketRequests,
+        news: state.news,
+        banners: state.banners,
+        staticPages: state.staticPages,
+        devicesBySupplier: mockDevicesBySupplier,
+        // Per tenant: a factory that authors in English and Tamil is not missing Sinhala,
+        // so its article-gap count must not include it (see `contentLanguagesOf`).
+        contentLanguages: contentLanguagesOf(request),
+      },
     );
     const flags = flagsOf(request);
 
@@ -2237,6 +2362,7 @@ export const handlers: HttpHandler[] = [
         if (q.queue === 'advanceRequests') return flags.enableAdvances;
         if (q.queue === 'loanRequests') return flags.enableLoans;
         if (q.queue === 'manureRequests') return flags.enableManure;
+        if (q.queue === 'teaPacketRequests') return flags.enableTeaPackets;
         if (q.queue === 'inquiries') return flags.enableInquiry;
         return true;
       }),
@@ -2254,6 +2380,7 @@ export const handlers: HttpHandler[] = [
     const status = url.searchParams.get('status');
     const point = url.searchParams.get('collectionPoint');
     const hasBankDetails = url.searchParams.get('hasBankDetails');
+    const hasApp = url.searchParams.get('hasApp');
 
     let rows = state.suppliers.map(toListItem);
 
@@ -2271,6 +2398,10 @@ export const handlers: HttpHandler[] = [
     if (point) rows = rows.filter((s) => s.collectionPoint === point);
     if (hasBankDetails !== null) {
       rows = rows.filter((s) => s.hasBankDetails === (hasBankDetails === 'true'));
+    }
+    // v2's working filter — the list behind the dashboard's adoption percentage.
+    if (hasApp !== null) {
+      rows = rows.filter((s) => s.hasApp === (hasApp === 'true'));
     }
 
     // The registry's default is the code, which is how the office refers to a
@@ -3503,8 +3634,13 @@ export const handlers: HttpHandler[] = [
 
   http.get('*/admin/payout-runs', async ({ request }) => {
     await delay(LATENCY_MS);
-    const gated = featureGate(request, 'enablePayouts');
-    if (gated) return gated;
+    /* v2: `enablePayouts` is gone from `FeatureFlagSet` — payouts are the factory's own
+     * console. The handler stays as the executable statement of what M6's endpoints owe
+     * (mocks.md), with its gate commented rather than deleted:
+     *
+     *   const gated = featureGate(request, 'enablePayouts');
+     *   if (gated) return gated;
+     */
     const auth = authorize(request, 'payouts');
     if ('response' in auth) return auth.response;
 
@@ -3535,8 +3671,13 @@ export const handlers: HttpHandler[] = [
    */
   http.post('*/admin/payout-runs', async ({ request }) => {
     await delay(LATENCY_MS);
-    const gated = featureGate(request, 'enablePayouts');
-    if (gated) return gated;
+    /* v2: `enablePayouts` is gone from `FeatureFlagSet` — payouts are the factory's own
+     * console. The handler stays as the executable statement of what M6's endpoints owe
+     * (mocks.md), with its gate commented rather than deleted:
+     *
+     *   const gated = featureGate(request, 'enablePayouts');
+     *   if (gated) return gated;
+     */
     const auth = authorize(request, 'payouts', 'write');
     if ('response' in auth) return auth.response;
 
@@ -3650,8 +3791,13 @@ export const handlers: HttpHandler[] = [
    */
   http.get('*/admin/payout-runs/:id/file', async ({ request, params }) => {
     await delay(LATENCY_MS);
-    const gated = featureGate(request, 'enablePayouts');
-    if (gated) return gated;
+    /* v2: `enablePayouts` is gone from `FeatureFlagSet` — payouts are the factory's own
+     * console. The handler stays as the executable statement of what M6's endpoints owe
+     * (mocks.md), with its gate commented rather than deleted:
+     *
+     *   const gated = featureGate(request, 'enablePayouts');
+     *   if (gated) return gated;
+     */
     const auth = authorize(request, 'payouts');
     if ('response' in auth) return auth.response;
 
@@ -3724,8 +3870,13 @@ export const handlers: HttpHandler[] = [
    */
   http.get('*/admin/payout-runs/:id/lines', async ({ request, params }) => {
     await delay(LATENCY_MS);
-    const gated = featureGate(request, 'enablePayouts');
-    if (gated) return gated;
+    /* v2: `enablePayouts` is gone from `FeatureFlagSet` — payouts are the factory's own
+     * console. The handler stays as the executable statement of what M6's endpoints owe
+     * (mocks.md), with its gate commented rather than deleted:
+     *
+     *   const gated = featureGate(request, 'enablePayouts');
+     *   if (gated) return gated;
+     */
     const auth = authorize(request, 'payouts');
     if ('response' in auth) return auth.response;
 
@@ -3762,8 +3913,13 @@ export const handlers: HttpHandler[] = [
 
   http.get('*/admin/payout-runs/:id', async ({ request, params }) => {
     await delay(LATENCY_MS);
-    const gated = featureGate(request, 'enablePayouts');
-    if (gated) return gated;
+    /* v2: `enablePayouts` is gone from `FeatureFlagSet` — payouts are the factory's own
+     * console. The handler stays as the executable statement of what M6's endpoints owe
+     * (mocks.md), with its gate commented rather than deleted:
+     *
+     *   const gated = featureGate(request, 'enablePayouts');
+     *   if (gated) return gated;
+     */
     const auth = authorize(request, 'payouts');
     if ('response' in auth) return auth.response;
 
@@ -3782,8 +3938,13 @@ export const handlers: HttpHandler[] = [
    */
   http.post('*/admin/payout-runs/:id/approve', async ({ request, params }) => {
     await delay(LATENCY_MS);
-    const gated = featureGate(request, 'enablePayouts');
-    if (gated) return gated;
+    /* v2: `enablePayouts` is gone from `FeatureFlagSet` — payouts are the factory's own
+     * console. The handler stays as the executable statement of what M6's endpoints owe
+     * (mocks.md), with its gate commented rather than deleted:
+     *
+     *   const gated = featureGate(request, 'enablePayouts');
+     *   if (gated) return gated;
+     */
     const auth = authorize(request, 'payouts', 'approve');
     if ('response' in auth) return auth.response;
 
@@ -3848,8 +4009,13 @@ export const handlers: HttpHandler[] = [
    */
   http.post('*/admin/payout-runs/:id/lines/:lineId/mark', async ({ request, params }) => {
     await delay(LATENCY_MS);
-    const gated = featureGate(request, 'enablePayouts');
-    if (gated) return gated;
+    /* v2: `enablePayouts` is gone from `FeatureFlagSet` — payouts are the factory's own
+     * console. The handler stays as the executable statement of what M6's endpoints owe
+     * (mocks.md), with its gate commented rather than deleted:
+     *
+     *   const gated = featureGate(request, 'enablePayouts');
+     *   if (gated) return gated;
+     */
     const auth = authorize(request, 'payouts', 'write');
     if ('response' in auth) return auth.response;
 
@@ -4628,6 +4794,181 @@ export const handlers: HttpHandler[] = [
     }),
   ),
 
+  /* ── M18 Tea packet requests ───────────────────────────────────────────── */
+
+  /**
+   * The queue.
+   *
+   * Notice what is **not** here that M7's list has: no eligibility recomputation. A
+   * tea-packet request is not priced off the supplier's leaf, so there is no ceiling to
+   * re-derive and no figure that goes stale between the queue rendering and the decision.
+   * That absence is the whole reason this is a separate module rather than a fourth
+   * facility (`AdminTeaPacketRequest`).
+   */
+  http.get('*/admin/tea-packet-requests', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enableTeaPackets');
+    if (gate) return gate;
+    const auth = authorize(request, 'creditRequests');
+    if ('response' in auth) return auth.response;
+
+    const url = new URL(request.url);
+    const status = url.searchParams.get('status');
+    const deliveryMethod = url.searchParams.get('deliveryMethod');
+    const supplierId = url.searchParams.get('supplierId');
+    const q = url.searchParams.get('q')?.trim().toLowerCase();
+
+    let rows = state.teaPacketRequests.map(withTeaPacketAge);
+
+    if (status) rows = rows.filter((row) => row.status === status);
+    if (deliveryMethod) rows = rows.filter((row) => row.deliveryMethod === deliveryMethod);
+    if (supplierId) rows = rows.filter((row) => row.supplierId === supplierId);
+    if (q) {
+      rows = rows.filter(
+        (row) =>
+          row.supplierCode.toLowerCase().includes(q) || row.supplierName.toLowerCase().includes(q),
+      );
+    }
+
+    // Oldest first, like every other inbox in the console.
+    rows = sortRows(rows, url, (a, b) => a.createdAt.localeCompare(b.createdAt));
+
+    return HttpResponse.json(paginate(rows, url));
+  }),
+
+  http.get('*/admin/tea-packet-requests/:id', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enableTeaPackets');
+    if (gate) return gate;
+    const auth = authorize(request, 'creditRequests');
+    if ('response' in auth) return auth.response;
+
+    const found = state.teaPacketRequests.find((row) => row.id === params.id);
+    if (!found) return fail({ status: 404, code: '404', message: 'No such request.' });
+    return HttpResponse.json(withTeaPacketAge(found));
+  }),
+
+  ...(['approve', 'reject'] as const).map((verb) =>
+    http.post(`*/admin/tea-packet-requests/:id/${verb}`, async ({ request, params }) => {
+      await delay(LATENCY_MS);
+      const gate = featureGate(request, 'enableTeaPackets');
+      if (gate) return gate;
+      const auth = authorize(request, 'creditRequests', 'approve');
+      if ('response' in auth) return auth.response;
+
+      const index = state.teaPacketRequests.findIndex((row) => row.id === params.id);
+      if (index < 0) return fail({ status: 404, code: '404', message: 'No such request.' });
+
+      const before = state.teaPacketRequests[index]!;
+
+      const body = (await request.json()) as { note?: string };
+      const note = body.note?.trim() ?? '';
+
+      // AC-06, on both verbs.
+      if (note.length < 10) {
+        return fail({
+          status: 422,
+          code: 'note-required',
+          message: 'A decision note is required.',
+        });
+      }
+
+      if (before.status !== 'pending') {
+        return fail({
+          status: 409,
+          code: 'already-decided',
+          message: `This request was already ${before.status}.`,
+          details: { decidedByName: before.decision?.decidedByName ?? null },
+        });
+      }
+
+      // BR-501, before anything is priced: who may decide does not depend on the amount.
+      if (isSelfApproval(auth.user, before.createdById)) {
+        return fail({
+          status: 409,
+          code: 'four-eyes-violation',
+          message: 'You raised this request, so you cannot decide it.',
+          details: { createdByName: before.createdByName },
+        });
+      }
+
+      const policy = tenantConfig(request).teaPackets ?? DEFAULT_TEA_PACKET_POLICY;
+
+      /**
+       * The store's own limits, checked on **approval only**.
+       *
+       * A rejection is how an over-cap request leaves the queue — refusing that too would
+       * trap the row for ever, which is the same trap BR-310 avoids by not gating M7's
+       * rejections on fresh eligibility.
+       */
+      if (verb === 'approve') {
+        const problems = teaPacketRequestProblems(policy, before.packets);
+        if (problems.length > 0) {
+          return fail({
+            status: 409,
+            code: 'tea-packets-refused',
+            message: 'This request is outside the factory\'s tea-packet policy.',
+            details: { problems, maxPacketsPerRequest: policy.maxPacketsPerRequest },
+          });
+        }
+      }
+
+      const status = verb === 'approve' ? 'approved' : 'rejected';
+      const after: AdminTeaPacketRequest = {
+        ...before,
+        status,
+        /**
+         * Re-priced at the moment of the decision, and then never again.
+         *
+         * The catalogue can move between a supplier asking and the office answering, and
+         * the price that matters is the one the approver agreed to — which is also the
+         * one that will appear on the supplier's account. Reading it back from config at
+         * bill time would silently re-price a decision somebody already made.
+         */
+        unitPrice: verb === 'approve' ? policy.pricePerPacket : before.unitPrice,
+        amount:
+          verb === 'approve' ? teaPacketAmount(policy, before.packets) : before.amount,
+        decision: {
+          note,
+          decidedById: auth.user.id,
+          decidedByName: auth.user.name,
+          decidedAt: new Date().toISOString(),
+        },
+      };
+      state.teaPacketRequests[index] = after;
+
+      const supplierIndex = state.suppliers.findIndex((s) => s.id === before.supplierId);
+      if (supplierIndex >= 0) {
+        const current = state.suppliers[supplierIndex]!;
+        state.suppliers[supplierIndex] = {
+          ...current,
+          pendingRequests: Math.max(0, current.pendingRequests - 1),
+        };
+      }
+
+      // AC-09, with the price on the record: "approved at LKR 1,200 a packet" is what
+      // settles a query about a `deductions.tea` line three weeks later.
+      record({
+        actorId: auth.user.id,
+        actorName: auth.user.name,
+        action: `teaPacketRequest.${verb}`,
+        entity: 'teaPacketRequest',
+        entityId: before.id,
+        before: { status: before.status },
+        after: {
+          status,
+          packets: after.packets,
+          unitPrice: after.unitPrice,
+          amount: after.amount,
+          deliveryMethod: after.deliveryMethod,
+          note,
+        },
+      });
+
+      return HttpResponse.json(after);
+    }),
+  ),
+
   /* ── M13 Notifications ─────────────────────────────────────────────────── */
 
   /** Registered before the collection route so the literal segment wins. */
@@ -5156,6 +5497,370 @@ export const handlers: HttpHandler[] = [
     return HttpResponse.json(serialiseNews(record, request));
   }),
 
+  /* ── M11 Promo banners ─────────────────────────────────────────────────── */
+
+  /**
+   * The banner list.
+   *
+   * `window` is computed **here**, against the server's clock, and that is the whole
+   * reason the field is on the wire rather than derived in the console: the office asks
+   * "what are suppliers seeing right now", and a browser working it out locally would
+   * answer differently on every machine — and differently again from the phone.
+   */
+  http.get('*/admin/banners', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enablePromoBanner');
+    if (gate) return gate;
+    const auth = authorize(request, 'content');
+    if ('response' in auth) return auth.response;
+
+    const url = new URL(request.url);
+    const status = url.searchParams.get('status') as ContentStatus | null;
+    const window = url.searchParams.get('window') as BannerListItem['window'] | null;
+    const q = url.searchParams.get('q')?.trim().toLowerCase();
+
+    let rows = state.banners.map((record) => toBannerListItem(record, request));
+
+    if (status) rows = rows.filter((row) => row.status === status);
+    /**
+     * A `window` filter implies published, and saying so here rather than making the
+     * console pass both is deliberate: a draft is not "scheduled", it is unfinished.
+     * Letting a draft match `scheduled` would put rows in the office's "coming up" list
+     * that nobody has agreed to send.
+     */
+    if (window) rows = rows.filter((row) => row.status === 'published' && row.window === window);
+    if (q) rows = rows.filter((row) => row.title.toLowerCase().includes(q));
+
+    rows = sortRows(rows, url, (a, b) => b.startsAt.localeCompare(a.startsAt));
+
+    return HttpResponse.json(paginate(rows, url));
+  }),
+
+  http.post('*/admin/banners', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enablePromoBanner');
+    if (gate) return gate;
+    const auth = authorize(request, 'content', 'write');
+    if ('response' in auth) return auth.response;
+
+    const body = (await request.json()) as {
+      translations?: Array<{ lang: LanguageCode; title?: string; body?: string; buttonLabel?: string }>;
+      imageUrl?: string;
+      imageAspectRatio?: number;
+      action?: BannerAction;
+      startsAt?: string;
+      endsAt?: string | null;
+    };
+
+    /**
+     * The action is checked **with the app's own resolver**, before anything is stored.
+     *
+     * `bannerTarget()` is what the phone runs, and its answer to an action it cannot
+     * resolve is to render the artwork with no button and say nothing. A record saved
+     * with one would look published from every screen in this console and be inert on
+     * every phone — so it is refused at the door rather than discovered by a supplier.
+     */
+    const actionProblem = bannerActionProblem(body.action);
+    if (actionProblem) {
+      return fail({
+        status: 422,
+        code: 'banner-action-refused',
+        message: 'The app would not open this action.',
+        details: { problemKey: actionProblem },
+      });
+    }
+
+    const startsAt = body.startsAt ?? new Date().toISOString();
+    const endsAt = body.endsAt ?? null;
+    if (endsAt !== null && endsAt < startsAt) {
+      // Silent otherwise: `isBannerLive` simply returns false for ever, so the office
+      // would see a published row and suppliers would see nothing.
+      return fail({
+        status: 422,
+        code: 'banner-window-invalid',
+        message: 'A banner cannot end before it starts.',
+        details: { startsAt, endsAt },
+      });
+    }
+
+    const translations: BannerTranslations = {};
+    for (const one of body.translations ?? []) {
+      const title = one.title?.trim() ?? '';
+      const buttonLabel = one.buttonLabel?.trim() ?? '';
+      if (!title || !buttonLabel) continue;
+      translations[one.lang] = {
+        lang: one.lang,
+        title,
+        // Empty rather than absent — see `BannerTranslation`. The projection drops it.
+        body: one.body?.trim() ?? '',
+        buttonLabel,
+        updatedAt: new Date().toISOString(),
+        updatedByName: auth.user.name,
+      };
+    }
+
+    if (!isBannerWritten(translations[EDITORIAL_FALLBACK_LANGUAGE])) {
+      return fail({
+        status: 422,
+        code: 'fallback-translation-missing',
+        message: 'A banner needs its English headline and button label before it can exist.',
+        details: { fallbackLanguage: EDITORIAL_FALLBACK_LANGUAGE },
+      });
+    }
+
+    const record: BannerRecord = {
+      id: `ban-${++state.sequence}`,
+      translations,
+      imageUrl: body.imageUrl,
+      imageAspectRatio: body.imageAspectRatio,
+      action: body.action!,
+      startsAt,
+      endsAt,
+      // Always a draft. Publishing is `content: approve`, which §12.1 withholds from the
+      // editor who writes — the same boundary M11's articles draw.
+      status: 'draft',
+      publishedAt: null,
+      publishedByName: null,
+      createdAt: new Date().toISOString(),
+      createdByName: auth.user.name,
+    };
+    state.banners.unshift(record);
+
+    recordBy(auth, 'banner.create', 'promoBanner', record.id, {
+      before: null,
+      after: { title: translations[EDITORIAL_FALLBACK_LANGUAGE]!.title, action: record.action },
+    });
+
+    return HttpResponse.json(serialiseBanner(record, request), { status: 201 });
+  }),
+
+  http.get('*/admin/banners/:id/preview', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enablePromoBanner');
+    if (gate) return gate;
+    const auth = authorize(request, 'content');
+    if ('response' in auth) return auth.response;
+
+    const record = state.banners.find((candidate) => candidate.id === params.id);
+    if (!record) return fail({ status: 404, code: '404', message: 'No such banner.' });
+
+    const url = new URL(request.url);
+    const lang = (url.searchParams.get('lang') ?? EDITORIAL_FALLBACK_LANGUAGE) as LanguageCode;
+    return HttpResponse.json(contentPreview(record.translations, lang));
+  }),
+
+  http.put('*/admin/banners/:id/translations/:lang', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enablePromoBanner');
+    if (gate) return gate;
+    const auth = authorize(request, 'content', 'write');
+    if ('response' in auth) return auth.response;
+
+    const lang = String(params.lang) as LanguageCode;
+    if (!contentLanguagesOf(request).includes(lang)) {
+      return fail({
+        status: 422,
+        code: 'invalid',
+        message: `This factory does not author content in ${lang}.`,
+        details: { lang, contentLanguages: contentLanguagesOf(request) },
+      });
+    }
+
+    const index = state.banners.findIndex((candidate) => candidate.id === params.id);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such banner.' });
+
+    const body = (await request.json()) as { title?: string; body?: string; buttonLabel?: string };
+    const title = body.title?.trim() ?? '';
+    const buttonLabel = body.buttonLabel?.trim() ?? '';
+    /**
+     * Headline and button label, body optional — `isBannerWritten`, not `isWritten`.
+     *
+     * The distinction is not pedantry: reusing the article rule would accept a banner
+     * with no button label and report the language as **written**, so the gap would
+     * disappear from the list AC-08 requires it to appear in and a supplier would get a
+     * banner with no way out of it.
+     */
+    if (!title || !buttonLabel) {
+      return fail({
+        status: 422,
+        code: 'note-required',
+        message: 'A banner needs a headline and a button label.',
+        details: { title: !title, buttonLabel: !buttonLabel },
+      });
+    }
+
+    const before = state.banners[index]!;
+    const previous = before.translations[lang];
+    const after = cloneBanner(before);
+    after.translations[lang] = {
+      lang,
+      title,
+      body: body.body?.trim() ?? '',
+      buttonLabel,
+      // Stamped now: this is the mechanism staleness is detected by, exactly as it is
+      // for an article.
+      updatedAt: new Date().toISOString(),
+      updatedByName: auth.user.name,
+    };
+    state.banners[index] = after;
+
+    recordBy(auth, 'banner.translation.save', 'promoBanner', after.id, {
+      before: previous ? { lang, title: previous.title } : { lang, title: null },
+      after: { lang, title },
+    });
+
+    return HttpResponse.json(serialiseBanner(after, request));
+  }),
+
+  ...(['publish', 'unpublish', 'archive'] as const).map((verb) =>
+    http.post(`*/admin/banners/:id/${verb}`, async ({ request, params }) => {
+      await delay(LATENCY_MS);
+      const gate = featureGate(request, 'enablePromoBanner');
+      if (gate) return gate;
+      // `approve`, not `write` — §12.1's split between writing a circular and putting it
+      // in front of every supplier the factory has.
+      const auth = authorize(request, 'content', 'approve');
+      if ('response' in auth) return auth.response;
+
+      const index = state.banners.findIndex((candidate) => candidate.id === params.id);
+      if (index < 0) return fail({ status: 404, code: '404', message: 'No such banner.' });
+
+      const before = state.banners[index]!;
+
+      if (verb === 'publish') {
+        if (before.status === 'published') {
+          return fail({
+            status: 409,
+            code: 'already-published',
+            message: 'This banner is already published.',
+          });
+        }
+        if (!isBannerWritten(before.translations[EDITORIAL_FALLBACK_LANGUAGE])) {
+          return fail({
+            status: 422,
+            code: 'fallback-translation-missing',
+            message: 'There is nothing for the app to fall back to.',
+            details: { fallbackLanguage: EDITORIAL_FALLBACK_LANGUAGE },
+          });
+        }
+        /**
+         * A refused action blocks the publish, where a missing translation does not.
+         *
+         * The asymmetry is the module's one real judgement, and it follows from what the
+         * app does with each: a missing language falls back to English and the supplier
+         * reads *something*, which AC-08 explicitly permits. A refused action has nothing
+         * to fall back to — the button is simply not drawn — so publishing it puts
+         * artwork in front of every supplier with no way to act on it.
+         */
+        const actionProblem = bannerActionProblem(before.action);
+        if (actionProblem) {
+          return fail({
+            status: 422,
+            code: 'banner-action-refused',
+            message: 'The app would not open this action.',
+            details: { problemKey: actionProblem },
+          });
+        }
+      }
+
+      const after = cloneBanner(before);
+      after.status = verb === 'publish' ? 'published' : verb === 'unpublish' ? 'draft' : 'archived';
+      after.publishedAt = verb === 'publish' ? new Date().toISOString() : before.publishedAt;
+      after.publishedByName = verb === 'publish' ? auth.user.name : before.publishedByName;
+      state.banners[index] = after;
+
+      /**
+       * The audit entry records the languages that will fall back.
+       *
+       * "Who decided a Tamil supplier could read this in English" is the question AC-08
+       * turns into an argument six months later, and the answer has to be in the record
+       * rather than in somebody's memory of the confirmation dialog.
+       */
+      recordBy(auth, `banner.${verb}`, 'promoBanner', after.id, {
+        before: { status: before.status },
+        after: {
+          status: after.status,
+          window: bannerWindowState(after, new Date().toISOString()),
+          fallbackLanguages: missingBannerTranslations(
+            after.translations,
+            contentLanguagesOf(request),
+          ).filter((lang) => lang !== EDITORIAL_FALLBACK_LANGUAGE),
+        },
+      });
+
+      return HttpResponse.json(serialiseBanner(after, request));
+    }),
+  ),
+
+  http.patch('*/admin/banners/:id', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enablePromoBanner');
+    if (gate) return gate;
+    const auth = authorize(request, 'content', 'write');
+    if ('response' in auth) return auth.response;
+
+    const index = state.banners.findIndex((candidate) => candidate.id === params.id);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such banner.' });
+
+    const patch = (await request.json()) as {
+      imageUrl?: string | null;
+      imageAspectRatio?: number | null;
+      action?: BannerAction;
+      startsAt?: string;
+      endsAt?: string | null;
+    };
+
+    const before = state.banners[index]!;
+    const after = cloneBanner(before);
+
+    if ('imageUrl' in patch) after.imageUrl = patch.imageUrl || undefined;
+    if ('imageAspectRatio' in patch) after.imageAspectRatio = patch.imageAspectRatio ?? undefined;
+    if (patch.action) {
+      const actionProblem = bannerActionProblem(patch.action);
+      if (actionProblem) {
+        return fail({
+          status: 422,
+          code: 'banner-action-refused',
+          message: 'The app would not open this action.',
+          details: { problemKey: actionProblem },
+        });
+      }
+      after.action = patch.action;
+    }
+    if (patch.startsAt) after.startsAt = patch.startsAt;
+    if ('endsAt' in patch) after.endsAt = patch.endsAt ?? null;
+
+    if (after.endsAt !== null && after.endsAt < after.startsAt) {
+      return fail({
+        status: 422,
+        code: 'banner-window-invalid',
+        message: 'A banner cannot end before it starts.',
+        details: { startsAt: after.startsAt, endsAt: after.endsAt },
+      });
+    }
+
+    state.banners[index] = after;
+
+    recordBy(auth, 'banner.update', 'promoBanner', after.id, {
+      before: { action: before.action, startsAt: before.startsAt, endsAt: before.endsAt },
+      after: { action: after.action, startsAt: after.startsAt, endsAt: after.endsAt },
+    });
+
+    return HttpResponse.json(serialiseBanner(after, request));
+  }),
+
+  http.get('*/admin/banners/:id', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enablePromoBanner');
+    if (gate) return gate;
+    const auth = authorize(request, 'content');
+    if ('response' in auth) return auth.response;
+
+    const record = state.banners.find((candidate) => candidate.id === params.id);
+    if (!record) return fail({ status: 404, code: '404', message: 'No such banner.' });
+    return HttpResponse.json(serialiseBanner(record, request));
+  }),
+
   /* ── M12 Static content ────────────────────────────────────────────────── */
 
   /**
@@ -5594,6 +6299,8 @@ export function resetMockState(): void {
    */
   state.news = mockNews.map(cloneNews);
   state.staticPages = mockStaticPages.map(cloneStaticPage);
+  state.banners = mockBanners.map(cloneBanner);
+  state.teaPacketRequests = mockTeaPacketRequests.map((request) => ({ ...request }));
   state.users = mockUsers.map((user) => ({ ...user, roles: [...user.roles] }));
   state.savingsWithdrawals = [];
   state.deductionRates = null;

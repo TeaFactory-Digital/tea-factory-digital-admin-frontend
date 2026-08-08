@@ -230,6 +230,35 @@ export interface ManureRequest {
 /** The three credit facilities, as a discriminator. */
 export type CreditFacility = 'advance' | 'loan' | 'manure';
 
+/**
+ * How the packets reach the supplier — `factoryCollection` means they call at the
+ * store, `transportVehicle` means it travels back on the vehicle that collects
+ * their leaf, which for an outlying division is the difference between a request
+ * and a day's journey.
+ */
+export type TeaPacketDeliveryMethod = 'factoryCollection' | 'transportVehicle';
+
+/**
+ * A request for packets of made tea for the supplier's own use, issued by the
+ * factory store and recovered on the monthly account's `deductions.tea` line.
+ *
+ * **Not a `CreditFacility`.** It is taken on credit and recovered from a bill like
+ * the other three, but nothing prices a ceiling for it: there is no eligibility
+ * working, no `leafCredit.ts` rule and no `ceilingSeen` to go stale. Folding it
+ * into `AdminCreditRequest` would have given every tea-packet row three `null`
+ * eligibility figures and an AC-05 obligation it cannot meet.
+ */
+export interface TeaPacketRequest {
+  id: string;
+  /** Number of packets asked for (packet weight is factory policy). */
+  packets: number;
+  deliveryMethod: TeaPacketDeliveryMethod;
+  notes?: string;
+  status: RequestStatus;
+  createdAt: string;
+  note?: string;
+}
+
 /** What kind of profile change requires factory approval. */
 export type ChangeRequestType = 'paymentMethod' | 'bankDetails' | 'savingsRate';
 

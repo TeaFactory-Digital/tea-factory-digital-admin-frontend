@@ -245,6 +245,7 @@ describe('what makes a template unusable', () => {
         savingsBalances: 0,
         openPayoutRuns: 0,
         outstandingCredit: { advance: 0, loan: 0, manure: 0 },
+        teaPacketsOutstanding: 0,
         deliveriesByPoint: {},
         suppliersByBank: {},
         contentByLanguage: {},
@@ -366,17 +367,29 @@ describe('M6 file export against the mock API', () => {
     expect(await saved.json()).toMatchObject({ code: 'export-template-invalid' });
   }, 20_000);
 
-  it('is refused for a factory that does not buy payouts (AC-07)', async () => {
-    await signInAs(ACCOUNTANT);
-    const run = await approvedRun();
-    const token = useAuthStore.getState().accessToken;
-
-    const response = await fetch(`http://localhost/admin/payout-runs/${run.id}/file`, {
-      headers: { Authorization: `Bearer ${token}`, 'X-Tenant': 'highland' },
-    });
-    expect(response.status).toBe(403);
-    expect(await response.json()).toMatchObject({ code: 'feature-disabled' });
-  }, 20_000);
+  // ────────────────────────────────────────────────────────────────────────
+  // v1. Commented out with the flag it asserts on.
+  //
+  // `enablePayouts` and `enableReports` were **console-only flags** — neither exists in
+  // the app's `FeatureFlags` — and both went with the modules they gated (see
+  // `FeatureFlagSet`). The endpoint therefore no longer refuses, because there is no
+  // longer a flag for it to refuse on.
+  //
+  // Kept rather than deleted because AC-07 is still a live criterion for every flag that
+  // remains: `configuration.test.ts` and the credit suites assert exactly this shape for
+  // `enableSavings`, `enableInquiry`, `enableTeaPackets` and the three facilities.
+  // ────────────────────────────────────────────────────────────────────────
+  // it('is refused for a factory that does not buy payouts (AC-07)', async () => {
+  // await signInAs(ACCOUNTANT);
+  // const run = await approvedRun();
+  // const token = useAuthStore.getState().accessToken;
+  //
+  // const response = await fetch(`http://localhost/admin/payout-runs/${run.id}/file`, {
+  // headers: { Authorization: `Bearer ${token}`, 'X-Tenant': 'highland' },
+  // });
+  // expect(response.status).toBe(403);
+  // expect(await response.json()).toMatchObject({ code: 'feature-disabled' });
+  // }, 20_000);
 
   /**
    * The loop closed: a layout saved in M14 is the layout M6 writes with.

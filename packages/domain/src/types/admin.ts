@@ -8,6 +8,7 @@
 
 import type {
   BankDetails,
+  BannerAction,
   ChangeRequest,
   CreditFacility,
   GreenLeafBill,
@@ -17,6 +18,7 @@ import type {
   RequestStatus,
   SavingsLedgerEntry,
   Supplier,
+  TeaPacketDeliveryMethod,
 } from './app';
 import type {
   ContentStatus,
@@ -28,9 +30,11 @@ import type {
   StaticPageSlug,
 } from '../constants';
 import type { ContentTranslation, ContentTranslations } from '../content';
+import type { BannerTranslations } from '../banners';
 import type { NotificationAudience } from '../notifications';
 import type { PayoutExportTemplate } from '../payoutExport';
 import type { ManureProduct } from '../deductionRates';
+import type { TeaPacketPolicy } from '../teaPackets';
 
 /* ─────────────────────────────── Identity ─────────────────────────────── */
 
@@ -182,6 +186,24 @@ export interface AdminSupplier extends Supplier {
   owesPasswordChange?: boolean;
   /** When the office last issued one, so a pattern of resets is visible on the record. */
   lastPasswordResetAt?: string | null;
+
+  /**
+   * Whether this supplier has ever signed in on a phone — **v2's first question about a
+   * supplier**, and the one v1 had no field for.
+   *
+   * The registry is the factory's own console's in v2; what is left here is the *app
+   * account*. So the record answers the questions app support actually asks: have they
+   * got it, do they still have a device registered for notifications, and do they owe a
+   * password change from a reset the office did at the counter.
+   *
+   * Derived from the device registry rather than stored, for the same reason
+   * `isLastAdministrator` is: it stops being true the moment somebody uninstalls.
+   */
+  hasApp: boolean;
+  /** Registered push devices. `0` with `hasApp: true` means they turned notifications off. */
+  deviceCount: number;
+  /** Most recent sign-in from the app, or `null` if never. */
+  lastAppSignInAt: string | null;
 }
 
 /** The grid row. Deliberately smaller than the detail — thousands are listed. */
@@ -197,6 +219,9 @@ export interface SupplierListItem {
   hasBankDetails: boolean;
   lastDeliveryAt: string | null;
   pendingRequests: number;
+  /** v2's app-account columns. See `AdminSupplier`. */
+  hasApp: boolean;
+  lastAppSignInAt: string | null;
 }
 
 export interface SupplierQuery extends PageQuery {
@@ -204,7 +229,20 @@ export interface SupplierQuery extends PageQuery {
   q?: string;
   status?: SupplierStatus;
   collectionPoint?: string;
-  /** Registered but not supplying — feeds the dormant-suppliers report (§19.2). */
+  /**
+   * v2's working filter: who has not installed the app.
+   *
+   * The dashboard's adoption card links straight into it, which is the whole point of
+   * putting filter state in the URL — a percentage nobody can turn into a list of names
+   * is a percentage nobody acts on.
+   */
+  hasApp?: boolean;
+  /**
+   * Registered but not supplying — fed the dormant-suppliers report (§19.2).
+   *
+   * v2 keeps the field though the report is commented out: it is the factory's own
+   * console's report, and the query parameter is what it was defined by.
+   */
   dormantMonths?: number;
 }
 
@@ -536,6 +574,68 @@ export interface CreditDecisionBody extends DecisionBody {
   ceilingSeen: number;
 }
 
+/* ─────────────────────── M18 Tea packet requests ─────────────────────── */
+
+/**
+ * A tea-packet request as the queue works it.
+ *
+ * **A separate queue from M7, not a fourth facility.** The app has asked for these
+ * since the first release (`RequestTeaPacketsScreen`) and v1 of this console had no
+ * type, no queue and no flag for them — a request a supplier could raise and nobody
+ * could decide, which is the exact failure M9 and M10 were built to end.
+ *
+ * They are not credit in the sense M7 means it: nothing prices a ceiling, so there
+ * is no `CreditEligibility`, no `ceilingSeen` and no BR-310 staleness. What the
+ * approver needs instead is the **store's** question — how many packets, and how do
+ * they reach the supplier — plus the one figure that makes it a money decision at
+ * all: what it will cost on the account.
+ *
+ * The value is recovered on the `deductions.tea` line of the next Green Leaf
+ * Account, which is why `unitPrice` is on the row rather than looked up: the price
+ * that was quoted when the request was decided is the price the supplier was told,
+ * and a catalogue edit afterwards must not silently re-price a decided request.
+ */
+export interface AdminTeaPacketRequest {
+  id: string;
+  supplierId: string;
+  supplierCode: string;
+  supplierName: string;
+  packets: number;
+  deliveryMethod: TeaPacketDeliveryMethod;
+  /** LKR per packet at the moment of the decision. Never re-read from the catalogue. */
+  unitPrice: number;
+  /** `packets × unitPrice`. On the wire rather than derived, for the same reason. */
+  amount: number;
+  /** The supplier's own note from the app. */
+  notes: string | null;
+  status: RequestStatus;
+  createdAt: string;
+  channel: RequestChannel;
+  /** Set when the office raised it at the counter, so four-eyes can be enforced. */
+  createdById: string | null;
+  createdByName: string | null;
+  decision: Decision | null;
+  /**
+   * The month whose published bill carried this on its `deductions.tea` line, or `null`
+   * while the factory is still owed for it.
+   *
+   * On the row rather than inferred from dates, because "approved in July" and
+   * "recovered on July's account" are different facts — a request approved after the
+   * month closed is recovered on the next one, and the difference is what
+   * `teaPacketsOutstanding` counts.
+   */
+  recoveredOnMonthKey: string | null;
+  /** Hours waiting — drives queue-age colouring against `QUEUE_SLA_HOURS`. */
+  ageHours: number;
+}
+
+export interface TeaPacketRequestQuery extends PageQuery {
+  status?: RequestStatus;
+  supplierId?: string;
+  deliveryMethod?: TeaPacketDeliveryMethod;
+  q?: string;
+}
+
 /* ───────────────────────── M10 Inquiries ───────────────────────── */
 
 /** The office's answer, rendered back to the supplier in the app. */
@@ -601,6 +701,7 @@ export type QueueKey =
   | 'advanceRequests'
   | 'loanRequests'
   | 'manureRequests'
+  | 'teaPacketRequests'
   | 'inquiries';
 
 export interface QueueCount {
@@ -662,12 +763,84 @@ export interface DashboardAlert {
   href?: string;
 }
 
+/**
+ * How much of the factory's supplier base is actually on the app — **v2's headline
+ * figure**, and the one this console is answerable for.
+ *
+ * v1's dashboard led with today's kilos, which is the right first number for a console
+ * that runs the factory and the wrong one for a console that manages an app: the office
+ * has a weighing system for kilos. What it has no other way to see is whether the thing
+ * this project was built for is being used, and §19.3 calls app adoption and channel
+ * shift *"the two KPIs that justify the project"*.
+ *
+ * Three counts rather than one percentage, because they are three different problems:
+ * suppliers who have never installed it is a field-work problem, devices that have gone
+ * quiet is a re-engagement problem, and a low request share is a trust problem.
+ */
+export interface AppAdoption {
+  /** Suppliers with at least one signed-in device. */
+  suppliersWithApp: number;
+  totalSuppliers: number;
+  /** Registered push devices — always ≥ `suppliersWithApp`; some people have two phones. */
+  devicesRegistered: number;
+  /**
+   * Share of this month's requests raised in the app rather than at the counter, 0–1.
+   *
+   * `null` when no request has been raised at all this month (BR-102): a month with no
+   * requests has no adoption share, and rendering `0%` would report a collapse that did
+   * not happen.
+   */
+  appRequestShare: number | null;
+}
+
+/**
+ * What is wrong with the content the app is showing — the second question v2's dashboard
+ * exists to answer.
+ *
+ * Every figure here is a **silent** failure. A supplier reading a Sinhala article in
+ * English, an FAQ page nobody has written, a banner whose window closed weeks ago: none
+ * of them produce an error anywhere, and only a screen that goes looking will find them.
+ * That is exactly the argument AC-08 makes about gaps being visible to the editor, one
+ * level up.
+ */
+export interface ContentHealth {
+  /** Published articles falling back for at least one language (AC-08). */
+  articlesWithGaps: number;
+  /** Published banners inside their live window right now. */
+  bannersLive: number;
+  /** Banners published whose window has closed — live in status, invisible in fact. */
+  bannersExpired: number;
+  /** Pages in `STATIC_PAGE_SLUGS` nobody has written; the app shows its bundled default. */
+  staticPagesUnwritten: number;
+}
+
 export interface DashboardSummary {
   queues: QueueCount[];
+  /** v2's lead figures. */
+  app: AppAdoption;
+  content: ContentHealth;
+  /**
+   * Twelve months of app-request share, oldest first (charts read left→right).
+   *
+   * The v2 replacement for `intakeTrend`, and monthly rather than daily on purpose:
+   * adoption moves when the office hands out passwords at the counter, which is a
+   * campaign, not a day's weather.
+   */
+  adoptionTrend: Array<{ monthKey: string; appShare: number | null }>;
+  alerts: DashboardAlert[];
+
+  /* ────────────────────────────────────────────────────────────────────────────
+   * v1's factory-operations figures. **Still served, no longer rendered.**
+   *
+   * The cards that read them are commented out on `DashboardScreen`, not deleted, and
+   * the fields stay on the payload for a reason worth stating: `cycle.stage` is what
+   * decides whether the app shows a supplier an amount or a blank, so an office
+   * answering the telephone about "why does my July account say nothing" still needs
+   * it — and when that turns out to be true, uncommenting one card is the whole change.
+   * ──────────────────────────────────────────────────────────────────────────── */
   cycle: MonthCycleStatus;
   today: TodaysCollection;
-  alerts: DashboardAlert[];
-  /** Last 14 Colombo-local days of intake, oldest first (charts read left→right). */
+  /** Last 14 Colombo-local days of intake, oldest first. */
   intakeTrend: Array<{ date: string; totalKgs: number }>;
 }
 
@@ -1158,6 +1331,98 @@ export interface NewsArticlePatch {
   coverImageUrl?: string | null;
 }
 
+/* ──────────────────── M11 Promo banners ──────────────────── */
+
+/**
+ * A promo banner as the office composes it: **every language at once**, plus the one
+ * thing that is not copy — where the button goes.
+ *
+ * v1 had the flag (`enablePromoBanner`), the app type (`PromoBanner`) and no editor,
+ * which is the worst of the three states available: a factory could turn the feature on
+ * and then find there was no way to author anything for it. `banners.md` had the whole
+ * specification and nothing implemented it.
+ *
+ * Shaped like `AdminNewsArticle` on purpose — same translation record, same gap lists,
+ * same fallback rule — because an editor should not have to learn two content models.
+ * The differences are the two things a banner has that an article does not: a **live
+ * window**, and an **action** that must survive the app's allowlist (`banners.ts`).
+ */
+export interface AdminPromoBanner extends ContentGaps {
+  id: string;
+  translations: BannerTranslations;
+  /** Full-width artwork. Optional — the app renders a branded panel without it. */
+  imageUrl?: string;
+  /** Width ÷ height, so the app reserves space before the image arrives. */
+  imageAspectRatio?: number;
+  /**
+   * Where the button goes. **Not localized**: one destination in three languages, because
+   * a banner whose Tamil button went somewhere else would be three banners.
+   */
+  action: BannerAction;
+  startsAt: string;
+  /** `null` means "until it is taken down". */
+  endsAt: string | null;
+  status: ContentStatus;
+  publishedAt: string | null;
+  publishedByName: string | null;
+  createdAt: string;
+  createdByName: string;
+  updatedAt: string;
+  updatedByName: string;
+}
+
+/** The grid row. `title` is the fallback language's, as in `NewsListItem`. */
+export interface BannerListItem extends ContentGaps {
+  id: string;
+  title: string;
+  status: ContentStatus;
+  /**
+   * Where it is in its window, computed server-side against the same clock the app
+   * reads. A console that worked this out from the browser's clock would disagree with
+   * the phone on the day a banner starts.
+   */
+  window: 'scheduled' | 'live' | 'expired';
+  startsAt: string;
+  endsAt: string | null;
+  hasImage: boolean;
+  updatedAt: string;
+  updatedByName: string;
+}
+
+export interface BannerQuery extends PageQuery {
+  status?: ContentStatus;
+  /** `live` is the office's most-asked question: what is in front of suppliers now? */
+  window?: 'scheduled' | 'live' | 'expired';
+  q?: string;
+}
+
+/** One language's banner copy, as the editor saves it. `lang` travels in the path. */
+export interface BannerTranslationBody {
+  title: string;
+  /** The supporting line. Optional — plenty of banners are a headline and a button. */
+  body?: string;
+  buttonLabel: string;
+}
+
+/** Creating a banner. The fallback language's copy is required, as it is for an article. */
+export interface BannerDraft {
+  translations: Array<BannerTranslationBody & { lang: LanguageCode }>;
+  imageUrl?: string;
+  imageAspectRatio?: number;
+  action: BannerAction;
+  startsAt: string;
+  endsAt: string | null;
+}
+
+/** What may be changed without touching copy. */
+export interface BannerPatch {
+  imageUrl?: string | null;
+  imageAspectRatio?: number | null;
+  action?: BannerAction;
+  startsAt?: string;
+  endsAt?: string | null;
+}
+
 /**
  * One of the app's fixed pages.
  *
@@ -1444,15 +1709,32 @@ export interface RuntimeConfig {
     defaultCategories: NotificationCategory[];
   };
   /**
+   * What a packet of made tea is and what it costs (`enableTeaPackets`).
+   *
+   * Beside the manure catalogue for the same reason: it is a thing a supplier chooses
+   * from the app, priced by a number that changes without a release. Optional so an
+   * existing `client_config` row keeps working — `DEFAULT_TEA_PACKET_POLICY` fills it.
+   */
+  teaPackets?: TeaPacketPolicy;
+  /**
    * How M6 writes a payout run out as a file — **§21.17 as configuration** rather than as
    * three guessed serialisers behind a dropdown. See `payoutExport.ts` for why the layout
    * is configured and the format's name is not.
    *
-   * Optional: a factory that has never opened the screen gets `DEFAULT_PAYOUT_EXPORT`,
-   * which is a readable spreadsheet rather than anything claiming to be a bank's format.
+   * **v2: the factory's own console owns payouts**, so nothing in this console reads this
+   * block any more. It stays on the payload rather than being dropped, because the field
+   * is served by an API this console does not own and a type that omitted it would make
+   * every other consumer's `RuntimeConfig` a different shape. The M14 section that edited
+   * it is commented out; see `PayoutFileSection.tsx`.
    */
   payouts?: { export: PayoutExportTemplate };
-  /** Collection points / divisions this factory weighs at. */
+  /**
+   * Collection points / divisions this factory weighs at.
+   *
+   * Kept in v2 though leaf collection moved to the factory's own console: the app shows a
+   * supplier which point their leaf was weighed at, and the supplier code carries the
+   * division suffix. It is app-facing data with an internal-facing name.
+   */
   collectionPoints: Array<{ id: string; name: string }>;
 }
 
@@ -1470,25 +1752,58 @@ export interface ThemeOverridePayload {
 }
 
 /**
- * Feature flags, identical to the app's set (white-label.md → Feature flags).
+ * Feature flags — **the app's set, and nothing else** (white-label.md → Feature flags).
  *
- * The console reads the same values, so a factory that does not lend against
- * income history has no loan queue *and* no loan screen. A flag that only hides
- * a screen is a UI preference, not a policy — the API must refuse the call too,
- * with `403 feature-disabled` (AC-07).
+ * The docblock here used to claim the set was "identical to the app's" while the type
+ * held ten flags against the app's fourteen: six the app gates surfaces on had no
+ * control anywhere in the console, and two were console-only. That is the drift v2
+ * exists to close. The console is the app's management surface, so this type is the
+ * app's `FeatureFlags` (mobile `src/config/types.ts`) and the M14 screen is the only
+ * place any of them can be changed.
+ *
+ * Most of these gate nothing the console renders — `enableBiometricLogin` is a phone
+ * capability — and that is expected. **Editing a flag is a console feature; obeying it
+ * is the app's job.** The three that also gate a console surface say so on the field.
+ *
+ * A flag that only hides a screen is a UI preference, not a policy — the API must
+ * refuse the call too, with `403 feature-disabled` (AC-07).
  */
 export interface FeatureFlagSet {
+  /* ── Tea-domain surfaces. These gate a console queue as well as an app screen. ── */
   enableSavings: boolean;
   enableAdvances: boolean;
   enableLoans: boolean;
   enableManure: boolean;
+  /** Packets of made tea from the factory store. Gates the M18 queue. */
+  enableTeaPackets: boolean;
   enableInquiry: boolean;
   enableNews: boolean;
   enablePushNotifications: boolean;
+  /** Gates the banner editor inside M11, and the banner itself in the app. */
   enablePromoBanner: boolean;
-  /** Console-side surfaces that not every factory buys. */
-  enablePayouts: boolean;
-  enableReports: boolean;
+
+  /* ── App-only surfaces. Edited here (M14), rendered only on the phone. ── */
+  enableOnboarding: boolean;
+  enableBiometricLogin: boolean;
+  enableDarkModeToggle: boolean;
+  enableProfileTab: boolean;
+  enableAutoLock: boolean;
+
+  /* ────────────────────────────────────────────────────────────────────────────
+   * v1 console-only flags, kept for reference.
+   *
+   * `enablePayouts` and `enableReports` gated M6 and M16 — a payout run and the
+   * factory's four reports. Both are the factory's own internal console's work in
+   * v2, and neither flag exists in the app's `FeatureFlags`, so a console that went
+   * on serving them would be offering the office a switch the app has never read.
+   *
+   * M16's surviving report (`channelShift`, the app-adoption KPI) is deliberately
+   * left ungated, for the same reason M12, M14 and M15 have no flag: it is not a
+   * feature a factory buys or declines.
+   *
+   *   enablePayouts: boolean;
+   *   enableReports: boolean;
+   * ──────────────────────────────────────────────────────────────────────────── */
 }
 
 export type FeatureFlagName = keyof FeatureFlagSet;

@@ -43,22 +43,35 @@ export function SuppliersScreen() {
   const status = params.get('status') as SupplierStatus | null;
   const collectionPoint = params.get('collectionPoint');
   const hasBankDetails = params.get('hasBankDetails');
+  const hasApp = params.get('hasApp');
   const page = Number(params.get('page') ?? 0);
 
   const [sorting, setSorting] = useState<SortingState>([{ id: 'supplierCode', desc: false }]);
 
+  /**
+   * `hasBankDetails` is an ad-hoc extension — it is a filter the mock supports and
+   * `SupplierQuery` has never declared — so it is intersected in as a string. `hasApp` is
+   * a real field on the query type, which is why it is a boolean above and not here.
+   */
   const query = useMemo<SupplierQuery & { hasBankDetails?: string }>(
     () => ({
       q: debouncedSearch || undefined,
       status: status ?? undefined,
       collectionPoint: collectionPoint ?? undefined,
       hasBankDetails: hasBankDetails ?? undefined,
+      /**
+       * Coerced here rather than passed through as a string, unlike `hasBankDetails`
+       * beside it: `hasApp` is a **typed field on `SupplierQuery`**, so the query object
+       * has to carry a boolean. `null` — the parameter absent from the URL — stays
+       * `undefined`, which is what means *no filter at all* rather than "false".
+       */
+      hasApp: hasApp === null ? undefined : hasApp === 'true',
       page,
       pageSize: 50,
       sort: sorting[0]?.id ?? 'supplierCode',
       dir: sorting[0]?.desc ? 'desc' : 'asc',
     }),
-    [debouncedSearch, status, collectionPoint, hasBankDetails, page, sorting],
+    [debouncedSearch, status, collectionPoint, hasBankDetails, hasApp, page, sorting],
   );
 
   const { data, isPending, error, refetch } = useSuppliers(query);
@@ -143,6 +156,38 @@ export function SuppliersScreen() {
         },
       },
       {
+        /**
+         * v2's first column about a supplier: **do they have the app?**
+         *
+         * Ahead of the delivery date on purpose. The registry is the factory's own
+         * console's now, and what this screen is for is app support — so the question a
+         * clerk arrives with is "are they using it", not "when did they last deliver".
+         *
+         * Three states, not two: signed in with notifications, signed in with none
+         * registered (they turned them off, or the token expired — a supplier who will
+         * never see a `billPublished` push), and never installed at all. Collapsing the
+         * middle one into "has the app" would hide the reason a supplier says they were
+         * never told their account was ready.
+         */
+        accessorKey: 'hasApp',
+        header: t('suppliers.column.app'),
+        enableSorting: false,
+        cell: (info) => {
+          const row = info.row.original;
+          if (!row.hasApp) {
+            return <Badge tone="neutral">{t('suppliers.app.none')}</Badge>;
+          }
+          return (
+            <span className="flex flex-col">
+              <Badge tone="success">{t('suppliers.app.installed')}</Badge>
+              <span className="numeric text-caption text-text-secondary">
+                {t('suppliers.app.lastSignIn', { when: formatDate(row.lastAppSignInAt) })}
+              </span>
+            </span>
+          );
+        },
+      },
+      {
         accessorKey: 'lastDeliveryAt',
         header: t('suppliers.column.lastDelivery'),
         cell: (info) => (
@@ -211,6 +256,20 @@ export function SuppliersScreen() {
                 {point.name}
               </option>
             ))}
+          </Select>
+
+          {/* The list behind the dashboard's adoption percentage. A figure nobody can
+              turn into names is a figure nobody acts on, which is why the card links
+              straight to `?hasApp=false`. */}
+          <Select
+            aria-label={t('suppliers.filter.appAny')}
+            value={hasApp ?? ''}
+            onChange={(event) => setParam('hasApp', event.target.value || null)}
+            fullWidth={false}
+          >
+            <option value="">{t('suppliers.filter.appAny')}</option>
+            <option value="false">{t('suppliers.filter.appMissing')}</option>
+            <option value="true">{t('suppliers.filter.appInstalled')}</option>
           </Select>
 
           <Select

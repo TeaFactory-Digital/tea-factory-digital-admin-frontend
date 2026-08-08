@@ -31,27 +31,44 @@ packages/
               makes Tailwind's build-time classes resolve to runtime brand values.
 apps/
   admin/      React 19 · Vite · Tailwind v4 · TanStack Query/Table · Radix · MSW
-docs/         Architecture, the API contract, and what is deliberately unfinished
+docs/v2/      Current: architecture, the API contract, what is deliberately unfinished
+docs/v1/      The seventeen-module console, kept unchanged as the reference build
 ```
 
-**Built: all 17 modules.** M1 Dashboard · M2 Suppliers · M3 Leaf collection ·
-M4 Rates & month close · M5 Bills · M6 Payouts · M7 Credit queues · M8 Savings ·
-M9 Change requests · M10 Inquiries · M11 News · M12 Static content ·
-M13 Notifications · **M14 Configuration** · **M15 Users & roles** · **M16 Reports** ·
-M17 Audit log — on a foundation of runtime white-labelling, a separate console auth
-realm with MFA, and capability-based access control.
+## v2 — this console manages the mobile app
 
-Every module has a route, so what is unfinished is no longer module-shaped: it is a
-short list of named absences *inside* built modules — the payout file, savings
-withdrawals, a deduction editor, CSV export — each blocked on a decision only the
-factory can make, and each stated on the screen where somebody would look for the
-control. [docs/status.md](./docs/status.md) is the list; nothing is quietly assumed
-to be solved.
+**It does not run the factory.** The factory already has its own console for its
+internal processes, so v2 hands back the four modules that were building a second
+answer to questions that already had one — leaf collection, rates & month close,
+payouts and savings. Two systems recording the same weighing is not redundancy; it is
+a reconciliation somebody does by hand every month.
 
-M3 and M4 are the pair §18.2 calls the ones the project succeeds or fails on: the
-leaf is recorded at the weighing point in one keyboard-driven session per day, and
-the month is closed on a rate that a second person publishes, with every open
-exception resolved by name first.
+**Built:** M1 Dashboard (app adoption and content health) · M2 Suppliers (the app
+account) · M5 Bills (read-only, for support) · M7 Credit queues · **M18 Tea packets** ·
+M9 Change requests · M10 Inquiries · M11 News **and promo banners** · M12 Static
+content · M13 Notifications · M14 Configuration · M15 Users & roles · M16 Reports
+(app adoption) · M17 Audit log.
+
+Narrowing the scope is the smaller half of what v2 did. Reading the app against the
+console turned up three drifts, each one a supplier looking at something the office
+could not see:
+
+- **The app has fourteen feature flags; the console had ten.** Six the app gates real
+  screens on had no control anywhere, which made AC-12 false on the very screen that
+  *is* AC-12. Two were console-only.
+- **Tea packets did not exist here.** The app has shipped `RequestTeaPacketsScreen`
+  since its first release; this console had no type, no endpoint, no queue and no flag.
+  A supplier could ask, and nothing could answer. That is now M18.
+- **There was no banner editor**, though the flag, the type and the full specification
+  all shipped. A factory that turned the switch on got nothing.
+
+**Nothing was deleted.** Every handed-back screen, handler, fixture and spec is still
+in the tree, commented out with the reason at the point of the change — because the
+mock handlers are the only written statement of what those flows require, and the
+factory's own console has to satisfy every one of them.
+
+[docs/v2/status.md](./docs/v2/status.md) is the gap list; nothing is quietly assumed to
+be solved.
 
 M5, M6 and M8 are the chain those two feed, and they are one slice because they are
 one fact: a bill is a read model over the leaf and the rate, a payout line pays a
@@ -83,7 +100,7 @@ somebody maintains and nobody reads.
 
 **The backend does not exist yet.** The console runs against an in-browser mock
 that enforces every rule the real API must, and
-[docs/api-contract.md](./docs/api-contract.md) specifies each endpoint. Hand that
+[docs/v2/api-contract.md](./docs/v2/api-contract.md) specifies each endpoint. Hand that
 document to the backend developer; when the API lands, two environment variables
 switch to it.
 
@@ -130,19 +147,23 @@ consistently. All of them come from the product spec in the mobile repo's `docs/
 
 ## Documentation
 
-Start at [docs/README.md](./docs/README.md).
+Start at [docs/v2/README.md](./docs/v2/README.md).
 
-|                                             |                                                                                             |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| [api-contract.md](./docs/api-contract.md)   | **For the backend developer** — every endpoint, payload and refusal, with a build checklist |
-| [architecture.md](./docs/architecture.md)   | Layers, state, start-up, security posture                                                   |
-| [white-label.md](./docs/white-label.md)     | Runtime branding, the Tailwind ↔ token bridge, feature flags, adding a tenant               |
-| [design-system.md](./docs/design-system.md) | Tokens, components, density, accessibility                                                  |
-| [rbac.md](./docs/rbac.md)                   | The permission matrix and where it is really enforced                                       |
-| [modules.md](./docs/modules.md)             | What each of the 17 modules decides, and what a real deployment still needs                  |
-| [mocks.md](./docs/mocks.md)                 | The mock API and how to leave it behind                                                     |
-| [operations.md](./docs/operations.md)       | Environments, deployment, testing, CI                                                       |
-| [status.md](./docs/status.md)               | **Known gaps and the questions blocking specific modules**                                  |
+|                                                |                                                                                             |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| [api-contract.md](./docs/v2/api-contract.md)   | **For the backend developer** — every endpoint, payload and refusal, with a build checklist |
+| [architecture.md](./docs/v2/architecture.md)   | Layers, state, start-up, security posture                                                   |
+| [white-label.md](./docs/v2/white-label.md)     | Runtime branding, the Tailwind ↔ token bridge, **the fourteen flags**, adding a tenant      |
+| [design-system.md](./docs/v2/design-system.md) | Tokens, components, density, accessibility                                                  |
+| [rbac.md](./docs/v2/rbac.md)                   | The permission matrix and where it is really enforced                                       |
+| [modules.md](./docs/v2/modules.md)             | What each module decides, and what moved to the factory's own console                       |
+| [mocks.md](./docs/v2/mocks.md)                 | The mock API and how to leave it behind                                                     |
+| [operations.md](./docs/v2/operations.md)       | Environments, deployment, testing, CI                                                       |
+| [status.md](./docs/v2/status.md)               | **Known gaps and the questions blocking specific modules**                                  |
+
+**[docs/v1/](./docs/v1/) is kept unchanged** — the seventeen-module console as it was
+designed and documented. It is the specification the factory's own build should be read
+against, and where the handed-back modules' open questions still live.
 
 The product specification — what the console is for and why — lives in the mobile
 repository's `docs/`, and nothing here restates it. `BR-###`, `AC-##` and `§n`
