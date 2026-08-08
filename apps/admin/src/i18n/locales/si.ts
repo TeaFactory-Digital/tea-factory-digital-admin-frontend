@@ -329,6 +329,7 @@ export const si: Record<TranslationKey, string> = {
   'changeRequests.column.requested': 'ඉල්ලූ',
   'changeRequests.column.age': 'බලා සිටි කාලය',
   'changeRequests.column.channel': 'ඉල්ලූ පාර්ශ්වය',
+  'changeRequests.type.address': 'ලිපිනය',
   'changeRequests.type.bankDetails': 'බැංකු විස්තර',
   'changeRequests.type.paymentMethod': 'ගෙවීම් ක්‍රමය',
   'changeRequests.type.savingsRate': 'ඉතුරුම් අනුපාතය',

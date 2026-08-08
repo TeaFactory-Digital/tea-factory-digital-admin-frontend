@@ -332,6 +332,7 @@ export const ta: Record<TranslationKey, string> = {
   'changeRequests.column.requested': 'கேட்டது',
   'changeRequests.column.age': 'காத்திருந்த காலம்',
   'changeRequests.column.channel': 'கேட்டவர்',
+  'changeRequests.type.address': 'முகவரி',
   'changeRequests.type.bankDetails': 'வங்கி விவரங்கள்',
   'changeRequests.type.paymentMethod': 'செலுத்தும் முறை',
   'changeRequests.type.savingsRate': 'சேமிப்பு வீதம்',

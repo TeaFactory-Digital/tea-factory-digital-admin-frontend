@@ -154,11 +154,20 @@ Worst first: correctness, then plumbing, then polish.
    — and none of it was reachable for one person. A console can hold everything needed
    to answer a question and still be unable to answer it.
 
-8. **~~A supplier's profile self-edits are invisible~~** ✅ **Closed**, as
-   `actorType: 'supplier'` on the audit entry. The API has to write those entries —
-   see [api-contract.md](./api-contract.md) §8 — and until it does, the console has the
-   vocabulary and nothing to render. **That is the live half of this gap**: the model
-   is in place and the app's `PATCH /profile` still has to start recording.
+8. **~~A supplier's profile self-edits are invisible~~** ✅ **Closed twice over**, and
+   the second way is the better one.
+
+   First as `actorType: 'supplier'` on the audit entry, so a self-edit is at least
+   *recorded*. Then the **addresses were taken out of the self-edit path entirely** —
+   they are now an M9 change request like the bank details, so the office decides them
+   rather than discovering them. What is left on `PATCH /profile` is contact details,
+   where "recorded" is the right level of control.
+
+   **Two live halves remain**, both on the API:
+   - it must **refuse** an address on `PATCH /profile` rather than ignore it
+     ([api-contract.md](./api-contract.md) §6.4) — silently dropping the field
+     reproduces the original failure;
+   - it must write the `supplier` audit entries for what is still self-editable.
 
 9. **~~One supplier's requests are scattered across four queues~~** ✅ **Closed** — the
    links were the whole of it; `supplierId` was already on all four query types.
@@ -520,10 +529,11 @@ after a month has been published on the wrong assumption:
 
 ## What I would build next
 
-1. **The API writing `supplier` audit entries** (gap 8). The console has the vocabulary
-   and the screens; `PATCH /profile` still has to start recording. Until it does, the
-   supplier-action history is a model with nothing in it outside the fixture — and this
-   is the one item on the list where the console's half is already done.
+1. **The two API halves of gap 8.** `PATCH /profile` has to **refuse** an address
+   field, and it has to write `supplier` audit entries for what it still accepts. Both
+   consoles and the app are done; until the API follows, an address can still be changed
+   the old way and the supplier-action history is a model with nothing in it outside the
+   fixture. This is the one item where every client's half is already built.
 2. **The repo merge, or at least the CI symbol diff** (gap 1). v2 found two drifts by
    accident. The next one will not announce itself either, and the check that would have
    caught both is an afternoon's work.

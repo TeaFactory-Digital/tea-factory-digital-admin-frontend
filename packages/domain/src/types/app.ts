@@ -259,8 +259,31 @@ export interface TeaPacketRequest {
   note?: string;
 }
 
-/** What kind of profile change requires factory approval. */
-export type ChangeRequestType = 'paymentMethod' | 'bankDetails' | 'savingsRate';
+/**
+ * Where a supplier lives, and where the leaf comes from.
+ *
+ * Both fields in one request rather than two, because a supplier who moves house
+ * changes both in one sitting — and two approvals for one move is a second decision
+ * about a fact the office has already accepted. Either field may be absent: changing
+ * only the estate is a normal thing to do.
+ */
+export interface RequestedAddress {
+  homeAddress?: string;
+  estateAddress?: string;
+}
+
+/**
+ * What kind of profile change requires factory approval.
+ *
+ * **`address` is the newest, and it corrects an asymmetry rather than adding a
+ * feature.** Bank details and the savings rate have always gone through this queue
+ * because they decide where money goes; an address decided nothing, so the app wrote
+ * it straight to the record. But the estate address is *where the leaf comes from* —
+ * it ties a supplier to a collection point and to land — and the home address is where
+ * every printed account is sent. A wrong one is a slip delivered nowhere, and until
+ * now nothing in the office knew it had changed.
+ */
+export type ChangeRequestType = 'paymentMethod' | 'bankDetails' | 'savingsRate' | 'address';
 
 /**
  * A pending change to how a supplier is paid, or to their savings rate. While
@@ -279,6 +302,8 @@ export interface ChangeRequest {
   requestedBankDetails?: BankDetails;
   /** Requested savings deduction per kilo, in LKR (`0` = opt out). */
   requestedSavingsPerKg?: number;
+  /** Requested home and/or estate address. Present only on an `address` request. */
+  requestedAddress?: RequestedAddress;
 }
 
 /** A factory blog/news post, localized server-side by `lang`. */

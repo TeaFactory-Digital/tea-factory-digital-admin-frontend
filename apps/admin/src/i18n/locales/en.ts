@@ -314,6 +314,7 @@ export const en = {
   'changeRequests.column.requested': 'Requested',
   'changeRequests.column.age': 'Waiting',
   'changeRequests.column.channel': 'Raised by',
+  'changeRequests.type.address': 'Address',
   'changeRequests.type.bankDetails': 'Bank details',
   'changeRequests.type.paymentMethod': 'Payment method',
   'changeRequests.type.savingsRate': 'Savings rate',

@@ -211,6 +211,12 @@ export function ChangeRequestsScreen() {
             <option value="bankDetails">{t('changeRequests.type.bankDetails')}</option>
             <option value="paymentMethod">{t('changeRequests.type.paymentMethod')}</option>
             <option value="savingsRate">{t('changeRequests.type.savingsRate')}</option>
+            {/* The address joined this queue last. Everything else on this screen —
+                the grid, the detail, the decision dialog — renders it with no change
+                at all, because they were built against `currentSummary` and
+                `requestedSummary` rather than against the three types that existed
+                at the time. The filter is the one place that names them. */}
+            <option value="address">{t('changeRequests.type.address')}</option>
           </Select>
         </div>
 

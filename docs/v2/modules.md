@@ -325,13 +325,52 @@ Rules shared with M9 and M7 unchanged: AC-06's note on both verbs, BR-501 on
 
 ## M9 Change requests
 
-*Payout and savings-rate approvals.* Unchanged. Oldest first within a status,
+*Payout, savings-rate **and address** approvals.* Oldest first within a status,
 current-vs-requested in the grid as well as on the detail page, and the three rules
 implemented rather than assumed: AC-06 in three layers, BR-501/AC-10 by withholding
 the buttons *and* refusing server-side, AC-02's asymmetry in the invalidation set.
 
 `already-decided` keeps the dialog open with an explanation and refetches, rather
 than discarding the note the clerk just wrote.
+
+### `address` — the fourth type
+
+**It corrects an asymmetry rather than adding a feature.** Bank details, the payment
+method and the savings rate came through this queue because they decide where money
+goes. An address decided nothing visible, so the app's `PATCH /profile` wrote it
+straight to the record and the office never heard about it.
+
+That is wrong twice over. The **estate address is where the leaf comes from** — it
+ties a supplier to a collection point and to land — and the **home address is where
+every printed Green Leaf Account is posted**. A wrong one is a slip delivered nowhere,
+and nobody in the office knew it had changed.
+
+**The console needed almost nothing.** The grid, the detail page and the decision
+dialog render it unchanged, because they were built against `currentSummary` and
+`requestedSummary` rather than against the three types that happened to exist. The
+filter dropdown is the one place that names them. That is the design paying for
+itself — a queue that had branched per type would have needed four screens touched.
+
+Two things did need care:
+
+- **Apply per key, not per block.** `requestedAddress` carries only what moved, and
+  changing only the estate address is a normal request. A handler spreading the whole
+  object would blank the field the supplier never touched — and the leaf is filed
+  against that one. The fixture's seeded request changes the home address alone,
+  precisely so a test fails if anybody rewrites it as a spread.
+- **The write path had to close.** Adding the request type changes nothing while
+  `PATCH /profile` still accepts an address. The app enforces its half in the **type
+  system** — `EditablePersonal` no longer includes either field — because a form can
+  be changed back by anybody and a `Pick` cannot be reached around without the build
+  failing. The API must refuse rather than ignore; see
+  [api-contract.md](./api-contract.md) §6.4.
+
+**On the app side** the profile screen is now two cards with two lifecycles: contact
+details save immediately, addresses are asked for. A single form with one Save would
+have told a supplier correcting their email that their *address* had been submitted
+for approval. While a request is pending the address fields are read-only and show
+what was asked for — two pending changes to one address is two decisions for the
+office to reconcile, and the supplier cannot withdraw the first.
 
 ## M10 Inquiries
 

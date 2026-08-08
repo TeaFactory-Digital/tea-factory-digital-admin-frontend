@@ -505,6 +505,42 @@ mockChangeRequests.push(
   },
 );
 
+/**
+ * The address request — **appended rather than folded into `makeChangeRequest`.**
+ *
+ * That factory cycles three types over a fixed id layout (`chg-1` … `chg-6`) that the
+ * integration suites name directly, including AC-10's four-eyes fixture. Adding a
+ * fourth type to the rotation would renumber every one of them, so this is its own row.
+ *
+ * It changes **only the home address**, which is the case worth having in the fixture:
+ * approving it must leave `estateAddress` alone. A handler that spread the whole
+ * `requestedAddress` block would blank the field the supplier never touched, and the
+ * leaf is filed against that one.
+ */
+mockChangeRequests.push(
+  (() => {
+    const supplier = mockSuppliers[20]!;
+    return {
+      id: 'chg-15',
+      supplierId: supplier.id,
+      supplierCode: supplier.supplierCode,
+      supplierName: supplier.name,
+      type: 'address' as const,
+      status: 'pending' as const,
+      createdAt: hoursAgo(7),
+      channel: 'app' as const,
+      createdById: null,
+      createdByName: null,
+      decision: null,
+      attachments: [],
+      ageHours: 7,
+      currentSummary: `Home address: ${supplier.homeAddress ?? '—'}`,
+      requestedSummary: 'Home address: No 88, Temple Road, Akuressa',
+      requestedAddress: { homeAddress: 'No 88, Temple Road, Akuressa' },
+    };
+  })(),
+);
+
 // Pending counts on the supplier records, now that the queue exists.
 for (const request of mockChangeRequests) {
   if (request.status !== 'pending') continue;

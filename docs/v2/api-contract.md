@@ -24,6 +24,7 @@ Sections that changed:
 | §3 `GET /config` | **Fourteen flags**, not ten. Two console-only flags removed, six app flags added, plus a `teaPackets` block |
 | §4 `GET /admin/dashboard` | Two new blocks — `app` and `content` — and an `adoptionTrend`. The v1 blocks stay on the payload |
 | §5 M2 Suppliers | `hasApp`, `deviceCount`, `lastAppSignInAt` on the record; `?hasApp=` on the query. **§5.6 and §5.7 are new**: a supplier's month history and their per-category push reach |
+| §6 M9 Change requests | **`address`** — a fourth request type, and the write path `PATCH /profile` must stop accepting |
 | §8 M17 Audit | **`actorType`** — the field that makes a supplier's own app writes visible |
 | §11 M5 Bills | `?supplierId=` — the axis v1 did not have |
 | §14 M7 Credit | Unchanged, and **§14a is new**: `/admin/tea-packet-requests` |
@@ -700,9 +701,24 @@ inbox is one where the oldest item is never seen.
 }], "page": 0, "pageSize": 25, "total": 12, "nextPage": null }
 ```
 
-- `type` ∈ `bankDetails | paymentMethod | savingsRate`, with
-  `requestedBankDetails` / `requestedPaymentMethod` / `requestedSavingsPerKg`
-  present accordingly.
+- `type` ∈ `bankDetails | paymentMethod | savingsRate | address`, with
+  `requestedBankDetails` / `requestedPaymentMethod` / `requestedSavingsPerKg` /
+  `requestedAddress` present accordingly.
+
+  **`address` is new, and it comes with a change to a different endpoint** — see
+  §6.4. Its payload is a partial:
+
+  ```json
+  { "type": "address",
+    "currentSummary": "Home address: No 12, Deniyaya Road",
+    "requestedSummary": "Home address: No 88, Temple Road, Akuressa",
+    "requestedAddress": { "homeAddress": "No 88, Temple Road, Akuressa" } }
+  ```
+
+  **Either field may be absent, and absent means "unchanged".** Changing only the
+  estate address is a normal thing to ask for — land changes without anybody moving
+  house — so a server applying `{...supplier, ...requestedAddress}` would blank the
+  field the supplier never touched. Apply **per key**.
 - **`currentSummary` and `requestedSummary` are server-composed strings.** The
   one deliberate exception to "no presentation in payloads": they summarise a
   heterogeneous change for side-by-side display, and composing them client-side
@@ -743,13 +759,39 @@ normal case, and silently overwriting the first decision would replace it in the
 audit log.
 
 On approve, apply the change to the supplier's **active** values — payment
-method, bank details, savings rate — and decrement their `pendingRequests`. On
-reject, change nothing except the request itself. That asymmetry *is* AC-02, and
-getting it backwards would be invisible in the console and very visible in the
-app.
+method, bank details, savings rate, **home and estate address** — and decrement
+their `pendingRequests`. On reject, change nothing except the request itself. That
+asymmetry *is* AC-02, and getting it backwards would be invisible in the console and
+very visible in the app.
 
 Both verbs write an audit entry with `before: { status }` and
 `after: { status, note }`.
+
+### 6.4 The other half: `PATCH /profile` must refuse an address
+
+**This is the part that is easy to miss, and it is where the control actually
+lives.** The supplier-facing `PATCH /profile` (mobile `docs/api.md` §181) has always
+accepted `homeAddress` and `estateAddress` and written them straight to the record —
+no approval, no queue, and until v2 no audit entry either. The office could be asked
+*"when did this address change?"* and had no answer.
+
+Adding the `address` request type changes nothing on its own if that endpoint still
+works. So:
+
+| Endpoint | After this change |
+| --- | --- |
+| `PATCH /profile` | Accepts `name`, `phone`, `email`, `dateOfBirth`, `avatarId`. **Refuses an address field** — `422`, rather than ignoring it |
+| `POST /change-requests` (app-side) | Gains an `address` kind, carrying the partial above |
+
+**Refuse rather than ignore.** A `PATCH` that silently drops what it was sent leaves a
+supplier believing their address changed and an office that never heard about it,
+which is the precise failure the approval flow exists to prevent — reproduced by the
+fix meant to close it.
+
+The mobile app enforces its half in the type system rather than in the form:
+`EditablePersonal` no longer includes either address field, so a screen reaching
+around the queue is a compile error in every caller. A form can be changed back by
+anybody; a `Pick` cannot be reached around without the build failing.
 
 ---
 

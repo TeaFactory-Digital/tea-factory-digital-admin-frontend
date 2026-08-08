@@ -4679,6 +4679,17 @@ export const handlers: HttpHandler[] = [
             bankDetails: before.requestedBankDetails ?? supplier.bankDetails,
             hasBankDetails: Boolean(before.requestedBankDetails) || supplier.hasBankDetails,
             savingsPerKg: before.requestedSavingsPerKg ?? supplier.savingsPerKg,
+            /**
+             * **Field by field, not block by block.**
+             *
+             * `requestedAddress` carries only what the supplier actually changed —
+             * a change to the estate alone is a normal thing to ask for — so
+             * spreading the whole object would blank the field they left alone.
+             * `??` per key is what keeps "I only moved house" from erasing the
+             * estate address the leaf is filed against.
+             */
+            homeAddress: before.requestedAddress?.homeAddress ?? supplier.homeAddress,
+            estateAddress: before.requestedAddress?.estateAddress ?? supplier.estateAddress,
             pendingRequests: Math.max(0, supplier.pendingRequests - 1),
           };
         }
