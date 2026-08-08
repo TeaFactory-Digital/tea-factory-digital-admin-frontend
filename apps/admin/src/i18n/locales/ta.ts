@@ -1901,6 +1901,57 @@ export const ta: Record<TranslationKey, string> = {
     'கன்சோலின் மற்ற பகுதி இன்னும் வேலை செய்கிறது. மீண்டும் முயற்சிக்க இந்தப் பக்கத்தை மீண்டும் ஏற்றவும்.',
   'error.reload': 'மீண்டும் ஏற்று',
 
+  /* ─────────────── M14 · தொழிற்சாலையின் கடன் விதிகள் (v2) ─────────────── */
+  'config.section.creditRules': 'கடன் விதிகள்',
+  'config.sectionHint.creditRules': 'ஒரு சப்ளையர் பெறக்கூடிய அதிகபட்சம்',
+  'config.sectionDescription.creditRules':
+    'ஒவ்வொரு கடன் வரம்பும் எவ்வாறு கணக்கிடப்படுகிறது. செயலியில் சப்ளையர் பார்க்கும் வரம்பையும், கடன் வரிசை சரிபார்க்கும் வரம்பையும் உருவாக்குவது ஒரே விதிதான்.',
+  'config.creditRules.scope':
+    'சப்ளையர் எதையும் கேட்பதற்கு முன் அவருக்குக் காட்டப்படும் தொகையை இந்த விதிகளே தீர்மானிக்கின்றன. ஒரே விதி, இரு வாசகர்கள் — செயலியும் அலுவலகமும் ஒரு வரம்பைப் பற்றி ஒருபோதும் முரண்பட முடியாது.',
+  'config.creditRules.usingDefaults':
+    'இந்தத் தொழிற்சாலை இன்னும் தனது சொந்த விதிகளை அமைக்கவில்லை, எனவே இயல்பு விதிகள் பயன்பாட்டில் உள்ளன. அவை கீழே காட்டப்பட்டுள்ளன — தொழிற்சாலையின் சொந்தமாக்க சேமிக்கவும்.',
+  'config.creditRules.facilityOff':
+    'இந்த வசதி “அம்சங்கள்” பகுதியில் நிறுத்தப்பட்டுள்ளது, எனவே இங்குள்ள எதுவும் இன்னும் சப்ளையரைச் சென்றடையாது.',
+  'config.creditRules.basis': 'கணக்கிடப்படுவது',
+  'config.creditRules.basisLabel.thisMonthLeaf': 'இந்த மாத இலை',
+  'config.creditRules.basisLabel.lastSettledMonth': 'கடைசியாக முடிந்த மாத இலை',
+  'config.creditRules.basisLabel.averageIncome': 'சராசரி மாத வருமானம்',
+  'config.creditRules.basisHint.thisMonthLeaf':
+    'கடைசி முடிந்த கிலோ விலை × இந்த மாதம் வழங்கிய கிலோ. கிடங்கில் ஏற்கெனவே உள்ள இலையின் மீது.',
+  'config.creditRules.basisHint.lastSettledMonth':
+    'கடைசி முடிந்த கிலோ விலை × அந்த மாதத்தின் கிலோ.',
+  'config.creditRules.basisHint.averageIncome':
+    'கீழே உள்ள முடிந்த மாதங்களின் எண்ணிக்கையில் சப்ளையரின் சராசரி மாதக் கணக்கு.',
+  'config.creditRules.multiplier': 'பெருக்க வேண்டியது',
+  'config.creditRules.multiplierHint': '1 என்றால் அடிப்படையே. 3 என்றால் அதன் மூன்று மடங்கு.',
+  'config.creditRules.averageOverMonths': 'சராசரி எடுக்கும் மாதங்கள்',
+  'config.creditRules.averageOverMonthsHint': 'முடிந்த மாதங்கள் மட்டும். நடப்பு மாதம் ஒருபோதும் கணக்கிடப்படாது.',
+  'config.creditRules.requiredMonths': 'தேவையான முடிந்த மாதங்கள்',
+  'config.creditRules.requiredMonthsHint':
+    '0 என்றால் முதல் மாதத்திலிருந்தே வழங்கப்படும் — முன்பணத்திற்கு இது சரி, கடனுக்கு அரிதாகவே.',
+  'config.creditRules.maxAmount': 'அதிகபட்சம் (ரூ.)',
+  'config.creditRules.maxAmountHint': 'வரம்பு இல்லையெனில் காலியாக விடவும். பெருக்கலுக்குப் பிறகு பயன்படுத்தப்படும்.',
+  'config.creditRules.noCap': 'வரம்பு இல்லை',
+  'config.creditRules.summary.thisMonthLeaf': 'கடைசி முடிந்த விலையில் இந்த மாத இலை × {{multiplier}}.',
+  'config.creditRules.summary.lastSettledMonth': 'கடைசியாக முடிந்த மாத இலை × {{multiplier}}.',
+  'config.creditRules.summary.averageIncome':
+    '{{months}} முடிந்த மாதங்களின் சராசரிக் கணக்கு × {{multiplier}}.',
+  'config.creditRules.summaryHistory': 'சப்ளையருக்கு {{months}} முடிந்த மாதங்கள் இருந்தால் வழங்கப்படும்.',
+  'config.creditRules.summaryNoHistory': 'சப்ளையரின் முதல் மாதத்திலிருந்தே வழங்கப்படும்.',
+  'config.creditRules.summaryCap': '{{amount}} ஐ விட ஒருபோதும் அதிகமல்ல.',
+  'config.impact.creditRule.negative-months': 'தேவையான முடிந்த மாதங்கள் எதிர்மறையாக இருக்க முடியாது.',
+  'config.impact.creditRule.bad-average-months': 'சராசரி எடுக்கும் மாதங்கள் குறைந்தது ஒன்றாக இருக்க வேண்டும்.',
+  'config.impact.creditRule.negative-multiplier':
+    'பெருக்கி பூஜ்ஜியத்தை விட அதிகமாக இருக்க வேண்டும். இந்த வசதியை நிறுத்த, அதற்குப் பதிலாக “அம்சங்கள்” பகுதியில் நிறுத்தவும்.',
+  'config.impact.creditRule.negative-max': 'வரம்பு பூஜ்ஜியத்தை விட அதிகமாக இருக்க வேண்டும், அல்லது காலியாக இருக்க வேண்டும்.',
+
+  /* ───────── தொழிற்சாலை அமைப்பிலிருந்து நகலெடுத்தல் (v2) ───────── */
+  'shell.syncStale':
+    'இந்த எண்கள் காலாவதியாகியிருக்கலாம். தொழிற்சாலை அமைப்பு கடைசியாக {{when}} அன்று வாசிக்கப்பட்டது, {{covers}} வரை உள்ளடக்கியது. ஒரு சப்ளையரிடம் இருப்பைச் சொல்வதற்கு முன் சரிபார்க்கவும்.',
+  'shell.syncNever':
+    'இந்தக் கன்சோல் தொழிற்சாலை அமைப்பிலிருந்து ஒருபோதும் வாசிக்கவில்லை, எனவே காட்டப்படும் ஒவ்வொரு கணக்கும் இருப்பும் ஒரு இடமீட்பு மட்டுமே. இங்குள்ள எந்த எண்ணையும் மேற்கோள் காட்ட வேண்டாம்.',
+  'sync.freshAsOf': '{{when}} அன்று தொழிற்சாலை அமைப்பிலிருந்து வாசிக்கப்பட்டது, {{covers}} வரை உள்ளடக்கியது.',
+
   /* ─────────────────── M18 தேநீர் பொட்டல வேண்டுகோள்கள் (v2) ─────────────────── */
   'teaPackets.title': 'தேநீர் பொட்டலங்கள்',
   'teaPackets.subtitle':

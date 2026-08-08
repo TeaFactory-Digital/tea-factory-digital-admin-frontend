@@ -15,6 +15,8 @@ export * from './money';
 export * from './bill';
 export * from './leafCollection';
 export * from './leafCredit';
+export * from './creditRules';
+export * from './factorySync';
 export * from './inquiry';
 export * from './content';
 export * from './banners';

@@ -1830,6 +1830,57 @@ export const en = {
   'error.boundaryBody': 'The rest of the console still works. Reload this page to try again.',
   'error.reload': 'Reload',
 
+  /* ─────────────── M14 · The factory's lending rules (v2) ─────────────── */
+  'config.section.creditRules': 'Credit rules',
+  'config.sectionHint.creditRules': 'How much a supplier may borrow',
+  'config.sectionDescription.creditRules':
+    'How each credit ceiling is worked out. The same rule produces the limit the supplier sees in the app and the limit the credit queue checks against.',
+  'config.creditRules.scope':
+    'These rules decide the figure a supplier is shown before they ask for anything. One rule, two readers — the app and the office can never disagree about a limit.',
+  'config.creditRules.usingDefaults':
+    'This factory has not set its own rules yet, so the bundled defaults are in use. They are shown below — save to make them the factory’s own.',
+  'config.creditRules.facilityOff':
+    'This facility is switched off under Features, so nothing here reaches a supplier yet.',
+  'config.creditRules.basis': 'Worked out from',
+  'config.creditRules.basisLabel.thisMonthLeaf': 'This month’s leaf',
+  'config.creditRules.basisLabel.lastSettledMonth': 'Last settled month’s leaf',
+  'config.creditRules.basisLabel.averageIncome': 'Average monthly income',
+  'config.creditRules.basisHint.thisMonthLeaf':
+    'The last settled rate per kilo, times the kilos delivered this month. Cash against leaf already in the shed.',
+  'config.creditRules.basisHint.lastSettledMonth':
+    'The last settled rate per kilo, times that month’s kilos.',
+  'config.creditRules.basisHint.averageIncome':
+    'The supplier’s average monthly account over the number of settled months below.',
+  'config.creditRules.multiplier': 'Multiply by',
+  'config.creditRules.multiplierHint': '1 means the basis itself. 3 means three times it.',
+  'config.creditRules.averageOverMonths': 'Months to average',
+  'config.creditRules.averageOverMonthsHint': 'Settled months only. The month in progress is never counted.',
+  'config.creditRules.requiredMonths': 'Settled months required',
+  'config.creditRules.requiredMonthsHint':
+    '0 offers it to a supplier in their first month — which is right for an advance, and rarely right for a loan.',
+  'config.creditRules.maxAmount': 'Never more than (LKR)',
+  'config.creditRules.maxAmountHint': 'Leave empty for no cap. Applied after the multiplier.',
+  'config.creditRules.noCap': 'No cap',
+  'config.creditRules.summary.thisMonthLeaf': '{{multiplier}} × this month’s leaf at the last settled rate.',
+  'config.creditRules.summary.lastSettledMonth': '{{multiplier}} × the last settled month’s leaf.',
+  'config.creditRules.summary.averageIncome':
+    '{{multiplier}} × the average account over {{months}} settled months.',
+  'config.creditRules.summaryHistory': 'Offered once the supplier has {{months}} settled months.',
+  'config.creditRules.summaryNoHistory': 'Offered from the supplier’s first month.',
+  'config.creditRules.summaryCap': 'Never more than {{amount}}.',
+  'config.impact.creditRule.negative-months': 'Settled months required cannot be negative.',
+  'config.impact.creditRule.bad-average-months': 'Months to average has to be at least one.',
+  'config.impact.creditRule.negative-multiplier':
+    'The multiplier has to be more than zero. To stop offering this facility, switch it off under Features instead.',
+  'config.impact.creditRule.negative-max': 'A cap has to be more than zero, or empty for no cap.',
+
+  /* ───────── Replication from the factory's own system (v2) ───────── */
+  'shell.syncStale':
+    'These figures may be out of date. The factory’s system was last read at {{when}}, covering up to {{covers}}. Check before quoting a balance to a supplier.',
+  'shell.syncNever':
+    'This console has never read from the factory’s system, so every account and balance shown is a placeholder. Do not quote any figure here.',
+  'sync.freshAsOf': 'Read from the factory’s system at {{when}}, covering up to {{covers}}.',
+
   /* ─────────────────── M18 Tea packet requests (v2) ─────────────────── */
   'teaPackets.title': 'Tea packets',
   'teaPackets.subtitle':

@@ -82,7 +82,7 @@ Three arguments for that, in order of weight:
 | You are | Read | Then |
 | --- | --- | --- |
 | **Backend developer** | [api-contract.md](./api-contract.md) — every endpoint, payload and refusal | The mobile repo's `docs/api.md` §16 for the data model |
-| **Building the bridge to the factory's system** | [integration.md](./integration.md) — the two directions, the deadline, and the decision to settle first | [api-contract.md](./api-contract.md) for the shapes |
+| **Building the bridge to the factory's system** | [factory-integration-spec.md](./factory-integration-spec.md) — self-contained, written to be shared with the other team | [integration.md](./integration.md) for this side's reasoning |
 | **Front-end developer joining** | [architecture.md](./architecture.md) · [white-label.md](./white-label.md) · [design-system.md](./design-system.md) | [modules.md](./modules.md) for what is built, [status.md](./status.md) for what is not |
 | **Reviewing this milestone** | [status.md](./status.md) — what works, what is deliberately absent, and the v2 acceptance criteria | [modules.md](./modules.md) |
 | **Looking for a module that has gone** | [modules.md](./modules.md) → *What moved to the factory's own console* | [docs/v1/](../v1/) for the module as it was documented |
@@ -94,7 +94,8 @@ Three arguments for that, in order of weight:
 | [modules.md](./modules.md) | The v2 module map, what each decides, and what moved out |
 | [white-label.md](./white-label.md) | Runtime brand resolution, the Tailwind ↔ token bridge, and **the fourteen flags** |
 | [api-contract.md](./api-contract.md) | Base URL, auth realm, every endpoint with payloads, the error envelope |
-| [integration.md](./integration.md) | **Talking to the factory's own console** — what flows each way, the bill-run deadline, and who owns the contested fields |
+| [factory-integration-spec.md](./factory-integration-spec.md) | **The document to share with the factory's own dev team and the BA.** Self-contained: both endpoints, the JSON, the duplicate-prevention handshake, and the one decision to settle first |
+| [integration.md](./integration.md) | The same subject from *this* repository's side — what the console assumes, and why replication rather than import |
 | [architecture.md](./architecture.md) | The workspace, the layer boundaries, the provider stack, state |
 | [rbac.md](./rbac.md) | The §12.1 permission matrix as data, four-eyes, where authorization is enforced |
 | [design-system.md](./design-system.md) | Tokens, components, density, tables, forms, accessibility |

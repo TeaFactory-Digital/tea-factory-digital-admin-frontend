@@ -16,12 +16,15 @@ import { qk } from '@/query/queryKeys';
 import { env } from '@/config/env';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { Notice, Spinner } from '@/components/ui/states';
+import { formatDate, formatDateTime } from '@/lib/format';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+import { useFactorySync } from './useFactorySync';
 
 export function AppShell() {
   const { t } = useTranslation();
   const { degraded } = useRuntimeConfig();
+  const sync = useFactorySync();
 
   const { data: summary } = useQuery({
     queryKey: qk.dashboard,
@@ -46,6 +49,27 @@ export function AppShell() {
             stale branding and flags, is worse than a permanent banner. */}
         {env.useMock ? <Notice tone="warning">{t('shell.mockBanner')}</Notice> : null}
         {degraded ? <Notice tone="error">{t('shell.degradedConfig')}</Notice> : null}
+
+        {/**
+          * Every money figure in this console is replicated from the factory's own
+          * system, so it is **as fresh as the last successful sync** — and the screens
+          * say "read-only", which implies "and current".
+          *
+          * Across the whole shell rather than on the bills grid, because a clerk quotes
+          * a balance from whichever screen happens to be open. `never` is separated from
+          * `stale` because they need different people: one is a deployment that was
+          * never finished, the other is a job that has stopped running.
+          */}
+        {sync.state === 'stale' ? (
+          <Notice tone="warning">
+            {t('shell.syncStale', {
+              when: formatDateTime(sync.status?.lastSucceededAt),
+              covers: formatDate(sync.status?.coversUpTo),
+            })}
+          </Notice>
+        ) : sync.state === 'never' ? (
+          <Notice tone="error">{t('shell.syncNever')}</Notice>
+        ) : null}
 
         <a
           href="#main"

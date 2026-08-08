@@ -52,6 +52,7 @@ import { Select } from '@/components/ui/Select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/states';
 import { formatAmount, formatKg, formatMonthKey } from '@/lib/format';
+import { SyncFreshness } from '@/components/SyncFreshness';
 import { useBill } from '@/modules/bills/hooks';
 import { useSupplierIncome } from './hooks';
 
@@ -191,6 +192,10 @@ export function SupplierIncomeHistory({ supplierId }: { supplierId: string }) {
       />
 
       <CardBody className="flex flex-col gap-md">
+        {/* The screen a clerk is most likely to be reading from while a supplier is on
+            the telephone, which makes it the one that most needs to say how old it is. */}
+        <SyncFreshness />
+
         <Tabs value={view} onValueChange={(value) => setView(value as ViewMode)}>
           <TabsList aria-label={t('suppliers.income.views')}>
             <TabsTrigger value="graph">{t('suppliers.income.tab.graph')}</TabsTrigger>

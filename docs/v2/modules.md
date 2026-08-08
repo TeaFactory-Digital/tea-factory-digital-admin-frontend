@@ -26,7 +26,7 @@ than deleted, with the reason on each.
 | M11 | **Promo banners** | 🆕 **New in v2** | `/banners`, `/banners/:id` |
 | M12 | **Static content** | ✅ Built | `/content` |
 | M13 | **Notifications** | ✅ Built | `/notifications` |
-| M14 | **Configuration** | ✅ Built, **7 sections**, fourteen flags | `/configuration` |
+| M14 | **Configuration** | ✅ Built, **7 sections**, fourteen flags, **the factory's own lending rules** | `/configuration` |
 | M15 | **Users & roles** | ✅ Built | `/users` |
 | M16 | **Reports** | ✅ Narrowed to `channelShift` | `/reports` |
 | M17 | **Audit log** | ✅ Built (no export) | `/audit` |
@@ -517,9 +517,10 @@ field a factory needs is on this screen. It was not: six of the app's fourteen f
 flags had no control anywhere in the console, so turning off biometric sign-in or the
 onboarding screens required a developer.
 
-Seven sections now: factory identity, **the fourteen flags**, collection points /
-banks / savings rates, languages and branding, the push block, and — new in v2 — the
-**tea-packet policy**.
+Seven sections: factory identity, **the fourteen flags**, collection points / banks /
+savings rates, languages and branding, the push block, the **tea-packet policy**, and
+the **credit rules**. The last two are new in v2 and both are the same kind of thing —
+a number the factory decides that used to require a release.
 
 **The flag section now says two different things**, and the distinction is v2's:
 some flags remove a console module *and* an app screen (`enableManure` → M7), and the
@@ -533,6 +534,47 @@ job.**
 heading about collection points is a price nobody finds, and M18 then quotes
 `DEFAULT_TEA_PACKET_POLICY` at real suppliers — a real number, and not this factory's.
 Both the queue and this section say so when it has never been set.
+
+### Credit rules — how much a supplier may borrow
+
+**The three ceilings used to be formulas in the build**, with two constants behind them
+(`REQUIRED_MONTHS_OF_HISTORY`, `LIMIT_MULTIPLIER`). A factory wanting *"manure: average
+the last three months, capped at 20,000"* needed a release — which is exactly the shape
+of thing white-label.md says belongs in a `client_config` row.
+
+It matters more than the other configurable values because of **who reads the result**:
+the ceiling is printed in the supplier's app before they ask for anything. A limit this
+platform guessed at is a supplier told they may borrow money the office then refuses.
+
+Four fields per facility, and they are these four because every ceiling the product has
+ever used is one sentence — *take a basis, multiply it, cap it, and require some history
+first*:
+
+| Field | What it is |
+| --- | --- |
+| **Basis** | `thisMonthLeaf` · `lastSettledMonth` · `averageIncome`. The three things a tea factory actually prices credit off |
+| **Multiplier** | `1` means the basis itself |
+| **Months to average** | Only asked for when the basis is an average — a field with no effect beside a rule that ignores it is a field an administrator stops trusting |
+| **Settled months required** | `0` offers it from the supplier's first month, which is right for an advance and rarely right for a loan |
+| **Cap** | Empty means none. **Applied after the multiplier**, which is the only order that reads the way an office states it |
+
+Three decisions worth keeping:
+
+- **The defaults reproduce the hard-coded formulas exactly.** A factory that never
+  opens the screen must not discover its lending moved on deploy day. Asserted by a
+  test that compares `creditCeilingFromRule(DEFAULT_CREDIT_RULES[f])` against the old
+  `creditCeiling(f)` for all three facilities.
+- **Every value blocks rather than warns.** A multiplier of `0` does not fail visibly —
+  it offers every supplier a ceiling of nothing and reads on screen as a policy rather
+  than a mistake. Turning the facility off under *Features* is what "nobody may borrow"
+  is for.
+- **The screen prints what the four numbers mean**, in a sentence, under each facility.
+  Four fields is enough to express every formula and also enough to get wrong silently.
+
+**The same rule runs in the app.** `creditCeilingFromRule` is ported to the mobile
+repository and the request screens call it with the served rule, so the limit a supplier
+reads and the limit the queue checks are one calculation rather than two that agree
+until the first policy change.
 
 **The screen's real job is still showing what an edit costs**, computed from the same
 `configImpact` the API refuses with:

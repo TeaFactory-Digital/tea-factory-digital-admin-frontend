@@ -29,6 +29,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import {
+  BadgeDollarSign,
   Building2,
   Languages,
   Bell as BellIcon,
@@ -57,6 +58,7 @@ import {
   PushSection,
 } from './ConfigSections';
 /* v1: `PayoutFileSection` — still in the tree, no longer a section. See `SECTIONS`. */
+import { CreditRulesSection } from './CreditRulesSection';
 import { TeaPacketSection } from './TeaPacketSection';
 import type { SectionProps } from './SectionFooter';
 import { useAdminConfig, useSaveConfig } from './hooks';
@@ -77,6 +79,12 @@ const SECTIONS: Array<{
    * price nobody sets — and M18 then quotes the bundled default at real suppliers.
    */
   { id: 'teaPackets', icon: Package, Component: TeaPacketSection },
+  /**
+   * The factory's lending policy. Beside the tea-packet price rather than under
+   * *Features*, because both answer the same kind of question — *how much, and at what
+   * price* — and neither is a switch.
+   */
+  { id: 'creditRules', icon: BadgeDollarSign, Component: CreditRulesSection },
   /* ──────────────────────────────────────────────────────────────────────────────
    * v1 — the payout file's layout (§21.17 as configuration).
    *

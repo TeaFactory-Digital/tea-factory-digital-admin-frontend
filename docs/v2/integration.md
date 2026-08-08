@@ -9,10 +9,43 @@ It is written the same way [api-contract.md](./api-contract.md) is: what must ha
 what must be refused, and why — so a disagreement about a figure has a paragraph to
 settle it rather than an argument.
 
-> **This console needs no change to support any of this.** It talks to one API
-> (`VITE_API_BASE_URL`) and always has. The integration is between *that* API and the
-> factory's system, and the console's only stake in it is freshness — see
-> [What the office has to be told](#what-the-office-has-to-be-told).
+> **To hand to the other team, use [factory-integration-spec.md](./factory-integration-spec.md).**
+> It is self-contained — no module ids, no `AC-` references — and it is the agreed
+> design. This document is the reasoning behind it, for readers of *this* repository.
+
+## Decided since this document was written
+
+Four answers arrived, and the last one changes the shape of everything:
+
+| | |
+| --- | --- |
+| Format | **JSON**, not CSV |
+| Window | **A date range**, not a daily delta |
+| Trigger | **Automatic hourly pull**, no human upload |
+| **The Factory System's business logic does not change** | ⚠️ **This overrides §4–§6 below** |
+
+That last constraint rules out everything this document proposed for direction 2: no
+external reference stored on their side, no call before the bill run, no
+externally-made decision accepted. Reading data out is not a logic change; everything
+else here was.
+
+**So there is no direction 2 on the wire.** The office is the bridge — it reads the
+app request in this console and enters it into the Factory System exactly as it enters
+a walk-in today. §4's deadline problem disappears with it: an advance entered into the
+Factory System is deducted by the Factory System, because it was never anywhere else.
+
+That also dissolves the duplicate problem rather than solving it. **This platform never
+creates a credit record — only a message.** One system creates the record, so there is
+nothing to reconcile. See the spec's §3.
+
+**What it costs this console:** the request queues record a decision rather than making
+one. No eligibility ceiling is computed here, and the buttons read *"Approved by the
+factory"* rather than *"Approve"*. That is a real reduction and it is the right one —
+a channel that also decides credit is a second business system by another name.
+
+**Read §4–§6 below as the design that was *not* chosen**, and why. They remain the
+right answer if the Factory System team ever takes on the optional work in the spec's
+§8.
 
 ---
 

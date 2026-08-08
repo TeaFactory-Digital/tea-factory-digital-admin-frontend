@@ -18,6 +18,7 @@
  */
 
 import { LIMIT_MULTIPLIER, REQUIRED_MONTHS_OF_HISTORY } from './constants';
+import type { CreditRule } from './creditRules';
 import { floor2, round2 } from './money';
 import type { CreditEligibility } from './types/admin';
 import type { CreditFacility, GreenLeafBill } from './types/app';
@@ -121,6 +122,43 @@ export function creditCeiling(
   return manureCeiling(bills, requiredMonths);
 }
 
+/**
+ * The ceiling from a **factory-configured rule** (`creditRules.ts`).
+ *
+ * The three functions above are the formulas as they were hard-coded; this is the same
+ * arithmetic driven by a `client_config` row, so a factory can say *"manure: average
+ * the last three months, capped at 20,000"* without a release.
+ *
+ * `DEFAULT_CREDIT_RULES` reproduces the hard-coded behaviour exactly, so a factory that
+ * never opens the configuration screen sees no change in what any supplier may borrow.
+ * That property is the reason the defaults are written out rather than left implicit.
+ */
+export function creditCeilingFromRule(rule: CreditRule, bills: GreenLeafBill[]): number {
+  // The history gate first: below it there is no ceiling at all, whatever the basis
+  // would have produced. An advance normally carries `requiredMonths: 0`, which is how
+  // a supplier in their first month qualifies for it and for nothing else.
+  if (monthsOfHistory(bills) < rule.requiredMonths) return 0;
+
+  const settled = lastSettledBill(bills);
+  const current = billsNewestFirst(bills)[0];
+
+  let basis = 0;
+  if (rule.basis === 'thisMonthLeaf') {
+    basis = settled?.totalRatePerKg && current ? settled.totalRatePerKg * current.totalKgs : 0;
+  } else if (rule.basis === 'lastSettledMonth') {
+    basis = settled?.totalRatePerKg ? settled.totalRatePerKg * settled.totalKgs : 0;
+  } else {
+    basis = averageMonthlyIncome(bills, rule.averageOverMonths);
+  }
+
+  const ceiling = floor2(basis * rule.multiplier);
+
+  // The cap is applied **after** the multiplier, which is the only order that reads
+  // the way an office states it: "three times the average, but never more than 20,000".
+  if (rule.maxAmount !== null && ceiling > rule.maxAmount) return floor2(rule.maxAmount);
+  return ceiling;
+}
+
 export interface CreditEligibilityInput {
   facility: CreditFacility;
   /** Every bill the supplier has, in any order. Newest is the month in progress. */
@@ -131,6 +169,14 @@ export interface CreditEligibilityInput {
   computedAt: string;
   multiplier?: number;
   requiredMonths?: number;
+  /**
+   * The factory's configured rule for this facility.
+   *
+   * When present it **replaces** `multiplier` and `requiredMonths` entirely — those two
+   * are the hard-coded formula's parameters, and a rule that used some of one and some
+   * of the other would be a ceiling nobody could derive from what the screen shows.
+   */
+  rule?: CreditRule;
 }
 
 /**
@@ -187,19 +233,33 @@ export function buildCreditEligibility({
   computedAt,
   multiplier = LIMIT_MULTIPLIER,
   requiredMonths = REQUIRED_MONTHS_OF_HISTORY,
+  rule,
 }: CreditEligibilityInput): CreditEligibility {
   const current = billsNewestFirst(bills)[0] ?? null;
   const settled = lastSettledBill(bills) ?? null;
   const months = monthsOfHistory(bills);
 
-  const ceiling = creditCeiling(facility, bills, multiplier, requiredMonths);
+  /**
+   * The configured rule wins over the hard-coded parameters, **wholesale**.
+   *
+   * Resolved once, here, so every figure below — the ceiling, the reason it is
+   * refused, the working printed on screen — is derived from the same numbers. A
+   * ceiling computed from a rule and a "required months" taken from the old constant
+   * would print a refusal that the ceiling beside it contradicts.
+   */
+  const effectiveRequiredMonths = rule ? rule.requiredMonths : requiredMonths;
+  const effectiveAverageMonths = rule ? rule.averageOverMonths : requiredMonths;
+
+  const ceiling = rule
+    ? creditCeilingFromRule(rule, bills)
+    : creditCeiling(facility, bills, multiplier, requiredMonths);
   // `floor2`, not `round2`: this is a maximum, and rounding one up prints a limit
   // the validator on the other side rejects (money.ts → "ceilings truncate").
   const available = Math.max(0, floor2(ceiling - outstanding));
 
   const reasonKey = ineligibilityReasonKey(facility, {
     monthsOfHistory: months,
-    requiredMonths,
+    requiredMonths: effectiveRequiredMonths,
     settledRate: settled?.totalRatePerKg ?? null,
     currentKgs: current?.totalKgs ?? 0,
     ceiling,
@@ -215,13 +275,29 @@ export function buildCreditEligibility({
     reasonKey,
 
     monthsOfHistory: months,
-    /** `0` for an advance — not "unset", but "no months are required". */
-    requiredMonths: facility === 'advance' ? 0 : requiredMonths,
+    /**
+     * `0` for an advance under the **hard-coded** formula — not "unset", but "no months
+     * are required". Under a configured rule the number is simply whatever the factory
+     * set, including for an advance: a factory that wants one settled month before
+     * lending against leaf is entitled to say so.
+     */
+    requiredMonths: rule ? rule.requiredMonths : facility === 'advance' ? 0 : requiredMonths,
+    /**
+     * The working, and it is shown for **any facility whose rule averages income** —
+     * not only a loan. Under configuration the manure ceiling may be an average too
+     * (that is the example this feature was built for), and printing the ceiling
+     * without the average it came from is the AC-05 failure in miniature.
+     */
     averageMonthlyIncome:
-      facility === 'loan' && months >= requiredMonths
-        ? averageMonthlyIncome(bills, requiredMonths)
+      (rule ? rule.basis === 'averageIncome' : facility === 'loan') &&
+      months >= effectiveRequiredMonths
+        ? averageMonthlyIncome(bills, effectiveAverageMonths)
         : null,
-    limitMultiplier: facility === 'loan' ? multiplier : null,
+    limitMultiplier: rule
+      ? rule.multiplier
+      : facility === 'loan'
+        ? multiplier
+        : null,
     lastSettledMonthKey: settled?.monthKey ?? null,
     lastSettledRatePerKg: settled?.totalRatePerKg ?? null,
     /**

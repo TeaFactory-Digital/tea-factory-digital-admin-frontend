@@ -46,6 +46,7 @@ import type {
   ConsoleRole,
   ConsoleUser,
   CreditFacility,
+  CreditRules,
   Delivery,
   DeliveryBatch,
   DeliveryBatchResult,
@@ -102,6 +103,7 @@ import {
   type DeductionRates,
   DEFAULT_PAYOUT_EXPORT,
   DEFAULT_SAVINGS_POLICY,
+  DEFAULT_CREDIT_RULES,
   DEFAULT_TEA_PACKET_POLICY,
   teaPacketAmount,
   teaPacketRequestProblems,
@@ -1628,7 +1630,15 @@ function withAge(request: AdminChangeRequest): AdminChangeRequest {
  * made against, and recomputing them would rewrite history every time the page is
  * opened.
  */
-function withCreditEligibility(request: AdminCreditRequest): AdminCreditRequest {
+function withCreditEligibility(
+  request: AdminCreditRequest,
+  /**
+   * The requesting tenant's rules. Threaded through rather than looked up here,
+   * because this function has no `Request` and a per-tenant value read from a module
+   * would price one factory's ceiling with another's policy.
+   */
+  rules: CreditRules,
+): AdminCreditRequest {
   const base = { ...request, ageHours: ageHoursOf(request.createdAt) };
   if (request.status !== 'pending') return base;
 
@@ -1638,8 +1648,16 @@ function withCreditEligibility(request: AdminCreditRequest): AdminCreditRequest 
   // so a session committed a minute ago has to be in the figure.
   return {
     ...base,
-    eligibility: eligibilityFor(supplier, request.facility, { deliveries: state.deliveries }),
+    eligibility: eligibilityFor(supplier, request.facility, {
+      deliveries: state.deliveries,
+      rules,
+    }),
   };
+}
+
+/** The tenant's lending policy, or the bundled defaults if it has never set one. */
+function creditRulesOf(request: Request): CreditRules {
+  return tenantConfig(request).creditRules ?? DEFAULT_CREDIT_RULES;
 }
 
 function withTeaPacketAge(request: AdminTeaPacketRequest): AdminTeaPacketRequest {
@@ -2176,6 +2194,16 @@ export const handlers: HttpHandler[] = [
       };
     }
     if (patch.manureProducts) config.manureProducts = patch.manureProducts.map((one) => ({ ...one }));
+    // Replaced wholesale rather than merged: each is a small record whose fields are
+    // read together, and a half-applied lending rule is a ceiling nobody chose.
+    if (patch.teaPackets) config.teaPackets = { ...patch.teaPackets };
+    if (patch.creditRules) {
+      config.creditRules = {
+        advance: { ...patch.creditRules.advance },
+        loan: { ...patch.creditRules.loan },
+        manure: { ...patch.creditRules.manure },
+      };
+    }
     if (patch.payouts) {
       // Replaced wholesale, not merged: the column list *is* the value, and merging two
       // column arrays would produce an order nobody chose.
@@ -2369,6 +2397,35 @@ export const handlers: HttpHandler[] = [
         if (q.queue === 'inquiries') return flags.enableInquiry;
         return true;
       }),
+    });
+  }),
+
+  /* ── Replication from the factory's own system ─────────────────────────── */
+
+  /**
+   * How fresh the figures this console shows actually are.
+   *
+   * The mock reports a **healthy** sync, because the fixture *is* the data — there is no
+   * factory system to be behind. What it must not do is omit the endpoint: a console
+   * that 404s here would render the "never synced" banner over every screen in
+   * development, and a banner that is always on is a banner nobody reads by the second
+   * morning.
+   *
+   * The real implementation reports its own replication job's state. See
+   * `docs/v2/factory-integration-spec.md` §7.
+   */
+  http.get('*/admin/factory-sync', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'reports');
+    if ('response' in auth) return auth.response;
+
+    const now = new Date();
+    return HttpResponse.json({
+      // Minutes ago, not seconds: an implausibly perfect figure invites a reader to
+      // assume the panel is decorative.
+      lastSucceededAt: new Date(now.getTime() - 8 * 60_000).toISOString(),
+      lastAttemptedAt: new Date(now.getTime() - 8 * 60_000).toISOString(),
+      coversUpTo: TODAY,
     });
   }),
 
@@ -4766,7 +4823,7 @@ export const handlers: HttpHandler[] = [
     const flags = flagsOf(request);
     let rows = state.creditRequests
       .filter((row) => flags[CREDIT_FACILITY_FLAGS[row.facility]])
-      .map(withCreditEligibility);
+      .map((row) => withCreditEligibility(row, creditRulesOf(request)));
 
     if (status) rows = rows.filter((r) => r.status === status);
     if (facility) rows = rows.filter((r) => r.facility === facility);
@@ -4796,7 +4853,7 @@ export const handlers: HttpHandler[] = [
     const gate = featureGate(request, CREDIT_FACILITY_FLAGS[found.facility]);
     if (gate) return gate;
 
-    return HttpResponse.json(withCreditEligibility(found));
+    return HttpResponse.json(withCreditEligibility(found, creditRulesOf(request)));
   }),
 
   ...(['approve', 'reject'] as const).map((verb) =>
@@ -4850,6 +4907,9 @@ export const handlers: HttpHandler[] = [
 
       const fresh = eligibilityFor(supplier, before.facility, {
         deliveries: state.deliveries,
+        // The same rule the queue priced the row with, so `stale-eligibility` fires on
+        // a ceiling that genuinely moved rather than on two different policies.
+        rules: creditRulesOf(request),
       });
 
       /**

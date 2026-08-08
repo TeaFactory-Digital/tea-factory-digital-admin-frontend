@@ -314,7 +314,7 @@ app stores demand binaries, browsers do not.
 **Since M14, the row is editable from inside the console** — which is what turns AC-12 from a
 mechanism into something you can watch happen. `/configuration` has a control for every block
 of the row: identity, **the fourteen flags**, collection points, banks, savings rates, the
-tea-packet policy, languages, branding and the push block. That completeness is the criterion:
+tea-packet policy, **the credit rules**, languages, branding and the push block. That completeness is the criterion:
 one field still requiring a developer would make AC-12 false however good the rest of the
 screen was.
 
@@ -333,6 +333,16 @@ Consequences worth knowing before you use it:
   0% interest — arrived as *"but the month must be changeable, and so must the rate"*, which
   is this row's whole purpose: a factory that pays out at the start of the school year is a
   value, not a build.
+- **The credit rules are configuration**, and they are the clearest case on the row of
+  why that matters. How much a supplier may borrow used to be a formula in the build
+  with two constants behind it, so a factory saying *"manure: average the last three
+  months, capped at 20,000"* needed a release. It is now four values per facility —
+  and the same rule produces the ceiling the **app** shows the supplier and the ceiling
+  the **office's queue** checks against, which is what stops the two disagreeing about
+  a limit somebody is being refused.
+
+  The bundled defaults reproduce the old formulas exactly, so a factory that never
+  opens the screen sees no change in what anybody may borrow.
 - **The tea-packet policy is configuration** — the pack size, the price and the most one
   supplier may take at once. New in v2 with M18, and it carries the row's argument in
   miniature: a factory that changes its packet price changes a value, not a build. It is also

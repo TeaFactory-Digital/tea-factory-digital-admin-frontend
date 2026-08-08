@@ -30,6 +30,7 @@ import {
   type PayoutExportTemplate,
 } from './payoutExport';
 import { teaPacketPolicyProblems, type TeaPacketPolicy } from './teaPackets';
+import { creditRuleProblems, type CreditRules } from './creditRules';
 
 /**
  * What the office may change. `tenantId` is **not** here, and that is deliberate: it is
@@ -52,6 +53,8 @@ export interface ConfigPatch {
   manureProducts?: ManureProduct[];
   /** What a packet of made tea is and what it costs (`enableTeaPackets`). */
   teaPackets?: TeaPacketPolicy;
+  /** How each credit ceiling is calculated — the factory's own lending policy. */
+  creditRules?: CreditRules;
   banks?: Array<{ name: string; branches: string[] }>;
   localization?: {
     defaultLanguage?: LanguageCode;
@@ -344,6 +347,27 @@ export function configImpact(
         params: {},
         field: 'teaPackets',
       });
+    }
+  }
+
+  /* ── The credit rules ─────────────────────────────────────────────────── */
+  if (patch.creditRules) {
+    /**
+     * Every problem blocks, for the same reason the payout template's do: the output is
+     * a figure a supplier is **told they may borrow**. A multiplier of zero does not
+     * fail visibly — it offers every supplier a ceiling of nothing and reads on screen
+     * as a policy rather than a mistake, and the person who finds out is at the counter
+     * being refused.
+     */
+    for (const [facility, rule] of Object.entries(patch.creditRules)) {
+      for (const problem of creditRuleProblems(rule)) {
+        out.push({
+          severity: 'blocks',
+          messageKey: `config.impact.creditRule.${problem}`,
+          params: { facility },
+          field: `creditRules.${facility}`,
+        });
+      }
     }
   }
 

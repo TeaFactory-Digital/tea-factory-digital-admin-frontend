@@ -127,25 +127,38 @@ Worst first: correctness, then plumbing, then polish.
 
 4. **The factory's system is a separate database, and nothing bridges them yet.**
 
-   v2 split the scope on the premise that the factory runs its own console. It does —
-   with **its own database** — so the two are not one system with two front ends, and
-   every fact they share has to be replicated.
+   The factory runs its own system, with its own database, and **its business logic
+   does not change**. The agreed design is therefore narrow: one read-only endpoint on
+   their side, pulled hourly, and the **office** carries requests the other way by
+   entering them exactly as it enters a walk-in today.
+   [factory-integration-spec.md](./factory-integration-spec.md) is the shareable
+   specification; [integration.md](./integration.md) is this side's reasoning.
 
-   The design is in [integration.md](./integration.md). Three things from it belong in
-   this list because they are gaps rather than plans:
+   Three consequences belong in this list because they are gaps rather than plans:
 
-   - **The bill-run deadline is unguarded.** An approval made here after the factory
-     has generated its bills is invisible: the supplier was told *yes* and their
-     account does not show it. §4's reconciliation pull is what makes that
-     self-healing, and it does not exist.
-   - **Bank details, payment method, savings rate and address are editable in both
-     systems.** Two approval paths for one fact, with no way to say which was later —
-     on a supplier's bank account. §5 argues for making this platform the only writer;
-     **that decision has not been taken.**
-   - **The console does not say how fresh a replicated figure is.** M5 says
-     "read-only" and implies "and current". Once bills arrive by replication a clerk
-     reading a figure to a supplier needs to know when it last synced (§7). Small, and
-     blocked on the design choice rather than on effort.
+   - **The available amount is computed from incomplete data.** ✅ The *ceiling* is now
+     the factory's own configured rule (M14 → *Credit rules*), shared with the app so
+     the two agree by construction. ⚠️ But `available = ceiling − outstanding`, and
+     `outstanding` must be the Factory System's **complete** balance — counter-raised
+     credit included. Until the sync supplies it, a supplier who borrowed at the
+     counter can draw the same headroom twice. See
+     [factory-integration-spec.md](./factory-integration-spec.md) §3.4.
+   - **The pull does not exist.** Nothing fetches from the factory's endpoint, because
+     the endpoint has not been built. Every money figure in this console is still the
+     mock's.
+   ✅ **The console now says how fresh a replicated figure is.** A quiet line under the
+   money screens while the sync is healthy, and a shell-wide warning when it is not —
+   with "never synced" separated from "behind", because they need different people.
+   `factorySyncState` is clock-free and tested; the mock reports healthy so a
+   development console does not carry a permanent banner. Asks nothing of the Factory
+   System: it is the platform's record of its own pulls.
+
+   ✅ **The app now reads `/config` at runtime.** It used to run entirely on values
+   compiled into the binary, so a credit rule the office set in M14 reached a supplier
+   only in the next release — which would have made the *Credit rules* screen a control
+   over nothing. `ClientConfigProvider` fetches, merges over the bundled build and never
+   blocks the launch. The remaining half is the backend: `configRepository` resolves to
+   `null` while there is no API to call.
 
 5. **The API half of every feature flag exists only in the mock.** The console hides a
    disabled surface end to end, and the mock now refuses **every** flagged endpoint with
@@ -564,9 +577,9 @@ after a month has been published on the wrong assumption:
 4. **MFA enrolment** (gap 33): the console names who owes a second factor and has no way
    for them to set one up, so the *Two-factor not set up* badge is a note rather than a
    gate.
-5. **The bridge to the factory's system** (gap 4) — and inside it, the reconciliation
-   pull first. It is the piece that makes a dropped call self-healing rather than one
-   supplier's money, silently. [integration.md](./integration.md) §4.
+5. **Get the Factory System's complete outstanding balances into the sync** (gap 4).
+   The ceiling is settled; the subtrahend is not, and it is the half that permits
+   over-lending. Nothing else in the credit path is blocked on anything.
 
 **This list is no longer a build order.** Every module in v2's scope has a route; what is
 left is the work that would make what exists trustworthy in production rather than

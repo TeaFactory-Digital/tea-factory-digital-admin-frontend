@@ -29,6 +29,7 @@ import { DataTable } from '@/components/ui/DataTable';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SearchInput, Select } from '@/components/ui/Field';
 import { EmptyState, Notice } from '@/components/ui/states';
+import { SyncFreshness } from '@/components/SyncFreshness';
 import { useDebounced } from '@/lib/useDebounced';
 import { formatAmount, formatKg, formatMoney } from '@/lib/format';
 import { MonthSelect } from '@/modules/money/MonthSelect';
@@ -224,6 +225,9 @@ export function BillsScreen() {
         *   <BillRunCard monthKey={monthKey} month={month} run={run.data} runError={run.error} />
         */}
       <Notice tone="info">{t('bills.readOnlyNotice')}</Notice>
+      {/* "Read-only" says nobody here changes it; this says how old it is. Both, because
+          the first without the second reads as "read-only and live". */}
+      <SyncFreshness />
 
       <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-end gap-sm border-b border-divider p-md">

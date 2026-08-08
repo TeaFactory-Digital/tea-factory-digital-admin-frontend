@@ -1852,6 +1852,57 @@ export const si: Record<TranslationKey, string> = {
   'error.boundaryBody': 'කොන්සෝලයේ ඉතිරි කොටස තවමත් ක්‍රියා කරයි. නැවත උත්සාහ කිරීමට මෙම පිටුව නැවත පූරණය කරන්න.',
   'error.reload': 'නැවත පූරණය කරන්න',
 
+  /* ─────────────── M14 · කර්මාන්තශාලාවේ ණය නීති (v2) ─────────────── */
+  'config.section.creditRules': 'ණය නීති',
+  'config.sectionHint.creditRules': 'සැපයුම්කරුවෙකුට ගත හැකි උපරිමය',
+  'config.sectionDescription.creditRules':
+    'එක් එක් ණය සීමාව ගණනය කරන ආකාරය. එකම නීතියෙන් තමයි යෙදුමේ සැපයුම්කරුට පෙනෙන සීමාවත්, ණය පෝලිමේ පරීක්ෂා කරන සීමාවත් හැදෙන්නේ.',
+  'config.creditRules.scope':
+    'සැපයුම්කරු කිසිවක් ඉල්ලීමට පෙර ඔහුට පෙන්වන අගය තීරණය කරන්නේ මෙම නීතියි. එක් නීතියක්, කියවන්නන් දෙදෙනෙක් — යෙදුමයි කාර්යාලයයි සීමාවක් ගැන කිසිදා නොගැලපෙන්නේ නැහැ.',
+  'config.creditRules.usingDefaults':
+    'මෙම කර්මාන්තශාලාව තවම තමන්ගේම නීති නියම කර නැත, එබැවින් පෙරනිමි නීති ක්‍රියාත්මකයි. ඒවා පහත පෙන්වා ඇත — කර්මාන්තශාලාවේම කර ගැනීමට සුරකින්න.',
+  'config.creditRules.facilityOff':
+    'මෙම පහසුකම "විශේෂාංග" යටතේ අක්‍රියයි, එබැවින් මෙහි කිසිවක් තවම සැපයුම්කරුවෙකුට ළඟා නොවේ.',
+  'config.creditRules.basis': 'ගණනය කරන්නේ',
+  'config.creditRules.basisLabel.thisMonthLeaf': 'මෙම මාසයේ කොළ',
+  'config.creditRules.basisLabel.lastSettledMonth': 'අවසන් නිරවුල් මාසයේ කොළ',
+  'config.creditRules.basisLabel.averageIncome': 'සාමාන්‍ය මාසික ආදායම',
+  'config.creditRules.basisHint.thisMonthLeaf':
+    'අවසන් නිරවුල් කිලෝ අනුපාතය × මෙම මාසයේ බෙදාහැරි කිලෝ. ගබඩාවේ දැනටමත් ඇති කොළ මතයි.',
+  'config.creditRules.basisHint.lastSettledMonth':
+    'අවසන් නිරවුල් කිලෝ අනුපාතය × එම මාසයේ කිලෝ.',
+  'config.creditRules.basisHint.averageIncome':
+    'පහත සඳහන් නිරවුල් මාස ගණන තුළ සැපයුම්කරුගේ සාමාන්‍ය මාසික ගිණුම.',
+  'config.creditRules.multiplier': 'ගුණ කරන්න',
+  'config.creditRules.multiplierHint': '1 යනු පදනමම. 3 යනු එහි තුන් ගුණයයි.',
+  'config.creditRules.averageOverMonths': 'සාමාන්‍යය ගන්නා මාස',
+  'config.creditRules.averageOverMonthsHint': 'නිරවුල් මාස පමණයි. ක්‍රියාත්මක මාසය කිසිදා ගණන් නොගනී.',
+  'config.creditRules.requiredMonths': 'අවශ්‍ය නිරවුල් මාස',
+  'config.creditRules.requiredMonthsHint':
+    '0 නම් පළමු මාසයේ සිටම ලබා දේ — advance එකකට එය නිවැරදියි, ණයකට කලාතුරකින්.',
+  'config.creditRules.maxAmount': 'උපරිමය (රු.)',
+  'config.creditRules.maxAmountHint': 'සීමාවක් නොමැති නම් හිස්ව තබන්න. ගුණ කිරීමෙන් පසුව යෙදේ.',
+  'config.creditRules.noCap': 'සීමාවක් නැත',
+  'config.creditRules.summary.thisMonthLeaf': 'අවසන් නිරවුල් අනුපාතයෙන් මෙම මාසයේ කොළ × {{multiplier}}.',
+  'config.creditRules.summary.lastSettledMonth': 'අවසන් නිරවුල් මාසයේ කොළ × {{multiplier}}.',
+  'config.creditRules.summary.averageIncome':
+    'නිරවුල් මාස {{months}}ක සාමාන්‍ය ගිණුම × {{multiplier}}.',
+  'config.creditRules.summaryHistory': 'සැපයුම්කරුට නිරවුල් මාස {{months}}ක් ඇති විට ලබා දේ.',
+  'config.creditRules.summaryNoHistory': 'සැපයුම්කරුගේ පළමු මාසයේ සිටම ලබා දේ.',
+  'config.creditRules.summaryCap': '{{amount}}ට වඩා කිසිදා නොවේ.',
+  'config.impact.creditRule.negative-months': 'අවශ්‍ය නිරවුල් මාස ඍණ විය නොහැක.',
+  'config.impact.creditRule.bad-average-months': 'සාමාන්‍යය ගන්නා මාස අවම වශයෙන් එකක් විය යුතුය.',
+  'config.impact.creditRule.negative-multiplier':
+    'ගුණකය ශුන්‍යයට වඩා වැඩි විය යුතුය. මෙම පහසුකම නැවැත්වීමට, ඒ වෙනුවට "විශේෂාංග" යටතේ අක්‍රිය කරන්න.',
+  'config.impact.creditRule.negative-max': 'සීමාවක් ශුන්‍යයට වඩා වැඩි විය යුතුය, නැතහොත් හිස්ව තබන්න.',
+
+  /* ───────── කර්මාන්තශාලා පද්ධතියෙන් අනුකරණය (v2) ───────── */
+  'shell.syncStale':
+    'මෙම අගයන් යල් පැන ගොස් තිබිය හැක. කර්මාන්තශාලා පද්ධතිය අවසන් වරට කියවූයේ {{when}} — {{covers}} දක්වා ආවරණය වේ. සැපයුම්කරුවෙකුට ශේෂයක් කීමට පෙර පරීක්ෂා කරන්න.',
+  'shell.syncNever':
+    'මෙම කොන්සෝලය කර්මාන්තශාලා පද්ධතියෙන් කිසිදා කියවා නැත, එබැවින් පෙන්වන සෑම ගිණුමක්ම ශේෂයක්ම ස්ථානාපන්නයකි. මෙහි කිසිදු අගයක් උපුටා නොදක්වන්න.',
+  'sync.freshAsOf': '{{when}} දී කර්මාන්තශාලා පද්ධතියෙන් කියවන ලදී — {{covers}} දක්වා ආවරණය වේ.',
+
   /* ─────────────────── M18 තේ පැකට් ඉල්ලීම් (v2) ─────────────────── */
   'teaPackets.title': 'තේ පැකට්',
   'teaPackets.subtitle':

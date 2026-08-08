@@ -309,6 +309,14 @@ public identity, its feature flags, its bank list and its collection points.
   },
   "savings": { "perKgOptions": [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50] },
   "teaPackets": { "packGrams": 400, "pricePerPacket": 1200, "maxPacketsPerRequest": 10 },
+  "creditRules": {
+    "advance": { "requiredMonths": 0, "basis": "thisMonthLeaf",
+                 "averageOverMonths": 6, "multiplier": 1, "maxAmount": null },
+    "loan":    { "requiredMonths": 6, "basis": "averageIncome",
+                 "averageOverMonths": 6, "multiplier": 3, "maxAmount": null },
+    "manure":  { "requiredMonths": 3, "basis": "averageIncome",
+                 "averageOverMonths": 3, "multiplier": 1, "maxAmount": 20000 }
+  },
   "banks": [{ "name": "Bank of Ceylon", "branches": ["Akuressa", "Matara"] }],
   "localization": {
     "defaultLanguage": "en",
@@ -339,6 +347,21 @@ Notes for the implementer:
   `enableReports` went the other way — console-only, and never read by the app.
   Serve the app's set and nothing else; a flag only one consumer understands is a
   switch whose effect nobody can predict.
+- **`creditRules` is how much a supplier may borrow, and it is served on the *public*
+  payload deliberately.** The app prints the ceiling before a supplier asks for
+  anything, and the console's queue checks a request against it — one served rule is
+  what makes those the same number rather than two implementations that agree until the
+  first policy change (AC-05, applied to a rule the factory now owns).
+
+  `basis` ∈ `thisMonthLeaf` · `lastSettledMonth` · `averageIncome`. The ceiling is
+  `basis × multiplier`, **then** capped — that order is the one an office states it in
+  (*"three times the average, but never more than twenty thousand"*), and capping first
+  would produce a higher limit than was asked for. `maxAmount: null` means no cap; `0`
+  is refused, because a cap of nothing and no cap at all are different intentions.
+
+  Optional: absent means `DEFAULT_CREDIT_RULES`, which reproduces the formulas that
+  used to be hard-coded. A factory that has never set a policy must not see its lending
+  move.
 - **`teaPackets` is optional and its absence is not neutral.** A row without it
   falls back to `DEFAULT_TEA_PACKET_POLICY`, which is a real price and not the
   factory's — so both M18 and M14 say so on screen. Serve it once the factory has
@@ -2239,11 +2262,16 @@ of the row is normal, and a save should carry only what its author touched.
 409 point-in-use       leaf is filed against that point     + details.point, deliveries
 409 language-required  the fallback language was removed    + details.language
 409 tea-packet-policy  a pack size, price or cap is unusable + details.problems
+409 credit-rule        a multiplier, cap or month count is unusable + details
 ```
 
 **v2's patchable blocks are the app's**: `factory`, `flags` (all fourteen), `savings`,
-`manureProducts`, **`teaPackets`**, `banks`, `localization`, `branding`, `theme`, `push`,
-`collectionPoints`.
+`manureProducts`, **`teaPackets`**, **`creditRules`**, `banks`, `localization`,
+`branding`, `theme`, `push`, `collectionPoints`.
+
+`teaPackets` and `creditRules` are **replaced wholesale rather than merged**: each is a
+small record whose fields are read together, and a half-applied lending rule is a
+ceiling nobody chose.
 
 `payouts.export` is **still served on `GET /config`** and this console no longer patches
 it — M6 belongs to the factory's own console in v2. Keep accepting the patch; something

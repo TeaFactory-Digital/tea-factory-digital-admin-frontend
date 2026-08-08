@@ -68,6 +68,7 @@ import {
   DEFAULT_DEDUCTION_RATES,
   DEFAULT_TEA_PACKET_POLICY,
   creditInstalment,
+  type CreditRules,
   EDITORIAL_FALLBACK_LANGUAGE,
   NOTIFICATION_CATEGORIES,
   OUTLIER_KG_FLOOR_KG,
@@ -2281,13 +2282,25 @@ export function creditHistoryFor(
 export function eligibilityFor(
   supplier: AdminSupplier,
   facility: CreditFacility,
-  options: { deliveries?: Delivery[]; computedAt?: string } = {},
+  options: {
+    deliveries?: Delivery[];
+    computedAt?: string;
+    /**
+     * The tenant's configured rule, when it has set one.
+     *
+     * Passed in rather than read from a module, because it is **per tenant** — a
+     * function reaching for a global would price `highland`'s loans with
+     * `galaboda`'s policy, and a ceiling is the one figure where that is money.
+     */
+    rules?: CreditRules;
+  } = {},
 ): CreditEligibility {
   return buildCreditEligibility({
     facility,
     bills: creditHistoryFor(supplier.id, options.deliveries),
     outstanding: supplier.creditBalances[facility],
     computedAt: options.computedAt ?? new Date().toISOString(),
+    rule: options.rules?.[facility],
   });
 }
 

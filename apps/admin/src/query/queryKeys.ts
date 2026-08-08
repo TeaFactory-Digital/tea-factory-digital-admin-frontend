@@ -56,6 +56,16 @@ export const qk = {
 
   dashboard: ['dashboard'] as const,
 
+  /**
+   * How fresh the figures replicated from the factory's system are.
+   *
+   * Its own key rather than a slice of `dashboard`, because the shell reads it on every
+   * screen and the dashboard is one of them. Folding it in would refetch the whole
+   * dashboard — five queue counts and a twelve-month trend — every time anybody wanted
+   * to know whether a balance was current.
+   */
+  factorySync: ['factory-sync'] as const,
+
   suppliers: {
     all: ['suppliers'] as const,
     list: (query: SupplierQuery) => ['suppliers', 'list', query] as const,

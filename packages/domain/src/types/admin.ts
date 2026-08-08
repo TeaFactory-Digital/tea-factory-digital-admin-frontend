@@ -35,6 +35,7 @@ import type { NotificationAudience } from '../notifications';
 import type { PayoutExportTemplate } from '../payoutExport';
 import type { ManureProduct } from '../deductionRates';
 import type { TeaPacketPolicy } from '../teaPackets';
+import type { CreditRules } from '../creditRules';
 
 /* ─────────────────────────────── Identity ─────────────────────────────── */
 
@@ -1878,6 +1879,18 @@ export interface RuntimeConfig {
     categories: NotificationCategory[];
     defaultCategories: NotificationCategory[];
   };
+  /**
+   * **The factory's own lending rules** — how each credit ceiling is calculated.
+   *
+   * Optional so an existing `client_config` row keeps working: absent means
+   * `DEFAULT_CREDIT_RULES`, which reproduces the formulas that used to be hard-coded.
+   * A factory that never opens the screen sees no change in what a supplier may borrow.
+   *
+   * Served on the **public** `GET /config` rather than only to the console, because the
+   * app shows a supplier their ceiling before they ask for anything. Two computations of
+   * one limit is the AC-05 failure, and one served rule is how it is avoided.
+   */
+  creditRules?: CreditRules;
   /**
    * What a packet of made tea is and what it costs (`enableTeaPackets`).
    *
