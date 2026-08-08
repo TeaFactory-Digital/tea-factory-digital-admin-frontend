@@ -23,7 +23,9 @@ Sections that changed:
 | --- | --- |
 | §3 `GET /config` | **Fourteen flags**, not ten. Two console-only flags removed, six app flags added, plus a `teaPackets` block |
 | §4 `GET /admin/dashboard` | Two new blocks — `app` and `content` — and an `adoptionTrend`. The v1 blocks stay on the payload |
-| §5 M2 Suppliers | `hasApp`, `deviceCount`, `lastAppSignInAt` on the record; `?hasApp=` on the query |
+| §5 M2 Suppliers | `hasApp`, `deviceCount`, `lastAppSignInAt` on the record; `?hasApp=` on the query. **§5.6 and §5.7 are new**: a supplier's month history and their per-category push reach |
+| §8 M17 Audit | **`actorType`** — the field that makes a supplier's own app writes visible |
+| §11 M5 Bills | `?supplierId=` — the axis v1 did not have |
 | §14 M7 Credit | Unchanged, and **§14a is new**: `/admin/tea-packet-requests` |
 | §16 M11 Content | **§16a is new**: `/admin/banners` |
 | §18 M14 Configuration | The `teaPackets` block; `payouts.export` still served, no longer patched by this console |
@@ -574,6 +576,93 @@ wrong flow here is an account-takeover path.
 
 ---
 
+### 5.6 `GET /admin/suppliers/{id}/income`
+
+Capability: `suppliers` (read). Query: `year` (optional).
+
+**One supplier across months** — and note that §11.1's bills list is *month first,
+filter second*, which is the accountant's axis and cannot express this. Both read the
+same bills; the difference is shape, and it is why this is an endpoint rather than a
+query parameter.
+
+```json
+200 {
+  "supplierId": "sup-3",
+  "years": [2026, 2025],
+  "year": 2026,
+  "months": [
+    { "monthKey": "2026-05", "billId": "bil-118", "totalKgs": 290.5,
+      "auctionResultAvailable": true, "grossAmount": 33100.25, "finalBalance": 28400.00 },
+    { "monthKey": "2026-07", "billId": "bil-142", "totalKgs": 245.0,
+      "auctionResultAvailable": false, "grossAmount": null, "finalBalance": null }
+  ]
+}
+```
+
+- **`years` travels with the months**, for the same reason M16's month list travels
+  with its report catalogue: a picker fed from a second endpoint behind a different
+  grant is a picker that comes back empty for the one role that needs it.
+- **An absent or unknown `year` resolves to the newest with data** — never a 404 and
+  never an empty series. An empty series reads as *"this supplier delivered nothing"*,
+  which is the one wrong answer this endpoint can give.
+- **`months` is oldest first.** It is drawn as a chart before it is read as a list.
+- **`grossAmount` and `finalBalance` are `null` until the auction result is in**
+  (BR-102), **never `0`**. The console renders a pending badge from exactly this
+  distinction, and the app shows the supplier the same thing. A zero would tell them
+  they earned nothing.
+- The summary is a **projection of the bill** `billId` points at. The two disagreeing
+  is precisely what a supplier reading their phone would catch.
+
+### 5.7 `GET /admin/suppliers/{id}/notifications`
+
+Capability: `suppliers` (read).
+
+**Why a push does or does not reach this supplier**, per category. §17's reach endpoint
+answers *"how many will this reach"*; this answers *"why did **he** not get it"*, which
+is the question the office is actually asked and which no count can answer.
+
+```json
+200 {
+  "supplierId": "sup-3",
+  "hasApp": true,
+  "devices": [
+    { "id": "dev-9", "platform": "android",
+      "categories": ["billPublished", "requestDecided"],
+      "registeredAt": "2026-03-11T…" }
+  ],
+  "categories": [
+    { "category": "billPublished", "offeredByFactory": true,
+      "acceptedOnSomeDevice": true, "deviceCount": 1, "reachable": true },
+    { "category": "newsArticle", "offeredByFactory": true,
+      "acceptedOnSomeDevice": false, "deviceCount": 0, "reachable": false }
+  ],
+  "recentSends": [
+    { "id": "snd-14", "category": "billPublished", "title": "…",
+      "sentAt": "2026-07-31T…", "origin": "automatic",
+      "deliveredToDevices": 1, "suppressedReason": null }
+  ]
+}
+```
+
+- **`reachable` is `offeredByFactory && acceptedOnSomeDevice`** — a conclusion drawn
+  from the two facts beside it, never an independent field. The console prints the
+  working, so it has to add up.
+- **List every category the platform knows, not only the ones this factory sends.** "The
+  factory does not send this kind" is a real answer with a different fix (M14 rather
+  than the supplier's phone), and omitting the row drops the case from the panel.
+- **`registeredAt`, not a last-seen.** The platform does not track when a device last
+  opened the app, and approximating it would invite the office to conclude a supplier
+  had abandoned it.
+- **Never send the push token.** It is a credential, nothing in the office can act on
+  one, and §1.1's rule about what must not appear in a payload covers it.
+- `recentSends` includes only sends that actually went out. `deliveredToDevices: 0` on a
+  send that reached hundreds is the row worth seeing, and an aggregate log can never
+  show it — which is why the figure is per-supplier here.
+- **A clean diagnosis with an empty `recentSends` is a complete answer**: everything
+  works and nobody told them.
+
+---
+
 ## 6. M9 Change requests — `/admin/change-requests`
 
 Capability: `changeRequests`. `read` to list, **`approve`** to decide.
@@ -699,21 +788,61 @@ Capability: `auditLog` (read). Per §12.1 that is **accountant and above — a c
 has no audit access at all**, which is deliberate: the log is for the people
 reviewing the work, not the people doing it.
 
-Query: `entity`, `entityId`, `actorId`, `action`, `from`, `to`, plus paging.
-Newest first.
+Query: `entity`, `entityId`, `actorId`, **`actorType`**, `action`, `from`, `to`, plus
+paging. Newest first.
 
 ```json
 200 { "items": [{
   "id": "aud-1041",
   "at": "2026-07-30T06:12:04.881Z",
   "actorId": "usr-manager-1", "actorName": "Ruwan Jayasuriya",
+  "actorType": "consoleUser",
   "action": "changeRequest.approve",
   "entity": "changeRequest", "entityId": "chg-2",
   "before": { "status": "pending" },
   "after": { "status": "approved", "note": "…" },
   "ip": "192.168.10.24"
+}, {
+  "id": "aud-1039",
+  "at": "2026-07-29T11:02:00.000Z",
+  "actorId": "sup-7", "actorName": "Kamala Wijesinghe",
+  "actorType": "supplier",
+  "action": "supplier.profile.update",
+  "entity": "supplier", "entityId": "sup-7",
+  "before": { "homeAddress": "No 12, DENIYAYA Road, Akuressa" },
+  "after": { "homeAddress": "No 88, Temple Road, Akuressa" },
+  "ip": null
 }], "page": 0, "pageSize": 50, "total": 3, "nextPage": null }
 ```
+
+### `actorType` — **v2's addition, and it closes a real hole**
+
+v1 had no such field because every entry was written by somebody signed into this
+console: `actorId` implied `consoleUser` and nothing needed to say so.
+
+That stopped being true when the console became the app's management surface. **The
+app's `PATCH /profile` lets a supplier change their own name, telephone, date of
+birth and both addresses** — no approval, no change request — and none of it was
+recorded anywhere. The office could be asked *"when did this address change?"* and
+had no way to answer.
+
+| Value | Who | `ip` |
+| --- | --- | --- |
+| `consoleUser` | The office. **The default** — an entry without the field is one of these, which is what keeps every v1 row readable | The office address |
+| `supplier` | The supplier, in the app | **`null`.** A phone on a mobile network has no address the office can act on, and inventing one makes the column look meaningful |
+| `system` | An automatic send firing off an event | `null` |
+
+**Write a `supplier` entry for every app-side write to a record the office is
+answerable for.** At minimum: `supplier.profile.update` and
+`supplier.password.change` — the second is what makes §21.16 auditable end to end,
+because it is the moment the office-issued credential stops working. The console can
+show that a password was *issued* and, without this, never that it was consumed.
+
+**Put them on the `supplier` entity**, not a separate feed. *"What we did to this
+account"* and *"what they did"* are two readings of one history, and a clerk
+investigating a dispute needs them interleaved — which is exactly why the type has to
+be on the row: an address change by the supplier and one by a clerk are the same row
+shape and completely different facts.
 
 - **Append-only. No write endpoint, ever** (BR-502). An audit trail a client can
   author is not evidence of anything — entries are a side effect of the mutation
@@ -723,7 +852,9 @@ Newest first.
   Current set: `changeRequest.approve`, `changeRequest.reject`,
   `supplier.update`, `supplier.suspend`, `supplier.reactivate`,
   `supplier.bankDetails.reveal`, `delivery.batch.commit`, `delivery.void`,
-  `month.rate.enter`, `month.exception.resolve`, `month.publish`.
+  `month.rate.enter`, `month.exception.resolve`, `month.publish`, and v2's
+  `supplier.profile.update`, `supplier.password.change`, `teaPacketRequest.approve`,
+  `teaPacketRequest.reject`, `banner.create`, `banner.publish`.
 - **A weighing session is one entry, not one per row** (§9.3). Two hundred lines
   for one commit would bury every other action in the log on a busy day.
 - The log **outlives everything it describes** (§20.4). Do not cascade-delete it.

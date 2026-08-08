@@ -46,6 +46,21 @@ const ACTION_KEYS: Record<string, string> = {
   'user.reactivate': 'audit.action.userReactivate',
   'user.mfa.reset': 'audit.action.userMfaReset',
   'role.update': 'audit.action.roleUpdate',
+
+  /**
+   * v2 — **what the supplier did, in the app.**
+   *
+   * These are the only verbs in this map whose actor is not staff, and the reason they
+   * exist is that `PATCH /profile` lets a supplier change their own name, telephone and
+   * addresses with no approval and no change request. v1 recorded none of it, so the
+   * office could be asked "when did this address change?" and had no answer.
+   *
+   * The copy is written from the supplier's side — *"Changed their own details"* rather
+   * than *"Profile updated"* — because the row sits on the same timeline as the
+   * office's actions and the distinction is the whole point of the entry.
+   */
+  'supplier.profile.update': 'audit.action.supplier.profile.update',
+  'supplier.password.change': 'audit.action.supplier.password.change',
 };
 
 export function auditActionLabel(action: string, t: (key: string) => string): string {

@@ -1052,10 +1052,144 @@ export interface BillQuery extends PageQuery {
   monthKey?: string;
   /** Matches supplier code, name or bill number. */
   q?: string;
+  /**
+   * One supplier, across months — **the axis v1 did not have**.
+   *
+   * M5 was built month-first because it fed the month close and the payout run: pick a
+   * month, then filter within it. That is the accountant's axis, and in v2 there is no
+   * accountant on this screen — the module survives as supplier support, and supplier
+   * support is by supplier. A clerk answering *"why is my July less than my June?"*
+   * needs both months at once, and `monthKey` + `q` cannot express that.
+   *
+   * Note this is a filter on the **bills** list. The month-by-month summary the detail
+   * page renders is `GET /admin/suppliers/{id}/income`, which is derived from the same
+   * bills but shaped as a series rather than a page.
+   */
+  supplierId?: string;
   /** The bills a payout run cannot pay. */
   missingBankDetails?: boolean;
   /** The bills that pay nothing this month. */
   carriesDebt?: boolean;
+}
+
+/* ─────────────────── M2 · A supplier's own month history ─────────────────── */
+
+/**
+ * One month of a supplier's account, as the office sees it — **the same shape the app
+ * shows the supplier** (`IncomeSummary` in `types/app.ts`).
+ *
+ * Deliberately the same type rather than a console-specific one. The whole reason this
+ * exists is that a supplier telephones holding their phone, and the clerk has to be
+ * looking at what the supplier is looking at. Two shapes for one screen's worth of facts
+ * is how the two drift into disagreeing about a figure somebody is reading aloud.
+ *
+ * `grossAmount` and `finalBalance` are `null` until the month's auction result is in
+ * (BR-102) — **never `0`**. The app renders that as a "pending" badge and so does the
+ * console; a zero would tell a supplier they earned nothing.
+ */
+export interface SupplierMonthSummary {
+  monthKey: string;
+  /** The bill this month resolves to, so the row links straight to the slip. */
+  billId: string | null;
+  totalKgs: number;
+  auctionResultAvailable: boolean;
+  grossAmount: number | null;
+  finalBalance: number | null;
+}
+
+/**
+ * The history payload: which years have anything in them, and one year's months.
+ *
+ * `years` travels with the summaries for the same reason M16's month list travels with
+ * its report catalogue — a picker fed from a second endpoint behind a different grant is
+ * a picker that comes back empty for the one role that needs it.
+ */
+export interface SupplierIncomeHistory {
+  supplierId: string;
+  /** Descending — newest year first, which is what the picker should open on. */
+  years: number[];
+  /** The requested year, **oldest month first**: a chart reads left to right. */
+  year: number;
+  months: SupplierMonthSummary[];
+}
+
+/* ────────────── M2 · What this supplier can be notified about ────────────── */
+
+/**
+ * One registered device, as the office needs to see it.
+ *
+ * `RegisteredDevice` already exists in `types/app.ts` and carries the push token. This
+ * omits it: a token is a credential, it appears in no other console payload (§20.4's
+ * rule about account numbers is the same rule), and nothing in the office can do
+ * anything with one.
+ */
+export interface SupplierDevice {
+  id: string;
+  platform: 'ios' | 'android';
+  /** The categories **this device** accepts. Consent, not routing. */
+  categories: NotificationCategory[];
+  /**
+   * When the device registered — **not when it was last seen**, which the platform does
+   * not track. Named for what it is rather than approximated: "registered in March" and
+   * "last opened the app in March" are different facts, and a clerk deciding whether a
+   * supplier has abandoned the app would act on the second.
+   */
+  registeredAt: string;
+}
+
+/**
+ * Why a category would or would not reach this supplier — **the answer to the most
+ * common push support call there is.**
+ *
+ * *"I wasn't told my bill was ready."* There are four possible answers and v1 exposed
+ * none of them per person: the console held the device registry, the consent lists, the
+ * tenant's category list and the send log, and could only report them in aggregate
+ * ("reaches 61 devices, 6 opted out") — which names nobody.
+ *
+ * So this is computed per category and says which of the four it is. `reachable` is the
+ * conclusion; the three booleans under it are the working, in the order a clerk would
+ * check them.
+ */
+export interface SupplierCategoryReach {
+  category: NotificationCategory;
+  /** The factory sends this category at all (`config.push.categories`). */
+  offeredByFactory: boolean;
+  /** At least one of this supplier's devices accepts it. */
+  acceptedOnSomeDevice: boolean;
+  /** Devices that accept it. `0` with `offeredByFactory: true` is an opt-out. */
+  deviceCount: number;
+  /** `offeredByFactory && acceptedOnSomeDevice`. The one-line answer. */
+  reachable: boolean;
+}
+
+/**
+ * Everything the office needs to answer "why didn't I get it?" for one supplier.
+ *
+ * `recentSends` is what turns a diagnosis into evidence: a category can be perfectly
+ * reachable and the supplier still never told, because nothing was ever sent.
+ */
+export interface SupplierNotificationStatus {
+  supplierId: string;
+  /** `false` here makes every other field moot, and it is the commonest answer. */
+  hasApp: boolean;
+  devices: SupplierDevice[];
+  categories: SupplierCategoryReach[];
+  /**
+   * Sends whose audience included this supplier, newest first.
+   *
+   * `deliveredToDevices` is what the server actually attempted for **this** supplier —
+   * `0` on a send that reached hundreds is the case worth seeing, and an aggregate log
+   * can never show it.
+   */
+  recentSends: Array<{
+    id: string;
+    category: NotificationCategory;
+    title: string;
+    sentAt: string;
+    origin: NotificationOrigin;
+    deliveredToDevices: number;
+    suppressedReason: 'optedOut' | 'noDevice' | null;
+  }>;
 }
 
 /* ───────────────────────────── M6 Payouts ───────────────────────────── */
@@ -1626,11 +1760,39 @@ export interface RoleMatrix {
  * change, publish and payout lands here within one second, with actor and
  * before/after (AC-09).
  */
+/**
+ * **Who** an audit entry is about.
+ *
+ * v1 had no such field, because every entry was written by somebody signed into this
+ * console — so `actorId` implied `consoleUser` and nothing needed to say so.
+ *
+ * That stopped being true the moment the console became the app's management surface.
+ * A supplier editing their own address through `PATCH /profile` is a real write to a
+ * record the office is answerable for, and v1 recorded it **nowhere**: it was not a
+ * change request (`ChangeRequestType` covers only payout and savings-rate changes), and
+ * the audit log had no vocabulary for an actor who is not staff. The office could be
+ * asked "when did this address change?" and had no way to answer.
+ *
+ * Three kinds rather than a boolean, because the third is a real and separate answer:
+ * `system` is an automatic notification firing off a publish, and attributing that to a
+ * person would be worse than leaving it blank.
+ */
+export type AuditActorType = 'consoleUser' | 'supplier' | 'system';
+
 export interface AuditEntry {
   id: string;
   at: string;
+  /**
+   * The actor's id **in their own realm**. A console user id and a supplier id are
+   * different namespaces — see `AuditActorType`, which is what says which one this is.
+   */
   actorId: string;
   actorName: string;
+  /**
+   * Optional so an existing entry keeps working; treat an absent value as
+   * `consoleUser`, which is what every v1 entry was.
+   */
+  actorType?: AuditActorType;
   /** Dotted verb, e.g. `changeRequest.approve`, `supplier.bankDetails.reveal`. */
   action: string;
   entity: string;
@@ -1644,6 +1806,14 @@ export interface AuditQuery extends PageQuery {
   entity?: string;
   entityId?: string;
   actorId?: string;
+  /**
+   * Filter to office actions or to what the supplier did themselves.
+   *
+   * The two answer different questions on the same record — *"what did we do to this
+   * account"* and *"what did they do"* — and a clerk investigating a dispute is always
+   * asking one of them rather than both.
+   */
+  actorType?: AuditActorType;
   action?: string;
   from?: string;
   to?: string;

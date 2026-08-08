@@ -38,6 +38,40 @@ export function useSupplier(id: string | undefined) {
   });
 }
 
+/**
+ * One supplier's months.
+ *
+ * `year` is `undefined` on first render and the **server** resolves it to the newest
+ * year with data. Working that out here would mean fetching the history to discover
+ * which year to ask for, which is the round trip the `years` field exists to avoid.
+ */
+export function useSupplierIncome(id: string | undefined, year: number | undefined) {
+  return useQuery({
+    queryKey: qk.suppliers.income(id ?? '', year),
+    queryFn: () => supplierRepository.income(id!, year),
+    enabled: Boolean(id),
+    // Moving the year picker should not blank the chart while the next year loads.
+    placeholderData: (previous) => previous,
+  });
+}
+
+/**
+ * Why a push would or would not reach this supplier.
+ *
+ * `throwOnError: false` like the audit panel: this reads the device registry, and a
+ * role that may see a supplier but not their devices should get no panel rather than
+ * an error banner across the record.
+ */
+export function useSupplierNotifications(id: string | undefined) {
+  return useQuery({
+    queryKey: qk.suppliers.notifications(id ?? ''),
+    queryFn: () => supplierRepository.notifications(id!),
+    enabled: Boolean(id),
+    throwOnError: false,
+    retry: false,
+  });
+}
+
 export function useSupplierAudit(id: string | undefined) {
   return useQuery({
     queryKey: qk.audit.forEntity('supplier', id ?? ''),

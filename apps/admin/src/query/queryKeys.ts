@@ -60,6 +60,19 @@ export const qk = {
     all: ['suppliers'] as const,
     list: (query: SupplierQuery) => ['suppliers', 'list', query] as const,
     detail: (id: string) => ['suppliers', 'detail', id] as const,
+    /**
+     * Keyed by year, because that is what the request *is*. One entry for the whole
+     * history would refetch twelve months every time the picker moved, and one entry
+     * that ignored the year would show 2025's months under a 2026 heading.
+     */
+    income: (id: string, year: number | undefined) =>
+      ['suppliers', 'income', id, year ?? 'latest'] as const,
+    /**
+     * Under `suppliers`, not `notifications`, and deliberately: a composed send
+     * invalidates `notifications.all` and must **not** sweep this — the per-supplier
+     * consent state did not change because the office sent something.
+     */
+    notifications: (id: string) => ['suppliers', 'notifications', id] as const,
   },
 
   /**

@@ -15,7 +15,9 @@ import type {
   Paged,
   RevealedBankDetails,
   SupplierEditable,
+  SupplierIncomeHistory,
   SupplierListItem,
+  SupplierNotificationStatus,
   SupplierQuery,
   SupplierRegistration,
 } from '@tfd/domain';
@@ -30,6 +32,37 @@ export const supplierEndpoints = {
 
   get: (id: string) =>
     apiClient.get<AdminSupplier>(`/admin/suppliers/${id}`).then((response) => response.data),
+
+  /**
+   * This supplier's months — the same series the app shows them.
+   *
+   * Its own endpoint rather than `GET /admin/bills?supplierId=`, and the difference is
+   * shape rather than data: the bills list is a **page** of bills and this is a
+   * **series** over a year, with the years that have anything in them travelling
+   * alongside so the picker cannot come back empty. Both read the same bills.
+   *
+   * `year` omitted means the most recent year with data — which is what the screen
+   * should open on, and working it out client-side would need a round trip to discover
+   * what to ask for.
+   */
+  income: (id: string, year?: number) =>
+    apiClient
+      .get<SupplierIncomeHistory>(`/admin/suppliers/${id}/income`, {
+        params: toParams({ year }),
+      })
+      .then((response) => response.data),
+
+  /**
+   * Why this supplier would or would not receive a push — **per category**.
+   *
+   * The aggregate reach panel in M13 answers "how many will this reach"; this answers
+   * "why did *he* not get it", which is the question the office is actually asked and
+   * which no count can answer.
+   */
+  notifications: (id: string) =>
+    apiClient
+      .get<SupplierNotificationStatus>(`/admin/suppliers/${id}/notifications`)
+      .then((response) => response.data),
 
   /** `409 supplier-code-taken` when the code exists **for this factory** (§16.2). */
   create: (body: SupplierRegistration) =>

@@ -14,6 +14,7 @@
 import { useTranslation } from 'react-i18next';
 import type { AuditEntry, Paged } from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
+import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/states';
 import { formatDateTime } from '@/lib/format';
@@ -49,11 +50,33 @@ export function AuditPanel({
           <ol className="flex flex-col gap-sm">
             {page.items.map((entry) => (
               <li key={entry.id} className="border-l-2 border-divider pl-md">
-                <p className="text-body-small text-text-primary">
+                <p className="flex flex-wrap items-center gap-xs text-body-small text-text-primary">
                   {auditActionLabel(entry.action, t)}
+                  {/**
+                   * **Who** did it, when that is not the office.
+                   *
+                   * On a supplier's record the two kinds sit on one timeline
+                   * deliberately — "what we did to this account" and "what they did"
+                   * are two readings of one history, and a clerk investigating a
+                   * dispute needs them interleaved. Which makes the distinction
+                   * essential: an address change by the supplier and one by a clerk
+                   * are the same row shape and completely different facts.
+                   *
+                   * The office's own actions carry **no** badge. They are the norm
+                   * here, and badging every row would make the exception invisible
+                   * again — which is the whole failure this closes.
+                   */}
+                  {entry.actorType === 'supplier' ? (
+                    <Badge tone="info">{t('audit.actor.supplier')}</Badge>
+                  ) : entry.actorType === 'system' ? (
+                    <Badge tone="neutral">{t('audit.actor.system')}</Badge>
+                  ) : null}
                 </p>
                 <p className="numeric text-caption text-text-secondary">
                   {entry.actorName} · {formatDateTime(entry.at)}
+                  {/* A phone on a mobile network has no address the office can act on,
+                      so a supplier entry carries none — and the column simply omits it
+                      rather than showing a dash that invites a question. */}
                   {entry.ip ? ` · ${entry.ip}` : ''}
                 </p>
                 {/* Before/after as JSON is not pretty, and it is deliberate: an

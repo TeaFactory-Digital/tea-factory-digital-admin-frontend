@@ -2014,6 +2014,68 @@ export const si: Record<TranslationKey, string> = {
   'banners.confirm.publishLiveNow': 'එය වහාම ක්‍රියාත්මක වේ.',
   'banners.confirm.publishScheduled': 'එය {{when}} දින ක්‍රියාත්මක වේ.',
 
+  /* ───────────── M2 · සැපයුම්කරුගේම මාසික ඉතිහාසය (v2) ───────────── */
+  'suppliers.income.title': 'මාසික ඉතිහාසය',
+  'suppliers.income.subtitle':
+    'සැපයුම්කරු යෙදුමේ දකින එම මාසම. ඔවුන් අතේ ඇති පත්‍රිකාව කියවීමට මාසයක් විවෘත කරන්න.',
+  'suppliers.income.year': 'වර්ෂය',
+  'suppliers.income.views': 'පෙන්වන ආකාරය',
+  'suppliers.income.tab.graph': 'ප්‍රස්තාරය',
+  'suppliers.income.tab.list': 'ලැයිස්තුව',
+  'suppliers.income.tab.chart': 'අඩු කිරීම්',
+  'suppliers.income.metric': 'පෙන්විය යුත්තේ',
+  'suppliers.income.earnings': 'ආදායම',
+  'suppliers.income.kgs': 'කිලෝග්‍රෑම්',
+  'suppliers.income.month': 'මාසය',
+  'suppliers.income.paid': '{{amount}} ගෙවා ඇත',
+  'suppliers.income.pending': 'අනුපාතය එනතුරු',
+  'suppliers.income.empty': 'තවම මාස නැත',
+  'suppliers.income.emptyHint': 'තෝරාගත් වර්ෂය සඳහා මෙම සැපයුම්කරුට ගිණුමක් නැත.',
+  'suppliers.income.noEarningsYet': 'මෙම වර්ෂයේ නිරවුල් වූ මාස නැත',
+  'suppliers.income.noEarningsYetHint':
+    'සෑම මාසයක්ම තවම වෙන්දේසි ප්‍රතිඵලය එනතුරු සිටී, එබැවින් ප්‍රස්තාර ගත කිරීමට ආදායමක් නැත. බෙදාහැරි ප්‍රමාණය බැලීමට කිලෝග්‍රෑම් වෙත මාරු වන්න.',
+  'suppliers.income.noDeductions': 'කිසිවක් අඩු කර නැත',
+  'suppliers.income.noDeductionsHint': 'මෙම ගිණුමේ අඩු කිරීමේ පේළි නොතිබුණි.',
+
+  /* ─────── M2 · මෙම සැපයුම්කරුට දැනුම්දීම ලැබේද නොලැබේද (v2) ─────── */
+  'suppliers.push.title': 'දැනුම්දීම්',
+  'suppliers.push.subtitle': 'මෙම සැපයුම්කරුට දැනුම් දිය හැකිද, සහ ඔවුන්ට කුමක් දැනුම් දුන්නාද.',
+  'suppliers.push.devices': 'උපාංග',
+  'suppliers.push.platform.ios': 'iPhone',
+  'suppliers.push.platform.android': 'Android',
+  'suppliers.push.registered': '{{when}} සිට',
+  'suppliers.push.onDevices': 'උපාංග {{count}}ක පිළිගනී',
+  'suppliers.push.noApp':
+    'මෙම සැපයුම්කරු කිසිදා දුරකථනයකින් පිවිසී නැත, එබැවින් කිසිදු දැනුම්දීමක් ඔවුන් වෙත ළඟා විය නොහැක. යෙදුම ස්ථාපනය කරන තෙක් මෙම පැනලයේ අන් කිසිවක් අදාළ නොවේ.',
+  'suppliers.push.reason.noDevice': 'ලියාපදිංචි උපාංගයක් නැත',
+  'suppliers.push.reason.notOffered': 'මෙම කර්මාන්තශාලාව මෙම වර්ගය නොයවයි — "වින්‍යාසය" බලන්න',
+  'suppliers.push.reason.optedOut': 'ඔවුන්ගේ සෑම උපාංගයකම එය off කර ඇත',
+  'suppliers.push.recent': 'මෑතකදී ඔවුන්ට යවන ලද',
+  'suppliers.push.noSends': 'ඔවුන්ට කිසිවක් යවා නැත',
+  'suppliers.push.noSendsHint':
+    'ඔවුන්ගේ දුරකථනයට දැනුම්දීම් ලැබිය හැක; තවම එකක්වත් ඔවුන් වෙත ගොස් නැත. "මට කිසිදා දැනුම් දුන්නේ නැහැ" යන්නට එය සම්පූර්ණ පිළිතුරකි.',
+  'suppliers.push.delivered': '{{count}}කට යවා ඇත',
+  'suppliers.push.notDeliveredNoDevice': 'නොලැබුණි — උපාංගයක් නැත',
+  'suppliers.push.notDeliveredOptedOut': 'නොලැබුණි — off කර ඇත',
+  'suppliers.push.openModule': 'දැනුම්දීම් විවෘත කරන්න',
+
+  /* ──────────── M2 · මෙම සැපයුම්කරු සිටිය හැකි සෑම පෝලිමක්ම (v2) ──────────── */
+  'suppliers.detail.queuesLabel': 'මෙම සැපයුම්කරුගේ පෝලිම්',
+  'suppliers.detail.queue.changeRequests': 'වෙනස් කිරීමේ ඉල්ලීම්',
+  'suppliers.detail.queue.credit': 'ණය ඉල්ලීම්',
+  'suppliers.detail.queue.teaPackets': 'තේ පැකට්',
+  'suppliers.detail.queue.inquiries': 'පණිවිඩ',
+
+  /* ─────────────────── M17 · සටහන කවුරු ගැනද (v2) ─────────────────── */
+  'audit.actor.consoleUser': 'කාර්යාලය',
+  'audit.actor.supplier': 'සැපයුම්කරු',
+  'audit.actor.system': 'ස්වයංක්‍රීය',
+  'audit.filter.actorType': 'ක්‍රියා කළේ කවුද',
+  'audit.filter.allActors': 'ඕනෑම කෙනෙක්',
+  'audit.action.supplier.profile.update': 'යෙදුමේදී තමන්ගේම විස්තර වෙනස් කළා',
+  'audit.action.supplier.password.change': 'තමන්ගේම යෙදුම් මුරපදය තෝරා ගත්තා',
+  'audit.action.notification.send': 'දැනුම්දීම යවන ලදී',
+
   /* ───────────────────────────── attachments ───────────────────────────── */
   'attachment.tooLarge': 'එම ලිපිගොනුව 8 MBට වඩා විශාලයි',
   'attachment.badType': 'JPEG, PNG, WebP හෝ PDF ලිපිගොනුවක් අමුණන්න',

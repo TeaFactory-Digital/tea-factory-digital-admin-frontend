@@ -1579,6 +1579,9 @@ function recordBy(
   return record({
     actorId: auth.user.id,
     actorName: auth.user.name,
+    // Explicit rather than left to the default, so a reader of one entry never has to
+    // know what the default is. See `AuditActorType`.
+    actorType: 'consoleUser',
     action,
     entity,
     entityId,
@@ -2409,6 +2412,143 @@ export const handlers: HttpHandler[] = [
     rows = sortRows(rows, url, (a, b) => a.supplierCode.localeCompare(b.supplierCode));
 
     return HttpResponse.json(paginate(rows, url));
+  }),
+
+  /**
+   * One supplier's months — **the axis M5 never had** (§5.6).
+   *
+   * Derived from `state.bills` at request time rather than stored, like every other read
+   * model here. Two properties the real API must reproduce:
+   *
+   *  - **`null` is not `0`.** A month whose auction result is not in has no gross and no
+   *    balance; sending zeroes would tell a supplier they earned nothing that month, and
+   *    the console renders a "pending" badge from exactly this distinction (BR-102).
+   *  - **Oldest month first.** A chart reads left to right, and this series is drawn
+   *    before it is read.
+   */
+  http.get('*/admin/suppliers/:id/income', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'suppliers');
+    if ('response' in auth) return auth.response;
+
+    const supplier = state.suppliers.find((one) => one.id === params.id);
+    if (!supplier) return fail({ status: 404, code: '404', message: 'No such supplier.' });
+
+    const mine = state.bills.filter((bill) => bill.supplierId === supplier.id);
+
+    // Descending: the picker should open on the newest year, not the oldest.
+    const years = Array.from(new Set(mine.map((bill) => Number(bill.monthKey.slice(0, 4)))))
+      .sort((a, b) => b - a);
+
+    const url = new URL(request.url);
+    const requested = Number(url.searchParams.get('year'));
+    /**
+     * An unknown or absent year resolves to the newest with data, rather than 404ing or
+     * answering emptily. An empty series reads as "this supplier delivered nothing",
+     * which is the one wrong answer this endpoint can give.
+     */
+    const year = years.includes(requested) ? requested : (years[0] ?? new Date().getFullYear());
+
+    const months = mine
+      .filter((bill) => Number(bill.monthKey.slice(0, 4)) === year)
+      .sort((a, b) => a.monthKey.localeCompare(b.monthKey))
+      .map((bill) => ({
+        monthKey: bill.monthKey,
+        billId: bill.id,
+        totalKgs: bill.totalKgs,
+        auctionResultAvailable: bill.auctionResultAvailable,
+        grossAmount: bill.grossAmount,
+        finalBalance: bill.balanceAmount,
+      }));
+
+    return HttpResponse.json({ supplierId: supplier.id, years, year, months });
+  }),
+
+  /**
+   * Why a push would or would not reach **this** supplier.
+   *
+   * The interesting part is that every fact here already existed in v1 and none of it was
+   * reachable per person: the device registry, the tenant's category list, each device's
+   * consent list and the send log. M13's reach panel could say *"reaches 61 devices, 6
+   * opted out"* and could not name one of the six — so the office could never answer
+   * *"why didn't I get it?"*, which is the question it is actually asked.
+   */
+  http.get('*/admin/suppliers/:id/notifications', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'suppliers');
+    if ('response' in auth) return auth.response;
+
+    const supplier = state.suppliers.find((one) => one.id === params.id);
+    if (!supplier) return fail({ status: 404, code: '404', message: 'No such supplier.' });
+
+    const config = tenantConfig(request);
+    const offered = config.push?.categories ?? [];
+    const devices = mockDevicesBySupplier[supplier.id] ?? [];
+
+    /**
+     * Every category the **platform** knows, not only the ones this factory sends.
+     *
+     * A category the factory does not offer is a real answer to "why didn't I get it" —
+     * and it is a different answer from an opt-out, with a different fix (M14 rather
+     * than the supplier's phone). Listing only the offered ones would silently drop the
+     * case from the panel.
+     */
+    const categories = NOTIFICATION_CATEGORIES.map((category) => {
+      const accepting = devices.filter((device) => device.categories.includes(category));
+      const offeredByFactory = offered.includes(category);
+      return {
+        category,
+        offeredByFactory,
+        acceptedOnSomeDevice: accepting.length > 0,
+        deviceCount: accepting.length,
+        reachable: offeredByFactory && accepting.length > 0,
+      };
+    });
+
+    const recentSends = state.notificationSends
+      // Only what actually went out. A queued or failed send tells the office about the
+      // send, not about this supplier, and M13's log is where that belongs.
+      .filter((send) => send.sentAt !== null && audienceMatches(supplier, send.audience))
+      .sort((a, b) => (b.sentAt ?? '').localeCompare(a.sentAt ?? ''))
+      .slice(0, 10)
+      .map((send) => {
+        const accepting = devices.filter((device) => device.categories.includes(send.category));
+        return {
+          id: send.id,
+          category: send.category,
+          title: send.title,
+          sentAt: send.sentAt!,
+          origin: send.origin,
+          deliveredToDevices: accepting.length,
+          /**
+           * Why *this* supplier got nothing from a send that reached hundreds. The two
+           * reasons need different follow-ups — one is a conversation with the supplier
+           * about their settings, the other is that they never installed the app.
+           */
+          suppressedReason:
+            accepting.length > 0
+              ? null
+              : devices.length === 0
+                ? ('noDevice' as const)
+                : ('optedOut' as const),
+        };
+      });
+
+    return HttpResponse.json({
+      supplierId: supplier.id,
+      hasApp: devices.length > 0,
+      devices: devices.map((device) => ({
+        id: device.id,
+        platform: device.platform,
+        categories: device.categories,
+        registeredAt: device.registeredAt,
+        // The push token is deliberately **not** on this payload. It is a credential,
+        // nothing in the office can act on one, and §20.4's argument about account
+        // numbers is the same argument.
+      })),
+      categories,
+      recentSends,
+    });
   }),
 
   http.get('*/admin/suppliers/:id', async ({ request, params }) => {
@@ -3592,12 +3732,19 @@ export const handlers: HttpHandler[] = [
 
     const url = new URL(request.url);
     const monthKey = url.searchParams.get('monthKey');
+    const supplierId = url.searchParams.get('supplierId');
     const q = url.searchParams.get('q')?.trim().toLowerCase();
     const missingBankDetails = url.searchParams.get('missingBankDetails');
     const carriesDebt = url.searchParams.get('carriesDebt');
 
     let rows = state.bills.map(toBillListItem);
     if (monthKey) rows = rows.filter((row) => row.monthKey === monthKey);
+    /**
+     * v2's axis. Note it composes with `monthKey` rather than replacing it: "this
+     * supplier, this month" resolves to the one bill a clerk is being read a figure
+     * from over the telephone.
+     */
+    if (supplierId) rows = rows.filter((row) => row.supplierId === supplierId);
     if (q) {
       rows = rows.filter(
         (row) =>
@@ -6208,11 +6355,18 @@ export const handlers: HttpHandler[] = [
     const entity = url.searchParams.get('entity');
     const entityId = url.searchParams.get('entityId');
     const actorId = url.searchParams.get('actorId');
+    const actorType = url.searchParams.get('actorType');
 
     let rows = state.audit;
     if (entity) rows = rows.filter((e) => e.entity === entity);
     if (entityId) rows = rows.filter((e) => e.entityId === entityId);
     if (actorId) rows = rows.filter((e) => e.actorId === actorId);
+    /**
+     * An entry with no `actorType` is a v1 entry, and every v1 entry was written by
+     * somebody signed into this console — so it matches `consoleUser`. Defaulting the
+     * *filter* rather than backfilling the data is what keeps an old row readable.
+     */
+    if (actorType) rows = rows.filter((e) => (e.actorType ?? 'consoleUser') === actorType);
 
     // Newest first: a log is read from the top, and the entry someone is looking
     // for is almost always the one that just happened.

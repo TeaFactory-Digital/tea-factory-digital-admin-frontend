@@ -1991,6 +1991,68 @@ export const en = {
   'banners.confirm.publishLiveNow': 'It goes live immediately.',
   'banners.confirm.publishScheduled': 'It goes live on {{when}}.',
 
+  /* ───────────── M2 · A supplier's own month history (v2) ───────────── */
+  'suppliers.income.title': 'Month history',
+  'suppliers.income.subtitle':
+    'The same months the supplier sees in the app. Open a month to read the slip they are holding.',
+  'suppliers.income.year': 'Year',
+  'suppliers.income.views': 'How to show it',
+  'suppliers.income.tab.graph': 'Graph',
+  'suppliers.income.tab.list': 'List',
+  'suppliers.income.tab.chart': 'Deductions',
+  'suppliers.income.metric': 'What to show',
+  'suppliers.income.earnings': 'Earnings',
+  'suppliers.income.kgs': 'Kilos',
+  'suppliers.income.month': 'Month',
+  'suppliers.income.paid': 'paid {{amount}}',
+  'suppliers.income.pending': 'Awaiting the rate',
+  'suppliers.income.empty': 'No months yet',
+  'suppliers.income.emptyHint': 'This supplier has no account for the selected year.',
+  'suppliers.income.noEarningsYet': 'No settled months this year',
+  'suppliers.income.noEarningsYetHint':
+    'Every month is still awaiting its auction result, so there are no earnings to plot. Switch to kilos to see what was delivered.',
+  'suppliers.income.noDeductions': 'Nothing was deducted',
+  'suppliers.income.noDeductionsHint': 'This account carried no deduction lines.',
+
+  /* ─────── M2 · Why a push does or does not reach this supplier (v2) ─────── */
+  'suppliers.push.title': 'Notifications',
+  'suppliers.push.subtitle': 'Whether this supplier can be told, and what they were told.',
+  'suppliers.push.devices': 'Devices',
+  'suppliers.push.platform.ios': 'iPhone',
+  'suppliers.push.platform.android': 'Android',
+  'suppliers.push.registered': 'since {{when}}',
+  'suppliers.push.onDevices': 'accepted on {{count}} device',
+  'suppliers.push.noApp':
+    'This supplier has never signed in on a phone, so no notification can reach them. Nothing else on this panel applies until they install the app.',
+  'suppliers.push.reason.noDevice': 'No device registered',
+  'suppliers.push.reason.notOffered': 'This factory does not send this kind — see Configuration',
+  'suppliers.push.reason.optedOut': 'Turned off on every one of their devices',
+  'suppliers.push.recent': 'Recently sent to them',
+  'suppliers.push.noSends': 'Nothing has been sent to them',
+  'suppliers.push.noSendsHint':
+    'Their phone can receive notifications; none has gone out to them yet. That is a complete answer to “I was never told”.',
+  'suppliers.push.delivered': 'sent to {{count}}',
+  'suppliers.push.notDeliveredNoDevice': 'not received — no device',
+  'suppliers.push.notDeliveredOptedOut': 'not received — turned off',
+  'suppliers.push.openModule': 'Open Notifications',
+
+  /* ──────────── M2 · Every queue this supplier can be in (v2) ──────────── */
+  'suppliers.detail.queuesLabel': 'This supplier’s queues',
+  'suppliers.detail.queue.changeRequests': 'Change requests',
+  'suppliers.detail.queue.credit': 'Credit requests',
+  'suppliers.detail.queue.teaPackets': 'Tea packets',
+  'suppliers.detail.queue.inquiries': 'Messages',
+
+  /* ─────────────────── M17 · Who an entry is about (v2) ─────────────────── */
+  'audit.actor.consoleUser': 'Office',
+  'audit.actor.supplier': 'The supplier',
+  'audit.actor.system': 'Automatic',
+  'audit.filter.actorType': 'Who acted',
+  'audit.filter.allActors': 'Anyone',
+  'audit.action.supplier.profile.update': 'Changed their own details in the app',
+  'audit.action.supplier.password.change': 'Chose their own app password',
+  'audit.action.notification.send': 'Notification sent',
+
   /* ───────────────────────────── attachments ───────────────────────────── */
   'attachment.tooLarge': 'That file is larger than 8 MB',
   'attachment.badType': 'Attach a JPEG, PNG, WebP or PDF',

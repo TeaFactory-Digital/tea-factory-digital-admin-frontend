@@ -12,7 +12,7 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { useState } from 'react';
-import { Ban, RotateCcw } from 'lucide-react';
+import { ArrowRight, Ban, RotateCcw } from 'lucide-react';
 import type { SupplierStatus } from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
@@ -24,10 +24,13 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, Notice, Skeleton } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { AuditPanel } from '@/components/AuditPanel';
+import { useFeatureFlags } from '@/config/RuntimeConfigProvider';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatAmount, formatDate, formatMoney } from '@/lib/format';
 import { ResetPasswordDialog } from './ResetPasswordDialog';
 import { RevealBankDetailsDialog } from './RevealBankDetailsDialog';
+import { SupplierIncomeHistory } from './SupplierIncomeHistory';
+import { SupplierNotificationsPanel } from './SupplierNotificationsPanel';
 import {
   useReactivateSupplier,
   useSupplier,
@@ -98,14 +101,24 @@ export function SupplierDetailScreen() {
 
       {supplier.pendingRequests > 0 ? (
         <Notice tone="info">
-          <Link
-            to={`/change-requests?supplierId=${supplier.id}&status=pending`}
-            className="underline"
-          >
-            {t('suppliers.detail.pendingRequests')}: {supplier.pendingRequests}
-          </Link>
+          {t('suppliers.detail.pendingRequests')}: {supplier.pendingRequests}
         </Notice>
       ) : null}
+
+      {/**
+        * Every queue this supplier can be in, from the record they are on.
+        *
+        * v1 linked to **one** of the four. The app shows a supplier their whole request
+        * history in a single list (`RequestHistoryList`), and the office had to visit
+        * four screens and type the supplier code into each — which in practice means
+        * checking one and assuming the rest.
+        *
+        * `supplierId` was already on all four query types; only the links were missing.
+        * They are unconditional rather than hidden when a queue is empty: "nothing
+        * outstanding" is an answer a clerk needs, and a row that vanishes when the
+        * answer is *no* cannot give it.
+        */}
+      <QueueLinks supplierId={supplier.id} />
 
       <div className="grid gap-lg lg:grid-cols-2">
         <Card>
@@ -242,13 +255,59 @@ export function SupplierDetailScreen() {
           </CardBody>
         </Card>
 
-        <AuditPanel
-          title={t('suppliers.detail.auditTitle')}
-          page={audit}
-          loading={auditPending}
-        />
+        <SupplierNotificationsPanel supplierId={supplier.id} />
       </div>
+
+      {/* Full width, and below the record: it is the longest thing on the page and the
+          one a clerk scrolls to while the supplier is still talking. */}
+      <SupplierIncomeHistory supplierId={supplier.id} />
+
+      <AuditPanel
+        title={t('suppliers.detail.auditTitle')}
+        page={audit}
+        loading={auditPending}
+      />
     </>
+  );
+}
+
+/**
+ * Links into the four queues, filtered to this supplier.
+ *
+ * Deliberately not counts. A count needs four requests to render a row of numbers that
+ * are stale the moment a colleague decides something, and the question here is *"is
+ * there anything of theirs waiting"* — which the queue itself answers accurately.
+ */
+function QueueLinks({ supplierId }: { supplierId: string }) {
+  const { t } = useTranslation();
+  const flags = useFeatureFlags();
+
+  const links = [
+    { key: 'changeRequests', to: `/change-requests?supplierId=${supplierId}`, show: true },
+    {
+      key: 'credit',
+      to: `/credit?supplierId=${supplierId}`,
+      // Any one of the three facilities, exactly as the sidebar row is gated — a
+      // factory may lend against leaf and not against income history.
+      show: flags.enableAdvances || flags.enableLoans || flags.enableManure,
+    },
+    { key: 'teaPackets', to: `/tea-packets?supplierId=${supplierId}`, show: flags.enableTeaPackets },
+    { key: 'inquiries', to: `/inquiries?supplierId=${supplierId}`, show: flags.enableInquiry },
+  ].filter((link) => link.show);
+
+  return (
+    <nav aria-label={t('suppliers.detail.queuesLabel')} className="flex flex-wrap gap-sm">
+      {links.map((link) => (
+        <Link
+          key={link.key}
+          to={link.to}
+          className="inline-flex items-center gap-xs rounded-md border border-border bg-surface px-md py-xs text-body-small text-text-primary hover:bg-surface-variant"
+        >
+          {t(`suppliers.detail.queue.${link.key}`)}
+          <ArrowRight className="size-icon-xs text-text-secondary" aria-hidden />
+        </Link>
+      ))}
+    </nav>
   );
 }
 

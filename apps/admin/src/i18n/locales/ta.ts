@@ -2063,6 +2063,70 @@ export const ta: Record<TranslationKey, string> = {
   'banners.confirm.publishLiveNow': 'இது உடனடியாகச் செயல்படும்.',
   'banners.confirm.publishScheduled': 'இது {{when}} அன்று செயல்படும்.',
 
+  /* ───────────── M2 · சப்ளையரின் சொந்த மாத வரலாறு (v2) ───────────── */
+  'suppliers.income.title': 'மாத வரலாறு',
+  'suppliers.income.subtitle':
+    'சப்ளையர் செயலியில் பார்க்கும் அதே மாதங்கள். அவர் கையில் உள்ள சீட்டைப் படிக்க ஒரு மாதத்தைத் திறக்கவும்.',
+  'suppliers.income.year': 'ஆண்டு',
+  'suppliers.income.views': 'காட்டும் முறை',
+  'suppliers.income.tab.graph': 'வரைபடம்',
+  'suppliers.income.tab.list': 'பட்டியல்',
+  'suppliers.income.tab.chart': 'கழிவுகள்',
+  'suppliers.income.metric': 'காட்ட வேண்டியது',
+  'suppliers.income.earnings': 'வருமானம்',
+  'suppliers.income.kgs': 'கிலோகிராம்',
+  'suppliers.income.month': 'மாதம்',
+  'suppliers.income.paid': '{{amount}} செலுத்தப்பட்டது',
+  'suppliers.income.pending': 'விலை வரும் வரை',
+  'suppliers.income.empty': 'இன்னும் மாதங்கள் இல்லை',
+  'suppliers.income.emptyHint': 'தேர்ந்தெடுத்த ஆண்டுக்கு இந்தச் சப்ளையருக்குக் கணக்கு இல்லை.',
+  'suppliers.income.noEarningsYet': 'இந்த ஆண்டில் முடிவான மாதங்கள் இல்லை',
+  'suppliers.income.noEarningsYetHint':
+    'ஒவ்வொரு மாதமும் இன்னும் ஏல முடிவுக்குக் காத்திருக்கிறது, எனவே வரைபடமிட வருமானம் இல்லை. வழங்கியதைப் பார்க்க கிலோகிராமுக்கு மாறவும்.',
+  'suppliers.income.noDeductions': 'எதுவும் கழிக்கப்படவில்லை',
+  'suppliers.income.noDeductionsHint': 'இந்தக் கணக்கில் கழிவு வரிகள் இல்லை.',
+
+  /* ─────── M2 · இந்தச் சப்ளையரை அறிவிப்பு சென்றடைகிறதா (v2) ─────── */
+  'suppliers.push.title': 'அறிவிப்புகள்',
+  'suppliers.push.subtitle':
+    'இந்தச் சப்ளையருக்குத் தெரிவிக்க முடியுமா, மற்றும் அவருக்கு என்ன தெரிவிக்கப்பட்டது.',
+  'suppliers.push.devices': 'சாதனங்கள்',
+  'suppliers.push.platform.ios': 'iPhone',
+  'suppliers.push.platform.android': 'Android',
+  'suppliers.push.registered': '{{when}} முதல்',
+  'suppliers.push.onDevices': '{{count}} சாதனத்தில் ஏற்கப்படுகிறது',
+  'suppliers.push.noApp':
+    'இந்தச் சப்ளையர் ஒருபோதும் தொலைபேசியில் உள்நுழையவில்லை, எனவே எந்த அறிவிப்பும் அவரைச் சென்றடைய முடியாது. செயலியை நிறுவும் வரை இந்தப் பலகையில் வேறு எதுவும் பொருந்தாது.',
+  'suppliers.push.reason.noDevice': 'பதிவு செய்யப்பட்ட சாதனம் இல்லை',
+  'suppliers.push.reason.notOffered':
+    'இந்தத் தொழிற்சாலை இந்த வகையை அனுப்புவதில்லை — “அமைப்பு” பகுதியைப் பார்க்கவும்',
+  'suppliers.push.reason.optedOut': 'அவரது எல்லாச் சாதனங்களிலும் இது நிறுத்தப்பட்டுள்ளது',
+  'suppliers.push.recent': 'சமீபத்தில் அவருக்கு அனுப்பப்பட்டவை',
+  'suppliers.push.noSends': 'அவருக்கு எதுவும் அனுப்பப்படவில்லை',
+  'suppliers.push.noSendsHint':
+    'அவரது தொலைபேசி அறிவிப்புகளைப் பெற முடியும்; இன்னும் எதுவும் அவருக்குச் செல்லவில்லை. “எனக்கு ஒருபோதும் தெரிவிக்கப்படவில்லை” என்பதற்கு அதுவே முழுமையான பதில்.',
+  'suppliers.push.delivered': '{{count}} க்கு அனுப்பப்பட்டது',
+  'suppliers.push.notDeliveredNoDevice': 'கிடைக்கவில்லை — சாதனம் இல்லை',
+  'suppliers.push.notDeliveredOptedOut': 'கிடைக்கவில்லை — நிறுத்தப்பட்டுள்ளது',
+  'suppliers.push.openModule': 'அறிவிப்புகளைத் திற',
+
+  /* ──────────── M2 · இந்தச் சப்ளையர் இருக்கக்கூடிய எல்லா வரிசைகளும் (v2) ──────────── */
+  'suppliers.detail.queuesLabel': 'இந்தச் சப்ளையரின் வரிசைகள்',
+  'suppliers.detail.queue.changeRequests': 'மாற்ற வேண்டுகோள்கள்',
+  'suppliers.detail.queue.credit': 'கடன் வேண்டுகோள்கள்',
+  'suppliers.detail.queue.teaPackets': 'தேநீர் பொட்டலங்கள்',
+  'suppliers.detail.queue.inquiries': 'செய்திகள்',
+
+  /* ─────────────────── M17 · பதிவு யாரைப் பற்றியது (v2) ─────────────────── */
+  'audit.actor.consoleUser': 'அலுவலகம்',
+  'audit.actor.supplier': 'சப்ளையர்',
+  'audit.actor.system': 'தானியங்கி',
+  'audit.filter.actorType': 'யார் செயல்பட்டார்',
+  'audit.filter.allActors': 'யாராக இருந்தாலும்',
+  'audit.action.supplier.profile.update': 'செயலியில் தனது சொந்த விவரங்களை மாற்றினார்',
+  'audit.action.supplier.password.change': 'தனது சொந்த செயலி கடவுச்சொல்லைத் தேர்ந்தெடுத்தார்',
+  'audit.action.notification.send': 'அறிவிப்பு அனுப்பப்பட்டது',
+
   /* ───────────────────────────── attachments ───────────────────────────── */
   'attachment.tooLarge': 'அந்தக் கோப்பு 8 MB ஐ விடப் பெரியது',
   'attachment.badType': 'JPEG, PNG, WebP அல்லது PDF கோப்பை இணைக்கவும்',

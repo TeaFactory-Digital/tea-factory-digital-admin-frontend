@@ -554,6 +554,90 @@ export const mockAudit: AuditEntry[] = [
     after: { ratePerKg: 122.5, extraRatePerKg: 8.0 },
     ip: '192.168.10.24',
   },
+
+  /* ────────────────────── What the supplier did themselves ──────────────────────
+   *
+   * v2's addition, and the gap it closes is worth stating: the app lets a supplier
+   * change their **name, telephone, email, date of birth and both addresses**
+   * directly through `PATCH /profile` — no approval, no change request
+   * (`ChangeRequestType` covers only payout and savings-rate changes). v1 recorded
+   * none of it, so the office could be asked *"when did this address change?"* and had
+   * no way to answer, and a wrong telephone number had no history at all.
+   *
+   * These entries are on the **supplier** entity, so they appear on the same timeline
+   * as the office's actions on that record — which is the point. "What did we do to
+   * this account" and "what did they do" are two readings of one history, and a clerk
+   * investigating a dispute needs to see them interleaved.
+   *
+   * `ip` is `null`: a phone on a mobile network has no address the office can act on,
+   * and inventing one would make the column look meaningful. */
+  {
+    id: 'aud-4',
+    at: daysAgo(3),
+    actorId: 'sup-7',
+    actorName: 'Kamala Wijesinghe',
+    actorType: 'supplier',
+    action: 'supplier.profile.update',
+    entity: 'supplier',
+    entityId: 'sup-7',
+    before: { homeAddress: 'No 12, DENIYAYA Road, Akuressa' },
+    after: { homeAddress: 'No 88, Temple Road, Akuressa' },
+    ip: null,
+  },
+  {
+    id: 'aud-5',
+    at: daysAgo(11),
+    actorId: 'sup-7',
+    actorName: 'Kamala Wijesinghe',
+    actorType: 'supplier',
+    action: 'supplier.profile.update',
+    entity: 'supplier',
+    entityId: 'sup-7',
+    before: { phone: '0771234567' },
+    after: { phone: '0759876543' },
+    ip: null,
+  },
+  {
+    /**
+     * The one that makes §21.16 auditable end to end.
+     *
+     * The office issues a one-time password and records the identity check; **this** is
+     * the other half — the supplier replacing it at first sign-in, which is what makes
+     * the credential the office knew stop working. Without this entry the console can
+     * show that a password was issued and never that it was consumed.
+     */
+    id: 'aud-6',
+    at: daysAgo(1),
+    actorId: 'sup-12',
+    actorName: 'Sunil Bandara',
+    actorType: 'supplier',
+    action: 'supplier.password.change',
+    entity: 'supplier',
+    entityId: 'sup-12',
+    before: { owesPasswordChange: true },
+    after: { owesPasswordChange: false },
+    ip: null,
+  },
+  {
+    /**
+     * A system actor, so the third `AuditActorType` has something behind it.
+     *
+     * An automatic push fires off an event rather than off a person, and attributing it
+     * to whoever happened to publish the month would be worse than leaving it blank —
+     * it reads as though they composed and sent it.
+     */
+    id: 'aud-7',
+    at: daysAgo(4),
+    actorId: 'system',
+    actorName: 'Automatic',
+    actorType: 'system',
+    action: 'notification.send',
+    entity: 'notificationSend',
+    entityId: 'snd-1',
+    before: null,
+    after: { category: 'billPublished', origin: 'automatic' },
+    ip: null,
+  },
 ];
 
 /* ─────────────────────────── M3 leaf collection ─────────────────────────── */

@@ -40,7 +40,7 @@ cannot.
 | **Mock API** | MSW: 84 suppliers, 14 change requests, 14 credit requests, **6 tea-packet requests**, 7 inquiries, five news articles, **four banners in every window state**, the app's six fixed pages in si/en/ta, 3 tenants, 6 console users whose suspensions take effect on the next request — enforcing every refusal the real API must. The v1 money-chain fixtures and handlers are all still there, feeding the commented-out modules |
 | **UI kit** | 15 token-driven primitives, keyboard-navigable data grid, i18n throughout |
 | **M1 Dashboard** | Queue cards with age and SLA (now six queues), app-adoption figures, content-health figures, server-composed alerts, and a 12-month adoption trend whose line **breaks** on a month with no requests rather than dropping to zero |
-| **M2 Suppliers** | The app account: `hasApp` as the first column in three states, a `?hasApp=false` working filter the dashboard links into, the audited bank reveal, and the §21.15/§21.16 password reset. Everything else read-only |
+| **M2 Suppliers** | The app account **and the support desk**: `hasApp` in three states with a `?hasApp=false` filter the dashboard links into; a **month history** in the app's own three views (graph / list / deductions); a **push diagnosis** naming per category why a supplier would or would not be reached, with the sends that actually went to them; links into all four queues; the audited bank reveal and the §21.15/§21.16 password reset. Everything else read-only |
 | **M5 Bills** | Read-only. The slip rendered field-for-field for AC-03, the nine deduction lines with their total recomputed (BR-107), the three lenses. `BillRunCard` commented out, because a control nobody on this screen may use is not a control |
 | **M7 Credit queues** | Unchanged: one queue over three facilities, the eligibility working printed rather than summarised (AC-05), `stale-eligibility` (BR-310), `over-ceiling` refused on both sides |
 | **M18 Tea packets** | **New.** One screen, no detail page, because there is no eligibility working to print. Packets and kilos side by side, the delivery filter as the storekeeper's working view, the price stamped at the decision, the stock cap refused on approval and **not** on rejection, and approved-unrecovered value blocking the flag in M14 |
@@ -53,8 +53,8 @@ cannot.
 | **M14 Configuration** | **Seven** independently-patched sections covering the whole `client_config` row (AC-12) — including the fourteen flags and the new tea-packet policy — with every edit's consequences computed from the shared `configImpact` before the save |
 | **M15 Users & roles** | Unchanged: invite, re-role, suspend with a reason, the §12.1 matrix editable as data, three lockout guards |
 | **M16 Reports** | One report — `channelShift`, §19.3's KPI — computed from live records, self-describing columns, `null` never rendered as `0` |
-| **M17 Audit** | Filterable read-only log, plus per-record panels. Two new entity types: `promoBanner` and `teaPacketRequest` |
-| **Tests** | 366 Vitest passing + Playwright. Typecheck and lint clean. The v1 suites for handed-back modules are commented out with their reason; `teaPackets.test.ts` and `banners.test.ts` are new |
+| **M17 Audit** | Filterable read-only log, plus per-record panels. Two new entity types (`promoBanner`, `teaPacketRequest`) and **`actorType`** — which is what finally records the supplier's own app writes, interleaved with the office's actions on the same record |
+| **Tests** | 382 Vitest passing + Playwright. Typecheck and lint clean. The v1 suites for handed-back modules are commented out with their reason; `teaPackets.test.ts`, `banners.test.ts` and `supplierSupport.test.ts` are new |
 
 ## Acceptance criteria
 
@@ -146,7 +146,24 @@ Worst first: correctness, then plumbing, then polish.
    M16's grid is a real `<table>`, so the office can select it and paste it into a
    spreadsheet, which is where the office lives. That is a workaround, not a close.
 
-7. **Banner artwork cannot be uploaded.** `imageUrl` and `imageAspectRatio` are on the
+7. **~~The office cannot answer "why didn't I get the notification?"~~** ✅ **Closed.**
+   `GET /admin/suppliers/{id}/notifications` names the reason per category and lists
+   what actually went to that supplier. Kept in the list rather than deleted because
+   the shape of the failure is worth remembering: **every fact was already in the
+   console** — the device registry, the consent lists, the category list, the send log
+   — and none of it was reachable for one person. A console can hold everything needed
+   to answer a question and still be unable to answer it.
+
+8. **~~A supplier's profile self-edits are invisible~~** ✅ **Closed**, as
+   `actorType: 'supplier'` on the audit entry. The API has to write those entries —
+   see [api-contract.md](./api-contract.md) §8 — and until it does, the console has the
+   vocabulary and nothing to render. **That is the live half of this gap**: the model
+   is in place and the app's `PATCH /profile` still has to start recording.
+
+9. **~~One supplier's requests are scattered across four queues~~** ✅ **Closed** — the
+   links were the whole of it; `supplierId` was already on all four query types.
+
+10. **Banner artwork cannot be uploaded.** `imageUrl` and `imageAspectRatio` are on the
    record, the app renders them at the declared ratio, and the editor has no way to put a
    file there. `uploadRepository` exists for M9's evidence attachments, but a CMS image
    needs a store, a size policy and a CDN — none of which is this repository.
@@ -156,7 +173,7 @@ Worst first: correctness, then plumbing, then polish.
    where the picture should be reads as a broken app rather than a quiet one"*
    (mobile `docs/banners.md`). The seeded banners have no artwork for the same reason.
 
-8. **The deduction values on a bill are the mock's invention, and only the values.**
+11. **The deduction values on a bill are the mock's invention, and only the values.**
    *(v2: the bill is the factory's console's to produce. This gap describes what the
    mock renders on M5's read-only slip, and is kept because AC-03 requires all three
    systems to agree on the shape — see gap 2.)*
@@ -170,38 +187,38 @@ Worst first: correctness, then plumbing, then polish.
    transport charge is not a number to quote at anybody. *To close:* the answer is a
    permission question as much as a form — see the blocking table below.
 
-9. **A delivery is one net figure.** ⛔ *v2: M3 is the factory's own console's.* Kept
+12. **A delivery is one net figure.** ⛔ *v2: M3 is the factory's own console's.* Kept
    because it is a **schema** question rather than a UI one and `Delivery` is in the
    shared package: if a weighing point books a gross weight and a sack/water deduction —
    common practice, and nobody has confirmed it either way — then the type is wrong in
    every system that reads it, including the app.
 
-10. **Supplier create and edit are not wired.** `POST` and `PATCH` exist in the
+13. **Supplier create and edit are not wired.** `POST` and `PATCH` exist in the
    repository and the endpoint layer with full types, and no screen calls them.
    Registration is also blocked on §21.15 (who issues a code, what the supplier
    receives), so building the form first would be guessing at the flow.
 
-11. **Evidence attachments are read-only.** M9 renders existing attachments and the
+14. **Evidence attachments are read-only.** M9 renders existing attachments and the
    upload path is fully built (`uploadRepository`, presign + PUT, validation) —
    but no screen calls it, because whether an attachment is *required* to approve
    a bank-details change is an open question.
 
-12. **No error reporting.** A console error reaches `console.error` and nowhere
+15. **No error reporting.** A console error reaches `console.error` and nowhere
    else. `sentryDsn` is a placeholder on both sides.
 
-13. **No console analytics.** §19.3's KPIs — app adoption and channel shift — need
+16. **No console analytics.** §19.3's KPIs — app adoption and channel shift — need
     the `channel` column on office-raised requests, which the mock sets and the
     backend must too. Nothing measures console-side usage.
 
-14. **Dark mode is off.** The palette exists and the bridge emits whichever scheme
+17. **Dark mode is off.** The palette exists and the bridge emits whichever scheme
     it is given; enabling it is a toggle plus a QA pass. Off because the console
     runs on office desktops in daylight and doubling the theming QA buys nothing.
 
-15. **No screen-reader pass.** The semantics are built in — real tables,
+18. **No screen-reader pass.** The semantics are built in — real tables,
     `aria-sort`, `role="alert"`, a clean accessible name on every field, a global
     focus ring — but nobody has driven NVDA or VoiceOver over it.
 
-16. **The chrome is translated; its dates, numbers and money are not.** ~~The i18n
+19. **The chrome is translated; its dates, numbers and money are not.** ~~The i18n
     table is English-only.~~ **Closed** — `src/i18n/locales/` now carries si/en/ta,
     typed against English so a missing key fails the build, with a picker in the
     topbar and on sign-in (see [white-label.md](./white-label.md) → Localization).
@@ -230,7 +247,7 @@ Worst first: correctness, then plumbing, then polish.
       were caught by comparing code points, not by reading. *To close:* a unit test
       asserting each table's values fall in its own script range.
 
-17. **The console's ceiling arithmetic is untested against the server's.** AC-05
+20. **The console's ceiling arithmetic is untested against the server's.** AC-05
     requires byte-for-byte agreement, and `packages/domain/src/leafCredit.ts` is
     the shared implementation — now rendered field for field by M7's eligibility
     panel and asserted as an identity (the ceiling equals its own working) rather
@@ -239,14 +256,14 @@ Worst first: correctness, then plumbing, then polish.
     calling one function is the mechanism; a live comparison is the proof, and it
     is the first test to write the day the API answers.
 
-18. **An approved credit has no repayment schedule.** M7 raises
+21. **An approved credit has no repayment schedule.** M7 raises
     `creditBalances[facility]` on approval, and M5 deducts an instalment against it
     next month — but the *share* it deducts (30% of gross for an advance, 20% for a
     loan, 15% for manure) is the mock's guess, and it is the other half of §21.10.
     Approving LKR 40,000 today therefore shows a plausible repayment and not a
     promised one, which is not a number to quote at a supplier.
 
-19. **A supplier's pending requests are each priced against the same headroom.**
+22. **A supplier's pending requests are each priced against the same headroom.**
     Two open advances both read as approvable when only one of them is. The detail
     page links to the supplier's other open requests so an approver can see it, and
     the server re-checks at the moment of approval — so the *second* approval is
@@ -261,7 +278,7 @@ Worst first: correctness, then plumbing, then polish.
     the process: the mock's flag gate read the seed while `GET /config` served live state, so
     the surface disappeared and the endpoints did not.
 
-21. **No Sinhala or Tamil in this repository has been reviewed by a native speaker —
+23. **No Sinhala or Tamil in this repository has been reviewed by a native speaker —
     and that is now the whole chrome, not just the fixtures.** It was five articles and
     six pages; it is now those **plus ~1,250 console labels in each language**, which is
     the largest unreviewed surface in the project by a wide margin.
@@ -284,7 +301,7 @@ Worst first: correctness, then plumbing, then polish.
     walkthrough in each language, since the labels only make sense in place. **Do both
     before the console is demonstrated in either language.**
 
-22. **Content is plain text, and the FAQ is the case that strains it.** A body keeps its
+24. **Content is plain text, and the FAQ is the case that strains it.** A body keeps its
     line breaks and nothing else — no headings, no links, no lists. The fixture's FAQ is
     therefore questions and answers separated by blank lines inside one field, which reads
     acceptably and is not what it is. Whether the app renders Markdown, a subset of HTML,
@@ -292,13 +309,13 @@ Worst first: correctness, then plumbing, then polish.
     a rich editor built against a guess produces copy the app renders as literal asterisks.
     *To close:* ask what the app's content renderer does today.
 
-23. **A published article cannot be scheduled, and a cover image cannot be uploaded.**
+25. **A published article cannot be scheduled, and a cover image cannot be uploaded.**
     Publishing is immediate, and `coverImageUrl` is on the type and settable through the
     API with no way to put a file behind it — `uploadRepository` exists and does presign +
     PUT for M9's evidence, so this is wiring rather than design. Both are absent rather
     than half-built. Neither is blocked on anything.
 
-24. **§21.24 is answered by the console, not by the factory.** The defaults are read from
+26. **§21.24 is answered by the console, not by the factory.** The defaults are read from
     `push.defaultCategories` rather than invented, and every choice is a toggle — but
     nobody at the factory has confirmed that a bill publication *should* push to every
     supplier, or that `content: approve` is the right gate on free text. Both are the
@@ -306,42 +323,42 @@ Worst first: correctness, then plumbing, then polish.
     close:* show the office the Notifications screen and ask whether the four switches are
     set the way they want them.
 
-25. **Nothing is actually sent, and nothing ever reports back.** There is no FCM or APNs
+27. **Nothing is actually sent, and nothing ever reports back.** There is no FCM or APNs
     integration — the mock records a send and computes its reach, which is every part of
     the problem *except* the transport. When the real one lands it brings a failure mode
     the console currently has no shape for: a per-device delivery result arriving
     asynchronously, minutes later. `NotificationSend.status` already has `queued` and
     `failed` in its vocabulary for that reason, and nothing sets them yet.
 
-26. **A composed notification is English-only.** M11 taught the console that editorial copy
+28. **A composed notification is English-only.** M11 taught the console that editorial copy
     is authored in three languages and falls back (AC-08); a push does not, and it should —
     a Sinhala supplier receiving an English lock-screen message is the same failure AC-08
     is written about, in the one place the supplier cannot go and find the translation.
     Deliberately not half-built: doing it properly means the composer grows the same
     language strip M11 has, and the send picks per device.
 
-27. **M16 reads the same store a clerk is writing to.** §19.5 asks that reports run off a
+29. **M16 reads the same store a clerk is writing to.** §19.5 asks that reports run off a
     **read replica** so a month-close query does not compete with leaf entry, and the mock
     has one store. That is a deployment concern rather than a console one — but the four
     reports are written as single-pass scans over live records precisely so that moving them
     to a replica is a connection string and not a rewrite. Recorded because "the report is
     slow during month close" is the failure it produces, and it will look like a console bug.
 
-28. **The report list is four long because §19.1 is in the other repository.** Each of the
+30. **The report list is four long because §19.1 is in the other repository.** Each of the
     four is defined by something already in this codebase and carries that citation on the
     row. The rest of what the factory asked for needs the warehouse shape, and a report
     invented to fill the list is a query somebody maintains and nobody reads. The screen says
     this where somebody would look for the missing reports, rather than leaving the shortness
     to be read as an oversight.
 
-29. **A created user's password is the demo password, and nothing forces a change.** M15
+31. **A created user's password is the demo password, and nothing forces a change.** M15
     invites a user and the mock gives them `demo1234`, which is why the success toast says
     *"tell them their password"*. A real API issues a one-time credential the office cannot
     read back, and insists on a change at first sign-in. Neither exists here, and the
     console has no screen for either — this is the one place in the console where the mock is
     weaker than the contract rather than equal to it.
 
-30. **MFA is owed and never collected.** `MFA_REQUIRED_ROLES` marks manager and above, the
+32. **MFA is owed and never collected.** `MFA_REQUIRED_ROLES` marks manager and above, the
     user list shows *Two-factor not set up*, and the sign-in demands a code from anyone who
     **is** enrolled — but nothing enrols anybody. The only MFA control that exists is the
     reset, which un-enrols. So a manager who owes a second factor signs in with a password
@@ -349,7 +366,7 @@ Worst first: correctness, then plumbing, then polish.
     at first sign-in for a role that requires it, which is a screen plus a TOTP secret the
     server issues — and it is where §18.1 expected MFA enrolment to live.
 
-31. **The role matrix has no "restore the standard roles".** A factory that has narrowed
+33. **The role matrix has no "restore the standard roles".** A factory that has narrowed
     six roles has no single control to put them back, and `DEFAULT_ROLE_MATRIX` is right
     there in the bundle. Left out deliberately: a one-click reset of every permission in the
     console is a control whose worst case is worse than the inconvenience it saves, and the
@@ -495,7 +512,7 @@ after a month has been published on the wrong assumption:
 
 | Question | What the console assumes today |
 | --- | --- |
-| **Gross or net?** Does the weighing point record one figure, or a gross weight and a deduction for the sack and surface water? | One net `kgs` per weighing. If the answer is two, it is a schema change (gap 7 above) |
+| **Gross or net?** Does the weighing point record one figure, or a gross weight and a deduction for the sack and surface water? | One net `kgs` per weighing. If the answer is two, it is a schema change (gap 12 above) |
 | **What is a plausible delivery?** The grid questions a figure over 150 kg that is also 3× the session's mean. Those numbers are a guess sized for smallholder routes | `OUTLIER_KG_MULTIPLE` and `OUTLIER_KG_FLOOR_KG` in `@tfd/domain`, and the same pair raises M4's `outlierDelivery` exception. Tenant config once the factory has a number |
 | **How far back may leaf be entered?** A paper slip found on Monday for Saturday's weighing is normal; a row backdated three weeks into a month about to close is not | Any date in an unpublished month is accepted. The publish lock is the only guard, which is a policy nobody chose |
 
@@ -503,15 +520,19 @@ after a month has been published on the wrong assumption:
 
 ## What I would build next
 
-3. **The repo merge, or at least the CI symbol diff** (gap 1). v2 found two drifts by
+1. **The API writing `supplier` audit entries** (gap 8). The console has the vocabulary
+   and the screens; `PATCH /profile` still has to start recording. Until it does, the
+   supplier-action history is a model with nothing in it outside the fixture — and this
+   is the one item on the list where the console's half is already done.
+2. **The repo merge, or at least the CI symbol diff** (gap 1). v2 found two drifts by
    accident. The next one will not announce itself either, and the check that would have
    caught both is an afternoon's work.
-4. **Banner artwork upload** (gap 7) — the one thing an editor can want on the new module
+3. **Banner artwork upload** (gap 10) — the one thing an editor can want on the new module
    and cannot have. It needs a store and a size policy more than it needs a form.
-5. **MFA enrolment** (gap 28): the console names who owes a second factor and has no way
+4. **MFA enrolment** (gap 32): the console names who owes a second factor and has no way
    for them to set one up, so the *Two-factor not set up* badge is a note rather than a
    gate.
-6. **The notification-trigger integration** (gap 3), which is not a screen — it is
+5. **The notification-trigger integration** (gap 3), which is not a screen — it is
    getting the factory's console to call the endpoint on publish, and an environment where
    that can be tested.
 

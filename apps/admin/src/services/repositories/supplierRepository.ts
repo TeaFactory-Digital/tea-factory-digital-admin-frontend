@@ -13,6 +13,8 @@ import type {
   Paged,
   RevealedBankDetails,
   SupplierEditable,
+  SupplierIncomeHistory,
+  SupplierNotificationStatus,
   SupplierListItem,
   SupplierQuery,
   SupplierRegistration,
@@ -27,6 +29,12 @@ export const supplierRepository = {
     supplierEndpoints.list({ page: 0, pageSize: 50, ...query }),
 
   get: (id: string): Promise<AdminSupplier> => supplierEndpoints.get(id),
+
+  income: (id: string, year?: number): Promise<SupplierIncomeHistory> =>
+    supplierEndpoints.income(id, year),
+
+  notifications: (id: string): Promise<SupplierNotificationStatus> =>
+    supplierEndpoints.notifications(id),
 
   create: (body: SupplierRegistration): Promise<AdminSupplier> => supplierEndpoints.create(body),
 

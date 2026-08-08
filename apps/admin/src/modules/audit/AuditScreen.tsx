@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
-import type { AuditEntry } from '@tfd/domain';
+import type { AuditEntry, AuditQuery } from '@tfd/domain';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { qk } from '@/query/queryKeys';
 import { Card } from '@/components/ui/Card';
@@ -32,6 +32,7 @@ export function AuditScreen() {
   const [params, setParams] = useSearchParams();
 
   const entity = params.get('entity');
+  const actorType = params.get('actorType');
   const page = Number(params.get('page') ?? 0);
 
   /**
@@ -44,12 +45,13 @@ export function AuditScreen() {
   const query = useMemo(
     () => ({
       entity: entity ?? undefined,
+      actorType: (actorType as AuditQuery['actorType']) ?? undefined,
       page,
       pageSize: 50,
       sort: sorting[0]?.id ?? 'at',
       dir: sorting[0]?.desc ? ('desc' as const) : ('asc' as const),
     }),
-    [entity, page, sorting],
+    [entity, actorType, page, sorting],
   );
 
   const { data, isPending, error, refetch } = useQuery({
@@ -90,7 +92,34 @@ export function AuditScreen() {
           </span>
         ),
       },
-      { accessorKey: 'actorName', header: t('audit.column.actor') },
+      {
+        accessorKey: 'actorName',
+        header: t('audit.column.actor'),
+        cell: (info) => {
+          const row = info.row.original;
+          return (
+            <span className="flex flex-col">
+              <span className="text-text-primary">{row.actorName}</span>
+              {/**
+               * The realm the actor belongs to, when it is not the office.
+               *
+               * `actorId` alone cannot say: a console user id and a supplier id are
+               * different namespaces, and two rows reading "Kamala Wijesinghe" —
+               * one a clerk acting on the record, one the supplier acting on their
+               * own — are indistinguishable without it.
+               *
+               * Office actions carry no label. They are the norm on this screen, and
+               * labelling every row would hide the exception again.
+               */}
+              {row.actorType === 'supplier' ? (
+                <span className="text-caption text-info">{t('audit.actor.supplier')}</span>
+              ) : row.actorType === 'system' ? (
+                <span className="text-caption text-text-secondary">{t('audit.actor.system')}</span>
+              ) : null}
+            </span>
+          );
+        },
+      },
       {
         accessorKey: 'action',
         header: t('audit.column.action'),
@@ -143,6 +172,23 @@ export function AuditScreen() {
                 {value}
               </option>
             ))}
+          </Select>
+
+          {/**
+            * *What did we do* versus *what did they do* — two readings of one log, and
+            * an investigator is always asking one of them. v1 had no way to separate
+            * them because it had no supplier entries to separate.
+            */}
+          <Select
+            aria-label={t('audit.filter.actorType')}
+            value={actorType ?? ''}
+            onChange={(event) => setParam('actorType', event.target.value || null)}
+            fullWidth={false}
+          >
+            <option value="">{t('audit.filter.allActors')}</option>
+            <option value="consoleUser">{t('audit.actor.consoleUser')}</option>
+            <option value="supplier">{t('audit.actor.supplier')}</option>
+            <option value="system">{t('audit.actor.system')}</option>
           </Select>
         </div>
 

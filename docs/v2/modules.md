@@ -126,8 +126,11 @@ of amounts*, and that is a telephone call the office takes either way.
 
 ## M2 Suppliers
 
-*The app account.* The registry — register, suspend, close, edit the estate address
-— is the factory's own console's. What is left is the record app support needs.
+*The app account, and everything support needs to answer a telephone call.* The
+registry — register, suspend, close, edit the estate address — is the factory's own
+console's. What is left is the record app support works from, and v2 added three
+things to it that v1 could not show **for one person** even though it held every
+fact needed for all three.
 
 - **`hasApp` is the first column**, ahead of the last delivery date. The question a
   clerk arrives with is "are they using it", not "when did they last deliver".
@@ -154,6 +157,83 @@ of amounts*, and that is a telephone call the office takes either way.
 fixture, deliberately: the dashboard counts adoption from the device registry and
 this grid reads `hasApp`, so two different predicates would put a percentage on one
 screen that the list on the next screen disagrees with.
+
+### Month history — graph, list and deductions
+
+**The screen a clerk needs while the supplier is talking**, and v1 had no way to show
+it. `BillQuery` offered `monthKey` and a text search — the accountant's axis: pick a
+month, then filter within it. Right when M5 fed the month close; wrong now that M5
+survives only as support, because the question support is asked is never about one
+month. It is *"why is my July less than my June?"*, and answering it needs both.
+
+So `supplierId` is on `BillQuery`, and `GET /admin/suppliers/{id}/income` serves the
+series. **The three views are the app's three views, in the app's order**, because the
+whole point is that the clerk and the supplier are looking at the same thing:
+
+| View | What it answers |
+| --- | --- |
+| **Graph** | A bar per month, switchable between earnings and kilos. The switch is what makes *"I delivered more and got less"* visible rather than arguable — it is a rate question, and the two series have to be seen apart |
+| **List** | The months, newest first, each opening the slip the supplier is holding |
+| **Deductions** | A donut of one month's nine lines. The view that answers the real complaint most of the time: the gross was fine and something came off it |
+
+Two rules carried from the app rather than reinvented:
+
+- **`null` is not `0`** (BR-102). The graph **omits** an unsettled month in earnings
+  mode rather than drawing a zero bar, and the list shows a pending badge. A zero
+  would tell a supplier they earned nothing in a month that has simply not settled.
+- **The deduction labels are M5's**, not a second set. The donut and the slip must
+  name a line identically, or a clerk reading one to a supplier holding the other is
+  reading two different words for one charge.
+
+The series arrives **oldest-first** and the list reverses it: a chart reads left to
+right, a list is read from the top.
+
+### Notifications — why a push does or does not reach *this* supplier
+
+**The most common push support call there is, and v1 could not answer it.**
+
+*"Nobody told me my account was ready."* There are four possible reasons, and the
+console held every fact for all four — the device registry, the tenant's category
+list, each device's consent list, the send log — while exposing them only in
+aggregate. M13's reach panel can say *"reaches 61 devices, 6 opted out"* and cannot
+name one of the six.
+
+The panel is a **diagnosis, not a dump**. One line per category, and when it does not
+reach, which reason it is — because the reasons have different fixes:
+
+| Reason | What the office does |
+| --- | --- |
+| No device at all | Help them install it. Nothing else on the panel applies, so nothing else is shown |
+| The factory does not send this category | M14. Not the supplier's doing, and sending them to their phone settings wastes both their time |
+| Every device opted out | Their setting, on their phone. The office can explain it and cannot change it |
+| Reachable, and nothing was sent | The send log below it |
+
+That last row is why `recentSends` is on the panel rather than left to M13: **a clean
+diagnosis and an empty log is a complete answer**, and the two halves have to be on
+one screen to be read as one. Without it the panel shows four green ticks and leaves
+the office insisting the message must have arrived.
+
+`deliveredToDevices: 0` on a send that reached hundreds is the row that matters, and
+an aggregate log can never show it — which is why the figure is per-supplier on the
+wire.
+
+**No push token anywhere on the payload.** It is a credential, nothing in the office
+can act on one, and §20.4's argument about account numbers applies unchanged.
+
+### Every queue this supplier can be in
+
+v1 linked to **one** of four. The app shows a supplier their whole request history in
+a single list (`RequestHistoryList`); the office had to visit four screens and type
+the supplier code into each — which in practice means checking one and assuming the
+rest.
+
+`supplierId` was already on all four query types. Only the links were missing. They
+are unconditional rather than hidden when a queue is empty: *"nothing outstanding"* is
+an answer a clerk needs, and a row that vanishes when the answer is *no* cannot give
+it. Each is gated on the same flag as its sidebar row.
+
+Deliberately **not** counts: four extra requests to render numbers that are stale the
+moment a colleague decides something, when the queue itself answers accurately.
 
 ## M5 Bills — read-only
 
@@ -472,8 +552,48 @@ columns come with the rows carrying what each one *is* — and `null` is never `
 
 ## M17 Audit log
 
-Filterable by entity, read-only, newest first. Unchanged, and it gains two entity
-types: `promoBanner` and `teaPacketRequest`.
+Filterable by entity, read-only, newest first. It gains two entity types —
+`promoBanner` and `teaPacketRequest` — and one field that closes a real hole.
+
+### `actorType` — what the supplier did themselves
+
+v1 had no such field, because every entry was written by somebody signed into this
+console: `actorId` implied `consoleUser` and nothing needed to say so.
+
+That stopped being true when the console became the app's management surface. **The
+app lets a supplier change their own name, telephone, date of birth and both
+addresses through `PATCH /profile`** — no approval, no change request
+(`ChangeRequestType` covers only payout and savings-rate changes) — and v1 recorded it
+**nowhere**. The office could be asked *"when did this address change?"* and had no
+way to answer; a wrong telephone number had no history at all.
+
+Three kinds rather than a boolean, because the third is a real and separate answer:
+
+| `actorType` | Who |
+| --- | --- |
+| `consoleUser` | The office. **The default**, and an entry with no `actorType` is one of these — every v1 entry was |
+| `supplier` | The supplier, in the app. Their own profile edits, and their first-sign-in password change |
+| `system` | An automatic send firing off an event. Attributing it to whoever published the month would read as though they composed it |
+
+**The supplier's actions sit on the same timeline as the office's**, on the same
+record, deliberately: *"what we did to this account"* and *"what they did"* are two
+readings of one history, and a clerk investigating a dispute needs them interleaved.
+Which makes the label essential — an address change by the supplier and one by a clerk
+are the same row shape and completely different facts.
+
+Office entries carry **no** badge. They are the norm here, and badging every row would
+make the exception invisible again, which is the failure this closes. M17 gains an
+actor filter for the same reason: an investigator is always asking one of the two
+questions rather than both.
+
+`supplier.password.change` is the entry that makes §21.16 auditable end to end. The
+office issues a one-time password and records the identity check; this is the other
+half — the supplier replacing it, which is what makes the credential the office knew
+stop working. Without it the console can show that a password was issued and never
+that it was consumed.
+
+An `ip` of `null` on a supplier entry is deliberate: a phone on a mobile network has no
+address the office can act on, and inventing one would make the column look meaningful.
 
 Before/after render as JSON, deliberately: an audit entry is evidence, and a
 prettified summary is an interpretation of evidence.
