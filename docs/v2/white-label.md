@@ -221,11 +221,9 @@ What is left of M16 is `channelShift`, deliberately **ungated**, for the same re
 M12, M14 and M15 have no flag: a factory does not decline to know whether its own app
 is being used.
 
-Their commented-out definitions are in `packages/domain/src/types/admin.ts`, and the
-AC-07 tests written against them are commented out in `payoutExport.test.ts`,
-`reports.test.ts` and `savings.test.ts` — with live equivalents for `enableTeaPackets`
-and `enablePromoBanner` in `teaPackets.test.ts` and `banners.test.ts`. AC-07 did not
-weaken; it moved to flags the app actually reads.
+Their definitions and the AC-07 tests written against them are in git history — live
+equivalents for `enableTeaPackets` and `enablePromoBanner` are in `teaPackets.test.ts`
+and `banners.test.ts`. AC-07 did not weaken; it moved to flags the app actually reads.
 
 ### The reduced-feature reference
 
@@ -357,8 +355,8 @@ Consequences worth knowing before you use it:
   answer — that the columns, headings, delimiter and number formats are per-tenant values
   rather than three guessed serialisers — remains the right answer, and `payoutExport.ts`
   still holds the shared serialiser. But M6 is the factory's own console's in v2, so the
-  section that edited it is commented out. Whoever owns payouts next inherits the serialiser
-  rather than a second guess at the format.
+  section that edited it is no longer rendered. Whoever owns payouts next inherits the
+  serialiser rather than a second guess at the format.
 
 What is still outside the console is **creating** the row for a factory that has none. §12.1
 has a `tenants` capability and no screen behind it, so the first row is inserted by whoever

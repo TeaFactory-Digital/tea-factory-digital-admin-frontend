@@ -125,64 +125,6 @@ export const NAVIGATION: NavSection[] = [
       },
     ],
   },
-  /* ────────────────────────────────────────────────────────────────────────────
-   * v1 § "Operations" and "Money" — the factory's internal processes.
-   *
-   * Commented out in v2, not deleted. Every screen behind these rows still builds
-   * and every mock handler still answers; what has gone is the claim that *this*
-   * console is where the work happens. The factory's own console records the leaf,
-   * enters the rate, closes the month and pays the suppliers, and a second set of
-   * screens doing the same job is two systems to reconcile.
-   *
-   * M5 is the one exception and it is **not** here: bills survive as a read-only
-   * support view, because the app puts a bill in front of the supplier and the
-   * office has to be able to answer a question about the figure on their phone.
-   * Reading it is app support; producing it is not. See `router.tsx`.
-   *
-   *   {
-   *     titleKey: 'nav.sectionOperations',
-   *     items: [
-   *       {
-   *         module: 'M3',
-   *         labelKey: 'nav.deliveries',
-   *         to: '/deliveries',
-   *         icon: Scale,
-   *         capability: 'deliveries',
-   *       },
-   *     ],
-   *   },
-   *   {
-   *     titleKey: 'nav.sectionMoney',
-   *     items: [
-   *       {
-   *         module: 'M4',
-   *         labelKey: 'nav.rates',
-   *         to: '/rates',
-   *         icon: Gauge,
-   *         capability: 'ratesAndMonthClose',
-   *       },
-   *       {
-   *         module: 'M6',
-   *         labelKey: 'nav.payouts',
-   *         to: '/payouts',
-   *         icon: Landmark,
-   *         capability: 'payouts',
-   *         flag: 'enablePayouts',
-   *       },
-   *       {
-   *         module: 'M8',
-   *         labelKey: 'nav.savings',
-   *         to: '/savings',
-   *         icon: PiggyBank,
-   *         // `billing`, not a capability of its own: §12.1 has no savings row, and
-   *         // the scheme is a view over bills. Inventing one here would be a
-   *         // permission the matrix has never granted anybody.
-   *         capability: 'billing',
-   *         flag: 'enableSavings',
-   *       },
-   *     ],
-   *   },
-   * ──────────────────────────────────────────────────────────────────────────── */
   {
     titleKey: 'nav.sectionQueues',
     items: [

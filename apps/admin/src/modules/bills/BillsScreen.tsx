@@ -212,18 +212,6 @@ export function BillsScreen() {
         }
       />
 
-      {/**
-        * v2: **read-only.** The office still needs this screen — a supplier telephones
-        * about the figure on their phone and the clerk has to see the same account — but
-        * generating a run and publishing a month are the factory's own console's work.
-        *
-        * `BillRunCard` is commented out rather than passed a `readOnly` prop, because the
-        * card is a *control*: its whole subject is which of three states the run is in
-        * and which button to press about it. A disabled version would be a card
-        * explaining a decision nobody on this screen can make.
-        *
-        *   <BillRunCard monthKey={monthKey} month={month} run={run.data} runError={run.error} />
-        */}
       <Notice tone="info">{t('bills.readOnlyNotice')}</Notice>
       {/* "Read-only" says nobody here changes it; this says how old it is. Both, because
           the first without the second reads as "read-only and live". */}

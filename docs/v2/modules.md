@@ -2,13 +2,13 @@
 
 The v2 module map: what this console contains, what each module decides, and what
 left. Scope and rationale for the original seventeen are in the mobile repo's
-`docs/admin-console.md`; the v1 state against them is in [../v1/modules.md](../v1/modules.md),
-which is kept unchanged.
+`docs/admin-console.md`; the v1 state against them is in git history at
+`docs/v1/modules.md`.
 
 `NAVIGATION` in `apps/admin/src/layout/navigation.ts` is the machine-readable
 version of this table — it carries each module's capability and feature flag, and
-the sidebar is generated from it. The v1 rows are commented out in that file rather
-than deleted, with the reason on each.
+the sidebar is generated from it. The v1 rows were removed from that file; git history
+has them, with the reason each left.
 
 ---
 
@@ -43,10 +43,10 @@ than deleted, with the reason on each.
 | M6 | Payouts | `/payouts` | Money leaving the factory, reconciled against the factory's own bank statements |
 | M8 | Savings | `/savings` | A view over published bills, which this console no longer produces |
 
-**Their screens are still in the tree.** The routes, the sidebar rows and the lazy
-imports are commented out in `router.tsx` and `navigation.ts`; the MSW handlers
-still answer; the fixtures still seed. What is gone is the claim that *this* console
-is where the work happens.
+**Their screens are still in the tree.** They build and typecheck, the MSW handlers
+still answer and the fixtures still seed — what went is the wiring: the routes, the
+sidebar rows and the lazy imports in `router.tsx` and `navigation.ts`. What is gone
+with them is the claim that *this* console is where the work happens.
 
 Three reasons the code stayed, in order of weight:
 
@@ -69,8 +69,8 @@ inside the shell goes home, via the `*` route.
 
 ## Why this slice
 
-The v1 document argued its milestone order and that argument is kept in
-[../v1/modules.md](../v1/modules.md). v2's slice is not a milestone — it is a
+The v1 document argued its milestone order and that argument is in git history at
+`docs/v1/modules.md`. v2's slice is not a milestone — it is a
 boundary — so it is argued differently: **by what breaks on a phone if it is
 missing.** Every module above answers that question, and the four that left do not.
 
@@ -119,10 +119,10 @@ collapse that did not happen (BR-102, as a chart).
 The **shell** owns this query, not the screen, because the sidebar's queue badges
 need the same numbers. A queue whose feature flag is off is **absent**, not zero.
 
-`cycle`, `today` and `intakeTrend` are still on the payload and the cards that read
-them are commented out on the screen. The month-cycle card is the one most likely to
-be wanted back: `awaitingRate` is *why the app is showing a supplier blanks instead
-of amounts*, and that is a telephone call the office takes either way.
+`cycle`, `today` and `intakeTrend` are still on the payload; the cards that read them
+were removed from the screen and are in git history. The month-cycle card is the one
+most likely to be wanted back: `awaitingRate` is *why the app is showing a supplier
+blanks instead of amounts*, and that is a telephone call the office takes either way.
 
 ## M2 Suppliers
 
@@ -244,8 +244,8 @@ A supplier telephones about a figure; the clerk has to see the same account. Tha
 a read. Generating a run, re-generating after a correction and publishing a month
 are the factory's own console's, and they move money.
 
-So `BillRunCard` is **commented out rather than disabled**, and the distinction is
-the point: that card is a *control*: its entire subject is which of three states the
+So `BillRunCard` is **removed from the screen rather than disabled**, and the distinction
+is the point: that card is a *control*: its entire subject is which of three states the
 run is in and which button to press about it. A disabled version would be a card
 explaining a decision nobody on this screen can make. The screen says where that work
 happens instead.
@@ -592,7 +592,7 @@ until the first policy change.
 drafted locally and saved as a unit so the impact list can describe the *complete*
 change.
 
-**`payoutFile` is commented out** with M6. `PayoutFileSection.tsx` and
+**`payoutFile` is no longer edited here**, with M6. `PayoutFileSection.tsx` and
 `payoutExport.ts` both stay: §21.17's answer — that the layout is configuration rather
 than three guessed serialisers — is still the right answer, and whoever owns payouts
 next needs the serialiser rather than a second guess at the format.
@@ -621,8 +621,8 @@ record for no gain, and the same roles exist in the factory's own console. See
 `channelShift` stays because §19.3 calls app adoption and channel shift **"the two
 KPIs that justify the project"**. The other three — `dormantSuppliers`,
 `leafByCollectionPoint`, `monthSummary` — are the factory's own console's, and are
-commented out in `REPORT_IDS`, in the mock's `runReport` switch and in the test suite,
-each with its citation intact.
+in git history — removed from `REPORT_IDS`, from the mock's `runReport` switch and from
+the test suite, each with its citation intact in the commit that removed it.
 
 **No flag.** `enableReports` was console-only and went with `enablePayouts`; what is
 left is not a feature a factory declines to have.
@@ -704,8 +704,8 @@ than implied by a disabled button.
 
 The v1 table's other rows — §21.17's fixed-width bank file, §21.9's interest accrual,
 §21.8's post-publish correction — are **not** listed here, because they are questions
-about modules this console no longer contains. They are in
-[../v1/modules.md](../v1/modules.md), where the factory's own build can read them.
+about modules this console no longer contains. They are in git history at
+`docs/v1/modules.md`, where the factory's own build can read them.
 
 ---
 

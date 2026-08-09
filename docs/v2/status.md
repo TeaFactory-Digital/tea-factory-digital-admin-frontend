@@ -7,8 +7,8 @@ Written in the mobile repo's `status.md` voice on purpose: **anything marked a g
 is exactly that.** Nothing here is quietly assumed to be solved.
 
 The v1 status — the seventeen-module console, its acceptance-criteria coverage and
-its open questions — is kept unchanged at [../v1/status.md](../v1/status.md). It is
-the reference for the factory's own build, and this document does not restate it.
+its open questions — is in git history at `docs/v1/status.md`. It is the reference for
+the factory's own build, and this document does not restate it.
 
 ---
 
@@ -19,7 +19,7 @@ factory's own console runs the factory. What that changed:
 
 | | |
 | --- | --- |
-| **Handed back** | M3 leaf collection, M4 rates & month close, M6 payouts, M8 savings. Commented out, not deleted — see [modules.md](./modules.md) |
+| **Handed back** | M3 leaf collection, M4 rates & month close, M6 payouts, M8 savings. Screens and handlers still in the tree, unrouted — see [modules.md](./modules.md) |
 | **Narrowed** | M1 to app adoption and content health · M2 to the app account · M5 to a read-only support view · M16 to `channelShift` |
 | **Built** | **M18 tea packets** and **M11's banner editor** — two surfaces the app has always had and this console never did |
 | **Corrected** | The feature flag set, which claimed to be the app's and was four flags short in one direction and two long in the other |
@@ -37,11 +37,11 @@ cannot.
 | **Auth realm** | Separate from suppliers. Password → optional TOTP → in-memory access token + httpOnly refresh cookie, with refresh-on-401 |
 | **RBAC** | The §12.1 matrix as data, server grants overriding per capability, four-eyes, capability route guards |
 | **Transport** | Axios with domain-code-preserving errors, tenant header, idempotency keys, single-retry refresh |
-| **Mock API** | MSW: 84 suppliers, 14 change requests, 14 credit requests, **6 tea-packet requests**, 7 inquiries, five news articles, **four banners in every window state**, the app's six fixed pages in si/en/ta, 3 tenants, 6 console users whose suspensions take effect on the next request — enforcing every refusal the real API must. The v1 money-chain fixtures and handlers are all still there, feeding the commented-out modules |
+| **Mock API** | MSW: 84 suppliers, 14 change requests, 14 credit requests, **6 tea-packet requests**, 7 inquiries, five news articles, **four banners in every window state**, the app's six fixed pages in si/en/ta, 3 tenants, 6 console users whose suspensions take effect on the next request — enforcing every refusal the real API must. The v1 money-chain fixtures and handlers are all still there, feeding the unrouted modules |
 | **UI kit** | 15 token-driven primitives, keyboard-navigable data grid, i18n throughout |
 | **M1 Dashboard** | Queue cards with age and SLA (now six queues), app-adoption figures, content-health figures, server-composed alerts, and a 12-month adoption trend whose line **breaks** on a month with no requests rather than dropping to zero |
 | **M2 Suppliers** | The app account **and the support desk**: `hasApp` in three states with a `?hasApp=false` filter the dashboard links into; a **month history** in the app's own three views (graph / list / deductions); a **push diagnosis** naming per category why a supplier would or would not be reached, with the sends that actually went to them; links into all four queues; the audited bank reveal and the §21.15/§21.16 password reset. Everything else read-only |
-| **M5 Bills** | Read-only. The slip rendered field-for-field for AC-03, the nine deduction lines with their total recomputed (BR-107), the three lenses. `BillRunCard` commented out, because a control nobody on this screen may use is not a control |
+| **M5 Bills** | Read-only. The slip rendered field-for-field for AC-03, the nine deduction lines with their total recomputed (BR-107), the three lenses. `BillRunCard` removed, because a control nobody on this screen may use is not a control |
 | **M7 Credit queues** | Unchanged: one queue over three facilities, the eligibility working printed rather than summarised (AC-05), `stale-eligibility` (BR-310), `over-ceiling` refused on both sides |
 | **M18 Tea packets** | **New.** One screen, no detail page, because there is no eligibility working to print. Packets and kilos side by side, the delivery filter as the storekeeper's working view, the price stamped at the decision, the stock cap refused on approval and **not** on rejection, and approved-unrecovered value blocking the flag in M14 |
 | **M9 Change requests** | Unchanged: oldest-first, side-by-side comparison, mandatory note, four-eyes, already-decided |
@@ -54,7 +54,7 @@ cannot.
 | **M15 Users & roles** | Unchanged: invite, re-role, suspend with a reason, the §12.1 matrix editable as data, three lockout guards |
 | **M16 Reports** | One report — `channelShift`, §19.3's KPI — computed from live records, self-describing columns, `null` never rendered as `0` |
 | **M17 Audit** | Filterable read-only log, plus per-record panels. Two new entity types (`promoBanner`, `teaPacketRequest`) and **`actorType`** — which is what finally records the supplier's own app writes, interleaved with the office's actions on the same record |
-| **Tests** | 382 Vitest passing + Playwright. Typecheck and lint clean. The v1 suites for handed-back modules are commented out with their reason; `teaPackets.test.ts`, `banners.test.ts` and `supplierSupport.test.ts` are new |
+| **Tests** | **480 Vitest passing across 44 files** + Playwright. Typecheck and lint clean. The v1 suites for handed-back modules are in git history; `teaPackets.test.ts`, `banners.test.ts` and `supplierSupport.test.ts` are new |
 
 ## Acceptance criteria
 
@@ -75,7 +75,7 @@ Stated rather than quietly reinterpreted.
 | AC-11 | The FAQ is driven by M12 content | ✅ Met |
 | AC-12 | A new factory goes live without a code deploy | ✅ **Met in v2, and it was not in v1.** M14 now has a control for every field of the row *measured against the app's own type* — the fourteen flags, the tea-packet policy, identity, collection points, banks, savings rates, languages, branding and push. v1 met the criterion against its own ten-flag type, which is the wrong thing to measure it against. One step is still outside the console: inserting the row for a factory that has none |
 | AC-03 | A bill matches the app's Home screen and the PDF field for field | ⚠️ **Read half met, and the derivation is now three-way.** The slip renders every field in the printed account's order from the shared `bill.ts`. **The bill is produced by the factory's own console in v2**, so this criterion now spans three systems rather than two — see *Known gaps*. The PDF is not built |
-| AC-04 | The month cannot be published with an unresolved exception | ⛔ **Not assessable here.** M4 is the factory's own console's. The rule, its five ordered refusals and its exception queue are commented out in this repository rather than deleted, and [../v1/modules.md](../v1/modules.md) is the specification the factory's build has to satisfy |
+| AC-04 | The month cannot be published with an unresolved exception | ⛔ **Not assessable here.** M4 is the factory's own console's. The rule, its five ordered refusals and its exception queue are unrouted in this repository — the screens and handlers still build — and v1's `modules.md` (in git history) is the specification the factory's build has to satisfy |
 
 ---
 
@@ -495,8 +495,8 @@ the one area of the console where the wrong flow is worse than no flow.
 
 **Questions that only stopped a control in a handed-back module are not repeated here** —
 §21.17's bank file, §21.9's interest basis and §21.8's post-publish correction are the
-factory's own console's to answer now. They are in [../v1/status.md](../v1/status.md), which
-is the specification that build should be read against.
+factory's own console's to answer now. They are in v1's `status.md` (in git history),
+which is the specification that build should be read against.
 
 | § | Question | Blocks |
 | --- | --- | --- |

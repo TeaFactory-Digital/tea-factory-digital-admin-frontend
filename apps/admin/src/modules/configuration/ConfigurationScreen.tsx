@@ -95,19 +95,6 @@ const SECTIONS: Array<{
    * price* — and neither is a switch.
    */
   { id: 'creditRules', icon: BadgeDollarSign, Component: CreditRulesSection },
-  /* ──────────────────────────────────────────────────────────────────────────────
-   * v1 — the payout file's layout (§21.17 as configuration).
-   *
-   * Commented out with M6: payouts are the factory's own console in v2, so a console
-   * that went on editing the bank file's column order would be configuring a module it
-   * no longer contains. `PayoutFileSection.tsx` and `payoutExport.ts` both stay — the
-   * serialiser is still the shared answer to §21.17, and whoever owns payouts next needs
-   * it rather than a second guess at the format.
-   *
-   *   // Last, because it is the only section that is an *answer to an open question*
-   *   // rather than a setting — see §21.17 and `payoutExport.ts`.
-   *   { id: 'payoutFile', icon: FileSpreadsheet, Component: PayoutFileSection },
-   * ────────────────────────────────────────────────────────────────────────────── */
 ];
 
 export function ConfigurationScreen() {

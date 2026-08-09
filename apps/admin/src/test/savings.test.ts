@@ -28,7 +28,6 @@ import { monthRepository } from '@/services/repositories/monthRepository';
 import { savingsRepository } from '@/services/repositories/savingsRepository';
 import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { isApiError } from '@/services/api/errors';
-/* v1: `useAuthStore`, for the AC-07 case commented out below. */
 import { signInAs, signInWithMfaAs, signOut } from './render';
 
 const ACCOUNTANT = 'accountant@galabodatea.lk';
@@ -223,58 +222,3 @@ describe('M8 savings', () => {
     await expect(savingsRepository.accounts({ pageSize: 1 })).resolves.toBeTruthy();
   });
 });
-
-/**
- * AC-07's second half, which status.md records as a gap: *"a flag off removes the
- * surface **and** the endpoint refuses"*.
- *
- * Driven with `fetch` and an explicit `X-Tenant` rather than through a repository,
- * because the console resolves its tenant **once at module load** (`config/tenant.ts`)
- * and switching it mid-session is deliberately impossible — the dev switcher reloads
- * the page. So this reaches the handler the way a replayed request or a hand-typed URL
- * would, which is exactly the attack the API half exists to stop.
- */
-// ────────────────────────────────────────────────────────────────────────────
-// v1. The whole suite is commented out with its one case.
-//
-// AC-07 has not gone anywhere — it is asserted for `enableTeaPackets` in
-// `teaPackets.test.ts` and for `enablePromoBanner` in `banners.test.ts`, which are
-// flags the app actually reads. What went is `enablePayouts`, the console-only flag
-// this case was written against.
-// ────────────────────────────────────────────────────────────────────────────
-// describe('AC-07 · a flag off refuses the endpoint, not only the sidebar', () => {
-//   beforeEach(() => {
-//     signOut();
-//   });
-//
-//   // ────────────────────────────────────────────────────────────────────────
-//   // v1. Commented out with the flag it asserts on.
-//   //
-//   // `enablePayouts` and `enableReports` were **console-only flags** — neither exists in
-//   // the app's `FeatureFlags` — and both went with the modules they gated (see
-//   // `FeatureFlagSet`). The endpoint therefore no longer refuses, because there is no
-//   // longer a flag for it to refuse on.
-//   //
-//   // Kept rather than deleted because AC-07 is still a live criterion for every flag that
-//   // remains: `configuration.test.ts` and the credit suites assert exactly this shape for
-//   // `enableSavings`, `enableInquiry`, `enableTeaPackets` and the three facilities.
-//   // ────────────────────────────────────────────────────────────────────────
-//   // it('refuses payouts for a tenant that does not buy them', async () => {
-//   // await signInAs(ACCOUNTANT);
-//   // const token = useAuthStore.getState().accessToken;
-//   //
-//   // const asTenant = (tenant: string) =>
-//   // fetch('http://localhost/admin/payout-runs', {
-//   // headers: { Authorization: `Bearer ${token}`, 'X-Tenant': tenant },
-//   // });
-//   //
-//   // // Galaboda buys payouts.
-//   // expect((await asTenant('galaboda')).status).toBe(200);
-//   //
-//   // // Highland counts cash out at the counter and buys no bank-file module. The
-//   // // console hides the row; this is the half that cannot be bypassed.
-//   // const refused = await asTenant('highland');
-//   // expect(refused.status).toBe(403);
-//   // expect(await refused.json()).toMatchObject({ code: 'feature-disabled' });
-//   // });
-// });

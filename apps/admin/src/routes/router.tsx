@@ -42,29 +42,6 @@ const BillsScreen = lazy(() =>
 const BillDetailScreen = lazy(() =>
   import('@/modules/bills/BillDetailScreen').then((m) => ({ default: m.BillDetailScreen })),
 );
-/* ──────────────────────────────────────────────────────────────────────────────
- * v1 internal-process screens. Still in the tree, no longer routed — see
- * `navigation.ts` for why. The imports go with the routes: a lazy chunk nothing
- * can reach is weight in the build for a URL that answers 404 anyway.
- *
- *   const DeliveriesScreen = lazy(() =>
- *     import('@/modules/deliveries/DeliveriesScreen').then((m) => ({ default: m.DeliveriesScreen })),
- *   );
- *   const MonthCloseScreen = lazy(() =>
- *     import('@/modules/months/MonthCloseScreen').then((m) => ({ default: m.MonthCloseScreen })),
- *   );
- *   const PayoutsScreen = lazy(() =>
- *     import('@/modules/payouts/PayoutsScreen').then((m) => ({ default: m.PayoutsScreen })),
- *   );
- *   const PayoutRunDetailScreen = lazy(() =>
- *     import('@/modules/payouts/PayoutRunDetailScreen').then((m) => ({
- *       default: m.PayoutRunDetailScreen,
- *     })),
- *   );
- *   const SavingsScreen = lazy(() =>
- *     import('@/modules/savings/SavingsScreen').then((m) => ({ default: m.SavingsScreen })),
- *   );
- * ────────────────────────────────────────────────────────────────────────────── */
 const ChangeRequestsScreen = lazy(() =>
   import('@/modules/change-requests/ChangeRequestsScreen').then((m) => ({
     default: m.ChangeRequestsScreen,
@@ -200,67 +177,6 @@ export const router = createBrowserRouter([
           </RequireCapability>
         ),
       },
-      /* ──────────────────────────────────────────────────────────────────────────
-       * v1 internal-process routes, commented out in v2.
-       *
-       * Not left behind a capability nobody holds, and not rendering a "moved" notice
-       * either: this console has no way to know where the factory's own console lives,
-       * and a screen that guessed would be a broken link somebody maintains. An unknown
-       * path inside the shell already goes home (the `*` route at the foot of this
-       * list), which is the honest answer to a bookmark that no longer resolves.
-       *
-       * Payouts and savings were **flag-gated as well as capability-gated**, and the
-       * flag was checked first — a factory that does not use a feature is not a
-       * permission question, and asking it in the other order shows a manager at a
-       * cash-only factory a bank-transfer screen they are entitled to but cannot use.
-       *
-       *   {
-       *     path: 'deliveries',
-       *     element: (
-       *       <RequireCapability capability="deliveries">
-       *         <DeliveriesScreen />
-       *       </RequireCapability>
-       *     ),
-       *   },
-       *   {
-       *     path: 'rates',
-       *     element: (
-       *       <RequireCapability capability="ratesAndMonthClose">
-       *         <MonthCloseScreen />
-       *       </RequireCapability>
-       *     ),
-       *   },
-       *   {
-       *     path: 'payouts',
-       *     element: (
-       *       <RequireFlag flag="enablePayouts">
-       *         <RequireCapability capability="payouts">
-       *           <PayoutsScreen />
-       *         </RequireCapability>
-       *       </RequireFlag>
-       *     ),
-       *   },
-       *   {
-       *     path: 'payouts/:id',
-       *     element: (
-       *       <RequireFlag flag="enablePayouts">
-       *         <RequireCapability capability="payouts">
-       *           <PayoutRunDetailScreen />
-       *         </RequireCapability>
-       *       </RequireFlag>
-       *     ),
-       *   },
-       *   {
-       *     path: 'savings',
-       *     element: (
-       *       <RequireFlag flag="enableSavings">
-       *         <RequireCapability capability="billing">
-       *           <SavingsScreen />
-       *         </RequireCapability>
-       *       </RequireFlag>
-       *     ),
-       *   },
-       * ────────────────────────────────────────────────────────────────────────── */
       {
         path: 'change-requests',
         element: (

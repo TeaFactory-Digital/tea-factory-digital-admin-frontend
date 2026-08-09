@@ -13,9 +13,8 @@ is testable the day it lands.
 console no longer calls — the factory's own console does that work. They are kept
 here **in full and unmarked in the section bodies**, for three reasons: the app
 still reads the bills and balances those endpoints produce, the factory's console
-has to satisfy the same refusals, and a contract that deleted them would leave the
-only written statement of BR-108's lock and BR-501's publish rule in a commented-out
-mock handler.
+has to satisfy the same refusals, and a contract that deleted them would leave
+BR-108's lock and BR-501's publish rule with no written statement anywhere.
 
 Sections that changed:
 
@@ -2407,8 +2406,8 @@ operational role, because this is the dashboard's capability.
 
 **One report id**, not four. `dormantSuppliers`, `leafByCollectionPoint` and
 `monthSummary` are the factory's own console's; their definitions and citations are
-commented out in `packages/domain/src/reports.ts` and in [../v1/api-contract.md](../v1/api-contract.md)
-rather than deleted, because each was defined by something that still exists.
+in git history — in `packages/domain/src/reports.ts` and in v1's `api-contract.md` —
+because each was defined by something that still exists.
 
 `channelShift` stays because §19.3 calls app adoption and channel shift *"the two KPIs
 that justify the project"* — the one report an app-management console owes anybody.

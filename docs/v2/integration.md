@@ -114,8 +114,8 @@ What the app and this console cannot function without.
 | **Delivery totals** per supplier per month | On publish is enough | Only totals. The app shows a monthly figure and this console shows a month history — **neither needs the individual weighings** |
 
 **Send bills whole, not as deltas.** A bill is a read model the factory regenerates
-whenever a delivery is voided or a rate is corrected ([../v1/modules.md](../v1/modules.md)
-→ M5), so *"re-generating is the normal case"*. A delta protocol has to express a
+whenever a delivery is voided or a rate is corrected (v1's `modules.md` → M5, in git
+history), so *"re-generating is the normal case"*. A delta protocol has to express a
 recomputation, and the first one it gets wrong is a figure on a slip somebody is
 holding.
 

@@ -10,8 +10,8 @@ What changed is what sits inside them:
 
 - **`modules/` lost four directories from the router and kept them on disk.**
   `deliveries/`, `months/`, `payouts/` and `savings/` still build, still typecheck and
-  still have mock handlers behind them. Their routes and sidebar rows are commented out
-  in `routes/router.tsx` and `layout/navigation.ts`, with the reason at each site.
+  still have mock handlers behind them. Their routes and sidebar rows were removed from
+  `routes/router.tsx` and `layout/navigation.ts` — see git history for what they were.
 - **Two directories are new**: `modules/tea-packets/` and `modules/banners/`, each
   following the same four-file shape every other module uses — screen, hooks,
   repository, endpoints.
@@ -20,7 +20,7 @@ What changed is what sits inside them:
   argument `content.ts` makes about `resolveTranslation`: the console's job is to run
   the app's rule, not a second implementation of it.
 
-The one thing worth noticing about the commented-out modules is that **nothing in the
+The one thing worth noticing about the unrouted modules is that **nothing in the
 layer boundaries had to be relaxed to keep them.** A screen that is not routed is a
 module nobody imports; the repository under it is a file nobody calls. The tree carries
 them at no structural cost, which is most of why keeping them was cheap enough to be

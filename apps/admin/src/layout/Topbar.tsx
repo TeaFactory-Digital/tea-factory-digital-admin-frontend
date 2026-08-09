@@ -58,57 +58,6 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-md">
-        {/* ────────────────────────────────────────────────────────────────────────
-          * The language switcher lived here, always visible, on the argument that a clerk
-          * who cannot read the current language must reach it without opening a menu whose
-          * trigger they cannot read either.
-          *
-          * Moved to M15 by decision, with the sign-in screen keeping its own copy — which
-          * answers most of that argument: somebody who cannot read the console changes the
-          * language **before** signing in, on a screen that still offers it.
-          *
-          * What is left of the gap: a shared machine left in a language the next person
-          * cannot read. The account trigger is that person's own **name** rather than a
-          * word, so it is still findable, and `UserRound` marks the profile row inside.
-          *
-          *   <LanguageSwitcher />
-          * ──────────────────────────────────────────────────────────────────────── */}
-
-        {/* ────────────────────────────────────────────────────────────────────────
-          * Tenant switcher — **hidden, not removed.**
-          *
-          * It was gated on `allowTenantOverride` (development and the hosted demo only,
-          * never production), so this changes nothing a factory ever saw. What it did
-          * change was what everyone *else* sees: a control labelled "dev/demo only" sits
-          * in the top bar of every screenshot, demo and screen-share.
-          *
-          * Everything it needs is still in the tree and still tested —
-          * `config/tenant.ts` keeps `allowTenantOverride`, `switchTenantByReload` and the
-          * `?tenant=` resolution, and `MOCK_TENANT_IDS` still seeds the fixtures. Bringing
-          * it back is uncommenting this block and its four imports at the top of the file.
-          *
-          * Switching tenant meanwhile: append `?tenant=<id>` to the URL in development,
-          * which is the same path this control took.
-          *
-          *   {allowTenantOverride ? (
-          *     <label className="hidden items-center gap-xs text-caption text-text-secondary md:flex">
-          *       {t('shell.tenantSwitcher')}
-          *       <Select
-          *         value={tenantId}
-          *         onChange={(event) => switchTenantByReload(event.target.value)}
-          *         className="h-9 min-w-24 px-sm text-caption"
-          *         fullWidth={false}
-          *       >
-          *         {[...new Set([tenantId, ...MOCK_TENANT_IDS])].map((id) => (
-          *           <option key={id} value={id}>
-          *             {id}
-          *           </option>
-          *         ))}
-          *       </Select>
-          *       {tenantSource === 'fallback' ? <Badge tone="warning">fallback</Badge> : null}
-          *     </label>
-          *   ) : null}
-          * ──────────────────────────────────────────────────────────────────────── */}
 
         {user ? (
           <DropdownMenu>

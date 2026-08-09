@@ -13,10 +13,9 @@ Two notes for whoever runs it:
   manure, no news, and in v2 no tea packets and no promo banner. A row that survives is
   a row gated on something hardcoded.
 - **The test suite grew and shrank in the same commit.** `teaPackets.test.ts` and
-  `banners.test.ts` are new; the v1 suites for handed-back modules are commented out
-  with their reason rather than deleted, and three AC-07 cases moved from
-  `enablePayouts`/`enableReports` to flags the app actually reads. `npm test` is 366
-  passing.
+  `banners.test.ts` are new; the v1 suites for handed-back modules are in git history,
+  and three AC-07 cases moved from `enablePayouts`/`enableReports` to flags the app
+  actually reads. `npm test` is **480 passing across 44 files**.
 
 Running, testing and deploying the console.
 

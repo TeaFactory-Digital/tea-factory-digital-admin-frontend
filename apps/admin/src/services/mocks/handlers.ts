@@ -330,10 +330,6 @@ function cloneMonths(): Record<string, MonthRecord> {
   );
 }
 
-
-
-
-
 /* ─────────────────────── M16 report helpers ─────────────────────── */
 
 /**
@@ -349,169 +345,13 @@ function runReport(
   params: { monthKey?: string; from?: string; to?: string; dormantMonths?: number },
 ): Pick<ReportResult, 'id' | 'columns' | 'rows' | 'totals'> {
   switch (id) {
-    /* ──────────────────────────────────────────────────────────────────────────
-     * v1's three factory-operations reports.
+    /**
+     * App adoption and channel shift — *"the two KPIs that justify the project"* (§19.3).
      *
-     * Commented out with their ids (`REPORT_IDS`), not deleted: these branches are the
-     * executable definition of what each report *is*, and mocks.md calls the handlers
-     * the specification the server has to satisfy rather than a stand-in for one.
-     * Whoever builds the factory's own reporting needs them.
-     * ────────────────────────────────────────────────────────────────────────── */
-    // /**
-    // * The month's own figures, in the order the office asks for them: how much leaf, at what
-    // * rate, worth what, of which how much is payable and how much is held as savings.
-    // */
-    // case 'monthSummary': {
-    // const monthKey = params.monthKey!;
-    // const record = state.months[monthKey];
-    // const bills = state.bills.filter((bill) => bill.monthKey === monthKey);
-    // const rows = state.deliveries.filter((row) => row.monthKey === monthKey && !row.voidedAt);
-    // const totals = summariseKgs(rows.map((row) => ({ supplierId: row.supplierId, kgs: row.kgs })));
-    //
-    // return {
-    // id,
-    // columns: [
-    // // `metricKey`, not `text`: the row label is a key under `reports.metric.*`, and
-    // // running it through the console as literal prose is how `reports.metric.5091`
-    // // happened to a completely different column that was also typed `text`.
-    // { key: 'metric', labelKey: 'reports.column.metric', type: 'metricKey' },
-    // { key: 'value', labelKey: 'reports.column.value', type: 'text' },
-    // ],
-    // // A two-column shape, because this report is a set of unrelated figures rather than a
-    // // table of like things — one row per metric reads as a summary, and a single wide row
-    // // reads as a spreadsheet nobody scrolls.
-    // rows: [
-    // // `null` rather than the string `'unknown'`: the console already renders a `null`
-    // // value as an em dash, and a month record should always exist for a month this
-    // // picker offered — inventing a translatable "unknown" state for a case that should
-    // // not occur is worse than the em dash.
-    // { metric: 'stage', value: record?.stage ?? null },
-    // { metric: 'totalKgs', value: totals.totalKgs },
-    // { metric: 'supplierCount', value: totals.supplierCount },
-    // { metric: 'deliveryCount', value: totals.rowCount },
-    // { metric: 'ratePerKg', value: record?.rate?.ratePerKg ?? null },
-    // { metric: 'extraRatePerKg', value: record?.rate?.extraRatePerKg ?? null },
-    // { metric: 'billCount', value: bills.length },
-    // {
-    // metric: 'grossTotal',
-    // value: round2(bills.reduce((sum, bill) => sum + (bill.grossAmount ?? 0), 0)),
-    // },
-    // {
-    // metric: 'payableTotal',
-    // value: round2(bills.reduce((sum, bill) => sum + (bill.finalBalance ?? 0), 0)),
-    // },
-    // {
-    // metric: 'savingsTotal',
-    // value: round2(bills.reduce((sum, bill) => sum + bill.deductions.savings, 0)),
-    // },
-    // ],
-    // };
-    // }
-    //
-    // /** Where the leaf came from. The one report a weighing supervisor asks for by name. */
-    // case 'leafByCollectionPoint': {
-    // const monthKey = params.monthKey!;
-    // const rows = state.deliveries.filter((row) => row.monthKey === monthKey && !row.voidedAt);
-    //
-    // const byPoint = new Map<string, { kgs: number; suppliers: Set<string>; deliveries: number }>();
-    // for (const row of rows) {
-    // const entry = byPoint.get(row.collectionPoint) ?? {
-    // kgs: 0,
-    // suppliers: new Set<string>(),
-    // deliveries: 0,
-    // };
-    // entry.kgs = roundKg(entry.kgs + row.kgs);
-    // entry.suppliers.add(row.supplierId);
-    // entry.deliveries += 1;
-    // byPoint.set(row.collectionPoint, entry);
-    // }
-    //
-    // const out = [...byPoint.entries()]
-    // .map(([point, entry]) => ({
-    // collectionPoint: point,
-    // totalKgs: entry.kgs,
-    // supplierCount: entry.suppliers.size,
-    // deliveryCount: entry.deliveries,
-    // // Mean kilos per delivery: the figure that shows one point weighing very
-    // // differently from the others, which is what a supervisor is looking for.
-    // meanKgs: entry.deliveries === 0 ? 0 : roundKg(entry.kgs / entry.deliveries),
-    // }))
-    // .sort((a, b) => b.totalKgs - a.totalKgs);
-    //
-    // return {
-    // id,
-    // columns: [
-    // { key: 'collectionPoint', labelKey: 'reports.column.point', type: 'text' },
-    // { key: 'totalKgs', labelKey: 'reports.column.kgs', type: 'kg' },
-    // { key: 'supplierCount', labelKey: 'reports.column.suppliers', type: 'count' },
-    // { key: 'deliveryCount', labelKey: 'reports.column.deliveries', type: 'count' },
-    // { key: 'meanKgs', labelKey: 'reports.column.meanKgs', type: 'kg' },
-    // ],
-    // rows: out,
-    // totals: {
-    // totalKgs: roundKg(out.reduce((sum, row) => sum + row.totalKgs, 0)),
-    // deliveryCount: out.reduce((sum, row) => sum + row.deliveryCount, 0),
-    // // Deliberately **no `supplierCount` total**: a supplier who delivers to two points
-    // // would be counted twice, and a sum that double-counts people is worse than none.
-    // },
-    // };
-    // }
-    //
-    // /**
-    // * Registered and not supplying (§19.2).
-    // *
-    // * The report the office uses to decide who to telephone, so it carries the balances too —
-    // * a dormant supplier who is owed savings is a different conversation from one who is not.
-    // */
-    // case 'dormantSuppliers': {
-    // const months = params.dormantMonths!;
-    // const cutoff = new Date(Date.now() - months * 30 * 86_400_000).toISOString();
-    //
-    // const out = state.suppliers
-    // .filter((supplier) => supplier.status !== 'closed')
-    // .filter((supplier) => !supplier.lastDeliveryAt || supplier.lastDeliveryAt < cutoff)
-    // .map((supplier) => ({
-    // supplierCode: supplier.supplierCode,
-    // name: supplier.name,
-    // collectionPoint: supplier.collectionPoint,
-    // // `null` is a real value here, and the one that matters most: a supplier who has
-    // // *never* delivered is a registration that never became a supply relationship.
-    // lastDeliveryAt: supplier.lastDeliveryAt,
-    // savingsBalance: supplier.savingsBalance,
-    // creditOutstanding: round2(
-    // supplier.creditBalances.advance +
-    // supplier.creditBalances.loan +
-    // supplier.creditBalances.manure,
-    // ),
-    // }))
-    // .sort((a, b) => (a.lastDeliveryAt ?? '').localeCompare(b.lastDeliveryAt ?? ''));
-    //
-    // return {
-    // id,
-    // columns: [
-    // { key: 'supplierCode', labelKey: 'reports.column.code', type: 'text' },
-    // { key: 'name', labelKey: 'reports.column.name', type: 'text' },
-    // { key: 'collectionPoint', labelKey: 'reports.column.point', type: 'text' },
-    // { key: 'lastDeliveryAt', labelKey: 'reports.column.lastDelivery', type: 'date' },
-    // { key: 'savingsBalance', labelKey: 'reports.column.savings', type: 'money' },
-    // { key: 'creditOutstanding', labelKey: 'reports.column.credit', type: 'money' },
-    // ],
-    // rows: out,
-    // totals: {
-    // savingsBalance: round2(out.reduce((sum, row) => sum + row.savingsBalance, 0)),
-    // creditOutstanding: round2(out.reduce((sum, row) => sum + row.creditOutstanding, 0)),
-    // },
-    // };
-    // }
-    //
-    // /**
-    // * App adoption and channel shift — *"the two KPIs that justify the project"* (§19.3).
-    // *
-    // * Measured as the share of requests that arrived from the app rather than being keyed in
-    // * by the office, which is only measurable because every request carries `channel`. That
-    // * column exists for this report and nothing else.
-    // */
-
+     * Measured as the share of requests that arrived from the app rather than being keyed in
+     * by the office, which is only measurable because every request carries `channel`. That
+     * column exists for this report and nothing else.
+     */
     case 'channelShift': {
       const { from, to } = params;
       const inWindow = (createdAt: string) => {
@@ -1682,13 +1522,6 @@ export const handlers: HttpHandler[] = [
    */
   http.get('*/admin/reports', async ({ request }) => {
     await delay(LATENCY_MS);
-    /* v2: M16 has no flag. `enableReports` was console-only and went with M6's
-     * `enablePayouts` — what is left of the module is `channelShift`, the app-adoption
-     * KPI, which is not a feature a factory declines. See `FeatureFlagSet`.
-     *
-     *   const gate = featureGate(request, 'enableReports');
-     *   if (gate) return gate;
-     */
     const auth = authorize(request, 'reports');
     if ('response' in auth) return auth.response;
 
@@ -1719,13 +1552,6 @@ export const handlers: HttpHandler[] = [
    */
   http.get('*/admin/reports/:id', async ({ request, params }) => {
     await delay(LATENCY_MS * 2);
-    /* v2: M16 has no flag. `enableReports` was console-only and went with M6's
-     * `enablePayouts` — what is left of the module is `channelShift`, the app-adoption
-     * KPI, which is not a feature a factory declines. See `FeatureFlagSet`.
-     *
-     *   const gate = featureGate(request, 'enableReports');
-     *   if (gate) return gate;
-     */
     const auth = authorize(request, 'reports');
     if ('response' in auth) return auth.response;
 
@@ -3838,13 +3664,6 @@ export const handlers: HttpHandler[] = [
 
   http.get('*/admin/payout-runs', async ({ request }) => {
     await delay(LATENCY_MS);
-    /* v2: `enablePayouts` is gone from `FeatureFlagSet` — payouts are the factory's own
-     * console. The handler stays as the executable statement of what M6's endpoints owe
-     * (mocks.md), with its gate commented rather than deleted:
-     *
-     *   const gated = featureGate(request, 'enablePayouts');
-     *   if (gated) return gated;
-     */
     const auth = authorize(request, 'payouts');
     if ('response' in auth) return auth.response;
 
@@ -3875,13 +3694,6 @@ export const handlers: HttpHandler[] = [
    */
   http.post('*/admin/payout-runs', async ({ request }) => {
     await delay(LATENCY_MS);
-    /* v2: `enablePayouts` is gone from `FeatureFlagSet` — payouts are the factory's own
-     * console. The handler stays as the executable statement of what M6's endpoints owe
-     * (mocks.md), with its gate commented rather than deleted:
-     *
-     *   const gated = featureGate(request, 'enablePayouts');
-     *   if (gated) return gated;
-     */
     const auth = authorize(request, 'payouts', 'write');
     if ('response' in auth) return auth.response;
 
@@ -3995,13 +3807,6 @@ export const handlers: HttpHandler[] = [
    */
   http.get('*/admin/payout-runs/:id/file', async ({ request, params }) => {
     await delay(LATENCY_MS);
-    /* v2: `enablePayouts` is gone from `FeatureFlagSet` — payouts are the factory's own
-     * console. The handler stays as the executable statement of what M6's endpoints owe
-     * (mocks.md), with its gate commented rather than deleted:
-     *
-     *   const gated = featureGate(request, 'enablePayouts');
-     *   if (gated) return gated;
-     */
     const auth = authorize(request, 'payouts');
     if ('response' in auth) return auth.response;
 
@@ -4074,13 +3879,6 @@ export const handlers: HttpHandler[] = [
    */
   http.get('*/admin/payout-runs/:id/lines', async ({ request, params }) => {
     await delay(LATENCY_MS);
-    /* v2: `enablePayouts` is gone from `FeatureFlagSet` — payouts are the factory's own
-     * console. The handler stays as the executable statement of what M6's endpoints owe
-     * (mocks.md), with its gate commented rather than deleted:
-     *
-     *   const gated = featureGate(request, 'enablePayouts');
-     *   if (gated) return gated;
-     */
     const auth = authorize(request, 'payouts');
     if ('response' in auth) return auth.response;
 
@@ -4117,13 +3915,6 @@ export const handlers: HttpHandler[] = [
 
   http.get('*/admin/payout-runs/:id', async ({ request, params }) => {
     await delay(LATENCY_MS);
-    /* v2: `enablePayouts` is gone from `FeatureFlagSet` — payouts are the factory's own
-     * console. The handler stays as the executable statement of what M6's endpoints owe
-     * (mocks.md), with its gate commented rather than deleted:
-     *
-     *   const gated = featureGate(request, 'enablePayouts');
-     *   if (gated) return gated;
-     */
     const auth = authorize(request, 'payouts');
     if ('response' in auth) return auth.response;
 
@@ -4142,13 +3933,6 @@ export const handlers: HttpHandler[] = [
    */
   http.post('*/admin/payout-runs/:id/approve', async ({ request, params }) => {
     await delay(LATENCY_MS);
-    /* v2: `enablePayouts` is gone from `FeatureFlagSet` — payouts are the factory's own
-     * console. The handler stays as the executable statement of what M6's endpoints owe
-     * (mocks.md), with its gate commented rather than deleted:
-     *
-     *   const gated = featureGate(request, 'enablePayouts');
-     *   if (gated) return gated;
-     */
     const auth = authorize(request, 'payouts', 'approve');
     if ('response' in auth) return auth.response;
 
@@ -4213,13 +3997,6 @@ export const handlers: HttpHandler[] = [
    */
   http.post('*/admin/payout-runs/:id/lines/:lineId/mark', async ({ request, params }) => {
     await delay(LATENCY_MS);
-    /* v2: `enablePayouts` is gone from `FeatureFlagSet` — payouts are the factory's own
-     * console. The handler stays as the executable statement of what M6's endpoints owe
-     * (mocks.md), with its gate commented rather than deleted:
-     *
-     *   const gated = featureGate(request, 'enablePayouts');
-     *   if (gated) return gated;
-     */
     const auth = authorize(request, 'payouts', 'write');
     if ('response' in auth) return auth.response;
 

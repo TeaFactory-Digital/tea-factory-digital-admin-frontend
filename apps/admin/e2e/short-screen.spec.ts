@@ -42,10 +42,6 @@ const SCREENS = [
   { path: '/banners', label: 'Promo banners' },
   { path: '/tea-packets', label: 'Tea packets' },
   { path: '/inquiries', label: 'Inquiries' },
-  /* v1's routed grids, gone with their modules:
-   *   { path: '/savings', label: 'Savings accounts' },
-   *   { path: '/payouts', label: 'Payouts' },
-   */
 ];
 
 const VIEWPORTS = [

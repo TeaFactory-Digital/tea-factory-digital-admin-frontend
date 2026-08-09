@@ -19,9 +19,9 @@ consequences:
   months with stored stages, bills and savings ledgers chained month to month, payout
   runs in every state. Removing it would have broken M5's read-only slip anyway, which
   reads the same bills.
-- **The `enablePayouts` and `enableReports` gates are commented out inside their
-  handlers** rather than the handlers being deleted, because the flags are gone from
-  `FeatureFlagSet` and nothing else about those endpoints changed.
+- **The `enablePayouts` and `enableReports` gates were removed from inside their
+  handlers**, not the handlers themselves: the flags are gone from `FeatureFlagSet` and
+  nothing else about those endpoints changed. The gates are in git history.
 
 New in v2's fixture: **six tea-packet requests** covering every state the M18 screen
 renders (including one over the stock cap and one raised at the counter for BR-501),

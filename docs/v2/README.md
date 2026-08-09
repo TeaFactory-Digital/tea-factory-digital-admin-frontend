@@ -58,24 +58,27 @@ The first is the one worth dwelling on: `FeatureFlagSet`'s docblock claimed the 
 was *"identical to the app's"* while the type said otherwise. A comment that was
 true when it was written is the most expensive kind of drift, because nothing fails.
 
-## Nothing was deleted
+## The screens were not deleted
 
-Every v1 screen, handler, fixture and spec for the internal-process modules is
-still in the tree, **commented out with the reason at the point of the change**.
-Three arguments for that, in order of weight:
+Every v1 screen, handler and fixture for the internal-process modules is **still in the
+tree, still building and still answering**. What went is the wiring that claimed this
+console owns them — the routes, the sidebar rows, the dashboard cards and the v1 test
+cases. Two arguments for keeping the rest:
 
 - **They are the executable statement of what those flows require.** [mocks.md](./mocks.md)
   calls the MSW handlers *"the specification the server has to satisfy, not a
   stand-in for one"* — that is exactly as true of M4's five publish refusals and
   M6's payout serialiser as it is of the modules that stayed. Whoever builds the
   factory's own console against this API needs them.
-- **The scope decision may be revisited**, and a commented card is a smaller change
-  to reverse than a deleted module. `DashboardSummary` still carries `cycle`,
+- **The scope decision may be revisited.** `DashboardSummary` still carries `cycle`,
   `today` and `intakeTrend` for this reason: the month-cycle stage is *why the app
   shows a supplier blanks instead of amounts*, which is a telephone call the office
   takes whether or not it closes the month.
-- **A deletion loses the argument with the code.** The comments say *why* a module
-  left, and that is the part a reader six months from now cannot reconstruct.
+
+> **The removed wiring is in git history**, with the reason it left recorded in the commit
+> that removed it. It was carried commented-out through v2's first pass and taken out once
+> the boundary settled — a file that explains itself twice, once in code and once in a
+> comment about code that no longer runs, drifts on the first change to either.
 
 ## Where to start
 
@@ -85,7 +88,7 @@ Three arguments for that, in order of weight:
 | **Building the bridge to the factory's system** | [factory-integration-spec.md](./factory-integration-spec.md) — the design, and the map of which audience gets which document | [platform-team.md](./platform-team.md) for this side's work, [integration.md](./integration.md) for its reasoning |
 | **Front-end developer joining** | [architecture.md](./architecture.md) · [white-label.md](./white-label.md) · [design-system.md](./design-system.md) | [modules.md](./modules.md) for what is built, [status.md](./status.md) for what is not |
 | **Reviewing this milestone** | [status.md](./status.md) — what works, what is deliberately absent, and the v2 acceptance criteria | [modules.md](./modules.md) |
-| **Looking for a module that has gone** | [modules.md](./modules.md) → *What moved to the factory's own console* | [docs/v1/](../v1/) for the module as it was documented |
+| **Looking for a module that has gone** | [modules.md](./modules.md) → *What moved to the factory's own console* | `git show <rev>:docs/v1/modules.md` for the module as it was documented |
 
 ## The documents
 
@@ -110,8 +113,9 @@ Three arguments for that, in order of weight:
 | [operations.md](./operations.md) | Commands, environments, deployment per subdomain, testing, CI |
 | [status.md](./status.md) | Known gaps, v2 acceptance-criteria coverage, open business questions |
 
-**[docs/v1/](../v1/) is kept unchanged.** It is the seventeen-module console as it
-was designed and documented, and it is the reference for the factory's own build.
+**v1 — the seventeen-module console — is in git history, not in the tree.** It was the
+reference for the factory's own build. Recover it with `git log -- docs/v1/` and
+`git show <rev>:docs/v1/<file>`.
 
 ## One rule binds all of it
 

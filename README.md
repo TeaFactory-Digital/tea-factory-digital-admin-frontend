@@ -32,7 +32,6 @@ packages/
 apps/
   admin/      React 19 · Vite · Tailwind v4 · TanStack Query/Table · Radix · MSW
 docs/v2/      Current: architecture, the API contract, what is deliberately unfinished
-docs/v1/      The seventeen-module console, kept unchanged as the reference build
 ```
 
 ## v2 — this console manages the mobile app
@@ -62,10 +61,12 @@ could not see:
 - **There was no banner editor**, though the flag, the type and the full specification
   all shipped. A factory that turned the switch on got nothing.
 
-**Nothing was deleted.** Every handed-back screen, handler, fixture and spec is still
-in the tree, commented out with the reason at the point of the change — because the
-mock handlers are the only written statement of what those flows require, and the
-factory's own console has to satisfy every one of them.
+**The screens were not deleted.** Every handed-back screen, handler and fixture is still
+in the tree, still builds and still answers — because the mock handlers are the only
+written statement of what those flows require, and the factory's own console has to
+satisfy every one of them. What is gone is the claim that *this* console is where the
+work happens: the routes, sidebar rows and cards that wired them up are in git history
+rather than commented out in the files.
 
 [docs/v2/status.md](./docs/v2/status.md) is the gap list; nothing is quietly assumed to
 be solved.
@@ -161,9 +162,10 @@ Start at [docs/v2/README.md](./docs/v2/README.md).
 | [operations.md](./docs/v2/operations.md)       | Environments, deployment, testing, CI                                                       |
 | [status.md](./docs/v2/status.md)               | **Known gaps and the questions blocking specific modules**                                  |
 
-**[docs/v1/](./docs/v1/) is kept unchanged** — the seventeen-module console as it was
-designed and documented. It is the specification the factory's own build should be read
-against, and where the handed-back modules' open questions still live.
+**v1 — the seventeen-module console — is in git history, not in the tree.** It was the
+specification the factory's own build should be read against, and where the handed-back
+modules' open questions lived. Recover it with `git log -- docs/v1/` and
+`git show <rev>:docs/v1/<file>`.
 
 The product specification — what the console is for and why — lives in the mobile
 repository's `docs/`, and nothing here restates it. `BR-###`, `AC-##` and `§n`

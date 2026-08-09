@@ -100,10 +100,4 @@ test('a reduced-feature tenant loses the queues it does not use', async ({ page 
   await expect(nav.getByText(/^promo banners$/i)).toHaveCount(0);
   await expect(nav.getByText(/^bills$/i)).toBeVisible();
 
-  /* v1: Payouts was gated on `enablePayouts` and Savings on `enableSavings`; both
-   * modules are the factory's own console's now.
-   *
-   *   await expect(nav.getByText(/^payouts$/i)).toHaveCount(0);
-   *   await expect(nav.getByText(/^savings$/i)).toBeVisible();
-   */
 });
