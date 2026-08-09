@@ -74,6 +74,8 @@ import {
   OUTLIER_KG_FLOOR_KG,
   QUEUE_SLA_HOURS,
   REQUIRED_MONTHS_OF_HISTORY,
+  SRI_LANKA_BANKS,
+  SRI_LANKA_BANK_OPTIONS,
   billNumberFor,
   buildCreditEligibility,
   monthsOfHistory,
@@ -141,13 +143,34 @@ const COLLECTION_POINTS = [
   { id: 'cp-akuressa', name: 'AKURESSA' },
 ] as const;
 
-const BANKS = [
-  { name: 'Bank of Ceylon', branches: ['Akuressa', 'Matara', 'Deniyaya', 'Morawaka'] },
-  { name: "People's Bank", branches: ['Akuressa', 'Matara', 'Kamburupitiya'] },
-  { name: 'Commercial Bank', branches: ['Matara', 'Akuressa'] },
-  { name: 'Hatton National Bank', branches: ['Matara', 'Deniyaya'] },
-  { name: 'Sampath Bank', branches: ['Matara', 'Akuressa'] },
-] as const;
+/**
+ * The towns this factory's suppliers actually bank in.
+ *
+ * The served config carries the whole national catalogue — a supplier may bank anywhere,
+ * and the app's dropdown has to let them say so. But a *fixture* drawn from all 3,682
+ * branches would give a Deniyaya smallholder an account in Jaffna, and the seed is read
+ * as a picture of one factory rather than as a random sample of the country.
+ */
+const LOCAL_BRANCHES = ['Akuressa', 'Matara', 'Deniyaya', 'Morawaka', 'Kamburupitiya'];
+
+/**
+ * The banks the fixture's suppliers hold accounts at — **filtered from the real
+ * catalogue** rather than typed out beside it.
+ *
+ * Written by hand, this list drifted: it carried `Commercial Bank` and `Hatton National
+ * Bank` where the clearing system calls them `Commercial Bank PLC` and `Hatton National
+ * Bank PLC`, so a fixture supplier's stored bank name matched nothing in the list the app
+ * would offer them. Harmless in a mock, and exactly the shape of the bug that makes a
+ * real supplier's branch dropdown come up empty when they open the payout screen.
+ *
+ * Two branches or more, so a change request has somewhere else to move the account to.
+ */
+const BANKS = SRI_LANKA_BANKS.map((bank) => ({
+  name: bank.name,
+  branches: bank.branches
+    .filter((branch) => LOCAL_BRANCHES.includes(branch.name))
+    .map((branch) => branch.name),
+})).filter((bank) => bank.branches.length >= 2);
 
 /* ───────────────────────────── console users ───────────────────────────── */
 
@@ -1392,7 +1415,13 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
     // §21.10: the same list M7's requests are drawn from, so the catalogue and the queue
     // cannot name different fertilizers.
     manureProducts: MANURE_PRODUCTS.map((one) => ({ ...one })),
-    banks: BANKS.map((b) => ({ name: b.name, branches: [...b.branches] })),
+    /**
+     * The whole national catalogue, because this is the list the **app** offers a
+     * supplier — and a supplier banks where they bank. The office narrows it in M14 if it
+     * wants to; a default that shipped only the five banks nearest the factory would send
+     * everyone else to the counter to have their details typed in by hand.
+     */
+    banks: SRI_LANKA_BANK_OPTIONS.map((b) => ({ name: b.name, branches: [...b.branches] })),
     localization: {
       defaultLanguage: 'en',
       supportedLanguages: ['si', 'en', 'ta'],
@@ -1441,6 +1470,9 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
     },
     savings: { perKgOptions: [0, 10, 20, 30, 40] },
     manureProducts: MANURE_PRODUCTS.map((one) => ({ ...one })),
+    // A second tenant that *has* narrowed the list — the case M14's editor exists for,
+    // and the one that proves the app renders whatever it is served rather than the
+    // catalogue it was built with.
     banks: BANKS.slice(0, 3).map((b) => ({ name: b.name, branches: [...b.branches] })),
     localization: {
       defaultLanguage: 'en',

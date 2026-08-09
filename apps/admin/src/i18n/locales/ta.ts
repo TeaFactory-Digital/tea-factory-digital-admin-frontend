@@ -1381,11 +1381,15 @@ export const ta: Record<TranslationKey, string> = {
   'config.sectionHint.features': 'இந்தத் தொழிற்சாலை வழங்குவது',
   'config.sectionDescription.features':
     'வசதி ஒன்றை முடக்குவது அதை முழுவதுமாக நீக்குகிறது — மெனு வரிசை, திரைகள், மற்றும் செயலி.',
-  'config.section.operations': 'சேகரிப்பும் செலுத்தலும்',
+  'config.section.operations': 'சேகரிப்பும் சேமிப்பும்',
   'config.sectionHint.operations':
-    'இடங்கள், வங்கிகள், உரம், சேமிப்பு',
+    'இடங்கள், சேமிப்பு, உரம்',
   'config.sectionDescription.operations':
-    'நிறுத்தல் இடங்கள், கொடுப்பனவுச் சுற்றுகள், உரக் கோரிக்கைகள் மற்றும் சேமிப்புத் திட்டம் தேர்வு செய்யும் பட்டியல்கள்.',
+    'நிறுத்தல் இடங்கள், உரக் கோரிக்கைகள் மற்றும் சேமிப்புத் திட்டம் தேர்வு செய்யும் பட்டியல்கள்.',
+  'config.section.banks': 'வங்கிகளும் கிளைகளும்',
+  'config.sectionHint.banks': 'கொடுப்பனவு விவரங்களுக்கு செயலி வழங்குவது',
+  'config.sectionDescription.banks':
+    'சப்ளையர் தமது கணக்கை வழங்கும்போது தேர்வு செய்யும் வங்கிகளும் கிளைகளும். இந்தத் தொழிற்சாலை உண்மையில் செலுத்தும் வங்கிகளுக்கு மட்டும் சுருக்கவும்.',
   'config.section.appearance': 'மொழிகளும் அடையாளச் சின்னமும்',
   'config.sectionHint.appearance': 'மொழிகள், சின்னம், நிறங்கள்',
   'config.sectionDescription.appearance':
@@ -1431,6 +1435,9 @@ export const ta: Record<TranslationKey, string> = {
   'config.addBank': 'வங்கி ஒன்றைச் சேர்',
   'config.branchesOf': '{{bank}} இன் கிளைகள்',
   'config.addBranch': 'கிளை ஒன்றைச் சேர்',
+  'config.branchesFor': 'கிளைகளைத் திருத்து',
+  'config.branchesForHint': 'ஒரு நேரத்தில் ஒரு வங்கி — முழுப் பட்டியலில் சில ஆயிரம் கிளைகள் உள்ளன.',
+  'config.branchesPickBank': 'ஒரு வங்கியைத் தேர்ந்தெடு…',
   'config.withdrawalMonth': 'சேமிப்பை எடுக்கக்கூடிய மாதம்',
   'config.withdrawalMonthHint': 'ஒவ்வொரு ஆண்டும் இந்த மாதத்தில் சப்ளையர்கள் தமது சேமிப்பைத் திரும்பக் கேட்கலாம்.',
   'config.interestRate': 'வழங்கும் வட்டி (ஆண்டுக்கு %)',

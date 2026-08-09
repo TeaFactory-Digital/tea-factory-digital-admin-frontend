@@ -33,7 +33,21 @@ export function Badge({
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-pill px-sm py-xxs text-caption font-medium whitespace-nowrap',
+        /**
+         * `w-fit` because a pill must hug its text wherever it is put.
+         *
+         * `inline-flex` sizes to content on its own, but a badge is very often the first
+         * child of a `flex flex-col` cell — a status over the date it happened, in six
+         * grids at the last count — and a column flex container stretches its children to
+         * the full width by default. That turned every "Signed in" into a pale green bar
+         * the width of the column, which reads as a filled progress track rather than as
+         * a status.
+         *
+         * A definite width wins over `align-self: stretch`, so this fixes the width
+         * without touching vertical alignment — which `self-start` would have changed for
+         * every badge sitting in a row.
+         */
+        'inline-flex w-fit items-center rounded-pill px-sm py-xxs text-caption font-medium whitespace-nowrap',
         TONES[tone],
         className,
       )}

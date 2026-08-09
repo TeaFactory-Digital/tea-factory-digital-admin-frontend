@@ -1352,11 +1352,15 @@ export const si: Record<TranslationKey, string> = {
   'config.sectionHint.features': 'මෙම කර්මාන්තශාලාව ලබා දෙන දේ',
   'config.sectionDescription.features':
     'විශේෂාංගයක් අක්‍රීය කිරීමෙන් එය සම්පූර්ණයෙන් ඉවත් වේ — මෙනු පේළිය, තිර, සහ යෙදුම.',
-  'config.section.operations': 'එකතු කිරීම සහ ගෙවීම',
+  'config.section.operations': 'එකතු කිරීම සහ ඉතුරුම්',
   'config.sectionHint.operations':
-    'ස්ථාන, බැංකු, පොහොර, ඉතුරුම්',
+    'ස්ථාන, ඉතුරුම්, පොහොර',
   'config.sectionDescription.operations':
-    'කිරුම් ස්ථාන, ගෙවීම් වට, පොහොර ඉල්ලීම් සහ ඉතුරුම් යෝජනා ක්‍රමය තෝරා ගන්නා ලැයිස්තු.',
+    'කිරුම් ස්ථාන, පොහොර ඉල්ලීම් සහ ඉතුරුම් යෝජනා ක්‍රමය තෝරා ගන්නා ලැයිස්තු.',
+  'config.section.banks': 'බැංකු සහ ශාඛා',
+  'config.sectionHint.banks': 'ගෙවීම් විස්තර සඳහා යෙදුම දෙන ලැයිස්තුව',
+  'config.sectionDescription.banks':
+    'සැපයුම්කරු තම ගිණුම දෙන විට තෝරා ගන්නා බැංකු සහ ශාඛා. මෙම කර්මාන්තශාලාව ඇත්තටම ගෙවන ඒවාට පමණක් සීමා කරන්න.',
   'config.section.appearance': 'භාෂා සහ සන්නාමය',
   'config.sectionHint.appearance': 'භාෂා, ලාංඡනය, වර්ණ',
   'config.sectionDescription.appearance':
@@ -1402,6 +1406,9 @@ export const si: Record<TranslationKey, string> = {
   'config.addBank': 'බැංකුවක් එකතු කරන්න',
   'config.branchesOf': '{{bank}} හි ශාඛා',
   'config.addBranch': 'ශාඛාවක් එකතු කරන්න',
+  'config.branchesFor': 'ශාඛා සංස්කරණය',
+  'config.branchesForHint': 'එක් බැංකුවක් බැගින් — සම්පූර්ණ ලැයිස්තුවේ ශාඛා දහස් ගණනක් ඇත.',
+  'config.branchesPickBank': 'බැංකුවක් තෝරන්න…',
   'config.withdrawalMonth': 'ඉතුරුම් ආපසු ගත හැකි මාසය',
   'config.withdrawalMonthHint': 'සෑම වසරකම මෙම මාසය තුළ සැපයුම්කරුවන්ට තම ඉතුරුම් ඉල්ලා සිටිය හැක.',
   'config.interestRate': 'ගෙවන පොලිය (වසරකට %)',

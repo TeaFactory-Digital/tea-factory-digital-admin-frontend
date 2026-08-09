@@ -96,6 +96,8 @@ Three arguments for that, in order of weight:
 | [api-contract.md](./api-contract.md) | Base URL, auth realm, every endpoint with payloads, the error envelope |
 | [factory-integration-spec.md](./factory-integration-spec.md) | **The document to share with the factory's own dev team and the BA.** Self-contained: the endpoint, the JSON, the duplicate-prevention handshake, and the office workflow |
 | [factory-updates-sample.json](./factory-updates-sample.json) | A complete, valid, arithmetically-consistent sample response for that endpoint. Send it with the spec |
+| [bank-catalogue.md](./bank-catalogue.md) | Where the bank and branch list lives, the three decisions behind it (names not ids, no rename, inside `client_config`), and what comes out of the frontend once the backend holds it |
+| [sri-lanka-banks.seed.json](./sri-lanka-banks.seed.json) | The catalogue as portable JSON — 45 institutions, 3,682 branches, with clearing codes. What the backend seeds `client_config.banks` from |
 | [integration.md](./integration.md) | The same subject from *this* repository's side — what the console assumes, and why replication rather than import |
 | [architecture.md](./architecture.md) | The workspace, the layer boundaries, the provider stack, state |
 | [rbac.md](./rbac.md) | The §12.1 permission matrix as data, four-eyes, where authorization is enforced |

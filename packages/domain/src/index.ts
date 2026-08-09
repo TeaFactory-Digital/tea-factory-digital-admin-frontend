@@ -31,3 +31,4 @@ export * from './rbac';
 export * from './users';
 export * from './reports';
 export * from './schemas';
+export * from './data/sriLankaBanks';

@@ -217,21 +217,24 @@ export function FeaturesSection(props: SectionProps) {
   );
 }
 
-/* ─────────────────────── 3. Collection points, banks, savings ─────────────────────── */
+/* ────────────────── 3. Collection points, savings, fertilizer ────────────────── */
 
 /**
- * The three lists the operational modules read from.
+ * The lists the operational modules read from.
  *
  * Each one is referenced by records elsewhere and each row therefore shows what depends on
- * it — a collection point by its delivery rows, a bank by the suppliers whose details name
- * it. Removing a point with leaf filed to it is **refused**: a delivery names its point and
- * nothing else, so the rows would be orphaned. Removing a bank only stops it being offered.
+ * it — a collection point by its delivery rows. Removing a point with leaf filed to it is
+ * **refused**: a delivery names its point and nothing else, so the rows would be orphaned.
+ *
+ * The bank catalogue used to be here too, and moved to `BanksSection` when it grew from a
+ * hand-typed five to the 45-institution SLIPS list: everything below it had been pushed so
+ * far down the page that an administrator looking for the savings rates would not find
+ * them.
  */
 export function OperationsSection(props: SectionProps) {
   const { t } = useTranslation();
 
   const [points, setPoints] = useState(props.config.collectionPoints.map((point) => point.name));
-  const [banks, setBanks] = useState(props.config.banks);
   const [rates, setRates] = useState(props.config.savings.perKgOptions);
   // §21.9's answer, as two values: the month withdrawals may be asked for, and the rate the
   // factory records. Defaulted for a `client_config` row written before it was answered.
@@ -242,16 +245,14 @@ export function OperationsSection(props: SectionProps) {
 
   useEffect(() => {
     setPoints(props.config.collectionPoints.map((point) => point.name));
-    setBanks(props.config.banks);
     setRates(props.config.savings.perKgOptions);
     setPolicy(policyOf(props.config));
     setManureProducts(props.config.manureProducts ?? []);
-  }, [props.config, props.config.collectionPoints, props.config.banks, props.config.savings]);
+  }, [props.config, props.config.collectionPoints, props.config.savings]);
 
   const currentPoints = props.config.collectionPoints.map((point) => point.name);
   const dirty =
     !same(points, currentPoints) ||
-    !same(banks, props.config.banks) ||
     !same(rates, props.config.savings.perKgOptions) ||
     !same(policy, savedPolicy) ||
     !same(manureProducts, props.config.manureProducts ?? []);
@@ -265,7 +266,6 @@ export function OperationsSection(props: SectionProps) {
         `cp-${name.toLowerCase().replace(/\s+/g, '-')}`,
       name,
     })),
-    banks,
     savings: { perKgOptions: rates, ...policy },
     manureProducts,
   };
@@ -281,41 +281,6 @@ export function OperationsSection(props: SectionProps) {
         usage={props.usage.deliveriesByPoint}
         readOnly={props.readOnly}
       />
-
-      <div className="flex flex-col gap-sm">
-        <StringListEditor
-          items={banks.map((bank) => bank.name)}
-          onChange={(next) =>
-            setBanks(
-              next.map(
-                (name) => banks.find((bank) => bank.name === name) ?? { name, branches: [] },
-              ),
-            )
-          }
-          label={t('config.banks')}
-          addLabel={t('config.addBank')}
-          placeholder="Bank of Ceylon"
-          usage={props.usage.suppliersByBank}
-          readOnly={props.readOnly}
-        />
-
-        {/* Branches per bank. Nested because a branch means nothing without its bank, and
-            a supplier's details name both. */}
-        {banks.map((bank, index) => (
-          <div key={bank.name} className="ml-md border-l-2 border-divider pl-md">
-            <StringListEditor
-              items={bank.branches}
-              onChange={(branches) =>
-                setBanks(banks.map((one, i) => (i === index ? { ...one, branches } : one)))
-              }
-              label={t('config.branchesOf', { bank: bank.name })}
-              addLabel={t('config.addBranch')}
-              placeholder="Akuressa"
-              readOnly={props.readOnly}
-            />
-          </div>
-        ))}
-      </div>
 
       <StringListEditor
         items={rates.map(String)}
@@ -335,7 +300,7 @@ export function OperationsSection(props: SectionProps) {
       />
 
       {/* §21.10: what a supplier may ask for on credit. A catalogue, so it sits with the
-          banks and the collection points — the *rates* need two people and live on M4. */}
+          collection points — the *rates* need two people and live on M4. */}
       <ManureCatalogue
         products={manureProducts}
         onChange={setManureProducts}
@@ -403,7 +368,6 @@ export function OperationsSection(props: SectionProps) {
         dirty={dirty}
         onRevert={() => {
           setPoints(currentPoints);
-          setBanks(props.config.banks);
           setRates(props.config.savings.perKgOptions);
           setPolicy(policyOf(props.config));
           setManureProducts(props.config.manureProducts ?? []);

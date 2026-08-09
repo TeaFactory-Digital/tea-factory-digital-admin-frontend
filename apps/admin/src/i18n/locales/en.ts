@@ -1326,10 +1326,16 @@ export const en = {
   'config.sectionHint.features': 'What this factory offers',
   'config.sectionDescription.features':
     'Turning a feature off removes it completely — the menu row, the screens, and the app.',
-  'config.section.operations': 'Collection & payment',
-  'config.sectionHint.operations': 'Points, banks, fertilizer, savings',
+  'config.section.operations': 'Collection & savings',
+  'config.sectionHint.operations': 'Points, savings, fertilizer',
   'config.sectionDescription.operations':
-    'The lists the weighing points, the payout runs, the fertilizer requests and the savings scheme choose from.',
+    'The lists the weighing points, the fertilizer requests and the savings scheme choose from.',
+  /* Split out of Operations once the catalogue became the national list — see
+     `BanksSection`. */
+  'config.section.banks': 'Banks & branches',
+  'config.sectionHint.banks': 'What the app offers for payout details',
+  'config.sectionDescription.banks':
+    'The banks and branches a supplier picks from when they give the factory their account. Narrow it to the ones this factory actually pays into.',
   'config.section.appearance': 'Languages & branding',
   'config.sectionHint.appearance': 'Languages, logo, colours',
   'config.sectionDescription.appearance':
@@ -1375,6 +1381,9 @@ export const en = {
   'config.addBank': 'Add a bank',
   'config.branchesOf': 'Branches of {{bank}}',
   'config.addBranch': 'Add a branch',
+  'config.branchesFor': 'Edit branches',
+  'config.branchesForHint': 'One bank at a time — the full list runs to a few thousand branches.',
+  'config.branchesPickBank': 'Choose a bank…',
   'config.withdrawalMonth': 'Savings can be taken out in',
   'config.withdrawalMonthHint': 'Suppliers may ask for their savings back during this month each year.',
   'config.interestRate': 'Interest paid (% a year)',

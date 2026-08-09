@@ -27,11 +27,18 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { ArrowRight, Info, TriangleAlert } from 'lucide-react';
-import type { AppAdoption, ContentHealth, DashboardAlert, QueueCount } from '@tfd/domain';
+import type {
+  AppAdoption,
+  ContentHealth,
+  CreditFacility,
+  DashboardAlert,
+  QueueCount,
+  QueueKey,
+} from '@tfd/domain';
 /* v1: `MonthCycleStatus`, for the month-cycle card commented out below. */
 import { dashboardRepository } from '@/services/repositories/dashboardRepository';
 import { qk } from '@/query/queryKeys';
-import { NAVIGATION } from '@/layout/navigation';
+import { NAVIGATION, queuesOf } from '@/layout/navigation';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -130,13 +137,32 @@ export function DashboardScreen() {
 
 /* ─────────────────────────────── queue cards ─────────────────────────────── */
 
+/**
+ * The filter that narrows a shared screen back down to the card that was clicked.
+ *
+ * M7 answers for three queues behind one link, so `/credit?status=pending` alone would
+ * open the *Advances* card onto loans and manure as well — a card reading four and a
+ * screen listing eleven, which reads as a bug in the count rather than as a wider filter.
+ */
+const QUEUE_FACILITY: Partial<Record<QueueKey, CreditFacility>> = {
+  advanceRequests: 'advance',
+  loanRequests: 'loan',
+  manureRequests: 'manure',
+};
+
 function QueueCard({ queue }: { queue: QueueCount }) {
   const { t } = useTranslation();
 
   // The nav is the single source of where a queue lives, so a card cannot link
   // somewhere the sidebar does not.
-  const target = NAVIGATION.flatMap((section) => section.items).find(
-    (item) => item.queue === queue.queue,
+  //
+  // Matched through `queuesOf` rather than against `item.queue` directly, because one row
+  // may answer for several queues: M7 carries all three credit facilities behind a single
+  // link. Comparing `item.queue === queue.queue` silently missed that row — an array is
+  // never equal to a string — so the advances, loans and manure cards each reported
+  // "no screen in this version" while their screen was in the sidebar all along.
+  const target = NAVIGATION.flatMap((section) => section.items).find((item) =>
+    queuesOf(item).includes(queue.queue),
   );
 
   const label = t(`dashboard.queue.${queue.queue}`);
@@ -179,9 +205,13 @@ function QueueCard({ queue }: { queue: QueueCount }) {
     );
   }
 
+  const search = new URLSearchParams({ status: 'pending' });
+  const facility = QUEUE_FACILITY[queue.queue];
+  if (facility) search.set('facility', facility);
+
   return (
     <Link
-      to={`${target.to}?status=pending`}
+      to={`${target.to}?${search}`}
       className="rounded-lg border border-border bg-surface p-lg hover:bg-surface-variant"
     >
       {body}

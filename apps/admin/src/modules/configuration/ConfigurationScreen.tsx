@@ -9,7 +9,7 @@
  *
  * Two things shape the layout:
  *
- *  - **A section rail, not one long form.** Five independently-saved sections, the selected
+ *  - **A section rail, not one long form.** Seven independently-saved sections, the selected
  *    one in the URL, matching M12. A single form would mean one save carrying every field
  *    an administrator did not touch, which is exactly what `PATCH`-per-section avoids on
  *    the wire.
@@ -31,6 +31,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
   BadgeDollarSign,
   Building2,
+  Landmark,
   Languages,
   Bell as BellIcon,
   Package,
@@ -58,6 +59,7 @@ import {
   PushSection,
 } from './ConfigSections';
 /* v1: `PayoutFileSection` — still in the tree, no longer a section. See `SECTIONS`. */
+import { BanksSection } from './BanksSection';
 import { CreditRulesSection } from './CreditRulesSection';
 import { TeaPacketSection } from './TeaPacketSection';
 import type { SectionProps } from './SectionFooter';
@@ -71,6 +73,13 @@ const SECTIONS: Array<{
   { id: 'factory', icon: Building2, Component: FactorySection },
   { id: 'features', icon: SlidersHorizontal, Component: FeaturesSection },
   { id: 'operations', icon: Warehouse, Component: OperationsSection },
+  /**
+   * Split out of *Collection & payment* when the catalogue grew from a hand-typed five
+   * banks to the 45-institution SLIPS list. Sharing a section, it pushed the collection
+   * points, the savings rates, the fertilizer catalogue and the withdrawal month so far
+   * down the page that an administrator would not find them.
+   */
+  { id: 'banks', icon: Landmark, Component: BanksSection },
   { id: 'appearance', icon: Languages, Component: AppearanceSection },
   { id: 'push', icon: BellIcon, Component: PushSection },
   /**
@@ -108,8 +117,8 @@ const SECTIONS: Array<{
  *
  * The floor is the same lesson as `GRID_CARD` — a `flex-1` child that opts out of
  * `min-height: auto` will happily shrink to nothing on a short window, and here that would
- * take the rail with it. 30 rem clears the six rail entries with room to spare; below that
- * the pane keeps a usable height and `main` scrolls the page as it did before.
+ * take the rail with it. 30 rem clears the seven rail entries with room to spare; below
+ * that the pane keeps a usable height and `main` scrolls the page as it did before.
  */
 const SECTION_PANE =
   'grid gap-lg lg:min-h-[30rem] lg:flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]';
