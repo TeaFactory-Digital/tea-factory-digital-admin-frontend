@@ -343,6 +343,24 @@ export const si: Record<TranslationKey, string> = {
   'suppliers.reactivate.title': '{{name}} නැවත සක්‍රීය කරන්න',
   'suppliers.reactivate.body': 'දළු භාර සහ ඉල්ලීම් වහාම නැවත ආරම්භ වේ.',
   'suppliers.reasonLabel': 'හේතුව (විගණන ලොගයේ සටහන් වේ)',
+  'suppliers.statusSuggest.suspend.inactive': 'දළු භාර නැත',
+  'suppliers.statusSuggest.suspend.inactive.text':
+    'දිගු කලක් දළු භාර දී නැත. නැවත සැපයීමට පෙර කාර්යාලයට එන්න.',
+  'suppliers.statusSuggest.suspend.request': 'සැපයුම්කරු ඉල්ලුවා',
+  'suppliers.statusSuggest.suspend.request.text':
+    'සැපයුම්කරුගේම ඉල්ලීම පරිදි, කාර්යාල කවුන්ටරයේදී අත්හිටුවන ලදී.',
+  'suppliers.statusSuggest.suspend.dispute': 'ගිණුමේ ගැටලුවක්',
+  'suppliers.statusSuggest.suspend.dispute.text':
+    'ගිණුම පිළිබඳ ප්‍රශ්නයක් විසඳන තුරු අත්හිටුවන ලදී. කාර්යාලයට එන්න.',
+  'suppliers.statusSuggest.reactivate.resolved': 'ගැටලුව විසඳුණා',
+  'suppliers.statusSuggest.reactivate.resolved.text':
+    'ගිණුම නතර වීමට හේතු වූ කරුණ විසඳා ඇත. නැවත දළු භාර දිය හැක.',
+  'suppliers.statusSuggest.reactivate.returned': 'නැවත සපයනවා',
+  'suppliers.statusSuggest.reactivate.returned.text':
+    'සැපයුම්කරු නැවත කර්මාන්තශාලාවට පැමිණ සැපයීම ආරම්භ කර ඇත.',
+  'suppliers.statusSuggest.reactivate.error': 'වැරදීමකින් නතර විය',
+  'suppliers.statusSuggest.reactivate.error.text':
+    'ගිණුම වැරදීමකින් නතර කර තිබූ අතර එය පෙර පරිදිම නැවත සකසා ඇත.',
 
   'suppliers.resetPassword.title': 'යෙදුම් මුරපදය නැවත සකසන්න',
   'suppliers.resetPassword.body':
@@ -354,6 +372,15 @@ export const si: Record<TranslationKey, string> = {
     'අවම වශයෙන් අකුරු {{min}}ක්, සහ එය ඔබේ නමට එරෙහිව සටහන් වේ. "ඔවුන් ඉල්ලුවා" යනු පරීක්ෂාවක් නොවේ.',
   'suppliers.resetPassword.identityCheckPlaceholder':
     'සැපයුම්කරු පොත 5091 සමඟ කවුන්ටරයට පැමිණියා, එස්. ප්‍රනාන්දු හඳුනාගත්තා',
+  'suppliers.resetPassword.identitySuggest.book': 'කවුන්ටරයේ පොත',
+  'suppliers.resetPassword.identitySuggest.book.text':
+    'සැපයුම්කරු පොත සමඟ කාර්යාල කවුන්ටරයට පැමිණියා.',
+  'suppliers.resetPassword.identitySuggest.nic': 'ජා.හැ. පත බැලුවා',
+  'suppliers.resetPassword.identitySuggest.nic.text':
+    'කාර්යාල කවුන්ටරයේදී ජා.හැ. පතින් අනන්‍යතාව තහවුරු කර ගත්තා.',
+  'suppliers.resetPassword.identitySuggest.known': 'කාර්යාලයට හඳුනයි',
+  'suppliers.resetPassword.identitySuggest.known.text':
+    'මුහුණින් කාර්යාලයට හඳුනන අතර කවුන්ටරයේදී හඳුනාගත්තේ',
   'suppliers.resetPassword.confirm': 'නව මුරපදයක් සාදන්න',
   'suppliers.resetPassword.failed': 'මුරපදයක් සාදන ලද්දේ නැත',
   'suppliers.resetPassword.issuedBody': 'මෙය දැන් ලියාගෙන සැපයුම්කරුට දෙන්න.',

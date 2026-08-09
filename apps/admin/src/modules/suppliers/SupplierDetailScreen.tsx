@@ -23,11 +23,11 @@ import { ArrowRight, Ban, Info, RotateCcw } from 'lucide-react';
 import type { SupplierStatus } from '@tfd/domain';
 import { can } from '@tfd/domain';
 import { useAuthStore, useCan } from '@/auth/authStore';
+import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader, DetailRow } from '@/components/ui/Card';
 import { Dialog } from '@/components/ui/Dialog';
-import { Field, Textarea } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, Notice, Skeleton } from '@/components/ui/states';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
@@ -415,6 +415,21 @@ function QuickActions({ supplierId }: { supplierId: string }) {
 }
 
 /**
+ * The reasons an account is actually stopped and started, by verb — the words live in
+ * the string tables, only the order is here.
+ *
+ * Split per verb rather than pooled, for the reason M9 splits its own: the two acts
+ * share no vocabulary, and a clerk reactivating an account has no use for a chip about
+ * why it was suspended. The reactivation sentences are written to answer the question
+ * the *supplier* asks — "am I back?" — because this note travels the same way a
+ * suspension note does.
+ */
+const STATUS_SUGGESTIONS: Record<'suspend' | 'reactivate', readonly string[]> = {
+  suspend: ['inactive', 'request', 'dispute'],
+  reactivate: ['resolved', 'returned', 'error'],
+};
+
+/**
  * Suspend / reactivate, both behind a reason.
  *
  * A supplier who finds their account suspended will telephone the office, and
@@ -439,6 +454,12 @@ function StatusAction({
   const suspend = useSuspendSupplier(supplierId);
   const reactivate = useReactivateSupplier(supplierId);
   const mutation = suspending ? suspend : reactivate;
+
+  const verb = suspending ? 'suspend' : 'reactivate';
+  const suggestions: NoteSuggestion[] = STATUS_SUGGESTIONS[verb].map((slug) => ({
+    label: t(`suppliers.statusSuggest.${verb}.${slug}`),
+    text: t(`suppliers.statusSuggest.${verb}.${slug}.text`),
+  }));
 
   function close() {
     setOpen(false);
@@ -499,23 +520,14 @@ function StatusAction({
           </>
         }
       >
-        <Field
+        <DecisionNoteField
           label={t('suppliers.reasonLabel')}
-          required
           error={mutation.error ? t(errorMessageKey(mutation.error)) : undefined}
-        >
-          {({ id, describedBy, invalid, required }) => (
-            <Textarea
-              id={id}
-              autoFocus
-              value={reason}
-              aria-describedby={describedBy}
-              invalid={invalid}
-              required={required}
-              onChange={(event) => setReason(event.target.value)}
-            />
-          )}
-        </Field>
+          value={reason}
+          onChange={setReason}
+          suggestions={suggestions}
+          suggestionsLabel={t('common.noteSuggestions')}
+        />
       </Dialog>
     </>
   );

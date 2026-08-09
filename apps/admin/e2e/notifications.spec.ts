@@ -79,3 +79,51 @@ test('works out who a message reaches before it can be sent', async ({ page }) =
   // And the thing that cannot be taken back says so before it is pressed.
   await expect(dialog.getByText(/cannot be taken back/i)).toBeVisible();
 });
+
+/**
+ * **The page does not scroll; the columns do.**
+ *
+ * Only a browser can prove this. jsdom computes no layout, so `splitPane.test.tsx` can
+ * only assert that the classes which *make* it true are present on the right elements —
+ * and every one of them fails silently: `overflow-hidden` on a container that never
+ * overflows, `min-h-0` on a column that had room anyway.
+ *
+ * Measured rather than asserted by class, and in two parts, because "nothing scrolls
+ * anywhere" would also pass on a screen whose content simply fitted:
+ *
+ *  1. **`main` does not scroll**, which is the property being bought.
+ *  2. **The settings column does**, which proves the first one is a layout rule rather
+ *     than a short page. The triggers card is a form of eight rows plus a paragraph, and
+ *     it overflows at this viewport — before the fix that overflow went to `main` and
+ *     took the log off screen with it.
+ *
+ * The log's own overflow is deliberately **not** asserted: the fixture has three sends, so
+ * its `DataTable` scroller does not need a scrollbar at 1366×768 and demanding one would
+ * be a test of the fixture. What matters is that the card cannot outgrow the pane, which
+ * is checked as a box rather than as a scroll height.
+ */
+test('scrolls each column on its own rather than the whole page', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/notifications');
+  await expect(page.getByRole('table', { name: 'Notifications' })).toBeVisible({
+    timeout: 15_000,
+  });
+
+  const main = page.locator('main#main');
+
+  // `main` is the page scroller — see `AppShell`. Nothing on this screen may push it.
+  // One pixel of slack for sub-pixel rounding on a fractional device ratio.
+  expect(await main.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1);
+
+  // The settings column reads down on its own, so reaching a toggle never moves the list.
+  const settings = page.locator('main#main .lg\\:overflow-y-auto').first();
+  await expect(settings).toBeVisible();
+  expect(await settings.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeGreaterThan(0);
+
+  // And the log stays inside the window rather than hanging below the fold.
+  const card = page.locator('table[aria-label="Notifications"] >> xpath=ancestor::*[contains(@class,"flex-1")][1]');
+  const cardBox = await card.boundingBox();
+  const mainBox = await main.boundingBox();
+  expect(cardBox).not.toBeNull();
+  expect(cardBox!.y + cardBox!.height).toBeLessThanOrEqual(mainBox!.y + mainBox!.height + 1);
+});

@@ -21,7 +21,9 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import { Route, Routes } from 'react-router-dom';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { IDENTITY_CHECK_MIN } from '@tfd/domain';
 import { ChangeRequestDetailScreen } from '@/modules/change-requests/ChangeRequestDetailScreen';
+import { SupplierDetailScreen } from '@/modules/suppliers/SupplierDetailScreen';
 import { toggleNoteSuggestion } from '@/lib/noteSuggestion';
 import { en } from '@/i18n/locales/en';
 import { renderWithProviders, signInAs, signOut } from './render';
@@ -35,6 +37,26 @@ function renderDetail(id: string) {
     </Routes>,
     { route: `/change-requests/${id}` },
   );
+}
+
+/** `sup-1` is active in the seed; `sup-17` is the suspended one (`index % 17`). */
+function renderSupplierDetail(id: string) {
+  return renderWithProviders(
+    <Routes>
+      <Route path="/suppliers/:id" element={<SupplierDetailScreen />} />
+    </Routes>,
+    { route: `/suppliers/${id}` },
+  );
+}
+
+async function openSupplierDialog(
+  user: ReturnType<typeof userEvent.setup>,
+  id: string,
+  trigger: string,
+) {
+  renderSupplierDetail(id);
+  await user.click(await screen.findByRole('button', { name: trigger }));
+  return screen.getByRole('dialog');
 }
 
 /** Opens the reject dialog on a request the signed-in clerk did not raise. */
@@ -126,6 +148,150 @@ describe('decision note suggestions', () => {
     expect(
       within(dialog).queryByRole('button', {
         name: en['changeRequests.noteSuggest.reject.mismatch'],
+      }),
+    ).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * The same chips on the two supplier acts that also demand a reason.
+ *
+ * Worth their own cases rather than trusting the shared component, because what is on
+ * the chips is the part that carries the risk: these two notes are the office's only
+ * account of why a supplier was locked out and how it knew who it was talking to.
+ */
+describe('supplier identity-check suggestions', () => {
+  it('clears the identity-check floor and unblocks the reset', async () => {
+    await signInAs(CLERK);
+    const user = userEvent.setup();
+    const dialog = await openSupplierDialog(
+      user,
+      'sup-1',
+      en['suppliers.action.resetPassword'],
+    );
+
+    const note = within(dialog).getByRole('textbox');
+    const confirm = within(dialog).getByRole('button', {
+      name: en['suppliers.resetPassword.confirm'],
+    });
+    expect(confirm).toBeDisabled();
+
+    await user.click(
+      within(dialog).getByRole('button', {
+        name: en['suppliers.resetPassword.identitySuggest.book'],
+      }),
+    );
+
+    expect(note).toHaveValue(en['suppliers.resetPassword.identitySuggest.book.text']);
+    expect((note as HTMLTextAreaElement).value.length).toBeGreaterThanOrEqual(
+      IDENTITY_CHECK_MIN,
+    );
+    await waitFor(() => expect(confirm).toBeEnabled());
+  });
+
+  /**
+   * The absence is the assertion.
+   *
+   * The dialog's own warning is that anyone who knows a supplier code can telephone and
+   * ask, so a one-click *"confirmed by telephone"* would be the console offering the
+   * weakest possible check as though it were policy — the opposite of what the field is
+   * for. M9 offers that chip and should; this dialog must not.
+   */
+  it('offers no telephone chip, unlike the change-request queue', async () => {
+    await signInAs(CLERK);
+    const user = userEvent.setup();
+    const dialog = await openSupplierDialog(
+      user,
+      'sup-1',
+      en['suppliers.action.resetPassword'],
+    );
+
+    for (const chip of ['book', 'nic', 'known'] as const) {
+      expect(
+        within(dialog).getByRole('button', {
+          name: en[`suppliers.resetPassword.identitySuggest.${chip}`],
+        }),
+      ).toBeInTheDocument();
+    }
+    expect(
+      within(dialog).queryByRole('button', {
+        name: en['changeRequests.noteSuggest.approve.phone'],
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  /**
+   * `known` stops on "recognised at the counter by". Completed it reads properly;
+   * submitted untouched it is visibly a clerk who clicked and stopped, which is the one
+   * thing somebody reading the audit log six months later needs to be able to see.
+   */
+  it('leaves the "known to staff" sentence open for the name', async () => {
+    await signInAs(CLERK);
+    const user = userEvent.setup();
+    const dialog = await openSupplierDialog(
+      user,
+      'sup-1',
+      en['suppliers.action.resetPassword'],
+    );
+
+    const note = within(dialog).getByRole('textbox');
+    await user.click(
+      within(dialog).getByRole('button', {
+        name: en['suppliers.resetPassword.identitySuggest.known'],
+      }),
+    );
+    await user.type(note, ' S. Fernando.');
+
+    expect(note).toHaveValue(
+      `${en['suppliers.resetPassword.identitySuggest.known.text']} S. Fernando.`,
+    );
+  });
+});
+
+describe('supplier suspend and reactivate suggestions', () => {
+  it('offers the suspension sentences when suspending', async () => {
+    await signInAs(CLERK);
+    const user = userEvent.setup();
+    const dialog = await openSupplierDialog(user, 'sup-1', en['suppliers.action.suspend']);
+
+    const note = within(dialog).getByRole('textbox');
+    const confirm = within(dialog).getByRole('button', { name: en['common.confirm'] });
+    expect(confirm).toBeDisabled();
+
+    await user.click(
+      within(dialog).getByRole('button', {
+        name: en['suppliers.statusSuggest.suspend.inactive'],
+      }),
+    );
+
+    expect(note).toHaveValue(en['suppliers.statusSuggest.suspend.inactive.text']);
+    await waitFor(() => expect(confirm).toBeEnabled());
+
+    // A clerk suspending an account has no use for the sentence about it coming back.
+    expect(
+      within(dialog).queryByRole('button', {
+        name: en['suppliers.statusSuggest.reactivate.resolved'],
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('offers the reactivation sentences when reactivating', async () => {
+    await signInAs(CLERK);
+    const user = userEvent.setup();
+    const dialog = await openSupplierDialog(
+      user,
+      'sup-17',
+      en['suppliers.action.reactivate'],
+    );
+
+    expect(
+      within(dialog).getByRole('button', {
+        name: en['suppliers.statusSuggest.reactivate.resolved'],
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole('button', {
+        name: en['suppliers.statusSuggest.suspend.inactive'],
       }),
     ).not.toBeInTheDocument();
   });

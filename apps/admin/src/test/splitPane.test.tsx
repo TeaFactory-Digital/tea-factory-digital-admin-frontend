@@ -17,9 +17,15 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { screen } from '@testing-library/react';
 import { Route, Routes } from 'react-router-dom';
-import { SPLIT_PANE, SPLIT_PANE_SCROLLER } from '@/components/ui/layout';
+import {
+  GRID_CARD_PANE,
+  SPLIT_PANE,
+  SPLIT_PANE_BOTH,
+  SPLIT_PANE_SCROLLER,
+} from '@/components/ui/layout';
 import { BannerEditorScreen } from '@/modules/banners/BannerEditorScreen';
 import { ConfigurationScreen } from '@/modules/configuration/ConfigurationScreen';
+import { NotificationsScreen } from '@/modules/notifications/NotificationsScreen';
 import { StaticContentScreen } from '@/modules/static-content/StaticContentScreen';
 import { renderWithProviders, signInAs, signOut } from './render';
 
@@ -58,6 +64,68 @@ describe('SPLIT_PANE', () => {
       if (rule.startsWith('grid') || rule.startsWith('gap-') || rule === '') continue;
       expect(rule.startsWith('lg:'), rule).toBe(true);
     }
+  });
+});
+
+/**
+ * The other shape: **both** sides scroll, the page does not.
+ *
+ * Same class of silent failure as `SPLIT_PANE`, plus one of its own — the floor. A card
+ * that will not shrink below 22 rem inside a container that clips has to overflow
+ * something, so leaving `GRID_CARD` on the grid column would leave the page scrolling
+ * with no scrollbar to show for it.
+ */
+describe('SPLIT_PANE_BOTH', () => {
+  it('clips the container and drops the floor, above `lg` only', () => {
+    // The container hides its own overflow so neither column can push the page.
+    expect(SPLIT_PANE_BOTH).toContain('lg:overflow-hidden');
+    // And can shrink at all: without this it inherits `min-height: auto` from its children.
+    expect(SPLIT_PANE_BOTH).toContain('min-h-0');
+
+    // The floor moves to `max-lg:`, where the columns stack and the page is what scrolls.
+    expect(GRID_CARD_PANE).toContain('max-lg:min-h-[22rem]');
+    expect(GRID_CARD_PANE).toContain('lg:min-h-0');
+  });
+
+  it('never sets the same property twice at one width', () => {
+    /**
+     * `max-lg:` and `lg:` are mutually exclusive, so neither can be overridden by the
+     * order Tailwind happens to emit them in — the trap `GRID_CARD` documents. A bare
+     * `min-h-…` alongside either would reintroduce it.
+     */
+    const heights = GRID_CARD_PANE.split(' ').filter((rule) => rule.includes('min-h-'));
+    expect(heights).toEqual(['max-lg:min-h-[22rem]', 'lg:min-h-0']);
+  });
+
+  it('leaves the page scrolling below `lg`, where a clipped container strands a column', () => {
+    // Stacked, the second column would sit below a fold with no scrollbar anywhere.
+    for (const rule of SPLIT_PANE_BOTH.split(' ')) {
+      if (rule.includes('overflow')) expect(rule.startsWith('lg:'), rule).toBe(true);
+    }
+  });
+});
+
+describe('M13 notifications', () => {
+  it('gives each column its own scrollbar and the page none', async () => {
+    await signInAs(ADMIN);
+    const { container } = renderWithProviders(<NotificationsScreen />, { route: '/notifications' });
+
+    await screen.findByRole('table', { name: 'Notifications' });
+
+    const pane = paneOf(container);
+    expect(pane).toBeTruthy();
+    expect(pane).toHaveClass('lg:overflow-hidden');
+
+    const [log, settings] = Array.from(pane!.children);
+
+    // The log shrinks above `lg` rather than forcing the page to scroll; its `DataTable`
+    // owns the scrollbar from there.
+    expect(log).toHaveClass('lg:min-h-0');
+    expect(log).toHaveClass('max-lg:min-h-[22rem]');
+
+    // The settings read down on their own, so reaching a toggle never moves the list.
+    expect(settings).toHaveClass('lg:overflow-y-auto');
+    expect(settings).toHaveClass('lg:min-h-0');
   });
 });
 

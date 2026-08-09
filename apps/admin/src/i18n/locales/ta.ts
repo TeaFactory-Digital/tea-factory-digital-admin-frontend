@@ -349,6 +349,24 @@ export const ta: Record<TranslationKey, string> = {
   'suppliers.reactivate.title': '{{name}} ஐ மீண்டும் இயக்கு',
   'suppliers.reactivate.body': 'ஒப்படைப்புகளும் வேண்டுகோள்களும் உடனே மீண்டும் தொடங்கும்.',
   'suppliers.reasonLabel': 'காரணம் (தணிக்கைப் பதிவில் குறிக்கப்படும்)',
+  'suppliers.statusSuggest.suspend.inactive': 'ஒப்படைப்பு இல்லை',
+  'suppliers.statusSuggest.suspend.inactive.text':
+    'நீண்ட காலமாக ஒப்படைப்பு இல்லை. மீண்டும் வழங்கும் முன் அலுவலகத்திற்கு வரவும்.',
+  'suppliers.statusSuggest.suspend.request': 'சப்ளையர் கேட்டார்',
+  'suppliers.statusSuggest.suspend.request.text':
+    'சப்ளையரின் சொந்த வேண்டுகோளின்படி, அலுவலகக் கவுண்டரில் இடைநிறுத்தப்பட்டது.',
+  'suppliers.statusSuggest.suspend.dispute': 'கணக்கில் தகராறு',
+  'suppliers.statusSuggest.suspend.dispute.text':
+    'கணக்கு தொடர்பான கேள்வி தீர்க்கப்படும் வரை இடைநிறுத்தப்பட்டது. அலுவலகத்திற்கு வரவும்.',
+  'suppliers.statusSuggest.reactivate.resolved': 'விவகாரம் தீர்ந்தது',
+  'suppliers.statusSuggest.reactivate.resolved.text':
+    'கணக்கை நிறுத்திய விவகாரம் தீர்க்கப்பட்டது. மீண்டும் ஒப்படைக்கலாம்.',
+  'suppliers.statusSuggest.reactivate.returned': 'மீண்டும் வழங்குகிறார்',
+  'suppliers.statusSuggest.reactivate.returned.text':
+    'சப்ளையர் மீண்டும் தொழிற்சாலைக்கு வந்து வழங்கத் தொடங்கியுள்ளார்.',
+  'suppliers.statusSuggest.reactivate.error': 'தவறுதலாக நிறுத்தம்',
+  'suppliers.statusSuggest.reactivate.error.text':
+    'கணக்கு தவறுதலாக நிறுத்தப்பட்டிருந்தது, முன்பு இருந்தபடியே மீட்டமைக்கப்பட்டது.',
 
   'suppliers.resetPassword.title': 'செயலி கடவுச்சொல்லை மீட்டமை',
   'suppliers.resetPassword.body':
@@ -360,6 +378,15 @@ export const ta: Record<TranslationKey, string> = {
     'குறைந்தது {{min}} எழுத்துகள், உங்கள் பெயருடன் பதிவு செய்யப்படும். "அவர்கள் கேட்டார்கள்" என்பது சரிபார்ப்பு அல்ல.',
   'suppliers.resetPassword.identityCheckPlaceholder':
     'சப்ளையர் புத்தகம் 5091 உடன் கவுண்டருக்கு வந்தார், எஸ். பெர்னாண்டோ அடையாளம் கண்டார்',
+  'suppliers.resetPassword.identitySuggest.book': 'கவுண்டரில் புத்தகம்',
+  'suppliers.resetPassword.identitySuggest.book.text':
+    'சப்ளையர் புத்தகத்துடன் அலுவலகக் கவுண்டருக்கு வந்தார்.',
+  'suppliers.resetPassword.identitySuggest.nic': 'தே.அ.அ. பார்த்தது',
+  'suppliers.resetPassword.identitySuggest.nic.text':
+    'அலுவலகக் கவுண்டரில் தே.அ.அ. அட்டையிலிருந்து அடையாளம் உறுதி செய்யப்பட்டது.',
+  'suppliers.resetPassword.identitySuggest.known': 'ஊழியர் அறிவார்',
+  'suppliers.resetPassword.identitySuggest.known.text':
+    'முகத்தால் அலுவலகத்திற்குத் தெரிந்தவர், கவுண்டரில் அடையாளம் கண்டவர்',
   'suppliers.resetPassword.confirm': 'புதிய கடவுச்சொல்லை உருவாக்கு',
   'suppliers.resetPassword.failed': 'கடவுச்சொல் உருவாக்கப்படவில்லை',
   'suppliers.resetPassword.issuedBody': 'இதை இப்போதே எழுதிக்கொண்டு சப்ளையரிடம் கொடுங்கள்.',

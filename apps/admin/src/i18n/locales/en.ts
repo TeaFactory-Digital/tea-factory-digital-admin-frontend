@@ -331,6 +331,24 @@ export const en = {
   'suppliers.reactivate.title': 'Reactivate {{name}}',
   'suppliers.reactivate.body': 'Deliveries and requests resume immediately.',
   'suppliers.reasonLabel': 'Reason (recorded in the audit log)',
+  'suppliers.statusSuggest.suspend.inactive': 'No deliveries',
+  'suppliers.statusSuggest.suspend.inactive.text':
+    'No deliveries for a long period. Come to the office before supplying again.',
+  'suppliers.statusSuggest.suspend.request': 'Supplier asked',
+  'suppliers.statusSuggest.suspend.request.text':
+    'Suspended at the supplier’s own request, made at the office counter.',
+  'suppliers.statusSuggest.suspend.dispute': 'Account in dispute',
+  'suppliers.statusSuggest.suspend.dispute.text':
+    'Suspended while a question about the account is settled. Come to the office.',
+  'suppliers.statusSuggest.reactivate.resolved': 'Matter settled',
+  'suppliers.statusSuggest.reactivate.resolved.text':
+    'The matter that stopped the account is settled. Deliveries can start again.',
+  'suppliers.statusSuggest.reactivate.returned': 'Supplying again',
+  'suppliers.statusSuggest.reactivate.returned.text':
+    'The supplier has returned to the factory and is supplying again.',
+  'suppliers.statusSuggest.reactivate.error': 'Stopped in error',
+  'suppliers.statusSuggest.reactivate.error.text':
+    'The account was stopped in error and has been put back as it was.',
 
   'suppliers.resetPassword.title': 'Reset app password',
   'suppliers.resetPassword.body':
@@ -342,6 +360,15 @@ export const en = {
     'At least {{min}} characters, and it is recorded against your name. "They asked" is not a check.',
   'suppliers.resetPassword.identityCheckPlaceholder':
     'Came to the counter with supplier book 5091, recognised by S. Fernando',
+  'suppliers.resetPassword.identitySuggest.book': 'Book at counter',
+  'suppliers.resetPassword.identitySuggest.book.text':
+    'Came to the office counter with their supplier book.',
+  'suppliers.resetPassword.identitySuggest.nic': 'NIC seen',
+  'suppliers.resetPassword.identitySuggest.nic.text':
+    'Identity confirmed from the NIC at the office counter.',
+  'suppliers.resetPassword.identitySuggest.known': 'Known to staff',
+  'suppliers.resetPassword.identitySuggest.known.text':
+    'Known to the office by face and recognised at the counter by',
   'suppliers.resetPassword.confirm': 'Create a new password',
   'suppliers.resetPassword.failed': 'No password was created',
   'suppliers.resetPassword.issuedBody': 'Write this down now and give it to the supplier.',

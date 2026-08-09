@@ -81,3 +81,44 @@ export const SPLIT_PANE = 'grid gap-lg lg:min-h-[30rem] lg:flex-1';
 
 /** The one column of a {@link SPLIT_PANE} that scrolls. Put it on exactly one side. */
 export const SPLIT_PANE_SCROLLER = 'lg:min-h-0 lg:overflow-y-auto';
+
+/**
+ * A two-column screen where **both** sides scroll and the page does not.
+ *
+ * {@link SPLIT_PANE} pins one column and scrolls the other. This is the other shape: a
+ * grid beside a settings column, where each side has its own reading order and neither is
+ * a reference for the other. M13 notifications is the case — the log is a list you page
+ * through, the triggers are a form you read down, and a page scroll that moved both at
+ * once meant scrolling the list out of view to reach a toggle.
+ *
+ * Put this on the container, {@link GRID_CARD_PANE} on the grid column, and
+ * {@link SPLIT_PANE_SCROLLER} on the other. Pair with a `lg:grid-cols-…` track of the
+ * screen's own, as with `SPLIT_PANE`.
+ *
+ * **`lg:` only, and that is the whole safety argument.** Above `lg` the columns sit side
+ * by side, each is the full height of the container, and clipping the container is free.
+ * Below `lg` they *stack* — so a container that hid its overflow would put the second
+ * column below a fold with no scrollbar anywhere to reach it. Under `lg` the page scrolls
+ * as it always did, which is also why `GRID_CARD_PANE` keeps its floor down there.
+ */
+export const SPLIT_PANE_BOTH = 'grid min-h-0 flex-1 gap-lg lg:overflow-hidden';
+
+/**
+ * {@link GRID_CARD} for a column of a {@link SPLIT_PANE_BOTH}: the floor below `lg`, none
+ * above it.
+ *
+ * `GRID_CARD`'s floor exists so a short window scrolls the page instead of collapsing the
+ * list to nothing — measured at 28 px on a 13-inch laptop and at zero a little shorter.
+ * That is the right trade **when the page is what scrolls**. In a both-sides-scroll pane
+ * it is the opposite: the floor is precisely what makes the page scroll, because a card
+ * that refuses to go below 22 rem in a container shorter than that has to overflow
+ * something. Above `lg` the card's own `DataTable` already owns a scroller
+ * (`min-h-0 flex-1 overflow-auto`), so shrinking costs rows on screen and loses nothing —
+ * the list scrolls instead of the window.
+ *
+ * Written as `max-lg:` and `lg:` rather than as a base `min-h-[22rem]` with a `lg:min-h-0`
+ * on top of it. Both would set the same property, and which won would come down to the
+ * order Tailwind happened to emit them in — the trap `GRID_CARD` warns about. Two
+ * mutually-exclusive media queries cannot disagree.
+ */
+export const GRID_CARD_PANE = 'flex flex-1 flex-col max-lg:min-h-[22rem] lg:min-h-0';

@@ -20,8 +20,15 @@
  *    need without costing the list a row. Below `lg` — where the sidebar has already
  *    collapsed, so the window is a tablet rather than a laptop — they stack
  *    *underneath*, which keeps reading and tab order the same at every width.
- *  - **The grid card has a floor** (`GRID_CARD`), so when the window genuinely cannot fit
- *    everything the page scrolls instead of the list vanishing.
+ *  - **The grid card has a floor below `lg`** (`GRID_CARD_PANE`), so when the columns are
+ *    stacked and the window genuinely cannot fit everything, the page scrolls instead of
+ *    the list vanishing.
+ *
+ * Above `lg`, where the two columns sit side by side, **neither the page nor the window
+ * scrolls — each column does** (`SPLIT_PANE_BOTH`). The floor is dropped there on purpose:
+ * in a clipped container a card that refuses to go below 22 rem is the one thing forcing
+ * the page to scroll, and the log's own `DataTable` already owns a scroller, so a shorter
+ * card costs rows on screen and loses nothing.
  *
  * Every row carries **reached and suppressed side by side**, because one figure without
  * the other is misleading in the direction that matters. "Sent to 3" next to "11 opted
@@ -44,7 +51,7 @@ import { useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { GRID_CARD } from '@/components/ui/layout';
+import { GRID_CARD_PANE, SPLIT_PANE_BOTH, SPLIT_PANE_SCROLLER } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
 import { Select } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -193,15 +200,23 @@ export function NotificationsScreen() {
       />
 
       {/**
-       * The log first, the settings beside it.
+       * The log first, the settings beside it — and above `lg`, **each column scrolls and
+       * the page does not**.
        *
-       * `min-h-0` on the grid container is what lets the **card's** floor decide the
-       * height rather than the container's content: without it the container inherits
-       * `min-height: auto` from its own children and stops being able to shrink at all,
+       * The two halves have nothing to do with each other while you are reading them: the
+       * log is a list you page through, the triggers are a form you read down. Scrolled as
+       * one page they moved together, so reaching a toggle meant taking the list off
+       * screen and scrolling back to it afterwards.
+       *
+       * `min-h-0` on the container is load-bearing for both readings — without it the
+       * container inherits `min-height: auto` from its children and cannot shrink at all,
        * which turns every screen into a scrolling one even when there is room.
+       *
+       * Below `lg` the columns stack and the page scrolls as before; see
+       * `SPLIT_PANE_BOTH` for why clipping a stacked container would strand the settings.
        */}
-      <div className="grid min-h-0 flex-1 gap-lg lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <Card className={GRID_CARD}>
+      <div className={`${SPLIT_PANE_BOTH} lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]`}>
+        <Card className={GRID_CARD_PANE}>
           <div className="flex shrink-0 flex-wrap items-end gap-sm border-b border-divider p-md">
             <label className="flex flex-col gap-xs text-label text-text-primary">
               {t('notifications.filterLabel')}
@@ -247,7 +262,7 @@ export function NotificationsScreen() {
          * log fits perfectly — the reader would be scrolling the whole screen to reach a
          * paragraph, and losing the list to do it.
          */}
-        <div className="flex min-h-0 flex-col gap-lg lg:overflow-y-auto">
+        <div className={`flex min-h-0 flex-col gap-lg ${SPLIT_PANE_SCROLLER}`}>
           <TriggersCard />
 
           {/* M11 is where the copy lives; this module only carries the headline. Linked so

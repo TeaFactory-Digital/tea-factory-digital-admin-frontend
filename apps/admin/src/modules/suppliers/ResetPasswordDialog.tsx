@@ -25,13 +25,36 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyRound } from 'lucide-react';
 import { IDENTITY_CHECK_MIN, formatSupplierPassword, type SupplierCredentialReset } from '@tfd/domain';
+import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { Field, Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDateTime } from '@/lib/format';
 import { useResetSupplierCredentials } from './hooks';
+
+/**
+ * The checks the counter actually performs — **only the ones that are checks.**
+ *
+ * The chips exist for the same reason M9's do: the field's failure mode was never an
+ * empty note, which the button already refuses, but a fifteen-character one that says
+ * nothing. *"supplier asked for reset"* clears the gate and leaves the office no better
+ * off six months later than a blank would.
+ *
+ * **There is deliberately no telephone chip.** The dialog's own warning is that anyone
+ * who knows a supplier code can ring up and ask, so a chip reading *"confirmed by
+ * telephone"* would be the console offering a one-click way to record the weakest
+ * possible check as though it were policy. A clerk who genuinely did it can still type
+ * it; they should not be handed it.
+ *
+ * Each sentence is a starting point, not the finished check — the book number or the
+ * name of whoever recognised the supplier is the part that makes the entry worth
+ * reading, and it is typed after the chip. `known` ends mid-sentence, on *"recognised
+ * at the counter by"*, for exactly that reason: completed it reads properly, and
+ * submitted untouched it is visibly a clerk who clicked a chip and stopped — which is
+ * the one thing an audit reader needs to be able to see.
+ */
+const IDENTITY_SUGGESTIONS: readonly string[] = ['book', 'nic', 'known'];
 
 export function ResetPasswordDialog({
   supplierId,
@@ -47,6 +70,11 @@ export function ResetPasswordDialog({
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [issued, setIssued] = useState<SupplierCredentialReset | null>(null);
+
+  const suggestions: NoteSuggestion[] = IDENTITY_SUGGESTIONS.map((slug) => ({
+    label: t(`suppliers.resetPassword.identitySuggest.${slug}`),
+    text: t(`suppliers.resetPassword.identitySuggest.${slug}.text`),
+  }));
 
   function close() {
     setOpen(false);
@@ -145,24 +173,15 @@ export function ResetPasswordDialog({
               {t('suppliers.resetPassword.beforeYouStart')}
             </p>
 
-            <Field
+            <DecisionNoteField
               label={t('suppliers.resetPassword.identityCheck')}
-              required
               hint={t('suppliers.resetPassword.identityCheckHint', { min: IDENTITY_CHECK_MIN })}
-            >
-              {({ id, describedBy, required }) => (
-                <Textarea
-                  id={id}
-                  aria-describedby={describedBy}
-                  required={required}
-                  autoFocus
-                  rows={3}
-                  placeholder={t('suppliers.resetPassword.identityCheckPlaceholder')}
-                  value={reason}
-                  onChange={(event) => setReason(event.target.value)}
-                />
-              )}
-            </Field>
+              placeholder={t('suppliers.resetPassword.identityCheckPlaceholder')}
+              value={reason}
+              onChange={setReason}
+              suggestions={suggestions}
+              suggestionsLabel={t('common.noteSuggestions')}
+            />
           </div>
         )}
       </Dialog>
