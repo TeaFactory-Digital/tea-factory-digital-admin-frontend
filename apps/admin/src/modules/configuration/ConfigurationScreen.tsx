@@ -38,7 +38,6 @@ import {
   SlidersHorizontal,
   Warehouse,
 } from 'lucide-react';
-/* v1: FileSpreadsheet, for the payout-file section commented out below. */
 import type { LucideIcon } from 'lucide-react';
 import type { ConfigPatch } from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
@@ -59,7 +58,6 @@ import {
   OperationsSection,
   PushSection,
 } from './ConfigSections';
-/* v1: `PayoutFileSection` — still in the tree, no longer a section. See `SECTIONS`. */
 import { BanksSection } from './BanksSection';
 import { CreditRulesSection } from './CreditRulesSection';
 import { TeaPacketSection } from './TeaPacketSection';

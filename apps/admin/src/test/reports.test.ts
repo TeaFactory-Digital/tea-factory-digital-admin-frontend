@@ -25,7 +25,7 @@ import { isApiError } from '@/services/api/errors';
 import { useAuthStore } from '@/auth/authStore';
 import { signInAs, signInWithMfaAs, signOut } from './render';
 
-const ACCOUNTANT = 'accountant@galabodatea.lk';
+const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
 const EDITOR = 'editor@galabodatea.lk';
 
@@ -35,7 +35,7 @@ describe('M16 reports', () => {
   });
 
   it('offers only the reports this codebase can define, each with its citation', async () => {
-    await signInAs(ACCOUNTANT);
+    await signInAs(CLERK);
     const served = await reportRepository.list();
 
     /**
@@ -57,7 +57,7 @@ describe('M16 reports', () => {
   });
 
   it('404s a report it does not have', async () => {
-    await signInAs(ACCOUNTANT);
+    await signInAs(CLERK);
     const token = useAuthStore.getState().accessToken;
     const response = await fetch('http://localhost/admin/reports/profitByEstate', {
       headers: { Authorization: `Bearer ${token}` },
@@ -67,7 +67,7 @@ describe('M16 reports', () => {
   });
 
   it('gives every operational role read access and the editor none (§12.1)', async () => {
-    // `reports: R` for clerk, weigher, accountant, manager and both admins — this is the
+    // `reports: R` for the clerk, the manager and both admins — this is the
     // dashboard's capability, so almost everybody has it.
     await signInWithMfaAs(MANAGER);
     await expect(reportRepository.list()).resolves.toBeTruthy();

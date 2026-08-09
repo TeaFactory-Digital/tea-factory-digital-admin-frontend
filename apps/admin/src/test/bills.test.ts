@@ -28,9 +28,9 @@ import { auditRepository } from '@/services/repositories/auditRepository';
 import { isApiError } from '@/services/api/errors';
 import { signInAs, signInWithMfaAs, signOut } from './render';
 
-const ACCOUNTANT = 'accountant@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
-const WEIGHER = 'weigher@galabodatea.lk';
+const FACTORY_SYSTEM = 'factory-system@galabodatea.lk';
+const EDITOR = 'editor@galabodatea.lk';
 
 const TODAY = colomboDayOf(new Date());
 
@@ -56,7 +56,7 @@ describe('M5 bills', () => {
   });
 
   it('carries a run and a bill per supplier for every published month', async () => {
-    await signInAs(ACCOUNTANT);
+    await signInWithMfaAs(MANAGER);
     const month = await publishedMonth();
 
     const run = await billRepository.run(month.monthKey);
@@ -73,7 +73,7 @@ describe('M5 bills', () => {
   });
 
   it('derives every figure on the slip from the leaf and the rate (AC-03)', async () => {
-    await signInAs(ACCOUNTANT);
+    await signInWithMfaAs(MANAGER);
     const month = await publishedMonth();
     const page = await billRepository.list({ monthKey: month.monthKey, pageSize: 5 });
     const summary = page.items[0]!;
@@ -122,7 +122,7 @@ describe('M5 bills', () => {
   });
 
   it('deducts savings at the supplier’s own rate, and prints the running balance', async () => {
-    await signInAs(ACCOUNTANT);
+    await signInWithMfaAs(MANAGER);
     const month = await publishedMonth();
     const page = await billRepository.list({ monthKey: month.monthKey, pageSize: 200 });
 
@@ -148,7 +148,7 @@ describe('M5 bills', () => {
   });
 
   it('pays nothing when the deductions swallow the account, and carries the shortfall', async () => {
-    await signInAs(ACCOUNTANT);
+    await signInWithMfaAs(MANAGER);
     const month = await publishedMonth();
     const page = await billRepository.list({
       monthKey: month.monthKey,
@@ -174,7 +174,7 @@ describe('M5 bills', () => {
   });
 
   it('lists the bills a payout run will not be able to pay', async () => {
-    await signInAs(ACCOUNTANT);
+    await signInWithMfaAs(MANAGER);
     const month = await publishedMonth();
 
     const run = await billRepository.run(month.monthKey);
@@ -194,7 +194,7 @@ describe('M5 bills', () => {
   });
 
   it('refuses to generate without a rate, and generates once there is one', async () => {
-    await signInAs(ACCOUNTANT);
+    await signInWithMfaAs(MANAGER);
     const month = await openMonth();
 
     // A month with no auction result produces no bills, rather than bills full of
@@ -210,7 +210,7 @@ describe('M5 bills', () => {
     const run = await billRepository.generate(month.monthKey);
 
     expect(run.billCount).toBeGreaterThan(0);
-    expect(run.generatedByName).toBe('Dilani Fonseka');
+    expect(run.generatedByName).toBe('Ruwan Jayasuriya');
     expect(run.stale).toBe(false);
     // Generating occupies §13's `billsGenerated` stage.
     expect((await monthRepository.get(month.monthKey)).stage).toBe('billsGenerated');
@@ -221,7 +221,7 @@ describe('M5 bills', () => {
   }, 20_000);
 
   it('re-generates on a corrected rate, because a bill is a read model', async () => {
-    await signInAs(ACCOUNTANT);
+    await signInWithMfaAs(MANAGER);
     const month = await openMonth();
     await monthRepository.setRate(month.monthKey, { ratePerKg: 100, extraRatePerKg: 0 });
     const first = await billRepository.generate(month.monthKey);
@@ -239,14 +239,16 @@ describe('M5 bills', () => {
   }, 20_000);
 
   it('goes stale when the leaf moves, and stops being stale when re-run', async () => {
-    await signInAs(ACCOUNTANT);
+    await signInWithMfaAs(MANAGER);
     const month = await openMonth();
     await monthRepository.setRate(month.monthKey, { ratePerKg: 122.5, extraRatePerKg: 8 });
     await billRepository.generate(month.monthKey);
     expect((await billRepository.run(month.monthKey)).stale).toBe(false);
 
     signOut();
-    await signInAs(WEIGHER);
+    // Leaf moves through the factory's own system now, not through a console role —
+    // `deliveries: write` is a server grant no `ConsoleRole` carries. See `mockUsers`.
+    await signInAs(FACTORY_SYSTEM);
     const supplier = (await supplierRepository.list({ status: 'active', pageSize: 1 })).items[0]!;
     await deliveryRepository.commit({
       date: TODAY,
@@ -256,13 +258,22 @@ describe('M5 bills', () => {
     });
 
     signOut();
-    await signInAs(ACCOUNTANT);
+    await signInWithMfaAs(MANAGER);
     expect((await billRepository.run(month.monthKey)).stale).toBe(true);
     expect((await billRepository.generate(month.monthKey)).stale).toBe(false);
   }, 20_000);
 
   it('locks the bills once the month is published (BR-108)', async () => {
-    await signInAs(ACCOUNTANT);
+    /**
+     * **Two identities, and BR-501 is why.** Whoever enters a month's rate may not be
+     * whoever publishes it, so a version of this that did both as the manager fails on
+     * `You entered this month's rate, so you cannot publish it` — the four-eyes rule
+     * firing correctly and hiding the property under test.
+     *
+     * The rate is the factory's own system's anyway: `ratesAndMonthClose: write` is a
+     * server grant no `ConsoleRole` carries in v2.
+     */
+    await signInAs(FACTORY_SYSTEM);
     const month = await openMonth();
     await monthRepository.setRate(month.monthKey, { ratePerKg: 122.5, extraRatePerKg: 8 });
     const open = await monthRepository.exceptions(month.monthKey, { resolved: false });
@@ -295,7 +306,7 @@ describe('M5 bills', () => {
   }, 30_000);
 
   it('writes an audit entry for the run (AC-09)', async () => {
-    await signInAs(ACCOUNTANT);
+    await signInWithMfaAs(MANAGER);
     const month = await openMonth();
     await monthRepository.setRate(month.monthKey, { ratePerKg: 122.5, extraRatePerKg: 8 });
     const run = await billRepository.generate(month.monthKey);
@@ -305,7 +316,7 @@ describe('M5 bills', () => {
     expect(entry).toMatchObject({
       action: 'month.bills.generate',
       entity: 'billRun',
-      actorName: 'Dilani Fonseka',
+      actorName: 'Ruwan Jayasuriya',
     });
     // The figures the run produced are in the entry, because "what was it generated
     // at" is the question asked once a supplier disputes a slip.
@@ -313,7 +324,7 @@ describe('M5 bills', () => {
   }, 20_000);
 
   it('refuses a month the factory has no records for, and a bill that does not exist', async () => {
-    await signInAs(ACCOUNTANT);
+    await signInWithMfaAs(MANAGER);
     await expect(billRepository.run('1999-01')).rejects.toMatchObject({ code: '404' });
     await expect(billRepository.generate('1999-01')).rejects.toMatchObject({ code: '404' });
     await expect(billRepository.get('bill-nope')).rejects.toMatchObject({ code: '404' });
@@ -344,8 +355,9 @@ describe('M5 bills', () => {
     expect(isApiError(refused) && refused.status).toBe(403);
   });
 
-  it('gives the weigher no access to bills at all (§12.1)', async () => {
-    await signInAs(WEIGHER);
+  it('gives the editor no access to bills at all (§12.1)', async () => {
+    // `content: W` and nothing else — the narrowest account the console has.
+    await signInAs(EDITOR);
     const refused = await billRepository.list().catch((cause: unknown) => cause);
     expect(isApiError(refused) && refused.code).toBe('forbidden');
   });

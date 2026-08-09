@@ -7,7 +7,7 @@
  * that at least as much as a supplier.
  *
  * Roles are checkboxes rather than a single select, because §12.1 is a set — a person can be
- * the accountant and the factory administrator at a small factory, and `grantsFromRoles`
+ * the editor and the factory administrator at a small factory, and `grantsFromRoles`
  * takes the highest level any of their roles grants.
  */
 

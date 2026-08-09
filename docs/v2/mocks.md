@@ -121,12 +121,11 @@ on real values.
 | --- | --- | --- | --- |
 | `clerk@galabodatea.lk` | `clerk` | no | Works the change-request queue |
 | `manager@galabodatea.lk` | `manager` | **yes** — code `123456` | Approves, publishes a month; exercises the MFA step |
-| `accountant@galabodatea.lk` | `accountant` | no | Enters the rate, resolves M4 exceptions |
-| `weigher@galabodatea.lk` | `weigher` | no | **The only one who can record leaf** |
 | `editor@galabodatea.lk` | `editor` | no | **The only one who can write content.** `content: W` and nothing else at all — not even `auditLog: R` |
 | `factoryadmin@galabodatea.lk` | `factoryAdmin` | no | **The only one who can publish it.** §12.1 splits writing from publishing, and that split *is* M11/M12's control |
+| `factory-system@galabodatea.lk` | *none* | no | **The only one who can move leaf.** No `ConsoleRole` at all — every capability arrives from the server |
 
-Password for all six: `demo1234`, and all six are **printed on the sign-in
+Password for all five: `demo1234`, and all five are **printed on the sign-in
 screen** while `VITE_USE_MOCK` is on — deliberate, because a demo credential that
 has to be looked up in a source file gets pasted into a chat thread and outlives
 the demo. The block cannot render in a production build.
@@ -135,14 +134,23 @@ The editor is worth a second look: it is the **narrowest account the console has
 is why the news screen's audit panel tolerates a `403` instead of treating it as an error —
 the person most likely to be on that screen cannot read the log.
 
-**One identity per rule that needs two people.** AC-10 ("no console user can
-approve a record they created") cannot be demonstrated with one, and neither can
-BR-501 on the month close, where the accountant enters the rate and the manager
-publishes it. The weigher exists because §12.1 gives `deliveries: W` to nobody
-else in this fixture — signed in as the clerk, M3 is read-only, and that is the
-matrix working rather than a broken screen.
+**The last row is the one that changed in v2.** `weigher` and `accountant` are gone from
+`ConsoleRole` — with deliveries, rates and payouts owned by the factory's own console,
+neither could do anything here but read. They still exist over there against the same user
+table, so the server still sends grants for them, and rbac.md's asymmetric merge exists to
+honour grants for roles this build has never heard of. `factory-system` is that case as a
+fixture rather than as a paragraph.
 
-**M15 makes these six mutable, and that changed what they are for.** A suspension now takes
+It is also load-bearing for two properties that would otherwise be untestable: M5's
+staleness and M7's recomputation are *relationships* between a stored figure and live
+weighing, and nothing else in the fixture can change one side of them.
+
+**One identity per rule that needs two people.** AC-10 ("no console user can approve a
+record they created") cannot be demonstrated with one, and neither can BR-501 on the
+month close — which is why `bills.test.ts` has the factory system enter the rate and the
+manager publish it. Doing both as the manager fails on `four-eyes-violation`, correctly.
+
+**M15 makes these mutable, and that changed what they are for.** A suspension now takes
 effect on the next request rather than being a badge, so the fixture can demonstrate the one
 failure the module exists to prevent: `factoryadmin` is the *only* user holding
 `usersAndRoles`, which makes them the last way back in — the row says so and the suspend

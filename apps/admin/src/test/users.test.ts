@@ -26,6 +26,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   DEFAULT_ROLE_MATRIX,
+  FACTORY_CONSOLE_CAPABILITIES,
   canAdministerUsers,
   matrixKeepsRecovery,
   owesMfa,
@@ -61,7 +62,9 @@ describe('M15 users & roles', () => {
     await signInAs(ADMIN);
     const { page } = await listWithContext();
 
-    expect(page.total).toBeGreaterThanOrEqual(6);
+    // One per role v2 kept that belongs to a factory: clerk, manager, editor, factory
+    // admin. A platform admin spans tenants and is not seeded against this one.
+    expect(page.total).toBeGreaterThanOrEqual(4);
 
     const admin = page.items.find((one) => one.email === ADMIN)!;
     // The fixture's only holder of `usersAndRoles: W`, which is what makes the lockout rules
@@ -73,11 +76,11 @@ describe('M15 users & roles', () => {
     // enrolled — reported rather than hidden.
     expect(admin.owesMfa).toBe(true);
 
-    const weigher = page.items.find((one) => one.roles.includes('weigher'))!;
-    expect(weigher.canAdministerUsers).toBe(false);
-    expect(weigher.isLastAdministrator).toBe(false);
-    // A weigher is not manager-or-above, so no second factor is owed.
-    expect(weigher.owesMfa).toBe(false);
+    const editor = page.items.find((one) => one.roles.includes('editor'))!;
+    expect(editor.canAdministerUsers).toBe(false);
+    expect(editor.isLastAdministrator).toBe(false);
+    // An editor is not manager-or-above, so no second factor is owed.
+    expect(editor.owesMfa).toBe(false);
   });
 
   /**
@@ -275,6 +278,34 @@ describe('M15 users & roles', () => {
     expect(after.updatedByName).toBe('Chandima Bandara');
   }, 20_000);
 
+  /**
+   * **The property that makes hiding rows safe.**
+   *
+   * `RoleMatrixView` renders twelve of the fifteen capabilities: `deliveries`,
+   * `ratesAndMonthClose` and `payouts` are the factory's own console's, and a dropdown
+   * that changes nothing is the same failure as a role that grants nothing. But the
+   * server holds those grants, so hiding them must not *drop* them — and the only thing
+   * standing between the two is the screen spreading the whole `matrix[role]` when it
+   * saves one cell. Asserted here rather than trusted, because the day somebody sends a
+   * narrower payload the loss is silent and lands on the other console.
+   */
+  it('preserves the capabilities M15 does not render when a visible one is edited', async () => {
+    await signInAs(ADMIN);
+    const before = await userRepository.roles();
+
+    // Exactly what `RoleMatrixView.change()` builds for one cell.
+    const after = await userRepository.setRole(
+      'clerk',
+      { ...before.matrix.clerk, inquiries: 'read' },
+      before.matrix,
+    );
+
+    expect(after.matrix.clerk.inquiries).toBe('read');
+    for (const capability of FACTORY_CONSOLE_CAPABILITIES) {
+      expect(after.matrix.clerk[capability]).toBe(before.matrix.clerk[capability]);
+    }
+  }, 20_000);
+
   it('refuses a matrix edit that would leave no role able to administer users', async () => {
     await signInAs(ADMIN);
     const before = await userRepository.roles();
@@ -323,12 +354,12 @@ describe('M15 users & roles', () => {
   it('audits every write, with the roles before and after (AC-09)', async () => {
     await signInAs(ADMIN);
     const { page, context } = await listWithContext();
-    const weigher = page.items.find((one) => one.roles.includes('weigher'))!;
-    await userRepository.patch(weigher.id, { roles: ['weigher', 'clerk'] }, context);
+    const editor = page.items.find((one) => one.roles.includes('editor'))!;
+    await userRepository.patch(editor.id, { roles: ['editor', 'clerk'] }, context);
 
     signOut();
     await signInWithMfaAs(MANAGER);
-    const trail = await auditRepository.forEntity('consoleUser', weigher.id);
+    const trail = await auditRepository.forEntity('consoleUser', editor.id);
     const entry = trail.items.find((one) => one.action === 'user.update');
 
     /**
@@ -337,8 +368,8 @@ describe('M15 users & roles', () => {
      * ever asked about it.
      */
     expect(entry).toBeTruthy();
-    expect(entry!.before).toMatchObject({ roles: ['weigher'] });
-    expect(entry!.after).toMatchObject({ roles: ['weigher', 'clerk'] });
+    expect(entry!.before).toMatchObject({ roles: ['editor'] });
+    expect(entry!.after).toMatchObject({ roles: ['editor', 'clerk'] });
   }, 30_000);
 
   it('gives a manager read access and refuses them every write (§12.1)', async () => {
@@ -354,9 +385,9 @@ describe('M15 users & roles', () => {
       .catch((cause: unknown) => cause);
     expect(isApiError(refused) && refused.code).toBe('forbidden');
 
-    const weigher = page.items.find((one) => one.roles.includes('weigher'))!;
+    const editor = page.items.find((one) => one.roles.includes('editor'))!;
     const alsoRefused = await userRepository
-      .patch(weigher.id, { name: 'Renamed' }, context)
+      .patch(editor.id, { name: 'Renamed' }, context)
       .catch((cause: unknown) => cause);
     expect(isApiError(alsoRefused) && alsoRefused.code).toBe('forbidden');
   }, 20_000);

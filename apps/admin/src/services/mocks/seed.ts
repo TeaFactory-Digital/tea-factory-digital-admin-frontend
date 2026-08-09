@@ -175,16 +175,15 @@ const BANKS = SRI_LANKA_BANKS.map((bank) => ({
 /* ───────────────────────────── console users ───────────────────────────── */
 
 /**
- * Three identities, each one because a rule cannot be demonstrated without it:
+ * One identity per role v2 kept, each because a rule cannot be demonstrated without it:
  *
  *  - **clerk** raises office-side requests, and AC-10 ("no console user can
  *    approve a record they created") needs someone to have created one.
  *  - **manager** approves them, and has MFA enrolled.
- *  - **weigher** is the only one of the three the §12.1 matrix gives
- *    `deliveries: W`. Without it nobody could enter leaf, and the clerk's
- *    read-only view of M3 would look like a bug rather than the matrix working.
+ *  - **editor** writes content and **factoryAdmin** publishes it — the capability
+ *    boundary that is the whole of M11 and M12's control.
  *
- * The password is the same for all three and is printed on the sign-in screen
+ * The password is the same for all of them and is printed on the sign-in screen
  * while `VITE_USE_MOCK` is on. That is deliberate — a demo credential that has to
  * be looked up in a source file gets pasted into a chat thread instead.
  */
@@ -222,20 +221,6 @@ export const mockUsers: MockUser[] = [
     status: 'active',
     password: MOCK_PASSWORD,
     grants: grantsFromRoles(['manager']),
-  },
-  {
-    id: 'usr-accountant-1',
-    name: 'Dilani Fonseka',
-    email: 'accountant@galabodatea.lk',
-    factoryId: 'galaboda',
-    roles: ['accountant'],
-    // MFA is mandatory for manager and above; the accountant sits below that line
-    // and works from a desk in the office, not a shared shed terminal.
-    mfaEnrolled: false,
-    lastLoginAt: hoursAgo(6),
-    status: 'active',
-    password: MOCK_PASSWORD,
-    grants: grantsFromRoles(['accountant']),
   },
   {
     /**
@@ -278,19 +263,42 @@ export const mockUsers: MockUser[] = [
     grants: grantsFromRoles(['factoryAdmin']),
   },
   {
-    id: 'usr-weigher-1',
+    /**
+     * **The identity whose grants this build cannot derive** — and the reason it is here
+     * is the reason `resolveGrants` is asymmetric.
+     *
+     * v2 dropped `weigher` and `accountant` from `ConsoleRole`: with deliveries, rates
+     * and payouts owned by the factory's own console, neither could do anything here but
+     * read. They still exist over there, against the same user table, so the server still
+     * sends grants for them. rbac.md's promise is that such grants **must be honoured**,
+     * because otherwise a factory splitting or merging a role is a console release.
+     *
+     * So this account holds no role in `DEFAULT_ROLE_MATRIX` and every capability it has
+     * arrives from the server — the case the merge exists for, as a fixture rather than
+     * as a paragraph. It is also the only account left that can move leaf, which is what
+     * keeps M5's staleness and M7's recomputation reachable: both are *relationships*
+     * between a stored figure and live weighing, and nothing else can change one side.
+     */
+    id: 'usr-factory-system-1',
     name: 'Sunil Rathnayake',
-    email: 'weigher@galabodatea.lk',
+    email: 'factory-system@galabodatea.lk',
     factoryId: 'galaboda',
-    roles: ['weigher'],
-    // No second factor: MFA is mandatory for manager and above, and a weighing
-    // point runs on a shared machine at the collection shed where a TOTP app on
-    // somebody's phone would stop the queue.
+    roles: [],
+    // No second factor: this is the factory's own weighing and accounting desk, on a
+    // shared machine where a TOTP app on somebody's phone would stop the queue.
     mfaEnrolled: false,
     lastLoginAt: hoursAgo(3),
     status: 'active',
     password: MOCK_PASSWORD,
-    grants: grantsFromRoles(['weigher']),
+    grants: {
+      suppliers: 'read',
+      deliveries: 'write',
+      ratesAndMonthClose: 'write',
+      billing: 'write',
+      payouts: 'write',
+      reports: 'read',
+      auditLog: 'read',
+    },
   },
 ];
 
@@ -855,7 +863,7 @@ function makeDeliveries(): Delivery[] {
           kgs: roundKg(between(6, 118)),
           source,
           batchId: `seed-${date}-${supplier.collectionPoint}`,
-          recordedById: 'usr-weigher-1',
+          recordedById: 'usr-factory-system-1',
           recordedByName: 'Sunil Rathnayake',
           recordedAt: colomboInstant(date, hour, intBetween(0, 59)),
           voidedAt: null,
@@ -954,8 +962,8 @@ function makeMonths(): Record<string, MonthRecord> {
             monthKey,
             ratePerKg: roundMoney(118 + back * 2.25),
             extraRatePerKg: roundMoney(6 + back * 0.5),
-            enteredById: 'usr-accountant-1',
-            enteredByName: 'Dilani Fonseka',
+            enteredById: 'usr-factory-system-1',
+            enteredByName: 'Sunil Rathnayake',
             enteredAt: daysAgo(back * 30 + 6),
           },
           publishedAt: daysAgo(back * 30 + 4),
@@ -1078,7 +1086,7 @@ function makeMonthExceptions(): MonthException[] {
   // have something in the fixture rather than only after a click.
   if (out[0]) {
     out[0].resolvedAt = daysAgo(1);
-    out[0].resolvedByName = 'Dilani Fonseka';
+    out[0].resolvedByName = 'Sunil Rathnayake';
     out[0].resolutionNote = 'Bank details collected at the counter and entered on the record.';
   }
 
@@ -2084,8 +2092,8 @@ function seedMoneyHistory() {
       monthKey,
       runId,
       generatedAt,
-      generatedById: 'usr-accountant-1',
-      generatedByName: 'Dilani Fonseka',
+      generatedById: 'usr-factory-system-1',
+      generatedByName: 'Sunil Rathnayake',
       publishedAt: record.publishedAt,
       deliveries: mockDeliveries,
       suppliers: mockSuppliers,
@@ -2106,8 +2114,8 @@ function seedMoneyHistory() {
     runs.push(
       summariseBillRun(monthKey, runId, monthBills, {
         generatedAt,
-        generatedById: 'usr-accountant-1',
-        generatedByName: 'Dilani Fonseka',
+        generatedById: 'usr-factory-system-1',
+        generatedByName: 'Sunil Rathnayake',
       }),
     );
   }
@@ -2177,8 +2185,8 @@ function seedPayoutRuns() {
       totalAmount: 0,
       paidAmount: 0,
       createdAt: daysAgo(ageDays),
-      createdById: 'usr-accountant-1',
-      createdByName: 'Dilani Fonseka',
+      createdById: 'usr-factory-system-1',
+      createdByName: 'Sunil Rathnayake',
       approvedAt: approved ? daysAgo(ageDays - 1) : null,
       approvedById: approved ? 'usr-manager-1' : null,
       approvedByName: approved ? 'Ruwan Jayasuriya' : null,
@@ -2190,7 +2198,7 @@ function seedPayoutRuns() {
         if (line.status === 'held') continue;
         line.status = 'paid';
         line.paidAt = daysAgo(ageDays - 2);
-        line.markedByName = 'Dilani Fonseka';
+        line.markedByName = 'Sunil Rathnayake';
       }
       base.completedAt = daysAgo(ageDays - 2);
     } else if (status === 'approved') {
@@ -2201,11 +2209,11 @@ function seedPayoutRuns() {
         if (index % 3 === 0) {
           line.status = 'paid';
           line.paidAt = daysAgo(1);
-          line.markedByName = 'Dilani Fonseka';
+          line.markedByName = 'Sunil Rathnayake';
         } else if (index === 4) {
           line.status = 'failed';
           line.reason = 'Bank returned it — the account name does not match the supplier.';
-          line.markedByName = 'Dilani Fonseka';
+          line.markedByName = 'Sunil Rathnayake';
         }
       });
     }
@@ -2253,8 +2261,8 @@ const openMonthBills: AdminBill[] = generateBills({
   monthKey: currentMonthKey,
   runId: `run-${currentMonthKey}-open`,
   generatedAt: NOW.toISOString(),
-  generatedById: 'usr-accountant-1',
-  generatedByName: 'Dilani Fonseka',
+  generatedById: 'usr-factory-system-1',
+  generatedByName: 'Sunil Rathnayake',
   publishedAt: null,
   deliveries: mockDeliveries,
   suppliers: mockSuppliers,
@@ -2287,8 +2295,8 @@ export function creditHistoryFor(
         monthKey: currentMonthKey,
         runId: `run-${currentMonthKey}-open`,
         generatedAt: new Date().toISOString(),
-        generatedById: 'usr-accountant-1',
-        generatedByName: 'Dilani Fonseka',
+        generatedById: 'usr-factory-system-1',
+        generatedByName: 'Sunil Rathnayake',
         publishedAt: null,
         deliveries,
         suppliers: [supplier],

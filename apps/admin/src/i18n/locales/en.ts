@@ -47,7 +47,8 @@ export const en = {
   'profile.title': 'Your profile',
   'profile.subtitle': 'Your account, and how you read this console',
   'profile.youTitle': 'You',
-  'profile.youDescription': 'What the console knows about your account. Ask a factory administrator to change any of it.',
+  'profile.youDescription':
+    'What the console knows about your account. Ask a factory administrator to change any of it.',
   'profile.name': 'Name',
   'profile.email': 'Email',
   'profile.roles': 'Roles',
@@ -57,7 +58,8 @@ export const en = {
   'profile.securityDescription': 'How this account is protected.',
   'profile.mfaOn': 'Two-factor is set up',
   'profile.mfaOff': 'Two-factor is not set up',
-  'profile.mfaOwed': 'Required for your role — ask a factory administrator to reset it so you can enrol.',
+  'profile.mfaOwed':
+    'Required for your role — ask a factory administrator to reset it so you can enrol.',
   'profile.mfaOptional': 'Not required for your role.',
   'profile.securityHint':
     'Passwords and two-factor are reset by a factory administrator from Users & roles — there is no way to change them from here.',
@@ -72,7 +74,8 @@ export const en = {
   'profile.preferencesTitle': 'How you read this console',
   'profile.preferencesDescription': 'Yours alone. Nobody else sees these change.',
   'profile.language': 'Language',
-  'profile.languageHint': 'The console’s own labels. Content written for suppliers keeps its own languages.',
+  'profile.languageHint':
+    'The console’s own labels. Content written for suppliers keeps its own languages.',
   'profile.preferencesScope':
     'Saved on this computer rather than to your account, so they work on the sign-in screen too. Signing in elsewhere starts from the defaults.',
   'appearance.scheme': 'Appearance',
@@ -86,7 +89,8 @@ export const en = {
   'common.signOut': 'Sign out',
   'shell.signOutConfirmBody': 'You will need to sign in again to continue working in the console.',
   'config.confirmSaveTitle': 'Save these configuration changes?',
-  'config.confirmSaveBody': 'These edits affect other modules and branding throughout the factory console.',
+  'config.confirmSaveBody':
+    'These edits affect other modules and branding throughout the factory console.',
   'common.copy': 'Copy',
   'common.copied': 'Copied',
   'common.reason': 'Reason',
@@ -131,12 +135,8 @@ export const en = {
   'nav.teaPackets': 'Tea packets',
   'nav.banners': 'Promo banners',
   'nav.suppliers': 'Suppliers',
-  'nav.deliveries': 'Leaf collection',
-  'nav.rates': 'Rates & month close',
   'nav.bills': 'Bills',
-  'nav.payouts': 'Payouts',
   'nav.credit': 'Credit queues',
-  'nav.savings': 'Savings',
   'nav.changeRequests': 'Change requests',
   'nav.inquiries': 'Inquiries',
   'nav.news': 'News',
@@ -173,11 +173,10 @@ export const en = {
   'auth.demoCredentials': 'Mock sign-in',
   'auth.demoMfa': '(two-factor: {{code}})',
   'auth.demoRole.clerk': 'Clerk — change requests, suppliers',
-  'auth.demoRole.weigher': 'Weigher — records leaf',
-  'auth.demoRole.accountant': 'Accountant — rate and month close',
-  'auth.demoRole.manager': 'Manager — publishes the month',
+  'auth.demoRole.manager': 'Manager — approves credit and change requests',
   'auth.demoRole.editor': 'Editor — writes news and static content',
   'auth.demoRole.factoryAdmin': 'Factory admin — publishes content',
+  'auth.demoRole.factorySystem': 'Factory system — records leaf, rates and payouts',
   'auth.sessionExpired': 'Your session ended. Please sign in again.',
 
   /* ────────────────────────────── dashboard ────────────────────────────── */
@@ -528,8 +527,7 @@ export const en = {
   'credit.noteSuggest.approve.counter.text':
     'Collect the money from the office counter during working hours.',
   'credit.noteSuggest.approve.deducted': 'Off next account',
-  'credit.noteSuggest.approve.deducted.text':
-    'The amount comes off your next Green Leaf Account.',
+  'credit.noteSuggest.approve.deducted.text': 'The amount comes off your next Green Leaf Account.',
   'credit.noteSuggest.reject.overCeiling': 'Over ceiling',
   'credit.noteSuggest.reject.overCeiling.text':
     'The amount asked for is above the ceiling for this month. Ask again for a smaller amount.',
@@ -672,7 +670,8 @@ export const en = {
   'validation.fallbackRequired': 'The English copy is required — everything falls back to it',
   'validation.reasonRequired': 'A reason is required',
   'validation.replyRequired': 'An answer is required',
-  'validation.replyTooShort': 'Write at least 20 characters — this is the answer the supplier reads',
+  'validation.replyTooShort':
+    'Write at least 20 characters — this is the answer the supplier reads',
 
   /* ─────────────────────── M3 Leaf collection ─────────────────────── */
   'deliveries.title': 'Leaf collection',
@@ -687,16 +686,6 @@ export const en = {
     '{{month}} is published, so nothing more can be recorded or voided in it. Bills and payouts are built from the leaf as it stands.',
   'deliveries.empty': 'Nothing weighed yet',
   'deliveries.emptyHint': 'Rows appear here as soon as a weighing session is committed.',
-
-  'deliveries.column.recordedAt': 'Recorded',
-  'deliveries.column.supplier': 'Supplier',
-  'deliveries.column.point': 'Point',
-  'deliveries.column.kgs': 'Kilos',
-  'deliveries.column.source': 'Source',
-  'deliveries.column.recordedBy': 'Weighed by',
-  'deliveries.column.line': 'Line',
-  'deliveries.source.manual': 'Keyed in',
-  'deliveries.source.scaleFile': 'Scale file',
 
   'deliveries.totalKgs': 'Total kilos',
   'deliveries.rowCount': 'Deliveries',
@@ -720,14 +709,6 @@ export const en = {
   'deliveries.commitFailed': 'Nothing was recorded',
   'deliveries.outlierConfirm':
     '{{kgs}} is far more than the rest of this session. Press Enter again to record it as typed.',
-
-  'deliveries.error.sessionFull':
-    'A session holds at most {{limit}} lines. Record these, then start another.',
-  'deliveries.error.stillMatching': 'Still looking up that code…',
-  'deliveries.error.unknownSupplier': 'No active supplier with that code.',
-  'deliveries.error.kgRange': 'Kilos must be more than 0 and at most {{max}}.',
-  'deliveries.error.kgPrecision':
-    'Kilos take at most two decimals — the factory records 12.35, not 12.345.',
 
   'deliveries.void': 'Void',
   'deliveries.voidedBadge': 'Voided',
@@ -766,27 +747,9 @@ export const en = {
   'months.rateSaved': 'Rate saved for {{month}}',
   'months.rateFailed': 'The rate was not saved',
 
-  'months.error.ratePositive': 'A rate must be more than 0.',
-  'months.error.extraNonNegative': 'The extra cannot be negative.',
-  'months.error.moneyScale': 'Money takes at most two decimals.',
-
   'months.closeTitle': 'Month close',
   'months.closeDescription': 'Every step has to pass before the month can be published.',
   'months.closedDescription': 'This month is closed. Its figures are the record now.',
-  'months.step.leaf': 'Leaf recorded',
-  'months.step.leafDetail': '{{kgs}} from {{suppliers}} suppliers, {{deliveries}} deliveries.',
-  'months.step.rate': 'Auction rate entered',
-  'months.step.rateDetail': '{{total}} per kg, entered by {{name}}.',
-  'months.step.rateMissing': 'No rate yet — bills cannot be built without one.',
-  'months.step.exceptions': 'Exceptions resolved',
-  'months.step.exceptionsClear': 'All {{total}} resolved.',
-  'months.step.exceptionsOpen': '{{count}} still open.',
-  'months.step.bills': 'Bills generated',
-  'months.step.billsDetail': '{{count}} bills, {{payable}} payable.',
-  'months.step.billsMissing': 'No bills built yet — publishing has nothing to hand to suppliers.',
-  'months.step.billsStale':
-    'The leaf has changed since the bills were built. Re-generate them before closing.',
-  'months.step.openBills': 'Open the bill run',
   'months.stepDone': '— done',
   'months.stepBlocked': '— not done yet',
   'months.publish': 'Publish {{month}}',
@@ -808,17 +771,6 @@ export const en = {
   'months.exceptionsTitle': 'Exceptions',
   'months.exceptionsDescription': 'Each one has to be resolved, or explained, before the close.',
   'months.filterExceptions': 'Which exceptions',
-  'months.filter.open': 'Open ({{count}})',
-  'months.filter.resolved': 'Resolved',
-  'months.filter.all': 'All',
-  'months.column.type': 'Exception',
-  'months.column.supplier': 'Supplier',
-  'months.column.detail': 'Detail',
-  'months.column.raised': 'Raised',
-  'months.exception.missingBankDetails': 'No bank details',
-  'months.exception.inactiveSupplierWithLeaf': 'Leaf from an inactive supplier',
-  'months.exception.pendingChangeRequest': 'Change request still open',
-  'months.exception.outlierDelivery': 'Unusual weighing',
   'months.openRecord': 'Open the record',
   'months.resolve': 'Resolve',
   'months.resolveTitle': 'Resolve this exception',
@@ -963,19 +915,8 @@ export const en = {
   'payouts.empty': 'No payout runs for this month',
   'payouts.emptyHint': 'Prepare one once the month is published.',
 
-  'payouts.column.method': 'Method',
-  'payouts.column.total': 'Total',
-  'payouts.column.progress': 'Paid',
-  'payouts.column.prepared': 'Prepared by',
-  'payouts.column.released': 'Released by',
-  'payouts.column.supplier': 'Supplier',
-  'payouts.column.amount': 'Amount',
-  'payouts.column.account': 'Account',
   'payouts.progress': '{{paid}} of {{total}}',
   'payouts.awaitingApproval': 'Awaiting a manager',
-  'payouts.status.draft': 'Draft',
-  'payouts.status.approved': 'Released',
-  'payouts.status.completed': 'Completed',
   'payouts.heldCount': '{{count}} held',
   'payouts.failedCount': '{{count}} failed',
 
@@ -992,7 +933,8 @@ export const en = {
   'payouts.prepareFailed': 'The run was not prepared',
   'payouts.notPublished':
     '{{month}} is not published yet. A payout run needs a closed month — until then the figures can still change, and money that has left the factory cannot be taken back.',
-  'payouts.noBills': 'No bills have been generated for {{month}}, so there is nothing to pay against.',
+  'payouts.noBills':
+    'No bills have been generated for {{month}}, so there is nothing to pay against.',
   'payouts.allMethodsPrepared': 'Every payment method already has a run for this month.',
   'payouts.noFileExport':
     'Once a run is released you can download it as a file, laid out the way Configuration → Payout file says. What is still open (§21.17) is a fixed-width bank format with control totals, and printing cheques on pre-printed stationery — both need your bank’s own specification.',
@@ -1011,11 +953,8 @@ export const en = {
   'payouts.releaseTitle': 'Release',
   'payouts.releaseDescription':
     'Nothing in this run has been paid. A manager releases it, and it cannot be the person who prepared it.',
-  'payouts.releasedDescription': 'This run has been released. Record what the bank did, line by line.',
-  'payouts.stat.payable': 'Payable',
-  'payouts.stat.paid': 'Paid',
-  'payouts.stat.failed': 'Failed',
-  'payouts.stat.held': 'Held',
+  'payouts.releasedDescription':
+    'This run has been released. Record what the bank did, line by line.',
   'payouts.heldExplanation':
     '{{count}} lines are held: the supplier is owed money and has no account to pay it into. They stay on this run and count against nothing until the passbook is collected — the run can still complete without them.',
   'payouts.preparedBy': 'Prepared by {{name}}, {{when}}',
@@ -1023,8 +962,7 @@ export const en = {
   'payouts.release': 'Release {{total}}',
   'payouts.releaseHint': 'Releasing records that the money has been sent for payment.',
   'payouts.releaseNeedsManager': 'Releasing a payout run is a manager’s decision.',
-  'payouts.fourEyesHint':
-    'You prepared this run, so somebody else has to release it (BR-501).',
+  'payouts.fourEyesHint': 'You prepared this run, so somebody else has to release it (BR-501).',
   'payouts.nothingPayableHint': 'Every line in this run is held. There is nothing to release.',
   'payouts.approvedNotice': 'Released. Mark each line as the bank answers.',
   'payouts.completedNotice': 'Every line accounted for, {{when}}.',
@@ -1039,16 +977,7 @@ export const en = {
   'payouts.linesTitle': 'Lines',
   'payouts.linesDescription': 'Held and unpaid first — those are the ones still to work.',
   'payouts.filterLines': 'Which lines',
-  'payouts.filter.all': 'All lines',
-  'payouts.filter.held': 'Held ({{count}})',
-  'payouts.filter.pending': 'Not yet paid',
-  'payouts.filter.failed': 'Failed',
-  'payouts.filter.paid': 'Paid',
   'payouts.noLinesHint': 'No lines match that filter.',
-  'payouts.line.pending': 'Not yet paid',
-  'payouts.line.held': 'Held',
-  'payouts.line.paid': 'Paid',
-  'payouts.line.failed': 'Failed',
 
   'payouts.markPaid': 'Paid',
   'payouts.markFailedShort': 'Failed',
@@ -1066,84 +995,6 @@ export const en = {
   'payouts.markFailed': 'The line was not updated',
 
   /* ───────────────────────────── M8 Savings ───────────────────────────── */
-  'savings.title': 'Savings',
-  'savings.subtitle': 'What the factory holds on suppliers’ behalf',
-  'savings.balanceTotal': 'Held for suppliers',
-  'savings.contributedThisMonth': 'Added in {{month}}',
-  'savings.schemeTitle': 'The scheme',
-  'savings.schemeDescription':
-    'A supplier chooses a rate per kilo, it is deducted from their monthly account, and the factory holds it.',
-  'savings.stat.accounts': 'Accounts',
-  'savings.stat.optedOut': 'Opted out',
-  'savings.stat.contributing': 'Contributed this month',
-  'savings.stat.averagePerKg': 'Average per kg',
-  'savings.trendTitle': 'Savings by month',
-  'savings.column.month': 'Month',
-  'savings.column.contributed': 'Added (LKR)',
-  'savings.column.heldAfter': 'Held after (LKR)',
-  'savings.column.rate': 'Rate /kg',
-  'savings.column.balance': 'Balance (LKR)',
-  'savings.column.lastContribution': 'Last added',
-  'savings.column.source': 'From',
-  'savings.column.amount': 'Amount (LKR)',
-  'savings.liabilityNote':
-    'This is suppliers’ money, not factory income. A contribution is created by publishing a month — it is the savings line on a published bill — so there is nothing to add or edit here.',
-
-  'savings.accountsTitle': 'Savings accounts',
-  'savings.searchPlaceholder': 'Search code or name',
-  'savings.filterLabel': 'Show',
-  'savings.filter.any': 'All accounts',
-  'savings.filter.contributing': 'Contributing',
-  'savings.filter.optedOut': 'Opted out',
-  'savings.contributing': 'Contributing',
-  'savings.neverContributed': 'Never',
-  'savings.pendingRateChange': 'Rate change pending',
-
-  'savings.ledgerTitle': 'Passbook · {{code}} {{name}}',
-  'savings.ledgerSubtitle': 'Balance {{balance}} · {{rate}} per kg',
-  'savings.ledgerTable': 'Savings movements, oldest first',
-  'savings.source.openingBalance': 'Opening balance',
-  'savings.source.billDeduction': 'Bill deduction',
-  'savings.source.adjustment': 'Adjustment',
-  'savings.source.withdrawal': 'Withdrawal',
-  'savings.source.interest': 'Interest',
-  'savings.noLedger': 'Nothing in this passbook yet',
-  'savings.noLedgerHint':
-    'A movement appears here when a month is published with a savings deduction on this supplier’s bill.',
-  'savings.withdrawalsTitle': 'Taking savings out',
-  'savings.windowOpen': 'Open — {{month}}',
-  'savings.windowClosed': 'Opens in {{month}}',
-  'savings.windowClosedHint':
-    'Savings can be taken out in {{month}}. Nothing can be recorded until then.',
-  'savings.availableAfterPending':
-    '{{available}} can still be asked for — {{pending}} is already waiting to be paid.',
-  'savings.awaitingBill': 'Waiting for the next account',
-  'savings.requestedBy': 'Recorded by {{name}}, {{when}}',
-  'savings.cancelWithdrawal': 'Cancel this',
-  'savings.cancelReasonHint': 'The supplier was told it was arranged. At least 10 characters.',
-  'savings.cancelConfirm': 'Cancel the withdrawal',
-  'savings.withdrawalCancelled': 'The withdrawal was cancelled',
-  'savings.withdrawalCancelFailed': 'Nothing was changed',
-  'savings.withdrawalReadOnly': 'Only the accountant can take savings out.',
-  'savings.nothingToWithdraw': 'This supplier has no savings to take out.',
-  'savings.withdrawAmount': 'Amount to take out',
-  'savings.withdrawAmountHint': 'Up to {{available}}.',
-  'savings.withdrawReasonHint': 'At least {{min}} characters. The supplier will ask why, months later.',
-  'savings.recordWithdrawal': 'Record the withdrawal',
-  'savings.paidOnNextBill':
-    'Nothing moves yet. It is paid on the supplier’s next Green Leaf Account, and the passbook changes when that account is published.',
-  'savings.withdrawalRecorded': '{{amount}} will be paid on the next account',
-  'savings.withdrawalRecordedHint':
-    'The balance has not changed yet — it changes when the account that pays this is published.',
-  'savings.withdrawalFailed': 'Nothing was recorded',
-  'savings.paidOn': 'paid on the {{month}} account',
-  'savings.wasCancelled': 'cancelled',
-  'savings.interestNote':
-    'This factory records {{rate}}% a year. The console does not work it out — the accountant posts it (§21.9).',
-  'savings.problem.not-positive': 'Enter an amount above zero.',
-  'savings.problem.exceeds-available': 'That is more than this supplier has left to take out.',
-  'savings.problem.window-closed': 'Savings cannot be taken out this month.',
-  'savings.problem.no-balance': 'There are no savings to take out.',
 
   /* ─────────── M11 News · M12 Static content (shared) ─────────── */
   /* AC-08 lives in this block: a missing translation must be visible to the editor,
@@ -1159,7 +1010,8 @@ export const en = {
   'content.state.stale': '— older than the English copy',
 
   'content.copyTitle': 'Copy',
-  'content.copyDescription': 'One language at a time. Saving one language does not touch the others.',
+  'content.copyDescription':
+    'One language at a time. Saving one language does not touch the others.',
   'content.field.title': 'Title',
   'content.field.titleHint': 'What the supplier sees in the list.',
   'content.field.excerpt': 'Summary',
@@ -1195,7 +1047,8 @@ export const en = {
   'content.lens': 'Show',
 
   'content.previewTitle': 'What the supplier sees',
-  'content.previewDescription': 'Resolved the way the app resolves it, for a reader in {{language}}.',
+  'content.previewDescription':
+    'Resolved the way the app resolves it, for a reader in {{language}}.',
   'content.previewFallback':
     'There is no {{requested}} copy, so a {{requested}} reader is shown the {{fallback}} version.',
   'content.previewEmpty': 'Nothing to show',
@@ -1225,7 +1078,8 @@ export const en = {
   'news.createTitle': 'New article',
   'news.createDescription':
     'Write the English copy first — it is what every other language falls back to until it is translated.',
-  'news.createDraftHint': 'It is created as a draft. Nothing reaches suppliers until it is published.',
+  'news.createDraftHint':
+    'It is created as a draft. Nothing reaches suppliers until it is published.',
   'notifications.confirmSendBody': 'This message will be sent to {{count}} device(s) immediately.',
   'notifications.confirmSendHint': 'A send cannot be recalled once it is sent.',
   'staticContent.publishConfirmTitle': 'Publish {{page}}?',
@@ -1298,7 +1152,8 @@ export const en = {
      choice a toggle, so the copy here has to explain a *mechanism* rather than assert
      a policy. */
   'notifications.title': 'Notifications',
-  'notifications.subtitle': 'What suppliers have been told, and what the factory tells them automatically',
+  'notifications.subtitle':
+    'What suppliers have been told, and what the factory tells them automatically',
   'notifications.compose': 'Write a notification',
 
   'notifications.category.billPublished': 'Account published',
@@ -1367,7 +1222,8 @@ export const en = {
   'notifications.reachSummary': 'Reaches {{devices}} phones, across {{suppliers}} suppliers.',
   'notifications.reachSuppressed':
     '{{count}} phones have “{{category}}” switched off and will not get this.',
-  'notifications.reachNoDevice': '{{count}} suppliers in this audience have never installed the app.',
+  'notifications.reachNoDevice':
+    '{{count}} suppliers in this audience have never installed the app.',
   'notifications.reachNobody':
     'Nobody in this audience would receive it. Put it on the noticeboard instead, or choose a different kind.',
   'notifications.noRecallHint':
@@ -1375,7 +1231,8 @@ export const en = {
   'notifications.send': 'Send it',
   'notifications.sendToCount': 'Send to {{count}} phones',
   'notifications.sent': 'Sent to {{count}} phones',
-  'notifications.sentSuppressed': '{{count}} phones have this kind switched off and did not get it.',
+  'notifications.sentSuppressed':
+    '{{count}} phones have this kind switched off and did not get it.',
   'notifications.sendFailed': 'Nothing was sent',
 
   /* ───────────────────────── M14 Configuration ───────────────────────── */
@@ -1475,9 +1332,11 @@ export const en = {
   'config.branchesForHint': 'One bank at a time — the full list runs to a few thousand branches.',
   'config.branchesPickBank': 'Choose a bank…',
   'config.withdrawalMonth': 'Savings can be taken out in',
-  'config.withdrawalMonthHint': 'Suppliers may ask for their savings back during this month each year.',
+  'config.withdrawalMonthHint':
+    'Suppliers may ask for their savings back during this month each year.',
   'config.interestRate': 'Interest paid (% a year)',
-  'config.interestRateHint': 'Recorded so the office can quote it. Leave at 0 if the factory pays none.',
+  'config.interestRateHint':
+    'Recorded so the office can quote it. Leave at 0 if the factory pays none.',
   'config.interestNotApplied':
     'The console does not work interest out by itself. Nobody has said whether it is paid on the closing balance or on the lowest balance of the year, and those pay different amounts — so when the factory decides, the accountant records the figure as an entry in the passbook (§21.9).',
   'config.manureProducts': 'Fertilizer a supplier may ask for',
@@ -1492,49 +1351,14 @@ export const en = {
   'config.manure.problem.no-name': 'A fertilizer needs a name — the app shows it in the list.',
   'config.manure.problem.bad-pack': 'A bag has to hold something. Zero kilos cannot be priced.',
   'config.manure.problem.negative-price': 'A price cannot be below zero.',
-  'config.manure.problem.duplicate-name': 'Two fertilizers share a name, so a request could not say which.',
+  'config.manure.problem.duplicate-name':
+    'Two fertilizers share a name, so a request could not say which.',
   'config.addManureType': 'Add a type',
   'config.savingsRates': 'Savings rates a supplier may choose (LKR per kg)',
   'config.addRate': 'Add a rate',
 
   /* §21.10's standing rates. On M4 rather than M14 because they are approved by a second
      person, not saved — a transport charge re-prices every account in the factory. */
-  'rates.deduction.title': 'What comes off every account',
-  'rates.deduction.description':
-    'The charges the factory sets, and the most any credit may take back in one month. A change needs a second person.',
-  'rates.deduction.customised': 'Set by this factory',
-  'rates.deduction.shipped': 'Never set',
-  'rates.deduction.shippedHint':
-    'These are the figures the console shipped with, not this factory’s — transport at LKR {{transport}} a kilo is a placeholder. Until somebody sets them, they are on every account and nobody chose them.',
-  'rates.deduction.transportPerKg': 'Transport (LKR per kg)',
-  'rates.deduction.stamps': 'Stamps (LKR)',
-  'rates.deduction.caps': 'Most a credit may take in one month (%)',
-  'rates.deduction.capsHint':
-    'The supplier chooses how many months to repay over. This is the ceiling that stops a bad plucking month disappearing into a repayment they agreed to when they were doing well.',
-  'rates.deduction.field.transportPerKg': 'Transport per kg',
-  'rates.deduction.field.stamps': 'Stamps',
-  'rates.deduction.field.instalmentShares.advance': 'Advance cap',
-  'rates.deduction.field.instalmentShares.loan': 'Loan cap',
-  'rates.deduction.field.instalmentShares.manure': 'Fertilizer cap',
-  'rates.deduction.propose': 'Send for approval',
-  'rates.deduction.reasonHint': 'At least 10 characters. The approver reads this before deciding.',
-  'rates.deduction.needsApproval': 'A second person has to approve this before it takes effect.',
-  'rates.deduction.nothingChanged': 'Nothing has changed.',
-  'rates.deduction.proposed': 'Sent for approval',
-  'rates.deduction.proposedHint': 'Nothing has changed yet. A manager has to approve it.',
-  'rates.deduction.proposeFailed': 'Nothing was sent',
-  'rates.deduction.pendingTitle': 'Waiting for approval — proposed by {{name}}, {{when}}',
-  'rates.deduction.approve': 'Approve',
-  'rates.deduction.reject': 'Reject',
-  'rates.deduction.approved': 'The new rates are in force',
-  'rates.deduction.rejectd': 'The change was rejected',
-  'rates.deduction.decideFailed': 'Nothing was changed',
-  'rates.deduction.noteHint': 'Required to reject. The person who proposed it will read it.',
-  'rates.deduction.fourEyes': 'You proposed this, so somebody else has to approve it (BR-501).',
-  'rates.deduction.awaitingManager': 'A manager has to approve this before it takes effect.',
-  'rates.deduction.readOnly': 'Only the accountant can propose a change to these.',
-  'rates.deduction.elsewhere':
-    'The other lines are not set here. Savings is the supplier’s (change requests); tea, fertilizer and the advance are asked for from the app; previous debts is carried from last month. Approved rates apply to the next bill run, never to a month already published.',
   'config.contentLanguages': 'Languages content is written in',
   'config.contentLanguagesHint':
     'News articles and the app’s fixed pages are written in each of these. A language that is not ticked stops being counted as missing.',
@@ -1568,8 +1392,7 @@ export const en = {
     'LKR {{count}} of tea packets have been issued and not yet recovered on an account. Turning it off would hide that, so this cannot be saved.',
   'config.impact.teaPacketPolicy.bad-pack':
     'A packet has to weigh something. Set the pack size before saving.',
-  'config.impact.teaPacketPolicy.negative-price':
-    'A packet cannot cost less than nothing.',
+  'config.impact.teaPacketPolicy.negative-price': 'A packet cannot cost less than nothing.',
   'config.impact.teaPacketPolicy.bad-max':
     'The limit per request has to be at least one packet. To close the scheme, turn the feature off instead.',
   'config.impact.creditOutstanding':
@@ -1601,58 +1424,6 @@ export const en = {
 
   /* §21.17 as configuration. The copy has to do one thing above all: stop somebody
      configuring a column template and believing they have produced a SLIPS file. */
-  'config.payoutFile.scope':
-    'Set this up to match the sheet your bank asks for. It writes a delimited file — which is what most banks’ bulk-upload sheets are. It cannot yet produce a fixed-width file with control totals, or print cheques on pre-printed stationery; those still need the bank’s own specification (§21.17).',
-  'config.payoutFile.preset': 'Start from',
-  'config.payoutFile.presetHint':
-    'A starting point you then adjust. Only “Plain spreadsheet” is complete — the other two are the columns those schemes usually ask for, with the headings left blank for you to fill in from your bank’s specification.',
-  'config.payoutFile.preset.genericCsv': 'Plain spreadsheet',
-  'config.payoutFile.preset.slipsSkeleton': 'SLIPS (fill in)',
-  'config.payoutFile.preset.ceftsSkeleton': 'CEFTS (fill in)',
-
-  'config.payoutFile.delimiter': 'Separated by',
-  'config.payoutFile.delimiter.comma': 'Comma  ,',
-  'config.payoutFile.delimiter.semicolon': 'Semicolon  ;',
-  'config.payoutFile.delimiter.pipe': 'Pipe  |',
-  'config.payoutFile.delimiter.tab': 'Tab',
-  'config.payoutFile.headerRow': 'Write the headings as the first line',
-  'config.payoutFile.amountFormat': 'Amounts written as',
-  'config.payoutFile.amountFormatHint':
-    'Check this against your bank’s sheet. Sending rupees where cents were expected pays every supplier a hundredth of what they are owed, and the bank will process it.',
-  'config.payoutFile.amountFormat.decimal2': '4213.50  — rupees and cents',
-  'config.payoutFile.amountFormat.cents': '421350  — cents, no decimal point',
-  'config.payoutFile.amountFormat.whole': '4214  — whole rupees',
-  'config.payoutFile.accountFormat': 'Account numbers written as',
-  'config.payoutFile.accountFormat.plain': 'Exactly as recorded',
-  'config.payoutFile.accountFormat.digitsOnly': 'Digits only — dashes and spaces removed',
-  'config.payoutFile.reference': 'Reference',
-  'config.payoutFile.referenceHint':
-    'What the supplier sees on their bank statement. {{code}} becomes their supplier code and {{month}} the month.',
-
-  'config.payoutFile.columns': 'Columns, in order',
-  'config.payoutFile.columnsHint':
-    'The order here is the order in the file. The heading is matched by the bank exactly as you type it, so copy it from their sheet rather than translating it.',
-  'config.payoutFile.headingFor': 'Heading for {{field}}',
-  'config.payoutFile.headingPlaceholder': 'As the bank writes it',
-  'config.payoutFile.moveUp': 'Move up',
-  'config.payoutFile.moveDown': 'Move down',
-  'config.payoutFile.removeColumn': 'Remove {{field}}',
-  'config.payoutFile.bankOnly': '· empty on cheque and cash runs',
-
-  'config.payoutFile.field.supplierCode': 'Supplier code',
-  'config.payoutFile.field.supplierName': 'Supplier name',
-  'config.payoutFile.field.accountNumber': 'Account number',
-  'config.payoutFile.field.bankName': 'Bank',
-  'config.payoutFile.field.branchName': 'Branch',
-  'config.payoutFile.field.amount': 'Amount',
-  'config.payoutFile.field.reference': 'Reference',
-  'config.payoutFile.field.monthKey': 'Month',
-  'config.payoutFile.field.method': 'Payment method',
-
-  'config.payoutFile.preview': 'What the file will look like',
-  'config.payoutFile.previewHint':
-    'Two made-up suppliers, the second with no bank details — so you can see what a cheque or cash line does to each column. Written by the same code that writes the real file.',
-  'config.payoutFile.previewBlocked': 'Fix the problems above and the sample will appear.',
 
   /* Every one of these blocks the save: the output of a bad layout is a file the bank
      rejects, and the person who finds out is a supplier who was not paid. */
@@ -1662,7 +1433,8 @@ export const en = {
     'No amount column. A file without one is a list of names, not a payment instruction.',
   'config.impact.payoutTemplate.duplicate-field':
     'The same value appears in two columns. Most bank uploads reject that.',
-  'config.impact.payoutTemplate.unknown-field': 'A column refers to something a payout line does not have.',
+  'config.impact.payoutTemplate.unknown-field':
+    'A column refers to something a payout line does not have.',
   'config.impact.payoutTemplate.missing-label':
     'A column has no heading, and headings are switched on. Either fill it in or turn the heading row off.',
   'config.impact.payoutTemplateBankColumns':
@@ -1717,7 +1489,8 @@ export const en = {
   'users.mfaObligation':
     'This person will have to set up two-factor sign-in before they can get in. It is required for managers and administrators.',
   'users.created': '{{name}} can now sign in',
-  'users.createdHint': 'Tell them their password. They will be asked to set up two-factor if their role needs it.',
+  'users.createdHint':
+    'Tell them their password. They will be asked to set up two-factor if their role needs it.',
   'users.confirmCreateBody': 'This will create a new console account with the selected roles.',
   'users.confirmEditBody': 'This will update the account details and access for this user.',
   'users.createFailed': 'The user was not created',
@@ -1745,8 +1518,6 @@ export const en = {
   'users.confirmActionBody': 'This will perform the requested action for {{action}}.',
 
   'users.role.clerk': 'Clerk',
-  'users.role.weigher': 'Weigher',
-  'users.role.accountant': 'Accountant',
   'users.role.manager': 'Manager',
   'users.role.editor': 'Editor',
   'users.role.factoryAdmin': 'Factory administrator',
@@ -1915,8 +1686,7 @@ export const en = {
   'error.tenantImmutable': 'The factory id comes from the web address and cannot be changed.',
   'error.flagHasRecords':
     'That feature is holding records the factory still has to account for, so it cannot be turned off yet.',
-  'error.pointInUse':
-    'That collection point has weighings filed against it and cannot be removed.',
+  'error.pointInUse': 'That collection point has weighings filed against it and cannot be removed.',
   'error.fallbackLanguageRequired':
     'English cannot be removed — every article and page falls back to it.',
   'error.lastAdmin':
@@ -1953,14 +1723,16 @@ export const en = {
   'config.creditRules.multiplier': 'Multiply by',
   'config.creditRules.multiplierHint': '1 means the basis itself. 3 means three times it.',
   'config.creditRules.averageOverMonths': 'Months to average',
-  'config.creditRules.averageOverMonthsHint': 'Settled months only. The month in progress is never counted.',
+  'config.creditRules.averageOverMonthsHint':
+    'Settled months only. The month in progress is never counted.',
   'config.creditRules.requiredMonths': 'Settled months required',
   'config.creditRules.requiredMonthsHint':
     '0 offers it to a supplier in their first month — which is right for an advance, and rarely right for a loan.',
   'config.creditRules.maxAmount': 'Never more than (LKR)',
   'config.creditRules.maxAmountHint': 'Leave empty for no cap. Applied after the multiplier.',
   'config.creditRules.noCap': 'No cap',
-  'config.creditRules.summary.thisMonthLeaf': '{{multiplier}} × this month’s leaf at the last settled rate.',
+  'config.creditRules.summary.thisMonthLeaf':
+    '{{multiplier}} × this month’s leaf at the last settled rate.',
   'config.creditRules.summary.lastSettledMonth': '{{multiplier}} × the last settled month’s leaf.',
   'config.creditRules.summary.averageIncome':
     '{{multiplier}} × the average account over {{months}} settled months.',

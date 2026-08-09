@@ -229,13 +229,17 @@ function MfaForm() {
 /**
  * Every mock identity, not a chosen two.
  *
- * Which account you sign in as decides what the console will let you do, and
- * §12.1 spreads that across four roles: the **weigher** records leaf, the
- * **accountant** enters the rate, the **manager** publishes the month, and the
- * **clerk** works the change-request queue. Listing only two left the two roles
- * M3 and M4 need undiscoverable, and a reviewer concluding "leaf entry is broken"
- * when they were signed in as a clerk is the matrix working and the screen
- * failing to say so.
+ * Which account you sign in as decides what the console will let you do, and §12.1
+ * spreads that across the roles v2 kept: the **clerk** works the queues, the
+ * **manager** approves them, the **editor** writes what the app displays and the
+ * **factory admin** publishes it and holds the configuration. Listing only two left
+ * the others undiscoverable, and a reviewer concluding "the banner editor is broken"
+ * when they were signed in as a clerk is the matrix working and the screen failing to
+ * say so.
+ *
+ * The fixture also carries the **factory system** account, whose grants come from the
+ * server rather than from any `ConsoleRole` — it is the only one that can move leaf,
+ * and signing in as it is how a reviewer sees a bill run go stale.
  *
  * Derived from `mockUsers` rather than written out, so an identity added to the
  * fixture cannot go missing here.
@@ -249,7 +253,11 @@ function MockCredentials() {
         <p className="text-label text-text-primary">{t('auth.demoCredentials')}</p>
         {mockUsers.map((user) => (
           <p key={user.id} className="numeric text-caption text-text-secondary">
-            {t(`auth.demoRole.${user.roles[0]}`)}
+            {/* `factorySystem` for the account with no `ConsoleRole` at all: its grants come
+                from the server, so `roles[0]` is `undefined` and the key would render as
+                itself — the one line on this card that has to be written for a user rather
+                than derived from one. */}
+            {t(`auth.demoRole.${user.roles[0] ?? 'factorySystem'}`)}
             {user.mfaEnrolled ? ` ${t('auth.demoMfa', { code: MOCK_MFA_CODE })}` : ''}: {user.email}{' '}
             / {MOCK_PASSWORD}
           </p>

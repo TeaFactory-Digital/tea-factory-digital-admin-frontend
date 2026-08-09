@@ -2,20 +2,35 @@
 
 ## v2 in one paragraph
 
-**The matrix did not change, and that is the decision.** Four modules moved to the
-factory's own console, so `deliveries`, `ratesAndMonthClose` and `payouts` now grant
-access to nothing this build routes. They stay in `Capability` anyway: the same roles
-exist in the factory's console, §12.1 is the product's permission model rather than
-this repository's, and stripping three keys would be a migration of every role record
-for no gain. `billing` is the one that still gates something here — M5's read-only
-slip.
+**Five roles, not seven — and the same fifteen capabilities.** That asymmetry is the
+decision, and it is worth stating why the scope cut reached one and not the other.
+
+`weigher` and `accountant` are **gone from `ConsoleRole`**. Both existed for
+capabilities the factory's own console now owns: a weigher's entire job was
+`deliveries: write`, an accountant's was `ratesAndMonthClose` and `payouts`. Strip
+those and neither could do anything here but read — a person given the role would sign
+in, find suppliers and reports, and report the empty console as a bug. A role is
+something somebody is *assigned*; one that grants nothing is a support call waiting to
+happen.
+
+The capabilities they were built around — `deliveries`, `ratesAndMonthClose`,
+`payouts` — **stay**, granting access to nothing this build routes. A capability key is
+a column in a matrix the server also holds, §12.1 is the product's permission model
+rather than this repository's, and dropping three keys would be a migration of every
+role record for no gain. `billing` is the one of the four that still gates something
+here — M5's read-only slip.
 
 Two capabilities gained a surface: `creditRequests` now also gates **M18** (tea
 packets), and `content` now also gates the **banner editor**, with `content: approve`
 on its lifecycle verbs exactly as it is on an article's. Neither is a new capability,
 and that is deliberate — inventing one would be a permission the matrix has never
-granted anybody, which is the same argument that put M8's savings screen behind
-`billing`.
+granted anybody.
+
+**Nothing was lost by dropping the two roles**, because the server is still the
+authority: a factory whose own console assigns `weigher` sends grants for it, and
+`resolveGrants` honours grants for roles this build has never heard of. The mock
+fixture carries exactly that case as `factory-system@galabodatea.lk` — no
+`ConsoleRole` at all, every capability from the server.
 
 The §12.1 permission matrix, how it is expressed, and — the part that matters —
 where authorization is actually enforced.
@@ -45,27 +60,52 @@ rather than assumed.
 
 `R` read · `W` create/edit · `A` approve/reject · `—` no access
 
-| Capability | Clerk | Weigher | Accountant | Manager | Editor | Fac. admin | Plat. admin |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `suppliers` | W | R | R | R | — | R | R |
-| `deliveries` | R | W | W | R | — | — | — |
-| `ratesAndMonthClose` | — | — | W | A | — | — | — |
-| `billing` | R | — | W | A | — | — | — |
-| `payouts` | R | — | W | A | — | — | — |
-| `creditRequests` | R | — | R | A | — | — | — |
-| `creditAboveThreshold` | — | — | — | A | — | — | — |
-| `changeRequests` | A | — | R | A | — | — | — |
-| `inquiries` | A | — | — | R | — | — | — |
-| `content` | R | — | — | R | W | A | — |
-| `flagsAndBranding` | R | — | — | R | — | W | W |
-| `usersAndRoles` | — | — | — | R | — | W | W |
-| `reports` | R | R | R | R | — | R | R |
-| `auditLog` | — | — | R | R | — | R | R |
-| `tenants` | — | — | — | — | — | — | W |
+| Capability | Clerk | Manager | Editor | Fac. admin | Plat. admin |
+| --- | --- | --- | --- | --- | --- |
+| `suppliers` | W | R | — | R | R |
+| `deliveries` | R | R | — | — | — |
+| `ratesAndMonthClose` | — | A | — | — | — |
+| `billing` | R | A | — | — | — |
+| `payouts` | R | A | — | — | — |
+| `creditRequests` | R | A | — | — | — |
+| `creditAboveThreshold` | — | A | — | — | — |
+| `changeRequests` | A | A | — | — | — |
+| `inquiries` | A | R | — | — | — |
+| `content` | R | R | W | A | — |
+| `flagsAndBranding` | R | R | — | W | W |
+| `usersAndRoles` | — | R | — | W | W |
+| `reports` | R | R | — | R | R |
+| `auditLog` | — | R | — | R | R |
+| `tenants` | — | — | — | — | W |
+
+The three rows in the middle — `deliveries`, `ratesAndMonthClose`, `payouts` — grant
+access to nothing this build routes. They are the factory's own console's, kept as
+columns because the server holds the same matrix. `FACTORY_CONSOLE_CAPABILITIES` names
+them, and **M15 does not render them**: kept in the data is not the same as shown in the
+UI, and a dropdown an administrator can set to `approve` with no effect is the same
+failure as a role that grants nothing. Their stored levels are preserved untouched —
+`RoleMatrixView` saves the whole `matrix[role]`, and `users.test.ts` asserts it, because
+that spread is the only thing standing between hiding a value and dropping it.
 
 Levels are ordered `none < read < write < approve`, and **the stronger implies
 the weaker** — an approver who could not read the record could not approve
 responsibly.
+
+### Which pairs cannot be merged
+
+A factory that wants fewer roles can merge them in M15 without a deploy, but two of the
+splits are load-bearing and merging them breaks something:
+
+- **Clerk and manager.** BR-501 requires the creator of a credit approval not to be its
+  approver. Collapse the two and every approval in M7 and M18 becomes a self-approval
+  the server refuses with `409 four-eyes-violation`.
+- **Editor and factory admin.** `content: W` writes what suppliers' phones display;
+  `content: A` publishes it. Merging them removes the review step before something
+  reaches every supplier at once. Legitimate at a small factory — but a choice, not a
+  tidy-up.
+
+`creditAboveThreshold` is a third split of the same kind, inside the manager row rather
+than between two roles: above the threshold, approval **escalates rather than widens**.
 
 ### Two rows that catch people out
 
@@ -117,6 +157,14 @@ The asymmetry is on purpose:
 - A server that sends *nothing* for a capability has not revoked it; it has said
   nothing, and the shipped default applies. This is what lets the console work
   against a backend that has not implemented per-endpoint grants yet.
+
+**v2 made the first bullet concrete rather than hypothetical.** `weigher` and
+`accountant` still exist in the factory's own console against the same user table, so
+the server still sends grants for them; this build simply has no matrix row to derive
+them from, and the merge fills them in from the server unchanged. The fixture identity
+`factory-system@galabodatea.lk` is that path end to end — `roles: []`, every capability
+from the server — and it is the only account in the mock that can move leaf, which is
+what keeps M5's staleness and M7's recomputation reachable at all.
 
 ---
 
@@ -200,8 +248,9 @@ console.
 
 ## Tests
 
-`apps/admin/src/test/rbac.test.ts` — 15 cases over the matrix, the merge
-semantics, four-eyes and the threshold. These are the highest-value unit tests in
+`apps/admin/src/test/rbac.test.ts` — 16 cases over the matrix, the merge
+semantics, four-eyes and the threshold, including a role this build does not ship
+whose grants arrive from the server. These are the highest-value unit tests in
 the console: the matrix is the thing a factory will ask to change, and every
 change is a chance to hand a clerk an approval they should not have.
 

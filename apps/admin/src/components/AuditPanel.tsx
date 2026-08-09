@@ -7,7 +7,7 @@
  * is an approval that will be disputed six months later, when nobody remembers.
  *
  * Renders nothing at all when the user has no `auditLog` access — the §12.1
- * matrix gives it to accountant and above, and an empty panel labelled "audit
+ * matrix gives it to manager and above, and an empty panel labelled "audit
  * trail" would read as "nothing was recorded".
  */
 

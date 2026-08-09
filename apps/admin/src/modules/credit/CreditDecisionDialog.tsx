@@ -57,10 +57,10 @@ export function CreditDecisionActions({ request }: { request: AdminCreditRequest
 
   /**
    * Checked here, unlike M9's dialog, because on this queue read and decide are
-   * **different roles**. §12.1 gives `creditRequests: R` to the clerk and the
-   * accountant and `A` to the manager alone — so most of the people who open this
-   * screen cannot act on it, and showing them buttons that will 403 is the lever
-   * the rbac module exists to hide. Saying who *can* is more use than saying no.
+   * **different roles**. §12.1 gives `creditRequests: R` to the clerk and `A` to the
+   * manager alone — so the person most likely to open this screen cannot act on it,
+   * and showing them buttons that will 403 is the lever the rbac module exists to
+   * hide. Saying who *can* is more use than saying no.
    */
   if (!mayDecide) {
     return (

@@ -34,7 +34,7 @@ function renderWithI18n(ui: React.ReactElement) {
               rolesHint: 'Select at least one role',
             },
             role: {
-              weigher: 'Weigher',
+              editor: 'Editor',
               clerk: 'Clerk',
               manager: 'Manager',
             },

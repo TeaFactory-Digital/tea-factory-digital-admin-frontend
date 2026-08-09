@@ -58,27 +58,34 @@ The first is the one worth dwelling on: `FeatureFlagSet`'s docblock claimed the 
 was *"identical to the app's"* while the type said otherwise. A comment that was
 true when it was written is the most expensive kind of drift, because nothing fails.
 
-## The screens were not deleted
+## The screens went; the API did not
 
-Every v1 screen, handler and fixture for the internal-process modules is **still in the
-tree, still building and still answering**. What went is the wiring that claimed this
-console owns them — the routes, the sidebar rows, the dashboard cards and the v1 test
-cases. Two arguments for keeping the rest:
+The internal-process modules' **screens are deleted** — `modules/deliveries`,
+`modules/payouts`, `modules/months`, `modules/savings`, the two orphaned cards beside
+them and their UI tests, about 4,250 lines. What stayed is everything below the screen:
+the MSW handlers, the repositories, the endpoints and the domain arithmetic.
 
-- **They are the executable statement of what those flows require.** [mocks.md](./mocks.md)
+- **That layer is the executable statement of what those flows require.** [mocks.md](./mocks.md)
   calls the MSW handlers *"the specification the server has to satisfy, not a
-  stand-in for one"* — that is exactly as true of M4's five publish refusals and
-  M6's payout serialiser as it is of the modules that stayed. Whoever builds the
-  factory's own console against this API needs them.
-- **The scope decision may be revisited.** `DashboardSummary` still carries `cycle`,
-  `today` and `intakeTrend` for this reason: the month-cycle stage is *why the app
-  shows a supplier blanks instead of amounts*, which is a telephone call the office
-  takes whether or not it closes the month.
+  stand-in for one"* — as true of M4's five publish refusals and M6's payout
+  serialiser as of the modules that stayed. Whoever builds the factory's own console
+  against this API needs them, and they are still exercised by tests, which is what
+  keeps them true rather than merely present.
+- **A screen nobody routes to is not that.** It is a second implementation no test can
+  reach, and it rots without ever failing — the same argument `navigation.ts` already
+  made about its unreachable *Planned* branch. The screens were carried commented-out
+  through v2's first pass and taken out once the boundary settled.
+- **The scope decision may still be revisited**, which is why `DashboardSummary` keeps
+  `cycle`, `today` and `intakeTrend`: the month-cycle stage is *why the app shows a
+  supplier blanks instead of amounts*, a telephone call this office takes whether or not
+  it closes the month. Git history has the screens.
 
-> **The removed wiring is in git history**, with the reason it left recorded in the commit
-> that removed it. It was carried commented-out through v2's first pass and taken out once
-> the boundary settled — a file that explains itself twice, once in code and once in a
-> comment about code that no longer runs, drifts on the first change to either.
+**Two roles went with them.** `weigher` and `accountant` are gone from `ConsoleRole` —
+both existed for capabilities the factory's own console now owns, so with `deliveries`,
+`ratesAndMonthClose` and `payouts` unrouted here, neither could do anything but read. The
+**capabilities stay**: the server holds the same matrix and still grants them to the roles
+it knows about, and `resolveGrants` honours grants for roles this build has never heard
+of. What is left is five roles, four of them a factory's. See [rbac.md](./rbac.md).
 
 ## Where to start
 

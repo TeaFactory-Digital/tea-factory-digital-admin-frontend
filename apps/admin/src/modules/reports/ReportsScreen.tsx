@@ -73,7 +73,7 @@ function cell(value: string | number | null, column: ReportColumn, t: (key: stri
     case 'date':
       return formatDate(String(value));
     case 'metricKey':
-      // `monthSummary`'s row label is a key, not prose — localized like everything else.
+      // A row label is a key, not prose — localized like everything else.
       return typeof value === 'string' ? t(`reports.metric.${value}`) || value : String(value);
     default:
       // `text` is literal: a supplier code, a collection point name, a person's name. Never
@@ -348,11 +348,6 @@ export function ReportsScreen() {
                                 : 'text-text-primary',
                             )}
                           >
-                            {/* v1: `monthSummary` rendered its `stage` row through the
-                                month vocabulary rather than as a bare string —
-                                  id === 'monthSummary' && column.key === 'value' && row.metric === 'stage'
-                                    ? t(`month.stage.${row.value}`) : …
-                                Commented out with the report; see `REPORT_IDS`. */}
                             {cell(row[column.key] ?? null, column, t)}
                           </td>
                         ))}

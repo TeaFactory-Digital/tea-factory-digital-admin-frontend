@@ -6,7 +6,7 @@
  *
  *  - **`stale-eligibility`** (BR-310) — the ceiling moved while the queue was open.
  *    The load-bearing one, and the only refusal in the console that can be caused
- *    by somebody else doing their job correctly: a weigher recording leaf raises an
+ *    by somebody else doing their job correctly: the factory's system recording leaf raises an
  *    advance ceiling, and the approver's screen is instantly out of date.
  *  - **`over-ceiling`** — eligibility that never moved, against an amount that was
  *    never inside it.
@@ -43,8 +43,8 @@ import { renderWithProviders, signInAs, signInWithMfaAs, signOut } from './rende
 
 const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
-const WEIGHER = 'weigher@galabodatea.lk';
-const ACCOUNTANT = 'accountant@galabodatea.lk';
+const FACTORY_SYSTEM = 'factory-system@galabodatea.lk';
+const EDITOR = 'editor@galabodatea.lk';
 
 const NOTE = 'Checked against the leaf already weighed this month at the counter.';
 
@@ -149,12 +149,12 @@ describe('M7 eligibility (AC-05)', () => {
   });
 
   it('recomputes on every read instead of serving what was stored', async () => {
-    // Read as the clerk, move the leaf as the weigher, read again. An advance
+    // Read as the clerk, let the factory's system move the leaf, read again. An advance
     // ceiling that did not change would mean the row is serving a snapshot.
     await signInAs(CLERK);
     const before = await creditRepository.get(WITHIN_CEILING);
 
-    await signInAs(WEIGHER);
+    await signInAs(FACTORY_SYSTEM);
     await deliveryRepository.commit({
       date: colomboDayOf(new Date()),
       collectionPoint: 'MAKADURA',
@@ -246,12 +246,12 @@ describe('M7 refusals', () => {
 
   it('refuses an approval after a weighing actually moves the ceiling', async () => {
     // The same refusal, reached the way it happens in the office rather than by
-    // sending a wrong number: the clerk loads the queue, a weigher records leaf,
+    // sending a wrong number: the clerk loads the queue, the factory records leaf,
     // the clerk clicks approve.
     await signInWithMfaAs(MANAGER);
     const asRendered = await creditRepository.get(WITHIN_CEILING);
 
-    await signInAs(WEIGHER);
+    await signInAs(FACTORY_SYSTEM);
     await deliveryRepository.commit({
       date: colomboDayOf(new Date()),
       collectionPoint: 'MAKADURA',
@@ -383,7 +383,7 @@ describe('M7 refusals', () => {
     await signInAs(CLERK);
     const first = await creditRepository.get(ALREADY_APPROVED);
 
-    await signInAs(WEIGHER);
+    await signInAs(FACTORY_SYSTEM);
     await deliveryRepository.commit({
       date: colomboDayOf(new Date()),
       collectionPoint: 'MAKADURA',
@@ -402,16 +402,17 @@ describe('M7 refusals', () => {
 });
 
 describe('M7 permissions (§12.1)', () => {
-  it('gives the weigher no access to credit at all', async () => {
-    await signInAs(WEIGHER);
+  it('gives the editor no access to credit at all', async () => {
+    // `content: W` and nothing else at all — the narrowest account the console has.
+    await signInAs(EDITOR);
     await expect(creditRepository.list()).rejects.toMatchObject({ code: 'forbidden' });
   });
 
-  it('lets an accountant read the queue and refuses them the decision', async () => {
-    // `creditRequests: R` for the accountant, `A` for the clerk and the manager.
-    // Easy to get wrong, because the accountant outranks the clerk on every money
-    // module — and credit is the one they only watch.
-    await signInAs(ACCOUNTANT);
+  it('lets a clerk read the queue and refuses them the decision', async () => {
+    // `creditRequests: R` for the clerk, `A` for the manager alone. Easy to get wrong,
+    // because the clerk *approves* change requests and inquiries outright — credit is
+    // the queue they only prepare, because it is the one with money in it (BR-501).
+    await signInAs(CLERK);
     await expect(creditRepository.list()).resolves.toBeTruthy();
 
     const request = await creditRepository.get('crd-8');

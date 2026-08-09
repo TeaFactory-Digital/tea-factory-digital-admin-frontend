@@ -21,7 +21,7 @@ import { screen } from '@testing-library/react';
 import { CreditScreen } from '@/modules/credit/CreditScreen';
 import { renderWithProviders, signInAs, signOut } from './render';
 
-const ACCOUNTANT = 'accountant@galabodatea.lk';
+const CLERK = 'clerk@galabodatea.lk';
 
 beforeEach(() => {
   signOut();
@@ -29,7 +29,7 @@ beforeEach(() => {
 
 describe('the credit queue', () => {
   it('renders its filters and its rows', async () => {
-    await signInAs(ACCOUNTANT);
+    await signInAs(CLERK);
 
     renderWithProviders(
       <Routes>

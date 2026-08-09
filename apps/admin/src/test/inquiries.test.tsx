@@ -29,7 +29,7 @@ import { renderWithProviders, signInAs, signInWithMfaAs, signOut } from './rende
 
 const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
-const ACCOUNTANT = 'accountant@galabodatea.lk';
+const EDITOR = 'editor@galabodatea.lk';
 
 const REPLY =
   'We checked the 12th and found a second weighing of 96 kg that had not been entered. It is on your account now.';
@@ -178,8 +178,8 @@ describe('M10 permissions (§12.1)', () => {
     });
   });
 
-  it('gives the accountant no access to inquiries at all', async () => {
-    await signInAs(ACCOUNTANT);
+  it('gives the editor no access to inquiries at all', async () => {
+    await signInAs(EDITOR);
     await expect(inquiryRepository.list()).rejects.toMatchObject({ code: 'forbidden' });
   });
 });

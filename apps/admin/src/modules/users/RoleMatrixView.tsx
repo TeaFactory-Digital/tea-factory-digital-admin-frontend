@@ -6,13 +6,24 @@
  * deploy"* — and until this screen existed, `packages/domain/src/rbac.ts` was the authority
  * while claiming to be a default. Now it is the default it always said it was.
  *
- * Rendered as the matrix rather than as seven role forms, because the question an
- * administrator arrives with is comparative: *"who else can approve a payout?"* is one column
- * read down, and seven separate forms make it seven screens.
+ * Rendered as the matrix rather than as five role forms, because the question an
+ * administrator arrives with is comparative: *"who else can approve a credit request?"* is
+ * one column read down, and five separate forms make it five screens.
+ *
+ * **Twelve rows, not fifteen.** `deliveries`, `ratesAndMonthClose` and `payouts` are the
+ * factory's own console's, and this build routes nothing behind them — rendered, they are
+ * three dropdowns an administrator can set to `approve`, get a success toast for, and
+ * change nothing whatsoever by. `FACTORY_CONSOLE_CAPABILITIES` names them, and their
+ * stored levels are **preserved rather than dropped**: `change()` spreads the whole
+ * `matrix[role]`, so a hidden grant survives an edit to a visible one untouched. Hiding a
+ * value the console still sends back is only safe because of that spread — read it before
+ * changing how a row saves.
  *
  * The refusal is the lockout nobody thinks of. Every user can keep their roles while the roles
  * stop granting `usersAndRoles`, and the factory is locked out without a single user record
- * changing — so the guard is on the **proposed matrix**, not on any user.
+ * changing — so the guard is on the **proposed matrix**, not on any user. It runs against the
+ * whole matrix, hidden rows included, because `usersAndRoles` is visible and a guard that
+ * only saw what was on screen would be a guard with a blind spot.
  */
 
 import { useState } from 'react';
@@ -21,6 +32,7 @@ import { KeyRound, TriangleAlert } from 'lucide-react';
 import {
   DEFAULT_ROLE_MATRIX,
   RECOVERY_CAPABILITY,
+  isRoutedCapability,
   matrixKeepsRecovery,
   type AccessLevel,
   type Capability,
@@ -39,7 +51,10 @@ import { formatDateTime } from '@/lib/format';
 import { useRoleMatrix, useSetRoleGrants } from './hooks';
 
 const ROLES = Object.keys(DEFAULT_ROLE_MATRIX) as ConsoleRole[];
-const CAPABILITIES = Object.keys(DEFAULT_ROLE_MATRIX.clerk) as Capability[];
+/** The matrix minus the factory's own console's rows — see the note above. */
+const CAPABILITIES = (Object.keys(DEFAULT_ROLE_MATRIX.clerk) as Capability[]).filter(
+  isRoutedCapability,
+);
 const LEVELS: AccessLevel[] = ['none', 'read', 'write', 'approve'];
 
 export function RoleMatrixView() {
@@ -114,8 +129,9 @@ export function RoleMatrixView() {
         }
       />
 
-      {/* The only scrolling region, in both axes: seven role columns do not fit a laptop, and
-          the capability names have to stay readable while scrolling right. */}
+      {/* The only scrolling region, in both axes. Five role columns fit a laptop where seven
+          did not, but the axes stay: a factory that splits a role adds a column, and the
+          capability name has to stay readable while scrolling right when it does. */}
       <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-full border-collapse text-data-cell" aria-label={t('users.matrixTitle')}>
           <thead className="sticky top-0 z-10 bg-table-header shadow-[inset_0_-1px_0_0_var(--color-border)]">

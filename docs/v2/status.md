@@ -19,7 +19,7 @@ factory's own console runs the factory. What that changed:
 
 | | |
 | --- | --- |
-| **Handed back** | M3 leaf collection, M4 rates & month close, M6 payouts, M8 savings. Screens and handlers still in the tree, unrouted — see [modules.md](./modules.md) |
+| **Handed back** | M3 leaf collection, M4 rates & month close, M6 payouts, M8 savings. Screens deleted; handlers, repositories and domain arithmetic kept as the API spec — see [modules.md](./modules.md) |
 | **Narrowed** | M1 to app adoption and content health · M2 to the app account · M5 to a read-only support view · M16 to `channelShift` |
 | **Built** | **M18 tea packets** and **M11's banner editor** — two surfaces the app has always had and this console never did |
 | **Corrected** | The feature flag set, which claimed to be the app's and was four flags short in one direction and two long in the other |
@@ -536,9 +536,10 @@ verbatim because they are the specification that build has to answer, and becaus
 
 **Who may reveal a full bank account number?** §20.4 says "except to roles that
 need them" without naming them. The console currently gates the reveal on
-`suppliers: read`, which is every role except editor — almost certainly too broad.
-It should probably be clerk and accountant only, and it is a one-line change once
-the factory says.
+`suppliers: read`, which after v2 dropped `weigher` and `accountant` is the clerk, the
+manager and both administrators — narrower than it was, and still almost certainly too
+broad. It should probably be the clerk alone, who is the only one at the counter, and it
+is a one-line change once the factory says.
 
 **Is a whole-rupee payout right?** The bill pays whole rupees and carries the cents as
 the slip's "coins" line, which is what `coinsBroughtForward` and `coinsCarriedForward`

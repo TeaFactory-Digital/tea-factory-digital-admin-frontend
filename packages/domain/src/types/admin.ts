@@ -43,15 +43,27 @@ import type { CreditRules } from '../creditRules';
  * Console roles (§12). A **separate auth realm** from suppliers: different
  * table, different token audience, different login screen. A supplier token
  * must never open the console.
+ *
+ * **v2 dropped `weigher` and `accountant`**, and this is the one place the scope cut
+ * reached the permission model rather than only the module map. Both roles existed for
+ * capabilities the factory's own console now owns — a weigher's entire job was
+ * `deliveries: write`, and an accountant's was `ratesAndMonthClose` and `payouts`. With
+ * those gone, neither could do anything here but read: a person given the role would
+ * sign in, find suppliers and reports, and report the empty console as a bug.
+ *
+ * The five that remain each decide something the app is waiting on:
+ *
+ *  - `clerk` runs the queues, `manager` approves them — and they cannot merge, because
+ *    BR-501 requires the creator of an approval not to be its approver.
+ *  - `editor` writes what the app displays, `factoryAdmin` approves publishing it —
+ *    the same separation, one level down.
+ *  - `platformAdmin` is the only identity that spans tenants.
+ *
+ * §12.1 still describes seven roles because it is the *product's* permission model, and
+ * the factory's own console keeps both of the two dropped here. Merging or splitting any
+ * of these is a matrix edit in M15, not a deploy.
  */
-export type ConsoleRole =
-  | 'clerk'
-  | 'weigher'
-  | 'accountant'
-  | 'manager'
-  | 'editor'
-  | 'factoryAdmin'
-  | 'platformAdmin';
+export type ConsoleRole = 'clerk' | 'manager' | 'editor' | 'factoryAdmin' | 'platformAdmin';
 
 /** One row of the §12.1 permission matrix. */
 export type Capability =
@@ -241,8 +253,8 @@ export interface SupplierQuery extends PageQuery {
   /**
    * Registered but not supplying — fed the dormant-suppliers report (§19.2).
    *
-   * v2 keeps the field though the report is commented out: it is the factory's own
-   * console's report, and the query parameter is what it was defined by.
+   * v2 keeps the field though the report is gone from `REPORT_IDS`: it is the factory's
+   * own console's report, and the query parameter is what it was defined by.
    */
   dormantMonths?: number;
 }
@@ -831,13 +843,14 @@ export interface DashboardSummary {
   alerts: DashboardAlert[];
 
   /* ────────────────────────────────────────────────────────────────────────────
-   * v1's factory-operations figures. **Still served, no longer rendered.**
+   * v1's factory-operations figures. **Still served, no longer rendered here.**
    *
-   * The cards that read them are commented out on `DashboardScreen`, not deleted, and
-   * the fields stay on the payload for a reason worth stating: `cycle.stage` is what
-   * decides whether the app shows a supplier an amount or a blank, so an office
-   * answering the telephone about "why does my July account say nothing" still needs
-   * it — and when that turns out to be true, uncommenting one card is the whole change.
+   * The cards that read them are gone from `DashboardScreen`, but the fields stay on the
+   * payload for a reason worth stating: `cycle.stage` is what decides whether the app
+   * shows a supplier an amount or a blank, so an office answering the telephone about
+   * "why does my July account say nothing" still needs it. The server owns this payload;
+   * a console that dropped the fields from the type would only make itself unable to
+   * read what it is already being sent.
    * ──────────────────────────────────────────────────────────────────────────── */
   cycle: MonthCycleStatus;
   today: TodaysCollection;
@@ -1908,7 +1921,7 @@ export interface RuntimeConfig {
    * block any more. It stays on the payload rather than being dropped, because the field
    * is served by an API this console does not own and a type that omitted it would make
    * every other consumer's `RuntimeConfig` a different shape. The M14 section that edited
-   * it is commented out; see `PayoutFileSection.tsx`.
+   * it is gone.
    */
   payouts?: { export: PayoutExportTemplate };
   /**

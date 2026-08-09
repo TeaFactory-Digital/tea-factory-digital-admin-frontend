@@ -8,7 +8,7 @@
  *
  * It is a `localStorage` preference rather than an M14 field because §12.1 makes
  * `flagsAndBranding` writable by the factory admin alone. Put in configuration, a clerk on
- * a bright counter and a weigher who needs larger type would both be stuck with whatever
+ * a bright counter and an editor who needs larger type would both be stuck with whatever
  * somebody else chose — and text size is an accessibility need belonging to the reader.
  * That is the decision these guard.
  */

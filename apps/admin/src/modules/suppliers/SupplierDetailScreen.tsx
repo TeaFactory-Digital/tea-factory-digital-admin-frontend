@@ -19,9 +19,7 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
-/* `Info` goes with the hint below it, which is commented out rather than deleted —
-   see the withheld-actions paragraph in the header actions. */
-import { ArrowRight, Ban, RotateCcw } from 'lucide-react';
+import { ArrowRight, Ban, Info, RotateCcw } from 'lucide-react';
 import type { SupplierStatus } from '@tfd/domain';
 import { can } from '@tfd/domain';
 import { useAuthStore, useCan } from '@/auth/authStore';
@@ -132,8 +130,8 @@ export function SupplierDetailScreen() {
                  * depending on who signed in.
                  */
                 <p className="flex max-w-64 items-start gap-xs text-caption text-text-secondary">
-                  {/* <Info className="mt-0.5 size-icon-xs shrink-0" aria-hidden />
-                  {t('suppliers.detail.counterActionsHint')} */}
+                  <Info className="mt-0.5 size-icon-xs shrink-0" aria-hidden />
+                  {t('suppliers.detail.counterActionsHint')}
                 </p>
               )
             ) : null}

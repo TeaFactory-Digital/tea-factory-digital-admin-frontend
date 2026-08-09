@@ -6,8 +6,9 @@
  * broken.
  *
  * **v2 scope.** The internal-process routes — deliveries, rates, payouts, savings —
- * are commented out below rather than deleted, along with their lazy imports. The
- * factory's own console runs those; this one manages the mobile app. See
+ * are gone, along with their screens. The factory's own console runs those; this one
+ * manages the mobile app. What those flows require is still stated executably by the
+ * mock handlers and the repositories, which is the form the other team can read. See
  * `navigation.ts` for the full argument and for what stayed.
  *
  * Every route is wrapped in the capability gate, so a bookmarked or emailed URL is
@@ -157,9 +158,9 @@ export const router = createBrowserRouter([
        * M5, read-only. A supplier telephones about the figure on their phone and the
        * clerk needs the same account in front of them — that is app support, and it is
        * why this route survived the v2 scope cut when the four below it did not.
-       * Generating and publishing are the factory's own console's; the controls are
-       * commented out on `BillsScreen` rather than merely hidden here, because a route
-       * that renders a screen with live mutation buttons is not read-only.
+       * Generating and publishing are the factory's own console's; those controls are
+       * gone from `BillsScreen` rather than merely hidden here, because a route that
+       * renders a screen with live mutation buttons is not read-only.
        */
       {
         path: 'bills',

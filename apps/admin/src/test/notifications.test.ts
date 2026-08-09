@@ -41,7 +41,7 @@ import { signInAs, signInWithMfaAs, signOut } from './render';
 
 const ADMIN = 'factoryadmin@galabodatea.lk';
 const EDITOR = 'editor@galabodatea.lk';
-const ACCOUNTANT = 'accountant@galabodatea.lk';
+const FACTORY_SYSTEM = 'factory-system@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
 const CLERK = 'clerk@galabodatea.lk';
 
@@ -284,15 +284,15 @@ describe('M13 automatic triggers', () => {
   }
 
   it('fires billPublished when a month is published, once', async () => {
-    // The baseline is read by somebody who *can* read it: the accountant holds
-    // `ratesAndMonthClose: W` and no `content` grant at all, which is the matrix working
-    // rather than a gap — the person who closes a month is not the person who reads the
-    // notification log.
+    // The month is closed by the factory's own system, which holds `ratesAndMonthClose: W`
+    // from the server and no `content` grant at all — so the baseline has to be read by
+    // somebody who *can* read it. The person who closes a month is not the person who
+    // reads the notification log, and that is the matrix working rather than a gap.
     await signInAs(ADMIN);
     const before = await sendsFor('billPublished');
 
     signOut();
-    await signInAs(ACCOUNTANT);
+    await signInAs(FACTORY_SYSTEM);
     const months = await monthRepository.list();
     const open = months.items.find((month) => month.open)!;
 

@@ -13,17 +13,19 @@ import { expect, test, type Page } from '@playwright/test';
  * resolve and the month picker validates a key against the API's own list rather than
  * trusting the URL.
  *
- * Signed in as the accountant, because §12.1 gives them `billing: W`. In v2 nobody on
- * this screen can write anything, which is a different test — see the read-only notice
- * asserted below.
+ * Signed in as the **clerk**, because the clerk is who answers that telephone and §12.1
+ * gives them `billing: R`. v2 dropped the accountant this suite used to sign in as: with
+ * `payouts` and `ratesAndMonthClose` owned by the factory's own console, the role could do
+ * nothing here but read, which is what the clerk already does. The read-only notice
+ * asserted below is the same screen either way.
  */
 
-const ACCOUNTANT = 'accountant@galabodatea.lk';
+const CLERK = 'clerk@galabodatea.lk';
 const PASSWORD = 'demo1234';
 
 async function signIn(page: Page) {
   await page.goto('/sign-in');
-  await page.getByLabel(/^email$/i).fill(ACCOUNTANT);
+  await page.getByLabel(/^email$/i).fill(CLERK);
   await page.getByLabel(/^password$/i).fill(PASSWORD);
   await page.getByRole('button', { name: /^sign in$/i }).click();
   await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible({ timeout: 15_000 });

@@ -34,9 +34,12 @@ describe('grantsFromRoles', () => {
   });
 
   it('takes the strongest level across several roles', () => {
-    const grants = grantsFromRoles(['weigher', 'accountant']);
-    expect(can(grants, 'deliveries', 'write')).toBe(true);
-    expect(can(grants, 'ratesAndMonthClose', 'write')).toBe(true);
+    // A small factory gives one person both jobs. `content` is the pair that shows
+    // the merge doing something: the editor writes, the administrator publishes,
+    // and holding both must yield `approve` rather than either one alone.
+    const grants = grantsFromRoles(['editor', 'factoryAdmin']);
+    expect(can(grants, 'content', 'approve')).toBe(true);
+    expect(can(grants, 'usersAndRoles', 'write')).toBe(true);
   });
 
   it('treats approve as implying write and read', () => {
@@ -79,8 +82,16 @@ describe('resolveGrants', () => {
   });
 
   it('works with no server grants at all', () => {
-    const grants = resolveGrants(['accountant']);
-    expect(can(grants, 'ratesAndMonthClose', 'write')).toBe(true);
+    const grants = resolveGrants(['manager']);
+    expect(can(grants, 'creditAboveThreshold', 'approve')).toBe(true);
+  });
+
+  it('honours a role this build has never heard of', () => {
+    // v2 dropped `weigher` and `accountant`, but a factory's server may still send
+    // grants for roles this console does not ship a matrix row for. Those must be
+    // honoured — otherwise a role change is a console release.
+    const grants = resolveGrants(['weigher' as never], { deliveries: 'write' });
+    expect(can(grants, 'deliveries', 'write')).toBe(true);
   });
 });
 

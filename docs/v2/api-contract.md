@@ -452,7 +452,7 @@ with the phones. Serve this from indexes.
 `cycle`, `today` and `intakeTrend` stay on the payload though no v2 card renders
 them. `cycle.stage` in particular is *why the app shows a supplier blanks instead
 of amounts*, which is a telephone call the office takes whether or not it closes
-the month — and the card that reads it is one uncommented line away. Serve them if
+the month — and the card that reads it is a small change away. Serve them if
 you have them; a console that gets them and ignores them costs nothing, and a
 console that wants them back and cannot get them costs a release.
 - `stage` ∈ `collecting | awaitingRate | rateEntered | billsGenerated |
@@ -848,7 +848,7 @@ courtesy to save a clerk a wasted upload — the signature is the control.
 
 ## 8. M17 Audit — `GET /admin/audit`
 
-Capability: `auditLog` (read). Per §12.1 that is **accountant and above — a clerk
+Capability: `auditLog` (read). Per §12.1 that is **manager and above — a clerk
 has no audit access at all**, which is deliberate: the log is for the people
 reviewing the work, not the people doing it.
 
@@ -928,9 +928,9 @@ shape and completely different facts.
 ## 9. M3 Leaf collection — `/admin/deliveries`
 
 Capability: `deliveries`. `read` for the day and its rows, **`write`** to record
-or void. Note who that is in §12.1: the **weigher and the accountant** hold `W`,
-and the clerk and manager hold `R` — the opposite way round from most of the
-console, because entry happens at the weighing shed and not at the office desk.
+or void. Note who that is in §12.1: **no v2 `ConsoleRole` holds `W`** — the clerk and the
+manager hold `R`, and the write belongs to the factory's own console, whose roles the
+server grants directly. Entry happens at the weighing shed, not at the office desk.
 
 A delivery is the **fact every money figure downstream is derived from**: a bill
 is a read model over these rows and a monthly rate (api.md §16). Three
@@ -949,7 +949,7 @@ never silently rounded, and a published month refuses all of it.
   "kgs": 42.50,
   "source": "manual",
   "batchId": "8f1c…",
-  "recordedById": "usr-weigher-1", "recordedByName": "Sunil Rathnayake",
+  "recordedById": "usr-factory-system-1", "recordedByName": "Sunil Rathnayake",
   "recordedAt": "2026-07-30T03:14:22.104Z",
   "voidedAt": null, "voidedByName": null, "voidedReason": null
 }
@@ -1090,7 +1090,7 @@ is closed rather than being asked for a reason that cannot help.
 ## 10. M4 Rates & month close — `/admin/months`
 
 Capability: `ratesAndMonthClose`. **`write`** to enter a rate and resolve
-exceptions (the accountant), **`approve`** to publish (the manager). That split is
+exceptions, **`approve`** to publish (the manager alone). That split is
 BR-501 made structural: the person who types the auction rate is not the person
 who closes the month on it.
 
@@ -1108,7 +1108,7 @@ accepting leaf into a closed month.
   "monthKey": "2026-07",
   "stage": "rateEntered",
   "rate": { "monthKey": "2026-07", "ratePerKg": 122.50, "extraRatePerKg": 8.00,
-            "enteredById": "usr-accountant-1", "enteredByName": "Dilani Fonseka",
+            "enteredById": "usr-factory-system-1", "enteredByName": "Sunil Rathnayake",
             "enteredAt": "2026-08-02T04:10:00.000Z" },
   "totalKgs": 96421.25, "supplierCount": 71, "deliveryCount": 1284,
   "openExceptions": 3, "totalExceptions": 11,
@@ -1427,7 +1427,7 @@ supplier goes a month unpaid.
 
 ### 12.4 `POST /admin/payout-runs/{id}/approve` → `PayoutRun`
 
-`payouts: approve` — §12.1 gives that to the manager and `write` to the accountant who
+`payouts: approve` — §12.1 gives that to the manager, and `write` to whoever
 prepares it.
 
 ```
@@ -1612,7 +1612,7 @@ unanswered, and those pay different money on the same rate.
 ## 14. M7 Credit queues
 
 Authorize on `creditRequests`, and read the level carefully: §12.1 gives `R` to the
-clerk and the accountant and **`A` to the manager alone**. Every list and detail is
+clerk and **`A` to the manager alone**. Every list and detail is
 `R`; both decisions are `A`. That is the opposite of M9, where the clerk decides.
 
 Gate each row on the facility's own flag — `enableAdvances`, `enableLoans`,

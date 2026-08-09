@@ -28,7 +28,7 @@ import { renderWithProviders, signInAs, signInWithMfaAs, signOut } from './rende
 
 const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
-const ACCOUNTANT = 'accountant@galabodatea.lk';
+const FACTORY_ADMIN = 'factoryadmin@galabodatea.lk';
 
 function renderDetail(id: string) {
   return renderWithProviders(
@@ -218,8 +218,9 @@ describe('M2 supplier detail', () => {
   /**
    * The quick actions are shortcuts into the queues, filtered to the supplier on
    * screen — and they are gated the way the sidebar is, so one cannot offer a clerk
-   * a screen their session would be refused. §12.1 gives the accountant
-   * `inquiries: NONE`, which is what these two cases turn on.
+   * a screen their session would be refused. §12.1 gives the factory administrator
+   * `suppliers: R` with neither queue, which is what these two cases turn on: the
+   * record renders for them, and both shortcuts out of it do not.
    */
   it('offers a clerk the message queue filtered to this supplier', async () => {
     await signInAs(CLERK);
@@ -232,12 +233,13 @@ describe('M2 supplier detail', () => {
   });
 
   it('withholds the same shortcut from a session that cannot read that queue', async () => {
-    await signInAs(ACCOUNTANT);
+    await signInAs(FACTORY_ADMIN);
     renderSupplierDetail();
 
-    // The record itself still renders — this is the shortcut being absent, not the screen.
-    expect(await screen.findByRole('link', { name: /change requests/i })).toBeInTheDocument();
+    // The record itself still renders — this is the shortcuts being absent, not the screen.
+    expect(await screen.findByRole('tab', { name: /overview/i })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /messages/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /change requests/i })).not.toBeInTheDocument();
   });
 
   it('shows a masked account number and never the full one', async () => {

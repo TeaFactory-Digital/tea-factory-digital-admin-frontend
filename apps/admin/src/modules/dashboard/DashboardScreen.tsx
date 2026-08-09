@@ -16,10 +16,10 @@
  *  4. **What is broken?** Server-composed alerts, because the rule that makes something
  *     an alert is policy, not presentation.
  *
- * The v1 cards are commented out below rather than deleted, and their data is still on
- * the payload — see `DashboardSummary`. The month-cycle card in particular is one
- * telephone call away from being wanted back: `awaitingRate` is *why the app is showing a
- * supplier blanks instead of amounts*.
+ * The v1 cards are gone, but **their data is still on the payload** — see
+ * `DashboardSummary`. That is not an oversight: `cycle.awaitingRate` is *why the app is
+ * showing a supplier blanks instead of amounts*, which is a telephone call this office
+ * takes whether or not it closes the month.
  */
 
 import { useQuery } from '@tanstack/react-query';

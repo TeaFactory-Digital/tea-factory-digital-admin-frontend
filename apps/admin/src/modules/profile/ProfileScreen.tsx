@@ -25,6 +25,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Save, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { requiresMfa } from '@tfd/domain';
 import { useCurrentUser } from '@/auth/authStore';
 import { AppearanceControls } from '@/brand/AppearanceControls';
 import { useAppearance } from '@/brand/useAppearance';
@@ -112,8 +113,14 @@ export function ProfileScreen() {
    * Two-factor is mandatory for manager and above (§ Auth and roles), so "not set up"
    * means something different depending on the role: a clerk without it is fine, a manager
    * without it is a gap somebody has to close.
+   *
+   * **`requiresMfa`, not a list of the roles it does not apply to.** This read
+   * `role !== 'clerk' && role !== 'weigher'`, which had already drifted — an editor holds
+   * `content: W` and nothing else, and was being told it owed a second factor. Inverting a
+   * membership test means every role added or removed has to be remembered in two places,
+   * and `MFA_REQUIRED_ROLES` is the one that decides.
    */
-  const mfaRequired = user.roles.some((role) => role !== 'clerk' && role !== 'weigher');
+  const mfaRequired = requiresMfa(user.roles);
   const mfaOwed = mfaRequired && !user.mfaEnrolled;
 
   return (

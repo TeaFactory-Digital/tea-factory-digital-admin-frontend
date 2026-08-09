@@ -27,7 +27,6 @@ import { signInAs, signInWithMfaAs, signOut } from './render';
 
 const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
-const WEIGHER = 'weigher@galabodatea.lk';
 const CHECK = 'Came to the counter with supplier book, recognised by the clerk';
 
 describe('the password itself', () => {
@@ -161,9 +160,10 @@ describe('issuing one against the mock API', () => {
   }, 20_000);
 
   it('refuses a role that may read the registry but not write it (§12.1)', async () => {
-    await signInAs(WEIGHER);
+    await signInWithMfaAs(MANAGER);
     const supplier = await anySupplier();
-    // The weigher holds `suppliers: read`. Issuing a credential is not a read.
+    // The manager holds `suppliers: read` — `W` is the clerk's alone, because these are
+    // counter acts. Issuing a credential is not a read.
     const refused = await supplierRepository
       .resetCredentials(supplier.id, CHECK)
       .catch((cause: unknown) => cause);

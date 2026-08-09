@@ -38,10 +38,11 @@
  *  - The feed, the banner, the FAQ and the push would be empty (M11, M12, M13).
  *  - The flags, the brand and the bank list would need a deploy to change (M14).
  *
- * The internal-process rows are **commented out below rather than deleted**, and
- * their screens are still in the tree. They are a working implementation of §18.1
- * that the factory's own console can be read against, and deleting them would
- * throw away the only executable statement of what those flows require.
+ * The internal-process rows and their screens are **gone**. What those flows require
+ * is still stated executably — by the mock handlers, the repositories and the domain
+ * arithmetic, which is the layer the factory's own console has to satisfy anyway. A
+ * screen nobody routes to is not a specification; it is a second implementation that
+ * rots without a test able to reach it.
  */
 
 import type { Capability, FeatureFlagName, QueueKey } from '@tfd/domain';
@@ -63,7 +64,6 @@ import {
   Users,
   UsersRound,
 } from 'lucide-react';
-/* v1 icons, for the rows commented out below: Landmark (M6), PiggyBank (M8), Scale (M3). */
 
 export interface NavItem {
   /** The §18.1 module id, so a bug report can cite it. */
@@ -186,7 +186,7 @@ export const NAVIGATION: NavSection[] = [
          * A supplier telephones about the figure on their phone, and the clerk has to be
          * able to see the same account. That is a read, and it stays. Generating a run
          * and publishing a month are the factory's own console's, and the controls for
-         * them are commented out on the screen itself.
+         * them are gone from the screen itself rather than merely hidden.
          */
         module: 'M5',
         labelKey: 'nav.bills',
@@ -251,8 +251,8 @@ export const NAVIGATION: NavSection[] = [
          * §19.3 calls app adoption and channel shift *"the two KPIs that justify the
          * project"*, which makes it the only report an app-management console owes
          * anybody. The other three — dormant suppliers, leaf by collection point, the
-         * month summary — are the factory's own console's, and are commented out in
-         * `reports/hooks.ts` rather than deleted.
+         * month summary — are the factory's own console's, and are gone from
+         * `REPORT_IDS` in `reports/hooks.ts`.
          *
          * **No flag.** `enableReports` was console-only and is gone with M6's; the same
          * argument as M12 and M15 applies to what is left — a factory does not decline

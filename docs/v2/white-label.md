@@ -355,7 +355,7 @@ Consequences worth knowing before you use it:
   answer — that the columns, headings, delimiter and number formats are per-tenant values
   rather than three guessed serialisers — remains the right answer, and `payoutExport.ts`
   still holds the shared serialiser. But M6 is the factory's own console's in v2, so the
-  section that edited it is no longer rendered. Whoever owns payouts next inherits the
+  section that edited it is gone. Whoever owns payouts next inherits the
   serialiser rather than a second guess at the format.
 
 What is still outside the console is **creating** the row for a factory that has none. §12.1

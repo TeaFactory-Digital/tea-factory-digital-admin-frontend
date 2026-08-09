@@ -34,7 +34,6 @@ import { useDebounced } from '@/lib/useDebounced';
 import { formatAmount, formatKg, formatMoney } from '@/lib/format';
 import { MonthSelect } from '@/modules/money/MonthSelect';
 import { resolveMonthKey, useBillMonths } from '@/modules/money/monthOptions';
-/* v1: `BillRunCard` — still in the tree, no longer rendered. See below. */
 import { useBillRun, useBills } from './hooks';
 
 type Lens = 'all' | 'missingBankDetails' | 'carriesDebt';

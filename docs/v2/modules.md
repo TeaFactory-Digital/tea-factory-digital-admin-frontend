@@ -43,22 +43,32 @@ has them, with the reason each left.
 | M6 | Payouts | `/payouts` | Money leaving the factory, reconciled against the factory's own bank statements |
 | M8 | Savings | `/savings` | A view over published bills, which this console no longer produces |
 
-**Their screens are still in the tree.** They build and typecheck, the MSW handlers
-still answer and the fixtures still seed — what went is the wiring: the routes, the
-sidebar rows and the lazy imports in `router.tsx` and `navigation.ts`. What is gone
-with them is the claim that *this* console is where the work happens.
+**Their screens are gone; their API is not.** The four module directories, their
+components and their UI tests were deleted — routes, sidebar rows, lazy imports and
+all. What stayed is the layer below: the MSW handlers, the repositories, the endpoints
+and the domain arithmetic.
 
-Three reasons the code stayed, in order of weight:
+That split is the whole of the reasoning:
 
 - **The handlers are a specification.** [mocks.md](./mocks.md) calls them *"the
   specification the server has to satisfy, not a stand-in for one"*. M4's five
   ordered publish refusals and M6's `payoutExport.ts` serialiser are the only
   written statement of what those flows require, and the factory's own console has
-  to satisfy the same rules or the app will disagree with it.
-- **The scope decision may be revisited.** A commented card is a smaller change to
-  reverse than a deleted module.
-- **A deletion loses the argument.** The comments say why each module left, and
-  that is the part a reader cannot reconstruct from the diff.
+  to satisfy the same rules or the app will disagree with it. They are still
+  exercised by tests, which is what keeps them true.
+- **A screen nobody routes to is not a specification.** It is a second implementation
+  with no test able to reach it, which rots silently — the same argument that removed
+  `navigation.ts`'s unreachable `status: 'planned'` branch. Kept-but-dead code was the
+  earlier answer here, and it lasted exactly as long as it took somebody to ask why
+  seventeen modules' worth of screens sat behind ten sidebar rows.
+- **The argument survives in prose, not in dead code.** This table is why each module
+  left; git history has the screens if the decision is revisited.
+
+**Two roles left with them.** `weigher` and `accountant` existed for `deliveries`,
+`ratesAndMonthClose` and `payouts` — strip those and neither could do anything in this
+console but read. Both are gone from `ConsoleRole`; the three capabilities stay, because
+the server holds the same matrix and still grants them to the factory's own console. See
+[rbac.md](./rbac.md).
 
 **Nothing was left behind a capability nobody holds, and nothing renders a "moved"
 notice.** This console has no way to know where the factory's own console lives,
@@ -271,9 +281,9 @@ page prints the working in the order the rule reads it, `ceilingSeen` makes BR-3
 enforceable, `over-ceiling` is refused on both sides, and BR-501 is checked **before**
 the figures because who may decide does not depend on what the ceiling says.
 
-**§12.1 is unusual here and stays unusual**: `creditRequests` is `R` for the clerk
-and the accountant, `A` for the manager alone. Most people who open this screen
-cannot act on it, and they are told who can.
+**§12.1 is unusual here and stays unusual**: `creditRequests` is `R` for the clerk,
+`A` for the manager alone. The person most likely to open this screen cannot act on
+it, and they are told who can.
 
 ## M18 Tea packets — new in v2
 
@@ -609,10 +619,12 @@ users again, which a check written per user misses entirely (`matrixKeepsRecover
 There is no delete: a user who approved a request is the actor on an audit entry, and
 an entry whose actor cannot be resolved is not evidence.
 
-**§12.1's matrix keeps every capability**, including `deliveries`,
-`ratesAndMonthClose` and `payouts`. Removing them would be a migration of every role
-record for no gain, and the same roles exist in the factory's own console. See
-[rbac.md](./rbac.md).
+**§12.1's matrix keeps every capability** — including `deliveries`,
+`ratesAndMonthClose` and `payouts` — **but the screen shows twelve of the fifteen.**
+Removing the keys would be a migration of every role record for no gain, and the same
+roles exist in the factory's own console; rendering them would put three dropdowns in
+front of an administrator that change nothing here. Hidden values are preserved on save,
+which is a test rather than an intention. See [rbac.md](./rbac.md).
 
 ## M16 Reports — narrowed to one
 

@@ -30,7 +30,7 @@ import { DashboardScreen } from '@/modules/dashboard/DashboardScreen';
 import { en } from '@/i18n/locales/en';
 import { renderWithProviders, signInAs, signOut } from './render';
 
-const ACCOUNTANT = 'accountant@galabodatea.lk';
+const CLERK = 'clerk@galabodatea.lk';
 
 /**
  * Every href the queue cards offer, once the summary has landed.
@@ -56,7 +56,7 @@ beforeEach(() => {
 
 describe('dashboard queue cards', () => {
   it('links every queue it shows, rather than disowning three of them', async () => {
-    await signInAs(ACCOUNTANT);
+    await signInAs(CLERK);
     const { container } = renderWithProviders(<DashboardScreen />);
 
     const hrefs = await queueLinks(container);
@@ -73,7 +73,7 @@ describe('dashboard queue cards', () => {
   });
 
   it('narrows the shared credit screen to the facility that was clicked', async () => {
-    await signInAs(ACCOUNTANT);
+    await signInAs(CLERK);
     const { container } = renderWithProviders(<DashboardScreen />);
 
     const hrefs = await queueLinks(container);
