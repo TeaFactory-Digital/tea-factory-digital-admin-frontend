@@ -37,12 +37,15 @@ import { Badge, type BadgeTone } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Dialog } from '@/components/ui/Dialog';
-import { Field, Input } from '@/components/ui/Field';
+import { Field } from '@/components/ui/Field';
+import { DateTimePicker } from '@/components/ui/DatePicker';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, Notice, Spinner } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDateTime } from '@/lib/format';
+import { SPLIT_PANE, SPLIT_PANE_SCROLLER } from '@/components/ui/layout';
+import { cn } from '@/lib/cn';
 import { LanguageStrip } from '@/modules/content/LanguageStrip';
 import { PreviewPanel } from '@/modules/content/PreviewPanel';
 import { useContentLanguages } from '@/modules/content/hooks';
@@ -249,8 +252,16 @@ export function BannerEditorScreen() {
         </Notice>
       ) : null}
 
-      <div className="grid gap-lg lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <div className="flex flex-col gap-lg">
+      <div className={cn(SPLIT_PANE, 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]')}>
+        {/* The form scrolls; the preview beside it does not.
+
+            The opposite way round from M12 and M14, and for the same reason they are
+            that way round: the half that stays put is the half being *consulted*. Here
+            that is the preview — the whole point of editing banner copy beside a live
+            rendering is checking one against the other, which cannot be done when the
+            rendering scrolls out of sight exactly as the copy grows long enough to
+            need it. */}
+        <div className={cn('flex flex-col gap-lg', SPLIT_PANE_SCROLLER)}>
           <Card>
             <CardHeader
               title={t('banners.copyTitle')}
@@ -295,14 +306,13 @@ export function BannerEditorScreen() {
               <div className="grid gap-sm sm:grid-cols-2">
                 <Field label={t('banners.field.startsAt')} required>
                   {({ id: fieldId, describedBy, required }) => (
-                    <Input
+                    <DateTimePicker
                       id={fieldId}
-                      type="datetime-local"
                       aria-describedby={describedBy}
                       required={required}
                       disabled={!canWrite}
                       value={startsAt}
-                      onChange={(event) => setDraftStartsAt(event.target.value)}
+                      onChange={setDraftStartsAt}
                     />
                   )}
                 </Field>
@@ -313,14 +323,13 @@ export function BannerEditorScreen() {
                   error={windowBackwards ? t('banners.window.backwards') : undefined}
                 >
                   {({ id: fieldId, describedBy, invalid }) => (
-                    <Input
+                    <DateTimePicker
                       id={fieldId}
-                      type="datetime-local"
                       aria-describedby={describedBy}
                       invalid={invalid}
                       disabled={!canWrite}
                       value={endsAt}
-                      onChange={(event) => setDraftEndsAt(event.target.value)}
+                      onChange={setDraftEndsAt}
                     />
                   )}
                 </Field>

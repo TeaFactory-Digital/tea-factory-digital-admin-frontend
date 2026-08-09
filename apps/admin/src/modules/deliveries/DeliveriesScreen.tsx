@@ -34,7 +34,7 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { Label } from '@/components/ui/Label';
 import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
-import { Input } from '@/components/ui/Input';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Select } from '@/components/ui/Select';
 import { EmptyState, Notice } from '@/components/ui/states';
@@ -209,15 +209,12 @@ export function DeliveriesScreen() {
         <div className="flex shrink-0 flex-wrap items-end gap-sm border-b border-divider p-md">
           <label className="flex flex-col gap-xs text-label text-text-primary">
             {t('deliveries.date')}
-            <Input
-              type="date"
-              className="numeric w-48"
-              fullWidth={false}
+            {/* No `disabledDates`: a factory that weighs past midnight enters
+                yesterday's sheet in the morning, and a future date is refused by the
+                month check rather than by the control. */}
+            <DatePicker
               value={date}
-              // No `max`: a factory that weighs past midnight enters yesterday's
-              // sheet in the morning, and a future date is refused by the month
-              // check rather than by the control.
-              onChange={(event) => setParam('date', event.target.value || null)}
+              onChange={(next) => setParam('date', next || null)}
             />
           </label>
 

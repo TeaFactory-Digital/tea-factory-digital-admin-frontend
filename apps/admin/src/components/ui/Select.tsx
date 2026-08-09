@@ -22,7 +22,21 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   );
 
   return (
-    <div className={cn('relative', fullWidth ? 'w-full' : 'w-auto')}>
+    /**
+     * `inline-block` when it is not full width, because the chevron is positioned against
+     * **this** box rather than against the `<select>`.
+     *
+     * A `div` is block-level, so `w-auto` made the wrapper fill whatever contained it while
+     * the `<select>` inside shrank to its widest option. The arrow then sat at the right
+     * edge of the *container*, floating in open space — sometimes several inches from the
+     * control it belongs to.
+     *
+     * Invisible in a filter bar, because a flex item shrinks to fit regardless. It shows
+     * wherever `fullWidth={false}` lands in a normal block context: M13's capability
+     * matrix, where every cell is a `<td>` wider than the word "Approve", had forty-five
+     * detached arrows.
+     */
+    <div className={cn('relative', fullWidth ? 'w-full' : 'inline-block')}>
       <select ref={ref} aria-invalid={invalid || undefined} className={selectClassName} {...rest}>
         {children}
       </select>

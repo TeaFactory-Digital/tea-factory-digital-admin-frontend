@@ -23,6 +23,7 @@ import { EDITORIAL_FALLBACK_LANGUAGE, bannerActionProblem } from '@tfd/domain';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Field, Input, Textarea } from '@/components/ui/Field';
+import { DateTimePicker } from '@/components/ui/DatePicker';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { BannerActionField } from './BannerActionField';
@@ -176,13 +177,12 @@ export function NewBannerDialog({
         <div className="grid gap-sm sm:grid-cols-2">
           <Field label={t('banners.field.startsAt')} required>
             {({ id, describedBy, required }) => (
-              <Input
+              <DateTimePicker
                 id={id}
-                type="datetime-local"
                 aria-describedby={describedBy}
                 required={required}
                 value={startsAt}
-                onChange={(event) => setStartsAt(event.target.value)}
+                onChange={setStartsAt}
               />
             )}
           </Field>
@@ -193,13 +193,12 @@ export function NewBannerDialog({
             error={windowBackwards ? t('banners.window.backwards') : undefined}
           >
             {({ id, describedBy, invalid }) => (
-              <Input
+              <DateTimePicker
                 id={id}
-                type="datetime-local"
                 aria-describedby={describedBy}
                 invalid={invalid}
                 value={endsAt}
-                onChange={(event) => setEndsAt(event.target.value)}
+                onChange={setEndsAt}
               />
             )}
           </Field>

@@ -25,9 +25,19 @@ import { cn } from '@/lib/cn';
 
 export interface LanguageSwitcherProps {
   className?: string;
+  /**
+   * Drive it from a draft instead of from the live language.
+   *
+   * Omitted — the sign-in screen — a press applies immediately, which is the right
+   * behaviour on the one screen where somebody may not be able to read what they are
+   * confirming. Supplied, the caller owns the value and decides when it lands: M15 holds
+   * the three preferences as a draft and applies them together behind one confirmation.
+   */
+  value?: LanguageCode;
+  onChange?: (next: LanguageCode) => void;
 }
 
-export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
+export function LanguageSwitcher({ className, value, onChange }: LanguageSwitcherProps) {
   const { t, i18n } = useTranslation();
   const segmentRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -36,7 +46,8 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
    * (`si-LK`) that matches no segment, which would leave the knob homeless and every
    * segment unchecked.
    */
-  const active: LanguageCode = isLanguageCode(i18n.resolvedLanguage) ? i18n.resolvedLanguage : 'en';
+  const live: LanguageCode = isLanguageCode(i18n.resolvedLanguage) ? i18n.resolvedLanguage : 'en';
+  const active: LanguageCode = value ?? live;
   const activeIndex = Math.max(
     0,
     LANGUAGES.findIndex((language) => language.code === active),
@@ -45,7 +56,8 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
   function select(index: number): void {
     const next = LANGUAGES[index];
     if (!next) return;
-    void setLanguage(next.code);
+    if (onChange) onChange(next.code);
+    else void setLanguage(next.code);
     // Focus follows selection so the arrow keys keep working from the new position;
     // `radiogroup` convention is that moving the selection moves focus with it.
     segmentRefs.current[index]?.focus();

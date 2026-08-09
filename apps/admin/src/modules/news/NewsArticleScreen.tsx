@@ -34,6 +34,8 @@ import { ErrorState, Spinner } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDateTime } from '@/lib/format';
+import { SPLIT_PANE, SPLIT_PANE_SCROLLER } from '@/components/ui/layout';
+import { cn } from '@/lib/cn';
 import { GapNotice } from '@/modules/content/GapNotice';
 import { LanguageStrip } from '@/modules/content/LanguageStrip';
 import { PreviewPanel } from '@/modules/content/PreviewPanel';
@@ -142,8 +144,20 @@ export function NewsArticleScreen() {
 
       <GapNotice gaps={data} published={published} />
 
-      <div className="grid gap-lg lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <Card>
+      <div className={cn(SPLIT_PANE, 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]')}>
+        {/* The editor scrolls; the preview beside it does not.
+
+            The opposite way round from M12 and M14, and for the same reason they are
+            that way round: the half that stays put is the half being *consulted*. Here
+            that is the preview — the whole point of writing an article beside a live
+            rendering is checking one against the other, which cannot be done when the
+            rendering scrolls out of sight exactly as the copy grows long enough to need
+            it.
+
+            `flex flex-col` as well as the scroller, because a bare `Card` in a grid
+            stretches to the row and its body would scroll inside the card instead — the
+            scrollbar would sit under the header rather than beside the column. */}
+        <Card className={cn('flex flex-col', SPLIT_PANE_SCROLLER)}>
           <CardHeader
             title={t('content.copyTitle')}
             description={t('content.copyDescription')}

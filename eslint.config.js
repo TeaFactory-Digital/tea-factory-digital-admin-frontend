@@ -23,6 +23,24 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
 
+  /**
+   * Build scripts — Node, not the browser.
+   *
+   * The block below covers `.ts`/`.tsx` only, so a `.mjs` under `scripts/` reached
+   * `js.configs.recommended` with no globals declared at all and `no-undef` fired on
+   * `fetch` and `console`. Given its own entry rather than widening the main block's
+   * globs, because these files are not application code: they run once at a terminal,
+   * they are not bundled, and the React rules below have nothing to say about them.
+   */
+  {
+    files: ['scripts/**/*.{js,mjs}'],
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: 'module',
+      globals: { ...globals.node },
+    },
+  },
+
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {

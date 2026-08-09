@@ -29,6 +29,7 @@ import { RouterProvider } from 'react-router-dom';
 import { createQueryClient } from '@/query/queryClient';
 import { RuntimeConfigProvider } from '@/config/RuntimeConfigProvider';
 import { BrandProvider } from '@/brand/BrandProvider';
+import { AppearanceProvider } from '@/brand/AppearanceProvider';
 import { BootSplash } from '@/brand/SplashScreen';
 import { ToastProvider } from '@/components/ui/Toast';
 import { ViewportGate } from '@/layout/ViewportGate';
@@ -51,15 +52,19 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <RuntimeConfigProvider>
-        <BrandProvider>
-          <ToastProvider>
-            <BootSplash>
-              <ViewportGate>
-                <RouterProvider router={router} />
-              </ViewportGate>
-            </BootSplash>
-          </ToastProvider>
-        </BrandProvider>
+        {/* Outside `BrandProvider`, which reads the reader's scheme and text size to
+            decide which palette and type scale to write onto the document. */}
+        <AppearanceProvider>
+          <BrandProvider>
+            <ToastProvider>
+              <BootSplash>
+                <ViewportGate>
+                  <RouterProvider router={router} />
+                </ViewportGate>
+              </BootSplash>
+            </ToastProvider>
+          </BrandProvider>
+        </AppearanceProvider>
       </RuntimeConfigProvider>
     </QueryClientProvider>
   );

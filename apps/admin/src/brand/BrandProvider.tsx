@@ -30,20 +30,23 @@ import {
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { tenantId } from '@/config/tenant';
 import { BUNDLED_LOGO_URL } from './assets';
+import { scaleTypography } from './appearance';
+import { useAppearance } from './useAppearance';
 
 /**
- * Light only, for now.
+ * The scheme and the type scale are now the **reader's**, not the tenant's.
  *
- * The dark palette exists in `@tfd/brand` and the bridge emits whichever scheme
- * it is given, so switching this on later is a toggle plus a QA pass — not a
- * refactor. It is off because the console runs on office desktops in daylight
- * and doubling the theming QA buys nothing in the field. Recorded as a decision
- * in docs/design-system.md rather than left as an omission.
+ * This used to be `const CONSOLE_SCHEME = 'light'`, with a note that the dark palette
+ * already existed in `@tfd/brand` and turning it on would be "a toggle plus a QA pass, not
+ * a refactor". That turned out to be exactly true: `applyTheme` already writes
+ * `data-scheme` and `color-scheme`, so this is the toggle.
+ *
+ * It is read from `localStorage` rather than from `client_config` because §12.1 makes
+ * configuration writable by the factory admin alone — see `appearance.ts`.
  */
-const CONSOLE_SCHEME = 'light' as const;
-
 export function BrandProvider({ children }: PropsWithChildren) {
   const { config } = useRuntimeConfig();
+  const { appearance } = useAppearance();
 
   useEffect(() => {
     const bundled = brandForTenant(tenantId);
@@ -54,7 +57,7 @@ export function BrandProvider({ children }: PropsWithChildren) {
       themeOverrideFromWire(config.theme, KNOWN_TOKENS),
     );
 
-    const theme = createTheme(CONSOLE_SCHEME, override);
+    const theme = scaleTypography(createTheme(appearance.scheme, override), appearance.textSize);
     const written = applyTheme(document.documentElement, theme);
 
     return () => {
@@ -63,7 +66,7 @@ export function BrandProvider({ children }: PropsWithChildren) {
       // tenant switch is a full page load (see config/tenant.ts).
       void written;
     };
-  }, [config.theme]);
+  }, [config.theme, appearance.scheme, appearance.textSize]);
 
   useEffect(() => {
     const name = config.factory.name?.trim();

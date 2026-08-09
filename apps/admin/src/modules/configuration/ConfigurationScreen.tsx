@@ -16,8 +16,8 @@
  *  - **The rail is static and only the editor scrolls.** A rail that scrolls away is a rail
  *    you have to scroll back to before you can switch sections, and the payout-file section
  *    is several windows tall. So the two columns fill the window and the editor owns the
- *    scrollbar — see `SECTION_PANE` below for the short-screen floor that keeps this from
- *    repeating the bug `GRID_CARD` documents.
+ *    scrollbar — see `SPLIT_PANE` in `components/ui/layout` for the three rules that make
+ *    that work and the short-screen floor that keeps it from repeating `GRID_CARD`'s bug.
  *
  * The dangerous part is not the editing, it is that these edits reach across every other
  * module and the person making them cannot see any of them from here. So every section
@@ -49,6 +49,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover';
 import { ErrorState, Spinner } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
+import { SPLIT_PANE } from '@/components/ui/layout';
 import { cn } from '@/lib/cn';
 import { errorMessageKey } from '@/lib/errorMessage';
 import {
@@ -108,20 +109,6 @@ const SECTIONS: Array<{
    *   { id: 'payoutFile', icon: FileSpreadsheet, Component: PayoutFileSection },
    * ────────────────────────────────────────────────────────────────────────────── */
 ];
-
-/**
- * The two columns, filling what `AppShell` leaves and no more.
- *
- * `lg:` only: one column on a narrow window, where an inner scroller nested in the page
- * scroller is the worse of the two behaviours.
- *
- * The floor is the same lesson as `GRID_CARD` — a `flex-1` child that opts out of
- * `min-height: auto` will happily shrink to nothing on a short window, and here that would
- * take the rail with it. 30 rem clears the seven rail entries with room to spare; below
- * that the pane keeps a usable height and `main` scrolls the page as it did before.
- */
-const SECTION_PANE =
-  'grid gap-lg lg:min-h-[30rem] lg:flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]';
 
 export function ConfigurationScreen() {
   const { t } = useTranslation();
@@ -199,9 +186,13 @@ export function ConfigurationScreen() {
                 (`tenant-immutable`). */}
             <Popover>
               <PopoverTrigger asChild>
+                {/* One line: the label is four words and the id one, so stacking them made
+                    a two-line block the height of the page title for eight characters of
+                    content. `items-baseline` rather than `items-center`, so the small grey
+                    label sits on the same writing line as the larger id. */}
                 <button
                   type="button"
-                  className="flex flex-col rounded-md border border-border bg-surface px-md py-sm text-left"
+                  className="flex items-baseline gap-xs whitespace-nowrap rounded-md border border-border bg-surface px-md py-sm text-left"
                 >
                   <span className="text-caption text-text-secondary">{t('config.tenantId')}</span>
                   <span className="numeric text-subtitle text-text-primary">{config.tenantId}</span>
@@ -216,10 +207,10 @@ export function ConfigurationScreen() {
         }
       />
 
-      <div className={SECTION_PANE}>
+      <div className={cn(SPLIT_PANE, 'lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]')}>
         {/* Static, and deliberately without an `overflow` of its own: a rail that clips is a
             section an administrator cannot reach and has no scrollbar to look for. If this
-            ever outgrows `SECTION_PANE`'s floor, raise the floor. */}
+            ever outgrows `SPLIT_PANE`'s floor, raise the floor. */}
         <Card>
           <CardHeader title={t('config.sections')} />
           <CardBody className="p-0">

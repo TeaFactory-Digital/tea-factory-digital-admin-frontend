@@ -19,6 +19,7 @@ import '@/i18n';
 import { i18next, setLanguage } from '@/i18n';
 import { LANGUAGES, type LanguageCode } from '@/i18n/languages';
 import { LanguageSwitcher } from '@/i18n/LanguageSwitcher';
+import { installLocalStorage } from './localStorage';
 
 const STORAGE_KEY = 'tfd.admin.language';
 
@@ -41,33 +42,6 @@ function endonym(code: LanguageCode): string {
 const SINHALA = endonym('si');
 const ENGLISH = endonym('en');
 const TAMIL = endonym('ta');
-
-/**
- * A working `localStorage`.
- *
- * This environment's `window.localStorage` is an empty object — no `getItem`, no
- * `setItem` — while `sessionStorage` is a real `Storage`. The guards in `@/i18n`
- * swallow that, which is the correct production behaviour (Safari in private mode
- * throws here) but means persistence cannot be observed without a real one.
- *
- * Installed per test rather than in `test/setup.ts`: nothing else in the console
- * touches `localStorage` by design, so giving the whole suite one would be changing
- * shared infrastructure for a single feature's benefit.
- */
-function installLocalStorage(): void {
-  const entries = new Map<string, string>();
-  const storage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem' | 'clear'> = {
-    getItem: (key) => entries.get(key) ?? null,
-    setItem: (key, value) => void entries.set(key, String(value)),
-    removeItem: (key) => void entries.delete(key),
-    clear: () => entries.clear(),
-  };
-  Object.defineProperty(window, 'localStorage', {
-    value: storage,
-    configurable: true,
-    writable: true,
-  });
-}
 
 beforeEach(async () => {
   installLocalStorage();

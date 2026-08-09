@@ -40,6 +40,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, Spinner } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
+import { SPLIT_PANE, SPLIT_PANE_SCROLLER } from '@/components/ui/layout';
 import { cn } from '@/lib/cn';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDateTime } from '@/lib/format';
@@ -138,9 +139,12 @@ export function StaticContentScreen() {
     <>
       <PageHeader title={t('staticContent.title')} description={t('staticContent.subtitle')} />
 
-      <div className="grid gap-lg lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
+      <div className={cn(SPLIT_PANE, 'lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]')}>
         {/* The rail. Six rows, each stating the two things that decide whether it needs
-            work: is it written at all, and which languages are behind. */}
+            work: is it written at all, and which languages are behind.
+
+            Static, and deliberately without an `overflow` of its own — a rail that clips is
+            a page an editor cannot reach and has no scrollbar to look for. */}
         <Card>
           <CardHeader title={t('staticContent.pagesTitle')} />
           <CardBody className="p-0">
@@ -158,7 +162,13 @@ export function StaticContentScreen() {
           </CardBody>
         </Card>
 
-        <div className="flex flex-col gap-lg">
+        {/* The one scroller on the screen.
+
+            All three stack here — the gap notice, the editor and the rendered preview —
+            and together they are several windows tall. Scrolling them as part of the page
+            took the rail with them, so switching to another page meant scrolling back up
+            to a picker that had left the window. */}
+        <div className={cn('flex flex-col gap-lg', SPLIT_PANE_SCROLLER)}>
           <GapNotice gaps={page} published={published} />
 
           <Card>

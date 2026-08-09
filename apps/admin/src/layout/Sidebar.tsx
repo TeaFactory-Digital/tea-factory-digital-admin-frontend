@@ -7,7 +7,7 @@
  * checks something on a tablet, and there the topbar carries a menu instead.
  */
 
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { DashboardSummary } from '@tfd/domain';
 import { can } from '@tfd/domain';
@@ -54,8 +54,26 @@ export function Sidebar({ summary }: { summary?: DashboardSummary }) {
       aria-label={t('nav.dashboard')}
       className="hidden w-64 shrink-0 flex-col border-r border-border bg-surface lg:flex"
     >
-      <div className="border-b border-border px-lg py-md">
-        <Logo />
+      {/**
+       * The mark is the way home.
+       *
+       * A convention every console has, and its absence is only noticed as a small
+       * repeated friction: from a supplier's detail screen the way back to the dashboard
+       * was to find *Dashboard* in the list below, even though the obvious target was
+       * already at the top of the sidebar and being clicked.
+       *
+       * A plain `Link` rather than a `NavLink`: this is not a nav row and must not take
+       * the active styling when the dashboard is open — two things would then look
+       * selected at once.
+       */}
+      <div className="border-b border-border">
+        <Link
+          to="/"
+          aria-label={t('nav.dashboard')}
+          className="block rounded-sm px-lg py-md hover:bg-surface-variant"
+        >
+          <Logo />
+        </Link>
       </div>
 
       <div className="flex-1 overflow-y-auto py-sm">

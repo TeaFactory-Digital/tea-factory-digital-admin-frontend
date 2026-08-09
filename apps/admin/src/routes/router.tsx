@@ -121,6 +121,9 @@ const ConfigurationScreen = lazy(() =>
     default: m.ConfigurationScreen,
   })),
 );
+const ProfileScreen = lazy(() =>
+  import('@/modules/profile/ProfileScreen').then((m) => ({ default: m.ProfileScreen })),
+);
 const ReportsScreen = lazy(() =>
   import('@/modules/reports/ReportsScreen').then((m) => ({ default: m.ReportsScreen })),
 );
@@ -408,6 +411,18 @@ export const router = createBrowserRouter([
        * decline — this is the screen that turns the others off, and gating it on a flag
        * would make a misconfiguration unrecoverable from the console.
        */
+      /**
+       * The reader's own screen.
+       *
+       * **No `RequireCapability`.** Every other route asks what this person may do to the
+       * factory; this one shows them their own account and their own reading preferences,
+       * and there is no role that should be denied that. Gating it would lock a clerk out
+       * of the text-size control, which is an accessibility need rather than a taste.
+       */
+      {
+        path: 'profile',
+        element: <ProfileScreen />,
+      },
       {
         path: 'configuration',
         element: (

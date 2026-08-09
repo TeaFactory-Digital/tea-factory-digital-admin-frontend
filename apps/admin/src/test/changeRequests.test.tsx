@@ -28,6 +28,7 @@ import { renderWithProviders, signInAs, signInWithMfaAs, signOut } from './rende
 
 const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
+const ACCOUNTANT = 'accountant@galabodatea.lk';
 
 function renderDetail(id: string) {
   return renderWithProviders(
@@ -35,6 +36,15 @@ function renderDetail(id: string) {
       <Route path="/change-requests/:id" element={<ChangeRequestDetailScreen />} />
     </Routes>,
     { route: `/change-requests/${id}` },
+  );
+}
+
+function renderSupplierDetail(id = 'sup-1') {
+  return renderWithProviders(
+    <Routes>
+      <Route path="/suppliers/:id" element={<SupplierDetailScreen />} />
+    </Routes>,
+    { route: `/suppliers/${id}` },
   );
 }
 
@@ -205,15 +215,39 @@ describe('M9 detail screen', () => {
 });
 
 describe('M2 supplier detail', () => {
-  it('shows a masked account number and never the full one', async () => {
+  /**
+   * The quick actions are shortcuts into the queues, filtered to the supplier on
+   * screen — and they are gated the way the sidebar is, so one cannot offer a clerk
+   * a screen their session would be refused. §12.1 gives the accountant
+   * `inquiries: NONE`, which is what these two cases turn on.
+   */
+  it('offers a clerk the message queue filtered to this supplier', async () => {
     await signInAs(CLERK);
+    renderSupplierDetail();
 
-    renderWithProviders(
-      <Routes>
-        <Route path="/suppliers/:id" element={<SupplierDetailScreen />} />
-      </Routes>,
-      { route: '/suppliers/sup-1' },
+    expect(await screen.findByRole('link', { name: /messages/i })).toHaveAttribute(
+      'href',
+      '/inquiries?supplierId=sup-1',
     );
+  });
+
+  it('withholds the same shortcut from a session that cannot read that queue', async () => {
+    await signInAs(ACCOUNTANT);
+    renderSupplierDetail();
+
+    // The record itself still renders — this is the shortcut being absent, not the screen.
+    expect(await screen.findByRole('link', { name: /change requests/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /messages/i })).not.toBeInTheDocument();
+  });
+
+  it('shows a masked account number and never the full one', async () => {
+    const user = userEvent.setup();
+    await signInAs(CLERK);
+    renderSupplierDetail();
+
+    // The record is tabbed; the bank details live under payout, one click from the
+    // profile the screen opens on.
+    await user.click(await screen.findByRole('tab', { name: /payout/i }));
 
     const masked = await screen.findByText(/•+\d{4}$/);
     expect(masked).toBeInTheDocument();
