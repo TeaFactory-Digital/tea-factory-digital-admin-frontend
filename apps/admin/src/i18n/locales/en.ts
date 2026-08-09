@@ -19,6 +19,8 @@ export const en = {
   'common.search': 'Search',
   'common.filter': 'Filter',
   'common.clear': 'Clear',
+  // Names the row of ready-made sentences under a decision note.
+  'common.noteSuggestions': 'Common notes:',
   'common.retry': 'Try again',
   'common.loading': 'Loading…',
   'common.none': 'None',
@@ -405,6 +407,28 @@ export const en = {
   'changeRequests.notePlaceholderReject':
     'e.g. The account name does not match the registered supplier name. Bring the passbook to the office.',
   'changeRequests.noteHelp': 'The supplier reads this. At least 10 characters.',
+  /**
+   * The four sentences this queue writes all day. `.text` is what the supplier
+   * reads; the bare key is the chip, and stays short enough to scan.
+   */
+  'changeRequests.noteSuggest.approve.passbook': 'Passbook checked',
+  'changeRequests.noteSuggest.approve.passbook.text':
+    'Passbook checked against the NIC at the counter.',
+  'changeRequests.noteSuggest.approve.nic': 'NIC seen',
+  'changeRequests.noteSuggest.approve.nic.text':
+    'Identity confirmed from the NIC at the office counter.',
+  'changeRequests.noteSuggest.approve.phone': 'Confirmed by phone',
+  'changeRequests.noteSuggest.approve.phone.text':
+    'Confirmed with the supplier by telephone before approving.',
+  'changeRequests.noteSuggest.reject.mismatch': 'Name mismatch',
+  'changeRequests.noteSuggest.reject.mismatch.text':
+    'The account name does not match the registered supplier name. Bring the passbook to the office.',
+  'changeRequests.noteSuggest.reject.document': 'No document',
+  'changeRequests.noteSuggest.reject.document.text':
+    'No supporting document was produced. Bring the passbook and the NIC to the office.',
+  'changeRequests.noteSuggest.reject.unreadable': 'Photo unclear',
+  'changeRequests.noteSuggest.reject.unreadable.text':
+    'The photograph is not readable. Send a clearer picture and raise the request again.',
   'changeRequests.approved': 'Approved. The app will show the new value on next refresh.',
   'changeRequests.rejected': 'Rejected. The current value is unchanged.',
 
@@ -497,6 +521,24 @@ export const en = {
     'e.g. Within the ceiling for the leaf already weighed this month. Paying at the counter.',
   'credit.notePlaceholderReject':
     'e.g. Above three times the average monthly account. Reapply once two more months are settled.',
+  'credit.noteSuggest.approve.withinCeiling': 'Within ceiling',
+  'credit.noteSuggest.approve.withinCeiling.text':
+    'Within the ceiling for the leaf already weighed this month.',
+  'credit.noteSuggest.approve.counter': 'Pay at counter',
+  'credit.noteSuggest.approve.counter.text':
+    'Collect the money from the office counter during working hours.',
+  'credit.noteSuggest.approve.deducted': 'Off next account',
+  'credit.noteSuggest.approve.deducted.text':
+    'The amount comes off your next Green Leaf Account.',
+  'credit.noteSuggest.reject.overCeiling': 'Over ceiling',
+  'credit.noteSuggest.reject.overCeiling.text':
+    'The amount asked for is above the ceiling for this month. Ask again for a smaller amount.',
+  'credit.noteSuggest.reject.shortHistory': 'Too few months',
+  'credit.noteSuggest.reject.shortHistory.text':
+    'Not enough settled months yet. Reapply once two more months are settled.',
+  'credit.noteSuggest.reject.outstanding': 'Advance open',
+  'credit.noteSuggest.reject.outstanding.text':
+    'The previous advance is not settled yet. Settle it first and ask again.',
   'credit.approved': 'Approved. It will be deducted from the next account.',
   'credit.rejected': 'Rejected. Nothing has been paid.',
 
@@ -1972,6 +2014,22 @@ export const en = {
   'teaPackets.noteLabel': 'Decision note',
   'teaPackets.noteHelp': 'At least 10 characters. The supplier reads this in the app.',
   'teaPackets.notePlaceholder': 'Ready for collection from the store from Monday.',
+  /**
+   * One list, not two. This dialog carries both buttons — the clerk decides the
+   * verb *inside* it — so splitting the sentences by verb would hide half of them
+   * behind a choice that has not been made yet.
+   */
+  'teaPackets.noteSuggest.ready': 'Ready Monday',
+  'teaPackets.noteSuggest.ready.text': 'Ready for collection from the store from Monday.',
+  'teaPackets.noteSuggest.collect': 'Collect at store',
+  'teaPackets.noteSuggest.collect.text':
+    'Collect the packets from the factory store during working hours.',
+  'teaPackets.noteSuggest.overLimit': 'Over the limit',
+  'teaPackets.noteSuggest.overLimit.text':
+    'More packets than we can issue at one time. Ask again for a smaller number.',
+  'teaPackets.noteSuggest.outOfStock': 'Out of stock',
+  'teaPackets.noteSuggest.outOfStock.text':
+    'The store is out of packets this week. Ask again after the next issue.',
   'teaPackets.empty': 'Nothing waiting',
   'teaPackets.emptyHint': 'Requests from the app appear here, oldest first.',
   'teaPackets.fourEyes.short': 'You raised this',

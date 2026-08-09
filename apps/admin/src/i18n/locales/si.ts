@@ -34,6 +34,7 @@ export const si: Record<TranslationKey, string> = {
   'common.search': 'සොයන්න',
   'common.filter': 'පෙරහන',
   'common.clear': 'ඉවත් කරන්න',
+  'common.noteSuggestions': 'සුලබ සටහන්:',
   'common.retry': 'නැවත උත්සාහ කරන්න',
   'common.loading': 'පූරණය වෙමින්…',
   'common.none': 'නැත',
@@ -420,6 +421,24 @@ export const si: Record<TranslationKey, string> = {
   'changeRequests.notePlaceholderReject':
     'උදා: ගිණුමේ නම ලියාපදිංචි සැපයුම්කරුගේ නමට නොගැළපේ. ගිණුම් පොත කාර්යාලයට ගෙන එන්න.',
   'changeRequests.noteHelp': 'සැපයුම්කරු මෙය කියවයි. අවම අකුරු 10ක්.',
+  'changeRequests.noteSuggest.approve.passbook': 'ගිණුම් පොත බැලුවා',
+  'changeRequests.noteSuggest.approve.passbook.text':
+    'ගිණුම් පොත ජා.හැ. පතට එරෙහිව කවුන්ටරයේ පරීක්ෂා කළා.',
+  'changeRequests.noteSuggest.approve.nic': 'ජා.හැ. පත බැලුවා',
+  'changeRequests.noteSuggest.approve.nic.text':
+    'කාර්යාල කවුන්ටරයේදී ජා.හැ. පතින් අනන්‍යතාව තහවුරු කර ගත්තා.',
+  'changeRequests.noteSuggest.approve.phone': 'දුරකථනයෙන් තහවුරුයි',
+  'changeRequests.noteSuggest.approve.phone.text':
+    'අනුමත කිරීමට පෙර සැපයුම්කරු සමඟ දුරකථනයෙන් තහවුරු කර ගත්තා.',
+  'changeRequests.noteSuggest.reject.mismatch': 'නම නොගැළපේ',
+  'changeRequests.noteSuggest.reject.mismatch.text':
+    'ගිණුමේ නම ලියාපදිංචි සැපයුම්කරුගේ නමට නොගැළපේ. ගිණුම් පොත කාර්යාලයට ගෙන එන්න.',
+  'changeRequests.noteSuggest.reject.document': 'ලේඛනයක් නැත',
+  'changeRequests.noteSuggest.reject.document.text':
+    'සහාය ලේඛනයක් ඉදිරිපත් කර නැත. ගිණුම් පොත සහ ජා.හැ. පත කාර්යාලයට ගෙන එන්න.',
+  'changeRequests.noteSuggest.reject.unreadable': 'ඡායාරූපය අපැහැදිලියි',
+  'changeRequests.noteSuggest.reject.unreadable.text':
+    'ඡායාරූපය කියවිය නොහැක. පැහැදිලි පින්තූරයක් එවා ඉල්ලීම නැවත ඉදිරිපත් කරන්න.',
   'changeRequests.approved': 'අනුමත කළා. යෙදුම ඊළඟ වර යාවත්කාලීන වන විට නව අගය පෙන්වයි.',
   'changeRequests.rejected': 'ප්‍රතික්ෂේප කළා. දැන් ඇති අගය වෙනස් වී නැත.',
 
@@ -511,6 +530,23 @@ export const si: Record<TranslationKey, string> = {
     'උදා: මේ මාසයේ දැනටමත් බර කළ දළු සඳහා සීමාව තුළ. කවුන්ටරයේ ගෙවනු ලැබේ.',
   'credit.notePlaceholderReject':
     'උදා: සාමාන්‍ය මාසික ගිණුමේ තුන් ගුණයට වඩා වැඩි. තවත් මාස දෙකක් සමතුලිත වූ පසු නැවත ඉල්ලුම් කරන්න.',
+  'credit.noteSuggest.approve.withinCeiling': 'සීමාව තුළයි',
+  'credit.noteSuggest.approve.withinCeiling.text':
+    'මේ මාසයේ දැනටමත් බර කළ දළු සඳහා සීමාව තුළ.',
+  'credit.noteSuggest.approve.counter': 'කවුන්ටරයෙන් ගෙවීම',
+  'credit.noteSuggest.approve.counter.text':
+    'වැඩ කරන වේලාවන් තුළ කාර්යාල කවුන්ටරයෙන් මුදල් ලබා ගන්න.',
+  'credit.noteSuggest.approve.deducted': 'ඊළඟ ගිණුමෙන්',
+  'credit.noteSuggest.approve.deducted.text': 'මෙම මුදල ඔබේ ඊළඟ දළු ගිණුමෙන් අඩු කරනු ලැබේ.',
+  'credit.noteSuggest.reject.overCeiling': 'සීමාව ඉක්මවයි',
+  'credit.noteSuggest.reject.overCeiling.text':
+    'ඉල්ලූ මුදල මේ මාසයේ සීමාවට වඩා වැඩියි. අඩු මුදලක් සඳහා නැවත ඉල්ලන්න.',
+  'credit.noteSuggest.reject.shortHistory': 'මාස ප්‍රමාණවත් නැත',
+  'credit.noteSuggest.reject.shortHistory.text':
+    'තවම සමතුලිත මාස ප්‍රමාණවත් නැත. තවත් මාස දෙකක් සමතුලිත වූ පසු නැවත ඉල්ලුම් කරන්න.',
+  'credit.noteSuggest.reject.outstanding': 'පෙර අත්තිකාරම',
+  'credit.noteSuggest.reject.outstanding.text':
+    'පෙර ලබාගත් අත්තිකාරම තවම පියවා නැත. එය පියවා නැවත ඉල්ලන්න.',
   'credit.approved': 'අනුමත කළා. එය ඊළඟ ගිණුමෙන් අඩු කරනු ලැබේ.',
   'credit.rejected': 'ප්‍රතික්ෂේප කළා. කිසිවක් ගෙවා නැත.',
 
@@ -1992,6 +2028,17 @@ export const si: Record<TranslationKey, string> = {
   'teaPackets.noteLabel': 'තීරණයේ සටහන',
   'teaPackets.noteHelp': 'අවම අකුරු 10ක්. සැපයුම්කරු මෙය යෙදුමේ කියවයි.',
   'teaPackets.notePlaceholder': 'සඳුදා සිට ගබඩාවෙන් ලබා ගත හැක.',
+  'teaPackets.noteSuggest.ready': 'සඳුදා සිට',
+  'teaPackets.noteSuggest.ready.text': 'සඳුදා සිට ගබඩාවෙන් ලබා ගත හැක.',
+  'teaPackets.noteSuggest.collect': 'ගබඩාවෙන් ලබා ගන්න',
+  'teaPackets.noteSuggest.collect.text':
+    'වැඩ කරන වේලාවන් තුළ කර්මාන්තශාලා ගබඩාවෙන් පැකට් ලබා ගන්න.',
+  'teaPackets.noteSuggest.overLimit': 'සීමාව ඉක්මවයි',
+  'teaPackets.noteSuggest.overLimit.text':
+    'එකවර නිකුත් කළ හැකි ප්‍රමාණයට වඩා වැඩියි. අඩු ගණනක් සඳහා නැවත ඉල්ලන්න.',
+  'teaPackets.noteSuggest.outOfStock': 'තොග අවසන්',
+  'teaPackets.noteSuggest.outOfStock.text':
+    'මේ සතියේ ගබඩාවේ පැකට් නැත. ඊළඟ නිකුතුවෙන් පසු නැවත ඉල්ලන්න.',
   'teaPackets.empty': 'රැඳී ඇති කිසිවක් නැත',
   'teaPackets.emptyHint': 'යෙදුමෙන් එන ඉල්ලීම්, පැරණිතම මුලින්, මෙහි පෙනේ.',
   'teaPackets.fourEyes.short': 'මෙය ඔබ ඉදිරිපත් කළේය',

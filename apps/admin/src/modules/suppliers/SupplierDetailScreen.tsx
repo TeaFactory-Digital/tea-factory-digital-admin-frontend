@@ -19,7 +19,9 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
-import { ArrowRight, Ban, Info, RotateCcw } from 'lucide-react';
+/* `Info` goes with the hint below it, which is commented out rather than deleted —
+   see the withheld-actions paragraph in the header actions. */
+import { ArrowRight, Ban, RotateCcw } from 'lucide-react';
 import type { SupplierStatus } from '@tfd/domain';
 import { can } from '@tfd/domain';
 import { useAuthStore, useCan } from '@/auth/authStore';

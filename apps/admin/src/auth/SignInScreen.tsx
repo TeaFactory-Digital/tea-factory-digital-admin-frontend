@@ -71,10 +71,6 @@ export function SignInScreen() {
           </CardBody>
         </Card>
 
-        <p className="text-center text-caption text-text-secondary">
-          {t('auth.supplierWrongPlace')}
-        </p>
-
         {env.useMock ? <MockCredentials /> : null}
       </div>
     </div>

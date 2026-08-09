@@ -35,6 +35,7 @@ export const ta: Record<TranslationKey, string> = {
   'common.search': 'தேடு',
   'common.filter': 'வடிகட்டி',
   'common.clear': 'அழி',
+  'common.noteSuggestions': 'வழக்கமான குறிப்புகள்:',
   'common.retry': 'மீண்டும் முயற்சிக்கவும்',
   'common.loading': 'ஏற்றப்படுகிறது…',
   'common.none': 'இல்லை',
@@ -424,6 +425,24 @@ export const ta: Record<TranslationKey, string> = {
   'changeRequests.notePlaceholderReject':
     'எ.கா: கணக்கின் பெயர் பதிவு செய்யப்பட்ட வழங்குநரின் பெயருடன் பொருந்தவில்லை. கணக்குப் புத்தகத்தை அலுவலகத்திற்குக் கொண்டு வரவும்.',
   'changeRequests.noteHelp': 'வழங்குநர் இதைப் படிப்பார். குறைந்தது 10 எழுத்துகள்.',
+  'changeRequests.noteSuggest.approve.passbook': 'புத்தகம் சரிபார்த்தது',
+  'changeRequests.noteSuggest.approve.passbook.text':
+    'கணக்குப் புத்தகம் தே.அ.அ. அட்டையுடன் கவுண்டரில் சரிபார்க்கப்பட்டது.',
+  'changeRequests.noteSuggest.approve.nic': 'தே.அ.அ. பார்த்தது',
+  'changeRequests.noteSuggest.approve.nic.text':
+    'அலுவலகக் கவுண்டரில் தே.அ.அ. அட்டையிலிருந்து அடையாளம் உறுதி செய்யப்பட்டது.',
+  'changeRequests.noteSuggest.approve.phone': 'தொலைபேசியில் உறுதி',
+  'changeRequests.noteSuggest.approve.phone.text':
+    'அனுமதிக்கும் முன் வழங்குநருடன் தொலைபேசியில் உறுதி செய்யப்பட்டது.',
+  'changeRequests.noteSuggest.reject.mismatch': 'பெயர் பொருந்தவில்லை',
+  'changeRequests.noteSuggest.reject.mismatch.text':
+    'கணக்கின் பெயர் பதிவு செய்யப்பட்ட வழங்குநரின் பெயருடன் பொருந்தவில்லை. கணக்குப் புத்தகத்தை அலுவலகத்திற்குக் கொண்டு வரவும்.',
+  'changeRequests.noteSuggest.reject.document': 'ஆவணம் இல்லை',
+  'changeRequests.noteSuggest.reject.document.text':
+    'ஆதார ஆவணம் எதுவும் காட்டப்படவில்லை. கணக்குப் புத்தகத்தையும் தே.அ.அ. அட்டையையும் அலுவலகத்திற்குக் கொண்டு வரவும்.',
+  'changeRequests.noteSuggest.reject.unreadable': 'படம் தெளிவில்லை',
+  'changeRequests.noteSuggest.reject.unreadable.text':
+    'புகைப்படம் படிக்க முடியவில்லை. தெளிவான படத்தை அனுப்பி மீண்டும் கோரிக்கை இடவும்.',
   'changeRequests.approved':
     'அனுமதிக்கப்பட்டது. செயலி அடுத்த முறை புதுப்பிக்கும்போது புதிய மதிப்பைக் காட்டும்.',
   'changeRequests.rejected': 'நிராகரிக்கப்பட்டது. இப்போதுள்ள மதிப்பு மாறவில்லை.',
@@ -517,6 +536,24 @@ export const ta: Record<TranslationKey, string> = {
     'எ.கா: இந்த மாதம் ஏற்கெனவே எடை பார்க்கப்பட்ட கொழுந்துக்கு வரம்புக்கு உள்ளே. கவுண்டரில் செலுத்தப்படும்.',
   'credit.notePlaceholderReject':
     'எ.கா: சராசரி மாதக் கணக்கின் மூன்று மடங்குக்கு மேல். மேலும் இரு மாதங்கள் தீர்க்கப்பட்ட பின் மீண்டும் விண்ணப்பிக்கவும்.',
+  'credit.noteSuggest.approve.withinCeiling': 'வரம்புக்குள்',
+  'credit.noteSuggest.approve.withinCeiling.text':
+    'இந்த மாதம் ஏற்கெனவே எடை பார்க்கப்பட்ட கொழுந்துக்கு வரம்புக்கு உள்ளே.',
+  'credit.noteSuggest.approve.counter': 'கவுண்டரில் பணம்',
+  'credit.noteSuggest.approve.counter.text':
+    'வேலை நேரத்தில் அலுவலகக் கவுண்டரில் பணத்தைப் பெற்றுக்கொள்ளவும்.',
+  'credit.noteSuggest.approve.deducted': 'அடுத்த கணக்கில்',
+  'credit.noteSuggest.approve.deducted.text':
+    'இந்தத் தொகை உங்கள் அடுத்த கொழுந்துக் கணக்கிலிருந்து கழிக்கப்படும்.',
+  'credit.noteSuggest.reject.overCeiling': 'வரம்பை மீறுகிறது',
+  'credit.noteSuggest.reject.overCeiling.text':
+    'கேட்ட தொகை இந்த மாதத்தின் வரம்பை விட அதிகம். குறைந்த தொகைக்கு மீண்டும் கேட்கவும்.',
+  'credit.noteSuggest.reject.shortHistory': 'மாதங்கள் போதவில்லை',
+  'credit.noteSuggest.reject.shortHistory.text':
+    'தீர்க்கப்பட்ட மாதங்கள் இன்னும் போதவில்லை. மேலும் இரு மாதங்கள் தீர்க்கப்பட்ட பின் மீண்டும் விண்ணப்பிக்கவும்.',
+  'credit.noteSuggest.reject.outstanding': 'முந்தைய முன்பணம்',
+  'credit.noteSuggest.reject.outstanding.text':
+    'முந்தைய முன்பணம் இன்னும் தீர்க்கப்படவில்லை. அதைத் தீர்த்த பின் மீண்டும் கேட்கவும்.',
   'credit.approved': 'அனுமதிக்கப்பட்டது. அது அடுத்த கணக்கிலிருந்து கழிக்கப்படும்.',
   'credit.rejected': 'நிராகரிக்கப்பட்டது. எதுவும் செலுத்தப்படவில்லை.',
 
@@ -2041,6 +2078,17 @@ export const ta: Record<TranslationKey, string> = {
   'teaPackets.noteLabel': 'முடிவுக் குறிப்பு',
   'teaPackets.noteHelp': 'குறைந்தது 10 எழுத்துகள். சப்ளையர் இதைச் செயலியில் படிப்பார்.',
   'teaPackets.notePlaceholder': 'திங்கள் முதல் கிடங்கிலிருந்து பெற்றுக்கொள்ளலாம்.',
+  'teaPackets.noteSuggest.ready': 'திங்கள் முதல்',
+  'teaPackets.noteSuggest.ready.text': 'திங்கள் முதல் கிடங்கிலிருந்து பெற்றுக்கொள்ளலாம்.',
+  'teaPackets.noteSuggest.collect': 'கிடங்கில் பெறவும்',
+  'teaPackets.noteSuggest.collect.text':
+    'வேலை நேரத்தில் தொழிற்சாலைக் கிடங்கிலிருந்து பொட்டலங்களைப் பெற்றுக்கொள்ளவும்.',
+  'teaPackets.noteSuggest.overLimit': 'வரம்பை மீறுகிறது',
+  'teaPackets.noteSuggest.overLimit.text':
+    'ஒரே நேரத்தில் வழங்கக்கூடிய அளவை விட அதிகம். குறைந்த எண்ணிக்கைக்கு மீண்டும் கேட்கவும்.',
+  'teaPackets.noteSuggest.outOfStock': 'இருப்பு இல்லை',
+  'teaPackets.noteSuggest.outOfStock.text':
+    'இந்த வாரம் கிடங்கில் பொட்டலங்கள் இல்லை. அடுத்த வழங்கலுக்குப் பிறகு மீண்டும் கேட்கவும்.',
   'teaPackets.empty': 'காத்திருப்பில் எதுவும் இல்லை',
   'teaPackets.emptyHint': 'செயலியிலிருந்து வரும் வேண்டுகோள்கள், பழையவை முதலில், இங்கே தோன்றும்.',
   'teaPackets.fourEyes.short': 'இதை நீங்கள் பதிவு செய்தீர்கள்',

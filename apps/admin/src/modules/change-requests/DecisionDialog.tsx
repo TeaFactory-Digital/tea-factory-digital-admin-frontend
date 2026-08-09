@@ -21,9 +21,9 @@ import { Check, X } from 'lucide-react';
 import type { AdminChangeRequest } from '@tfd/domain';
 import { isSelfApproval } from '@tfd/domain';
 import { useCurrentUser } from '@/auth/authStore';
+import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { Field, Textarea } from '@/components/ui/Field';
 import { Notice } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey, isBlockingError } from '@/lib/errorMessage';
@@ -31,6 +31,16 @@ import { isApiError } from '@/services/api/errors';
 import { useDecideChangeRequest, type DecisionVerb } from './hooks';
 
 const MIN_NOTE = 10;
+
+/**
+ * The sentences this queue writes all day, by verb — the words live in the string
+ * tables, only the order is here. Approving and rejecting share no vocabulary, so
+ * the clerk is never shown a chip for the decision they are not making.
+ */
+const SUGGESTIONS: Record<DecisionVerb, readonly string[]> = {
+  approve: ['passbook', 'nic', 'phone'],
+  reject: ['mismatch', 'document', 'unreadable'],
+};
 
 export function DecisionActions({ request }: { request: AdminChangeRequest }) {
   const { t } = useTranslation();
@@ -98,6 +108,11 @@ function DecisionDialog({
   const tooShort = note.trim().length < MIN_NOTE;
   const approving = verb === 'approve';
 
+  const suggestions: NoteSuggestion[] = SUGGESTIONS[verb].map((slug) => ({
+    label: t(`changeRequests.noteSuggest.${verb}.${slug}`),
+    text: t(`changeRequests.noteSuggest.${verb}.${slug}.text`),
+  }));
+
   function submit() {
     decide.mutate(
       { verb, body: { note: note.trim() } },
@@ -160,31 +175,20 @@ function DecisionDialog({
           </div>
         </div>
 
-        <Field
+        <DecisionNoteField
           label={t('changeRequests.noteLabel')}
-          required
           hint={t('changeRequests.noteHelp')}
-          error={
-            decide.error && !blocking ? t(errorMessageKey(decide.error)) : undefined
+          placeholder={
+            approving
+              ? t('changeRequests.notePlaceholderApprove')
+              : t('changeRequests.notePlaceholderReject')
           }
-        >
-          {({ id, describedBy, invalid, required }) => (
-            <Textarea
-              id={id}
-              autoFocus
-              value={note}
-              placeholder={
-                approving
-                  ? t('changeRequests.notePlaceholderApprove')
-                  : t('changeRequests.notePlaceholderReject')
-              }
-              aria-describedby={describedBy}
-              invalid={invalid}
-              required={required}
-              onChange={(event) => setNote(event.target.value)}
-            />
-          )}
-        </Field>
+          error={decide.error && !blocking ? t(errorMessageKey(decide.error)) : undefined}
+          value={note}
+          onChange={setNote}
+          suggestions={suggestions}
+          suggestionsLabel={t('common.noteSuggestions')}
+        />
 
         {/* A blocking refusal gets its own explanation inside the dialog, never a
             toast — the clerk has to understand why nothing happened. */}

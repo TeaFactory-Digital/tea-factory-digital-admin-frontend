@@ -26,9 +26,9 @@ import { Check, X } from 'lucide-react';
 import type { AdminCreditRequest } from '@tfd/domain';
 import { isSelfApproval } from '@tfd/domain';
 import { useCan, useCurrentUser } from '@/auth/authStore';
+import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { Field, Textarea } from '@/components/ui/Field';
 import { Notice } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey, isBlockingError } from '@/lib/errorMessage';
@@ -37,6 +37,12 @@ import { isApiError } from '@/services/api/errors';
 import { useDecideCreditRequest, type CreditVerb } from './hooks';
 
 const MIN_NOTE = 10;
+
+/** The money queue's own sentences, by verb. Words in the string tables. */
+const SUGGESTIONS: Record<CreditVerb, readonly string[]> = {
+  approve: ['withinCeiling', 'counter', 'deducted'],
+  reject: ['overCeiling', 'shortHistory', 'outstanding'],
+};
 
 export function CreditDecisionActions({ request }: { request: AdminCreditRequest }) {
   const { t } = useTranslation();
@@ -140,6 +146,11 @@ function CreditDecisionDialog({
   const tooShort = note.trim().length < MIN_NOTE;
   const approving = verb === 'approve';
 
+  const suggestions: NoteSuggestion[] = SUGGESTIONS[verb].map((slug) => ({
+    label: t(`credit.noteSuggest.${verb}.${slug}`),
+    text: t(`credit.noteSuggest.${verb}.${slug}.text`),
+  }));
+
   function submit() {
     decide.mutate(
       {
@@ -224,27 +235,18 @@ function CreditDecisionDialog({
           </div>
         </dl>
 
-        <Field
+        <DecisionNoteField
           label={t('credit.noteLabel')}
-          required
           hint={t('credit.noteHelp')}
+          placeholder={
+            approving ? t('credit.notePlaceholderApprove') : t('credit.notePlaceholderReject')
+          }
           error={decide.error && !blocking ? t(errorMessageKey(decide.error)) : undefined}
-        >
-          {({ id, describedBy, invalid, required }) => (
-            <Textarea
-              id={id}
-              autoFocus
-              value={note}
-              placeholder={
-                approving ? t('credit.notePlaceholderApprove') : t('credit.notePlaceholderReject')
-              }
-              aria-describedby={describedBy}
-              invalid={invalid}
-              required={required}
-              onChange={(event) => setNote(event.target.value)}
-            />
-          )}
-        </Field>
+          value={note}
+          onChange={setNote}
+          suggestions={suggestions}
+          suggestionsLabel={t('common.noteSuggestions')}
+        />
 
         {/**
          * Each blocking refusal gets its own words. They are not interchangeable:

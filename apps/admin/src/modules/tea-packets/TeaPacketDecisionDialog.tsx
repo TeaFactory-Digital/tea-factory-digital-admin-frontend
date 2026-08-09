@@ -23,9 +23,9 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AdminTeaPacketRequest, TeaPacketPolicy } from '@tfd/domain';
 import { teaPacketRequestProblems, teaPacketWeightKg } from '@tfd/domain';
+import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { Field, Textarea } from '@/components/ui/Field';
 import { Notice } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey, isBlockingError } from '@/lib/errorMessage';
@@ -34,6 +34,13 @@ import { formatAmount } from '@/lib/format';
 import { useDecideTeaPacketRequest, type DecisionVerb } from './hooks';
 
 const MIN_NOTE = 10;
+
+/**
+ * One list rather than one per verb, unlike M9 and credit: this dialog carries both
+ * buttons and the clerk settles the verb *inside* it, so sentences filtered by a
+ * choice that has not been made yet would be sentences nobody sees.
+ */
+const SUGGESTIONS = ['ready', 'collect', 'overLimit', 'outOfStock'] as const;
 
 export function TeaPacketDecisionDialog({
   request,
@@ -50,6 +57,11 @@ export function TeaPacketDecisionDialog({
   const decide = useDecideTeaPacketRequest(request.id, request.supplierId);
 
   const tooShort = note.trim().length < MIN_NOTE;
+
+  const suggestions: NoteSuggestion[] = SUGGESTIONS.map((slug) => ({
+    label: t(`teaPackets.noteSuggest.${slug}`),
+    text: t(`teaPackets.noteSuggest.${slug}.text`),
+  }));
 
   /**
    * What is wrong with the request as asked — the store's own limits, not the
@@ -164,25 +176,16 @@ export function TeaPacketDecisionDialog({
           </Notice>
         ) : null}
 
-        <Field
+        <DecisionNoteField
           label={t('teaPackets.noteLabel')}
-          required
           hint={t('teaPackets.noteHelp')}
+          placeholder={t('teaPackets.notePlaceholder')}
           error={decide.error && !blocking ? t(errorMessageKey(decide.error)) : undefined}
-        >
-          {({ id, describedBy, invalid, required }) => (
-            <Textarea
-              id={id}
-              autoFocus
-              value={note}
-              placeholder={t('teaPackets.notePlaceholder')}
-              aria-describedby={describedBy}
-              invalid={invalid}
-              required={required}
-              onChange={(event) => setNote(event.target.value)}
-            />
-          )}
-        </Field>
+          value={note}
+          onChange={setNote}
+          suggestions={suggestions}
+          suggestionsLabel={t('common.noteSuggestions')}
+        />
 
         {alreadyDecided ? (
           <Notice tone="error">
