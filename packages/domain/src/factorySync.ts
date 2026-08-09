@@ -1,7 +1,7 @@
 /**
  * How fresh the figures replicated from the factory's own system are.
  *
- * **This exists because of one sentence in `factory-integration-spec.md`:** accounts and
+ * **This exists because of one sentence in `docs/v2/platform-team.md` §3:** accounts and
  * balances in this console are *as fresh as the last successful sync*. A clerk reading a
  * balance to a supplier over the telephone has no way to know that — the screen says
  * "read-only" and implies "and current".

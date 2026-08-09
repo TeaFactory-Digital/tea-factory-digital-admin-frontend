@@ -546,9 +546,9 @@ It matters more than the other configurable values because of **who reads the re
 the ceiling is printed in the supplier's app before they ask for anything. A limit this
 platform guessed at is a supplier told they may borrow money the office then refuses.
 
-Four fields per facility, and they are these four because every ceiling the product has
-ever used is one sentence — *take a basis, multiply it, cap it, and require some history
-first*:
+Five fields per facility, and they are these five because every ceiling the product has
+ever used is one sentence — *take a basis, average it if that is what the basis is,
+multiply it, cap it, and require some history first*:
 
 | Field | What it is |
 | --- | --- |
@@ -568,8 +568,8 @@ Three decisions worth keeping:
   it offers every supplier a ceiling of nothing and reads on screen as a policy rather
   than a mistake. Turning the facility off under *Features* is what "nobody may borrow"
   is for.
-- **The screen prints what the four numbers mean**, in a sentence, under each facility.
-  Four fields is enough to express every formula and also enough to get wrong silently.
+- **The screen prints what the five numbers mean**, in a sentence, under each facility.
+  Five fields is enough to express every formula and also enough to get wrong silently.
 
 **The same rule runs in the app.** `creditCeilingFromRule` is ported to the mobile
 repository and the request screens call it with the served rule, so the limit a supplier

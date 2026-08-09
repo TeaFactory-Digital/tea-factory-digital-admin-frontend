@@ -131,8 +131,10 @@ Worst first: correctness, then plumbing, then polish.
    does not change**. The agreed design is therefore narrow: one read-only endpoint on
    their side, pulled hourly, and the **office** carries requests the other way by
    entering them exactly as it enters a walk-in today.
-   [factory-integration-spec.md](./factory-integration-spec.md) is the shareable
-   specification; [integration.md](./integration.md) is this side's reasoning.
+   [factory-integration-spec.md](./factory-integration-spec.md) is the shared design and
+   routes each audience to its own document — [factory-system-team.md](./factory-system-team.md)
+   is the one handed to the factory's dev team;
+   [integration.md](./integration.md) is this side's reasoning.
 
    Three consequences belong in this list because they are gaps rather than plans:
 

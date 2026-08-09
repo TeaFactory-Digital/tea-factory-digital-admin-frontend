@@ -9,9 +9,12 @@ It is written the same way [api-contract.md](./api-contract.md) is: what must ha
 what must be refused, and why — so a disagreement about a figure has a paragraph to
 settle it rather than an argument.
 
-> **To hand to the other team, use [factory-integration-spec.md](./factory-integration-spec.md).**
-> It is self-contained — no module ids, no `AC-` references — and it is the agreed
-> design. This document is the reasoning behind it, for readers of *this* repository.
+> **To hand to the other team, use [factory-system-team.md](./factory-system-team.md)**
+> and the sample JSON beside it. It is self-contained — no module ids, no `AC-`
+> references — and it is the agreed design.
+> [factory-integration-spec.md](./factory-integration-spec.md) is the shared core it sits
+> on, and routes each audience to its own document. This document is the reasoning behind
+> all of them, for readers of *this* repository.
 
 ## Decided since this document was written
 

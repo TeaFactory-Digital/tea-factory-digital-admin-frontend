@@ -209,10 +209,7 @@
       "raisedAt": "2026-08-02T10:15:00+05:30",
       "decidedAt": "2026-08-03T11:00:00+05:30",
       "decidedBy": "Ruwan Jayasuriya",
-      "note": "Within the ceiling for leaf already weighed this month.",
-      "source": "counter",
-      "platformRequestId": null
-    },
+      "note": "Within the ceiling for leaf already weighed this month."    },
     {
       "requestId": "LON-2026-08-0009",
       "supplierId": "SUP-000517",
@@ -225,10 +222,7 @@
       "raisedAt": "2026-08-06T09:20:00+05:30",
       "decidedAt": null,
       "decidedBy": null,
-      "note": null,
-      "source": "counter",
-      "platformRequestId": null
-    },
+      "note": null    },
     {
       "requestId": "MAN-2026-08-0031",
       "supplierId": "SUP-000412",
@@ -241,10 +235,7 @@
       "raisedAt": "2026-08-04T08:45:00+05:30",
       "decidedAt": "2026-08-04T15:30:00+05:30",
       "decidedBy": "Ruwan Jayasuriya",
-      "note": "One 50 kg sack issued from the store.",
-      "source": "counter",
-      "platformRequestId": null
-    },
+      "note": "One 50 kg sack issued from the store."    },
     {
       "requestId": "TEA-2026-08-0114",
       "supplierId": "SUP-000517",
@@ -257,9 +248,6 @@
       "raisedAt": "2026-08-05T11:05:00+05:30",
       "decidedAt": "2026-08-05T16:20:00+05:30",
       "decidedBy": "Nadeeka Perera",
-      "note": "Store is out of 400 g packs until the next milling run. Please ask again after the 15th.",
-      "source": "counter",
-      "platformRequestId": null
-    }
+      "note": "Store is out of 400 g packs until the next milling run. Please ask again after the 15th."    }
   ]
 }

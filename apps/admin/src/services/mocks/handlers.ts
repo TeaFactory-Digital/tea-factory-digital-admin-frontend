@@ -2412,7 +2412,7 @@ export const handlers: HttpHandler[] = [
    * morning.
    *
    * The real implementation reports its own replication job's state. See
-   * `docs/v2/factory-integration-spec.md` §7.
+   * `docs/v2/platform-team.md` §3.
    */
   http.get('*/admin/factory-sync', async ({ request }) => {
     await delay(LATENCY_MS);

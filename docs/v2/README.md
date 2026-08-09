@@ -82,7 +82,7 @@ Three arguments for that, in order of weight:
 | You are | Read | Then |
 | --- | --- | --- |
 | **Backend developer** | [api-contract.md](./api-contract.md) — every endpoint, payload and refusal | The mobile repo's `docs/api.md` §16 for the data model |
-| **Building the bridge to the factory's system** | [factory-integration-spec.md](./factory-integration-spec.md) — self-contained, written to be shared with the other team | [integration.md](./integration.md) for this side's reasoning |
+| **Building the bridge to the factory's system** | [factory-integration-spec.md](./factory-integration-spec.md) — the design, and the map of which audience gets which document | [platform-team.md](./platform-team.md) for this side's work, [integration.md](./integration.md) for its reasoning |
 | **Front-end developer joining** | [architecture.md](./architecture.md) · [white-label.md](./white-label.md) · [design-system.md](./design-system.md) | [modules.md](./modules.md) for what is built, [status.md](./status.md) for what is not |
 | **Reviewing this milestone** | [status.md](./status.md) — what works, what is deliberately absent, and the v2 acceptance criteria | [modules.md](./modules.md) |
 | **Looking for a module that has gone** | [modules.md](./modules.md) → *What moved to the factory's own console* | [docs/v1/](../v1/) for the module as it was documented |
@@ -94,8 +94,12 @@ Three arguments for that, in order of weight:
 | [modules.md](./modules.md) | The v2 module map, what each decides, and what moved out |
 | [white-label.md](./white-label.md) | Runtime brand resolution, the Tailwind ↔ token bridge, and **the fourteen flags** |
 | [api-contract.md](./api-contract.md) | Base URL, auth realm, every endpoint with payloads, the error envelope |
-| [factory-integration-spec.md](./factory-integration-spec.md) | **The document to share with the factory's own dev team and the BA.** Self-contained: the endpoint, the JSON, the duplicate-prevention handshake, and the office workflow |
-| [factory-updates-sample.json](./factory-updates-sample.json) | A complete, valid, arithmetically-consistent sample response for that endpoint. Send it with the spec |
+| [factory-integration-spec.md](./factory-integration-spec.md) | **The shared core, and the front door to the four below.** The duplicate-prevention handshake, the office workflow, who decides what, and the rules both sides keep |
+| [factory-system-team.md](./factory-system-team.md) | **The document to hand the factory's own dev team.** The endpoint field by field, the volumes, and the fallbacks if they have no modified timestamps or no HTTPS |
+| [business-analyst.md](./business-analyst.md) | The BA's three conversations — with the Factory System team, the office, and management — and what each must produce in writing |
+| [platform-team.md](./platform-team.md) | This side's work: consuming the endpoint, the credit ceiling, the freshness indicator |
+| [factory-management.md](./factory-management.md) | **Non-technical.** The decisions only the factory's owner can make — above all **who instructs the existing vendor, and on what commercial terms** |
+| [factory-updates-sample.json](./factory-updates-sample.json) | A complete, valid, arithmetically-consistent sample response for that endpoint. Send it with [factory-system-team.md](./factory-system-team.md) |
 | [bank-catalogue.md](./bank-catalogue.md) | Where the bank and branch list lives, the three decisions behind it (names not ids, no rename, inside `client_config`), and what comes out of the frontend once the backend holds it |
 | [sri-lanka-banks.seed.json](./sri-lanka-banks.seed.json) | The catalogue as portable JSON — 45 institutions, 3,682 branches, with clearing codes. What the backend seeds `client_config.banks` from |
 | [integration.md](./integration.md) | The same subject from *this* repository's side — what the console assumes, and why replication rather than import |
