@@ -19,7 +19,6 @@ const BY_CODE: Record<string, string> = {
   'note-required': 'error.noteRequired',
   'stale-eligibility': 'error.staleEligibility',
   invalid: 'error.invalid',
-  'mfa-invalid': 'error.mfaInvalid',
   // M3. `month-locked` is the one a clerk meets most: it is what a published
   // month answers to every attempt to change the leaf it was built from (BR-108).
   'month-locked': 'error.monthLocked',

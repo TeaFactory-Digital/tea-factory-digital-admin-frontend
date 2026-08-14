@@ -16,7 +16,7 @@ import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { adminConfigRepository } from '@/services/repositories/adminConfigRepository';
 import { isApiError } from '@/services/api/errors';
-import { signInAs, signInWithMfaAs, signOut } from './render';
+import { signInAs, signOut } from './render';
 
 const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
@@ -198,7 +198,7 @@ describe('M17 · what the supplier did themselves', () => {
   });
 
   it('records a supplier’s own profile edit on the same timeline as the office’s actions', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const page = await auditRepository.list({ actorType: 'supplier', pageSize: 50 });
 
     expect(page.items.length).toBeGreaterThan(0);
@@ -217,7 +217,7 @@ describe('M17 · what the supplier did themselves', () => {
   });
 
   it('shows the supplier’s own actions on their record, beside the office’s', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const page = await auditRepository.forEntity('supplier', 'sup-7');
 
     const actors = new Set(page.items.map((one) => one.actorType ?? 'consoleUser'));
@@ -227,7 +227,7 @@ describe('M17 · what the supplier did themselves', () => {
   });
 
   it('treats an entry with no actorType as an office action', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const office = await auditRepository.list({ actorType: 'consoleUser', pageSize: 50 });
 
     /**

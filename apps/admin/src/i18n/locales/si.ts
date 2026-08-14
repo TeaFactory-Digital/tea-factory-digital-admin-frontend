@@ -70,13 +70,8 @@ export const si: Record<TranslationKey, string> = {
   'profile.firstSignIn': 'මෙය ඔබේ පළමු වාරයයි',
   'profile.securityTitle': 'ආරක්ෂාව',
   'profile.securityDescription': 'මෙම ගිණුම ආරක්ෂා වන ආකාරය.',
-  'profile.mfaOn': 'ද්වි-සාධක සකසා ඇත',
-  'profile.mfaOff': 'ද්වි-සාධක සකසා නැත',
-  'profile.mfaOwed':
-    'ඔබේ භූමිකාවට අවශ්‍යයි — ලියාපදිංචි විය හැකි වන පරිදි කර්මාන්තශාලා පරිපාලකයෙකුගෙන් නැවත සැකසීමක් ඉල්ලන්න.',
-  'profile.mfaOptional': 'ඔබේ භූමිකාවට අවශ්‍ය නැත.',
   'profile.securityHint':
-    'මුරපද සහ ද්වි-සාධක නැවත සකසන්නේ කර්මාන්තශාලා පරිපාලකයෙකු විසින් “පරිශීලකයින් සහ භූමිකා” තිරයෙනි — මෙතැනින් ඒවා වෙනස් කළ නොහැක.',
+    'මුරපද නැවත සකසන්නේ කර්මාන්තශාලා පරිපාලකයෙකු විසින් “පරිශීලකයින් සහ භූමිකා” තිරයෙනි — මෙතැනින් එය වෙනස් කළ නොහැක.',
   'profile.save': 'මනාපයන් සුරකින්න',
   'profile.unsavedHint': 'තවම යොදා නැත — භාවිතයට සුරකින්න.',
   'profile.nothingToSave': 'සුරැකීමට කිසිවක් නැත.',
@@ -175,17 +170,11 @@ export const si: Record<TranslationKey, string> = {
   'auth.password': 'මුරපදය',
   'auth.signIn': 'පිවිසෙන්න',
   'auth.signingIn': 'පිවිසෙමින්…',
-  'auth.mfaTitle': 'ද්වි-සාධක කේතය',
-  'auth.mfaSubtitle': 'ඔබේ සත්‍යාපන යෙදුමේ ඇති ඉලක්කම් හයේ කේතය ඇතුළත් කරන්න.',
-  'auth.mfaCode': 'කේතය',
-  'auth.mfaVerify': 'තහවුරු කරන්න',
-  'auth.mfaRequiredNote': 'කළමනාකරු සහ ඉහළ ගිණුම් සඳහා ද්වි-සාධක සත්‍යාපනය අවශ්‍ය වේ.',
   'auth.forgotPassword': 'මුරපදය අමතක වුණාද?',
   'auth.forgotPasswordHint':
     'එය නැවත සැකසීමට ඔබේ කර්මාන්තශාලා පරිපාලකගෙන් ඉල්ලා සිටින්න. කොන්සෝලයට නැවත සැකසීමේ සබැඳියක් තැපැල් කළ නොහැක.',
   'auth.supplierWrongPlace': 'සැපයුම්කරුවන් පිවිසෙන්නේ ජංගම යෙදුමෙන්, මෙතැනින් නොවේ.',
   'auth.demoCredentials': 'ආදර්ශ පිවිසුම',
-  'auth.demoMfa': '(ද්වි-සාධක: {{code}})',
   'auth.demoRole.clerk': 'ලිපිකරු — වෙනස් කිරීමේ ඉල්ලීම්, සැපයුම්කරුවන්',
   'auth.demoRole.manager': 'කළමනාකරු — ණය සහ වෙනස් කිරීමේ ඉල්ලීම් අනුමත කරයි',
   'auth.demoRole.editor': 'සංස්කාරක — පුවත් සහ ස්ථිර පිටු ලියයි',
@@ -679,7 +668,6 @@ export const si: Record<TranslationKey, string> = {
   'audit.action.userUpdate': 'පරිශීලකයෙකුගේ නම හෝ භූමිකා වෙනස් කළා',
   'audit.action.userSuspend': 'කොන්සෝල පරිශීලකයෙකු අත්හිටුවා',
   'audit.action.userReactivate': 'කොන්සෝල පරිශීලකයෙකු නැවත සක්‍රීය කළා',
-  'audit.action.userMfaReset': 'පරිශීලකයෙකුගේ ද්වි-සාධක පිවිසුම නැවත සකස් කළා',
   'audit.action.roleUpdate': 'භූමිකාවකට කළ හැකි දේ වෙනස් කළා',
 
   /* ───────────────────────────── validation ───────────────────────────── */
@@ -696,7 +684,6 @@ export const si: Record<TranslationKey, string> = {
   'validation.rateNonNegative': 'මෙය ඍණ විය නොහැක',
   'validation.rateTooLarge': 'එම මිල කර්මාන්තශාලාවට වාර්තා කළ හැකි ප්‍රමාණයට වඩා විශාලයි',
   'validation.moneyScale': 'මුදල් සඳහා දශම ස්ථාන දෙකක් පමණි',
-  'validation.mfaCode': 'ඉලක්කම් හයේ කේතය ඇතුළත් කරන්න',
   'validation.noteRequired': 'සටහනක් අවශ්‍යයි',
   'validation.noteTooShort': 'අවම අකුරු 10ක් ලියන්න — සැපයුම්කරු මෙය කියවයි',
   'validation.url': 'වලංගු වෙබ් ලිපිනයක් ඇතුළත් කරන්න',
@@ -1487,14 +1474,12 @@ export const si: Record<TranslationKey, string> = {
   'users.status.suspended': 'අත්හිටුවා ඇත',
   'users.neverSignedIn': 'කිසිදා නැත',
   'users.lastAdministrator': 'ආපසු ඇතුළු වීමට ඇති එකම මාර්ගය',
-  'users.mfaOwed': 'ද්වි-සාධකය සකසා නැත',
   'users.noDeleteHint':
     'ගිණුම් අත්හිටුවනු ලැබේ, කිසිදා මකා නොදමයි — ගෙවීමක් අනුමත කළ හෝ මාසයක් අවසන් කළ පුද්ගලයෙකු එම වාර්තාවල නම් කර ඇත, තවද කර්තෘ සොයාගත නොහැකි වාර්තාවක් සාක්ෂියක් නොවේ.',
 
   'users.edit': 'සංස්කරණය',
   'users.suspend': 'අත්හිටුවන්න',
   'users.reactivate': 'නැවත සක්‍රීය කරන්න',
-  'users.resetMfa': 'ද්වි-සාධකය නැවත සකසන්න',
   'users.invite': 'පරිශීලකයෙකු එකතු කරන්න',
   'users.inviteTitle': 'පරිශීලකයෙකු එකතු කරන්න',
   'users.inviteBody':
@@ -1511,11 +1496,8 @@ export const si: Record<TranslationKey, string> = {
     'එකකට වඩා තිබීම කිසි ගැටලුවක් නැත. භූමිකා නොගැළපෙන විට, වඩාත් අවසර දෙන එක ක්‍රියාත්මක වේ.',
   'users.cannotEditOwnRoles':
     'ඔබට ඔබේම භූමිකා වෙනස් කළ නොහැක. වෙනත් පරිපාලකයෙකුගෙන් ඉල්ලන්න — කාර්යයක් අඩකින් නවත්වා යමෙකු තමාවම අවහිර කර ගැනීම නවත්වන්නේ මෙයයි.',
-  'users.mfaObligation':
-    'මෙම පුද්ගලයාට ඇතුළු වීමට පෙර ද්වි-සාධක පිවිසුම සකසා ගැනීමට සිදු වේ. එය කළමනාකරුවන් සහ පරිපාලකයන් සඳහා අවශ්‍ය වේ.',
   'users.created': '{{name}} දැන් පිවිසිය හැක',
-  'users.createdHint':
-    'ඔවුන්ගේ මුරපදය ඔවුන්ට කියන්න. ඔවුන්ගේ භූමිකාවට අවශ්‍ය නම් ද්වි-සාධකය සකසා ගැනීමට ඉල්ලා සිටිනු ලැබේ.',
+  'users.createdHint': 'ඔවුන්ගේ මුරපදය ඔවුන්ට කියන්න. පිවිසීමට අවශ්‍ය වන්නේ එය පමණි.',
   'users.confirmCreateBody': 'තෝරාගත් භූමිකා සමඟ නව කොන්සෝල ගිණුමක් සාදනු ලැබේ.',
   'users.confirmEditBody': 'මෙම පරිශීලකයාගේ ගිණුම් විස්තර සහ ප්‍රවේශය යාවත්කාලීන කරනු ලැබේ.',
   'users.createFailed': 'පරිශීලකයා සාදනු ලැබුවේ නැත',
@@ -1533,12 +1515,6 @@ export const si: Record<TranslationKey, string> = {
   'users.reactivateConfirm': 'ඔවුන් නැවත සක්‍රීය කරන්න',
   'users.reactivateDone': '{{name}}ට නැවත පිවිසිය හැක',
   'users.reactivateFailed': 'කිසිවක් වෙනස් වූයේ නැත',
-  'users.mfaTitle': '{{name}} සඳහා ද්වි-සාධකය නැවත සකසන්නද?',
-  'users.mfaBody':
-    'යමෙකුගේ දුරකථනය නැති වූ විට මෙය භාවිත කරන්න. ඔවුන් ඊළඟ වර පිවිසෙන විට එය නැවත සකසා ගනී — එතෙක්, ඔවුන්ගේ මුරපදය පමණක් ඔවුන්ට ඇතුළු වීමට ප්‍රමාණවත්. ඔබ කතා කරන්නේ කවුරුන් සමඟද යන්න ස්ථිර වූ විට පමණක් මෙය කරන්න.',
-  'users.mfaConfirm': 'නැවත සකසන්න',
-  'users.mfaDone': '{{name}} සඳහා ද්වි-සාධකය නැවත සකස් කළා',
-  'users.mfaFailed': 'කිසිවක් වෙනස් වූයේ නැත',
   'users.reasonHint': 'අවම අකුරු {{min}}ක්. මෙය සිදු වන පුද්ගලයා ඇයි කියා අසනු ඇත.',
   'users.confirmActionBody': '{{action}} සඳහා ඉල්ලූ ක්‍රියාව සිදු කරනු ලැබේ.',
 
@@ -1663,7 +1639,6 @@ export const si: Record<TranslationKey, string> = {
   'error.featureDisabled': 'මෙම කර්මාන්තශාලාව එම විශේෂාංගය භාවිත නොකරයි.',
   'error.notFound': 'එම වාර්තාව තවදුරටත් නොපවතී.',
   'error.invalid': 'විද්‍යුත් තැපෑල හෝ මුරපදය වැරදිය.',
-  'error.mfaInvalid': 'එම කේතය නිවැරදි නොවේ.',
   'error.noteRequired': 'මෙය වාර්තා කිරීමට පෙර සටහනක් අවශ්‍යයි.',
   'error.fourEyesViolation': 'ඔබ මෙම වාර්තාව ඉදිරිපත් කළ බැවින්, ඔබට එය අනුමත කළ නොහැක.',
   'error.alreadyDecided': 'වෙනත් අයෙක් දැනටමත් මෙය තීරණය කර ඇත.',

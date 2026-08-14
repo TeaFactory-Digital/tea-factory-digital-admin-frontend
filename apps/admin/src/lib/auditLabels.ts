@@ -44,7 +44,6 @@ const ACTION_KEYS: Record<string, string> = {
   'user.update': 'audit.action.userUpdate',
   'user.suspend': 'audit.action.userSuspend',
   'user.reactivate': 'audit.action.userReactivate',
-  'user.mfa.reset': 'audit.action.userMfaReset',
   'role.update': 'audit.action.roleUpdate',
 
   /**

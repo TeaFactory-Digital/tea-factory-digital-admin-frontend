@@ -19,7 +19,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { changeRequestRepository } from '@/services/repositories/changeRequestRepository';
 import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { isApiError } from '@/services/api/errors';
-import { signInAs, signInWithMfaAs, signOut } from './render';
+import { signInAs, signOut } from './render';
 
 const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
@@ -64,7 +64,7 @@ describe('M9 · an address change is a request, not a save', () => {
   });
 
   it('applies the address on approval (AC-02)', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const request = await changeRequestRepository.get(ADDRESS_REQUEST);
 
     await changeRequestRepository.approve(ADDRESS_REQUEST, { note: NOTE });
@@ -74,7 +74,7 @@ describe('M9 · an address change is a request, not a save', () => {
   });
 
   it('leaves the untouched field alone — the case a block-spread would break', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const request = await changeRequestRepository.get(ADDRESS_REQUEST);
     const before = await supplierRepository.get(request.supplierId);
 
@@ -94,7 +94,7 @@ describe('M9 · an address change is a request, not a save', () => {
   });
 
   it('leaves the record untouched on rejection (AC-02’s other half)', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const request = await changeRequestRepository.get(ADDRESS_REQUEST);
     const before = await supplierRepository.get(request.supplierId);
 
@@ -108,7 +108,7 @@ describe('M9 · an address change is a request, not a save', () => {
   });
 
   it('refuses a decision without a note, like every other type (AC-06)', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const refused = await changeRequestRepository
       .approve(ADDRESS_REQUEST, { note: 'ok' })
       .catch((cause: unknown) => cause);
@@ -117,7 +117,7 @@ describe('M9 · an address change is a request, not a save', () => {
   });
 
   it('drops the supplier’s pending count when it is decided', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const request = await changeRequestRepository.get(ADDRESS_REQUEST);
     const before = await supplierRepository.get(request.supplierId);
 

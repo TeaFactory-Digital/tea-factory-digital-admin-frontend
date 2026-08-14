@@ -135,7 +135,6 @@ import {
   matrixKeepsRecovery,
   missingReportParams,
   missingTranslations,
-  owesMfa,
   monthKeyOf,
   publishability,
   resolveTranslation,
@@ -147,7 +146,6 @@ import {
   summariseKgs,
 } from '@tfd/domain';
 import {
-  MOCK_MFA_CODE,
   MOCK_PASSWORD,
   TODAY,
   billFactoryOf,
@@ -239,8 +237,6 @@ const state = {
   audit: [...mockAudit],
   /** access token → user id. */
   sessions: new Map<string, string>(),
-  /** challenge token → user id, for the MFA step. */
-  challenges: new Map<string, string>(),
   /**
    * Committed batches, by the id the console generated.
    *
@@ -448,7 +444,6 @@ function toAdminUser(user: MockUser): AdminConsoleUser {
   return {
     ...rest,
     canAdministerUsers: canAdministerUsers(self, matrix),
-    owesMfa: owesMfa(user),
     /**
      * Derived, not stored, and derived **per read**: "is this the last administrator" stops
      * being true the moment somebody else is given the role, and a stored flag would go on
@@ -1727,14 +1722,6 @@ export const handlers: HttpHandler[] = [
       email,
       factoryId: tenantOf(request),
       roles: body.roles,
-      /**
-       * **Never enrolled at creation**, whatever roles they are given.
-       *
-       * A user cannot enrol a second factor before they have an account, so refusing to
-       * create a manager without one would make the senior roles unassignable. The
-       * obligation is reported instead (`owesMfa`) and the sign-in is what enforces it.
-       */
-      mfaEnrolled: false,
       lastLoginAt: null,
       status: 'active',
       password: MOCK_PASSWORD,
@@ -1857,48 +1844,6 @@ export const handlers: HttpHandler[] = [
       return HttpResponse.json(toAdminUser(after));
     }),
   ),
-
-  /**
-   * Clear an enrolled second factor.
-   *
-   * The one action in this module that is a security operation rather than an administrative
-   * one: it is what the office does when somebody loses their phone, and it is exactly what
-   * an attacker holding an administrator session would do. Hence the reason, the audit entry,
-   * and the refusal on yourself — resetting your own is not recovery, it is dropping your
-   * second factor while holding a live session.
-   */
-  http.post('*/admin/users/:id/mfa/reset', async ({ request, params }) => {
-    await delay(LATENCY_MS);
-    const auth = authorize(request, 'usersAndRoles', 'write');
-    if ('response' in auth) return auth.response;
-
-    const index = state.users.findIndex((one) => one.id === params.id);
-    if (index < 0) return fail({ status: 404, code: '404', message: 'No such user.' });
-
-    const before = state.users[index]!;
-    const { reason } = (await request.json()) as { reason?: string };
-    if (!reason || reason.trim().length < 10) {
-      return fail({ status: 422, code: 'note-required', message: 'A reason is required.' });
-    }
-    if (before.id === auth.user.id) {
-      return fail({
-        status: 409,
-        code: 'self-modification',
-        message: 'You cannot reset your own second factor.',
-        details: { what: 'mfa' },
-      });
-    }
-
-    const after: MockUser = { ...before, mfaEnrolled: false };
-    state.users[index] = after;
-
-    recordBy(auth, 'user.mfa.reset', 'consoleUser', after.id, {
-      before: { mfaEnrolled: before.mfaEnrolled },
-      after: { mfaEnrolled: false, reason: reason.trim() },
-    });
-
-    return HttpResponse.json(toAdminUser(after));
-  }),
 
   /* ── M14 Configuration ─────────────────────────────────────────────────── */
 
@@ -2105,39 +2050,8 @@ export const handlers: HttpHandler[] = [
       return fail({ status: 403, code: 'forbidden', message: 'This account is suspended.' });
     }
 
-    if (user.mfaEnrolled) {
-      const challengeToken = `mock-challenge-${nextId()}`;
-      state.challenges.set(challengeToken, user.id);
-      return HttpResponse.json({
-        status: 'mfaRequired',
-        challenge: { challengeToken, method: 'totp' },
-      });
-    }
-
     return HttpResponse.json({
       status: 'authenticated',
-      session: { ...issueSession(user), user: publicUser(user), grants: user.grants },
-    });
-  }),
-
-  http.post('*/admin/auth/mfa', async ({ request }) => {
-    await delay(LATENCY_MS);
-    const { challengeToken, code } = (await request.json()) as {
-      challengeToken: string;
-      code: string;
-    };
-    const userId = state.challenges.get(challengeToken);
-    if (!userId) {
-      return fail({ status: 401, code: 'mfa-invalid', message: 'Challenge expired. Sign in again.' });
-    }
-    if (code !== MOCK_MFA_CODE) {
-      return fail({ status: 401, code: 'mfa-invalid', message: 'That code is not correct.' });
-    }
-    // Single-use: a replayed challenge is a replayed second factor.
-    state.challenges.delete(challengeToken);
-
-    const user = state.users.find((u) => u.id === userId)!;
-    return HttpResponse.json({
       session: { ...issueSession(user), user: publicUser(user), grants: user.grants },
     });
   }),
@@ -6323,7 +6237,6 @@ export function resetMockState(): void {
   state.inquiries = mockInquiries.map((inquiry) => ({ ...inquiry }));
   state.audit = [...mockAudit];
   state.sessions.clear();
-  state.challenges.clear();
   state.sequence = 1000;
   // The stand-in cookie too, or a signed-in session leaks into the next test and
   // an RBAC assertion passes as the wrong user.

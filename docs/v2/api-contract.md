@@ -141,8 +141,6 @@ copy interpolates.
 | --- | --- | --- |
 | `unauthenticated` | 401 | No or expired access token |
 | `invalid` | 401 | Bad credentials. **Same code and message for unknown user and wrong password** — distinguishing them is an account-enumeration oracle |
-| `mfa-required` | — | Not an error; see §2.1. A correct password is not an authentication failure |
-| `mfa-invalid` | 401 | Wrong or expired TOTP code |
 | `forbidden` | 403 | The role does not grant this capability. `details: { capability, required, granted }` |
 | `feature-disabled` | 403 | The tenant has this feature flag off (AC-07) |
 | `four-eyes-violation` | 409 | The approver created the record (BR-501) |
@@ -182,39 +180,27 @@ console token carries a factory id and a role set.
 → { "email": "clerk@galabodatea.lk", "password": "…" }
 ```
 
-Two possible `200` responses. Note that the MFA case is **`200`, not `401`** — a
-password that was correct is not an authentication failure, and treating it as
-one makes lockout counters and rate limits wrong.
+**One step, one success shape.** The console used to accept a second `200` carrying a TOTP
+challenge for manager-and-above; the factory has withdrawn the second factor, because the
+console is worked from shared office machines where a code on one person's phone stops
+whoever is at the counter. `status` stays on the payload rather than being dropped — it is
+the discriminator every consumer already reads, and a response that changed shape would
+break clients over a step that was removed.
 
 ```json
-200 { "status": "authenticated", "session": { … } }        // see §2.5
-200 { "status": "mfaRequired",
-      "challenge": { "challengeToken": "opaque", "method": "totp" } }
+200 { "status": "authenticated", "session": { … } }        // see §2.4
 401 { "code": "invalid",   "message": "Email or password is incorrect." }
 403 { "code": "forbidden", "message": "This account is suspended." }
 ```
 
-`challengeToken` is opaque, single-use and short-lived (≤5 min). It is **not** a
-session token and must not authorize anything.
+`POST /admin/auth/mfa` is **withdrawn**. Nothing calls it, and an implementation that keeps
+answering it is offering a way in the console cannot see.
 
-Rate-limit this endpoint strictly, per email and per IP.
+Rate-limit this endpoint strictly, per email and per IP. With no second factor behind it,
+this is the only thing standing between a guessed password and a session — so the limit and
+the lockout counters are load-bearing rather than hygiene.
 
-### 2.2 `POST /admin/auth/mfa`
-
-```json
-→ { "challengeToken": "opaque", "code": "123456" }
-200 { "session": { … } }
-401 { "code": "mfa-invalid" }
-```
-
-Consume the challenge on use — a replayed challenge is a replayed second factor.
-
-**MFA is mandatory for manager and above.** A manager account without an enrolled
-authenticator must be forced through enrolment, not allowed past it. On first
-enrolment include `challenge.enrolment: { secret, otpauthUrl }` in the login
-response.
-
-### 2.3 `POST /admin/auth/refresh`
+### 2.2 `POST /admin/auth/refresh`
 
 No body. Reads a **rotating refresh token from an httpOnly, Secure, SameSite=Lax
 cookie**.
@@ -236,13 +222,13 @@ session. The console has no way to read the refresh cookie, which is the point.
 `withCredentials`. You need `Access-Control-Allow-Credentials: true` and an
 explicit origin allowlist — a wildcard origin is illegal with credentials.
 
-### 2.4 `POST /admin/auth/logout` → `204`
+### 2.3 `POST /admin/auth/logout` → `204`
 
 Revoke the refresh token server-side. The console clears its session regardless
 of the response: a clerk who clicks *Sign out* on a shared machine and walks away
 must not remain signed in because the request timed out.
 
-### 2.5 `GET /admin/auth/me`
+### 2.4 `GET /admin/auth/me`
 
 ```json
 200 {
@@ -252,7 +238,6 @@ must not remain signed in because the request timed out.
     "email": "clerk@galabodatea.lk",
     "factoryId": "galaboda",
     "roles": ["clerk"],
-    "mfaEnrolled": false,
     "lastLoginAt": "2026-07-29T13:00:00.000Z",
     "status": "active"
   },
@@ -269,7 +254,9 @@ ships the default matrix as an offline fallback and lets your grants override it
 per capability — so a role this build has never heard of still works. The full
 matrix and capability list are in [rbac.md](./rbac.md).
 
-The same `AuthSession` shape is returned inside `login` and `mfa`:
+`mfaEnrolled` is **gone from this record**, with the second factor it described (§2.1).
+
+The same `AuthSession` shape is returned inside `login`:
 
 ```ts
 { accessToken, expiresAt, user, grants }
@@ -2328,13 +2315,12 @@ and they have to agree about which user is the last way in.
 
 ### 19.1 `GET /admin/users` → `Paged<AdminConsoleUser>`
 
-Three fields are **derived per read**, never stored:
+Two fields are **derived per read**, never stored:
 
 | Field | Rule |
 | --- | --- |
 | `canAdministerUsers` | Active, and holding `usersAndRoles: write` through some role. A suspended administrator is not a way back in |
 | `isLastAdministrator` | Would suspending *this* user leave nobody who can administer users? It stops being true the moment somebody else is given the role, and a stored flag would go on withholding the suspend button afterwards |
-| `owesMfa` | Holds a role in `MFA_REQUIRED_ROLES` and has not enrolled. Owed, not enforced at the point of granting: a user cannot enrol before they have an account |
 
 Never send `password` or `grants` on a user record. The signed-in user's own grants come from
 `GET /admin/auth/me`; another user's are a property of their roles.
@@ -2356,18 +2342,19 @@ an audit entry, and an entry whose actor cannot be resolved is not evidence. Sus
 
 The console cannot issue a credential, and this contract does not say how you do: an
 invitation with a one-time password, or an enrolment link. What it does say is that the
-office must not be able to read the password back, and that a role in `MFA_REQUIRED_ROLES`
-should be made to enrol at first sign-in. Neither exists in the mock — see status.md.
+office must not be able to read the password back, and that the credential should be
+changed at first sign-in. Neither exists in the mock — see status.md, where this is now the
+whole of the console's credential story: with the second factor withdrawn, a password is
+the only thing an account has.
 
-### 19.3 `POST /admin/users/{id}/suspend` · `/reactivate` · `/mfa/reset`
+### 19.3 `POST /admin/users/{id}/suspend` · `/reactivate`
 
-All three take a **mandatory reason** (≥10 chars, `422 note-required`). The person it
-happens to will ask why, and "suspended on the 14th" with no reason is a conversation
-nobody in the office can have — the same argument AC-06 makes about a rejection note.
+Both take a **mandatory reason** (≥10 chars, `422 note-required`). The person it happens to
+will ask why, and "suspended on the 14th" with no reason is a conversation nobody in the
+office can have — the same argument AC-06 makes about a rejection note.
 
-`self-modification` on suspending yourself and on resetting your own second factor. The
-second is the one worth stating: it is dropping your own second factor while holding a live
-session, which is precisely what an attacker with a stolen administrator session would do.
+`self-modification` on suspending yourself. `POST /admin/users/{id}/mfa/reset` is
+**withdrawn** with the second factor (§2.1) — there is no enrolment left to clear.
 
 A suspension must take effect on the **next request**, not at the next login. A token issued
 before it stops working.
@@ -2491,7 +2478,7 @@ shapes are open. Requests from the front end when you get there:
 | **The push transport** | §17 specifies the record and the reach; **nothing here sends anything.** FCM/APNs brings a failure mode the console has no shape for yet — a per-device delivery result arriving asynchronously, minutes later. `NotificationSend.status` already carries `queued` and `failed` for it |
 | **M16's read replica** | §20 is built and its four queries are live scans over the same store a clerk is writing to. §19.5 asks for a read replica or a nightly snapshot; a month-close query must not compete with leaf entry. The four reports are written as single-pass scans so this is a connection string rather than a rewrite |
 | **The reports beyond one** | §20.1's list is served, so it grows without a console release — but the reports themselves need §19.1's warehouse shape, which is in the mobile repository. `channelShift` is the one this console owes; the other three v1 defined are the factory's own console's |
-| **Credentials for a new console user** | §19.2 creates the record and cannot issue a password. An invitation with a one-time credential the office cannot read back, and enrolment forced at first sign-in for a role in `MFA_REQUIRED_ROLES` |
+| **Credentials for a new console user** | §19.2 creates the record and cannot issue a password. An invitation with a one-time credential the office cannot read back, and a forced change at first sign-in. With no second factor behind it (§2.1), this is the whole of an account's protection |
 
 ---
 

@@ -20,7 +20,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import type { ColumnDef } from '@tanstack/react-table';
-import { KeyRound, Pencil, ShieldAlert, ShieldOff, UserPlus } from 'lucide-react';
+import { Pencil, ShieldAlert, ShieldOff, UserPlus } from 'lucide-react';
 import type { AdminConsoleUser, ConsoleRole, UserQuery } from '@tfd/domain';
 import { useAuthStore, useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
@@ -138,10 +138,6 @@ export function UsersScreen() {
               {row.isLastAdministrator ? (
                 <Badge tone="warning">{t('users.lastAdministrator')}</Badge>
               ) : null}
-
-              {/* MFA is mandatory for manager and above. Owed rather than enforced at the
-                  point of granting — a user cannot enrol before they have an account. */}
-              {row.owesMfa ? <Badge tone="error">{t('users.mfaOwed')}</Badge> : null}
             </span>
           );
         },
@@ -204,20 +200,6 @@ export function UsersScreen() {
                   {t('users.reactivate')}
                 </Button>
               )}
-
-              {row.mfaEnrolled ? (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  // Resetting your own is not recovery — it is dropping your second factor
-                  // while holding a live session.
-                  disabled={isSelf}
-                  iconLeft={<KeyRound className="size-icon-sm" aria-hidden />}
-                  onClick={() => setActing({ user: row, action: 'mfa' })}
-                >
-                  {t('users.resetMfa')}
-                </Button>
-              ) : null}
             </span>
           );
         },

@@ -113,17 +113,6 @@ export const userRepository = {
   reactivate: async (id: string, reason: string): Promise<AdminConsoleUser> =>
     userEndpoints.reactivate(id, requireReason(reason)),
 
-  resetMfa: async (
-    id: string,
-    reason: string,
-    context: { actingUserId: string | undefined },
-  ): Promise<AdminConsoleUser> => {
-    // Resetting your own second factor is not recovery — it is dropping it while holding a
-    // live session, which is the move an attacker with a stolen session makes.
-    if (id === context.actingUserId) throw selfModification('mfa');
-    return userEndpoints.resetMfa(id, requireReason(reason));
-  },
-
   roles: (): Promise<RoleMatrix> => userEndpoints.roles(),
 
   /**

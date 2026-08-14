@@ -61,20 +61,6 @@ export const userEndpoints = {
       .post<AdminConsoleUser>(`/admin/users/${id}/reactivate`, { reason })
       .then((response) => response.data),
 
-  /**
-   * Clear an enrolled second factor so the user enrols again on next sign-in.
-   *
-   * The one action here that is a **security** operation rather than an administrative one:
-   * it is what the office does when somebody loses their phone, and it is also exactly what
-   * an attacker with an administrator session would do. Audited by name, and refused on
-   * yourself — resetting your own is not recovery, it is a way to drop your own second
-   * factor while holding a live session.
-   */
-  resetMfa: (id: string, reason: string) =>
-    apiClient
-      .post<AdminConsoleUser>(`/admin/users/${id}/mfa/reset`, { reason })
-      .then((response) => response.data),
-
   /** The §12.1 matrix as served — the authority, of which `rbac.ts` is the default. */
   roles: () => apiClient.get<RoleMatrix>('/admin/roles').then((response) => response.data),
 

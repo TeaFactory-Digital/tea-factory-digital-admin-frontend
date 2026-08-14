@@ -8,17 +8,12 @@
  * path would invite sharing the realm.
  */
 
-import type { AuthSession, CapabilityGrants, ConsoleUser, LoginResult } from '@tfd/domain';
+import type { CapabilityGrants, ConsoleUser, LoginResult } from '@tfd/domain';
 import { apiClient, withoutAuth } from '../api/client';
 
 export interface LoginBody {
   email: string;
   password: string;
-}
-
-export interface MfaBody {
-  challengeToken: string;
-  code: string;
 }
 
 export interface RefreshResponse {
@@ -28,20 +23,13 @@ export interface RefreshResponse {
 
 export const authEndpoints = {
   /**
-   * `200` with a session, or `200` with an MFA challenge — **not** a `401` for
-   * the challenge. A password that was correct is not an authentication failure;
-   * treating it as one makes rate limiting and lockout counters wrong.
+   * `200` with a session, or a `401`. **One step**: the TOTP challenge that used to be a
+   * second `200` here is gone, and `POST /admin/auth/mfa` with it.
    */
   login: (body: LoginBody) =>
     apiClient
       .post<LoginResult>('/admin/auth/login', body, withoutAuth())
       .then((response) => response.data),
-
-  /** Second factor. Mandatory for manager and above. */
-  verifyMfa: (body: MfaBody) =>
-    apiClient
-      .post<{ session: AuthSession }>('/admin/auth/mfa', body, withoutAuth())
-      .then((response) => response.data.session),
 
   /**
    * Rotating refresh token, read from an httpOnly cookie — never from a body.

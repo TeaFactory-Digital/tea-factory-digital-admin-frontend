@@ -23,7 +23,7 @@ import { REPORT_DEFINITIONS, REPORT_IDS, isReportId, missingReportParams } from 
 import { reportRepository } from '@/services/repositories/reportRepository';
 import { isApiError } from '@/services/api/errors';
 import { useAuthStore } from '@/auth/authStore';
-import { signInAs, signInWithMfaAs, signOut } from './render';
+import { signInAs, signOut } from './render';
 
 const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
@@ -69,7 +69,7 @@ describe('M16 reports', () => {
   it('gives every operational role read access and the editor none (§12.1)', async () => {
     // `reports: R` for the clerk, the manager and both admins — this is the
     // dashboard's capability, so almost everybody has it.
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     await expect(reportRepository.list()).resolves.toBeTruthy();
 
     // The editor is the exception: §12.1 gives them `content: W` and nothing else at all.

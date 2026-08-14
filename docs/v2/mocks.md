@@ -117,13 +117,16 @@ on real values.
 
 ### Users
 
-| Email | Role | MFA | Purpose |
-| --- | --- | --- | --- |
-| `clerk@galabodatea.lk` | `clerk` | no | Works the change-request queue |
-| `manager@galabodatea.lk` | `manager` | **yes** — code `123456` | Approves, publishes a month; exercises the MFA step |
-| `editor@galabodatea.lk` | `editor` | no | **The only one who can write content.** `content: W` and nothing else at all — not even `auditLog: R` |
-| `factoryadmin@galabodatea.lk` | `factoryAdmin` | no | **The only one who can publish it.** §12.1 splits writing from publishing, and that split *is* M11/M12's control |
-| `factory-system@galabodatea.lk` | *none* | no | **The only one who can move leaf.** No `ConsoleRole` at all — every capability arrives from the server |
+| Email | Role | Purpose |
+| --- | --- | --- |
+| `clerk@galabodatea.lk` | `clerk` | Works the change-request queue |
+| `manager@galabodatea.lk` | `manager` | Approves, publishes a month |
+| `editor@galabodatea.lk` | `editor` | **The only one who can write content.** `content: W` and nothing else at all — not even `auditLog: R` |
+| `factoryadmin@galabodatea.lk` | `factoryAdmin` | **The only one who can publish it.** §12.1 splits writing from publishing, and that split *is* M11/M12's control |
+| `factory-system@galabodatea.lk` | *none* | **The only one who can move leaf.** No `ConsoleRole` at all — every capability arrives from the server |
+
+There is no MFA column any more: the factory withdrew the second factor, so a password is
+the whole of every sign-in here (status.md gap 33).
 
 Password for all five: `demo1234`, and all five are **printed on the sign-in
 screen** while `VITE_USE_MOCK` is on — deliberate, because a demo credential that
@@ -450,7 +453,7 @@ and holding no credential. A Playwright spec covers reload, deep-link and
 sign-out-then-reload.
 
 What still cannot be tested here is **token rotation and reuse detection**
-([api-contract.md](./api-contract.md) §2.3). Those need the real backend.
+([api-contract.md](./api-contract.md) §2.2). Those need the real backend.
 
 ---
 

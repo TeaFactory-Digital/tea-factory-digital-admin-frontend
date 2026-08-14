@@ -29,8 +29,6 @@ import {
   FACTORY_CONSOLE_CAPABILITIES,
   canAdministerUsers,
   matrixKeepsRecovery,
-  owesMfa,
-  requiresMfa,
   wouldLockOut,
   type AccessLevel,
   type Capability,
@@ -40,7 +38,7 @@ import { userRepository } from '@/services/repositories/userRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { isApiError } from '@/services/api/errors';
 import { useAuthStore } from '@/auth/authStore';
-import { signInAs, signInWithMfaAs, signOut } from './render';
+import { signInAs, signOut } from './render';
 
 const ADMIN = 'factoryadmin@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
@@ -72,15 +70,9 @@ describe('M15 users & roles', () => {
     expect(admin.canAdministerUsers).toBe(true);
     expect(admin.isLastAdministrator).toBe(true);
 
-    // MFA is mandatory for manager and above, and the fixture's factory admin has not
-    // enrolled — reported rather than hidden.
-    expect(admin.owesMfa).toBe(true);
-
     const editor = page.items.find((one) => one.roles.includes('editor'))!;
     expect(editor.canAdministerUsers).toBe(false);
     expect(editor.isLastAdministrator).toBe(false);
-    // An editor is not manager-or-above, so no second factor is owed.
-    expect(editor.owesMfa).toBe(false);
   });
 
   /**
@@ -166,14 +158,6 @@ describe('M15 users & roles', () => {
     await expect(
       userRepository.suspend(self.id, 'Leaving the factory at the end of the month.', context),
     ).rejects.toMatchObject({ code: 'self-modification' });
-
-    // Resetting your own second factor is not recovery — it is dropping it while holding a
-    // live session, which is the move an attacker with a stolen session makes.
-    await expect(
-      userRepository.resetMfa(self.id, 'Lost my phone this morning at the counter.', {
-        actingUserId: context.actingUserId,
-      }),
-    ).rejects.toMatchObject({ code: 'self-modification' });
   }, 20_000);
 
   it('makes a suspension actually stop the account signing in', async () => {
@@ -207,7 +191,7 @@ describe('M15 users & roles', () => {
     await expect(signInAs(CLERK)).resolves.toBeUndefined();
   }, 30_000);
 
-  it('refuses a suspension or a reset with no reason', async () => {
+  it('refuses a suspension with no reason', async () => {
     await signInAs(ADMIN);
     const { page, context } = await listWithContext();
     const clerk = page.items.find((one) => one.email === CLERK)!;
@@ -216,9 +200,11 @@ describe('M15 users & roles', () => {
     await expect(userRepository.suspend(clerk.id, 'too short', context)).rejects.toMatchObject({
       code: 'note-required',
     });
-    const manager = page.items.find((one) => one.email === MANAGER)!;
+
+    // And the same on the way back: a reactivation with no why is a record nobody can read
+    // six months later either.
     await expect(
-      userRepository.resetMfa(manager.id, 'nope', { actingUserId: context.actingUserId }),
+      userRepository.reactivate(clerk.id, 'ok now'),
     ).rejects.toMatchObject({ code: 'note-required' });
   }, 20_000);
 
@@ -230,7 +216,7 @@ describe('M15 users & roles', () => {
     ).rejects.toMatchObject({ code: 'email-taken' });
   });
 
-  it('creates a user who owes a second factor rather than refusing the role', async () => {
+  it('creates a senior account that can sign in with its password alone', async () => {
     await signInAs(ADMIN);
 
     const created = await userRepository.create({
@@ -240,14 +226,13 @@ describe('M15 users & roles', () => {
     });
 
     /**
-     * Allowed, and flagged. A user cannot enrol a second factor before they have an account,
-     * so refusing the grant would make every senior role unassignable — the obligation is
-     * reported and the sign-in is what insists on it.
+     * A manager used to be created owing a second factor, and the badge saying so was the
+     * only trace of a requirement nothing ever collected. The factory has withdrawn it, so
+     * the account this call produces is complete: the roles asked for, and a password.
      */
-    expect(created.mfaEnrolled).toBe(false);
-    expect(created.owesMfa).toBe(true);
+    expect(created.roles).toEqual(['manager']);
     expect(created.lastLoginAt).toBeNull();
-    expect(requiresMfa(created.roles)).toBe(true);
+    expect(created.status).toBe('active');
   }, 20_000);
 
   it('serves the §12.1 matrix, and marks it as the shipped default until it is changed', async () => {
@@ -358,7 +343,7 @@ describe('M15 users & roles', () => {
     await userRepository.patch(editor.id, { roles: ['editor', 'clerk'] }, context);
 
     signOut();
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const trail = await auditRepository.forEntity('consoleUser', editor.id);
     const entry = trail.items.find((one) => one.action === 'user.update');
 
@@ -373,7 +358,7 @@ describe('M15 users & roles', () => {
   }, 30_000);
 
   it('gives a manager read access and refuses them every write (§12.1)', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const { page, context } = await listWithContext();
     expect(page.total).toBeGreaterThan(0);
     await expect(userRepository.roles()).resolves.toBeTruthy();
@@ -456,12 +441,4 @@ describe('lockout rules', () => {
     expect(matrixKeepsRecovery(readOnly)).toBe(false);
   });
 
-  it('owes a second factor only for manager and above', () => {
-    expect(requiresMfa(['clerk'])).toBe(false);
-    expect(requiresMfa(['manager'])).toBe(true);
-    expect(requiresMfa(['clerk', 'factoryAdmin'])).toBe(true);
-    // Enrolled clears the obligation; the role alone does not create a permanent flag.
-    expect(owesMfa({ roles: ['manager'], mfaEnrolled: false })).toBe(true);
-    expect(owesMfa({ roles: ['manager'], mfaEnrolled: true })).toBe(false);
-  });
 });

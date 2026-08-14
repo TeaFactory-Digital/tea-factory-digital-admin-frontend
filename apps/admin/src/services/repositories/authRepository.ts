@@ -8,7 +8,7 @@
  * mock layer).
  */
 
-import { resolveGrants, type AuthSession, type LoginResult } from '@tfd/domain';
+import { resolveGrants, type AuthSession } from '@tfd/domain';
 import { authEndpoints } from '../endpoints/auth';
 
 /**
@@ -23,16 +23,10 @@ function hydrate(session: AuthSession): AuthSession {
 }
 
 export const authRepository = {
-  login: async (email: string, password: string): Promise<LoginResult> => {
+  login: async (email: string, password: string): Promise<AuthSession> => {
     const result = await authEndpoints.login({ email, password });
-    if (result.status === 'authenticated') {
-      return { status: 'authenticated', session: hydrate(result.session) };
-    }
-    return result;
+    return hydrate(result.session);
   },
-
-  verifyMfa: async (challengeToken: string, code: string): Promise<AuthSession> =>
-    hydrate(await authEndpoints.verifyMfa({ challengeToken, code })),
 
   refresh: () => authEndpoints.refresh(),
 

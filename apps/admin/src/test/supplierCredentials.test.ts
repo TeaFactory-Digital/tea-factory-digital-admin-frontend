@@ -23,7 +23,7 @@ import {
 import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { isApiError } from '@/services/api/errors';
-import { signInAs, signInWithMfaAs, signOut } from './render';
+import { signInAs, signOut } from './render';
 
 const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
@@ -133,7 +133,7 @@ describe('issuing one against the mock API', () => {
     // The clerk may issue a credential and not read the log (§12.1) — so the entry is read
     // by somebody who may, which is also how it would be read in practice.
     signOut();
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const audit = await auditRepository.list({ entity: 'supplier', entityId: supplier.id });
     const entry = audit.items.find((one) => one.action === 'supplier.credentials.reset')!;
 
@@ -160,7 +160,7 @@ describe('issuing one against the mock API', () => {
   }, 20_000);
 
   it('refuses a role that may read the registry but not write it (§12.1)', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const supplier = await anySupplier();
     // The manager holds `suppliers: read` — `W` is the clerk's alone, because these are
     // counter acts. Issuing a credential is not a read.

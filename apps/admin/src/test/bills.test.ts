@@ -26,7 +26,7 @@ import { monthRepository } from '@/services/repositories/monthRepository';
 import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { isApiError } from '@/services/api/errors';
-import { signInAs, signInWithMfaAs, signOut } from './render';
+import { signInAs, signOut } from './render';
 
 const MANAGER = 'manager@galabodatea.lk';
 const FACTORY_SYSTEM = 'factory-system@galabodatea.lk';
@@ -56,7 +56,7 @@ describe('M5 bills', () => {
   });
 
   it('carries a run and a bill per supplier for every published month', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const month = await publishedMonth();
 
     const run = await billRepository.run(month.monthKey);
@@ -73,7 +73,7 @@ describe('M5 bills', () => {
   });
 
   it('derives every figure on the slip from the leaf and the rate (AC-03)', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const month = await publishedMonth();
     const page = await billRepository.list({ monthKey: month.monthKey, pageSize: 5 });
     const summary = page.items[0]!;
@@ -122,7 +122,7 @@ describe('M5 bills', () => {
   });
 
   it('deducts savings at the supplier’s own rate, and prints the running balance', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const month = await publishedMonth();
     const page = await billRepository.list({ monthKey: month.monthKey, pageSize: 200 });
 
@@ -148,7 +148,7 @@ describe('M5 bills', () => {
   });
 
   it('pays nothing when the deductions swallow the account, and carries the shortfall', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const month = await publishedMonth();
     const page = await billRepository.list({
       monthKey: month.monthKey,
@@ -174,7 +174,7 @@ describe('M5 bills', () => {
   });
 
   it('lists the bills a payout run will not be able to pay', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const month = await publishedMonth();
 
     const run = await billRepository.run(month.monthKey);
@@ -194,7 +194,7 @@ describe('M5 bills', () => {
   });
 
   it('refuses to generate without a rate, and generates once there is one', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const month = await openMonth();
 
     // A month with no auction result produces no bills, rather than bills full of
@@ -221,7 +221,7 @@ describe('M5 bills', () => {
   }, 20_000);
 
   it('re-generates on a corrected rate, because a bill is a read model', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const month = await openMonth();
     await monthRepository.setRate(month.monthKey, { ratePerKg: 100, extraRatePerKg: 0 });
     const first = await billRepository.generate(month.monthKey);
@@ -239,7 +239,7 @@ describe('M5 bills', () => {
   }, 20_000);
 
   it('goes stale when the leaf moves, and stops being stale when re-run', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const month = await openMonth();
     await monthRepository.setRate(month.monthKey, { ratePerKg: 122.5, extraRatePerKg: 8 });
     await billRepository.generate(month.monthKey);
@@ -258,7 +258,7 @@ describe('M5 bills', () => {
     });
 
     signOut();
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     expect((await billRepository.run(month.monthKey)).stale).toBe(true);
     expect((await billRepository.generate(month.monthKey)).stale).toBe(false);
   }, 20_000);
@@ -293,7 +293,7 @@ describe('M5 bills', () => {
     expect((await billRepository.get(before.items[0]!.id)).publishedAt).toBeNull();
 
     signOut();
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     await monthRepository.publish(month.monthKey);
 
     // Publishing is what makes them the documents suppliers hold.
@@ -306,7 +306,7 @@ describe('M5 bills', () => {
   }, 30_000);
 
   it('writes an audit entry for the run (AC-09)', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const month = await openMonth();
     await monthRepository.setRate(month.monthKey, { ratePerKg: 122.5, extraRatePerKg: 8 });
     const run = await billRepository.generate(month.monthKey);
@@ -324,7 +324,7 @@ describe('M5 bills', () => {
   }, 20_000);
 
   it('refuses a month the factory has no records for, and a bill that does not exist', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     await expect(billRepository.run('1999-01')).rejects.toMatchObject({ code: '404' });
     await expect(billRepository.generate('1999-01')).rejects.toMatchObject({ code: '404' });
     await expect(billRepository.get('bill-nope')).rejects.toMatchObject({ code: '404' });

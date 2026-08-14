@@ -30,7 +30,7 @@ import {
 } from '@tfd/domain';
 import { adminConfigRepository } from '@/services/repositories/adminConfigRepository';
 import { creditRepository } from '@/services/repositories/creditRepository';
-import { signInAs, signInWithMfaAs, signOut } from './render';
+import { signInAs, signOut } from './render';
 
 const CLERK = 'clerk@galabodatea.lk';
 const FACTORY_ADMIN = 'factoryadmin@galabodatea.lk';
@@ -276,7 +276,7 @@ describe('M7 prices its queue with the tenant’s rule', () => {
   });
 
   it('serves the rules on the config payload so the app and the office share them', async () => {
-    await signInWithMfaAs('manager@galabodatea.lk');
+    await signInAs('manager@galabodatea.lk');
     const { config } = await adminConfigRepository.get();
 
     // Absent means the defaults — an existing `client_config` row keeps working.

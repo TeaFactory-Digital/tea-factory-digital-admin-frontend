@@ -32,7 +32,6 @@ import { expect, test, type Page } from '@playwright/test';
 
 const MANAGER = 'manager@galabodatea.lk';
 const PASSWORD = 'demo1234';
-const MFA_CODE = '123456';
 
 /** Every screen whose main artefact is a grid, and the grid's accessible name. */
 const SCREENS = [
@@ -53,18 +52,12 @@ const VIEWPORTS = [
   { width: 1152, height: 640 },
 ];
 
-/** The manager has MFA enrolled, so a password alone is not a session. */
+/** A password is the whole of console sign-in, manager included. */
 async function signIn(page: Page) {
   await page.goto('/sign-in');
   await page.getByLabel(/^email$/i).fill(MANAGER);
   await page.getByLabel(/^password$/i).fill(PASSWORD);
   await page.getByRole('button', { name: /^sign in$/i }).click();
-
-  await expect(page.getByRole('heading', { name: /two-factor code/i })).toBeVisible({
-    timeout: 15_000,
-  });
-  await page.getByLabel(/^code$/i).fill(MFA_CODE);
-  await page.getByRole('button', { name: /^verify$/i }).click();
 
   await expect(page.getByRole('navigation').first()).toBeVisible({ timeout: 15_000 });
 }

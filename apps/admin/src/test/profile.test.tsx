@@ -7,9 +7,10 @@
  *  - **It is not capability-gated.** Every other route asks what this person may do to the
  *    factory. Gating this one would lock a clerk out of the text-size control, which is an
  *    accessibility need rather than a taste.
- *  - **It offers no password or two-factor form.** The auth surface is `login`,
- *    `verifyMfa`, `refresh`, `logout` and `me` — there is no self-service endpoint for
- *    either. A form posting nowhere would look like the feature until somebody needed it.
+ *  - **It offers no password form.** The auth surface is `login`, `refresh`, `logout` and
+ *    `me` — there is no self-service endpoint for one. A form posting nowhere would look
+ *    like the feature until somebody needed it. There is no two-factor control either: the
+ *    factory withdrew the requirement, so the console has no second factor to show.
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -22,7 +23,7 @@ import { AppearanceProvider } from '@/brand/AppearanceProvider';
 import { readAppearance } from '@/brand/appearance';
 import { setLanguage } from '@/i18n';
 import { installLocalStorage } from './localStorage';
-import { renderWithProviders, signInAs, signInWithMfaAs, signOut } from './render';
+import { renderWithProviders, signInAs, signOut } from './render';
 
 const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
@@ -69,7 +70,7 @@ describe('the profile screen', () => {
     expect(await within(container).findByText('Clerk')).toBeInTheDocument();
   });
 
-  it('offers no password or two-factor form, because no endpoint backs one', async () => {
+  it('offers no password form, because no endpoint backs one', async () => {
     await signInAs(CLERK);
     const { container } = renderProfile();
     const view = within(container);
@@ -83,13 +84,19 @@ describe('the profile screen', () => {
     expect(view.getByText(/reset by a factory administrator/i)).toBeInTheDocument();
   });
 
-  it('says two-factor is owed when the role requires it', async () => {
-    // Mandatory for manager and above, so "not set up" means different things by role —
-    // fine for a clerk, a gap for a manager.
-    await signInWithMfaAs(MANAGER);
+  it('says nothing about a second factor, for a manager least of all', async () => {
+    /**
+     * The manager is the account the removal is most visible on: it used to be the one the
+     * console asked for a TOTP code, and the security card reported its enrolment. Asserted
+     * as an absence, because the failure this guards against is a leftover string reading
+     * *"Two-factor is not set up"* over a console that has no second factor to set up.
+     */
+    await signInAs(MANAGER);
     const { container } = renderProfile();
+    const view = within(container);
+    await view.findByText('Security');
 
-    expect(await within(container).findByText(/Two-factor is set up/)).toBeInTheDocument();
+    expect(view.queryByText(/two-factor/i)).not.toBeInTheDocument();
   });
 
   it('drafts a choice rather than applying it on press', async () => {

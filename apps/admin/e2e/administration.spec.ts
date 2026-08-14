@@ -126,9 +126,6 @@ test('stops withholding the suspend button once somebody else can get back in', 
   await dialog.getByLabel(/^email$/i).fill('nimal@galabodatea.lk');
   await dialog.getByRole('checkbox', { name: /factory administrator/i }).check();
 
-  // The obligation is stated rather than enforced here: a user cannot enrol a second factor
-  // before they have an account.
-  await expect(dialog.getByText(/two-factor/i).first()).toBeVisible();
   await dialog.getByRole('button', { name: /add a user/i }).click();
 
   await expect(toast(page)).toContainText(/can now sign in/i, { timeout: 15_000 });
@@ -141,7 +138,6 @@ test('stops withholding the suspend button once somebody else can get back in', 
   await expect(grid.getByText(/only way back in/i)).toHaveCount(0);
 
   const newRow = grid.locator('tbody tr').filter({ hasText: 'nimal@galabodatea.lk' });
-  await expect(newRow.getByText(/two-factor not set up/i)).toBeVisible();
   await expect(newRow.getByRole('button', { name: /^suspend$/i })).toBeEnabled();
 });
 

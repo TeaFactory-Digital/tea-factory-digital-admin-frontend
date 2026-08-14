@@ -13,7 +13,7 @@ import type { PropsWithChildren, ReactElement } from 'react';
 import { RuntimeConfigProvider } from '@/config/RuntimeConfigProvider';
 import { ToastProvider } from '@/components/ui/Toast';
 import { connectAuthToTransport, useAuthStore } from '@/auth/authStore';
-import { MOCK_MFA_CODE, MOCK_PASSWORD } from '@/services/mocks/seed';
+import { MOCK_PASSWORD } from '@/services/mocks/seed';
 
 connectAuthToTransport();
 
@@ -54,21 +54,6 @@ export function renderWithProviders(
 /** Sign in for real, so grants and the access token come from the mock API. */
 export async function signInAs(email: string): Promise<void> {
   await useAuthStore.getState().login(email, MOCK_PASSWORD);
-}
-
-/**
- * Sign in an account that has MFA enrolled — manager and above.
- *
- * Two steps, because one is not a session: a password that was correct leaves the
- * store in `mfaRequired` with no access token, which is the behaviour worth
- * relying on rather than working around.
- */
-export async function signInWithMfaAs(email: string): Promise<void> {
-  const status = await useAuthStore.getState().login(email, MOCK_PASSWORD);
-  if (status !== 'mfaRequired') {
-    throw new Error(`${email} does not require MFA — use signInAs instead.`);
-  }
-  await useAuthStore.getState().verifyMfa(MOCK_MFA_CODE);
 }
 
 export function signOut(): void {

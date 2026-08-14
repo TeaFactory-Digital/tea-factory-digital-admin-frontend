@@ -24,7 +24,7 @@ import { changeRequestRepository } from '@/services/repositories/changeRequestRe
 import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { ApiError } from '@/services/api/errors';
-import { renderWithProviders, signInAs, signInWithMfaAs, signOut } from './render';
+import { renderWithProviders, signInAs, signOut } from './render';
 
 const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
@@ -79,7 +79,7 @@ describe('M9 approve (AC-02, AC-09)', () => {
     // AC-09: with actor and before/after — read as the manager, because §12.1
     // gives the clerk no audit access at all. That the clerk *cannot* read back
     // the entry they just caused is the matrix working, not a gap.
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const audit = await auditRepository.forEntity('changeRequest', 'chg-2');
     const entry = audit.items.find((item) => item.action === 'changeRequest.approve');
     expect(entry).toBeDefined();
@@ -272,7 +272,7 @@ describe('M2 supplier detail', () => {
 
     // Again read as the manager: a clerk may reveal a number and may not read the
     // log of who revealed it. Deliberate — the log is for the people reviewing.
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const audit = await auditRepository.forEntity('supplier', 'sup-1');
     expect(audit.items.some((item) => item.action === 'supplier.bankDetails.reveal')).toBe(true);
   });
@@ -293,20 +293,23 @@ describe('M2 supplier detail', () => {
 });
 
 describe('server-side capability enforcement', () => {
-  it('leaves a manager unauthenticated until the second factor is verified', async () => {
-    // MFA is mandatory for manager and above. A correct password alone must not
-    // produce a usable session.
+  it('gives a manager a usable session from a password alone', async () => {
+    /**
+     * The inverse of what this asserted while the console had a second factor: a correct
+     * password used to leave the store in `mfaRequired` with no access token, and reading a
+     * supplier had to fail. The factory withdrew that step, so the password *is* the
+     * session — and the refusals below prove that dropping it did not widen what a manager
+     * may then do.
+     */
     await signInAs(MANAGER);
-    await expect(supplierRepository.get('sup-1')).rejects.toMatchObject({
-      code: 'unauthenticated',
-    });
+    await expect(supplierRepository.get('sup-1')).resolves.toBeTruthy();
   });
 
   it('refuses a manager editing a supplier record, per §12.1', async () => {
     // The matrix gives the manager `R` on supplier records, not `W` — easy to get
     // wrong, because a manager outranks a clerk everywhere else. The console hides
     // the button; this proves the server does not depend on that.
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
 
     await expect(supplierRepository.get('sup-1')).resolves.toBeTruthy();
     await expect(supplierRepository.update('sup-1', { name: 'Changed' })).rejects.toMatchObject({
@@ -315,7 +318,7 @@ describe('server-side capability enforcement', () => {
   });
 
   it('lets a manager decide a change request the clerk did not raise', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
 
     const decided = await changeRequestRepository.approve('chg-6', {
       note: 'Clerk raised this at the counter; verified against the passbook.',

@@ -88,14 +88,14 @@ export function useUpdateUser() {
   });
 }
 
-export type UserAction = 'suspend' | 'reactivate' | 'mfa';
+export type UserAction = 'suspend' | 'reactivate';
 
 /**
- * Suspend, reactivate and reset-MFA behind one mutation.
+ * Suspend and reactivate behind one mutation.
  *
- * All three take a mandatory reason and invalidate the same things, so three hooks would be
- * three places to forget the session key. Which action is *offered* is the screen's decision;
- * the server refuses the rest.
+ * Both take a mandatory reason and invalidate the same things, so two hooks would be two
+ * places to forget the session key. Which action is *offered* is the screen's decision; the
+ * server refuses the rest.
  */
 export function useUserAction() {
   const invalidate = useInvalidateUsers();
@@ -113,9 +113,7 @@ export function useUserAction() {
     }) =>
       action === 'suspend'
         ? userRepository.suspend(id, reason, context)
-        : action === 'reactivate'
-          ? userRepository.reactivate(id, reason)
-          : userRepository.resetMfa(id, reason, { actingUserId: context.actingUserId }),
+        : userRepository.reactivate(id, reason),
     onSuccess: invalidate,
   });
 }

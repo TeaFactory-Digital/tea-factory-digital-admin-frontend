@@ -1,10 +1,10 @@
 /**
- * Inviting a user, editing one, and the three things that need a reason.
+ * Inviting a user, editing one, and the two things that need a reason.
  *
- * The reason is mandatory on suspend, reactivate **and** an MFA reset, for the same argument
- * AC-06 makes about a rejection note: the person it happens to will ask, and "suspended on
- * the 14th" with no why is a conversation nobody in the office can have. A colleague is owed
- * that at least as much as a supplier.
+ * The reason is mandatory on suspend **and** reactivate, for the same argument AC-06 makes
+ * about a rejection note: the person it happens to will ask, and "suspended on the 14th"
+ * with no why is a conversation nobody in the office can have. A colleague is owed that at
+ * least as much as a supplier.
  *
  * Roles are checkboxes rather than a single select, because §12.1 is a set — a person can be
  * the editor and the factory administrator at a small factory, and `grantsFromRoles`
@@ -13,11 +13,9 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ShieldAlert } from 'lucide-react';
 import {
   DEFAULT_ROLE_MATRIX,
   emailSchema,
-  requiresMfa,
   type AdminConsoleUser,
   type ConsoleRole,
   type LockoutCandidate,
@@ -219,20 +217,6 @@ export function UserDialog({
             <p className="text-caption text-warning">{t('users.cannotEditOwnRoles')}</p>
           ) : null}
         </fieldset>
-
-          {/**
-           * The MFA obligation, stated rather than enforced at this point.
-           *
-           * A user cannot enrol before they have an account, so refusing to create a manager
-           * without a second factor would make the senior roles unassignable. The console says
-           * what is now owed; the sign-in is what insists on it.
-           */}
-          {requiresMfa(roles) ? (
-            <p className="flex items-start gap-xs rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
-              <ShieldAlert className="mt-xxs size-icon-sm shrink-0" aria-hidden />
-              {t('users.mfaObligation')}
-            </p>
-          ) : null}
         </div>
       </Dialog>
 
@@ -255,11 +239,9 @@ export function UserDialog({
 }
 
 /**
- * Suspend, reactivate or reset a second factor — all three with a mandatory reason.
+ * Suspend or reactivate — both with a mandatory reason.
  *
- * One dialog because the shape is identical and the copy is what differs. The MFA reset gets
- * the strongest wording: it is the only action here that is a security operation, and it is
- * exactly what an attacker holding an administrator session would do.
+ * One dialog because the shape is identical and the copy is what differs.
  */
 export function UserActionDialog({
   user,

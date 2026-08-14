@@ -13,19 +13,13 @@ import { expect, test, type Page } from '@playwright/test';
 const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
 const PASSWORD = 'demo1234';
-const MFA_CODE = '123456';
 
-async function signIn(page: Page, email: string, mfa = false) {
+/** One step for every role: a correct password is the whole of console sign-in. */
+async function signIn(page: Page, email: string) {
   await page.goto('/sign-in');
   await page.getByLabel(/^email$/i).fill(email);
   await page.getByLabel(/^password$/i).fill(PASSWORD);
   await page.getByRole('button', { name: /^sign in$/i }).click();
-
-  if (mfa) {
-    // Manager and above: a correct password alone is not a session.
-    await page.getByLabel(/^code$/i).fill(MFA_CODE);
-    await page.getByRole('button', { name: /^verify$/i }).click();
-  }
 
   await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible({ timeout: 15_000 });
 }
@@ -80,7 +74,7 @@ test('tells a clerk that the credit decision is not theirs to give', async ({ pa
 });
 
 test('a manager gets the decision controls the clerk does not', async ({ page }) => {
-  await signIn(page, MANAGER, true);
+  await signIn(page, MANAGER);
   await page.goto('/credit');
 
   const grid = page.getByRole('table', { name: /credit queues/i });

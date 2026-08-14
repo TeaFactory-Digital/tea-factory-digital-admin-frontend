@@ -27,7 +27,7 @@ import { teaPacketRepository } from '@/services/repositories/teaPacketRepository
 import { adminConfigRepository } from '@/services/repositories/adminConfigRepository';
 import { isApiError } from '@/services/api/errors';
 import { useAuthStore } from '@/auth/authStore';
-import { signInAs, signInWithMfaAs, signOut } from './render';
+import { signInAs, signOut } from './render';
 
 const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
@@ -67,7 +67,7 @@ describe('M18 tea packet requests', () => {
   });
 
   it('refuses a decision without a note (AC-06), on both verbs', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const [row] = await pendingRequests();
 
     const shortApprove = await teaPacketRepository
@@ -84,7 +84,7 @@ describe('M18 tea packet requests', () => {
   });
 
   it('approves without a ceiling, because there is no ceiling to go stale (BR-310 does not apply)', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const rows = await pendingRequests();
     // A row inside the cap and raised in the app, so neither the store policy nor
     // four eyes is what this case is measuring.
@@ -114,7 +114,7 @@ describe('M18 tea packet requests', () => {
   });
 
   it('refuses a second decision on the same request (two clerks, one inbox)', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const rows = await pendingRequests();
     const row = rows.find(
       (one) =>
@@ -131,7 +131,7 @@ describe('M18 tea packet requests', () => {
   });
 
   it('refuses the person who raised it at the counter (BR-501)', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const rows = await pendingRequests();
     // The fixture's counter-raised row carries `createdById`, which is what four eyes
     // is checked on — an app request has none and anybody may decide it.
@@ -153,7 +153,7 @@ describe('M18 tea packet requests', () => {
   });
 
   it('refuses an approval outside the factory’s stock policy, and allows the rejection', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const rows = await pendingRequests();
     const overMax = rows.find(
       (one) => one.packets > DEFAULT_TEA_PACKET_POLICY.maxPacketsPerRequest,
@@ -177,7 +177,7 @@ describe('M18 tea packet requests', () => {
   });
 
   it('counts approved-and-unrecovered tea as money the factory is owed (M14)', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const { usage } = await adminConfigRepository.get();
 
     /**

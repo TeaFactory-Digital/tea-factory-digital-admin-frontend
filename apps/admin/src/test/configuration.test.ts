@@ -30,7 +30,7 @@ import { isApiError } from '@/services/api/errors';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { useAuthStore } from '@/auth/authStore';
 import { tenantId } from '@/config/tenant';
-import { signInAs, signInWithMfaAs, signOut } from './render';
+import { signInAs, signOut } from './render';
 
 const ADMIN = 'factoryadmin@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
@@ -333,7 +333,7 @@ describe('M14 configuration', () => {
     await adminConfigRepository.patch({ factory: { ...config.factory, location: 'Matara' } }, config, usage);
 
     signOut();
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const trail = await auditRepository.forEntity('config', config.tenantId);
     const entry = trail.items.find((one) => one.action === 'config.update');
 
@@ -348,7 +348,7 @@ describe('M14 configuration', () => {
   }, 20_000);
 
   it('lets a manager read the configuration and not change it (§12.1)', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const { config, usage } = await adminConfigRepository.get();
     /**
      * Asserted against the resolved tenant rather than a literal. Vitest runs in jsdom,

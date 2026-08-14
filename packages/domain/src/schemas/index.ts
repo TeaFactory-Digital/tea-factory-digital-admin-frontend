@@ -59,17 +59,6 @@ export const updateUserSchema = z.object({
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 
-
-export const mfaSchema = z.object({
-  /** TOTP: exactly six digits. A trimmed paste with a space must still pass. */
-  code: z
-    .string()
-    .transform((v) => v.replace(/\s+/g, ''))
-    .refine((v) => /^\d{6}$/.test(v), 'validation.mfaCode'),
-});
-
-export type MfaInput = z.infer<typeof mfaSchema>;
-
 /* ─────────────────────────── Decisions (M7, M9) ─────────────────────────── */
 
 /**

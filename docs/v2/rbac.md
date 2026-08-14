@@ -234,11 +234,13 @@ Console users are a **separate realm** from suppliers: different table, differen
 token audience, different login screen. A supplier token must never open the
 console.
 
-- **MFA is mandatory for manager and above.** The manager is the only role that
-  can approve credit above threshold, close a month or publish bills, so the
-  second factor is not optional dressing. A correct password alone leaves the
-  store in `mfaRequired` with **no access token** — there is an integration test
-  asserting that a manager who has not completed MFA cannot read anything.
+- **Sign-in is one step, for every role.** The console asked manager-and-above for a
+  TOTP code and the factory has withdrawn it: it is worked from shared office machines,
+  where a code on one person's phone stops whoever is at the counter. So a correct
+  password *is* a session — and what guards a senior action is this matrix, the four-eyes
+  rule and the audit log, none of which ever depended on a second factor. The integration
+  test that asserted a manager could read nothing until MFA was verified now asserts the
+  inverse, beside the refusals proving the matrix still holds (`changeRequests.test.tsx`).
 - **Roles are per factory.** A platform admin is the only identity that spans
   tenants, and every cross-tenant action is audited.
 - **Sessions are revocable**, and every approval carries the actor into the audit

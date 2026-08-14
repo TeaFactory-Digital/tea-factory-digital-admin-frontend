@@ -37,7 +37,7 @@ import { inquiryRepository } from '@/services/repositories/inquiryRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { isApiError } from '@/services/api/errors';
 import { useAuthStore } from '@/auth/authStore';
-import { signInAs, signInWithMfaAs, signOut } from './render';
+import { signInAs, signOut } from './render';
 
 const ADMIN = 'factoryadmin@galabodatea.lk';
 const EDITOR = 'editor@galabodatea.lk';
@@ -253,7 +253,7 @@ describe('M13 notifications', () => {
     });
 
     signOut();
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const trail = await auditRepository.list({ pageSize: 200 });
     const actions = trail.items.map((entry) => entry.action);
     expect(actions).toContain('notification.send');
@@ -310,7 +310,7 @@ describe('M13 automatic triggers', () => {
     await billRepository.generate(open.monthKey);
 
     signOut();
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     await monthRepository.publish(open.monthKey);
 
     signOut();
@@ -399,7 +399,7 @@ describe('M13 automatic triggers', () => {
   }, 30_000);
 
   it('fires requestDecided without the decision note', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const { changeRequestRepository } = await import(
       '@/services/repositories/changeRequestRepository'
     );

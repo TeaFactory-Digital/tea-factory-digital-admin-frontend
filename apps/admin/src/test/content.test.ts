@@ -38,7 +38,7 @@ import { newsRepository, staticPageRepository } from '@/services/repositories/co
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { isApiError } from '@/services/api/errors';
 import { useAuthStore } from '@/auth/authStore';
-import { signInAs, signInWithMfaAs, signOut } from './render';
+import { signInAs, signOut } from './render';
 
 const EDITOR = 'editor@galabodatea.lk';
 const ADMIN = 'factoryadmin@galabodatea.lk';
@@ -241,7 +241,7 @@ describe('M11 news', () => {
     await newsRepository.publish(created.id);
 
     signOut();
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const trail = await auditRepository.forEntity('newsArticle', created.id);
     const entry = trail.items.find((candidate) => candidate.action === 'news.publish');
 
@@ -401,7 +401,7 @@ describe('M12 static content', () => {
     await staticPageRepository.saveTranslation('terms', 'en', { title: 'Terms of supply', body });
 
     signOut();
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const trail = await auditRepository.forEntity('staticPage', 'terms');
     const entry = trail.items.find(
       (candidate) => candidate.action === 'staticPage.translation.save',

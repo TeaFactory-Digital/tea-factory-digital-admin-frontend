@@ -56,13 +56,8 @@ export const en = {
   'profile.firstSignIn': 'This is your first session',
   'profile.securityTitle': 'Security',
   'profile.securityDescription': 'How this account is protected.',
-  'profile.mfaOn': 'Two-factor is set up',
-  'profile.mfaOff': 'Two-factor is not set up',
-  'profile.mfaOwed':
-    'Required for your role — ask a factory administrator to reset it so you can enrol.',
-  'profile.mfaOptional': 'Not required for your role.',
   'profile.securityHint':
-    'Passwords and two-factor are reset by a factory administrator from Users & roles — there is no way to change them from here.',
+    'Passwords are reset by a factory administrator from Users & roles — there is no way to change one from here.',
   'profile.save': 'Save preferences',
   'profile.unsavedHint': 'Not applied yet — save to use them.',
   'profile.nothingToSave': 'Nothing to save.',
@@ -161,17 +156,11 @@ export const en = {
   'auth.password': 'Password',
   'auth.signIn': 'Sign in',
   'auth.signingIn': 'Signing in…',
-  'auth.mfaTitle': 'Two-factor code',
-  'auth.mfaSubtitle': 'Enter the six-digit code from your authenticator app.',
-  'auth.mfaCode': 'Code',
-  'auth.mfaVerify': 'Verify',
-  'auth.mfaRequiredNote': 'Two-factor authentication is required for manager accounts and above.',
   'auth.forgotPassword': 'Forgotten your password?',
   'auth.forgotPasswordHint':
     'Ask your factory administrator to reset it. The console cannot email a reset link.',
   'auth.supplierWrongPlace': 'Suppliers sign in on the mobile app, not here.',
   'auth.demoCredentials': 'Mock sign-in',
-  'auth.demoMfa': '(two-factor: {{code}})',
   'auth.demoRole.clerk': 'Clerk — change requests, suppliers',
   'auth.demoRole.manager': 'Manager — approves credit and change requests',
   'auth.demoRole.editor': 'Editor — writes news and static content',
@@ -673,7 +662,6 @@ export const en = {
   'audit.action.userUpdate': 'Changed a user’s name or roles',
   'audit.action.userSuspend': 'Suspended a console user',
   'audit.action.userReactivate': 'Reactivated a console user',
-  'audit.action.userMfaReset': 'Reset a user’s two-factor sign-in',
   'audit.action.roleUpdate': 'Changed what a role may do',
 
   /* ───────────────────────────── validation ───────────────────────────── */
@@ -690,7 +678,6 @@ export const en = {
   'validation.rateNonNegative': 'This cannot be negative',
   'validation.rateTooLarge': 'That rate is larger than the factory can record',
   'validation.moneyScale': 'Money takes at most two decimals',
-  'validation.mfaCode': 'Enter the six-digit code',
   'validation.noteRequired': 'A note is required',
   'validation.noteTooShort': 'Write at least 10 characters — the supplier reads this',
   'validation.url': 'Enter a valid web address',
@@ -1489,14 +1476,12 @@ export const en = {
   'users.status.suspended': 'Suspended',
   'users.neverSignedIn': 'Never',
   'users.lastAdministrator': 'Only way back in',
-  'users.mfaOwed': 'Two-factor not set up',
   'users.noDeleteHint':
     'Accounts are suspended, never deleted — a person who approved a payout or closed a month is named on those records, and a record whose author cannot be found is not evidence.',
 
   'users.edit': 'Edit',
   'users.suspend': 'Suspend',
   'users.reactivate': 'Reactivate',
-  'users.resetMfa': 'Reset two-factor',
   'users.invite': 'Add a user',
   'users.inviteTitle': 'Add a user',
   'users.inviteBody':
@@ -1513,11 +1498,8 @@ export const en = {
     'More than one is fine. Where roles disagree, the most permissive one applies.',
   'users.cannotEditOwnRoles':
     'You cannot change your own roles. Ask another administrator — this is what stops somebody locking themselves out halfway through a job.',
-  'users.mfaObligation':
-    'This person will have to set up two-factor sign-in before they can get in. It is required for managers and administrators.',
   'users.created': '{{name}} can now sign in',
-  'users.createdHint':
-    'Tell them their password. They will be asked to set up two-factor if their role needs it.',
+  'users.createdHint': 'Tell them their password. It is all they need to sign in.',
   'users.confirmCreateBody': 'This will create a new console account with the selected roles.',
   'users.confirmEditBody': 'This will update the account details and access for this user.',
   'users.createFailed': 'The user was not created',
@@ -1535,12 +1517,6 @@ export const en = {
   'users.reactivateConfirm': 'Reactivate them',
   'users.reactivateDone': '{{name}} can sign in again',
   'users.reactivateFailed': 'Nothing was changed',
-  'users.mfaTitle': 'Reset two-factor for {{name}}?',
-  'users.mfaBody':
-    'Use this when somebody has lost their phone. They will set it up again next time they sign in — and until they do, their password alone gets them in. Only do this when you are certain who you are talking to.',
-  'users.mfaConfirm': 'Reset it',
-  'users.mfaDone': 'Two-factor reset for {{name}}',
-  'users.mfaFailed': 'Nothing was changed',
   'users.reasonHint': 'At least {{min}} characters. The person this happens to will ask why.',
   'users.confirmActionBody': 'This will perform the requested action for {{action}}.',
 
@@ -1666,7 +1642,6 @@ export const en = {
   'error.featureDisabled': 'This factory does not use that feature.',
   'error.notFound': 'That record no longer exists.',
   'error.invalid': 'Email or password is incorrect.',
-  'error.mfaInvalid': 'That code is not correct.',
   'error.noteRequired': 'A note is required before this can be recorded.',
   'error.fourEyesViolation': 'You raised this record, so you cannot approve it.',
   'error.alreadyDecided': 'Someone else has already decided this.',

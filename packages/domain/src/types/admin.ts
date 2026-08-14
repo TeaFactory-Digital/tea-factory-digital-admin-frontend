@@ -94,8 +94,6 @@ export interface ConsoleUser {
   /** The tenant this identity belongs to. `null` for a platform admin. */
   factoryId: string | null;
   roles: ConsoleRole[];
-  /** Mandatory for manager and above (admin-console.md → Auth and roles). */
-  mfaEnrolled: boolean;
   lastLoginAt: string | null;
   status: 'active' | 'suspended';
 }
@@ -120,18 +118,17 @@ export interface AuthSession {
   grants: CapabilityGrants;
 }
 
-/** Sign-in that has not finished: MFA is still owed. */
-export interface MfaChallenge {
-  /** Opaque, single-use, short-lived. Not a session token. */
-  challengeToken: string;
-  method: 'totp';
-  /** Present only during first-time enrolment. */
-  enrolment?: { secret: string; otpauthUrl: string };
-}
-
-export type LoginResult =
-  | { status: 'authenticated'; session: AuthSession }
-  | { status: 'mfaRequired'; challenge: MfaChallenge };
+/**
+ * What `POST /admin/auth/login` answers with.
+ *
+ * **One outcome, because sign-in is one step.** The console carried a second factor for
+ * manager and above — a TOTP challenge between the password and the session — and the
+ * factory has withdrawn it: the console runs on shared office machines where a code on
+ * one person's phone stops whoever is at the counter. A correct password is now a
+ * session, and the tagged union that used to carry `mfaRequired` beside it is gone with
+ * the step it described.
+ */
+export type LoginResult = { status: 'authenticated'; session: AuthSession };
 
 /* ─────────────────────────────── Paging ─────────────────────────────── */
 
@@ -1710,9 +1707,8 @@ export interface NotificationReach {
 /**
  * A console user as the administration screen lists them.
  *
- * Extends `ConsoleUser` with the two things a list has to show and a session payload has no
- * reason to carry: whether this person is **the way back into the console**, and whether they
- * owe a second factor.
+ * Extends `ConsoleUser` with what a list has to show and a session payload has no reason to
+ * carry: whether this person is **the way back into the console**.
  */
 export interface AdminConsoleUser extends ConsoleUser {
   /**
@@ -1723,8 +1719,6 @@ export interface AdminConsoleUser extends ConsoleUser {
    * server is what refuses.
    */
   canAdministerUsers: boolean;
-  /** Holds a manager-or-above role and has not enrolled a second factor. */
-  owesMfa: boolean;
   /** `true` when suspending or demoting this user would lock the factory out. */
   isLastAdministrator: boolean;
 }
@@ -2031,8 +2025,6 @@ export const ADMIN_ERROR_CODES = [
   'stale-eligibility',
   'note-required',
   'month-locked',
-  'mfa-required',
-  'mfa-invalid',
   'supplier-code-taken',
   'already-decided',
 

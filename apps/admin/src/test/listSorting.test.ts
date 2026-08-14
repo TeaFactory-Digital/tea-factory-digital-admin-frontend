@@ -15,7 +15,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { changeRequestRepository } from '@/services/repositories/changeRequestRepository';
 import { supplierRepository } from '@/services/repositories/supplierRepository';
-import { signInAs, signInWithMfaAs, signOut } from './render';
+import { signInAs, signOut } from './render';
 
 const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
@@ -78,7 +78,7 @@ describe('server-side sorting', () => {
   });
 
   it('reads the audit log newest-first by default and oldest-first on request', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
 
     // No `sort` at all: the repository's own default has to be newest-first, and
     // it has to arrive that way from the API rather than be re-sorted here.

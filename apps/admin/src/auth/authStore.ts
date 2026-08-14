@@ -12,13 +12,18 @@
  */
 
 import { create } from 'zustand';
-import type { AuthSession, CapabilityGrants, ConsoleUser, MfaChallenge } from '@tfd/domain';
+import type { AuthSession, CapabilityGrants, ConsoleUser } from '@tfd/domain';
 import { can as canDo, type AccessLevel, type Capability } from '@tfd/domain';
 import { authRepository } from '@/services/repositories/authRepository';
 import { setAuthBridge } from '@/services/api/client';
 import { isApiError } from '@/services/api/errors';
 
-export type AuthStatus = 'bootstrapping' | 'anonymous' | 'mfaRequired' | 'authenticated';
+/**
+ * No `mfaRequired` between `anonymous` and `authenticated` any more: the second factor
+ * the console asked manager-and-above for has been withdrawn (see `LoginResult`), so a
+ * correct password moves the store straight to a session.
+ */
+export type AuthStatus = 'bootstrapping' | 'anonymous' | 'authenticated';
 
 interface AuthState {
   status: AuthStatus;
@@ -26,11 +31,9 @@ interface AuthState {
   grants: CapabilityGrants;
   accessToken: string | null;
   expiresAt: string | null;
-  challenge: MfaChallenge | null;
 
   bootstrap: () => Promise<void>;
   login: (email: string, password: string) => Promise<AuthStatus>;
-  verifyMfa: (code: string) => Promise<void>;
   logout: () => Promise<void>;
   /** Used by the transport's 401 handler. Returns a fresh token, or null. */
   refresh: () => Promise<string | null>;
@@ -43,7 +46,6 @@ const anonymous = {
   grants: {} as CapabilityGrants,
   accessToken: null,
   expiresAt: null,
-  challenge: null,
 };
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -55,7 +57,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { accessToken, expiresAt } = await authRepository.refresh();
       set({ accessToken, expiresAt });
       const { user, grants } = await authRepository.me();
-      set({ status: 'authenticated', user, grants, challenge: null });
+      set({ status: 'authenticated', user, grants });
     } catch {
       // No refresh cookie, or it has expired. Not an error — it is the normal
       // state of a browser that has never signed in.
@@ -64,24 +66,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   login: async (email, password) => {
-    const result = await authRepository.login(email, password);
-
-    if (result.status === 'mfaRequired') {
-      set({ status: 'mfaRequired', challenge: result.challenge });
-      return 'mfaRequired';
-    }
-
-    applySession(set, result.session);
-    return 'authenticated';
-  },
-
-  verifyMfa: async (code) => {
-    const challenge = get().challenge;
-    if (!challenge) {
-      throw new Error('No MFA challenge in progress.');
-    }
-    const session = await authRepository.verifyMfa(challenge.challengeToken, code);
+    const session = await authRepository.login(email, password);
     applySession(set, session);
+    return 'authenticated';
   },
 
   logout: async () => {
@@ -117,7 +104,6 @@ function applySession(
     grants: session.grants,
     accessToken: session.accessToken,
     expiresAt: session.expiresAt,
-    challenge: null,
   });
 }
 

@@ -179,7 +179,7 @@ const BANKS = SRI_LANKA_BANKS.map((bank) => ({
  *
  *  - **clerk** raises office-side requests, and AC-10 ("no console user can
  *    approve a record they created") needs someone to have created one.
- *  - **manager** approves them, and has MFA enrolled.
+ *  - **manager** approves them.
  *  - **editor** writes content and **factoryAdmin** publishes it — the capability
  *    boundary that is the whole of M11 and M12's control.
  *
@@ -188,9 +188,6 @@ const BANKS = SRI_LANKA_BANKS.map((bank) => ({
  * be looked up in a source file gets pasted into a chat thread instead.
  */
 export const MOCK_PASSWORD = 'demo1234';
-
-/** The manager has MFA enrolled, so signing in as them exercises the challenge. */
-export const MOCK_MFA_CODE = '123456';
 
 export interface MockUser extends ConsoleUser {
   password: string;
@@ -204,7 +201,6 @@ export const mockUsers: MockUser[] = [
     email: 'clerk@galabodatea.lk',
     factoryId: 'galaboda',
     roles: ['clerk'],
-    mfaEnrolled: false,
     lastLoginAt: hoursAgo(20),
     status: 'active',
     password: MOCK_PASSWORD,
@@ -216,7 +212,6 @@ export const mockUsers: MockUser[] = [
     email: 'manager@galabodatea.lk',
     factoryId: 'galaboda',
     roles: ['manager'],
-    mfaEnrolled: true,
     lastLoginAt: daysAgo(1),
     status: 'active',
     password: MOCK_PASSWORD,
@@ -242,7 +237,6 @@ export const mockUsers: MockUser[] = [
     email: 'editor@galabodatea.lk',
     factoryId: 'galaboda',
     roles: ['editor'],
-    mfaEnrolled: false,
     lastLoginAt: hoursAgo(9),
     status: 'active',
     password: MOCK_PASSWORD,
@@ -254,9 +248,6 @@ export const mockUsers: MockUser[] = [
     email: 'factoryadmin@galabodatea.lk',
     factoryId: 'galaboda',
     roles: ['factoryAdmin'],
-    // Manager and above: MFA is mandatory, and a factory administrator holds
-    // `usersAndRoles: W` — the account that can widen anybody else's access.
-    mfaEnrolled: false,
     lastLoginAt: daysAgo(2),
     status: 'active',
     password: MOCK_PASSWORD,
@@ -284,9 +275,6 @@ export const mockUsers: MockUser[] = [
     email: 'factory-system@galabodatea.lk',
     factoryId: 'galaboda',
     roles: [],
-    // No second factor: this is the factory's own weighing and accounting desk, on a
-    // shared machine where a TOTP app on somebody's phone would stop the queue.
-    mfaEnrolled: false,
     lastLoginAt: hoursAgo(3),
     status: 'active',
     password: MOCK_PASSWORD,

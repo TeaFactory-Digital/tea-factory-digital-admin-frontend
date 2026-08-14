@@ -34,7 +34,7 @@ cannot.
 | --- | --- |
 | **Workspace** | npm workspaces: `@tfd/domain`, `@tfd/brand`, `@tfd/admin`. Packages consumed as TS source, no build step |
 | **Runtime white-label** | Subdomain → tenant → `GET /config` → CSS custom properties → Tailwind tokens. Three tenants, one of them reduced-feature |
-| **Auth realm** | Separate from suppliers. Password → optional TOTP → in-memory access token + httpOnly refresh cookie, with refresh-on-401 |
+| **Auth realm** | Separate from suppliers. Password → in-memory access token + httpOnly refresh cookie, with refresh-on-401. **One step: the second factor was removed at the factory's request** |
 | **RBAC** | The §12.1 matrix as data, server grants overriding per capability, four-eyes, capability route guards |
 | **Transport** | Axios with domain-code-preserving errors, tenant header, idempotency keys, single-retry refresh |
 | **Mock API** | MSW: 84 suppliers, 14 change requests, 14 credit requests, **6 tea-packet requests**, 7 inquiries, five news articles, **four banners in every window state**, the app's six fixed pages in si/en/ta, 3 tenants, 6 console users whose suspensions take effect on the next request — enforcing every refusal the real API must. The v1 money-chain fixtures and handlers are all still there, feeding the unrouted modules |
@@ -173,7 +173,7 @@ Worst first: correctness, then plumbing, then polish.
 6. **Refresh-token rotation is unverified.** The mock stands in for the httpOnly
    cookie with a `sessionStorage` entry, which is enough for the console to
    survive a reload but has **no rotation and no reuse detection**. Both are
-   specified in [api-contract.md](./api-contract.md) §2.3 and testable only
+   specified in [api-contract.md](./api-contract.md) §2.2 and testable only
    against the real backend.
 
 7. **M17 has no export, and neither has M16.** §18.1 says "read-only, exportable" and
@@ -404,13 +404,19 @@ Worst first: correctness, then plumbing, then polish.
     console has no screen for either — this is the one place in the console where the mock is
     weaker than the contract rather than equal to it.
 
-33. **MFA is owed and never collected.** `MFA_REQUIRED_ROLES` marks manager and above, the
-    user list shows *Two-factor not set up*, and the sign-in demands a code from anyone who
-    **is** enrolled — but nothing enrols anybody. The only MFA control that exists is the
-    reset, which un-enrols. So a manager who owes a second factor signs in with a password
-    indefinitely, and the badge is a note rather than a gate. *To close:* an enrolment step
-    at first sign-in for a role that requires it, which is a screen plus a TOTP secret the
-    server issues — and it is where §18.1 expected MFA enrolment to live.
+33. ⛔ *Closed by removal, not by building it: **the factory withdrew the requirement**.
+    The console is worked from shared office machines, and a code on one person's phone
+    stops whoever is at the counter.*
+
+    **MFA was owed and never collected**, and rather than build the enrolment step, the
+    second factor is gone: no `MFA_REQUIRED_ROLES`, no *Two-factor not set up* badge, no
+    reset action, no challenge between the password and the session, and no `mfaEnrolled`
+    on a user record. `POST /admin/auth/mfa` and `POST /admin/users/{id}/mfa/reset` are
+    withdrawn from the contract with them. What still guards a senior action is what always
+    carried the weight: the §12.1 matrix, the four-eyes rule, no self-modification, no
+    last-administrator suspension, and every decision audited by name. The exposure this
+    leaves is a password on a shared machine, and gap 32 — nothing forces a created user to
+    change theirs — is now the whole of the console's credential story.
 
 34. **The role matrix has no "restore the standard roles".** A factory that has narrowed
     six roles has no single control to put them back, and `DEFAULT_ROLE_MATRIX` is right
@@ -577,9 +583,9 @@ after a month has been published on the wrong assumption:
    caught both is an afternoon's work.
 3. **Banner artwork upload** (gap 11) — the one thing an editor can want on the new module
    and cannot have. It needs a store and a size policy more than it needs a form.
-4. **MFA enrolment** (gap 33): the console names who owes a second factor and has no way
-   for them to set one up, so the *Two-factor not set up* badge is a note rather than a
-   gate.
+4. **A real credential for a created user** (gap 32) — now the console's whole credential
+   story, since the second factor is gone: a one-time password the office cannot read back
+   and a forced change at first sign-in.
 5. **Get the Factory System's complete outstanding balances into the sync** (gap 4).
    The ceiling is settled; the subtrahend is not, and it is the half that permits
    over-lending. Nothing else in the credit path is blocked on anything.

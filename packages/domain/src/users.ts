@@ -95,31 +95,13 @@ export function matrixKeepsRecovery(
   );
 }
 
-/**
- * Roles for which a second factor is mandatory.
+/*
+ * **No second factor lives here any more.**
  *
- * admin-console.md: *"Mandatory for manager and above."* Listed rather than inferred from
- * the matrix, because "above" is about seniority and the matrix is about capabilities — a
- * clerk with `changeRequests: approve` is not a manager.
+ * `MFA_REQUIRED_ROLES`, `requiresMfa` and `owesMfa` marked manager-and-above as owing a
+ * TOTP code, and the factory has withdrawn the requirement: the console is used from
+ * shared office machines, and a code on one person's phone stops whoever is at the
+ * counter. Nothing replaced them — a password is the whole of console sign-in now, and
+ * the protections that remain are the ones that never depended on a second factor: no
+ * self-modification, no last-administrator suspension, and every action audited by name.
  */
-export const MFA_REQUIRED_ROLES: ConsoleRole[] = [
-  'manager',
-  'factoryAdmin',
-  'platformAdmin',
-];
-
-/**
- * Does this set of roles oblige a second factor?
- *
- * Note what this is **not**: a reason to refuse the grant. A user cannot enrol before they
- * have the role, so refusing would make the senior roles unassignable. The console flags the
- * obligation and the sign-in enforces it — see `MfaOwed` on the user row.
- */
-export function requiresMfa(roles: readonly ConsoleRole[]): boolean {
-  return roles.some((role) => MFA_REQUIRED_ROLES.includes(role));
-}
-
-/** A user who holds a role obliging MFA and has not enrolled. */
-export function owesMfa(user: Pick<ConsoleUser, 'roles' | 'mfaEnrolled'>): boolean {
-  return requiresMfa(user.roles) && !user.mfaEnrolled;
-}

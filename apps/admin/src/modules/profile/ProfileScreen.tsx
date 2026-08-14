@@ -10,12 +10,14 @@
  *
  * ## What is deliberately not here
  *
- * No password change and no two-factor enrolment. The auth surface is `login`,
- * `verifyMfa`, `refresh`, `logout` and `me` — there is no self-service endpoint for either,
- * and the supplier password reset in M2 is the office issuing a *supplier's* app password,
- * not a console user changing their own. A form posting to an endpoint that does not exist
- * would look like the feature until somebody needed it, so the security card states where
- * those changes actually happen instead.
+ * No password change. The auth surface is `login`, `refresh`, `logout` and `me` — there is
+ * no self-service endpoint for one, and the supplier password reset in M2 is the office
+ * issuing a *supplier's* app password, not a console user changing their own. A form posting
+ * to an endpoint that does not exist would look like the feature until somebody needed it,
+ * so the security card states where that change actually happens instead.
+ *
+ * There is no two-factor enrolment either, and now for a different reason: the factory has
+ * withdrawn the requirement outright rather than left it unbuilt.
  *
  * The **sign-in screen keeps its own language switcher**, and that is the one copy worth
  * having: somebody who cannot read the console changes the language before signing in,
@@ -24,8 +26,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Save, ShieldCheck, ShieldAlert } from 'lucide-react';
-import { requiresMfa } from '@tfd/domain';
+import { Save } from 'lucide-react';
 import { useCurrentUser } from '@/auth/authStore';
 import { AppearanceControls } from '@/brand/AppearanceControls';
 import { useAppearance } from '@/brand/useAppearance';
@@ -107,22 +108,6 @@ export function ProfileScreen() {
    */
   if (!user) return null;
 
-  /**
-   * The obligation, not merely the fact.
-   *
-   * Two-factor is mandatory for manager and above (§ Auth and roles), so "not set up"
-   * means something different depending on the role: a clerk without it is fine, a manager
-   * without it is a gap somebody has to close.
-   *
-   * **`requiresMfa`, not a list of the roles it does not apply to.** This read
-   * `role !== 'clerk' && role !== 'weigher'`, which had already drifted — an editor holds
-   * `content: W` and nothing else, and was being told it owed a second factor. Inverting a
-   * membership test means every role added or removed has to be remembered in two places,
-   * and `MFA_REQUIRED_ROLES` is the one that decides.
-   */
-  const mfaRequired = requiresMfa(user.roles);
-  const mfaOwed = mfaRequired && !user.mfaEnrolled;
-
   return (
     <>
       <PageHeader title={t('profile.title')} description={t('profile.subtitle')} />
@@ -158,31 +143,10 @@ export function ProfileScreen() {
             description={t('profile.securityDescription')}
           />
           <CardBody className="flex flex-col gap-md">
-            <div className="flex items-start gap-sm">
-              {user.mfaEnrolled ? (
-                <ShieldCheck className="mt-xxs size-icon-sm shrink-0 text-success" aria-hidden />
-              ) : (
-                <ShieldAlert
-                  className={mfaOwed ? 'mt-xxs size-icon-sm shrink-0 text-warning' : 'mt-xxs size-icon-sm shrink-0 text-text-secondary'}
-                  aria-hidden
-                />
-              )}
-              <div className="flex flex-col gap-xxs">
-                <span className="text-body-small text-text-primary">
-                  {user.mfaEnrolled ? t('profile.mfaOn') : t('profile.mfaOff')}
-                </span>
-                <span className="text-caption text-text-secondary">
-                  {mfaOwed ? t('profile.mfaOwed') : t('profile.mfaOptional')}
-                </span>
-              </div>
-            </div>
-
             {/* Said rather than shown as a disabled form. There is no self-service endpoint
-                for either of these, and a control that cannot work is worse than a sentence
-                naming the person who can do it. */}
-            <p className="border-t border-divider pt-md text-caption text-text-secondary">
-              {t('profile.securityHint')}
-            </p>
+                for a password change, and a control that cannot work is worse than a
+                sentence naming the person who can do it. */}
+            <p className="text-caption text-text-secondary">{t('profile.securityHint')}</p>
           </CardBody>
         </Card>
 

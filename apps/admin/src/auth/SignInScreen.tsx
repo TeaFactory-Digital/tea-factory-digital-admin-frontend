@@ -6,9 +6,11 @@
  * grey for every tenant, and a clerk could not tell which deployment they were
  * pointed at.
  *
- * The two-step shape (password, then TOTP) is not optional dressing: MFA is
- * mandatory for manager and above, and the manager is the only role that can
- * approve credit above threshold, close a month or publish bills.
+ * **One step.** The screen used to ask manager-and-above for a TOTP code after the
+ * password; the factory has withdrawn that requirement, because the console is worked
+ * from shared office machines where a code on one person's phone stops whoever is at the
+ * counter. What guards a senior action is the audit trail and the four-eyes rule on the
+ * action itself, not a second factor at the door.
  */
 
 import { useForm } from 'react-hook-form';
@@ -16,7 +18,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
-import { loginSchema, mfaSchema, type LoginInput, type MfaInput } from '@tfd/domain';
+import { loginSchema, type LoginInput } from '@tfd/domain';
 import { useAuthStore } from './authStore';
 import { env } from '@/config/env';
 import { useFactory } from '@/config/RuntimeConfigProvider';
@@ -26,14 +28,13 @@ import { Button } from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
 import { Card, CardBody } from '@/components/ui/Card';
 import { errorMessageKey } from '@/lib/errorMessage';
-import { MOCK_MFA_CODE, MOCK_PASSWORD, mockUsers } from '@/services/mocks/seed';
+import { MOCK_PASSWORD, mockUsers } from '@/services/mocks/seed';
 
 export function SignInScreen() {
   const { t } = useTranslation();
   const factory = useFactory();
   const location = useLocation();
   const status = useAuthStore((s) => s.status);
-  const challenge = useAuthStore((s) => s.challenge);
 
   if (status === 'authenticated') {
     const from = (location.state as { from?: string } | null)?.from;
@@ -67,7 +68,7 @@ export function SignInScreen() {
 
         <Card>
           <CardBody>
-            {status === 'mfaRequired' && challenge ? <MfaForm /> : <PasswordForm />}
+            <PasswordForm />
           </CardBody>
         </Card>
 
@@ -149,73 +150,6 @@ function PasswordForm() {
   );
 }
 
-function MfaForm() {
-  const { t } = useTranslation();
-  const verifyMfa = useAuthStore((s) => s.verifyMfa);
-  const clear = useAuthStore((s) => s.clear);
-  const [submitError, setSubmitError] = useState<unknown>(null);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<MfaInput>({ resolver: zodResolver(mfaSchema), defaultValues: { code: '' } });
-
-  const onSubmit = handleSubmit(async ({ code }) => {
-    setSubmitError(null);
-    try {
-      await verifyMfa(code);
-    } catch (error) {
-      setSubmitError(error);
-    }
-  });
-
-  return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-md" noValidate>
-      <div>
-        <h2 className="text-title text-text-primary">{t('auth.mfaTitle')}</h2>
-        <p className="mt-xxs text-body-small text-text-secondary">{t('auth.mfaSubtitle')}</p>
-      </div>
-
-      <Field label={t('auth.mfaCode')} error={errors.code && t(errors.code.message ?? '')} required>
-        {({ id, describedBy, invalid, required }) => (
-          <Input
-            id={id}
-            // `one-time-code` so the OS keyboard and password managers offer the
-            // right thing; `numeric` so a tablet shows digits.
-            autoComplete="one-time-code"
-            inputMode="numeric"
-            maxLength={7}
-            autoFocus
-            className="numeric tracking-widest"
-            aria-describedby={describedBy}
-            invalid={invalid}
-            required={required}
-            {...register('code')}
-          />
-        )}
-      </Field>
-
-      {submitError ? (
-        <p role="alert" className="text-body-small text-error">
-          {t(errorMessageKey(submitError))}
-        </p>
-      ) : null}
-
-      <div className="flex gap-sm">
-        <Button type="submit" variant="primary" loading={isSubmitting} className="flex-1">
-          {t('auth.mfaVerify')}
-        </Button>
-        <Button type="button" variant="ghost" onClick={clear}>
-          {t('common.cancel')}
-        </Button>
-      </div>
-
-      <p className="text-caption text-text-secondary">{t('auth.mfaRequiredNote')}</p>
-    </form>
-  );
-}
-
 /**
  * Mock credentials, printed on screen while `VITE_USE_MOCK` is on.
  *
@@ -257,9 +191,7 @@ function MockCredentials() {
                 from the server, so `roles[0]` is `undefined` and the key would render as
                 itself — the one line on this card that has to be written for a user rather
                 than derived from one. */}
-            {t(`auth.demoRole.${user.roles[0] ?? 'factorySystem'}`)}
-            {user.mfaEnrolled ? ` ${t('auth.demoMfa', { code: MOCK_MFA_CODE })}` : ''}: {user.email}{' '}
-            / {MOCK_PASSWORD}
+            {t(`auth.demoRole.${user.roles[0] ?? 'factorySystem'}`)}: {user.email} / {MOCK_PASSWORD}
           </p>
         ))}
       </CardBody>

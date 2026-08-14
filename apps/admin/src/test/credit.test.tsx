@@ -39,7 +39,7 @@ import { deliveryRepository } from '@/services/repositories/deliveryRepository';
 import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { useAuthStore } from '@/auth/authStore';
-import { renderWithProviders, signInAs, signInWithMfaAs, signOut } from './render';
+import { renderWithProviders, signInAs, signOut } from './render';
 
 const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
@@ -172,7 +172,7 @@ describe('M7 eligibility (AC-05)', () => {
 
 describe('M7 approve', () => {
   it('raises the supplier’s balance and records what it was decided against (AC-09)', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const request = await creditRepository.get(WITHIN_CEILING);
     const supplierBefore = await supplierRepository.get(request.supplierId);
 
@@ -230,7 +230,7 @@ describe('M7 approve', () => {
 
 describe('M7 refusals', () => {
   it('refuses an approval against a ceiling that has moved (BR-310)', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const request = await creditRepository.get(WITHIN_CEILING);
 
     await expect(
@@ -248,7 +248,7 @@ describe('M7 refusals', () => {
     // The same refusal, reached the way it happens in the office rather than by
     // sending a wrong number: the clerk loads the queue, the factory records leaf,
     // the clerk clicks approve.
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const asRendered = await creditRepository.get(WITHIN_CEILING);
 
     await signInAs(FACTORY_SYSTEM);
@@ -259,7 +259,7 @@ describe('M7 refusals', () => {
       rows: [{ supplierId: asRendered.supplierId, kgs: 55.5 }],
     });
 
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     await expect(
       creditRepository.approve(
         WITHIN_CEILING,
@@ -277,7 +277,7 @@ describe('M7 refusals', () => {
      * row: the figures move again while the clerk reloads, and it can never be
      * cleared.
      */
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const request = await creditRepository.get('crd-5');
 
     const decided = await creditRepository.reject('crd-5', {
@@ -288,7 +288,7 @@ describe('M7 refusals', () => {
   });
 
   it('refuses more than the supplier may draw, on the client and on the server', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const request = await creditRepository.get(OVER_CEILING);
     expect(request.amount).toBeGreaterThan(request.eligibility.available);
 
@@ -314,7 +314,7 @@ describe('M7 refusals', () => {
   it('refuses self-approval (BR-501)', async () => {
     // The manager is the only role that may approve credit, so the four-eyes
     // fixture has to be one they raised themselves — see the seed's note.
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const request = await creditRepository.get(OFFICE_RAISED);
     expect(request.channel).toBe('office');
     expect(request.createdById).toBe('usr-manager-1');
@@ -332,7 +332,7 @@ describe('M7 refusals', () => {
     // Order matters: who may decide does not depend on what the ceiling says, and
     // a stale-eligibility answer here would tell the wrong person to reload rather
     // than to hand it over.
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const request = await creditRepository.get(OFFICE_RAISED);
 
     await expect(
@@ -345,7 +345,7 @@ describe('M7 refusals', () => {
   });
 
   it('refuses a decision with no note, on the client and on the server (AC-06)', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const request = await creditRepository.get('crd-3');
 
     await expect(
@@ -366,7 +366,7 @@ describe('M7 refusals', () => {
   });
 
   it('refuses a second decision on a request that is already decided', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const request = await creditRepository.get(ALREADY_APPROVED);
     expect(request.status).toBe('approved');
 
@@ -469,7 +469,7 @@ describe('M7 detail screen', () => {
   });
 
   it('withholds Approve when the ask is over the ceiling, and says why', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     renderDetail(OVER_CEILING);
 
     expect(await screen.findByText(/More than they may draw/i)).toBeInTheDocument();
@@ -479,7 +479,7 @@ describe('M7 detail screen', () => {
   });
 
   it('explains the four-eyes rule instead of offering a form that will fail', async () => {
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     renderDetail(OFFICE_RAISED);
 
     expect(await screen.findByText(/money takes four eyes/i)).toBeInTheDocument();
@@ -488,7 +488,7 @@ describe('M7 detail screen', () => {
 
   it('keeps the approve button disabled until the note is long enough (AC-06)', async () => {
     const user = userEvent.setup();
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     renderDetail(WITHIN_CEILING);
 
     await user.click(await screen.findByRole('button', { name: /^approve$/i }));

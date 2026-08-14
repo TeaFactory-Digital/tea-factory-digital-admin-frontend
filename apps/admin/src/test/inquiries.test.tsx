@@ -25,7 +25,7 @@ import { inquiryStatusForApp } from '@tfd/domain';
 import { InquiryDetailScreen } from '@/modules/inquiries/InquiryDetailScreen';
 import { inquiryRepository } from '@/services/repositories/inquiryRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
-import { renderWithProviders, signInAs, signInWithMfaAs, signOut } from './render';
+import { renderWithProviders, signInAs, signOut } from './render';
 
 const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
@@ -71,7 +71,7 @@ describe('M10 answering', () => {
     expect(after.closedAt).toBeNull();
     expect(after.closureNote).toBeNull();
 
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     const audit = await auditRepository.forEntity('inquiry', OPEN);
     const entry = audit.items.find((item) => item.action === 'inquiry.reply');
     expect(entry).toBeDefined();
@@ -171,7 +171,7 @@ describe('M10 permissions (§12.1)', () => {
      * manager to release a reply would put a day between a question and its answer
      * to guard against a risk — money moving — that an inquiry does not carry.
      */
-    await signInWithMfaAs(MANAGER);
+    await signInAs(MANAGER);
     await expect(inquiryRepository.list()).resolves.toBeTruthy();
     await expect(inquiryRepository.reply(OPEN, { body: REPLY })).rejects.toMatchObject({
       code: 'forbidden',
