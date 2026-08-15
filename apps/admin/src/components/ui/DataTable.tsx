@@ -32,7 +32,7 @@ import { cn } from '@/lib/cn';
 import { Pagination } from './Pagination';
 import { ErrorState, TableSkeleton } from './states';
 
-export interface DataTableProps<Row> {
+interface DataTableProps<Row> {
   columns: ColumnDef<Row, unknown>[];
   page: Paged<Row> | undefined;
   loading: boolean;

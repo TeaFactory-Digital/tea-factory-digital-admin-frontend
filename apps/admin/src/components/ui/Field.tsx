@@ -35,7 +35,7 @@ const CONTROL_BAD = 'border-error';
  */
 const width = (fullWidth: boolean) => (fullWidth ? 'w-full' : 'w-auto');
 
-export interface FieldRenderProps {
+interface FieldRenderProps {
   id: string;
   describedBy: string | undefined;
   invalid: boolean;
@@ -50,7 +50,7 @@ export interface FieldRenderProps {
   required: boolean;
 }
 
-export interface FieldProps {
+interface FieldProps {
   label: ReactNode;
   /** Resolved message, already translated. Presence switches the control to error. */
   error?: string;

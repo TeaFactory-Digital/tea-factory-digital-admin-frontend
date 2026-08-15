@@ -23,7 +23,7 @@ import { setLanguage } from '@/i18n';
 import { isLanguageCode, LANGUAGES, type LanguageCode } from '@/i18n/languages';
 import { cn } from '@/lib/cn';
 
-export interface LanguageSwitcherProps {
+interface LanguageSwitcherProps {
   className?: string;
   /**
    * Drive it from a draft instead of from the live language.

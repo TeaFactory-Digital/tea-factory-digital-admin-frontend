@@ -380,7 +380,7 @@ function makeSupplier(index: number): AdminSupplier {
 export const mockSuppliers: AdminSupplier[] = Array.from({ length: 84 }, (_, i) => makeSupplier(i + 1));
 
 /** The `hasBankDetails: false` rows are what M4's close checklist will trip on. */
-export const suppliersMissingBankDetails = mockSuppliers.filter((s) => !s.hasBankDetails).length;
+const suppliersMissingBankDetails = mockSuppliers.filter((s) => !s.hasBankDetails).length;
 
 export function toListItem(supplier: AdminSupplier): SupplierListItem {
   return {
@@ -785,9 +785,6 @@ export function monthStageOf(key: string): MonthCycleStage {
   return key === currentMonthKey ? 'awaitingRate' : 'published';
 }
 
-export function isMonthLocked(key: string): boolean {
-  return monthStageOf(key) === 'published';
-}
 
 /** Weekday of a Colombo-local day. Midday UTC, so no offset can move it. */
 function weekdayOf(date: string): number {
@@ -970,7 +967,7 @@ function roundMoney(value: number): number {
 
 export const mockMonths: Record<string, MonthRecord> = makeMonths();
 
-export const monthKeys = Object.keys(mockMonths).sort().reverse();
+const monthKeys = Object.keys(mockMonths).sort().reverse();
 
 /**
  * The exceptions blocking the current month, **derived from the data** rather than
@@ -1547,7 +1544,6 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
   },
 };
 
-export const MOCK_TENANT_IDS = Object.keys(mockConfigs);
 
 /* ────────────────────────────── M5 Bills ────────────────────────────── */
 
@@ -1630,7 +1626,7 @@ function deductionLinesFor(
 }
 
 /** Everything a run needs to recompute a month's bills. */
-export interface BillGenerationContext {
+interface BillGenerationContext {
   monthKey: string;
   runId: string;
   generatedAt: string;
@@ -1864,7 +1860,7 @@ export function summariseBillRun(
  * **held**, not dropped: a supplier quietly filtered out of a run is a supplier who
  * is not paid and nobody notices until they telephone.
  */
-export const methodNeedsAccount = (method: PaymentMethod): boolean => method === 'bankTransfer';
+const methodNeedsAccount = (method: PaymentMethod): boolean => method === 'bankTransfer';
 
 /**
  * The lines a run would carry.
@@ -1943,7 +1939,7 @@ export function summarisePayoutRun(run: PayoutRun, lines: PayoutLine[]): PayoutR
  * read forward, and a running balance only means something in the order it
  * accumulated.
  */
-export function buildSavingsLedger(
+function buildSavingsLedger(
   suppliers: AdminSupplier[],
   bills: AdminBill[],
   openingBalances: Map<string, number>,
@@ -2225,7 +2221,6 @@ export const mockPayoutRuns: PayoutRun[] = payouts.runs;
 export const mockPayoutLines: PayoutLine[] = payouts.lines;
 
 /** The latest month with published bills — the default the money screens open on. */
-export const latestPublishedMonthKey: string | null = history.latestPublished;
 
 /* ─────────────────── M7 Credit queues · M10 Inquiries ─────────────────── */
 
@@ -2273,7 +2268,7 @@ const openMonthBills: AdminBill[] = generateBills({
  * was when the module loaded, `stale-eligibility` could not happen, and the one
  * refusal BR-310 exists for would be unreachable.
  */
-export function creditHistoryFor(
+function creditHistoryFor(
   supplierId: string,
   deliveries: Delivery[] = mockDeliveries,
 ): GreenLeafBill[] {
@@ -3450,7 +3445,7 @@ export const mockDevicesBySupplier: Record<string, RegisteredDevice[]> = (() => 
 })();
 
 /** A trigger record as the mock holds it. `available` is derived per tenant on read. */
-export interface NotificationTriggerRecord {
+interface NotificationTriggerRecord {
   category: NotificationCategory;
   enabled: boolean;
   updatedAt: string | null;

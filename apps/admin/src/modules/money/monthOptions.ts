@@ -10,7 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { BillMonth } from '@tfd/domain';
 import { billRepository } from '@/services/repositories/billRepository';
 
-export const MONTH_OPTIONS_KEY = ['bill-months'] as const;
+const MONTH_OPTIONS_KEY = ['bill-months'] as const;
 
 export function useBillMonths() {
   return useQuery({

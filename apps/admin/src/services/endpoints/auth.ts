@@ -11,7 +11,7 @@
 import type { CapabilityGrants, ConsoleUser, LoginResult } from '@tfd/domain';
 import { apiClient, withoutAuth } from '../api/client';
 
-export interface LoginBody {
+interface LoginBody {
   email: string;
   password: string;
 }

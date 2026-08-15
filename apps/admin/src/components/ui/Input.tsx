@@ -4,7 +4,7 @@ import { cn } from '@/lib/cn';
 const CONTROL =
   'flex min-w-0 rounded-md border bg-surface px-md text-body-small text-text-primary placeholder:text-text-secondary disabled:bg-surface-variant disabled:text-disabled-contrast';
 
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   invalid?: boolean;
   fullWidth?: boolean;
 }

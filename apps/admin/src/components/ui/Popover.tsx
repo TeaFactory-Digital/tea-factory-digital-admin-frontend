@@ -4,8 +4,6 @@ import { cn } from '@/lib/cn';
 
 export const Popover = RadixPopover.Root;
 export const PopoverTrigger = RadixPopover.Trigger;
-export const PopoverAnchor = RadixPopover.Anchor;
-export const PopoverPortal = RadixPopover.Portal;
 
 export const PopoverContent = forwardRef<
   ElementRef<typeof RadixPopover.Content>,
@@ -24,5 +22,3 @@ export const PopoverContent = forwardRef<
     />
   </RadixPopover.Portal>
 ));
-
-export const PopoverClose = RadixPopover.Close;

@@ -50,18 +50,6 @@ export function CardBody({ children, className }: PropsWithChildren<{ className?
   return <div className={cn('px-lg py-md', className)}>{children}</div>;
 }
 
-export function CardFooter({ children, className }: PropsWithChildren<{ className?: string }>) {
-  return (
-    <footer
-      className={cn(
-        'flex flex-wrap items-center justify-end gap-sm border-t border-divider px-lg py-md',
-        className,
-      )}
-    >
-      {children}
-    </footer>
-  );
-}
 
 /**
  * A label/value pair, the console's most repeated shape.

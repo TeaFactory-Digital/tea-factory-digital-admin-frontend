@@ -50,7 +50,7 @@ interface BaseProps {
  * across this boundary is what puts a weighing on the wrong day for a browser in another
  * timezone (BR-104).
  */
-export interface DatePickerProps extends BaseProps {
+interface DatePickerProps extends BaseProps {
   value: string;
   onChange: (next: string) => void;
   /** Days the calendar refuses. The typed field is still validated by the caller. */
@@ -134,7 +134,7 @@ export function DatePicker({
  * Both halves are this console's own controls: see `<TimePicker>` for why the time keeps a
  * native input underneath where the date does not.
  */
-export interface DateTimePickerProps extends BaseProps {
+interface DateTimePickerProps extends BaseProps {
   value: string;
   onChange: (next: string) => void;
 }

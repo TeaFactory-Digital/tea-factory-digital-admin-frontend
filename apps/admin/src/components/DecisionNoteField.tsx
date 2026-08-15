@@ -45,7 +45,7 @@ export interface NoteSuggestion {
   text: string;
 }
 
-export interface DecisionNoteFieldProps {
+interface DecisionNoteFieldProps {
   label: string;
   hint?: string;
   placeholder?: string;

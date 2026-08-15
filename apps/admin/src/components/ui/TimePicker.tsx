@@ -39,7 +39,7 @@ import { cn } from '@/lib/cn';
  */
 const DEFAULT_STEP_MINUTES = 30;
 
-export interface TimePickerProps {
+interface TimePickerProps {
   /** `HH:mm`, 24-hour, regardless of how the browser chooses to display it. */
   value: string;
   onChange: (next: string) => void;

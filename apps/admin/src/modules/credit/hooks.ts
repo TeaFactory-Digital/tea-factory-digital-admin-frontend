@@ -51,7 +51,7 @@ export function useCreditRequestAudit(id: string | undefined) {
 
 export type CreditVerb = 'approve' | 'reject';
 
-export interface CreditDecisionVariables {
+interface CreditDecisionVariables {
   verb: CreditVerb;
   body: CreditDecisionBody;
   /** Checked client-side before an approval leaves. See `creditRepository`. */

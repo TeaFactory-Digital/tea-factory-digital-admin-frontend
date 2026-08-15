@@ -7,7 +7,7 @@
  * need an `Accept-Language` round trip and still not match the console's wording.
  */
 
-export interface ApiErrorInit {
+interface ApiErrorInit {
   code: string;
   message: string;
   status?: number;

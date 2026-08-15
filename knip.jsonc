@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+
+  // Two deliberate exemptions, so `npx knip` reports an empty result and nobody
+  // deletes something load-bearing on its say-so.
+  //
+  // A third exemption cannot be expressed here and is recorded instead:
+  // `RefreshResponse` in services/endpoints/auth.ts must stay exported even
+  // though nothing imports it — it appears in authRepository's inferred return
+  // type, and un-exporting it is a TS4023 build error.
+  "workspaces": {
+    ".": {
+      // A CLI code generator, run by hand and documented in
+      // docs/v2/bank-catalogue.md. Nothing imports it because nothing is meant
+      // to — it writes packages/domain/src/data/sriLankaBanks.ts.
+      "entry": ["scripts/generate-banks.mjs"],
+
+      // Driven from the root `test` script, installed in the @tfd/admin workspace.
+      "ignoreBinaries": ["vitest"]
+    }
+  }
+}

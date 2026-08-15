@@ -9,7 +9,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { SupplierEditable, SupplierQuery } from '@tfd/domain';
+import type { SupplierQuery } from '@tfd/domain';
 import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { qk } from '@/query/queryKeys';
@@ -91,14 +91,6 @@ function useInvalidateSupplier(id: string) {
     void client.invalidateQueries({ queryKey: qk.suppliers.all });
     void client.invalidateQueries({ queryKey: qk.audit.forEntity('supplier', id) });
   };
-}
-
-export function useUpdateSupplier(id: string) {
-  const invalidate = useInvalidateSupplier(id);
-  return useMutation({
-    mutationFn: (body: Partial<SupplierEditable>) => supplierRepository.update(id, body),
-    onSuccess: invalidate,
-  });
 }
 
 export function useSuspendSupplier(id: string) {

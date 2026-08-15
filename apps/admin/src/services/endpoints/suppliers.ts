@@ -113,20 +113,6 @@ export const supplierEndpoints = {
       .then((response) => response.data),
 
   /**
-   * **Provisional shape.** The app tells a supplier who has forgotten their
-   * password to "contact the factory", and what the office then does is still an
-   * open question (status.md §21.16) — who checks the supplier's identity, and
-   * what the supplier receives. Until that is answered this returns an opaque
-   * confirmation and issues nothing the console displays.
-   */
-  resetPassword: (id: string, reason: string) =>
-    apiClient
-      .post<{ issued: boolean; deliveredTo: 'sms' | 'office' | null }>(
-        `/admin/suppliers/${id}/password-reset`,
-        { reason },
-      )
-      .then((response) => response.data),
-  /**
    * Issue a new app password (§21.16). Answers it **once** — not stored readably, not
    * re-fetchable. `422 note-required` without an identity check · `409 supplier-closed`.
    */

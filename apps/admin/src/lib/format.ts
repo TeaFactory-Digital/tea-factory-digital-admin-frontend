@@ -12,7 +12,7 @@
  *    `LKR 0.00`, which is a number the office would have to explain.
  */
 
-import { CURRENCY_CODE, FACTORY_TIME_ZONE, colomboDayOf } from '@tfd/domain';
+import { CURRENCY_CODE, FACTORY_TIME_ZONE } from '@tfd/domain';
 
 /** What a `null` money or rate field renders as. Not a zero. */
 export const NOT_AVAILABLE = '—';
@@ -132,16 +132,6 @@ export function formatMonthName(month: number): string {
   return monthNameFmt.format(new Date(Date.UTC(2000, month - 1, 15)));
 }
 
-/**
- * Today, as a Colombo-local `YYYY-MM-DD`.
- *
- * Delegates to `@tfd/domain` rather than formatting here: "which factory day is
- * this instant" has to have exactly one implementation, because the API answers
- * the same question when it stamps a delivery (BR-104).
- */
-export function colomboToday(now: Date = new Date()): string {
-  return colomboDayOf(now);
-}
 
 /**
  * `3 h`, `2 d` — how long a queue item has been waiting.

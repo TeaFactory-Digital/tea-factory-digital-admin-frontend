@@ -18,7 +18,6 @@ import type {
   ContentTranslationBody,
   LanguageCode,
   NewsArticleDraft,
-  NewsArticlePatch,
   NewsQuery,
   StaticPageSlug,
 } from '@tfd/domain';
@@ -103,14 +102,6 @@ export function useSaveNewsTranslation(id: string) {
   return useMutation({
     mutationFn: ({ lang, body }: { lang: LanguageCode; body: ContentTranslationBody }) =>
       newsRepository.saveTranslation(id, lang, body),
-    onSuccess: invalidate,
-  });
-}
-
-export function usePatchNewsArticle(id: string) {
-  const invalidate = useInvalidateArticle(id);
-  return useMutation({
-    mutationFn: (body: NewsArticlePatch) => newsRepository.patch(id, body),
     onSuccess: invalidate,
   });
 }

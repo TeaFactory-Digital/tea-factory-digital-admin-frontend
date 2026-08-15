@@ -100,7 +100,7 @@ export function queuesOf(item: NavItem): QueueKey[] {
   return Array.isArray(item.queue) ? item.queue : [item.queue];
 }
 
-export interface NavSection {
+interface NavSection {
   titleKey: string;
   items: NavItem[];
 }

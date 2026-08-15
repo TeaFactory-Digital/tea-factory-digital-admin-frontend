@@ -39,7 +39,7 @@ const MARK_SIZE = {
   xl: 'size-28',
 } as const;
 
-export type LogoSize = keyof typeof MARK_SIZE;
+type LogoSize = keyof typeof MARK_SIZE;
 
 /** `Galaboda Tea Factory` → `GT`. Two letters; three is a monogram, not a mark. */
 function initials(name: string): string {

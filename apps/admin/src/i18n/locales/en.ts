@@ -11,26 +11,18 @@
  */
 export const en = {
   /* ─────────────────────────────── common ─────────────────────────────── */
-  'common.appName': 'Console',
   'common.save': 'Save',
   'common.cancel': 'Cancel',
   'common.close': 'Close',
   'common.confirm': 'Confirm',
-  'common.search': 'Search',
-  'common.filter': 'Filter',
-  'common.clear': 'Clear',
   // Names the row of ready-made sentences under a decision note.
   'common.noteSuggestions': 'Common notes:',
   'common.retry': 'Try again',
   'common.loading': 'Loading…',
-  'common.none': 'None',
   'common.notAvailable': 'Not available',
-  'common.yes': 'Yes',
   'common.no': 'No',
-  'common.of': 'of',
   'common.previous': 'Previous',
   'common.next': 'Next',
-  'common.rowsPerPage': 'Rows',
   'common.showing': 'Showing {{from}}–{{to}} of {{total}}',
   // The page controls are icons, so these are the only names they have — they
   // reach the clerk as a tooltip and a screen reader as the accessible name.
@@ -86,26 +78,18 @@ export const en = {
   'config.confirmSaveTitle': 'Save these configuration changes?',
   'config.confirmSaveBody':
     'These edits affect other modules and branding throughout the factory console.',
-  'common.copy': 'Copy',
-  'common.copied': 'Copied',
   'common.reason': 'Reason',
   'common.note': 'Note',
-  'common.actor': 'Who',
   'common.when': 'When',
   'common.status': 'Status',
   'common.actions': 'Actions',
-  'common.required': 'Required',
-  'common.optional': 'Optional',
-  'common.back': 'Back',
 
   /* ──────────────────────────────── shell ──────────────────────────────── */
   'shell.skipToContent': 'Skip to content',
-  'shell.tenantBanner': 'Showing {{tenant}}',
   'shell.degradedConfig':
     'Could not reach the factory configuration — showing bundled defaults. Branding and feature flags may be out of date.',
   'shell.mockBanner':
     'Mock data. Nothing here is a real record, and nothing is saved past a page reload.',
-  'shell.tenantSwitcher': 'Tenant (dev/demo only)',
   /* The accessible name of the language pill. The options inside it are *not*
      translated — see i18n/languages.ts for why. */
   'shell.language': 'Language',
@@ -143,8 +127,6 @@ export const en = {
   'nav.audit': 'Audit log',
   'nav.sectionOverview': 'Overview',
   'nav.sectionSupport': 'Supplier support',
-  'nav.sectionOperations': 'Daily work',
-  'nav.sectionMoney': 'Money',
   'nav.sectionQueues': 'Queues',
   'nav.sectionContent': 'Content',
   'nav.sectionAdmin': 'Administration',
@@ -159,14 +141,12 @@ export const en = {
   'auth.forgotPassword': 'Forgotten your password?',
   'auth.forgotPasswordHint':
     'Ask your factory administrator to reset it. The console cannot email a reset link.',
-  'auth.supplierWrongPlace': 'Suppliers sign in on the mobile app, not here.',
   'auth.demoCredentials': 'Mock sign-in',
   'auth.demoRole.clerk': 'Clerk — change requests, suppliers',
   'auth.demoRole.manager': 'Manager — approves credit and change requests',
   'auth.demoRole.editor': 'Editor — writes news and static content',
   'auth.demoRole.factoryAdmin': 'Factory admin — publishes content',
   'auth.demoRole.factorySystem': 'Factory system — records leaf, rates and payouts',
-  'auth.sessionExpired': 'Your session ended. Please sign in again.',
 
   /* ────────────────────────────── dashboard ────────────────────────────── */
   'dashboard.title': 'Dashboard',
@@ -179,15 +159,6 @@ export const en = {
   'dashboard.noScreenForQueue': 'No screen for this in this version',
   'dashboard.oldestWaiting': 'Oldest {{age}}',
   'dashboard.slaBreaching': '{{count}} past target',
-  'dashboard.todaysCollection': "Today's leaf",
-  'dashboard.todaysSuppliers': '{{count}} suppliers',
-  'dashboard.todaysDeliveries': '{{count}} deliveries',
-  'dashboard.vsYesterday': '{{value}} vs yesterday',
-  'dashboard.monthCycle': 'Month cycle',
-  'dashboard.openExceptions': '{{count}} open exceptions',
-  'dashboard.noExceptions': 'No open exceptions',
-  'dashboard.intakeTrend': 'Leaf intake, last 14 days',
-  'dashboard.intakeAxisKg': 'kg',
   'dashboard.alerts': 'Needs attention',
   'dashboard.noAlerts': 'Nothing needs attention',
 
@@ -198,9 +169,6 @@ export const en = {
   'month.stage.rateEntered': 'Rate entered',
   'month.stage.billsGenerated': 'Bills generated',
   'month.stage.published': 'Published',
-  'dashboard.stageHint.awaitingRate':
-    'No rate yet for {{month}}, so every rate-derived figure is blank rather than zero.',
-  'dashboard.stageHint.published': 'Published {{date}} by {{name}}.',
 
   'dashboard.queue.changeRequests': 'Change requests',
   'dashboard.queue.advanceRequests': 'Advances',
@@ -272,7 +240,6 @@ export const en = {
   'suppliers.detail.payout': 'Payout',
   'suppliers.detail.savings': 'Savings',
   'suppliers.detail.credit': 'Credit',
-  'suppliers.detail.activity': 'Activity',
   'suppliers.detail.phone': 'Telephone',
   'suppliers.detail.email': 'Email',
   'suppliers.detail.dateOfBirth': 'Date of birth',
@@ -300,7 +267,6 @@ export const en = {
   'suppliers.detail.tab.notifications': 'Notifications',
   'suppliers.detail.tab.activity': 'Activity',
 
-  'suppliers.action.edit': 'Edit details',
   'suppliers.action.suspend': 'Suspend',
   'suppliers.action.reactivate': 'Reactivate',
   'suppliers.action.reveal': 'Show full number',
@@ -395,14 +361,12 @@ export const en = {
   'changeRequests.empty': 'The queue is clear',
   'changeRequests.emptyHint': 'Every change request has been decided.',
 
-  'changeRequests.detail.title': 'Change request',
   'changeRequests.detail.comparison': 'Current vs requested',
   'changeRequests.detail.currentHeading': 'Active now',
   'changeRequests.detail.requestedHeading': 'Requested',
   'changeRequests.detail.submitted': 'Submitted {{when}}',
   'changeRequests.detail.waiting': 'Waiting {{age}}',
   'changeRequests.detail.evidence': 'Evidence',
-  'changeRequests.detail.addEvidence': 'Attach a file',
   'changeRequests.detail.noEvidence': 'No files attached',
   'changeRequests.detail.decision': 'Decision',
   'changeRequests.detail.decidedBy': '{{status}} by {{name}}, {{when}}',
@@ -688,114 +652,13 @@ export const en = {
     'Write at least 20 characters — this is the answer the supplier reads',
 
   /* ─────────────────────── M3 Leaf collection ─────────────────────── */
-  'deliveries.title': 'Leaf collection',
-  'deliveries.subtitle': 'What the factory weighed in, day by day',
-  'deliveries.date': 'Day',
   'deliveries.point': 'Collection point',
-  'deliveries.allPoints': 'All collection points',
-  'deliveries.showVoided': 'Show voided rows',
-  'deliveries.pickPointToEnter':
-    'Pick a collection point to start recording — a delivery is filed against the point where it was weighed.',
-  'deliveries.monthLocked':
-    '{{month}} is published, so nothing more can be recorded or voided in it. Bills and payouts are built from the leaf as it stands.',
-  'deliveries.empty': 'Nothing weighed yet',
-  'deliveries.emptyHint': 'Rows appear here as soon as a weighing session is committed.',
-
-  'deliveries.totalKgs': 'Total kilos',
-  'deliveries.rowCount': 'Deliveries',
-  'deliveries.supplierCount': 'Suppliers',
-
-  'deliveries.supplierCode': 'Supplier code',
-  'deliveries.supplierCodeHint': 'With or without the division, e.g. 5708 or 5708 (MAKADURA).',
-  'deliveries.supplierCodePlaceholder': 'Code, then Tab',
-  'deliveries.kgs': 'Kilos',
-  'deliveries.addRow': 'Add line',
-  'deliveries.removeRow': 'Remove',
-  'deliveries.sessionEmpty':
-    'Type a supplier code and the kilos, then press Enter. Nothing is recorded until you commit.',
-  'deliveries.sessionTable': 'Lines in this weighing session, not yet recorded',
-  'deliveries.commit': 'Record {{count}} lines',
-  'deliveries.committed': 'Recorded {{count}} deliveries',
-  'deliveries.committedTotal': "The day's total is now {{kgs}}.",
-  'deliveries.committedPartly': 'Recorded {{accepted}}, refused {{rejected}}',
-  'deliveries.committedPartlyHint':
-    'The refused lines are still in the grid with the reason on each one. Fix them and record again.',
-  'deliveries.commitFailed': 'Nothing was recorded',
-  'deliveries.outlierConfirm':
-    '{{kgs}} is far more than the rest of this session. Press Enter again to record it as typed.',
-
-  'deliveries.void': 'Void',
-  'deliveries.voidedBadge': 'Voided',
-  'deliveries.voidTitle': 'Void this delivery',
-  'deliveries.voidDescription':
-    '{{kgs}} recorded for {{code}} · {{name}}. The row stays in the record with your reason — nothing money-bearing is deleted.',
-  'deliveries.voidConfirm': 'Void the delivery',
-  'deliveries.voidReasonHint':
-    'At least {{min}} characters. The supplier holds a slip for this weighing and may ask.',
-  'deliveries.voided': 'Voided {{kgs}}',
-  'deliveries.voidFailed': 'The delivery was not voided',
 
   /* ─────────────────── M4 Rates & month close ─────────────────── */
-  'months.title': 'Rates & month close',
-  'months.subtitle': 'The auction rate, and what is stopping the month closing',
-  'months.pickMonth': 'Month',
-  'months.totalKgs': 'Leaf this month',
-  'months.suppliers': 'Suppliers',
-  'months.perKg': 'per kg',
 
-  'months.rateTitle': 'Auction rate',
-  'months.rateDescription': 'What the factory pays per kilo for this month.',
   'months.ratePerKg': 'Rate per kg',
-  'months.ratePerKgHint': 'From the auction result.',
   'months.extraRatePerKg': 'Extra per kg',
-  'months.extraHint': 'What the factory adds on top. 0 is a real answer.',
   'months.totalPerKg': 'Total per kg',
-  'months.saveRate': 'Save the rate',
-  'months.updateRate': 'Correct the rate',
-  'months.enteredBy': 'Entered by',
-  'months.noRateYet':
-    'No rate entered for {{month}} yet, so every rate-derived figure in the app is blank rather than zero.',
-  'months.rateLocked':
-    'This month is published, so the rate is part of the record and cannot be changed.',
-  'months.rateReadOnly': 'Only the accountant enters the rate.',
-  'months.rateSaved': 'Rate saved for {{month}}',
-  'months.rateFailed': 'The rate was not saved',
-
-  'months.closeTitle': 'Month close',
-  'months.closeDescription': 'Every step has to pass before the month can be published.',
-  'months.closedDescription': 'This month is closed. Its figures are the record now.',
-  'months.stepDone': '— done',
-  'months.stepBlocked': '— not done yet',
-  'months.publish': 'Publish {{month}}',
-  'months.blockedHint': 'Finish the steps above first.',
-  'months.irreversibleHint':
-    'Publishing cannot be undone: the leaf locks, and bills and payouts are built from these figures.',
-  'months.fourEyesHint':
-    'You entered this month’s rate, so somebody else has to publish it (BR-501).',
-  'months.publishNeedsManager': 'Publishing a month is a manager’s decision.',
-  'months.alreadyPublished': 'Published by {{name}} on {{date}}.',
-  'months.confirmTitle': 'Publish {{month}}?',
-  'months.confirmDescription':
-    'This cannot be undone. The month’s leaf is locked against further entry, and every bill and payout is built from the figures below.',
-  'months.confirmPublish': 'Publish the month',
-  'months.publishNoteHint': 'Optional. Anything the office should know about this close.',
-  'months.published': 'Published {{month}}',
-  'months.publishFailed': 'The month was not published',
-
-  'months.exceptionsTitle': 'Exceptions',
-  'months.exceptionsDescription': 'Each one has to be resolved, or explained, before the close.',
-  'months.filterExceptions': 'Which exceptions',
-  'months.openRecord': 'Open the record',
-  'months.resolve': 'Resolve',
-  'months.resolveTitle': 'Resolve this exception',
-  'months.resolveConfirm': 'Mark it resolved',
-  'months.resolveNoteHint':
-    'At least {{min}} characters. This is what an auditor reads when they ask why the month closed with this on it.',
-  'months.resolvedByNote': 'Resolved by {{name}}: {{note}}',
-  'months.exceptionResolved': 'Exception resolved',
-  'months.exceptionResolveFailed': 'The exception was not resolved',
-  'months.noOpenExceptions': 'Nothing is blocking the close',
-  'months.noOpenExceptionsHint': 'Every exception raised for this month has been resolved.',
 
   /* ─────────── shared by the money modules (M5, M6, M8) ─────────── */
   'money.pickMonth': 'Month',
@@ -824,35 +687,7 @@ export const en = {
   'bills.flag.noBank': 'No bank details',
   'bills.flag.carriesDebt': 'Carries debt',
 
-  'bills.runTitle': 'Bill run',
-  'bills.runDescription':
-    'A bill is derived from the month’s leaf and its rate. Re-generate whenever either changes.',
-  'bills.runDescriptionClosed': 'These bills are the record. Suppliers can see them in the app.',
-  'bills.runBills': 'Bills',
-  'bills.runKgs': 'Leaf billed',
-  'bills.runGross': 'Gross',
-  'bills.runDeductions': 'Deductions',
-  'bills.runSavings': 'Savings held',
-  'bills.runCarryingDebt': 'Nothing payable',
-  'bills.runGeneratedBy': 'Generated by {{name}}, {{when}}.',
-  'bills.notGenerated':
-    'No bills generated for {{month}} yet. The auction rate has to be entered first.',
   'bills.generate': 'Generate the bills',
-  'bills.generateHint':
-    'Builds one Green Leaf Account per supplier with leaf this month. Nothing is sent to suppliers until the month is published.',
-  'bills.regenerate': 'Re-generate the bills',
-  'bills.regenerateHint':
-    'Recomputes every bill from the leaf and the rate as they stand now. Safe to repeat while the month is open.',
-  'bills.generateReadOnly': 'Only the accountant generates bills.',
-  'bills.generated': 'Bills generated for {{month}}',
-  'bills.generatedDetail': '{{count}} bills, {{payable}} payable.',
-  'bills.generateFailed': 'The bills were not generated',
-  'bills.missingBankWarning':
-    '{{count}} suppliers are owed money with no bank details on file. A payout run will hold those lines until the passbook is collected.',
-  'bills.staleWarning':
-    'The leaf has changed since these bills were generated ({{kgs}} at the time). Re-generate before publishing — the month cannot close on figures that no longer match.',
-  'bills.publishedLock':
-    'This month is published, so its bills are the record and cannot be re-generated.',
 
   'bills.detailTitle': 'Green Leaf Account · {{code}}',
   'bills.detailSubtitle': '{{name}} · {{month}}',
@@ -922,91 +757,6 @@ export const en = {
     'This bill is published, so it is the record. Whether a published bill may be corrected at all, or whether an error is always adjusted on the next account, is still an open question with the factory (§21.8).',
 
   /* ───────────────────────────── M6 Payouts ───────────────────────────── */
-  'payouts.title': 'Payouts',
-  'payouts.subtitle': 'Paying a published month, one method at a time',
-  'payouts.monthTotal': 'To pay',
-  'payouts.monthPaid': 'Paid',
-  'payouts.empty': 'No payout runs for this month',
-  'payouts.emptyHint': 'Prepare one once the month is published.',
-
-  'payouts.progress': '{{paid}} of {{total}}',
-  'payouts.awaitingApproval': 'Awaiting a manager',
-  'payouts.heldCount': '{{count}} held',
-  'payouts.failedCount': '{{count}} failed',
-
-  'payouts.prepareTitle': 'Prepare a run',
-  'payouts.prepareDescription':
-    'One run per payment method: a bank file, a cheque list and a cash sheet are three different jobs.',
-  'payouts.method': 'Payment method',
-  'payouts.prepare': 'Prepare the run',
-  'payouts.prepareHint':
-    'Builds a line for every supplier on this method who is owed money. Nothing is paid until a manager releases it.',
-  'payouts.prepareReadOnly': 'Only the accountant prepares a payout run.',
-  'payouts.prepared': '{{method}} run prepared',
-  'payouts.preparedDetail': '{{lines}} payable, {{held}} held.',
-  'payouts.prepareFailed': 'The run was not prepared',
-  'payouts.notPublished':
-    '{{month}} is not published yet. A payout run needs a closed month — until then the figures can still change, and money that has left the factory cannot be taken back.',
-  'payouts.noBills':
-    'No bills have been generated for {{month}}, so there is nothing to pay against.',
-  'payouts.allMethodsPrepared': 'Every payment method already has a run for this month.',
-  'payouts.noFileExport':
-    'Once a run is released you can download it as a file, laid out the way Configuration → Payout file says. What is still open (§21.17) is a fixed-width bank format with control totals, and printing cheques on pre-printed stationery — both need your bank’s own specification.',
-
-  'payouts.downloadFile': 'Download the file',
-  'payouts.fileHint':
-    'A spreadsheet of this run, laid out the way Configuration → Payout file says. Not yet a fixed-width bank file with control totals, and not cheque printing — those still need your bank’s own specification (§21.17).',
-  'payouts.fileDownloaded': 'File downloaded',
-  'payouts.fileDownloadedHint':
-    'It carries full account numbers, so the download is recorded in the audit log against your name.',
-  'payouts.fileFailed': 'The file was not produced',
-
-  'payouts.runTitle': '{{method}} · {{month}}',
-  'payouts.runSubtitle': '{{lines}} payable lines, {{total}} in total',
-  'payouts.backToMonth': 'Back to {{month}}',
-  'payouts.releaseTitle': 'Release',
-  'payouts.releaseDescription':
-    'Nothing in this run has been paid. A manager releases it, and it cannot be the person who prepared it.',
-  'payouts.releasedDescription':
-    'This run has been released. Record what the bank did, line by line.',
-  'payouts.heldExplanation':
-    '{{count}} lines are held: the supplier is owed money and has no account to pay it into. They stay on this run and count against nothing until the passbook is collected — the run can still complete without them.',
-  'payouts.preparedBy': 'Prepared by {{name}}, {{when}}',
-  'payouts.releasedBy': 'released by {{name}}, {{when}}',
-  'payouts.release': 'Release {{total}}',
-  'payouts.releaseHint': 'Releasing records that the money has been sent for payment.',
-  'payouts.releaseNeedsManager': 'Releasing a payout run is a manager’s decision.',
-  'payouts.fourEyesHint': 'You prepared this run, so somebody else has to release it (BR-501).',
-  'payouts.nothingPayableHint': 'Every line in this run is held. There is nothing to release.',
-  'payouts.approvedNotice': 'Released. Mark each line as the bank answers.',
-  'payouts.completedNotice': 'Every line accounted for, {{when}}.',
-  'payouts.confirmReleaseTitle': 'Release this run?',
-  'payouts.confirmReleaseBody':
-    'This records that the factory has sent these payments. Check the total against what you are about to give the bank.',
-  'payouts.confirmRelease': 'Release the run',
-  'payouts.releaseNoteHint': 'Optional. Anything the office should know about this run.',
-  'payouts.approved': 'Run released — {{total}}',
-  'payouts.approveFailed': 'The run was not released',
-
-  'payouts.linesTitle': 'Lines',
-  'payouts.linesDescription': 'Held and unpaid first — those are the ones still to work.',
-  'payouts.filterLines': 'Which lines',
-  'payouts.noLinesHint': 'No lines match that filter.',
-
-  'payouts.markPaid': 'Paid',
-  'payouts.markFailedShort': 'Failed',
-  'payouts.markPaidTitle': 'Record this payment',
-  'payouts.markPaidBody': 'Only mark a line paid once the money has actually left the account.',
-  'payouts.markFailedTitle': 'Record a failed payment',
-  'payouts.markFailedBody':
-    'The supplier has not been paid. Write what happened — whoever picks this run up next works from your note.',
-  'payouts.reasonLabel': 'What went wrong',
-  'payouts.reasonHint': 'At least {{min}} characters, e.g. what the bank returned.',
-  'payouts.confirmPaid': 'Mark it paid',
-  'payouts.confirmFailed': 'Mark it failed',
-  'payouts.markedPaid': '{{code}} marked paid',
-  'payouts.markedFailed': '{{code}} marked failed',
-  'payouts.markFailed': 'The line was not updated',
 
   /* ───────────────────────────── M8 Savings ───────────────────────────── */
 
@@ -1605,18 +1355,6 @@ export const en = {
   'reports.param.from': 'From',
   'reports.param.to': 'To',
 
-  'reports.column.metric': 'Figure',
-  'reports.column.value': 'Value',
-  'reports.column.point': 'Collection point',
-  'reports.column.kgs': 'Kilos',
-  'reports.column.suppliers': 'Suppliers',
-  'reports.column.deliveries': 'Weighings',
-  'reports.column.meanKgs': 'Average per weighing',
-  'reports.column.code': 'Code',
-  'reports.column.name': 'Name',
-  'reports.column.lastDelivery': 'Last delivery',
-  'reports.column.savings': 'Savings held',
-  'reports.column.credit': 'Owes',
   'reports.column.month': 'Month',
   'reports.column.fromApp': 'From the app',
   'reports.column.fromOffice': 'Keyed in',
@@ -1677,7 +1415,6 @@ export const en = {
     'There is no English copy, so there would be nothing to show a supplier. Write it first.',
   'error.slugTaken': 'An article with that title already exists.',
   'error.contentNotPublished': 'That is not live, so there is nothing to take down.',
-  'error.url': 'Enter a valid web address',
   'error.unknownCategory':
     'The app would throw that away — it only opens notifications of a kind it recognises.',
   'error.categoryDisabled': 'This factory does not send that kind of notification.',
@@ -1993,13 +1730,10 @@ export const en = {
   'audit.filter.allActors': 'Anyone',
   'audit.action.supplier.profile.update': 'Changed their own details in the app',
   'audit.action.supplier.password.change': 'Chose their own app password',
-  'audit.action.notification.send': 'Notification sent',
 
   /* ───────────────────────────── attachments ───────────────────────────── */
   'attachment.tooLarge': 'That file is larger than 8 MB',
   'attachment.badType': 'Attach a JPEG, PNG, WebP or PDF',
-  'attachment.uploading': 'Uploading…',
-  'attachment.remove': 'Remove',
 } as const;
 
 export type TranslationKey = keyof typeof en;

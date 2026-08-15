@@ -26,25 +26,17 @@ import type { TranslationKey } from './en';
 
 export const si: Record<TranslationKey, string> = {
   /* ─────────────────────────────── common ─────────────────────────────── */
-  'common.appName': 'කොන්සෝලය',
   'common.save': 'සුරකින්න',
   'common.cancel': 'අවලංගු කරන්න',
   'common.close': 'වසන්න',
   'common.confirm': 'තහවුරු කරන්න',
-  'common.search': 'සොයන්න',
-  'common.filter': 'පෙරහන',
-  'common.clear': 'ඉවත් කරන්න',
   'common.noteSuggestions': 'සුලබ සටහන්:',
   'common.retry': 'නැවත උත්සාහ කරන්න',
   'common.loading': 'පූරණය වෙමින්…',
-  'common.none': 'නැත',
   'common.notAvailable': 'නොමැත',
-  'common.yes': 'ඔව්',
   'common.no': 'නැත',
-  'common.of': '/',
   'common.previous': 'පෙර',
   'common.next': 'ඊළඟ',
-  'common.rowsPerPage': 'පේළි',
   'common.showing': '{{total}}ක් අතරින් {{from}}–{{to}} පෙන්වයි',
   // The page controls are icons, so these are the only names they have — they
   // reach the clerk as a tooltip and a screen reader as the accessible name.
@@ -100,26 +92,18 @@ export const si: Record<TranslationKey, string> = {
   'config.confirmSaveTitle': 'මෙම වින්‍යාස වෙනස්කම් සුරකින්නද?',
   'config.confirmSaveBody':
     'මෙම වෙනස්කම් කර්මාන්තශාලා කොන්සෝලය පුරා අනෙකුත් මොඩියුලවලට සහ සන්නාමයට බලපායි.',
-  'common.copy': 'පිටපත් කරන්න',
-  'common.copied': 'පිටපත් කළා',
   'common.reason': 'හේතුව',
   'common.note': 'සටහන',
-  'common.actor': 'කවුරු',
   'common.when': 'කවදා',
   'common.status': 'තත්ත්වය',
   'common.actions': 'ක්‍රියා',
-  'common.required': 'අවශ්‍ය',
-  'common.optional': 'අත්‍යවශ්‍ය නොවේ',
-  'common.back': 'ආපසු',
 
   /* ──────────────────────────────── shell ──────────────────────────────── */
   'shell.skipToContent': 'අන්තර්ගතයට යන්න',
-  'shell.tenantBanner': '{{tenant}} පෙන්වයි',
   'shell.degradedConfig':
     'කර්මාන්තශාලා වින්‍යාසයට සම්බන්ධ විය නොහැකි විය — ඇතුළත් කර ඇති පෙරනිමි අගයන් පෙන්වයි. සන්නාමය සහ විශේෂාංග යාවත්කාලීන නොවිය හැක.',
   'shell.mockBanner':
     'ආදර්ශ දත්ත. මෙහි කිසිවක් සැබෑ වාර්තාවක් නොවේ, පිටුව නැවත පූරණය කළ පසු කිසිවක් ඉතිරි නොවේ.',
-  'shell.tenantSwitcher': 'කර්මාන්තශාලාව (සංවර්ධන/ආදර්ශන පමණි)',
   /* The accessible name of the language pill. The options inside it are *not*
      translated — see i18n/languages.ts for why. */
   'shell.language': 'භාෂාව',
@@ -157,8 +141,6 @@ export const si: Record<TranslationKey, string> = {
   'nav.audit': 'විගණන ලොගය',
   'nav.sectionOverview': 'දළ විශ්ලේෂණය',
   'nav.sectionSupport': 'සැපයුම්කරු සහාය',
-  'nav.sectionOperations': 'දෛනික කටයුතු',
-  'nav.sectionMoney': 'මුදල්',
   'nav.sectionQueues': 'පෝලිම්',
   'nav.sectionContent': 'අන්තර්ගතය',
   'nav.sectionAdmin': 'පරිපාලනය',
@@ -173,14 +155,12 @@ export const si: Record<TranslationKey, string> = {
   'auth.forgotPassword': 'මුරපදය අමතක වුණාද?',
   'auth.forgotPasswordHint':
     'එය නැවත සැකසීමට ඔබේ කර්මාන්තශාලා පරිපාලකගෙන් ඉල්ලා සිටින්න. කොන්සෝලයට නැවත සැකසීමේ සබැඳියක් තැපැල් කළ නොහැක.',
-  'auth.supplierWrongPlace': 'සැපයුම්කරුවන් පිවිසෙන්නේ ජංගම යෙදුමෙන්, මෙතැනින් නොවේ.',
   'auth.demoCredentials': 'ආදර්ශ පිවිසුම',
   'auth.demoRole.clerk': 'ලිපිකරු — වෙනස් කිරීමේ ඉල්ලීම්, සැපයුම්කරුවන්',
   'auth.demoRole.manager': 'කළමනාකරු — ණය සහ වෙනස් කිරීමේ ඉල්ලීම් අනුමත කරයි',
   'auth.demoRole.editor': 'සංස්කාරක — පුවත් සහ ස්ථිර පිටු ලියයි',
   'auth.demoRole.factoryAdmin': 'කර්මාන්තශාලා පරිපාලක — අන්තර්ගතය ප්‍රකාශයට පත් කරයි',
   'auth.demoRole.factorySystem': 'කර්මාන්තශාලා පද්ධතිය — දළු, මිල සහ ගෙවීම් වාර්තා කරයි',
-  'auth.sessionExpired': 'ඔබේ සැසිය අවසන් විය. නැවත පිවිසෙන්න.',
 
   /* ────────────────────────────── dashboard ────────────────────────────── */
   'dashboard.title': 'උපකරණ පුවරුව',
@@ -193,15 +173,6 @@ export const si: Record<TranslationKey, string> = {
   'dashboard.noScreenForQueue': 'මෙම අනුවාදයේ මේ සඳහා තිරයක් නැත',
   'dashboard.oldestWaiting': 'පැරණිතම {{age}}',
   'dashboard.slaBreaching': 'ඉලක්කය පසු කළ {{count}}ක්',
-  'dashboard.todaysCollection': 'අද දළු',
-  'dashboard.todaysSuppliers': 'සැපයුම්කරුවන් {{count}}ක්',
-  'dashboard.todaysDeliveries': 'භාර {{count}}ක්',
-  'dashboard.vsYesterday': 'ඊයේට සාපේක්ෂව {{value}}',
-  'dashboard.monthCycle': 'මාසික චක්‍රය',
-  'dashboard.openExceptions': 'විසඳා නැති කරුණු {{count}}ක්',
-  'dashboard.noExceptions': 'විසඳා නැති කරුණු නැත',
-  'dashboard.intakeTrend': 'දළු ලැබීම, පසුගිය දින 14',
-  'dashboard.intakeAxisKg': 'කිලෝ',
   'dashboard.alerts': 'අවධානය අවශ්‍ය',
   'dashboard.noAlerts': 'අවධානය අවශ්‍ය කිසිවක් නැත',
 
@@ -212,9 +183,6 @@ export const si: Record<TranslationKey, string> = {
   'month.stage.rateEntered': 'මිල ඇතුළත් කර ඇත',
   'month.stage.billsGenerated': 'බිල්පත් සාදා ඇත',
   'month.stage.published': 'ප්‍රකාශයට පත් කර ඇත',
-  'dashboard.stageHint.awaitingRate':
-    '{{month}} සඳහා තවම මිලක් නැත, එබැවින් මිල මත ගණනය වන සෑම අගයක්ම බිංදුව නොව හිස්ව පෙන්වයි.',
-  'dashboard.stageHint.published': '{{name}} විසින් {{date}} දින ප්‍රකාශයට පත් කරන ලදී.',
 
   'dashboard.queue.changeRequests': 'වෙනස් කිරීමේ ඉල්ලීම්',
   'dashboard.queue.advanceRequests': 'අත්තිකාරම්',
@@ -284,7 +252,6 @@ export const si: Record<TranslationKey, string> = {
   'suppliers.detail.payout': 'ගෙවීම',
   'suppliers.detail.savings': 'ඉතුරුම්',
   'suppliers.detail.credit': 'ණය',
-  'suppliers.detail.activity': 'ක්‍රියාකාරකම්',
   'suppliers.detail.phone': 'දුරකථනය',
   'suppliers.detail.email': 'විද්‍යුත් තැපෑල',
   'suppliers.detail.dateOfBirth': 'උපන් දිනය',
@@ -312,7 +279,6 @@ export const si: Record<TranslationKey, string> = {
   'suppliers.detail.tab.notifications': 'දැනුම්දීම්',
   'suppliers.detail.tab.activity': 'ක්‍රියාකාරකම්',
 
-  'suppliers.action.edit': 'විස්තර සංස්කරණය',
   'suppliers.action.suspend': 'අත්හිටුවන්න',
   'suppliers.action.reactivate': 'නැවත සක්‍රීය කරන්න',
   'suppliers.action.reveal': 'සම්පූර්ණ අංකය පෙන්වන්න',
@@ -407,14 +373,12 @@ export const si: Record<TranslationKey, string> = {
   'changeRequests.empty': 'පෝලිම හිස්',
   'changeRequests.emptyHint': 'සෑම වෙනස් කිරීමේ ඉල්ලීමක්ම තීරණය කර ඇත.',
 
-  'changeRequests.detail.title': 'වෙනස් කිරීමේ ඉල්ලීම',
   'changeRequests.detail.comparison': 'දැන් ඇති එක සහ ඉල්ලූ එක',
   'changeRequests.detail.currentHeading': 'දැන් සක්‍රීය',
   'changeRequests.detail.requestedHeading': 'ඉල්ලූ',
   'changeRequests.detail.submitted': '{{when}} ඉදිරිපත් කළා',
   'changeRequests.detail.waiting': '{{age}} බලා සිටී',
   'changeRequests.detail.evidence': 'සාක්ෂි',
-  'changeRequests.detail.addEvidence': 'ලිපිගොනුවක් අමුණන්න',
   'changeRequests.detail.noEvidence': 'ලිපිගොනු අමුණා නැත',
   'changeRequests.detail.decision': 'තීරණය',
   'changeRequests.detail.decidedBy': '{{name}} විසින් {{when}} {{status}}',
@@ -693,115 +657,13 @@ export const si: Record<TranslationKey, string> = {
   'validation.replyTooShort': 'අවම අකුරු 20ක් ලියන්න — සැපයුම්කරු කියවන පිළිතුර මෙයයි',
 
   /* ─────────────────────── M3 Leaf collection ─────────────────────── */
-  'deliveries.title': 'දළු එකතු කිරීම',
-  'deliveries.subtitle': 'කර්මාන්තශාලාව දිනෙන් දින බර කළ දළු',
-  'deliveries.date': 'දිනය',
   'deliveries.point': 'එකතු කිරීමේ ස්ථානය',
-  'deliveries.allPoints': 'සියලුම එකතු කිරීමේ ස්ථාන',
-  'deliveries.showVoided': 'අවලංගු කළ පේළි පෙන්වන්න',
-  'deliveries.pickPointToEnter':
-    'වාර්තා කිරීම ආරම්භ කිරීමට එකතු කිරීමේ ස්ථානයක් තෝරන්න — දළු භාරයක් ගොනු කරන්නේ එය බර කළ ස්ථානයට එරෙහිවය.',
-  'deliveries.monthLocked':
-    '{{month}} ප්‍රකාශයට පත් කර ඇති බැවින්, එහි තවත් කිසිවක් වාර්තා කිරීමට හෝ අවලංගු කිරීමට නොහැක. බිල්පත් සහ ගෙවීම් සාදන්නේ දළු දැන් ඇති ආකාරයටය.',
-  'deliveries.empty': 'තවම කිසිවක් බර කර නැත',
-  'deliveries.emptyHint': 'බර කිරීමේ සැසියක් වාර්තා කළ විගස පේළි මෙහි දිස් වේ.',
-
-  'deliveries.totalKgs': 'මුළු කිලෝ',
-  'deliveries.rowCount': 'දළු භාර',
-  'deliveries.supplierCount': 'සැපයුම්කරුවන්',
-
-  'deliveries.supplierCode': 'සැපයුම්කරුගේ අංකය',
-  'deliveries.supplierCodeHint': 'කොට්ඨාසය සමඟ හෝ රහිතව, උදා: 5708 හෝ 5708 (MAKADURA).',
-  'deliveries.supplierCodePlaceholder': 'අංකය, ඉන්පසු Tab',
-  'deliveries.kgs': 'කිලෝ',
-  'deliveries.addRow': 'පේළියක් එකතු කරන්න',
-  'deliveries.removeRow': 'ඉවත් කරන්න',
-  'deliveries.sessionEmpty':
-    'සැපයුම්කරුගේ අංකය සහ කිලෝ ටයිප් කර Enter ඔබන්න. ඔබ වාර්තා කරන තුරු කිසිවක් සුරැකෙන්නේ නැත.',
-  'deliveries.sessionTable': 'මෙම බර කිරීමේ සැසියේ පේළි, තවම වාර්තා කර නැත',
-  'deliveries.commit': 'පේළි {{count}}ක් වාර්තා කරන්න',
-  'deliveries.committed': 'දළු භාර {{count}}ක් වාර්තා කළා',
-  'deliveries.committedTotal': 'දවසේ මුළු ප්‍රමාණය දැන් {{kgs}}.',
-  'deliveries.committedPartly': '{{accepted}}ක් වාර්තා කළා, {{rejected}}ක් ප්‍රතික්ෂේප විය',
-  'deliveries.committedPartlyHint':
-    'ප්‍රතික්ෂේප වූ පේළි එක් එක් හේතුව සමඟ තවමත් ජාලකයේ ඇත. ඒවා නිවැරදි කර නැවත වාර්තා කරන්න.',
-  'deliveries.commitFailed': 'කිසිවක් වාර්තා වූයේ නැත',
-  'deliveries.outlierConfirm':
-    '{{kgs}} යනු මෙම සැසියේ ඉතිරි ඒවාට වඩා බොහෝ වැඩි ප්‍රමාණයකි. ටයිප් කළ ආකාරයටම වාර්තා කිරීමට නැවත Enter ඔබන්න.',
-
-  'deliveries.void': 'අවලංගු කරන්න',
-  'deliveries.voidedBadge': 'අවලංගු කළා',
-  'deliveries.voidTitle': 'මෙම දළු භාරය අවලංගු කරන්න',
-  'deliveries.voidDescription':
-    '{{code}} · {{name}} සඳහා {{kgs}} වාර්තා විය. පේළිය ඔබේ හේතුව සමඟ වාර්තාවේ රැඳී සිටී — මුදල් සම්බන්ධ කිසිවක් මකා නොදමයි.',
-  'deliveries.voidConfirm': 'දළු භාරය අවලංගු කරන්න',
-  'deliveries.voidReasonHint':
-    'අවම අකුරු {{min}}ක්. සැපයුම්කරු මෙම බර කිරීම සඳහා පත්‍රිකාවක් තබාගෙන සිටින අතර ඒ ගැන විමසිය හැක.',
-  'deliveries.voided': '{{kgs}} අවලංගු කළා',
-  'deliveries.voidFailed': 'දළු භාරය අවලංගු වූයේ නැත',
 
   /* ─────────────────── M4 Rates & month close ─────────────────── */
-  'months.title': 'මිල සහ මාසය අවසන් කිරීම',
-  'months.subtitle': 'වෙන්දේසි මිල, සහ මාසය අවසන් වීම නවතන්නේ කුමක්ද',
-  'months.pickMonth': 'මාසය',
-  'months.totalKgs': 'මේ මාසයේ දළු',
-  'months.suppliers': 'සැපයුම්කරුවන්',
-  'months.perKg': 'කිලෝවකට',
 
-  'months.rateTitle': 'වෙන්දේසි මිල',
-  'months.rateDescription': 'මෙම මාසය සඳහා කර්මාන්තශාලාව කිලෝවකට ගෙවන මුදල.',
   'months.ratePerKg': 'කිලෝවකට මිල',
-  'months.ratePerKgHint': 'වෙන්දේසි ප්‍රතිඵලයෙන්.',
   'months.extraRatePerKg': 'කිලෝවකට අමතරව',
-  'months.extraHint': 'කර්මාන්තශාලාව ඉහළින් එකතු කරන මුදල. 0 යනු සැබෑ පිළිතුරකි.',
   'months.totalPerKg': 'කිලෝවකට මුළු මුදල',
-  'months.saveRate': 'මිල සුරකින්න',
-  'months.updateRate': 'මිල නිවැරදි කරන්න',
-  'months.enteredBy': 'ඇතුළත් කළේ',
-  'months.noRateYet':
-    '{{month}} සඳහා තවම මිලක් ඇතුළත් කර නැත, එබැවින් යෙදුමේ මිල මත ගණනය වන සෑම අගයක්ම බිංදුව නොව හිස්ව පෙන්වයි.',
-  'months.rateLocked':
-    'මෙම මාසය ප්‍රකාශයට පත් කර ඇති බැවින්, මිල වාර්තාවේ කොටසක් වන අතර එය වෙනස් කළ නොහැක.',
-  'months.rateReadOnly': 'මිල ඇතුළත් කරන්නේ ගණකාධිකාරී පමණි.',
-  'months.rateSaved': '{{month}} සඳහා මිල සුරැක්කා',
-  'months.rateFailed': 'මිල සුරැකුණේ නැත',
-
-  'months.closeTitle': 'මාසය අවසන් කිරීම',
-  'months.closeDescription': 'මාසය ප්‍රකාශයට පත් කිරීමට පෙර සෑම පියවරක්ම සම්පූර්ණ විය යුතුයි.',
-  'months.closedDescription': 'මෙම මාසය අවසන් කර ඇත. එහි අගයන් දැන් වාර්තාවයි.',
-  'months.stepDone': '— සම්පූර්ණයි',
-  'months.stepBlocked': '— තවම සම්පූර්ණ නැත',
-  'months.publish': '{{month}} ප්‍රකාශයට පත් කරන්න',
-  'months.blockedHint': 'පළමුව ඉහත පියවර සම්පූර්ණ කරන්න.',
-  'months.irreversibleHint':
-    'ප්‍රකාශයට පත් කිරීම නැවත හැරවිය නොහැක: දළු අගුළු වැටෙන අතර බිල්පත් සහ ගෙවීම් සාදන්නේ මෙම අගයන් මතය.',
-  'months.fourEyesHint':
-    'ඔබ මෙම මාසයේ මිල ඇතුළත් කළ බැවින්, එය ප්‍රකාශයට පත් කළ යුත්තේ වෙනත් අයෙකි (BR-501).',
-  'months.publishNeedsManager': 'මාසයක් ප්‍රකාශයට පත් කිරීම කළමනාකරුගේ තීරණයකි.',
-  'months.alreadyPublished': '{{name}} විසින් {{date}} දින ප්‍රකාශයට පත් කළා.',
-  'months.confirmTitle': '{{month}} ප්‍රකාශයට පත් කරන්නද?',
-  'months.confirmDescription':
-    'මෙය නැවත හැරවිය නොහැක. මාසයේ දළු තවදුරටත් ඇතුළත් කිරීමට එරෙහිව අගුළු වැටෙන අතර සෑම බිල්පතක් සහ ගෙවීමක් සාදන්නේ පහත අගයන් මතය.',
-  'months.confirmPublish': 'මාසය ප්‍රකාශයට පත් කරන්න',
-  'months.publishNoteHint': 'අත්‍යවශ්‍ය නොවේ. මෙම අවසන් කිරීම ගැන කාර්යාලය දැනගත යුතු කිසිවක්.',
-  'months.published': '{{month}} ප්‍රකාශයට පත් කළා',
-  'months.publishFailed': 'මාසය ප්‍රකාශයට පත් වූයේ නැත',
-
-  'months.exceptionsTitle': 'කරුණු',
-  'months.exceptionsDescription':
-    'අවසන් කිරීමට පෙර එක් එක් කරුණ විසඳිය යුතුයි, නැතහොත් පැහැදිලි කළ යුතුයි.',
-  'months.filterExceptions': 'කුමන කරුණුද',
-  'months.openRecord': 'වාර්තාව විවෘත කරන්න',
-  'months.resolve': 'විසඳන්න',
-  'months.resolveTitle': 'මෙම කරුණ විසඳන්න',
-  'months.resolveConfirm': 'විසඳූ බව සලකුණු කරන්න',
-  'months.resolveNoteHint':
-    'අවම අකුරු {{min}}ක්. මෙය මත මාසය අවසන් වූයේ ඇයිද යන්න විගණකයෙක් විමසන විට කියවන්නේ මෙයයි.',
-  'months.resolvedByNote': '{{name}} විසින් විසඳුවා: {{note}}',
-  'months.exceptionResolved': 'කරුණ විසඳුවා',
-  'months.exceptionResolveFailed': 'කරුණ විසඳුණේ නැත',
-  'months.noOpenExceptions': 'අවසන් කිරීම නවතන කිසිවක් නැත',
-  'months.noOpenExceptionsHint': 'මෙම මාසය සඳහා ඉදිරිපත් වූ සෑම කරුණක්ම විසඳා ඇත.',
 
   /* ─────────── shared by the money modules (M5, M6, M8) ─────────── */
   'money.pickMonth': 'මාසය',
@@ -830,34 +692,7 @@ export const si: Record<TranslationKey, string> = {
   'bills.flag.noBank': 'බැංකු විස්තර නැත',
   'bills.flag.carriesDebt': 'ණය ඉතිරිව ඇත',
 
-  'bills.runTitle': 'බිල්පත් වටය',
-  'bills.runDescription':
-    'බිල්පතක් සාදන්නේ මාසයේ දළු සහ එහි මිල මතය. ඒ දෙකෙන් එකක් වෙනස් වන සෑම විටම නැවත සාදන්න.',
-  'bills.runDescriptionClosed': 'මෙම බිල්පත් වාර්තාවයි. සැපයුම්කරුවන්ට යෙදුමේ ඒවා දැකිය හැක.',
-  'bills.runBills': 'බිල්පත්',
-  'bills.runKgs': 'බිල් කළ දළු',
-  'bills.runGross': 'දළ මුදල',
-  'bills.runDeductions': 'අඩු කිරීම්',
-  'bills.runSavings': 'රඳවාගත් ඉතුරුම්',
-  'bills.runCarryingDebt': 'ගෙවිය යුතු කිසිවක් නැත',
-  'bills.runGeneratedBy': '{{name}} විසින් {{when}} සාදුවා.',
-  'bills.notGenerated': '{{month}} සඳහා තවම බිල්පත් සාදා නැත. පළමුව වෙන්දේසි මිල ඇතුළත් කළ යුතුයි.',
   'bills.generate': 'බිල්පත් සාදන්න',
-  'bills.generateHint':
-    'මේ මාසයේ දළු ඇති සෑම සැපයුම්කරුවෙකු සඳහා එක් දළු ගිණුමක් සාදයි. මාසය ප්‍රකාශයට පත් කරන තුරු සැපයුම්කරුවන්ට කිසිවක් නොයවයි.',
-  'bills.regenerate': 'බිල්පත් නැවත සාදන්න',
-  'bills.regenerateHint':
-    'දළු සහ මිල දැන් ඇති ආකාරයට සෑම බිල්පතක්ම නැවත ගණනය කරයි. මාසය විවෘතව ඇති විට කිහිප වතාවක් කිරීම ආරක්ෂිතයි.',
-  'bills.generateReadOnly': 'බිල්පත් සාදන්නේ ගණකාධිකාරී පමණි.',
-  'bills.generated': '{{month}} සඳහා බිල්පත් සාදුවා',
-  'bills.generatedDetail': 'බිල්පත් {{count}}ක්, {{payable}} ගෙවිය යුතුයි.',
-  'bills.generateFailed': 'බිල්පත් සෑදුණේ නැත',
-  'bills.missingBankWarning':
-    'ලිපිගොනුවේ බැංකු විස්තර නොමැති සැපයුම්කරුවන් {{count}}කට මුදල් ගෙවිය යුතුයි. ගිණුම් පොත ලැබෙන තුරු ගෙවීම් වටයක් එම පේළි රඳවා තබයි.',
-  'bills.staleWarning':
-    'මෙම බිල්පත් සෑදූ පසු දළු වෙනස් වී ඇත (එවකට {{kgs}}). ප්‍රකාශයට පත් කිරීමට පෙර නැවත සාදන්න — තවදුරටත් නොගැළපෙන අගයන් මත මාසය අවසන් කළ නොහැක.',
-  'bills.publishedLock':
-    'මෙම මාසය ප්‍රකාශයට පත් කර ඇති බැවින්, එහි බිල්පත් වාර්තාව වන අතර නැවත සෑදිය නොහැක.',
 
   'bills.detailTitle': 'දළු ගිණුම · {{code}}',
   'bills.detailSubtitle': '{{name}} · {{month}}',
@@ -927,90 +762,6 @@ export const si: Record<TranslationKey, string> = {
     'මෙම බිල්පත ප්‍රකාශයට පත් කර ඇති බැවින් එය වාර්තාවයි. ප්‍රකාශයට පත් කළ බිල්පතක් නිවැරදි කළ හැකිද, නැතහොත් වැරැද්දක් සැමවිටම ඊළඟ ගිණුමේ සකස් කරන්නේද යන්න කර්මාන්තශාලාව සමඟ තවම විසඳා නැති ප්‍රශ්නයකි (§21.8).',
 
   /* ───────────────────────────── M6 Payouts ───────────────────────────── */
-  'payouts.title': 'ගෙවීම්',
-  'payouts.subtitle': 'ප්‍රකාශයට පත් කළ මාසයක් ගෙවීම, එක් ක්‍රමයක් පසු එකක්',
-  'payouts.monthTotal': 'ගෙවිය යුතු',
-  'payouts.monthPaid': 'ගෙවා ඇත',
-  'payouts.empty': 'මෙම මාසය සඳහා ගෙවීම් වට නැත',
-  'payouts.emptyHint': 'මාසය ප්‍රකාශයට පත් කළ පසු එකක් සූදානම් කරන්න.',
-
-  'payouts.progress': '{{total}}ක් අතරින් {{paid}}',
-  'payouts.awaitingApproval': 'කළමනාකරුවෙකු බලාපොරොත්තුවෙන්',
-  'payouts.heldCount': '{{count}}ක් රඳවා ඇත',
-  'payouts.failedCount': '{{count}}ක් අසාර්ථක',
-
-  'payouts.prepareTitle': 'වටයක් සූදානම් කරන්න',
-  'payouts.prepareDescription':
-    'එක් ගෙවීම් ක්‍රමයකට එක් වටයක්: බැංකු ලිපිගොනුවක්, චෙක්පත් ලැයිස්තුවක් සහ මුදල් පත්‍රිකාවක් යනු වෙනස් කාර්යයන් තුනකි.',
-  'payouts.method': 'ගෙවීම් ක්‍රමය',
-  'payouts.prepare': 'වටය සූදානම් කරන්න',
-  'payouts.prepareHint':
-    'මෙම ක්‍රමයේ මුදල් ගෙවිය යුතු සෑම සැපයුම්කරුවෙකු සඳහා පේළියක් සාදයි. කළමනාකරුවෙක් නිකුත් කරන තුරු කිසිවක් නොගෙවයි.',
-  'payouts.prepareReadOnly': 'ගෙවීම් වටයක් සූදානම් කරන්නේ ගණකාධිකාරී පමණි.',
-  'payouts.prepared': '{{method}} වටය සූදානම් කළා',
-  'payouts.preparedDetail': '{{lines}}ක් ගෙවිය යුතුයි, {{held}}ක් රඳවා ඇත.',
-  'payouts.prepareFailed': 'වටය සූදානම් වූයේ නැත',
-  'payouts.notPublished':
-    '{{month}} තවම ප්‍රකාශයට පත් කර නැත. ගෙවීම් වටයකට අවසන් කළ මාසයක් අවශ්‍යයි — එතෙක් අගයන් තවමත් වෙනස් විය හැකි අතර, කර්මාන්තශාලාවෙන් පිටව ගිය මුදල් නැවත ලබා ගත නොහැක.',
-  'payouts.noBills': '{{month}} සඳහා බිල්පත් සාදා නැත, එබැවින් ගෙවීමට පදනමක් නැත.',
-  'payouts.allMethodsPrepared': 'මෙම මාසය සඳහා සෑම ගෙවීම් ක්‍රමයකටම දැනටමත් වටයක් ඇත.',
-  'payouts.noFileExport':
-    'වටයක් නිකුත් කළ පසු ඔබට එය ගොනුවක් ලෙස බාගත හැක, වින්‍යාසය → ගෙවීම් ගොනුව හි සඳහන් පිරිසැලසුමට අනුව. තවමත් විවෘතව ඇත්තේ (§21.17) පාලන එකතු සහිත ස්ථිර-පළල බැංකු ආකෘතියක් සහ කලින් මුද්‍රිත චෙක්පත් මත මුද්‍රණය කිරීමයි — දෙකටම ඔබේ බැංකුවේම පිරිවිතර අවශ්‍යයි.',
-
-  'payouts.downloadFile': 'ගොනුව බාගන්න',
-  'payouts.fileHint':
-    'මෙම වටයේ පැතුරුම්පතක්, වින්‍යාසය → ගෙවීම් ගොනුව හි සඳහන් පිරිසැලසුමට අනුව. පාලන එකතු සහිත ස්ථිර-පළල බැංකු ගොනුවක් තවම නොවේ, චෙක්පත් මුද්‍රණයද නොවේ — ඒවාට තවමත් ඔබේ බැංකුවේම පිරිවිතර අවශ්‍යයි (§21.17).',
-  'payouts.fileDownloaded': 'ගොනුව බාගත කළා',
-  'payouts.fileDownloadedHint':
-    'එහි සම්පූර්ණ ගිණුම් අංක ඇත, එබැවින් මෙම බාගැනීම ඔබේ නමට එරෙහිව විගණන ලොගයේ සටහන් වේ.',
-  'payouts.fileFailed': 'ගොනුව සාදන ලද්දේ නැත',
-
-  'payouts.runTitle': '{{method}} · {{month}}',
-  'payouts.runSubtitle': 'ගෙවිය යුතු පේළි {{lines}}ක්, මුළු {{total}}',
-  'payouts.backToMonth': '{{month}} වෙත ආපසු',
-  'payouts.releaseTitle': 'නිකුත් කිරීම',
-  'payouts.releaseDescription':
-    'මෙම වටයේ කිසිවක් ගෙවා නැත. එය නිකුත් කරන්නේ කළමනාකරුවෙකි, තවද එය සූදානම් කළ පුද්ගලයා විය නොහැක.',
-  'payouts.releasedDescription': 'මෙම වටය නිකුත් කර ඇත. බැංකුව කළ දේ පේළියෙන් පේළියට වාර්තා කරන්න.',
-  'payouts.heldExplanation':
-    'පේළි {{count}}ක් රඳවා ඇත: සැපයුම්කරුට මුදල් ගෙවිය යුතු නමුත් එය ගෙවීමට ගිණුමක් නැත. ගිණුම් පොත ලැබෙන තුරු ඒවා මෙම වටයේ රැඳී සිටින අතර කිසිවකට එරෙහිව නොගණන් — ඒවා නොමැතිව වටය තවමත් සම්පූර්ණ කළ හැක.',
-  'payouts.preparedBy': '{{name}} විසින් {{when}} සූදානම් කළා',
-  'payouts.releasedBy': '{{name}} විසින් {{when}} නිකුත් කළා',
-  'payouts.release': '{{total}} නිකුත් කරන්න',
-  'payouts.releaseHint': 'නිකුත් කිරීමෙන් මුදල් ගෙවීම සඳහා යවා ඇති බව සටහන් වේ.',
-  'payouts.releaseNeedsManager': 'ගෙවීම් වටයක් නිකුත් කිරීම කළමනාකරුගේ තීරණයකි.',
-  'payouts.fourEyesHint': 'ඔබ මෙම වටය සූදානම් කළ බැවින්, එය නිකුත් කළ යුත්තේ වෙනත් අයෙකි (BR-501).',
-  'payouts.nothingPayableHint': 'මෙම වටයේ සෑම පේළියක්ම රඳවා ඇත. නිකුත් කිරීමට කිසිවක් නැත.',
-  'payouts.approvedNotice': 'නිකුත් කළා. බැංකුව පිළිතුරු දෙන පරිදි එක් එක් පේළිය සලකුණු කරන්න.',
-  'payouts.completedNotice': 'සෑම පේළියක්ම විසඳා ඇත, {{when}}.',
-  'payouts.confirmReleaseTitle': 'මෙම වටය නිකුත් කරන්නද?',
-  'payouts.confirmReleaseBody':
-    'මෙයින් කර්මාන්තශාලාව මෙම ගෙවීම් යවා ඇති බව සටහන් වේ. ඔබ බැංකුවට දීමට යන දේට එරෙහිව එකතුව පරීක්ෂා කරන්න.',
-  'payouts.confirmRelease': 'වටය නිකුත් කරන්න',
-  'payouts.releaseNoteHint': 'අත්‍යවශ්‍ය නොවේ. මෙම වටය ගැන කාර්යාලය දැනගත යුතු කිසිවක්.',
-  'payouts.approved': 'වටය නිකුත් කළා — {{total}}',
-  'payouts.approveFailed': 'වටය නිකුත් වූයේ නැත',
-
-  'payouts.linesTitle': 'පේළි',
-  'payouts.linesDescription': 'රඳවා ඇති සහ නොගෙවූ ඒවා පළමුව — තවම කළ යුත්තේ ඒවාය.',
-  'payouts.filterLines': 'කුමන පේළිද',
-  'payouts.noLinesHint': 'එම පෙරහනට ගැළපෙන පේළි නැත.',
-
-  'payouts.markPaid': 'ගෙවා ඇත',
-  'payouts.markFailedShort': 'අසාර්ථක',
-  'payouts.markPaidTitle': 'මෙම ගෙවීම වාර්තා කරන්න',
-  'payouts.markPaidBody':
-    'මුදල් සැබවින්ම ගිණුමෙන් පිටව ගිය පසු පමණක් පේළියක් ගෙවූ බව සලකුණු කරන්න.',
-  'payouts.markFailedTitle': 'අසාර්ථක ගෙවීමක් වාර්තා කරන්න',
-  'payouts.markFailedBody':
-    'සැපයුම්කරුට ගෙවා නැත. සිදු වූ දේ ලියන්න — මෙම වටය ඊළඟට භාරගන්නා අය ඔබේ සටහන අනුව කටයුතු කරයි.',
-  'payouts.reasonLabel': 'වැරදුණේ කුමක්ද',
-  'payouts.reasonHint': 'අවම අකුරු {{min}}ක්, උදා: බැංකුව ආපසු දුන් හේතුව.',
-  'payouts.confirmPaid': 'ගෙවූ බව සලකුණු කරන්න',
-  'payouts.confirmFailed': 'අසාර්ථක බව සලකුණු කරන්න',
-  'payouts.markedPaid': '{{code}} ගෙවූ බව සලකුණු කළා',
-  'payouts.markedFailed': '{{code}} අසාර්ථක බව සලකුණු කළා',
-  'payouts.markFailed': 'පේළිය යාවත්කාලීන වූයේ නැත',
 
   /* ───────────────────────────── M8 Savings ───────────────────────────── */
 
@@ -1602,18 +1353,6 @@ export const si: Record<TranslationKey, string> = {
   'reports.param.from': 'සිට',
   'reports.param.to': 'දක්වා',
 
-  'reports.column.metric': 'අගය',
-  'reports.column.value': 'ප්‍රමාණය',
-  'reports.column.point': 'එකතු කිරීමේ ස්ථානය',
-  'reports.column.kgs': 'කිලෝ',
-  'reports.column.suppliers': 'සැපයුම්කරුවන්',
-  'reports.column.deliveries': 'බර කිරීම්',
-  'reports.column.meanKgs': 'බර කිරීමකට සාමාන්‍යය',
-  'reports.column.code': 'අංකය',
-  'reports.column.name': 'නම',
-  'reports.column.lastDelivery': 'අවසන් භාරය',
-  'reports.column.savings': 'තබා ගෙන ඇති ඉතුරුම්',
-  'reports.column.credit': 'ගෙවිය යුතු',
   'reports.column.month': 'මාසය',
   'reports.column.fromApp': 'යෙදුමෙන්',
   'reports.column.fromOffice': 'අතින් ඇතුළත් කළ',
@@ -1675,7 +1414,6 @@ export const si: Record<TranslationKey, string> = {
     'ඉංග්‍රීසි පිටපතක් නැත, එබැවින් සැපයුම්කරුවෙකුට පෙන්වීමට කිසිවක් නොවනු ඇත. පළමුව එය ලියන්න.',
   'error.slugTaken': 'එම මාතෘකාව සහිත ලිපියක් දැනටමත් පවතී.',
   'error.contentNotPublished': 'එය සක්‍රීය නොවේ, එබැවින් ඉවත් කිරීමට කිසිවක් නැත.',
-  'error.url': 'වලංගු වෙබ් ලිපිනයක් ඇතුළත් කරන්න',
   'error.unknownCategory':
     'යෙදුම එය ඉවතට දමනු ඇත — එය විවෘත කරන්නේ හඳුනා ගන්නා වර්ගයේ දැනුම්දීම් පමණි.',
   'error.categoryDisabled': 'මෙම කර්මාන්තශාලාව එම වර්ගයේ දැනුම්දීම් නොයවයි.',
@@ -1986,11 +1724,8 @@ export const si: Record<TranslationKey, string> = {
   'audit.filter.allActors': 'ඕනෑම කෙනෙක්',
   'audit.action.supplier.profile.update': 'යෙදුමේදී තමන්ගේම විස්තර වෙනස් කළා',
   'audit.action.supplier.password.change': 'තමන්ගේම යෙදුම් මුරපදය තෝරා ගත්තා',
-  'audit.action.notification.send': 'දැනුම්දීම යවන ලදී',
 
   /* ───────────────────────────── attachments ───────────────────────────── */
   'attachment.tooLarge': 'එම ලිපිගොනුව 8 MBට වඩා විශාලයි',
   'attachment.badType': 'JPEG, PNG, WebP හෝ PDF ලිපිගොනුවක් අමුණන්න',
-  'attachment.uploading': 'උඩුගත වෙමින්…',
-  'attachment.remove': 'ඉවත් කරන්න',
 } as const;

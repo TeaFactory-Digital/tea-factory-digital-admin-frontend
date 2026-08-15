@@ -9,7 +9,7 @@
  * careful about.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import type { BillQuery } from '@tfd/domain';
 import { billRepository } from '@/services/repositories/billRepository';
 import { qk } from '@/query/queryKeys';
@@ -48,17 +48,3 @@ export function useBillRun(monthKey: string) {
   });
 }
 
-export function useGenerateBills(monthKey: string) {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: () => billRepository.generate(monthKey),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: qk.bills.all });
-      // Generating occupies §13's `billsGenerated` stage, so the month, the close
-      // checklist and the dashboard's cycle badge all move with it.
-      void client.invalidateQueries({ queryKey: qk.months.all });
-      void client.invalidateQueries({ queryKey: qk.dashboard });
-      void client.invalidateQueries({ queryKey: qk.audit.all });
-    },
-  });
-}

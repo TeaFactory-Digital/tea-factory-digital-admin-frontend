@@ -15,8 +15,8 @@ import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { SpinnerMark } from './SpinnerMark';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-export type ButtonSize = 'sm' | 'md';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type ButtonSize = 'sm' | 'md';
 
 const VARIANTS: Record<ButtonVariant, string> = {
   primary:
@@ -36,7 +36,7 @@ const SIZES: Record<ButtonSize, string> = {
   md: 'h-11 px-lg text-button gap-sm',
 };
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   /** Shows a spinner and disables the button. */
@@ -84,28 +84,3 @@ function Spinner() {
   return <SpinnerMark className="size-icon-sm" />;
 }
 
-/**
- * A button that is only an icon. Requires a label — an icon-only control with no
- * accessible name is invisible to a screen reader and ambiguous to everyone else.
- */
-export const IconButton = forwardRef<
-  HTMLButtonElement,
-  Omit<ButtonProps, 'children' | 'iconLeft' | 'iconRight'> & { label: string; icon: ReactNode }
->(function IconButton({ label, icon, variant = 'ghost', className, ...rest }, ref) {
-  return (
-    <button
-      ref={ref}
-      aria-label={label}
-      title={label}
-      className={cn(
-        'inline-flex size-11 items-center justify-center rounded-md transition-opacity',
-        'disabled:cursor-not-allowed',
-        VARIANTS[variant],
-        className,
-      )}
-      {...rest}
-    >
-      {icon}
-    </button>
-  );
-});

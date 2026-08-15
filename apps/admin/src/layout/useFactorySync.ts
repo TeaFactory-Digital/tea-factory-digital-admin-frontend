@@ -11,7 +11,7 @@ import { factorySyncState, type FactorySyncState, type FactorySyncStatus } from 
 import { factorySyncRepository } from '@/services/repositories/factorySyncRepository';
 import { qk } from '@/query/queryKeys';
 
-export interface FactorySyncView {
+interface FactorySyncView {
   status: FactorySyncStatus | undefined;
   state: FactorySyncState;
 }

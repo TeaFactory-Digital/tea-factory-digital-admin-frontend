@@ -18,7 +18,7 @@ import { MOCK_PASSWORD } from '@/services/mocks/seed';
 connectAuthToTransport();
 
 /** No retries and no caching between tests — a retry turns a failure into a hang. */
-export function createTestQueryClient(): QueryClient {
+function createTestQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: { retry: false, gcTime: 0, staleTime: 0 },
@@ -27,7 +27,7 @@ export function createTestQueryClient(): QueryClient {
   });
 }
 
-export interface RenderWithProvidersOptions extends Omit<RenderOptions, 'wrapper'> {
+interface RenderWithProvidersOptions extends Omit<RenderOptions, 'wrapper'> {
   route?: string;
   queryClient?: QueryClient;
 }

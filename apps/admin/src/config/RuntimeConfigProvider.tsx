@@ -12,11 +12,10 @@ import {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useState,
   type PropsWithChildren,
 } from 'react';
-import type { FeatureFlagName, RuntimeConfig } from '@tfd/domain';
+import type { RuntimeConfig } from '@tfd/domain';
 import { configRepository } from '@/services/repositories/configRepository';
 import { bundledConfig } from './defaults';
 
@@ -63,32 +62,8 @@ export function useFactory() {
   return useRuntimeConfig().config.factory;
 }
 
-/**
- * Gate a surface on a feature flag. **Never branch on the tenant id.**
- *
- * A flag turns a surface off end to end: the sidebar row disappears and the
- * route is never reached. And because the API refuses the call too (AC-07), a
- * clerk who bookmarked the URL gets `403 feature-disabled` rather than an empty
- * screen that looks like a bug.
- */
-export function useFeatureFlag(flag: FeatureFlagName): boolean {
-  const { config } = useRuntimeConfig();
-  return config.flags[flag];
-}
-
 /** The whole flag block, for a nav that decides many rows at once. */
 export function useFeatureFlags() {
   return useRuntimeConfig().config.flags;
 }
 
-/**
- * Languages editorial content must be authored in — the si/en/ta tabs in M11/M12.
- *
- * Separate from `supportedLanguages` on purpose: the console *chrome* is English
- * (docs/white-label.md → Localization), but a Sinhala supplier reading an
- * English-only FAQ is the app failing, so content is not optional in any of them.
- */
-export function useContentLanguages() {
-  const { config } = useRuntimeConfig();
-  return useMemo(() => config.localization.contentLanguages, [config.localization.contentLanguages]);
-}

@@ -41,7 +41,7 @@ const SEGMENT =
   'flex flex-1 items-center justify-center gap-xxs rounded-sm px-sm py-xxs ' +
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring';
 
-export interface AppearanceControlsProps {
+interface AppearanceControlsProps {
   className?: string;
   /**
    * Drive it from a draft instead of from the stored preference.

@@ -4,7 +4,7 @@ import { cn } from '@/lib/cn';
 const CONTROL =
   'flex min-w-0 rounded-md border bg-surface px-md text-body-small text-text-primary disabled:bg-surface-variant disabled:text-disabled-contrast';
 
-export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   invalid?: boolean;
   fullWidth?: boolean;
 }

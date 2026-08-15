@@ -23,7 +23,7 @@ import { si } from './locales/si';
 import { ta } from './locales/ta';
 import { isLanguageCode, LANGUAGE_CODES, type LanguageCode } from './languages';
 
-export const FALLBACK_LANGUAGE: LanguageCode = 'en';
+const FALLBACK_LANGUAGE: LanguageCode = 'en';
 
 /**
  * Where the chrome language lives between visits.

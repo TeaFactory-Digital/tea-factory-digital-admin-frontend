@@ -32,7 +32,7 @@ import { ApiError, TRANSPORT_CODES } from './errors';
  * import this module — so this module cannot import the store. The store
  * registers itself here at start-up instead.
  */
-export interface AuthBridge {
+interface AuthBridge {
   getAccessToken: () => string | null;
   /** Resolves to a fresh access token, or null when the session is unrecoverable. */
   refresh: () => Promise<string | null>;
@@ -85,10 +85,21 @@ apiClient.interceptors.request.use((config) => {
   /**
    * Idempotency on every mutation (§17.5).
    *
-   * The app's reason is a supplier double-tapping submit on a bad connection;
-   * the console's is worse. A clerk who clicks "Approve" twice because the first
-   * click seemed not to register must not produce two disbursements, and a
-   * retried payout run must not pay twice.
+   * **A network-retry guard, not a double-click guard** — the distinction matters
+   * to whoever implements the server half. The key is minted per *request*, so
+   * the only thing that replays it is the transport itself: the refresh-on-401
+   * path below re-sends the same config, and `headers.has(…)` is what keeps the
+   * key across that replay. A clerk who clicks *Approve* a second time produces a
+   * second request with a **new** key, and the server must not treat it as a
+   * duplicate.
+   *
+   * What actually stops the second act is server state — `already-decided`,
+   * `four-eyes-violation`, `already-approved`. Those refusals are load-bearing;
+   * this header is not a substitute for them.
+   *
+   * The one place the key is a *business* key is the delivery batch, which
+   * overrides it with `batchId` (`endpoints/deliveries.ts`) — there a repeat
+   * genuinely is the same weighing session.
    */
   const method = (config.method ?? 'get').toLowerCase();
   if (method !== 'get' && method !== 'head' && !config.headers.has('Idempotency-Key')) {
@@ -160,7 +171,7 @@ function asErrorBody(data: unknown): { code?: string; message?: string; details?
   return data as { code?: string; message?: string; details?: unknown } | undefined;
 }
 
-export function normalizeError(error: AxiosError): ApiError {
+function normalizeError(error: AxiosError): ApiError {
   if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
     return new ApiError({ code: TRANSPORT_CODES.timeout, message: 'The request timed out.' });
   }

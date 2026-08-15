@@ -26,7 +26,7 @@ import { env } from './env';
  * It is also the entire point of a demo of a white-label product — a console that
  * cannot be shown rebranding is not showing the feature.
  */
-export const allowTenantOverride = env.isDev || env.demoMode;
+const allowTenantOverride = env.isDev || env.demoMode;
 
 const resolution: TenantResolution = resolveTenant({
   host: typeof window === 'undefined' ? '' : window.location.hostname,
@@ -36,21 +36,7 @@ const resolution: TenantResolution = resolveTenant({
 });
 
 export const tenantId = resolution.tenantId;
-export const tenantSource = resolution.source;
 
 /** The API origin for this tenant, with `{tenant}` substituted. */
 export const apiBaseUrl = apiBaseUrlForTenant(env.apiBaseUrlTemplate, tenantId);
 
-/**
- * Switch tenant by reloading with `?tenant=`. Development and the demo only.
- *
- * A full reload, not a state update: see above. It also mirrors what actually
- * happens in production, where switching tenant means navigating to a different
- * subdomain and getting a fresh document.
- */
-export function switchTenantByReload(next: string): void {
-  if (!allowTenantOverride) return;
-  const url = new URL(window.location.href);
-  url.searchParams.set('tenant', next);
-  window.location.assign(url.toString());
-}

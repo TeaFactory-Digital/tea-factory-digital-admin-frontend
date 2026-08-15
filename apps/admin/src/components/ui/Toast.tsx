@@ -13,7 +13,7 @@ import { CheckCircle2, Info, TriangleAlert, X } from 'lucide-react';
 import { createContext, useCallback, useContext, useMemo, useState, type PropsWithChildren } from 'react';
 import { cn } from '@/lib/cn';
 
-export type ToastTone = 'success' | 'error' | 'info';
+type ToastTone = 'success' | 'error' | 'info';
 
 interface ToastItem {
   id: number;

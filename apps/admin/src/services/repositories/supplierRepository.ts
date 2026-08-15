@@ -60,7 +60,6 @@ export const supplierRepository = {
   revealBankDetails: (id: string, reason: string): Promise<RevealedBankDetails> =>
     supplierEndpoints.revealBankDetails(id, reason),
 
-  resetPassword: (id: string, reason: string) => supplierEndpoints.resetPassword(id, reason),
   /**
    * Issue a new app password.
    *

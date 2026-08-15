@@ -27,25 +27,17 @@ import type { TranslationKey } from './en';
 
 export const ta: Record<TranslationKey, string> = {
   /* ─────────────────────────────── common ─────────────────────────────── */
-  'common.appName': 'கன்சோல்',
   'common.save': 'சேமிக்கவும்',
   'common.cancel': 'இரத்துச் செய்',
   'common.close': 'மூடு',
   'common.confirm': 'உறுதிப்படுத்து',
-  'common.search': 'தேடு',
-  'common.filter': 'வடிகட்டி',
-  'common.clear': 'அழி',
   'common.noteSuggestions': 'வழக்கமான குறிப்புகள்:',
   'common.retry': 'மீண்டும் முயற்சிக்கவும்',
   'common.loading': 'ஏற்றப்படுகிறது…',
-  'common.none': 'இல்லை',
   'common.notAvailable': 'இல்லை',
-  'common.yes': 'ஆம்',
   'common.no': 'இல்லை',
-  'common.of': '/',
   'common.previous': 'முன்',
   'common.next': 'அடுத்து',
-  'common.rowsPerPage': 'வரிசைகள்',
   'common.showing': 'மொத்தம் {{total}}ல் {{from}}–{{to}} காட்டப்படுகிறது',
   // The page controls are icons, so these are the only names they have — they
   // reach the clerk as a tooltip and a screen reader as the accessible name.
@@ -101,26 +93,18 @@ export const ta: Record<TranslationKey, string> = {
   'config.confirmSaveTitle': 'இந்தக் கட்டமைப்பு மாற்றங்களைச் சேமிக்கவா?',
   'config.confirmSaveBody':
     'இந்த மாற்றங்கள் தொழிற்சாலைக் கன்சோல் முழுவதும் மற்ற பகுதிகளையும் அடையாளச் சின்னத்தையும் பாதிக்கும்.',
-  'common.copy': 'நகலெடு',
-  'common.copied': 'நகலெடுக்கப்பட்டது',
   'common.reason': 'காரணம்',
   'common.note': 'குறிப்பு',
-  'common.actor': 'யார்',
   'common.when': 'எப்போது',
   'common.status': 'நிலை',
   'common.actions': 'செயல்கள்',
-  'common.required': 'அவசியம்',
-  'common.optional': 'அவசியமில்லை',
-  'common.back': 'பின்',
 
   /* ──────────────────────────────── shell ──────────────────────────────── */
   'shell.skipToContent': 'உள்ளடக்கத்திற்குச் செல்',
-  'shell.tenantBanner': '{{tenant}} காட்டப்படுகிறது',
   'shell.degradedConfig':
     'தொழிற்சாலைக் கட்டமைப்பை அணுக முடியவில்லை — உள்ளமைந்த இயல்பு மதிப்புகள் காட்டப்படுகின்றன. அடையாளச் சின்னமும் வசதிகளும் காலாவதியாகியிருக்கலாம்.',
   'shell.mockBanner':
     'மாதிரித் தரவு. இதில் எதுவும் உண்மையான பதிவு அல்ல, பக்கத்தை மீண்டும் ஏற்றியபின் எதுவும் எஞ்சாது.',
-  'shell.tenantSwitcher': 'தொழிற்சாலை (உருவாக்கம்/மாதிரி மட்டும்)',
   /* The accessible name of the language pill. The options inside it are *not*
      translated — see i18n/languages.ts for why. */
   'shell.language': 'மொழி',
@@ -158,8 +142,6 @@ export const ta: Record<TranslationKey, string> = {
   'nav.audit': 'தணிக்கைப் பதிவு',
   'nav.sectionOverview': 'மேலோட்டம்',
   'nav.sectionSupport': 'சப்ளையர் ஆதரவு',
-  'nav.sectionOperations': 'அன்றாட வேலை',
-  'nav.sectionMoney': 'பணம்',
   'nav.sectionQueues': 'வரிசைகள்',
   'nav.sectionContent': 'உள்ளடக்கம்',
   'nav.sectionAdmin': 'நிர்வாகம்',
@@ -174,7 +156,6 @@ export const ta: Record<TranslationKey, string> = {
   'auth.forgotPassword': 'கடவுச்சொல் மறந்துவிட்டதா?',
   'auth.forgotPasswordHint':
     'அதை மீட்டமைக்க உங்கள் தொழிற்சாலை நிர்வாகியைக் கேட்கவும். கன்சோலால் மீட்டமைப்புத் தொடுப்பை மின்னஞ்சல் செய்ய முடியாது.',
-  'auth.supplierWrongPlace': 'வழங்குநர்கள் கைபேசிச் செயலியில் உள்நுழைவார்கள், இங்கே அல்ல.',
   'auth.demoCredentials': 'மாதிரி உள்நுழைவு',
   'auth.demoRole.clerk': 'எழுதுவினைஞர் — மாற்ற வேண்டுகோள்கள், வழங்குநர்கள்',
   'auth.demoRole.manager': 'மேலாளர் — கடன் மற்றும் மாற்ற வேண்டுகோள்களை அனுமதிக்கிறார்',
@@ -182,7 +163,6 @@ export const ta: Record<TranslationKey, string> = {
   'auth.demoRole.factoryAdmin': 'தொழிற்சாலை நிர்வாகி — உள்ளடக்கத்தை வெளியிடுகிறார்',
   'auth.demoRole.factorySystem':
     'தொழிற்சாலை அமைப்பு — கொழுந்து, விலை, கொடுப்பனவுகளைப் பதிவு செய்கிறது',
-  'auth.sessionExpired': 'உங்கள் அமர்வு முடிந்தது. மீண்டும் உள்நுழையவும்.',
 
   /* ────────────────────────────── dashboard ────────────────────────────── */
   'dashboard.title': 'முகப்புப் பலகை',
@@ -195,15 +175,6 @@ export const ta: Record<TranslationKey, string> = {
   'dashboard.noScreenForQueue': 'இந்தப் பதிப்பில் இதற்கான திரை இல்லை',
   'dashboard.oldestWaiting': 'மிகப் பழையது {{age}}',
   'dashboard.slaBreaching': 'இலக்கைத் தாண்டியவை {{count}}',
-  'dashboard.todaysCollection': 'இன்றைய கொழுந்து',
-  'dashboard.todaysSuppliers': 'வழங்குநர்கள் {{count}}',
-  'dashboard.todaysDeliveries': 'ஒப்படைப்புகள் {{count}}',
-  'dashboard.vsYesterday': 'நேற்றுடன் ஒப்பிடுகையில் {{value}}',
-  'dashboard.monthCycle': 'மாதச் சுழற்சி',
-  'dashboard.openExceptions': 'தீர்க்கப்படாத சிக்கல்கள் {{count}}',
-  'dashboard.noExceptions': 'தீர்க்கப்படாத சிக்கல்கள் இல்லை',
-  'dashboard.intakeTrend': 'கொழுந்து வரவு, கடந்த 14 நாட்கள்',
-  'dashboard.intakeAxisKg': 'கிலோ',
   'dashboard.alerts': 'கவனம் தேவை',
   'dashboard.noAlerts': 'கவனம் தேவைப்படுவது எதுவும் இல்லை',
 
@@ -214,9 +185,6 @@ export const ta: Record<TranslationKey, string> = {
   'month.stage.rateEntered': 'விலை உள்ளிடப்பட்டது',
   'month.stage.billsGenerated': 'பில்கள் உருவாக்கப்பட்டன',
   'month.stage.published': 'வெளியிடப்பட்டது',
-  'dashboard.stageHint.awaitingRate':
-    '{{month}} க்கு இன்னும் விலை இல்லை, எனவே விலையிலிருந்து கணக்கிடப்படும் ஒவ்வொரு மதிப்பும் பூஜ்யமாக அல்ல, வெறுமையாகக் காட்டப்படுகிறது.',
-  'dashboard.stageHint.published': '{{name}} அவர்களால் {{date}} அன்று வெளியிடப்பட்டது.',
 
   'dashboard.queue.changeRequests': 'மாற்ற வேண்டுகோள்கள்',
   'dashboard.queue.advanceRequests': 'முன்பணங்கள்',
@@ -288,7 +256,6 @@ export const ta: Record<TranslationKey, string> = {
   'suppliers.detail.payout': 'கொடுப்பனவு',
   'suppliers.detail.savings': 'சேமிப்பு',
   'suppliers.detail.credit': 'கடன்',
-  'suppliers.detail.activity': 'நடவடிக்கைகள்',
   'suppliers.detail.phone': 'தொலைபேசி',
   'suppliers.detail.email': 'மின்னஞ்சல்',
   'suppliers.detail.dateOfBirth': 'பிறந்த திகதி',
@@ -316,7 +283,6 @@ export const ta: Record<TranslationKey, string> = {
   'suppliers.detail.tab.notifications': 'அறிவிப்புகள்',
   'suppliers.detail.tab.activity': 'நடவடிக்கைகள்',
 
-  'suppliers.action.edit': 'விவரங்களைத் திருத்து',
   'suppliers.action.suspend': 'இடைநிறுத்து',
   'suppliers.action.reactivate': 'மீண்டும் இயக்கு',
   'suppliers.action.reveal': 'முழு இலக்கத்தைக் காட்டு',
@@ -413,14 +379,12 @@ export const ta: Record<TranslationKey, string> = {
   'changeRequests.empty': 'வரிசை காலி',
   'changeRequests.emptyHint': 'ஒவ்வொரு மாற்ற வேண்டுகோளும் தீர்மானிக்கப்பட்டுவிட்டது.',
 
-  'changeRequests.detail.title': 'மாற்ற வேண்டுகோள்',
   'changeRequests.detail.comparison': 'இப்போதுள்ளதும் கேட்டதும்',
   'changeRequests.detail.currentHeading': 'இப்போது இயக்கத்தில்',
   'changeRequests.detail.requestedHeading': 'கேட்டது',
   'changeRequests.detail.submitted': '{{when}} சமர்ப்பிக்கப்பட்டது',
   'changeRequests.detail.waiting': '{{age}} காத்திருக்கிறது',
   'changeRequests.detail.evidence': 'சான்றுகள்',
-  'changeRequests.detail.addEvidence': 'கோப்பை இணைக்கவும்',
   'changeRequests.detail.noEvidence': 'கோப்புகள் இணைக்கப்படவில்லை',
   'changeRequests.detail.decision': 'தீர்மானம்',
   'changeRequests.detail.decidedBy': '{{name}} அவர்களால் {{when}} {{status}}',
@@ -707,117 +671,13 @@ export const ta: Record<TranslationKey, string> = {
     'குறைந்தது 20 எழுத்துகள் எழுதுங்கள் — வழங்குநர் படிக்கும் பதில் இதுவே',
 
   /* ─────────────────────── M3 Leaf collection ─────────────────────── */
-  'deliveries.title': 'கொழுந்து சேகரிப்பு',
-  'deliveries.subtitle': 'தொழிற்சாலை நாளுக்கு நாள் எடை பார்த்த கொழுந்து',
-  'deliveries.date': 'நாள்',
   'deliveries.point': 'சேகரிப்பு நிலையம்',
-  'deliveries.allPoints': 'அனைத்துச் சேகரிப்பு நிலையங்கள்',
-  'deliveries.showVoided': 'இரத்துச் செய்யப்பட்ட வரிசைகளைக் காட்டு',
-  'deliveries.pickPointToEnter':
-    'பதிவு செய்யத் தொடங்க ஒரு சேகரிப்பு நிலையத்தைத் தேர்ந்தெடுக்கவும் — ஒப்படைப்பு அது எடை பார்க்கப்பட்ட நிலையத்தின் கீழேயே பதியப்படுகிறது.',
-  'deliveries.monthLocked':
-    '{{month}} வெளியிடப்பட்டுவிட்டதால், அதில் மேலும் எதையும் பதிவு செய்யவோ இரத்துச் செய்யவோ முடியாது. பில்களும் கொடுப்பனவுகளும் கொழுந்து இப்போது உள்ளபடியே உருவாக்கப்படுகின்றன.',
-  'deliveries.empty': 'இன்னும் எதுவும் எடை பார்க்கப்படவில்லை',
-  'deliveries.emptyHint': 'எடை பார்க்கும் அமர்வு பதிவு செய்யப்பட்ட உடனேயே வரிசைகள் இங்கே தோன்றும்.',
-
-  'deliveries.totalKgs': 'மொத்தக் கிலோ',
-  'deliveries.rowCount': 'ஒப்படைப்புகள்',
-  'deliveries.supplierCount': 'வழங்குநர்கள்',
-
-  'deliveries.supplierCode': 'வழங்குநரின் இலக்கம்',
-  'deliveries.supplierCodeHint': 'பிரிவுடன் அல்லது பிரிவின்றி, எ.கா: 5708 அல்லது 5708 (MAKADURA).',
-  'deliveries.supplierCodePlaceholder': 'இலக்கம், பின்னர் Tab',
-  'deliveries.kgs': 'கிலோ',
-  'deliveries.addRow': 'வரிசை ஒன்றைச் சேர்',
-  'deliveries.removeRow': 'நீக்கு',
-  'deliveries.sessionEmpty':
-    'வழங்குநரின் இலக்கத்தையும் கிலோவையும் தட்டச்சு செய்து Enter அழுத்தவும். நீங்கள் பதிவு செய்யும் வரை எதுவும் சேமிக்கப்படாது.',
-  'deliveries.sessionTable': 'இந்த எடை பார்க்கும் அமர்வின் வரிசைகள், இன்னும் பதிவு செய்யப்படவில்லை',
-  'deliveries.commit': 'வரிசைகள் {{count}} ஐப் பதிவு செய்',
-  'deliveries.committed': 'ஒப்படைப்புகள் {{count}} பதிவு செய்யப்பட்டன',
-  'deliveries.committedTotal': 'இன்றைய மொத்தம் இப்போது {{kgs}}.',
-  'deliveries.committedPartly': '{{accepted}} பதிவு செய்யப்பட்டது, {{rejected}} மறுக்கப்பட்டது',
-  'deliveries.committedPartlyHint':
-    'மறுக்கப்பட்ட வரிசைகள் ஒவ்வொன்றின் காரணத்துடன் இன்னும் அட்டவணையில் உள்ளன. அவற்றைச் சரிசெய்து மீண்டும் பதிவு செய்யவும்.',
-  'deliveries.commitFailed': 'எதுவும் பதிவு செய்யப்படவில்லை',
-  'deliveries.outlierConfirm':
-    'இந்த அமர்வின் மற்றவற்றை விட {{kgs}} மிக அதிகம். அது தட்டச்சு செய்தபடியே பதிவு செய்ய மீண்டும் Enter அழுத்தவும்.',
-
-  'deliveries.void': 'இரத்து',
-  'deliveries.voidedBadge': 'இரத்துச் செய்யப்பட்டது',
-  'deliveries.voidTitle': 'இந்த ஒப்படைப்பை இரத்துச் செய்',
-  'deliveries.voidDescription':
-    '{{code}} · {{name}} க்கு {{kgs}} பதிவு செய்யப்பட்டது. உங்கள் காரணத்துடன் வரிசை பதிவில் எஞ்சியிருக்கும் — பணம் சார்ந்த எதுவும் அழிக்கப்படுவதில்லை.',
-  'deliveries.voidConfirm': 'ஒப்படைப்பை இரத்துச் செய்',
-  'deliveries.voidReasonHint':
-    'குறைந்தது {{min}} எழுத்துகள். இந்த எடை பார்த்தலுக்கான சீட்டு வழங்குநரிடம் உள்ளது, அவர் கேட்கக்கூடும்.',
-  'deliveries.voided': '{{kgs}} இரத்துச் செய்யப்பட்டது',
-  'deliveries.voidFailed': 'ஒப்படைப்பு இரத்துச் செய்யப்படவில்லை',
 
   /* ─────────────────── M4 Rates & month close ─────────────────── */
-  'months.title': 'விலை மற்றும் மாத நிறைவு',
-  'months.subtitle': 'ஏல விலை, மற்றும் மாதம் நிறைவடைவதைத் தடுப்பது எது',
-  'months.pickMonth': 'மாதம்',
-  'months.totalKgs': 'இந்த மாதக் கொழுந்து',
-  'months.suppliers': 'வழங்குநர்கள்',
-  'months.perKg': 'கிலோவுக்கு',
 
-  'months.rateTitle': 'ஏல விலை',
-  'months.rateDescription': 'இந்த மாதத்திற்கு ஒரு கிலோவுக்குத் தொழிற்சாலை செலுத்துவது.',
   'months.ratePerKg': 'கிலோவுக்கு விலை',
-  'months.ratePerKgHint': 'ஏல முடிவிலிருந்து.',
   'months.extraRatePerKg': 'கிலோவுக்கு மேலதிகம்',
-  'months.extraHint': 'தொழிற்சாலை மேலதிகமாகச் சேர்ப்பது. 0 என்பதும் ஒரு உண்மையான பதில்.',
   'months.totalPerKg': 'கிலோவுக்கு மொத்தம்',
-  'months.saveRate': 'விலையைச் சேமி',
-  'months.updateRate': 'விலையைத் திருத்து',
-  'months.enteredBy': 'உள்ளிட்டவர்',
-  'months.noRateYet':
-    '{{month}} க்கு இன்னும் விலை உள்ளிடப்படவில்லை, எனவே செயலியில் விலையிலிருந்து கணக்கிடப்படும் ஒவ்வொரு மதிப்பும் பூஜ்யமாக அல்ல, வெறுமையாகக் காட்டப்படுகிறது.',
-  'months.rateLocked':
-    'இந்த மாதம் வெளியிடப்பட்டுவிட்டதால், விலை பதிவின் பகுதியாகிவிட்டது, அதை மாற்ற முடியாது.',
-  'months.rateReadOnly': 'விலையை உள்ளிடுவது கணக்கர் மட்டுமே.',
-  'months.rateSaved': '{{month}} க்கான விலை சேமிக்கப்பட்டது',
-  'months.rateFailed': 'விலை சேமிக்கப்படவில்லை',
-
-  'months.closeTitle': 'மாத நிறைவு',
-  'months.closeDescription': 'மாதத்தை வெளியிடுவதற்கு முன் ஒவ்வொரு படியும் நிறைவு பெற வேண்டும்.',
-  'months.closedDescription': 'இந்த மாதம் நிறைவு பெற்றுவிட்டது. அதன் மதிப்புகளே இப்போது பதிவு.',
-  'months.stepDone': '— முடிந்தது',
-  'months.stepBlocked': '— இன்னும் முடியவில்லை',
-  'months.publish': '{{month}} ஐ வெளியிடு',
-  'months.blockedHint': 'முதலில் மேலே உள்ள படிகளை முடிக்கவும்.',
-  'months.irreversibleHint':
-    'வெளியீட்டை மீளச் செய்ய முடியாது: கொழுந்து பூட்டப்படும், மேலும் பில்களும் கொடுப்பனவுகளும் இந்த மதிப்புகளிலிருந்தே உருவாக்கப்படும்.',
-  'months.fourEyesHint':
-    'இந்த மாதத்தின் விலையை நீங்கள் உள்ளிட்டதால், அதை வேறு ஒருவர் வெளியிட வேண்டும் (BR-501).',
-  'months.publishNeedsManager': 'மாதம் ஒன்றை வெளியிடுவது மேலாளரின் தீர்மானம்.',
-  'months.alreadyPublished': '{{name}} அவர்களால் {{date}} அன்று வெளியிடப்பட்டது.',
-  'months.confirmTitle': '{{month}} ஐ வெளியிடவா?',
-  'months.confirmDescription':
-    'இதை மீளச் செய்ய முடியாது. மாதத்தின் கொழுந்து மேலும் உள்ளிடுவதற்கு எதிராகப் பூட்டப்படும், மேலும் ஒவ்வொரு பில்லும் கொடுப்பனவும் கீழே உள்ள மதிப்புகளிலிருந்தே உருவாக்கப்படும்.',
-  'months.confirmPublish': 'மாதத்தை வெளியிடு',
-  'months.publishNoteHint':
-    'அவசியமில்லை. இந்த நிறைவு பற்றி அலுவலகம் அறிய வேண்டியது எதுவும் இருந்தால்.',
-  'months.published': '{{month}} வெளியிடப்பட்டது',
-  'months.publishFailed': 'மாதம் வெளியிடப்படவில்லை',
-
-  'months.exceptionsTitle': 'சிக்கல்கள்',
-  'months.exceptionsDescription':
-    'நிறைவுக்கு முன் ஒவ்வொன்றும் தீர்க்கப்பட வேண்டும், அல்லது விளக்கப்பட வேண்டும்.',
-  'months.filterExceptions': 'எந்தச் சிக்கல்கள்',
-  'months.openRecord': 'பதிவைத் திற',
-  'months.resolve': 'தீர்',
-  'months.resolveTitle': 'இந்தச் சிக்கலைத் தீர்',
-  'months.resolveConfirm': 'தீர்க்கப்பட்டதாகக் குறி',
-  'months.resolveNoteHint':
-    'குறைந்தது {{min}} எழுத்துகள். இது இருக்கும்போதே மாதம் ஏன் நிறைவு பெற்றது என்று தணிக்கையாளர் கேட்கும்போது அவர் படிப்பது இதுவே.',
-  'months.resolvedByNote': '{{name}} தீர்த்தார்: {{note}}',
-  'months.exceptionResolved': 'சிக்கல் தீர்க்கப்பட்டது',
-  'months.exceptionResolveFailed': 'சிக்கல் தீர்க்கப்படவில்லை',
-  'months.noOpenExceptions': 'நிறைவைத் தடுப்பது எதுவும் இல்லை',
-  'months.noOpenExceptionsHint':
-    'இந்த மாதத்திற்கு எழுப்பப்பட்ட ஒவ்வொரு சிக்கலும் தீர்க்கப்பட்டுவிட்டது.',
 
   /* ─────────── shared by the money modules (M5, M6, M8) ─────────── */
   'money.pickMonth': 'மாதம்',
@@ -846,36 +706,7 @@ export const ta: Record<TranslationKey, string> = {
   'bills.flag.noBank': 'வங்கி விவரங்கள் இல்லை',
   'bills.flag.carriesDebt': 'கடன் சுமக்கிறது',
 
-  'bills.runTitle': 'பில் சுற்று',
-  'bills.runDescription':
-    'பில் ஒன்று மாதத்தின் கொழுந்திலிருந்தும் அதன் விலையிலிருந்தும் கணக்கிடப்படுகிறது. அவற்றில் ஏதேனும் மாறும்போதெல்லாம் மீண்டும் உருவாக்கவும்.',
-  'bills.runDescriptionClosed':
-    'இந்தப் பில்களே பதிவு. வழங்குநர்கள் அவற்றைச் செயலியில் பார்க்கலாம்.',
-  'bills.runBills': 'பில்கள்',
-  'bills.runKgs': 'பில் போடப்பட்ட கொழுந்து',
-  'bills.runGross': 'மொத்தம்',
-  'bills.runDeductions': 'கழிவுகள்',
-  'bills.runSavings': 'வைத்திருக்கும் சேமிப்பு',
-  'bills.runCarryingDebt': 'செலுத்த வேண்டியது எதுவும் இல்லை',
-  'bills.runGeneratedBy': '{{name}} அவர்களால் {{when}} உருவாக்கப்பட்டது.',
-  'bills.notGenerated':
-    '{{month}} க்கு இன்னும் பில்கள் உருவாக்கப்படவில்லை. முதலில் ஏல விலை உள்ளிடப்பட வேண்டும்.',
   'bills.generate': 'பில்களை உருவாக்கு',
-  'bills.generateHint':
-    'இந்த மாதம் கொழுந்து கொண்டு வந்த ஒவ்வொரு வழங்குநருக்கும் ஒரு கொழுந்து கணக்கை உருவாக்குகிறது. மாதம் வெளியிடப்படும் வரை வழங்குநர்களுக்கு எதுவும் அனுப்பப்படாது.',
-  'bills.regenerate': 'பில்களை மீண்டும் உருவாக்கு',
-  'bills.regenerateHint':
-    'கொழுந்தும் விலையும் இப்போது உள்ளபடியே ஒவ்வொரு பில்லையும் மீண்டும் கணக்கிடுகிறது. மாதம் திறந்திருக்கும் வரை இதைத் திரும்பத் திரும்பச் செய்வது பாதுகாப்பானது.',
-  'bills.generateReadOnly': 'பில்களை உருவாக்குவது கணக்கர் மட்டுமே.',
-  'bills.generated': '{{month}} க்கான பில்கள் உருவாக்கப்பட்டன',
-  'bills.generatedDetail': 'பில்கள் {{count}}, செலுத்த வேண்டியது {{payable}}.',
-  'bills.generateFailed': 'பில்கள் உருவாக்கப்படவில்லை',
-  'bills.missingBankWarning':
-    'வழங்குநர்கள் {{count}} பேருக்குப் பணம் செலுத்த வேண்டியுள்ளது ஆனால் கோப்பில் வங்கி விவரங்கள் இல்லை. கணக்குப் புத்தகம் பெறப்படும் வரை கொடுப்பனவுச் சுற்று அந்த வரிசைகளை நிறுத்தி வைக்கும்.',
-  'bills.staleWarning':
-    'இந்தப் பில்கள் உருவாக்கப்பட்ட பின் கொழுந்து மாறியுள்ளது (அப்போது {{kgs}}). வெளியிடுவதற்கு முன் மீண்டும் உருவாக்கவும் — இப்போது பொருந்தாத மதிப்புகளின் மேல் மாதம் நிறைவு பெற முடியாது.',
-  'bills.publishedLock':
-    'இந்த மாதம் வெளியிடப்பட்டுவிட்டதால், அதன் பில்களே பதிவு, அவற்றை மீண்டும் உருவாக்க முடியாது.',
 
   'bills.detailTitle': 'கொழுந்து கணக்கு · {{code}}',
   'bills.detailSubtitle': '{{name}} · {{month}}',
@@ -947,99 +778,6 @@ export const ta: Record<TranslationKey, string> = {
     'இந்தப் பில் வெளியிடப்பட்டுவிட்டதால், இதுவே பதிவு. வெளியிடப்பட்ட பில்லைத் திருத்தலாமா, அல்லது தவறு எப்போதும் அடுத்த கணக்கில் சரிசெய்யப்படுமா என்பது தொழிற்சாலையுடன் இன்னும் தீர்க்கப்படாத கேள்வி (§21.8).',
 
   /* ───────────────────────────── M6 Payouts ───────────────────────────── */
-  'payouts.title': 'கொடுப்பனவுகள்',
-  'payouts.subtitle': 'வெளியிடப்பட்ட மாதத்திற்குச் செலுத்துவது, ஒரு முறையாக ஒன்று',
-  'payouts.monthTotal': 'செலுத்த வேண்டியது',
-  'payouts.monthPaid': 'செலுத்தப்பட்டது',
-  'payouts.empty': 'இந்த மாதத்திற்குக் கொடுப்பனவுச் சுற்றுகள் இல்லை',
-  'payouts.emptyHint': 'மாதம் வெளியிடப்பட்ட பின் ஒன்றைத் தயாரிக்கவும்.',
-
-  'payouts.progress': 'மொத்தம் {{total}}ல் {{paid}}',
-  'payouts.awaitingApproval': 'மேலாளருக்குக் காத்திருக்கிறது',
-  'payouts.heldCount': '{{count}} நிறுத்தி வைக்கப்பட்டது',
-  'payouts.failedCount': '{{count}} தோல்வியடைந்தது',
-
-  'payouts.prepareTitle': 'சுற்று ஒன்றைத் தயாரி',
-  'payouts.prepareDescription':
-    'ஒரு செலுத்தும் முறைக்கு ஒரு சுற்று: வங்கிக் கோப்பு, காசோலைப் பட்டியல், பணத் தாள் என்பன மூன்று வேறுபட்ட வேலைகள்.',
-  'payouts.method': 'செலுத்தும் முறை',
-  'payouts.prepare': 'சுற்றைத் தயாரி',
-  'payouts.prepareHint':
-    'இந்த முறையில் பணம் பெற வேண்டிய ஒவ்வொரு வழங்குநருக்கும் ஒரு வரிசையை உருவாக்குகிறது. மேலாளர் விடுவிக்கும் வரை எதுவும் செலுத்தப்படாது.',
-  'payouts.prepareReadOnly': 'கொடுப்பனவுச் சுற்றைத் தயாரிப்பது கணக்கர் மட்டுமே.',
-  'payouts.prepared': '{{method}} சுற்று தயாரிக்கப்பட்டது',
-  'payouts.preparedDetail': 'செலுத்த வேண்டியவை {{lines}}, நிறுத்தி வைக்கப்பட்டவை {{held}}.',
-  'payouts.prepareFailed': 'சுற்று தயாரிக்கப்படவில்லை',
-  'payouts.notPublished':
-    '{{month}} இன்னும் வெளியிடப்படவில்லை. கொடுப்பனவுச் சுற்றுக்கு நிறைவு பெற்ற மாதம் தேவை — அதுவரை மதிப்புகள் மாறக்கூடும், மேலும் தொழிற்சாலையை விட்டுச் சென்ற பணத்தைத் திரும்பப் பெற முடியாது.',
-  'payouts.noBills':
-    '{{month}} க்குப் பில்கள் எதுவும் உருவாக்கப்படவில்லை, எனவே எதற்கு எதிராகச் செலுத்துவதற்கும் எதுவும் இல்லை.',
-  'payouts.allMethodsPrepared':
-    'இந்த மாதத்திற்கு ஒவ்வொரு செலுத்தும் முறைக்கும் ஏற்கெனவே ஒரு சுற்று உள்ளது.',
-  'payouts.noFileExport':
-    'ஒரு சுற்று வெளியிடப்பட்டவுடன், அமைவு → கொடுப்பனவுக் கோப்பு கூறும் அமைப்பில் அதைக் கோப்பாகப் பதிவிறக்கலாம். இன்னும் திறந்திருப்பது (§21.17) கட்டுப்பாட்டுக் கூட்டுத்தொகைகளுடன் கூடிய நிலையான-அகல வங்கி வடிவம், மற்றும் முன்-அச்சிடப்பட்ட தாள்களில் காசோலை அச்சிடல் — இரண்டுக்கும் உங்கள் வங்கியின் சொந்த விவரக்குறிப்பு தேவை.',
-
-  'payouts.downloadFile': 'கோப்பைப் பதிவிறக்கு',
-  'payouts.fileHint':
-    'இந்தச் சுற்றின் விரிதாள், அமைவு → கொடுப்பனவுக் கோப்பு கூறும் அமைப்பின்படி. கட்டுப்பாட்டுக் கூட்டுத்தொகைகளுடன் கூடிய நிலையான-அகல வங்கிக் கோப்பு இன்னும் அல்ல, காசோலை அச்சிடலும் அல்ல — அவற்றுக்கு உங்கள் வங்கியின் சொந்த விவரக்குறிப்பு தேவை (§21.17).',
-  'payouts.fileDownloaded': 'கோப்பு பதிவிறக்கப்பட்டது',
-  'payouts.fileDownloadedHint':
-    'இதில் முழுக் கணக்கு எண்கள் உள்ளன, எனவே இந்தப் பதிவிறக்கம் உங்கள் பெயருடன் தணிக்கைப் பதிவில் பதியப்படுகிறது.',
-  'payouts.fileFailed': 'கோப்பு உருவாக்கப்படவில்லை',
-
-  'payouts.runTitle': '{{method}} · {{month}}',
-  'payouts.runSubtitle': 'செலுத்த வேண்டிய வரிசைகள் {{lines}}, மொத்தம் {{total}}',
-  'payouts.backToMonth': '{{month}} க்குத் திரும்பு',
-  'payouts.releaseTitle': 'விடுவி',
-  'payouts.releaseDescription':
-    'இந்தச் சுற்றில் எதுவும் செலுத்தப்படவில்லை. மேலாளர் ஒருவர் இதை விடுவிக்கிறார், அது இதைத் தயாரித்த நபராக இருக்க முடியாது.',
-  'payouts.releasedDescription':
-    'இந்தச் சுற்று விடுவிக்கப்பட்டுவிட்டது. வங்கி என்ன செய்தது என்று வரிசை வரிசையாகப் பதிவு செய்யவும்.',
-  'payouts.heldExplanation':
-    '{{count}} வரிசைகள் நிறுத்தி வைக்கப்பட்டுள்ளன: வழங்குநருக்குப் பணம் செலுத்த வேண்டியுள்ளது ஆனால் அதைச் செலுத்தக் கணக்கு இல்லை. கணக்குப் புத்தகம் பெறப்படும் வரை அவை இந்தச் சுற்றிலேயே இருக்கும், எதற்கும் எதிராகக் கணக்கிடப்படாது — அவை இல்லாமலும் சுற்று நிறைவு பெறலாம்.',
-  'payouts.preparedBy': '{{name}} அவர்களால் {{when}} தயாரிக்கப்பட்டது',
-  'payouts.releasedBy': '{{name}} அவர்களால் {{when}} விடுவிக்கப்பட்டது',
-  'payouts.release': '{{total}} ஐ விடுவி',
-  'payouts.releaseHint':
-    'விடுவிப்பது பணம் செலுத்துவதற்கு அனுப்பப்பட்டுவிட்டது என்று பதிவு செய்கிறது.',
-  'payouts.releaseNeedsManager': 'கொடுப்பனவுச் சுற்றை விடுவிப்பது மேலாளரின் தீர்மானம்.',
-  'payouts.fourEyesHint':
-    'இந்தச் சுற்றை நீங்கள் தயாரித்ததால், அதை வேறு ஒருவர் விடுவிக்க வேண்டும் (BR-501).',
-  'payouts.nothingPayableHint':
-    'இந்தச் சுற்றின் ஒவ்வொரு வரிசையும் நிறுத்தி வைக்கப்பட்டுள்ளது. விடுவிக்க எதுவும் இல்லை.',
-  'payouts.approvedNotice':
-    'விடுவிக்கப்பட்டது. வங்கி பதில் அளிக்கும்போது ஒவ்வொரு வரிசையையும் குறிக்கவும்.',
-  'payouts.completedNotice': 'ஒவ்வொரு வரிசைக்கும் கணக்குக் கொடுக்கப்பட்டது, {{when}}.',
-  'payouts.confirmReleaseTitle': 'இந்தச் சுற்றை விடுவிக்கவா?',
-  'payouts.confirmReleaseBody':
-    'இது தொழிற்சாலை இந்தச் செலுத்தல்களை அனுப்பிவிட்டது என்று பதிவு செய்கிறது. வங்கியிடம் கொடுக்கப்போவதுடன் மொத்தத்தை ஒப்பிட்டுச் சரிபார்க்கவும்.',
-  'payouts.confirmRelease': 'சுற்றை விடுவி',
-  'payouts.releaseNoteHint':
-    'அவசியமில்லை. இந்தச் சுற்று பற்றி அலுவலகம் அறிய வேண்டியது எதுவும் இருந்தால்.',
-  'payouts.approved': 'சுற்று விடுவிக்கப்பட்டது — {{total}}',
-  'payouts.approveFailed': 'சுற்று விடுவிக்கப்படவில்லை',
-
-  'payouts.linesTitle': 'வரிசைகள்',
-  'payouts.linesDescription':
-    'நிறுத்தி வைக்கப்பட்டவையும் செலுத்தப்படாதவையும் முதலில் — இன்னும் வேலை செய்ய வேண்டியவை அவையே.',
-  'payouts.filterLines': 'எந்த வரிசைகள்',
-  'payouts.noLinesHint': 'அந்த வடிகட்டிக்கு எந்த வரிசையும் பொருந்தவில்லை.',
-
-  'payouts.markPaid': 'செலுத்தப்பட்டது',
-  'payouts.markFailedShort': 'தோல்வியடைந்தது',
-  'payouts.markPaidTitle': 'இந்தச் செலுத்தலைப் பதிவு செய்',
-  'payouts.markPaidBody':
-    'பணம் உண்மையில் கணக்கை விட்டு வெளியேறிய பின்னரே வரிசையைச் செலுத்தப்பட்டதாகக் குறிக்கவும்.',
-  'payouts.markFailedTitle': 'தோல்வியடைந்த செலுத்தலைப் பதிவு செய்',
-  'payouts.markFailedBody':
-    'வழங்குநருக்குப் பணம் செலுத்தப்படவில்லை. நடந்ததை எழுதுங்கள் — இந்தச் சுற்றை அடுத்து எடுத்துக்கொள்பவர் உங்கள் குறிப்பையே அடிப்படையாகக் கொண்டு வேலை செய்வார்.',
-  'payouts.reasonLabel': 'என்ன தவறு நடந்தது',
-  'payouts.reasonHint': 'குறைந்தது {{min}} எழுத்துகள், எ.கா: வங்கி என்ன பதில் தந்தது.',
-  'payouts.confirmPaid': 'செலுத்தப்பட்டதாகக் குறி',
-  'payouts.confirmFailed': 'தோல்வியடைந்ததாகக் குறி',
-  'payouts.markedPaid': '{{code}} செலுத்தப்பட்டதாகக் குறிக்கப்பட்டது',
-  'payouts.markedFailed': '{{code}} தோல்வியடைந்ததாகக் குறிக்கப்பட்டது',
-  'payouts.markFailed': 'வரிசை புதுப்பிக்கப்படவில்லை',
 
   /* ───────────────────────────── M8 Savings ───────────────────────────── */
 
@@ -1655,18 +1393,6 @@ export const ta: Record<TranslationKey, string> = {
   'reports.param.from': 'இதிலிருந்து',
   'reports.param.to': 'இதுவரை',
 
-  'reports.column.metric': 'மதிப்பு',
-  'reports.column.value': 'அளவு',
-  'reports.column.point': 'சேகரிப்பு நிலையம்',
-  'reports.column.kgs': 'கிலோ',
-  'reports.column.suppliers': 'வழங்குநர்கள்',
-  'reports.column.deliveries': 'எடை பார்த்தல்கள்',
-  'reports.column.meanKgs': 'எடை பார்த்தலுக்குச் சராசரி',
-  'reports.column.code': 'இலக்கம்',
-  'reports.column.name': 'பெயர்',
-  'reports.column.lastDelivery': 'இறுதி ஒப்படைப்பு',
-  'reports.column.savings': 'வைத்திருக்கும் சேமிப்பு',
-  'reports.column.credit': 'செலுத்த வேண்டியது',
   'reports.column.month': 'மாதம்',
   'reports.column.fromApp': 'செயலியிலிருந்து',
   'reports.column.fromOffice': 'கையால் உள்ளிடப்பட்டது',
@@ -1732,7 +1458,6 @@ export const ta: Record<TranslationKey, string> = {
     'ஆங்கிலப் பாடம் இல்லை, எனவே வழங்குநருக்குக் காட்ட எதுவும் இருக்காது. முதலில் அதை எழுதுங்கள்.',
   'error.slugTaken': 'அந்தத் தலைப்புடன் ஒரு கட்டுரை ஏற்கெனவே உள்ளது.',
   'error.contentNotPublished': 'அது செயலில் இல்லை, எனவே நீக்குவதற்கு எதுவும் இல்லை.',
-  'error.url': 'சரியான வலை முகவரியை உள்ளிடவும்',
   'error.unknownCategory':
     'செயலி அதைத் தூக்கி எறியும் — அது அறிந்த வகையின் அறிவிப்புகளை மட்டுமே திறக்கிறது.',
   'error.categoryDisabled': 'இந்தத் தொழிற்சாலை அந்த வகை அறிவிப்பை அனுப்புவதில்லை.',
@@ -2059,11 +1784,8 @@ export const ta: Record<TranslationKey, string> = {
   'audit.filter.allActors': 'யாராக இருந்தாலும்',
   'audit.action.supplier.profile.update': 'செயலியில் தனது சொந்த விவரங்களை மாற்றினார்',
   'audit.action.supplier.password.change': 'தனது சொந்த செயலி கடவுச்சொல்லைத் தேர்ந்தெடுத்தார்',
-  'audit.action.notification.send': 'அறிவிப்பு அனுப்பப்பட்டது',
 
   /* ───────────────────────────── attachments ───────────────────────────── */
   'attachment.tooLarge': 'அந்தக் கோப்பு 8 MB ஐ விடப் பெரியது',
   'attachment.badType': 'JPEG, PNG, WebP அல்லது PDF கோப்பை இணைக்கவும்',
-  'attachment.uploading': 'பதிவேற்றப்படுகிறது…',
-  'attachment.remove': 'நீக்கு',
 } as const;

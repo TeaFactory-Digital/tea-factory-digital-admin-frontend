@@ -7,7 +7,7 @@
  * arbitrary classes and hope the merge order is right. Every primitive here
  * takes explicit variants and only appends `className` for layout.
  */
-export type ClassValue = string | number | false | null | undefined;
+type ClassValue = string | number | false | null | undefined;
 
 export function cn(...values: ClassValue[]): string {
   return values.filter(Boolean).join(' ');

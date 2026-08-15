@@ -13,14 +13,6 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useAuthStore, useCurrentUser } from '@/auth/authStore';
 import { useFactory } from '@/config/RuntimeConfigProvider';
-/* Hidden with the tenant switcher below — `Badge`, `Select` and all four tenant values
-   were used by it and by nothing else here:
-
-   import { allowTenantOverride, tenantId, tenantSource, switchTenantByReload } from '@/config/tenant';
-   import { MOCK_TENANT_IDS } from '@/services/mocks/seed';
-   import { Badge } from '@/components/ui/Badge';
-   import { Select } from '@/components/ui/Select';
-*/
 import { Logo } from '@/brand/Logo';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';

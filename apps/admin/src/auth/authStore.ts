@@ -23,7 +23,7 @@ import { isApiError } from '@/services/api/errors';
  * the console asked manager-and-above for has been withdrawn (see `LoginResult`), so a
  * correct password moves the store straight to a session.
  */
-export type AuthStatus = 'bootstrapping' | 'anonymous' | 'authenticated';
+type AuthStatus = 'bootstrapping' | 'anonymous' | 'authenticated';
 
 interface AuthState {
   status: AuthStatus;

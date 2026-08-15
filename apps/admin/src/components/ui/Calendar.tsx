@@ -31,7 +31,7 @@ const DAY_CELL =
   'size-9 rounded-md text-body-small text-text-primary hover:bg-surface-variant ' +
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring';
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>;
+type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
 export function Calendar({ className, classNames, ...props }: CalendarProps) {
   return (

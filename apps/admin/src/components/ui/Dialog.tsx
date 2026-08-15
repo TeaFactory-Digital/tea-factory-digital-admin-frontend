@@ -13,7 +13,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/cn';
 
-export interface DialogProps {
+interface DialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: ReactNode;

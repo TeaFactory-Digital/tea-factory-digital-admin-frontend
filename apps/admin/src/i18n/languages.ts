@@ -18,7 +18,7 @@ export const LANGUAGE_CODES = ['si', 'en', 'ta'] as const;
 
 export type LanguageCode = (typeof LANGUAGE_CODES)[number];
 
-export interface Language {
+interface Language {
   code: LanguageCode;
   /**
    * What the picker shows. Short, because it sits in a 14px-tall chrome control

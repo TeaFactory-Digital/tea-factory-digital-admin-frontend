@@ -25,7 +25,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/cn';
 
-export interface PaginationProps {
+interface PaginationProps {
   /** Zero-based, as the API sends it. */
   page: number;
   pageSize: number;
