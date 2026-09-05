@@ -24,7 +24,14 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { configImpact, type ConfigPatch } from '@tfd/domain';
+import {
+  FEATURE_FLAG_NAMES,
+  configImpact,
+  featureFlagPatchSchema,
+  featureFlagSetSchema,
+  type ConfigPatch,
+} from '@tfd/domain';
+import { bundledConfig } from '@/config/defaults';
 import { adminConfigRepository } from '@/services/repositories/adminConfigRepository';
 import { isApiError } from '@/services/api/errors';
 import { auditRepository } from '@/services/repositories/auditRepository';
@@ -439,5 +446,48 @@ describe('configImpact (the shared rule)', () => {
     // The reader has to fix the block before the warning matters, so it comes first.
     expect(impacts[0]?.severity).toBe('blocks');
     expect(impacts.at(-1)?.severity).toBe('warns');
+  });
+});
+
+/**
+ * The flag set as a **runtime** value.
+ *
+ * The type has always been shared; the type is also erased. An API checking its own list
+ * against `FeatureFlagSet` catches nothing when both sides are renamed in one pull — each
+ * half type-checks, the served payload and the console's expectations stop meeting, and a
+ * factory finds a feature quietly off. These assert the two properties that make the
+ * schema worth having: it knows the whole set, and it is lenient in the direction that
+ * keeps an older console working against a newer server.
+ */
+describe('featureFlagSetSchema', () => {
+  it('is the fourteen the app reads, and knows when one is missing', () => {
+    expect(FEATURE_FLAG_NAMES).toHaveLength(14);
+    expect(featureFlagSetSchema.safeParse(bundledConfig.flags).success).toBe(true);
+
+    const { enableManure: _dropped, ...incomplete } = bundledConfig.flags;
+    expect(featureFlagSetSchema.safeParse(incomplete).success).toBe(false);
+  });
+
+  it('strips a flag it has never heard of rather than refusing the block', () => {
+    /**
+     * The forward-compatible half, and the reason the console does **not** call
+     * `.strict()`. A server one release ahead must not cost this console the other
+     * fourteen flags — which would turn a new feature into every existing module
+     * reverting to its bundled default.
+     */
+    const parsed = featureFlagSetSchema.parse({ ...bundledConfig.flags, enableSomethingNew: true });
+    expect(parsed).not.toHaveProperty('enableSomethingNew');
+    expect(parsed.enableManure).toBe(bundledConfig.flags.enableManure);
+  });
+
+  it('refuses a flag that is not a boolean', () => {
+    // `"false"` is the one that matters: truthy, so an untyped merge would read a
+    // switched-off feature as on.
+    expect(featureFlagPatchSchema.safeParse({ enableNews: 'false' }).success).toBe(false);
+  });
+
+  it('accepts a partial patch, because that is what M14 sends', () => {
+    const parsed = featureFlagPatchSchema.parse({ enableNews: false });
+    expect(parsed).toEqual({ enableNews: false });
   });
 });

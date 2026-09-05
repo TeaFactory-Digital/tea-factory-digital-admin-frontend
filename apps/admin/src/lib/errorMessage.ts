@@ -19,6 +19,16 @@ const BY_CODE: Record<string, string> = {
   'note-required': 'error.noteRequired',
   'stale-eligibility': 'error.staleEligibility',
   invalid: 'error.invalid',
+  /**
+   * The record is gone — deleted, or never existed under that id.
+   *
+   * Mapped separately from the `'404'` fallback at the foot of this table and not
+   * folded into it: the status is what an unrouted path answers, the code is what a
+   * handler answers about a record it looked for and did not find. They resolve to
+   * the same sentence today, and a table that only carried the status would go on
+   * rendering "something went wrong" for every domain `not-found` the API sends.
+   */
+  'not-found': 'error.notFound',
   // M3. `month-locked` is the one a clerk meets most: it is what a published
   // month answers to every attempt to change the leaf it was built from (BR-108).
   'month-locked': 'error.monthLocked',

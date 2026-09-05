@@ -23,6 +23,7 @@ import {
   creditCeiling,
   creditCeilingFromRule,
   creditRuleProblems,
+  installmentOptionsFor,
   loanCeiling,
   manureCeiling,
   type CreditRule,
@@ -268,6 +269,92 @@ describe('creditRuleProblems', () => {
     expect(impacts.some((one) => one.severity === 'blocks')).toBe(true);
     expect(impacts.some((one) => one.field === 'creditRules.loan')).toBe(true);
   });
+});
+
+/**
+ * Repayment terms — **the last piece of credit policy that lived in two places.**
+ *
+ * The app's instalment picker read a constant compiled into the mobile bundle; the API
+ * validated the chosen term against its own list. Two lists that agree right up until one
+ * of them is edited, and the failure lands on a supplier: a term the picker offered and
+ * the factory then refused. These assert the single-source property, not the numbers.
+ */
+describe('installment terms come off the rule', () => {
+  it('defaults to exactly what the app hard-coded before', () => {
+    // Moved, not changed. A factory that has set no policy offers what it always did.
+    expect(installmentOptionsFor(DEFAULT_CREDIT_RULES, 'loan')).toEqual([
+      3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+    ]);
+    expect(installmentOptionsFor(DEFAULT_CREDIT_RULES, 'manure')).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  it('offers no term for an advance, which has none to offer', () => {
+    /**
+     * Not an oversight and not an empty list to be filled in later: an advance is settled
+     * out of the next month's leaf in one go. Empty is the correct answer, and it is what
+     * keeps the picker off the advance screen.
+     */
+    expect(installmentOptionsFor(DEFAULT_CREDIT_RULES, 'advance')).toEqual([]);
+  });
+
+  it('falls back to the platform list when the factory has set none', () => {
+    // `undefined` is the ordinary state of a `client_config` row written before this
+    // field existed — reading `rule.installmentOptions` directly is what breaks it.
+    const rules = {
+      ...DEFAULT_CREDIT_RULES,
+      loan: { ...DEFAULT_CREDIT_RULES.loan, installmentOptions: undefined },
+    };
+    expect(installmentOptionsFor(rules, 'loan')).toEqual([3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  });
+
+  it('reads the factory’s list when it has set one', () => {
+    const rules = {
+      ...DEFAULT_CREDIT_RULES,
+      manure: { ...DEFAULT_CREDIT_RULES.manure, installmentOptions: [2, 4] },
+    };
+    expect(installmentOptionsFor(rules, 'manure')).toEqual([2, 4]);
+  });
+
+  it('refuses the lists that would break the picker', () => {
+    const base = DEFAULT_CREDIT_RULES.loan;
+    const problems = (installmentOptions: number[]) =>
+      creditRuleProblems({ ...base, installmentOptions });
+
+    /**
+     * Empty is the one worth stating. It is not "this facility is off" — the app renders
+     * a picker with no chip and a form that cannot be submitted, which reads on a phone
+     * as a broken screen. Switching the facility off under Features is what off is for.
+     */
+    expect(problems([])).toContain('bad-installments');
+    expect(problems([0, 3])).toContain('bad-installments');
+    expect(problems([-1])).toContain('bad-installments');
+    expect(problems([1.5, 3])).toContain('bad-installments');
+    // Out of order and repeated both fail, because the app renders them as they arrive.
+    expect(problems([6, 3])).toContain('bad-installments');
+    expect(problems([3, 3, 6])).toContain('bad-installments');
+
+    expect(problems([1, 2, 3])).toEqual([]);
+    // Absent is not a problem — it means the platform's list, which is a real answer.
+    expect(creditRuleProblems({ ...base, installmentOptions: undefined })).toEqual([]);
+  });
+
+  it('survives the M14 save path the office actually uses', async () => {
+    signOut();
+    await signInAs(FACTORY_ADMIN);
+    const { config, usage } = await adminConfigRepository.get();
+    const rules = config.creditRules ?? DEFAULT_CREDIT_RULES;
+
+    await adminConfigRepository.patch(
+      { creditRules: { ...rules, loan: { ...rules.loan, installmentOptions: [6, 12] } } },
+      config,
+      usage,
+    );
+
+    const saved = await adminConfigRepository.get();
+    expect(installmentOptionsFor(saved.config.creditRules ?? DEFAULT_CREDIT_RULES, 'loan')).toEqual(
+      [6, 12],
+    );
+  }, 20_000);
 });
 
 describe('M7 prices its queue with the tenant’s rule', () => {

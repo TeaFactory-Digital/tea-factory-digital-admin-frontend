@@ -143,6 +143,7 @@ copy interpolates.
 | `invalid` | 401 | Bad credentials. **Same code and message for unknown user and wrong password** — distinguishing them is an account-enumeration oracle |
 | `forbidden` | 403 | The role does not grant this capability. `details: { capability, required, granted }` |
 | `feature-disabled` | 403 | The tenant has this feature flag off (AC-07) |
+| `not-found` | 404 | The record does not exist, or no longer does. Answer it for a record **this factory** does not hold, never a `403` — a status that distinguished "not yours" from "not there" would confirm the existence of another tenant's records |
 | `four-eyes-violation` | 409 | The approver created the record (BR-501) |
 | `already-decided` | 409 | Someone else decided it first. `details: { decidedByName }` |
 | `note-required` | 422 | A decision, suspension or reveal arrived without a reason (AC-06) |
@@ -221,6 +222,24 @@ session. The console has no way to read the refresh cookie, which is the point.
 **CORS:** the console is on a different subdomain from the API and sends
 `withCredentials`. You need `Access-Control-Allow-Credentials: true` and an
 explicit origin allowlist — a wildcard origin is illegal with credentials.
+`Access-Control-Allow-Headers` must carry `X-Tenant`, `Idempotency-Key` and
+`X-CSRF-Token`, or the preflight fails and no mutation is ever sent.
+
+**CSRF:** the console echoes a double-submit token on every mutation, this call
+included — `X-CSRF-Token`, read from a **non-`httpOnly`** cookie named `csrf_token`
+that the API sets alongside the refresh cookie. Both names are configurable
+(`VITE_CSRF_COOKIE`, `VITE_CSRF_HEADER`); tell us if yours differ.
+
+Two things about the subdomain split that are easy to get backwards:
+
+- **It does not break `SameSite=Lax`.** `SameSite` keys on *site*, not origin, and
+  `*.admin.teafactory.lk` and `api.teafactory.lk` share one registrable domain. The
+  refresh cookie is sent on this cross-origin `POST` as specified above — there is no
+  reason to relax it to `SameSite=None`, which would be strictly worse.
+- **Keep the refresh cookie host-only.** Set it on the API host and do not widen
+  `Domain` to the parent. Widening it is what would put the cookie into every tenant
+  console's traffic, and the sibling-subdomain exposure that creates is precisely what
+  the CSRF token above is there to cover.
 
 ### 2.3 `POST /admin/auth/logout` → `204`
 
@@ -299,9 +318,11 @@ public identity, its feature flags, its bank list and its collection points.
     "advance": { "requiredMonths": 0, "basis": "thisMonthLeaf",
                  "averageOverMonths": 6, "multiplier": 1, "maxAmount": null },
     "loan":    { "requiredMonths": 6, "basis": "averageIncome",
-                 "averageOverMonths": 6, "multiplier": 3, "maxAmount": null },
+                 "averageOverMonths": 6, "multiplier": 3, "maxAmount": null,
+                 "installmentOptions": [3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
     "manure":  { "requiredMonths": 3, "basis": "averageIncome",
-                 "averageOverMonths": 3, "multiplier": 1, "maxAmount": 20000 }
+                 "averageOverMonths": 3, "multiplier": 1, "maxAmount": 20000,
+                 "installmentOptions": [1, 2, 3, 4, 5, 6] }
   },
   "banks": [{ "name": "Bank of Ceylon", "branches": ["Akuressa", "Matara"] }],
   "localization": {
@@ -333,6 +354,16 @@ Notes for the implementer:
   `enableReports` went the other way — console-only, and never read by the app.
   Serve the app's set and nothing else; a flag only one consumer understands is a
   switch whose effect nobody can predict.
+
+  **Check the set at start-up, not at compile time.** `@tfd/domain` exports
+  `featureFlagSetSchema` and `FEATURE_FLAG_NAMES` for exactly this. A type is erased, so
+  an API validating its own list against `FeatureFlagSet` catches nothing when both sides
+  are renamed in one pull — each half type-checks, the served payload and the console's
+  expectations stop meeting, and the result reaches a factory as a feature that is
+  quietly off. Parse the list at boot and the same mistake is a start-up failure naming
+  the flag. Call `.strict()` on the schema for that check: an unrecognised flag in *your
+  own* list is a bug. The console deliberately does not — it strips unknown keys instead,
+  so a console one release behind survives a server that has learned a fifteenth flag.
 - **`creditRules` is how much a supplier may borrow, and it is served on the *public*
   payload deliberately.** The app prints the ceiling before a supplier asks for
   anything, and the console's queue checks a request against it — one served rule is
@@ -348,6 +379,26 @@ Notes for the implementer:
   Optional: absent means `DEFAULT_CREDIT_RULES`, which reproduces the formulas that
   used to be hard-coded. A factory that has never set a policy must not see its lending
   move.
+
+  **`installmentOptions` is the repayment terms, in monthly accounts** — ascending, no
+  repeats, whole numbers ≥ 1. It is on the rule because it was the last piece of credit
+  policy still living in two places: a constant in the mobile bundle that the picker
+  rendered, and a list on the API that validated what the picker sent. Two lists that
+  agree until the first edit, and the failure lands on a supplier — a term the app
+  offered and the factory then refused.
+
+  Validate the submitted `installmentMonths` against **this** list and nothing else, and
+  read it through `installmentOptionsFor(rules, facility)` from `@tfd/domain` rather than
+  the field directly. `undefined` is the ordinary state of a `client_config` row written
+  before the field existed, and the helper answers it with the platform default; the raw
+  field would answer it with `undefined` and refuse every term.
+
+  **Omitted for `advance`, and that is not an oversight**: an advance is settled out of
+  the next month's leaf in one go, so there is no term to choose. The helper returns `[]`
+  for it. An empty array on `loan` or `manure` is a different thing and is **refused** —
+  it leaves the app with no chip to offer and a form that cannot be submitted, which
+  reads as a broken screen rather than as a facility that is switched off. Turning the
+  facility off is what `enableLoans` / `enableManure` are for.
 - **`teaPackets` is optional and its absence is not neutral.** A row without it
   falls back to `DEFAULT_TEA_PACKET_POLICY`, which is a real price and not the
   factory's — so both M18 and M14 say so on screen. Serve it once the factory has

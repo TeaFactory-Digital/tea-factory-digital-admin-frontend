@@ -53,6 +53,27 @@ export function setAuthBridge(bridge: AuthBridge): void {
 /** Requests carrying this flag skip the auth header and the refresh retry. */
 const SKIP_AUTH = 'x-skip-auth';
 
+/**
+ * The double-submit CSRF token, read from the cookie the API set.
+ *
+ * Readable on purpose — this cookie is **not** `httpOnly`, unlike the refresh token
+ * beside it. That is the whole mechanism: a sibling subdomain can cause the browser
+ * to *send* our cookies but cannot *read* them across origins, so echoing one back in
+ * a header proves the request came from a page that could read it.
+ *
+ * Returns `null` when there is no cookie, and the header is then simply not sent
+ * rather than sent empty: an API that does not issue the cookie should see nothing,
+ * not a value it has to decide how to interpret.
+ */
+function csrfToken(): string | null {
+  if (!env.csrfCookieName || typeof document === 'undefined') return null;
+  const prefix = `${env.csrfCookieName}=`;
+  for (const entry of document.cookie.split('; ')) {
+    if (entry.startsWith(prefix)) return decodeURIComponent(entry.slice(prefix.length));
+  }
+  return null;
+}
+
 type RetriableConfig = InternalAxiosRequestConfig & { _retried?: boolean };
 
 export const apiClient: AxiosInstance = axios.create({
@@ -72,6 +93,22 @@ export const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use((config) => {
   if (env.sendTenantHeader) {
     config.headers.set('X-Tenant', tenantId);
+  }
+
+  const method = (config.method ?? 'get').toLowerCase();
+  const mutation = method !== 'get' && method !== 'head';
+
+  /**
+   * CSRF **above the `SKIP_AUTH` return, not below it.**
+   *
+   * The one call this token exists to protect is `POST /admin/auth/refresh`, and that
+   * is a `withoutAuth()` request — it carries no bearer token by design, because the
+   * refresh cookie *is* its credential. Setting the header after the early return
+   * would therefore attach it to every request except the one that needs it.
+   */
+  if (mutation) {
+    const csrf = csrfToken();
+    if (csrf) config.headers.set(env.csrfHeaderName, csrf);
   }
 
   if (config.headers.has(SKIP_AUTH)) {
@@ -101,8 +138,7 @@ apiClient.interceptors.request.use((config) => {
    * overrides it with `batchId` (`endpoints/deliveries.ts`) — there a repeat
    * genuinely is the same weighing session.
    */
-  const method = (config.method ?? 'get').toLowerCase();
-  if (method !== 'get' && method !== 'head' && !config.headers.has('Idempotency-Key')) {
+  if (mutation && !config.headers.has('Idempotency-Key')) {
     config.headers.set('Idempotency-Key', crypto.randomUUID());
   }
 

@@ -57,6 +57,8 @@ secret if you tried.
 | `VITE_USE_MOCK`           | `1` in dev, `0` in prod             | Serve from MSW instead of the network                                  |
 | `VITE_DEFAULT_TENANT`     | `galaboda` (dev)                    | Used only when the host carries no subdomain                           |
 | `VITE_SEND_TENANT_HEADER` | `1`                                 | Send `X-Tenant` alongside the subdomain                                |
+| `VITE_CSRF_COOKIE`        | `csrf_token`                        | Double-submit cookie the API sets. Empty switches the header off       |
+| `VITE_CSRF_HEADER`        | `X-CSRF-Token`                      | Header the cookie's value is echoed back in, on every mutation         |
 | `VITE_API_TIMEOUT_MS`     | `20000`                             | **Do not shorten for a rural network** (§20.1)                         |
 
 Files: `.env.development` (committed, dev defaults) · `.env.demo` (committed, demo
@@ -99,8 +101,20 @@ Host requirements:
    `index.html`**.
 4. **CORS on the API**: an explicit origin allowlist with
    `Access-Control-Allow-Credentials: true` — a wildcard origin is illegal with
-   credentials, and the refresh cookie needs them.
-5. **`noindex`** — already in `index.html`.
+   credentials, and the refresh cookie needs them. `Access-Control-Allow-Headers`
+   must carry `X-Tenant`, `Idempotency-Key` and `X-CSRF-Token`, or the preflight
+   fails and every mutation dies before it is sent.
+5. **The refresh cookie stays host-only.** Set it on `api.<domain>` and do **not**
+   widen `Domain` to `.<domain>`. Host-only is sent to exactly the host that issued
+   it, which is all a refresh needs; widening it hands the cookie to every tenant's
+   console subdomain and to anything else that ever lives on the parent — which is
+   the sibling-subdomain exposure `X-CSRF-Token` then has to compensate for.
+
+   Note what this split does *not* break: `SameSite=Lax` keys on **site**, not
+   origin, and the console and the API share one registrable domain. The cookie is
+   therefore sent on the cross-origin refresh `POST` as §2.2 specifies, and there is
+   no reason to relax it to `SameSite=None`.
+6. **`noindex`** — already in `index.html`.
 
 ### Vercel — the hosted demo
 
@@ -144,7 +158,7 @@ run cannot see.
 ### Going to production
 
 Point `VITE_API_BASE_URL` at the real origin and build with `npm run build` — the
-mock is not merely off in that bundle, it is not in it. Then the five host
+mock is not merely off in that bundle, it is not in it. Then the six host
 requirements above apply in full, plus the API's CORS allowlist.
 
 Release cadence is the thing to design around: **the API and the console can ship

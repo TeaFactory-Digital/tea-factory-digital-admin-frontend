@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   DEFAULT_SAVINGS_POLICY,
+  FEATURE_FLAG_NAMES,
   NOTIFICATION_CATEGORIES,
   SUPPORTED_LANGUAGES,
   emailSchema,
@@ -174,7 +175,16 @@ export function FeaturesSection(props: SectionProps) {
   useEffect(() => setDraft(props.config.flags), [props.config.flags]);
 
   const dirty = !same(draft, props.config.flags);
-  const names = Object.keys(props.config.flags) as FeatureFlagName[];
+  /**
+   * The platform's list, not the served payload's keys.
+   *
+   * `Object.keys(props.config.flags)` rendered whatever the server happened to send, so a
+   * flag this build has never heard of arrived as a row with a missing label and a toggle
+   * that gates nothing — and a flag the server *omitted* silently lost its row even though
+   * the bundled default was still in force. Iterating the declared set fixes both, and
+   * fixes the order: declaration order rather than whatever order the JSON arrived in.
+   */
+  const names = FEATURE_FLAG_NAMES;
 
   return (
     <CardBody className="flex flex-col gap-md">

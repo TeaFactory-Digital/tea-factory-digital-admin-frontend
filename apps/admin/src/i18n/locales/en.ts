@@ -1470,6 +1470,9 @@ export const en = {
   'config.creditRules.maxAmount': 'Never more than (LKR)',
   'config.creditRules.maxAmountHint': 'Leave empty for no cap. Applied after the multiplier.',
   'config.creditRules.noCap': 'No cap',
+  'config.creditRules.installments': 'Repayment terms',
+  'config.creditRules.installmentsHint':
+    'Monthly accounts a supplier may spread this over. The app offers exactly these and nothing else.',
   'config.creditRules.summary.thisMonthLeaf':
     '{{multiplier}} × this month’s leaf at the last settled rate.',
   'config.creditRules.summary.lastSettledMonth': '{{multiplier}} × the last settled month’s leaf.',
@@ -1483,6 +1486,8 @@ export const en = {
   'config.impact.creditRule.negative-multiplier':
     'The multiplier has to be more than zero. To stop offering this facility, switch it off under Features instead.',
   'config.impact.creditRule.negative-max': 'A cap has to be more than zero, or empty for no cap.',
+  'config.impact.creditRule.bad-installments':
+    'Offer at least one repayment term. To stop offering this facility, switch it off under Features instead.',
 
   /* ───────── Replication from the factory's own system (v2) ───────── */
   'shell.syncStale':

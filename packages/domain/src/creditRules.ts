@@ -35,7 +35,16 @@
  * No per-supplier rules, no tiers, no seasonal variation. Each of those is a policy
  * the factory has not asked for, and a rule engine nobody needs is a screen nobody can
  * fill in correctly. When one is asked for, it arrives as a field here — the same way
- * `maxAmount` did.
+ * `maxAmount` did, and the same way `installmentOptions` since has.
+ *
+ * ## `installmentOptions` is here for a different reason from the rest
+ *
+ * The four fields above answer *"how much"*. `installmentOptions` answers *"over how
+ * long"*, which is not a ceiling at all — it is here because it was the last piece of
+ * credit policy still living in **two** places: a constant in the mobile bundle that the
+ * picker rendered, and a list on the API that validated what the picker sent. Two lists
+ * that agree until the first time one of them is edited. Putting it on the rule makes the
+ * served config the only copy, which is the same argument that moved the ceilings here.
  */
 
 import type { CreditFacility } from './types/app';
@@ -76,6 +85,24 @@ export interface CreditRule {
    * somebody has to recognise as meaning uncapped.
    */
   maxAmount: number | null;
+  /**
+   * The repayment terms the factory offers, in monthly accounts. Ascending, no repeats.
+   *
+   * **On the rule because the alternative is two lists.** The app's instalment picker and
+   * the server's validation of the chosen term were reading different sources — a constant
+   * in the mobile bundle and a list on the API — so the failure mode was a supplier picking
+   * a term the picker offered and the server then refused. One served list makes that
+   * impossible rather than unlikely.
+   *
+   * **Ignored for `advance`**, the same way `averageOverMonths` is ignored unless the basis
+   * is `averageIncome`. An advance is settled out of the next month's leaf in one go; there
+   * is no term to choose, which is what separates it from a loan.
+   *
+   * Optional, and absent means `DEFAULT_CREDIT_RULES[facility].installmentOptions` — read
+   * it through `installmentOptionsFor`, never directly, so a factory that has set no policy
+   * keeps the terms it had before this field existed.
+   */
+  installmentOptions?: number[];
 }
 
 export type CreditRules = Record<CreditFacility, CreditRule>;
@@ -94,6 +121,7 @@ export const DEFAULT_CREDIT_RULES: CreditRules = {
     averageOverMonths: 6,
     multiplier: 1,
     maxAmount: null,
+    // No `installmentOptions`: an advance has no term to choose.
   },
   loan: {
     requiredMonths: 6,
@@ -101,6 +129,14 @@ export const DEFAULT_CREDIT_RULES: CreditRules = {
     averageOverMonths: 6,
     multiplier: 3,
     maxAmount: null,
+    /**
+     * Three to twelve — the app's `LOAN_INSTALLMENT_OPTIONS`, moved rather than changed.
+     *
+     * Three is the floor because a loan is a larger sum than an advance and one account
+     * cannot absorb it; twelve is the ceiling because the recovery has to finish inside a
+     * plucking year.
+     */
+    installmentOptions: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
   },
   manure: {
     requiredMonths: 6,
@@ -108,14 +144,51 @@ export const DEFAULT_CREDIT_RULES: CreditRules = {
     averageOverMonths: 6,
     multiplier: 1,
     maxAmount: null,
+    /**
+     * One to six — the app's `MANURE_INSTALLMENT_OPTIONS`, likewise unchanged.
+     *
+     * One is allowed because an issue is small enough for a single account to absorb; six
+     * is the ceiling because the next round of fertilizer comes before the monsoon after
+     * it, and two live balances would eat the whole ceiling.
+     */
+    installmentOptions: [1, 2, 3, 4, 5, 6],
   },
 };
+
+/**
+ * The terms on offer for a facility — the factory's, or the platform's if it has set none.
+ *
+ * **The one function both sides call.** The app's picker renders what this returns and the
+ * API validates the chosen term against what this returns, so "the supplier picked a term
+ * the server rejects" stops being a state the system can reach. Reading
+ * `rule.installmentOptions` directly is what re-introduces it, because `undefined` is a
+ * real and common value — a factory that has never opened the screen.
+ *
+ * Takes the whole rule set, and takes `undefined` for it, because "this factory has set
+ * no rules at all" and "this facility's rule carries no list" are the same state as far
+ * as a caller is concerned — and a caller forced to distinguish them is a caller that
+ * will get one of the two wrong.
+ *
+ * Empty for `advance`, which has no term.
+ */
+export function installmentOptionsFor(
+  rules: CreditRules | undefined,
+  facility: CreditFacility,
+): readonly number[] {
+  if (facility === 'advance') return [];
+  return (
+    rules?.[facility].installmentOptions ??
+    DEFAULT_CREDIT_RULES[facility].installmentOptions ??
+    []
+  );
+}
 
 export type CreditRuleProblem =
   | 'negative-months'
   | 'bad-average-months'
   | 'negative-multiplier'
-  | 'negative-max';
+  | 'negative-max'
+  | 'bad-installments';
 
 /**
  * What is wrong with a rule the office is about to save.
@@ -138,6 +211,27 @@ export function creditRuleProblems(rule: CreditRule): CreditRuleProblem[] {
   }
   if (!(rule.multiplier > 0)) problems.push('negative-multiplier');
   if (rule.maxAmount !== null && !(rule.maxAmount > 0)) problems.push('negative-max');
+
+  /**
+   * Terms, when the rule carries any.
+   *
+   * `undefined` is not a problem — it is the ordinary state of a factory that has set no
+   * policy, and `installmentOptionsFor` answers it with the platform's list. An **empty
+   * array** is a problem, and the distinction is the point: it would leave the app with no
+   * chip to offer and no way to submit, which reads on a phone as a broken screen rather
+   * than as a facility that is switched off.
+   *
+   * Strictly ascending does the work of three checks at once — sorted, unique, and no
+   * repeats — and sorted matters because the app renders them in the order they arrive.
+   */
+  const terms = rule.installmentOptions;
+  if (terms !== undefined) {
+    const bad =
+      terms.length === 0 ||
+      terms.some((months) => !Number.isInteger(months) || months < 1) ||
+      terms.some((months, index) => index > 0 && months <= terms[index - 1]!);
+    if (bad) problems.push('bad-installments');
+  }
 
   return problems;
 }

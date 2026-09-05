@@ -1469,6 +1469,9 @@ export const si: Record<TranslationKey, string> = {
   'config.creditRules.maxAmount': 'උපරිමය (රු.)',
   'config.creditRules.maxAmountHint': 'සීමාවක් නොමැති නම් හිස්ව තබන්න. ගුණ කිරීමෙන් පසුව යෙදේ.',
   'config.creditRules.noCap': 'සීමාවක් නැත',
+  'config.creditRules.installments': 'ආපසු ගෙවීමේ වාරික',
+  'config.creditRules.installmentsHint':
+    'සැපයුම්කරුට මෙය බෙදා ගෙවිය හැකි මාසික ගිණුම් ගණන. යෙදුම ලබා දෙන්නේ මේවා පමණි.',
   'config.creditRules.summary.thisMonthLeaf':
     'අවසන් නිරවුල් අනුපාතයෙන් මෙම මාසයේ කොළ × {{multiplier}}.',
   'config.creditRules.summary.lastSettledMonth': 'අවසන් නිරවුල් මාසයේ කොළ × {{multiplier}}.',
@@ -1483,6 +1486,8 @@ export const si: Record<TranslationKey, string> = {
     'ගුණකය ශුන්‍යයට වඩා වැඩි විය යුතුය. මෙම පහසුකම නැවැත්වීමට, ඒ වෙනුවට "විශේෂාංග" යටතේ අක්‍රිය කරන්න.',
   'config.impact.creditRule.negative-max':
     'සීමාවක් ශුන්‍යයට වඩා වැඩි විය යුතුය, නැතහොත් හිස්ව තබන්න.',
+  'config.impact.creditRule.bad-installments':
+    'අවම වශයෙන් එක් වාරික කාලයක්වත් ලබා දෙන්න. මෙම පහසුකම නැවැත්වීමට, ඒ වෙනුවට "විශේෂාංග" යටතේ අක්‍රිය කරන්න.',
 
   /* ───────── කර්මාන්තශාලා පද්ධතියෙන් අනුකරණය (v2) ───────── */
   'shell.syncStale':

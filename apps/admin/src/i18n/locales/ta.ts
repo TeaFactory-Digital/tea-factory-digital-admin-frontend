@@ -1518,6 +1518,9 @@ export const ta: Record<TranslationKey, string> = {
   'config.creditRules.maxAmountHint':
     'வரம்பு இல்லையெனில் காலியாக விடவும். பெருக்கலுக்குப் பிறகு பயன்படுத்தப்படும்.',
   'config.creditRules.noCap': 'வரம்பு இல்லை',
+  'config.creditRules.installments': 'திருப்பிச் செலுத்தும் தவணைகள்',
+  'config.creditRules.installmentsHint':
+    'சப்ளையர் இதைப் பிரித்துச் செலுத்தக்கூடிய மாதக் கணக்குகள். செயலி இவற்றை மட்டுமே வழங்கும்.',
   'config.creditRules.summary.thisMonthLeaf':
     'கடைசி முடிந்த விலையில் இந்த மாத இலை × {{multiplier}}.',
   'config.creditRules.summary.lastSettledMonth': 'கடைசியாக முடிந்த மாத இலை × {{multiplier}}.',
@@ -1535,6 +1538,8 @@ export const ta: Record<TranslationKey, string> = {
     'பெருக்கி பூஜ்ஜியத்தை விட அதிகமாக இருக்க வேண்டும். இந்த வசதியை நிறுத்த, அதற்குப் பதிலாக “அம்சங்கள்” பகுதியில் நிறுத்தவும்.',
   'config.impact.creditRule.negative-max':
     'வரம்பு பூஜ்ஜியத்தை விட அதிகமாக இருக்க வேண்டும், அல்லது காலியாக இருக்க வேண்டும்.',
+  'config.impact.creditRule.bad-installments':
+    'குறைந்தது ஒரு திருப்பிச் செலுத்தும் தவணையையாவது வழங்கவும். இந்த வசதியை நிறுத்த, அதற்குப் பதிலாக “அம்சங்கள்” பகுதியில் நிறுத்தவும்.',
 
   /* ───────── தொழிற்சாலை அமைப்பிலிருந்து நகலெடுத்தல் (v2) ───────── */
   'shell.syncStale':

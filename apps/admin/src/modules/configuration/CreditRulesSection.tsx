@@ -35,19 +35,39 @@ import {
   CREDIT_FACILITIES,
   DEFAULT_CREDIT_RULES,
   creditRuleProblems,
+  installmentOptionsFor,
   type CreditFacility,
   type CreditRule,
   type CreditRuleBasis,
   type CreditRules,
 } from '@tfd/domain';
 import { CardBody } from '@/components/ui/Card';
+import { Checkbox } from '@/components/ui/Checkbox';
 import { Field, Input } from '@/components/ui/Field';
+import { Label } from '@/components/ui/Label';
 import { Select } from '@/components/ui/Select';
 import { Notice } from '@/components/ui/states';
 import { formatAmount } from '@/lib/format';
 import { SectionFooter, type SectionProps } from './SectionFooter';
 
 const BASES: CreditRuleBasis[] = ['thisMonthLeaf', 'lastSettledMonth', 'averageIncome'];
+
+/**
+ * How far the term checkboxes run.
+ *
+ * Twelve because the recovery has to finish inside a plucking year — the reason the loan
+ * default stops there. It bounds the **control**, not the data: a rule that arrives from
+ * the server carrying eighteen still renders every one of its terms (see `termChoices`),
+ * because a screen that silently dropped a term the factory is actually offering would be
+ * worse than one that shows a number this build did not expect.
+ */
+const TERM_CHOICES = 12;
+
+/** `1 … 12`, extended if the served rule offers a longer term than the control does. */
+function termChoices(offered: readonly number[]): number[] {
+  const highest = Math.max(TERM_CHOICES, ...offered);
+  return Array.from({ length: highest }, (_, index) => index + 1);
+}
 
 /** Which flag turns each facility off entirely — so a rule for it can say it is inert. */
 const FACILITY_FLAGS = {
@@ -228,6 +248,56 @@ export function CreditRulesSection(props: SectionProps) {
                 )}
               </Field>
             </div>
+
+            {/**
+             * Terms, for the two facilities that have them.
+             *
+             * Not rendered for an advance at all, rather than rendered and disabled: an
+             * advance is settled out of the next month's leaf in one go, so an empty
+             * "repayment terms" control would invite an administrator to look for the
+             * setting that turns it on.
+             *
+             * Checkboxes rather than a comma-separated box, and the reason is what the
+             * control makes impossible: every list it can produce is whole numbers, in
+             * order, without repeats. `3,3,7,` typed into a text field is none of those,
+             * and this is the screen where the app's picker and the server's validation
+             * both read the result.
+             */}
+            {facility === 'advance' ? null : (
+              <fieldset className="flex flex-col gap-xxs">
+                <legend className="text-body-small font-medium text-text-primary">
+                  {t('config.creditRules.installments')}
+                </legend>
+                <p className="text-caption text-text-secondary">
+                  {t('config.creditRules.installmentsHint')}
+                </p>
+                <div className="flex flex-wrap gap-md pt-xs">
+                  {termChoices(installmentOptionsFor(draft, facility)).map((months) => {
+                    const offered = installmentOptionsFor(draft, facility);
+                    return (
+                      <Label
+                        key={months}
+                        className="flex items-center gap-xs text-body-small text-text-primary"
+                      >
+                        <Checkbox
+                          checked={offered.includes(months)}
+                          disabled={props.readOnly}
+                          onCheckedChange={(checked) =>
+                            set(facility, {
+                              installmentOptions:
+                                checked === true
+                                  ? [...offered, months].sort((a, b) => a - b)
+                                  : offered.filter((one) => one !== months),
+                            })
+                          }
+                        />
+                        {months}
+                      </Label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            )}
 
             {/* What the four numbers actually mean, in a sentence. */}
             <p className="text-caption text-text-secondary">

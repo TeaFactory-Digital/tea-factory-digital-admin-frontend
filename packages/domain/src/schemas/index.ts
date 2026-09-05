@@ -11,6 +11,7 @@
  */
 
 import { z } from 'zod';
+import type { FeatureFlagName } from '../types/admin';
 import {
   EDITORIAL_FALLBACK_LANGUAGE,
   MAX_CONTENT_BODY_CHARS,
@@ -460,3 +461,62 @@ export const composeNotificationSchema = z.object({
 });
 
 export type ComposeNotificationInput = z.infer<typeof composeNotificationSchema>;
+
+/* ─────────────────────────── M14 Configuration ─────────────────────────── */
+
+/**
+ * The fourteen flags, as a **runtime** value rather than only a type.
+ *
+ * `Record<FeatureFlagName, …>` is what does the work here, and it checks both
+ * directions at compile time: a flag missing from this literal fails because the
+ * `Record` requires every key, and a flag that is not in `FeatureFlagSet` fails as an
+ * excess property. So the set below cannot silently disagree with the type.
+ *
+ * **Why a schema at all, when the type already exists.** A type is erased. The API
+ * checks its own flag list against `FeatureFlagSet` at compile time, which catches
+ * nothing when both sides are renamed in one pull — each half type-checks, the served
+ * payload and the console's expectations no longer meet, and the failure surfaces as a
+ * feature that is quietly off for every factory. Parsing at start-up turns that into a
+ * boot failure with the offending name in it.
+ *
+ * Unknown keys are **stripped, not refused**, so a console on an older build survives a
+ * server that has learned a fifteenth flag. A consumer that wants the opposite — the
+ * API validating its own list, where an unrecognised flag is a bug rather than a newer
+ * peer — should call `.strict()` on it at the call site.
+ */
+const featureFlagShape: Record<FeatureFlagName, z.ZodBoolean> = {
+  enableSavings: z.boolean(),
+  enableAdvances: z.boolean(),
+  enableLoans: z.boolean(),
+  enableManure: z.boolean(),
+  enableTeaPackets: z.boolean(),
+  enableInquiry: z.boolean(),
+  enableNews: z.boolean(),
+  enablePushNotifications: z.boolean(),
+  enablePromoBanner: z.boolean(),
+  enableOnboarding: z.boolean(),
+  enableBiometricLogin: z.boolean(),
+  enableDarkModeToggle: z.boolean(),
+  enableProfileTab: z.boolean(),
+  enableAutoLock: z.boolean(),
+};
+
+export const featureFlagSetSchema = z.object(featureFlagShape);
+
+/**
+ * A patch: any subset, every member still a boolean.
+ *
+ * `PATCH /admin/config` sends only what the office changed, so a whole-set schema would
+ * refuse every real save. What it still refuses is a flag name nobody recognises being
+ * written into `client_config` and read back as garbage.
+ */
+export const featureFlagPatchSchema = featureFlagSetSchema.partial();
+
+/**
+ * Every flag name, in declaration order.
+ *
+ * The runtime half of `FeatureFlagName`. Anything that needs to *iterate* the flags —
+ * a settings screen, a server's start-up check, a migration — reads this rather than
+ * keeping its own list, which is the list that goes stale.
+ */
+export const FEATURE_FLAG_NAMES = Object.keys(featureFlagShape) as FeatureFlagName[];
