@@ -226,7 +226,7 @@ explicit origin allowlist — a wildcard origin is illegal with credentials.
 `X-CSRF-Token`, or the preflight fails and no mutation is ever sent.
 
 **CSRF:** the console echoes a double-submit token on every mutation, this call
-included — `X-CSRF-Token`, read from a **non-`httpOnly`** cookie named `csrf_token`
+included — `X-CSRF-Token`, read from a **non-`httpOnly`** cookie named `tfd_csrf`
 that the API sets alongside the refresh cookie. Both names are configurable
 (`VITE_CSRF_COOKIE`, `VITE_CSRF_HEADER`); tell us if yours differ.
 

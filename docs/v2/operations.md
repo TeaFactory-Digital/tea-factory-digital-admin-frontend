@@ -57,7 +57,7 @@ secret if you tried.
 | `VITE_USE_MOCK`           | `1` in dev, `0` in prod             | Serve from MSW instead of the network                                  |
 | `VITE_DEFAULT_TENANT`     | `galaboda` (dev)                    | Used only when the host carries no subdomain                           |
 | `VITE_SEND_TENANT_HEADER` | `1`                                 | Send `X-Tenant` alongside the subdomain                                |
-| `VITE_CSRF_COOKIE`        | `csrf_token`                        | Double-submit cookie the API sets. Empty switches the header off       |
+| `VITE_CSRF_COOKIE`        | `tfd_csrf`                          | Double-submit cookie the API sets. Empty switches the header off       |
 | `VITE_CSRF_HEADER`        | `X-CSRF-Token`                      | Header the cookie's value is echoed back in, on every mutation         |
 | `VITE_API_TIMEOUT_MS`     | `20000`                             | **Do not shorten for a rural network** (§20.1)                         |
 

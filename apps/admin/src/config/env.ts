@@ -90,7 +90,7 @@ export const env = {
    * Set `VITE_CSRF_COOKIE=` (empty) to switch it off — for an API that does not issue
    * the cookie, where sending a header from an absent cookie would be noise.
    */
-  csrfCookieName: String(raw.VITE_CSRF_COOKIE ?? 'csrf_token'),
+  csrfCookieName: String(raw.VITE_CSRF_COOKIE ?? 'tfd_csrf'),
   csrfHeaderName: String(raw.VITE_CSRF_HEADER ?? 'X-CSRF-Token'),
 
   apiTimeoutMs: int(raw.VITE_API_TIMEOUT_MS, 20000),
