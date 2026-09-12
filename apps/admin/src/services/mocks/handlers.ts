@@ -1521,11 +1521,10 @@ export const handlers: HttpHandler[] = [
     if ('response' in auth) return auth.response;
 
     /**
-     * The months come with the list, behind the `reports` grant rather than `billing`.
-     *
-     * The factory administrator holds `reports: R` and `billing: none` (§12.1), so a picker
-     * fed from `GET /admin/bill-months` left the one role that owns this section unable to
-     * run a month report at all — see `ReportCatalogue`.
+     * `{ reports, months }` — **G-15 is closed**. It briefly answered a bare array with no
+     * months, which left the picker empty and made a month-scoped report impossible to
+     * run. The months matter because §12.1 gives the factory administrator `reports: R`
+     * and `billing: none`, so this is the only place they can learn which months exist.
      */
     return HttpResponse.json({
       reports: Object.values(REPORT_DEFINITIONS),
@@ -1600,13 +1599,18 @@ export const handlers: HttpHandler[] = [
     const auth = authorize(request, 'usersAndRoles');
     if ('response' in auth) return auth.response;
 
+    /**
+     * `updatedByName` is carried — **G-10 is closed**. *"Who widened this, and from what"*
+     * is the only question ever asked of this table, and the API withheld the answer for
+     * a while; the console had to fill `null`.
+     */
     return HttpResponse.json({
       matrix: roleMatrix(),
       // Whether this factory has diverged from the shipped table, so the screen can say so
       // rather than leaving a reader to compare fifteen rows against a document.
       customised: state.roleMatrix !== null,
       updatedAt: state.roleMatrixUpdatedAt,
-      updatedByName: state.roleMatrixUpdatedByName,
+      updatedByName: state.roleMatrixUpdatedByName ?? null,
     });
   }),
 
@@ -1655,12 +1659,8 @@ export const handlers: HttpHandler[] = [
      */
     recordBy(auth, 'role.update', 'role', role, { before, after: grants });
 
-    return HttpResponse.json({
-      matrix: state.roleMatrix,
-      customised: true,
-      updatedAt: state.roleMatrixUpdatedAt,
-      updatedByName: state.roleMatrixUpdatedByName,
-    });
+    // `{ id }`, not the matrix (gap **G-11**) — the console invalidates and refetches.
+    return HttpResponse.json({ id: role });
   }),
 
   http.get('*/admin/users', async ({ request }) => {
@@ -1689,7 +1689,17 @@ export const handlers: HttpHandler[] = [
       return a.name.localeCompare(b.name);
     });
 
-    return HttpResponse.json(paginate(rows, url));
+    /**
+     * **A bare array, and the filters above are the console's, not the API's**
+     * (gap **G-09**).
+     *
+     * The real `GET /admin/users` ignores every query parameter and answers with every
+     * console user of the factory. `userRepository` filters and pages locally, which is
+     * the right call for a dozen office staff and stops being one at a scale a tea
+     * factory's office will not reach. The fixture still applies the filters so the
+     * *sorting* contract stays exercised, then throws the envelope away.
+     */
+    return HttpResponse.json(rows);
   }),
 
   http.post('*/admin/users', async ({ request }) => {
@@ -1697,12 +1707,33 @@ export const handlers: HttpHandler[] = [
     const auth = authorize(request, 'usersAndRoles', 'write');
     if ('response' in auth) return auth.response;
 
-    const body = (await request.json()) as { name?: string; email?: string; roles?: ConsoleRole[] };
+    const body = (await request.json()) as {
+      name?: string;
+      email?: string;
+      roles?: ConsoleRole[];
+      password?: string;
+    };
     const name = body.name?.trim() ?? '';
     const email = body.email?.trim().toLowerCase() ?? '';
 
     if (!name || !email) {
       return fail({ status: 422, code: 'invalid', message: 'A name and an email are required.' });
+    }
+    /**
+     * **A password is required** (gap **G-02**), and `ConsoleUserDraft` has no field for
+     * one — the contract assumed an invitation flow that does not exist.
+     *
+     * So the console mints one and prints it once. The fixture enforces the API's floor of
+     * 12, because a console that quietly sent a short one would fail only against the real
+     * server.
+     */
+    if (!body.password || body.password.length < 12) {
+      return fail({
+        status: 422,
+        code: 'invalid',
+        message: 'A first password of at least 12 characters is required.',
+        details: { field: 'password', minLength: 12 },
+      });
     }
     // The address is the identity a session is issued against, so two of them is two people.
     if (state.users.some((one) => one.email.toLowerCase() === email)) {
@@ -1724,16 +1755,18 @@ export const handlers: HttpHandler[] = [
       roles: body.roles,
       lastLoginAt: null,
       status: 'active',
-      password: MOCK_PASSWORD,
+      password: body.password,
       grants: grantsFromRoles(body.roles),
     };
     state.users = [...state.users, created];
 
     recordBy(auth, 'user.create', 'consoleUser', created.id, {
+      // Never the password, never its hash.
       after: { name, email, roles: created.roles },
     });
 
-    return HttpResponse.json(toAdminUser(created), { status: 201 });
+    // `{ id }`, not the record (gap **G-11**).
+    return HttpResponse.json({ id: created.id }, { status: 201 });
   }),
 
   http.patch('*/admin/users/:id', async ({ request, params }) => {
@@ -1790,60 +1823,66 @@ export const handlers: HttpHandler[] = [
       after: { name: after.name, roles: after.roles },
     });
 
-    return HttpResponse.json(toAdminUser(after));
+    return HttpResponse.json({ id: after.id });
   }),
 
-  ...(['suspend', 'reactivate'] as const).map((verb) =>
-    http.post(`*/admin/users/:id/${verb}`, async ({ request, params }) => {
-      await delay(LATENCY_MS);
-      const auth = authorize(request, 'usersAndRoles', 'write');
-      if ('response' in auth) return auth.response;
+  /**
+   * Suspend and reactivate — **one endpoint**, as with suppliers, because they are one
+   * state machine and only one place should decide what transitions are legal.
+   */
+  http.post('*/admin/users/:id/status', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'usersAndRoles', 'write');
+    if ('response' in auth) return auth.response;
 
-      const index = state.users.findIndex((one) => one.id === params.id);
-      if (index < 0) return fail({ status: 404, code: '404', message: 'No such user.' });
+    const index = state.users.findIndex((one) => one.id === params.id);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such user.' });
 
-      const before = state.users[index]!;
-      const { reason } = (await request.json()) as { reason?: string };
+    const before = state.users[index]!;
+    const { status, reason } = (await request.json()) as {
+      status?: 'active' | 'suspended';
+      reason?: string;
+    };
 
-      // A suspended colleague will ask why, exactly as a suspended supplier does (§12.1).
-      if (!reason || reason.trim().length < 10) {
-        return fail({ status: 422, code: 'note-required', message: 'A reason is required.' });
+    if (status !== 'active' && status !== 'suspended') {
+      return fail({ status: 422, code: 'invalid', message: 'That is not a user status.' });
+    }
+
+    // A suspended colleague will ask why, exactly as a suspended supplier does (§12.1).
+    if (!reason || reason.trim().length < 10) {
+      return fail({ status: 422, code: 'note-required', message: 'A reason is required.' });
+    }
+
+    if (status === 'suspended') {
+      if (before.id === auth.user.id) {
+        return fail({
+          status: 409,
+          code: 'self-modification',
+          message: 'You cannot suspend your own account.',
+          details: { what: 'suspend' },
+        });
       }
-
-      if (verb === 'suspend') {
-        if (before.id === auth.user.id) {
-          return fail({
-            status: 409,
-            code: 'self-modification',
-            message: 'You cannot suspend your own account.',
-            details: { what: 'suspend' },
-          });
-        }
-        const candidates: LockoutCandidate[] = state.users.map((one) => ({
-          id: one.id,
-          roles: one.roles,
-          status: one.status,
-        }));
-        const next = { id: before.id, roles: before.roles, status: 'suspended' as const };
-        if (wouldLockOut(next, candidates.filter((one) => one.id !== before.id), roleMatrix())) {
-          return lockoutRefusal({ userId: before.id });
-        }
+      const candidates: LockoutCandidate[] = state.users.map((one) => ({
+        id: one.id,
+        roles: one.roles,
+        status: one.status,
+      }));
+      const next = { id: before.id, roles: before.roles, status: 'suspended' as const };
+      if (wouldLockOut(next, candidates.filter((one) => one.id !== before.id), roleMatrix())) {
+        return lockoutRefusal({ userId: before.id });
       }
+    }
 
-      const after: MockUser = {
-        ...before,
-        status: verb === 'suspend' ? 'suspended' : 'active',
-      };
-      state.users[index] = after;
+    const after: MockUser = { ...before, status };
+    state.users[index] = after;
 
-      recordBy(auth, `user.${verb}`, 'consoleUser', after.id, {
-        before: { status: before.status },
-        after: { status: after.status, reason: reason.trim() },
-      });
+    recordBy(auth, status === 'suspended' ? 'user.suspend' : 'user.reactivate', 'consoleUser', after.id, {
+      before: { status: before.status },
+      after: { status: after.status, reason: reason.trim() },
+    });
 
-      return HttpResponse.json(toAdminUser(after));
-    }),
-  ),
+    return HttpResponse.json({ id: after.id, status: after.status });
+  }),
 
   /* ── M14 Configuration ─────────────────────────────────────────────────── */
 
@@ -2076,7 +2115,20 @@ export const handlers: HttpHandler[] = [
       return fail({ status: 401, code: 'invalid', message: 'No refresh token.' });
     }
 
-    return HttpResponse.json(issueSession(user));
+    /**
+     * **The same envelope as login**, because that is what the API answers.
+     *
+     * It used to reply with the bare token pair, and the console read `.accessToken`
+     * straight off it. Against the real API that is `undefined` — and an `undefined`
+     * access token fails at no point anybody would look: the store holds it, every
+     * request goes out with no `Authorization` header, and the console presents as
+     * signed in and forbidden from everything. The fixture answering the fuller shape
+     * is what makes that reachable in a test.
+     */
+    return HttpResponse.json({
+      status: 'authenticated',
+      session: { ...issueSession(user), user: publicUser(user), grants: user.grants },
+    });
   }),
 
   http.post('*/admin/auth/logout', async ({ request }) => {
@@ -2095,7 +2147,14 @@ export const handlers: HttpHandler[] = [
     if (!user) {
       return fail({ status: 401, code: 'unauthenticated', message: 'Sign in required.' });
     }
-    return HttpResponse.json({ user: publicUser(user), grants: user.grants });
+    /**
+     * The **thin** identity the API sends — no `email`, no `status`, no `lastLoginAt`
+     * (gap **G-03**). Nothing in the console reads this any more: `bootstrap()` takes
+     * the whole session off the refresh above, which is one round trip instead of two.
+     * The handler stays so the route is exercised rather than silently absent.
+     */
+    const { id, name, factoryId, roles } = publicUser(user);
+    return HttpResponse.json({ user: { id, name, factoryId, roles }, grants: user.grants });
   }),
 
   /* ── M1 Dashboard ──────────────────────────────────────────────────────── */
@@ -2127,45 +2186,66 @@ export const handlers: HttpHandler[] = [
      * "Otherwise a clerk is staffing an inbox nothing can reach"
      * (white-label.md → Feature flags are a backend concern too).
      */
-    return HttpResponse.json({
-      ...summary,
-      queues: summary.queues.filter((q) => {
-        if (q.queue === 'advanceRequests') return flags.enableAdvances;
-        if (q.queue === 'loanRequests') return flags.enableLoans;
-        if (q.queue === 'manureRequests') return flags.enableManure;
-        if (q.queue === 'teaPacketRequests') return flags.enableTeaPackets;
-        if (q.queue === 'inquiries') return flags.enableInquiry;
-        return true;
-      }),
+    const visible = summary.queues.filter((q) => {
+      if (q.queue === 'advanceRequests') return flags.enableAdvances;
+      if (q.queue === 'loanRequests') return flags.enableLoans;
+      if (q.queue === 'manureRequests') return flags.enableManure;
+      if (q.queue === 'teaPacketRequests') return flags.enableTeaPackets;
+      if (q.queue === 'inquiries') return flags.enableInquiry;
+      return true;
     });
-  }),
 
-  /* ── Replication from the factory's own system ─────────────────────────── */
-
-  /**
-   * How fresh the figures this console shows actually are.
-   *
-   * The mock reports a **healthy** sync, because the fixture *is* the data — there is no
-   * factory system to be behind. What it must not do is omit the endpoint: a console
-   * that 404s here would render the "never synced" banner over every screen in
-   * development, and a banner that is always on is a banner nobody reads by the second
-   * morning.
-   *
-   * The real implementation reports its own replication job's state. See
-   * `docs/v2/platform-team.md` §3.
-   */
-  http.get('*/admin/factory-sync', async ({ request }) => {
-    await delay(LATENCY_MS);
-    const auth = authorize(request, 'reports');
-    if ('response' in auth) return auth.response;
-
-    const now = new Date();
+    /**
+     * **The shape the API sends** — and it is `DashboardSummary` now for everything the
+     * console renders. **G-12 is largely closed**: `queues` carries the age of the oldest
+     * item and the §14.4 breach count, `app` reports the adoption figures that had no
+     * source at all, and `content` is the four silent failures rather than two published
+     * counts.
+     *
+     * What still differs is `adoptionTrend`, which arrives as the raw SQL rows
+     * (`month_key` / `app_share`) — **G-12a**. The fixture reproduces that rather than
+     * tidying it, because the console maps it and the mapping needs exercising.
+     *
+     * `total` is sent as a **number** here where the server sends a Postgres `bigint`.
+     * That difference is why this fixture cannot reproduce the crash the real endpoint
+     * has: see **G-12a**, and the note in `dashboardRepository`.
+     */
     return HttpResponse.json({
-      // Minutes ago, not seconds: an implausibly perfect figure invites a reader to
-      // assume the panel is decorative.
-      lastSucceededAt: new Date(now.getTime() - 8 * 60_000).toISOString(),
-      lastAttemptedAt: new Date(now.getTime() - 8 * 60_000).toISOString(),
-      coversUpTo: TODAY,
+      queues: visible,
+      app: summary.app,
+      content: summary.content,
+      adoptionTrend: summary.adoptionTrend.map((row) => ({
+        month_key: row.monthKey,
+        total: 0,
+        app_share: row.appShare,
+      })),
+      intakeTrend: summary.intakeTrend.map((row) => ({
+        month_key: row.date,
+        kgs: String(row.totalKgs),
+      })),
+      /**
+       * `FactorySyncStatus` rides HERE (ADR-005, Q18) — there is no
+       * `GET /admin/factory-sync`, and that is a resolved decision rather than a gap.
+       *
+       * A **healthy** sync, because this fixture's tenant is one that has a sync
+       * configured: the alternative — `null`, which the real API sends for a factory that
+       * has none — would render no freshness caption anywhere and leave the panel
+       * untested. The live server's `null` path is exercised by `factorySyncRepository`
+       * resolving it to "we do not know", which the suite covers separately.
+       */
+      sync: {
+        // Minutes ago, not seconds: an implausibly perfect figure invites a reader to
+        // assume the panel is decorative.
+        lastSucceededAt: new Date(Date.now() - 8 * 60_000).toISOString(),
+        lastAttemptedAt: new Date(Date.now() - 8 * 60_000).toISOString(),
+        coversUpTo: TODAY,
+      },
+      alerts: summary.alerts.map((alert) => ({
+        id: alert.id,
+        key: alert.messageKey,
+        severity: alert.severity,
+        params: alert.params,
+      })),
     });
   }),
 
@@ -2388,12 +2468,33 @@ export const handlers: HttpHandler[] = [
     return HttpResponse.json(after);
   }),
 
-  http.post('*/admin/suppliers/:id/suspend', async ({ request, params }) => {
+  /**
+   * Suspend, reactivate and close — **one endpoint, because they are one state machine.**
+   *
+   * Replaces the three verbs (`/suspend`, `/reactivate`, `/close`) this fixture used to
+   * answer. The API models the transition instead, which is the better shape: exactly one
+   * place decides whether `closed → active` is legal, rather than three handlers that have
+   * to agree.
+   *
+   * It answers `{ id, status }` and not the updated record (gap **G-11**). The console
+   * invalidates and refetches, so nothing reads the body — and a fixture that returned the
+   * whole supplier would let a screen start depending on a field the wire never carries.
+   */
+  http.post('*/admin/suppliers/:id/status', async ({ request, params }) => {
     await delay(LATENCY_MS);
     const auth = authorize(request, 'suppliers', 'write');
     if ('response' in auth) return auth.response;
 
-    const { reason } = (await request.json()) as { reason?: string };
+    const { status, reason } = (await request.json()) as {
+      status?: 'active' | 'suspended' | 'closed';
+      reason?: string;
+    };
+
+    if (!status || !['active', 'suspended', 'closed'].includes(status)) {
+      return fail({ status: 422, code: 'invalid', message: 'That is not a supplier status.' });
+    }
+    // The note is a LADDER rung, not a schema rule, so it is checked here in the handler
+    // where it can be ordered against the refusals around it.
     if (!reason || reason.trim().length < 10) {
       return fail({ status: 422, code: 'note-required', message: 'A reason is required.' });
     }
@@ -2402,50 +2503,23 @@ export const handlers: HttpHandler[] = [
     if (index < 0) return fail({ status: 404, code: '404', message: 'No such supplier.' });
 
     const before = state.suppliers[index]!;
-    const after: AdminSupplier = { ...before, status: 'suspended', suspendedReason: reason };
-    state.suppliers[index] = after;
+    state.suppliers[index] = {
+      ...before,
+      status,
+      suspendedReason: status === 'suspended' ? reason : undefined,
+    };
 
     record({
       actorId: auth.user.id,
       actorName: auth.user.name,
-      action: 'supplier.suspend',
+      action: status === 'suspended' ? 'supplier.suspend' : 'supplier.reactivate',
       entity: 'supplier',
       entityId: before.id,
       before: { status: before.status },
-      after: { status: 'suspended', reason },
+      after: { status, reason },
     });
 
-    return HttpResponse.json(after);
-  }),
-
-  http.post('*/admin/suppliers/:id/reactivate', async ({ request, params }) => {
-    await delay(LATENCY_MS);
-    const auth = authorize(request, 'suppliers', 'write');
-    if ('response' in auth) return auth.response;
-
-    const { reason } = (await request.json()) as { reason?: string };
-    if (!reason || reason.trim().length < 10) {
-      return fail({ status: 422, code: 'note-required', message: 'A reason is required.' });
-    }
-
-    const index = state.suppliers.findIndex((s) => s.id === params.id);
-    if (index < 0) return fail({ status: 404, code: '404', message: 'No such supplier.' });
-
-    const before = state.suppliers[index]!;
-    const after: AdminSupplier = { ...before, status: 'active', suspendedReason: undefined };
-    state.suppliers[index] = after;
-
-    record({
-      actorId: auth.user.id,
-      actorName: auth.user.name,
-      action: 'supplier.reactivate',
-      entity: 'supplier',
-      entityId: before.id,
-      before: { status: before.status },
-      after: { status: 'active', reason },
-    });
-
-    return HttpResponse.json(after);
+    return HttpResponse.json({ id: before.id, status });
   }),
 
   /**
@@ -2496,8 +2570,12 @@ export const handlers: HttpHandler[] = [
       });
     }
 
-    const { reason } = (await request.json()) as { reason?: string };
-    if (identityCheckProblem(reason ?? '')) {
+    // **`identityCheckNote`, not `reason`.** The name is the requirement: this is the one
+    // note that records *how the person on the telephone was shown to be the supplier*, and
+    // a field called `reason` invites "supplier asked for a reset" — exactly the note that
+    // makes the control worthless.
+    const { identityCheckNote } = (await request.json()) as { identityCheckNote?: string };
+    if (identityCheckProblem(identityCheckNote ?? '')) {
       return fail({
         status: 422,
         code: 'note-required',
@@ -2543,15 +2621,22 @@ export const handlers: HttpHandler[] = [
       entityId: supplier.id,
       // The reason and the fact — never the password. An audit trail carrying credentials
       // would be a list of live logins.
-      after: { reason: reason!.trim(), owesPasswordChange: true, sessionsEnded },
+      after: { identityCheckNote: identityCheckNote!.trim(), owesPasswordChange: true, sessionsEnded },
     });
-
+    /**
+     * The whole `SupplierCredentialReset` — **gap G-04 is closed**.
+     *
+     * It briefly answered three fields and omitted `auditId`, `issuedAt` and
+     * `issuedByName`, so the dialog had to attribute the act to whoever happened to be
+     * signed in and could not show an audit reference at all. All three are on the wire
+     * now, and the audit id is the one a support conversation quotes.
+     */
     return HttpResponse.json({
       supplierId: supplier.id,
       supplierCode: supplier.supplierCode,
       password,
       owesPasswordChange: true,
-      issuedAt,
+      issuedAt: new Date().toISOString(),
       issuedByName: auth.user.name,
       sessionsEnded,
       auditId: entry.id,
@@ -2587,12 +2672,14 @@ export const handlers: HttpHandler[] = [
       after: { reason },
     });
 
-    return HttpResponse.json({
-      bankName: supplier.bankDetails.bankName,
-      branchName: supplier.bankDetails.branchName,
-      accountNumber: full,
-      auditId: entry.id,
-    });
+    /**
+     * **The number and the audit id, and nothing else** (gap **G-05**).
+     *
+     * The bank and the branch are not secret, they are already on the supplier record the
+     * dialog opened from, and keeping this response minimal is the right instinct for the
+     * one endpoint that hands over an account number. The dialog takes them as props.
+     */
+    return HttpResponse.json({ accountNumber: full, auditId: entry.id });
   }),
 
   /* ── M3 Leaf collection ────────────────────────────────────────────────── */
@@ -4315,6 +4402,22 @@ export const handlers: HttpHandler[] = [
   }),
 
   /* ── M9 Change requests ────────────────────────────────────────────────── */
+  /**
+   * One change request, by id — **G-06 is closed**, so the console no longer sweeps the
+   * list across every status to find a row a link points at.
+   */
+  http.get('*/admin/change-requests/:id', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'changeRequests');
+    if ('response' in auth) return auth.response;
+
+    const row = state.changeRequests.find((one) => one.id === String(params.id));
+    if (!row) {
+      return fail({ status: 404, code: 'not-found', message: 'No such change request.' });
+    }
+    return HttpResponse.json(withAge(row));
+  }),
+
   http.get('*/admin/change-requests', async ({ request }) => {
     await delay(LATENCY_MS);
     const auth = authorize(request, 'changeRequests');
@@ -4344,16 +4447,6 @@ export const handlers: HttpHandler[] = [
     rows = sortRows(rows, url, (a, b) => a.createdAt.localeCompare(b.createdAt));
 
     return HttpResponse.json(paginate(rows, url));
-  }),
-
-  http.get('*/admin/change-requests/:id', async ({ request, params }) => {
-    await delay(LATENCY_MS);
-    const auth = authorize(request, 'changeRequests');
-    if ('response' in auth) return auth.response;
-
-    const found = state.changeRequests.find((r) => r.id === params.id);
-    if (!found) return fail({ status: 404, code: '404', message: 'No such request.' });
-    return HttpResponse.json(withAge(found));
   }),
 
   ...(['approve', 'reject'] as const).map((verb) =>
@@ -4483,7 +4576,9 @@ export const handlers: HttpHandler[] = [
         { kind: 'supplier', supplierId: before.supplierId },
       );
 
-      return HttpResponse.json(after);
+      // `{ id, status }`, not the record (gap **G-11**) — the console refetches.
+      void after;
+      return HttpResponse.json({ id: before.id, status });
     }),
   ),
 
@@ -4699,7 +4794,8 @@ export const handlers: HttpHandler[] = [
         },
       });
 
-      return HttpResponse.json(after);
+      void after;
+      return HttpResponse.json({ id: before.id, status });
     }),
   ),
 
@@ -4714,6 +4810,21 @@ export const handlers: HttpHandler[] = [
    * That absence is the whole reason this is a separate module rather than a fourth
    * facility (`AdminTeaPacketRequest`).
    */
+  /** One tea-packet request, by id (**G-06**). */
+  http.get('*/admin/tea-packet-requests/:id', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enableTeaPackets');
+    if (gate) return gate;
+    const auth = authorize(request, 'creditRequests');
+    if ('response' in auth) return auth.response;
+
+    const row = state.teaPacketRequests.find((one) => one.id === String(params.id));
+    if (!row) {
+      return fail({ status: 404, code: 'not-found', message: 'No such tea-packet request.' });
+    }
+    return HttpResponse.json(withTeaPacketAge(row));
+  }),
+
   http.get('*/admin/tea-packet-requests', async ({ request }) => {
     await delay(LATENCY_MS);
     const gate = featureGate(request, 'enableTeaPackets');
@@ -4745,17 +4856,6 @@ export const handlers: HttpHandler[] = [
     return HttpResponse.json(paginate(rows, url));
   }),
 
-  http.get('*/admin/tea-packet-requests/:id', async ({ request, params }) => {
-    await delay(LATENCY_MS);
-    const gate = featureGate(request, 'enableTeaPackets');
-    if (gate) return gate;
-    const auth = authorize(request, 'creditRequests');
-    if ('response' in auth) return auth.response;
-
-    const found = state.teaPacketRequests.find((row) => row.id === params.id);
-    if (!found) return fail({ status: 404, code: '404', message: 'No such request.' });
-    return HttpResponse.json(withTeaPacketAge(found));
-  }),
 
   ...(['approve', 'reject'] as const).map((verb) =>
     http.post(`*/admin/tea-packet-requests/:id/${verb}`, async ({ request, params }) => {
@@ -4874,7 +4974,7 @@ export const handlers: HttpHandler[] = [
         },
       });
 
-      return HttpResponse.json(after);
+      return HttpResponse.json({ id: before.id, status });
     }),
   ),
 
@@ -4940,11 +5040,8 @@ export const handlers: HttpHandler[] = [
       after: { enabled: after.enabled },
     });
 
-    return HttpResponse.json({
-      ...after,
-      event: NOTIFICATION_EVENTS[after.category],
-      available: true,
-    });
+    // `{ id }` (gap **G-11**) — the card refetches the trigger list.
+    return HttpResponse.json({ id: after.category });
   }),
 
   /**
@@ -4983,17 +5080,21 @@ export const handlers: HttpHandler[] = [
     const auth = authorize(request, 'content');
     if ('response' in auth) return auth.response;
 
+    /**
+     * **Paged and filterable, newest first** — **G-09 is closed for this list.**
+     *
+     * It used to answer a bare array capped at 50 with every query parameter ignored, and
+     * the cap was silent: a factory that sends daily lost sight of last month with nothing
+     * on screen saying so, and filtering a truncated list to one category and finding
+     * three did not mean three were sent.
+     */
     const url = new URL(request.url);
     const category = url.searchParams.get('category');
-    const origin = url.searchParams.get('origin');
 
-    let rows = state.notificationSends;
-    if (category) rows = rows.filter((send) => send.category === category);
-    if (origin) rows = rows.filter((send) => send.origin === origin);
-
-    // Newest first: a send log is read from the top, and the message somebody is asking
-    // about is almost always the one that just went out.
-    rows = sortRows(rows, url, (a, b) => b.createdAt.localeCompare(a.createdAt));
+    let rows = [...state.notificationSends].sort((a, b) =>
+      b.createdAt.localeCompare(a.createdAt),
+    );
+    if (category) rows = rows.filter((row) => row.category === category);
 
     return HttpResponse.json(paginate(rows, url));
   }),
@@ -5093,7 +5194,25 @@ export const handlers: HttpHandler[] = [
       },
     });
 
-    return HttpResponse.json(send, { status: 201 });
+    /**
+     * The **receipt**: the record's id and state, and how far it reached.
+     *
+     * Not the whole `NotificationSend` (gap **G-11**) — the translations it was composed
+     * from are not echoed back, and the composer does not need them: it has just typed
+     * them. What it shows afterwards is the reach, which is the only thing it could not
+     * have known beforehand.
+     */
+    return HttpResponse.json(
+      {
+        id: send.id,
+        status: send.status,
+        targetedSuppliers: send.targetedSuppliers,
+        reachableDevices: send.reachableDevices,
+        suppressedDevices: send.suppressedDevices,
+        suppliersWithoutDevice: Math.max(0, send.targetedSuppliers - send.reachableDevices),
+      },
+      { status: 201 },
+    );
   }),
 
   /* ── M11 News ──────────────────────────────────────────────────────────── */
@@ -5151,24 +5270,36 @@ export const handlers: HttpHandler[] = [
     const auth = authorize(request, 'content', 'write');
     if ('response' in auth) return auth.response;
 
+    /**
+     * **The fallback language's copy, flat** — `title` / `excerpt` / `body`, not a
+     * `translations` array.
+     *
+     * That is what `POST /admin/news` reads. The console's `NewsArticleDraft` carries the
+     * array, so `newsRepository.create` flattens before sending; this fixture reads what
+     * the API reads, so the flattening is what gets tested rather than bypassed. The
+     * other languages arrive afterwards through `PUT …/translations/{lang}`.
+     */
     const body = (await request.json()) as {
       coverImageUrl?: string;
-      translations?: Array<{ lang?: LanguageCode; title?: string; excerpt?: string; body?: string }>;
+      title?: string;
+      excerpt?: string;
+      body?: string;
     };
 
     const now = new Date().toISOString();
     const translations: ContentTranslations = {};
-    for (const one of body.translations ?? []) {
-      if (!one.lang) continue;
-      const parsed = readTranslationBody(one);
-      if (parsed instanceof Response) return parsed;
-      translations[one.lang] = {
-        lang: one.lang,
-        ...parsed,
-        updatedAt: now,
-        updatedByName: auth.user.name,
-      };
-    }
+    const parsed = readTranslationBody({
+      title: body.title,
+      excerpt: body.excerpt,
+      body: body.body,
+    });
+    if (parsed instanceof Response) return parsed;
+    translations[EDITORIAL_FALLBACK_LANGUAGE] = {
+      lang: EDITORIAL_FALLBACK_LANGUAGE,
+      ...parsed,
+      updatedAt: now,
+      updatedByName: auth.user.name,
+    };
 
     // The fallback is required **at creation**, not only at publish: a record with
     // nothing to fall back to cannot be shown to anybody, so allowing it would only
@@ -5202,7 +5333,8 @@ export const handlers: HttpHandler[] = [
       after: { slug, languages: Object.keys(translations) },
     });
 
-    return HttpResponse.json(serialiseNews(record, request), { status: 201 });
+    // `{ id, slug, status }` — enough for the dialog to navigate to what it just made.
+    return HttpResponse.json({ id: record.id, slug, status: record.status }, { status: 201 });
   }),
 
   /** The preview. Before `/news/:id` so the literal segment wins. */
@@ -5271,7 +5403,8 @@ export const handlers: HttpHandler[] = [
       after: { lang, title: parsed.title },
     });
 
-    return HttpResponse.json(serialiseNews(after, request));
+    // `{ id }` (gap **G-11**) — the editor refetches to see its own gaps recomputed.
+    return HttpResponse.json({ id: after.id });
   }),
 
   ...(['publish', 'unpublish', 'archive'] as const).map((verb) =>
@@ -5364,35 +5497,18 @@ export const handlers: HttpHandler[] = [
         },
       });
 
-      return HttpResponse.json(gaps);
+      // `{ id, status }` (gap **G-11**). `gaps` is still computed — the audit entry above
+      // is the whole reason it exists — but it is not what the wire carries.
+      return HttpResponse.json({ id: after.id, status: after.status });
     }),
   ),
 
-  http.patch('*/admin/news/:id', async ({ request, params }) => {
-    await delay(LATENCY_MS);
-    const gate = featureGate(request, 'enableNews');
-    if (gate) return gate;
-    const auth = authorize(request, 'content', 'write');
-    if ('response' in auth) return auth.response;
-
-    const index = state.news.findIndex((candidate) => candidate.id === params.id);
-    if (index < 0) return fail({ status: 404, code: '404', message: 'No such article.' });
-
-    const patch = (await request.json()) as { coverImageUrl?: string | null };
-    const before = state.news[index]!;
-    const after = cloneNews(before);
-    // `null` clears it, `undefined` leaves it — a PATCH that could not remove a cover
-    // image would need a second endpoint to do it.
-    if ('coverImageUrl' in patch) after.coverImageUrl = patch.coverImageUrl || undefined;
-    state.news[index] = after;
-
-    recordBy(auth, 'news.update', 'newsArticle', after.id, {
-      before: { coverImageUrl: before.coverImageUrl ?? null },
-      after: { coverImageUrl: after.coverImageUrl ?? null },
-    });
-
-    return HttpResponse.json(serialiseNews(after, request));
-  }),
+  /**
+   * **There is no `PATCH /admin/news/{id}`** (gap **G-07**), and nothing calls one: an
+   * article's copy moves through `PUT …/translations/{lang}` and its lifecycle through
+   * the three verbs above. The handler that used to answer it is gone so the console
+   * cannot quietly start depending on it again.
+   */
 
   http.get('*/admin/news/:id', async ({ request, params }) => {
     await delay(LATENCY_MS);
@@ -5442,7 +5558,33 @@ export const handlers: HttpHandler[] = [
 
     rows = sortRows(rows, url, (a, b) => b.startsAt.localeCompare(a.startsAt));
 
-    return HttpResponse.json(paginate(rows, url));
+    /**
+     * **A bare array, `headline` rather than `title`, and no `staleLanguages`**
+     * (gaps **G-08**, **G-09**).
+     *
+     * The last of those is the one that matters: the API computes `missingLanguages` and
+     * stops, so the console cannot tell *never translated* from *translated, then the
+     * English was corrected* — which is half of what AC-08 is about. It cannot work it
+     * out either, because it would need each translation's `updatedAt` and the row
+     * carries one timestamp for the whole banner. `bannerRepository` fills `[]`, so this
+     * fixture must withhold it or the gap becomes untestable.
+     */
+    return HttpResponse.json(
+      rows.map((row) => ({
+        id: row.id,
+        status: row.status,
+        imageUrl: row.hasImage ? (state.banners.find((b) => b.id === row.id)?.imageUrl ?? null) : null,
+        imageAspectRatio: state.banners.find((b) => b.id === row.id)?.imageAspectRatio ?? null,
+        action: state.banners.find((b) => b.id === row.id)?.action ?? null,
+        startsAt: row.startsAt,
+        endsAt: row.endsAt,
+        window: row.window,
+        headline: row.title,
+        missingLanguages: row.missingLanguages,
+        publishedByName: state.banners.find((b) => b.id === row.id)?.publishedByName ?? null,
+        updatedAt: row.updatedAt,
+      })),
+    );
   }),
 
   http.post('*/admin/banners', async ({ request }) => {
@@ -5452,8 +5594,19 @@ export const handlers: HttpHandler[] = [
     const auth = authorize(request, 'content', 'write');
     if ('response' in auth) return auth.response;
 
+    /**
+     * **The fallback language's copy, flat** — `title` / `body` / `buttonLabel`.
+     *
+     * `POST /admin/banners` has no `translations` field, and zod strips what it does not
+     * recognise — so a body carrying only the array created a banner **with no copy at
+     * all and answered 201**. That is the worst shape of failure in this integration: it
+     * succeeds. `bannerRepository.create` flattens before sending, and this fixture reads
+     * what the API reads so that flattening is tested rather than bypassed.
+     */
     const body = (await request.json()) as {
-      translations?: Array<{ lang: LanguageCode; title?: string; body?: string; buttonLabel?: string }>;
+      title?: string;
+      body?: string;
+      buttonLabel?: string;
       imageUrl?: string;
       imageAspectRatio?: number;
       action?: BannerAction;
@@ -5493,15 +5646,14 @@ export const handlers: HttpHandler[] = [
     }
 
     const translations: BannerTranslations = {};
-    for (const one of body.translations ?? []) {
-      const title = one.title?.trim() ?? '';
-      const buttonLabel = one.buttonLabel?.trim() ?? '';
-      if (!title || !buttonLabel) continue;
-      translations[one.lang] = {
-        lang: one.lang,
+    const title = body.title?.trim() ?? '';
+    const buttonLabel = body.buttonLabel?.trim() ?? '';
+    if (title && buttonLabel) {
+      translations[EDITORIAL_FALLBACK_LANGUAGE] = {
+        lang: EDITORIAL_FALLBACK_LANGUAGE,
         title,
         // Empty rather than absent — see `BannerTranslation`. The projection drops it.
-        body: one.body?.trim() ?? '',
+        body: body.body?.trim() ?? '',
         buttonLabel,
         updatedAt: new Date().toISOString(),
         updatedByName: auth.user.name,
@@ -5540,9 +5692,14 @@ export const handlers: HttpHandler[] = [
       after: { title: translations[EDITORIAL_FALLBACK_LANGUAGE]!.title, action: record.action },
     });
 
-    return HttpResponse.json(serialiseBanner(record, request), { status: 201 });
+    return HttpResponse.json({ id: record.id, status: record.status }, { status: 201 });
   }),
 
+  /**
+   * What the supplier sees, in one language — the server resolving its own fallback
+   * (**G-08**). Resolving it in the console would be a second implementation of the rule
+   * the app runs, which is the AC-08 failure with the console's fingerprints on it.
+   */
   http.get('*/admin/banners/:id/preview', async ({ request, params }) => {
     await delay(LATENCY_MS);
     const gate = featureGate(request, 'enablePromoBanner');
@@ -5555,7 +5712,11 @@ export const handlers: HttpHandler[] = [
 
     const url = new URL(request.url);
     const lang = (url.searchParams.get('lang') ?? EDITORIAL_FALLBACK_LANGUAGE) as LanguageCode;
-    return HttpResponse.json(contentPreview(record.translations, lang));
+    return HttpResponse.json({
+      ...contentPreview(record.translations, lang),
+      action: record.action,
+      imageUrl: record.imageUrl ?? null,
+    });
   }),
 
   http.put('*/admin/banners/:id/translations/:lang', async ({ request, params }) => {
@@ -5618,10 +5779,17 @@ export const handlers: HttpHandler[] = [
       after: { lang, title },
     });
 
-    return HttpResponse.json(serialiseBanner(after, request));
+    // `{ id }` (gap **G-11**).
+    return HttpResponse.json({ id: after.id });
   }),
 
-  ...(['publish', 'unpublish', 'archive'] as const).map((verb) =>
+  /**
+   * Publish and unpublish only — **there is no `POST /admin/banners/{id}/archive`**
+   * (gap **G-08**). News has one; banners do not, which is the asymmetry worth naming:
+   * the two content types were built to the same model deliberately, and an editor
+   * should not have to learn that one can be filed away and the other cannot.
+   */
+  ...(['publish', 'unpublish'] as const).map((verb) =>
     http.post(`*/admin/banners/:id/${verb}`, async ({ request, params }) => {
       await delay(LATENCY_MS);
       const gate = featureGate(request, 'enablePromoBanner');
@@ -5697,67 +5865,15 @@ export const handlers: HttpHandler[] = [
         },
       });
 
-      return HttpResponse.json(serialiseBanner(after, request));
+      return HttpResponse.json({ id: after.id, status: after.status });
     }),
   ),
 
-  http.patch('*/admin/banners/:id', async ({ request, params }) => {
-    await delay(LATENCY_MS);
-    const gate = featureGate(request, 'enablePromoBanner');
-    if (gate) return gate;
-    const auth = authorize(request, 'content', 'write');
-    if ('response' in auth) return auth.response;
-
-    const index = state.banners.findIndex((candidate) => candidate.id === params.id);
-    if (index < 0) return fail({ status: 404, code: '404', message: 'No such banner.' });
-
-    const patch = (await request.json()) as {
-      imageUrl?: string | null;
-      imageAspectRatio?: number | null;
-      action?: BannerAction;
-      startsAt?: string;
-      endsAt?: string | null;
-    };
-
-    const before = state.banners[index]!;
-    const after = cloneBanner(before);
-
-    if ('imageUrl' in patch) after.imageUrl = patch.imageUrl || undefined;
-    if ('imageAspectRatio' in patch) after.imageAspectRatio = patch.imageAspectRatio ?? undefined;
-    if (patch.action) {
-      const actionProblem = bannerActionProblem(patch.action);
-      if (actionProblem) {
-        return fail({
-          status: 422,
-          code: 'banner-action-refused',
-          message: 'The app would not open this action.',
-          details: { problemKey: actionProblem },
-        });
-      }
-      after.action = patch.action;
-    }
-    if (patch.startsAt) after.startsAt = patch.startsAt;
-    if ('endsAt' in patch) after.endsAt = patch.endsAt ?? null;
-
-    if (after.endsAt !== null && after.endsAt < after.startsAt) {
-      return fail({
-        status: 422,
-        code: 'banner-window-invalid',
-        message: 'A banner cannot end before it starts.',
-        details: { startsAt: after.startsAt, endsAt: after.endsAt },
-      });
-    }
-
-    state.banners[index] = after;
-
-    recordBy(auth, 'banner.update', 'promoBanner', after.id, {
-      before: { action: before.action, startsAt: before.startsAt, endsAt: before.endsAt },
-      after: { action: after.action, startsAt: after.startsAt, endsAt: after.endsAt },
-    });
-
-    return HttpResponse.json(serialiseBanner(after, request));
-  }),
-
+  /**
+   * One banner, **with its translations** — the call the editor could not make while
+   * **G-08** was open. The list row carries no copy and none could be synthesised: a
+   * banner's Sinhala headline is either sent or it is not.
+   */
   http.get('*/admin/banners/:id', async ({ request, params }) => {
     await delay(LATENCY_MS);
     const gate = featureGate(request, 'enablePromoBanner');
@@ -5769,6 +5885,41 @@ export const handlers: HttpHandler[] = [
     if (!record) return fail({ status: 404, code: '404', message: 'No such banner.' });
     return HttpResponse.json(serialiseBanner(record, request));
   }),
+
+  /** The window and the artwork — the fields that are not copy (**G-08**). */
+  http.patch('*/admin/banners/:id', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enablePromoBanner');
+    if (gate) return gate;
+    const auth = authorize(request, 'content', 'write');
+    if ('response' in auth) return auth.response;
+
+    const record = state.banners.find((candidate) => candidate.id === params.id);
+    if (!record) return fail({ status: 404, code: '404', message: 'No such banner.' });
+
+    const patch = (await request.json()) as Partial<BannerRecord>;
+    Object.assign(record, patch);
+    return HttpResponse.json({ id: record.id, status: record.status });
+  }),
+
+  /** Filed away, never deleted — the lifecycle news already had (**G-08**). */
+  http.post('*/admin/banners/:id/archive', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enablePromoBanner');
+    if (gate) return gate;
+    const auth = authorize(request, 'content', 'approve');
+    if ('response' in auth) return auth.response;
+
+    const record = state.banners.find((candidate) => candidate.id === params.id);
+    if (!record) return fail({ status: 404, code: '404', message: 'No such banner.' });
+    if (record.status === 'archived') {
+      return fail({ status: 409, code: 'already-decided', message: 'Already archived.' });
+    }
+
+    record.status = 'archived';
+    return HttpResponse.json({ id: record.id, status: record.status });
+  }),
+
 
   /* ── M12 Static content ────────────────────────────────────────────────── */
 
@@ -5873,7 +6024,8 @@ export const handlers: HttpHandler[] = [
       after: { lang, title: parsed.title, body: parsed.body },
     });
 
-    return HttpResponse.json(serialiseStaticPage(after, request));
+    // `{ id }` (gap **G-11**).
+    return HttpResponse.json({ id: after.slug });
   }),
 
   http.post('*/admin/static-pages/:slug/publish', async ({ request, params }) => {
@@ -5908,20 +6060,34 @@ export const handlers: HttpHandler[] = [
       after: { status: 'published', missingLanguages: gaps.missingLanguages },
     });
 
-    return HttpResponse.json(gaps);
+    // `{ id, status }` (gap **G-11**) — the editor refetches the closed set.
+    return HttpResponse.json({ id: after.slug, status: after.status });
   }),
 
-  http.get('*/admin/static-pages/:slug', async ({ request, params }) => {
-    await delay(LATENCY_MS);
-    const auth = authorize(request, 'content');
-    if ('response' in auth) return auth.response;
-
-    const record = state.staticPages.find((candidate) => candidate.slug === params.slug);
-    if (!record) return fail({ status: 404, code: '404', message: 'No such page.' });
-    return HttpResponse.json(serialiseStaticPage(record, request));
-  }),
+  /**
+   * **No `GET /admin/static-pages/{slug}`** (gap **G-07**), and none is needed: the set is
+   * six pages, `list` returns all of them written or not, and `staticPageRepository.get`
+   * picks its page out of that. A per-slug fetch would be a second round trip for a row
+   * the screen is already holding — and would have to invent a representation for a page
+   * the factory has never written, which the list already answers.
+   */
 
   /* ── M10 Inquiries ─────────────────────────────────────────────────────── */
+  /** One inquiry, by id (**G-06**). */
+  http.get('*/admin/inquiries/:id', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enableInquiry');
+    if (gate) return gate;
+    const auth = authorize(request, 'inquiries');
+    if ('response' in auth) return auth.response;
+
+    const row = state.inquiries.find((one) => one.id === String(params.id));
+    if (!row) {
+      return fail({ status: 404, code: 'not-found', message: 'No such inquiry.' });
+    }
+    return HttpResponse.json(withInquiryAge(row));
+  }),
+
   http.get('*/admin/inquiries', async ({ request }) => {
     await delay(LATENCY_MS);
     const gate = featureGate(request, 'enableInquiry');
@@ -5955,18 +6121,6 @@ export const handlers: HttpHandler[] = [
     return HttpResponse.json(paginate(rows, url));
   }),
 
-  http.get('*/admin/inquiries/:id', async ({ request, params }) => {
-    await delay(LATENCY_MS);
-    const gate = featureGate(request, 'enableInquiry');
-    if (gate) return gate;
-
-    const auth = authorize(request, 'inquiries');
-    if ('response' in auth) return auth.response;
-
-    const found = state.inquiries.find((r) => r.id === params.id);
-    if (!found) return fail({ status: 404, code: '404', message: 'No such inquiry.' });
-    return HttpResponse.json(withInquiryAge(found));
-  }),
 
   /**
    * The answer the supplier reads.
@@ -6050,7 +6204,8 @@ export const handlers: HttpHandler[] = [
       { kind: 'supplier', supplierId: before.supplierId },
     );
 
-    return HttpResponse.json(after);
+    void after;
+    return HttpResponse.json({ id: before.id, status: 'resolved' });
   }),
 
   /** Closing unanswered — a duplicate, a test message, something for the weighing point. */
@@ -6066,8 +6221,27 @@ export const handlers: HttpHandler[] = [
     if (index < 0) return fail({ status: 404, code: '404', message: 'No such inquiry.' });
 
     const before = state.inquiries[index]!;
-    const { note } = (await request.json()) as { note?: string };
-    const reason = note?.trim() ?? '';
+    /**
+     * **`note`, and the schema is `.strict()`.**
+     *
+     * `CloseInquiryBody` spells it `note` and the API reads `note` — **G-19 is closed**.
+     * It briefly read `closureNote`, and because zod stripped the unknown key the close
+     * succeeded with the reason silently dropped. The schema is `.strict()` now, so
+     * sending the wrong field is a `422` rather than a quiet loss; this fixture refuses
+     * the same way.
+     */
+    const body = (await request.json()) as Record<string, unknown>;
+    // `.strict()` on the server: an unknown key is a refusal, not a silent strip.
+    const unknown = Object.keys(body).filter((key) => key !== 'note');
+    if (unknown.length > 0) {
+      return fail({
+        status: 422,
+        code: 'invalid',
+        message: 'The request was not valid.',
+        details: { source: 'body', unrecognized: unknown },
+      });
+    }
+    const reason = typeof body.note === 'string' ? body.note.trim() : '';
 
     if (reason.length < 10) {
       return fail({
@@ -6104,7 +6278,8 @@ export const handlers: HttpHandler[] = [
       after: { status: 'closed', note: reason },
     });
 
-    return HttpResponse.json(after);
+    void after;
+    return HttpResponse.json({ id: before.id, status: 'closed' });
   }),
 
   /* ── M17 Audit ─────────────────────────────────────────────────────────── */

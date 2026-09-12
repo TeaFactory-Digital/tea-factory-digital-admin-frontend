@@ -9,8 +9,8 @@
 
 import { Link, NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import type { DashboardSummary } from '@tfd/domain';
 import { can } from '@tfd/domain';
+import type { DashboardView } from '@/services/repositories/dashboardRepository';
 import { useAuthStore } from '@/auth/authStore';
 import { useFeatureFlags } from '@/config/RuntimeConfigProvider';
 import { Logo } from '@/brand/Logo';
@@ -18,7 +18,7 @@ import { CountBadge } from '@/components/ui/Badge';
 import { cn } from '@/lib/cn';
 import { NAVIGATION, flagsOf, queuesOf, type NavItem } from './navigation';
 
-export function Sidebar({ summary }: { summary?: DashboardSummary }) {
+export function Sidebar({ summary }: { summary?: DashboardView }) {
   const { t } = useTranslation();
   const grants = useAuthStore((s) => s.grants);
   const flags = useFeatureFlags();

@@ -1,4 +1,9 @@
 /**
+ * ⚠ **None of this is implemented by the API** (gap **G-13**), and no v2 route reaches
+ * it — see `endpoints/months.ts` for why it is kept rather than deleted.
+ */
+
+/**
  * M3 Leaf collection — where the leaf is recorded.
  *
  * Two things here are contract, not convenience:

@@ -173,7 +173,18 @@ describe('M11 promo banners', () => {
      */
     const published = await bannerRepository.publish(created.id);
     expect(published.status).toBe('published');
-    expect(published.missingLanguages).toContain('si');
+
+    /**
+     * The gaps come from the **list**, not from the publish response.
+     *
+     * Publishing acknowledges with `{ id, status }` (gap **G-11**), and there is no
+     * `GET /admin/banners/{id}` to read the record back from (gap **G-08**) — so the list
+     * row is the only place `missingLanguages` is published at all. That is also exactly
+     * what the banners grid renders, which is why the gap is still visible to the office
+     * even with the editor unavailable.
+     */
+    const listed = await bannerRepository.list({ pageSize: 50 });
+    expect(listed.items.find((row) => row.id === created.id)?.missingLanguages).toContain('si');
 
     // But an action has nothing to fall back **to**, so it blocks. Patched to something
     // broken, the publish must refuse rather than warn.

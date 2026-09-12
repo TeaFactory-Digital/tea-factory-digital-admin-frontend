@@ -27,7 +27,28 @@ import { useRevealBankDetails } from './hooks';
 
 const MIN_REASON = 10;
 
-export function RevealBankDetailsDialog({ supplierId }: { supplierId: string }) {
+/**
+ * The bank and branch come from the **record already on screen**, not from the reveal.
+ *
+ * `POST .../bank-details/reveal` answers with the account number and the audit id alone
+ * (gap **G-05**) — which on reflection is the right payload: the bank and the branch are
+ * not secret, they are already rendered on the detail page this dialog was opened from,
+ * and asking the server to repeat them would put two more fields in a response whose
+ * whole design is to carry as little as possible.
+ *
+ * So they are passed in. The dialog still shows all three together, because a bare
+ * account number with no bank beside it is the one thing a clerk cannot safely read down
+ * a telephone.
+ */
+export function RevealBankDetailsDialog({
+  supplierId,
+  bankName,
+  branchName,
+}: {
+  supplierId: string;
+  bankName: string;
+  branchName: string;
+}) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
@@ -86,13 +107,13 @@ export function RevealBankDetailsDialog({ supplierId }: { supplierId: string }) 
                 <dt className="text-body-small text-text-secondary">
                   {t('suppliers.detail.bank')}
                 </dt>
-                <dd className="text-body-small text-text-primary">{reveal.data.bankName}</dd>
+                <dd className="text-body-small text-text-primary">{bankName}</dd>
               </div>
               <div className="flex justify-between gap-md">
                 <dt className="text-body-small text-text-secondary">
                   {t('suppliers.detail.branch')}
                 </dt>
-                <dd className="text-body-small text-text-primary">{reveal.data.branchName}</dd>
+                <dd className="text-body-small text-text-primary">{branchName}</dd>
               </div>
               <div className="flex justify-between gap-md">
                 <dt className="text-body-small text-text-secondary">

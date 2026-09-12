@@ -13,6 +13,7 @@
  */
 
 import {
+  EDITORIAL_FALLBACK_LANGUAGE,
   contentTranslationSchema,
   newsArticleDraftSchema,
   type AdminNewsArticle,
@@ -21,14 +22,14 @@ import {
   type ContentTranslationBody,
   type LanguageCode,
   type NewsArticleDraft,
-  type NewsArticlePatch,
   type NewsListItem,
   type NewsQuery,
   type Paged,
   type StaticPageSlug,
 } from '@tfd/domain';
-import { newsEndpoints } from '../endpoints/news';
+import { newsEndpoints, type CreatedArticle } from '../endpoints/news';
 import { staticPageEndpoints } from '../endpoints/staticPages';
+import type { MutationAck, StatusAck } from '../api/adapters';
 import { ApiError } from '../api/errors';
 
 /**
@@ -57,7 +58,7 @@ export const newsRepository = {
 
   get: (id: string): Promise<AdminNewsArticle> => newsEndpoints.get(id),
 
-  create: async (body: NewsArticleDraft): Promise<AdminNewsArticle> => {
+  create: async (body: NewsArticleDraft): Promise<CreatedArticle> => {
     const parsed = newsArticleDraftSchema.safeParse(body);
     if (!parsed.success) {
       throw new ApiError({
@@ -68,11 +69,36 @@ export const newsRepository = {
         details: parsed.error.flatten(),
       });
     }
-    return newsEndpoints.create(parsed.data as NewsArticleDraft);
+    /**
+     * The **fallback language's copy travels flat**, not in a `translations` array.
+     *
+     * `POST /admin/news` reads `title`, `excerpt`, `body` and `coverImageUrl` off the top
+     * level and writes them as the English translation; it has no `translations` field.
+     * Sending the array alone means `title` and `body` never arrive and the API answers
+     * `422 invalid` — which is at least loud, unlike the same mismatch on banners, where
+     * zod stripped the array and created a banner with no copy at all.
+     *
+     * The other languages are saved afterwards through `saveTranslation`, one at a time,
+     * which is how the editor writes them anyway.
+     */
+    const draft = parsed.data as NewsArticleDraft;
+    const fallback =
+      draft.translations.find((one) => one.lang === EDITORIAL_FALLBACK_LANGUAGE) ??
+      draft.translations[0]!;
+
+    return newsEndpoints.create({
+      coverImageUrl: draft.coverImageUrl,
+      title: fallback.title,
+      excerpt: fallback.excerpt,
+      body: fallback.body,
+    });
   },
 
-  patch: (id: string, body: NewsArticlePatch): Promise<AdminNewsArticle> =>
-    newsEndpoints.patch(id, body),
+  /**
+   * There is no `patch`. `PATCH /admin/news/{id}` is not implemented (gap **G-07**) and
+   * nothing in this console called it: copy moves through `saveTranslation` and the
+   * lifecycle through the three verbs below.
+   */
 
   /**
    * `async`, so the guard **rejects** rather than throwing synchronously.
@@ -87,31 +113,48 @@ export const newsRepository = {
     id: string,
     lang: LanguageCode,
     body: ContentTranslationBody,
-  ): Promise<AdminNewsArticle> => newsEndpoints.saveTranslation(id, lang, parseTranslation(body)),
+  ): Promise<MutationAck> => newsEndpoints.saveTranslation(id, lang, parseTranslation(body)),
 
   preview: (id: string, lang: LanguageCode): Promise<ContentPreview> =>
     newsEndpoints.preview(id, lang),
 
-  publish: (id: string): Promise<AdminNewsArticle> => newsEndpoints.publish(id),
-  unpublish: (id: string): Promise<AdminNewsArticle> => newsEndpoints.unpublish(id),
-  archive: (id: string): Promise<AdminNewsArticle> => newsEndpoints.archive(id),
+  publish: (id: string): Promise<StatusAck> => newsEndpoints.publish(id),
+  unpublish: (id: string): Promise<StatusAck> => newsEndpoints.unpublish(id),
+  archive: (id: string): Promise<StatusAck> => newsEndpoints.archive(id),
 };
 
 export const staticPageRepository = {
   list: (): Promise<AdminStaticPage[]> => staticPageEndpoints.list(),
 
-  get: (slug: StaticPageSlug): Promise<AdminStaticPage> => staticPageEndpoints.get(slug),
+  /**
+   * One page, taken from the list of six.
+   *
+   * There is no `GET /admin/static-pages/{slug}` (gap **G-07**) and there does not need
+   * to be: the closed set is small enough that fetching all of it is cheaper than a
+   * second endpoint, and `list` already answers with the unwritten pages too — which a
+   * per-slug fetch would have to decide how to represent.
+   */
+  get: async (slug: StaticPageSlug): Promise<AdminStaticPage> => {
+    const found = (await staticPageEndpoints.list()).find((page) => page.slug === slug);
+    if (!found) {
+      throw new ApiError({
+        code: 'not-found',
+        message: 'That page is not one this factory has.',
+        details: { entity: 'staticPage', slug },
+      });
+    }
+    return found;
+  },
 
   /** `async` for the reason `newsRepository.saveTranslation` is — the guard must reject. */
   saveTranslation: async (
     slug: StaticPageSlug,
     lang: LanguageCode,
     body: ContentTranslationBody,
-  ): Promise<AdminStaticPage> =>
-    staticPageEndpoints.saveTranslation(slug, lang, parseTranslation(body)),
+  ): Promise<MutationAck> => staticPageEndpoints.saveTranslation(slug, lang, parseTranslation(body)),
 
   preview: (slug: StaticPageSlug, lang: LanguageCode): Promise<ContentPreview> =>
     staticPageEndpoints.preview(slug, lang),
 
-  publish: (slug: StaticPageSlug): Promise<AdminStaticPage> => staticPageEndpoints.publish(slug),
+  publish: (slug: StaticPageSlug): Promise<StatusAck> => staticPageEndpoints.publish(slug),
 };

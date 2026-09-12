@@ -30,6 +30,10 @@ export const reportEndpoints = {
    *
    * The months come from here rather than from M5's `GET /admin/bill-months` because §12.1
    * gives the factory administrator `reports: R` and `billing: none` — see `ReportCatalogue`.
+   *
+   * Answers `{ reports, months }` — **G-15 is closed**. It briefly sent a bare array with
+   * no months at all, which left the month picker empty and made a month-scoped report
+   * impossible to run.
    */
   list: () => apiClient.get<ReportCatalogue>('/admin/reports').then((response) => response.data),
 

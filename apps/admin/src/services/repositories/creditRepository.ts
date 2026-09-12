@@ -21,6 +21,7 @@ import {
   type Paged,
 } from '@tfd/domain';
 import { creditEndpoints } from '../endpoints/credit';
+import type { StatusAck } from '../api/adapters';
 import { ApiError } from '../api/errors';
 
 /** Throws the same code the server would, so both paths render identically. */
@@ -55,7 +56,7 @@ export const creditRepository = {
     id: string,
     body: CreditDecisionBody,
     check: { amount: number; available: number },
-  ): Promise<AdminCreditRequest> => {
+  ): Promise<StatusAck> => {
     assertDecidable(body);
     if (check.amount > check.available) {
       throw new ApiError({
@@ -67,7 +68,7 @@ export const creditRepository = {
     return creditEndpoints.approve(id, body);
   },
 
-  reject: async (id: string, body: CreditDecisionBody): Promise<AdminCreditRequest> => {
+  reject: async (id: string, body: CreditDecisionBody): Promise<StatusAck> => {
     assertDecidable(body);
     return creditEndpoints.reject(id, body);
   },

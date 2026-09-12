@@ -61,7 +61,18 @@ describe('M10 answering', () => {
     expect(before.status).toBe('open');
     expect(before.reply).toBeNull();
 
-    const after = await inquiryRepository.reply(OPEN, { body: REPLY });
+    const ack = await inquiryRepository.reply(OPEN, { body: REPLY });
+    expect(ack.status).toBe('resolved');
+
+    /**
+     * Read back, because the API acknowledges with `{ id, status }` and nothing else.
+     *
+     * `inquiryRepository.get` has no endpoint behind it — there is no
+     * `GET /admin/inquiries/{id}` (gap **G-06**) — so it sweeps the list across every
+     * status. That is what the detail screen does against the real API, so exercising it
+     * here is the point rather than an inconvenience.
+     */
+    const after = await inquiryRepository.get(OPEN);
 
     expect(after.status).toBe('resolved');
     expect(after.reply?.body).toBe(REPLY);
@@ -84,7 +95,10 @@ describe('M10 answering', () => {
     await signInAs(CLERK);
     const note = 'Duplicate of the message answered on the 4th.';
 
-    const after = await inquiryRepository.close(TEST_MESSAGE, { note });
+    const ack = await inquiryRepository.close(TEST_MESSAGE, { note });
+    expect(ack.status).toBe('closed');
+
+    const after = await inquiryRepository.get(TEST_MESSAGE);
 
     expect(after.status).toBe('closed');
     expect(after.closureNote).toBe(note);

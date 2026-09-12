@@ -33,7 +33,6 @@ import type {
   CreditFacility,
   DashboardAlert,
   QueueCount,
-  QueueKey,
 } from '@tfd/domain';
 import { dashboardRepository } from '@/services/repositories/dashboardRepository';
 import { qk } from '@/query/queryKeys';
@@ -68,6 +67,8 @@ export function DashboardScreen() {
           </section>
 
           <div className="grid gap-lg lg:grid-cols-3">
+            {/* Both were "not available" placeholders while the payload carried
+                neither (G-12). The API reports them now. */}
             <AppAdoptionCard app={data.app} />
             <ContentHealthCard content={data.content} />
 
@@ -112,10 +113,13 @@ export function DashboardScreen() {
  * open the *Advances* card onto loans and manure as well — a card reading four and a
  * screen listing eleven, which reads as a bug in the count rather than as a wider filter.
  */
-const QUEUE_FACILITY: Partial<Record<QueueKey, CreditFacility>> = {
+const QUEUE_FACILITY: Partial<Record<QueueCount['queue'], CreditFacility>> = {
   advanceRequests: 'advance',
   loanRequests: 'loan',
   manureRequests: 'manure',
+  // `creditRequests` is deliberately absent. It is the *combined* count of all three
+  // facilities, so narrowing the screen to one of them would open a card reading eleven
+  // onto a list showing four.
 };
 
 function QueueCard({ queue }: { queue: QueueCount }) {
@@ -144,6 +148,8 @@ function QueueCard({ queue }: { queue: QueueCount }) {
         ) : null}
       </div>
       <p className="numeric mt-xs text-h2 text-text-primary">{formatCount(queue.pending)}</p>
+      {/* `oldestPendingAt` is now reported (G-12 closed), so `null` means one thing
+          again: the queue is empty. */}
       <p className="mt-xxs text-caption text-text-secondary">
         {queue.oldestPendingAt
           ? t('dashboard.oldestWaiting', { age: formatAge(hoursSince(queue.oldestPendingAt)) })

@@ -16,7 +16,6 @@ import type { AuthSession, CapabilityGrants, ConsoleUser } from '@tfd/domain';
 import { can as canDo, type AccessLevel, type Capability } from '@tfd/domain';
 import { authRepository } from '@/services/repositories/authRepository';
 import { setAuthBridge } from '@/services/api/client';
-import { isApiError } from '@/services/api/errors';
 
 /**
  * No `mfaRequired` between `anonymous` and `authenticated` any more: the second factor
@@ -40,6 +39,34 @@ interface AuthState {
   clear: () => void;
 }
 
+/**
+ * The rotation in flight, if any — **one at a time, shared by every caller.**
+ *
+ * The refresh token is **single-use**: the API rotates it on every call and treats a
+ * second presentation of a spent one as *reuse*, which revokes the whole family. So two
+ * concurrent rotations do not merely waste a round trip, they sign the clerk out.
+ *
+ * There are two ways to get two. `App` calls `bootstrap()` from an effect and React's
+ * `StrictMode` invokes effects twice in development — which produced exactly this: two
+ * `POST /admin/auth/refresh` on every page load, the second `401`, the family revoked,
+ * and the console back on the sign-in screen after every reload. The other way is a
+ * burst of screens each hitting a `401` at the same moment.
+ *
+ * It stayed invisible until the API's cookie path was fixed, because before that every
+ * refresh failed anyway and there was nothing to race.
+ */
+let rotating: Promise<AuthSession | null> | null = null;
+
+function rotateOnce(): Promise<AuthSession | null> {
+  rotating ??= authRepository
+    .refresh()
+    .catch(() => null)
+    .finally(() => {
+      rotating = null;
+    });
+  return rotating;
+}
+
 const anonymous = {
   status: 'anonymous' as AuthStatus,
   user: null,
@@ -52,17 +79,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   ...anonymous,
   status: 'bootstrapping',
 
+  /**
+   * **One round trip, not two.**
+   *
+   * The rotation answers with the whole session — token, user and grants — because the
+   * API re-resolves grants on every refresh. A follow-up `GET /admin/auth/me` would ask
+   * for a payload already in hand, and would do it on the critical path of the first
+   * paint after every reload.
+   */
   bootstrap: async () => {
-    try {
-      const { accessToken, expiresAt } = await authRepository.refresh();
-      set({ accessToken, expiresAt });
-      const { user, grants } = await authRepository.me();
-      set({ status: 'authenticated', user, grants });
-    } catch {
-      // No refresh cookie, or it has expired. Not an error — it is the normal
-      // state of a browser that has never signed in.
-      set({ ...anonymous });
+    const session = await rotateOnce();
+    if (session) {
+      applySession(set, session);
+      return;
     }
+    // No refresh cookie, or it has expired. Not an error — it is the normal state of a
+    // browser that has never signed in.
+    set({ ...anonymous });
   },
 
   login: async (email, password) => {
@@ -77,18 +110,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   refresh: async () => {
-    try {
-      const { accessToken, expiresAt } = await authRepository.refresh();
-      set({ accessToken, expiresAt });
-      return accessToken;
-    } catch (error) {
-      // A refresh that fails for any reason other than transport is terminal:
-      // retrying it on a dropped connection would sign a clerk out because the
-      // office wifi blinked.
-      if (isApiError(error) && error.code === 'network') return get().accessToken;
-      set({ ...anonymous });
-      return null;
+    const session = await rotateOnce();
+    if (session) {
+      /**
+       * The **user and the grants too**, not only the token.
+       *
+       * The API re-resolves grants on every rotation, so this is the moment a permission
+       * change reaches a console that has been open since the morning. Setting the token
+       * alone would leave a clerk holding the grant set they signed in with — which is
+       * either a lever that 403s or a screen they should have regained.
+       */
+      applySession(set, session);
+      return session.accessToken;
     }
+
+    /**
+     * A dropped connection is not a dead session.
+     *
+     * `rotateOnce` swallows the reason, so the distinction is drawn from what the store
+     * still holds: a token that has not expired is worth keeping while the office wifi
+     * blinks. Anything else is terminal, and clearing is what routes to sign-in.
+     */
+    const expiresAt = get().expiresAt;
+    if (expiresAt && Date.parse(expiresAt) > Date.now()) return get().accessToken;
+
+    set({ ...anonymous });
+    return null;
   },
 
   clear: () => set({ ...anonymous }),

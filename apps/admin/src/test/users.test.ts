@@ -180,10 +180,20 @@ describe('M15 users & roles', () => {
     // Reactivating puts them back, with the roles they had.
     await signInAs(ADMIN);
     const after = await listWithContext();
-    const restored = await userRepository.reactivate(
+    await userRepository.reactivate(
       after.page.items.find((one) => one.email === CLERK)!.id,
       'Back from leave and working the change-request queue again.',
     );
+
+    /**
+     * Asserted against a **refetch**, not against the response.
+     *
+     * The API acknowledges a status change with `{ id, status }` and nothing else, so
+     * "did they keep the roles they had" is a question only the record can answer. That is
+     * the console's real behaviour too — every mutation hook invalidates and refetches —
+     * so reading the list back is what the screen actually does.
+     */
+    const restored = (await listWithContext()).page.items.find((one) => one.email === CLERK)!;
     expect(restored.status).toBe('active');
     expect(restored.roles).toEqual(['clerk']);
 
@@ -229,10 +239,18 @@ describe('M15 users & roles', () => {
      * A manager used to be created owing a second factor, and the badge saying so was the
      * only trace of a requirement nothing ever collected. The factory has withdrawn it, so
      * the account this call produces is complete: the roles asked for, and a password.
+     *
+     * The **password is on the response and the record is not** — there is no invitation
+     * email, so the office reads the credential out once and the dialog shows it. Anything
+     * about the account itself comes from a refetch.
      */
-    expect(created.roles).toEqual(['manager']);
-    expect(created.lastLoginAt).toBeNull();
-    expect(created.status).toBe('active');
+    expect(created.id).toBeTruthy();
+    expect(created.password.length).toBeGreaterThanOrEqual(12);
+
+    const row = (await userRepository.list()).items.find((one) => one.id === created.id)!;
+    expect(row.roles).toEqual(['manager']);
+    expect(row.lastLoginAt).toBeNull();
+    expect(row.status).toBe('active');
   }, 20_000);
 
   it('serves the §12.1 matrix, and marks it as the shipped default until it is changed', async () => {
@@ -252,14 +270,20 @@ describe('M15 users & roles', () => {
     // The example rbac.md itself calls out: a manager cannot edit a supplier record, and a
     // factory that wants them to should not need a deploy.
     expect(before.matrix.manager.suppliers).toBe('read');
-    const after = await userRepository.setRole(
+    await userRepository.setRole(
       'manager',
       { ...before.matrix.manager, suppliers: 'write' },
       before.matrix,
     );
 
+    const after = await userRepository.roles();
     expect(after.matrix.manager.suppliers).toBe('write');
     expect(after.customised).toBe(true);
+    /**
+     * The name of whoever widened it — **G-10 is closed**. The API stored this and did not
+     * send it for a while, so the console had to fill `null` into the one caption anybody
+     * reads off this table: *"who changed this, and from what"*.
+     */
     expect(after.updatedByName).toBe('Chandima Bandara');
   }, 20_000);
 
@@ -279,12 +303,13 @@ describe('M15 users & roles', () => {
     const before = await userRepository.roles();
 
     // Exactly what `RoleMatrixView.change()` builds for one cell.
-    const after = await userRepository.setRole(
+    await userRepository.setRole(
       'clerk',
       { ...before.matrix.clerk, inquiries: 'read' },
       before.matrix,
     );
 
+    const after = await userRepository.roles();
     expect(after.matrix.clerk.inquiries).toBe('read');
     for (const capability of FACTORY_CONSOLE_CAPABILITIES) {
       expect(after.matrix.clerk[capability]).toBe(before.matrix.clerk[capability]);
@@ -308,12 +333,8 @@ describe('M15 users & roles', () => {
     // Strip it from all but the last one — still fine.
     let matrix = before.matrix;
     for (const role of holders.slice(0, -1)) {
-      const result = await userRepository.setRole(
-        role,
-        { ...matrix[role], usersAndRoles: 'none' },
-        matrix,
-      );
-      matrix = result.matrix;
+      await userRepository.setRole(role, { ...matrix[role], usersAndRoles: 'none' }, matrix);
+      matrix = (await userRepository.roles()).matrix;
     }
 
     // The last one is refused.

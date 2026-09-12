@@ -103,8 +103,6 @@ export const ta: Record<TranslationKey, string> = {
   'shell.skipToContent': 'உள்ளடக்கத்திற்குச் செல்',
   'shell.degradedConfig':
     'தொழிற்சாலைக் கட்டமைப்பை அணுக முடியவில்லை — உள்ளமைந்த இயல்பு மதிப்புகள் காட்டப்படுகின்றன. அடையாளச் சின்னமும் வசதிகளும் காலாவதியாகியிருக்கலாம்.',
-  'shell.mockBanner':
-    'மாதிரித் தரவு. இதில் எதுவும் உண்மையான பதிவு அல்ல, பக்கத்தை மீண்டும் ஏற்றியபின் எதுவும் எஞ்சாது.',
   /* The accessible name of the language pill. The options inside it are *not*
      translated — see i18n/languages.ts for why. */
   'shell.language': 'மொழி',
@@ -156,13 +154,6 @@ export const ta: Record<TranslationKey, string> = {
   'auth.forgotPassword': 'கடவுச்சொல் மறந்துவிட்டதா?',
   'auth.forgotPasswordHint':
     'அதை மீட்டமைக்க உங்கள் தொழிற்சாலை நிர்வாகியைக் கேட்கவும். கன்சோலால் மீட்டமைப்புத் தொடுப்பை மின்னஞ்சல் செய்ய முடியாது.',
-  'auth.demoCredentials': 'மாதிரி உள்நுழைவு',
-  'auth.demoRole.clerk': 'எழுதுவினைஞர் — மாற்ற வேண்டுகோள்கள், வழங்குநர்கள்',
-  'auth.demoRole.manager': 'மேலாளர் — கடன் மற்றும் மாற்ற வேண்டுகோள்களை அனுமதிக்கிறார்',
-  'auth.demoRole.editor': 'ஆசிரியர் — செய்திகளும் நிலையான பக்கங்களும் எழுதுகிறார்',
-  'auth.demoRole.factoryAdmin': 'தொழிற்சாலை நிர்வாகி — உள்ளடக்கத்தை வெளியிடுகிறார்',
-  'auth.demoRole.factorySystem':
-    'தொழிற்சாலை அமைப்பு — கொழுந்து, விலை, கொடுப்பனவுகளைப் பதிவு செய்கிறது',
 
   /* ────────────────────────────── dashboard ────────────────────────────── */
   'dashboard.title': 'முகப்புப் பலகை',
@@ -186,6 +177,7 @@ export const ta: Record<TranslationKey, string> = {
   'month.stage.billsGenerated': 'பில்கள் உருவாக்கப்பட்டன',
   'month.stage.published': 'வெளியிடப்பட்டது',
 
+  'dashboard.figureUnavailable': 'API இந்த எண்ணிக்கையை இன்னும் வழங்கவில்லை.',
   'dashboard.queue.changeRequests': 'மாற்ற வேண்டுகோள்கள்',
   'dashboard.queue.advanceRequests': 'முன்பணங்கள்',
   'dashboard.queue.loanRequests': 'கடன்கள்',
@@ -349,8 +341,7 @@ export const ta: Record<TranslationKey, string> = {
     'இது காட்டப்படும் ஒரே தருணம் இதுதான். இதை மூடினால் போய்விடும் — வேறொன்றை உருவாக்க வேண்டியிருக்கும்.',
   'suppliers.resetPassword.oneTime':
     'இதைக் கொண்டு முதன்முதலில் உள்நுழையும்போது சப்ளையர் தமது சொந்தக் கடவுச்சொல்லைத் தேர்ந்தெடுக்க வேண்டும், எனவே அதன் பிறகு இது வேலை செய்யாது. அதுவரை, இதை வைத்திருக்கும் யாரும் அவர்களாக உள்நுழையலாம்.',
-  'suppliers.resetPassword.recorded':
-    '{{name}} உடன் பதிவு செய்யப்பட்டது, {{when}} · தணிக்கை {{audit}}.',
+  'suppliers.resetPassword.recordedBy': '{{name}} உடன் பதிவு செய்யப்பட்டது, {{when}}.',
   'suppliers.resetPassword.sessionsEnded': '{{count}} திறந்த அமர்வுகள் முடிக்கப்பட்டன.',
   'suppliers.resetPassword.done': 'நான் எழுதிக்கொண்டேன்',
 
@@ -1286,6 +1277,12 @@ export const ta: Record<TranslationKey, string> = {
     'உங்கள் சொந்தப் பதவிகளை நீங்களே மாற்ற முடியாது. வேறு நிர்வாகியைக் கேட்கவும் — ஒரு வேலையை பாதியில் நிறுத்தி யாரோ தம்மையே வெளியில் பூட்டிக்கொள்வதைத் தடுப்பது இதுவே.',
   'users.created': '{{name}} இப்போது உள்நுழையலாம்',
   'users.createdHint': 'அவர்களின் கடவுச்சொல்லை அவர்களுக்குக் கூறுங்கள். உள்நுழைய அது மட்டுமே தேவை.',
+  'users.passwordLabel': 'முதல் கடவுச்சொல்',
+  'users.passwordOnce':
+    'இந்தக் கடவுச்சொல் ஒரு முறை மட்டுமே காட்டப்படும். மூடுவதற்கு முன் எழுதிக் கொள்ளுங்கள் — மீண்டும் படிக்க முடியாது.',
+  'users.passwordHandover':
+    'அதை {{name}} இடம் கொடுங்கள். அவர்கள் {{email}} மற்றும் இந்தக் கடவுச்சொல்லுடன் உள்நுழைவார்கள்; அதை மாற்ற வேண்டும்.',
+  'users.passwordDone': 'நான் எழுதிக் கொண்டேன்',
   'users.confirmCreateBody':
     'தேர்ந்தெடுக்கப்பட்ட பதவிகளுடன் புதிய கன்சோல் கணக்கு ஒன்று உருவாக்கப்படும்.',
   'users.confirmEditBody': 'இந்தப் பயனரின் கணக்கு விவரங்களும் அணுகலும் புதுப்பிக்கப்படும்.',

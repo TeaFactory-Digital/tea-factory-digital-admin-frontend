@@ -138,16 +138,22 @@ describe('M13 notifications', () => {
       audience: { kind: 'collectionPoint', collectionPoint: 'MAKADURA' },
     });
 
-    expect(send.origin).toBe('composed');
-    expect(send.createdByName).toBe('Chandima Bandara');
     expect(send.status).toBe('sent');
     // The counts on the record are the ones the reach preview showed, which is what makes
     // the preview worth trusting.
     expect(send.reachableDevices).toBe(before.reachableDevices);
     expect(send.suppressedDevices).toBe(before.suppressedDevices);
 
-    const log = await notificationRepository.list({ origin: 'composed', pageSize: 10 });
+    /**
+     * `origin` and `createdByName` are asserted on the **log entry**, not on the send
+     * response: the API acknowledges a send with its id, status and reach and nothing
+     * else (gap **G-11**). The composer needs only the reach, which is the one thing it
+     * could not have known before pressing send.
+     */
+    const log = await notificationRepository.list({ pageSize: 10 });
     expect(log.items[0]?.id).toBe(send.id);
+    expect(log.items[0]?.origin).toBe('composed');
+    expect(log.items[0]?.createdByName).toBe('Chandima Bandara');
   }, 20_000);
 
   it('refuses a send nobody would receive', async () => {

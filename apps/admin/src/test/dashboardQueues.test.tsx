@@ -62,9 +62,18 @@ describe('dashboard queue cards', () => {
     const hrefs = await queueLinks(container);
 
     /**
-     * The bug in one assertion. All three credit facilities were rendering the grey
-     * badge, so this read zero links to `/credit` on a console whose sidebar had the
-     * screen the whole time.
+     * **Three credit cards, and all three link.**
+     *
+     * The bug this was written for was three cards rendering the grey "no screen for this
+     * queue" badge on a console whose sidebar had `/credit` the whole time — `NavItem.queue`
+     * is `QueueKey | QueueKey[]` and the lookup compared a string to an array.
+     *
+     * It briefly asserted *one* link, because the API collapsed the three facilities into a
+     * single `creditRequests` count (gap **G-12**). It reports them separately again, so the
+     * three come back exactly as the note here predicted they would.
+     *
+     * The property being protected is unchanged: **every queue the API reports is
+     * clickable.**
      */
     expect(hrefs.filter((href) => href.startsWith('/credit'))).toHaveLength(3);
 
@@ -72,22 +81,24 @@ describe('dashboard queue cards', () => {
     expect(within(container).queryByText(en['dashboard.noScreenForQueue'])).not.toBeInTheDocument();
   });
 
-  it('narrows the shared credit screen to the facility that was clicked', async () => {
+  it('narrows the credit screen to the facility whose card was clicked', async () => {
     await signInAs(CLERK);
     const { container } = renderWithProviders(<DashboardScreen />);
 
     const hrefs = await queueLinks(container);
 
     /**
-     * M7 holds three queues behind one link, so `?status=pending` alone would open the
-     * *Advances* card onto loans and manure too — a card reading four against a screen
-     * listing eleven, which reads as a wrong count rather than as a wider filter.
+     * **Each credit card narrows the shared screen to its own facility.**
+     *
+     * M7 answers for all three behind one route, so a card reading four that opened a list
+     * of eleven reads as a bug in the count rather than as a wider filter. `QUEUE_FACILITY`
+     * is what adds the `facility=`, and it is exercised here rather than re-derived.
      */
     expect(hrefs).toContain('/credit?status=pending&facility=advance');
     expect(hrefs).toContain('/credit?status=pending&facility=loan');
     expect(hrefs).toContain('/credit?status=pending&facility=manure');
 
-    // A queue that owns its screen outright takes no facility filter.
+    // A queue that owns its screen outright takes no facility filter either.
     expect(hrefs).toContain('/change-requests?status=pending');
   });
 

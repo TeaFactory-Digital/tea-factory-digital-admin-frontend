@@ -56,6 +56,11 @@ export const billEndpoints = {
   /**
    * Recompute the month's bills.
    *
+   * ⚠ **Not implemented by the API, and not reached by this console** (gap **G-13**).
+   * M5 is read-only in v2 — generating and publishing a month are the factory's own
+   * console's job — so `BillsScreen` has no button behind this. It stays as the stated
+   * shape of the call for whoever builds that side.
+   *
    * `409 month-locked` once published · `409 rate-missing` with no auction result ·
    * `422 bills-unbalanced` if any slip's lines disagree with its total (BR-107).
    */

@@ -14,9 +14,11 @@ import {
   type CloseInquiryBody,
   type InquiryQuery,
   type InquiryReplyBody,
+  type InquiryStatus,
   type Paged,
 } from '@tfd/domain';
 import { inquiryEndpoints } from '../endpoints/inquiries';
+import type { StatusAck } from '../api/adapters';
 import { ApiError } from '../api/errors';
 
 function refuse(details: unknown): never {
@@ -32,15 +34,16 @@ export const inquiryRepository = {
   list: (query: InquiryQuery = {}): Promise<Paged<AdminInquiry>> =>
     inquiryEndpoints.list({ page: 0, pageSize: 25, status: 'open', ...query }),
 
+  /** One inquiry, by id. The list sweep this used to need is gone — **G-06** is closed. */
   get: (id: string): Promise<AdminInquiry> => inquiryEndpoints.get(id),
 
-  reply: async (id: string, body: InquiryReplyBody): Promise<AdminInquiry> => {
+  reply: async (id: string, body: InquiryReplyBody): Promise<StatusAck<InquiryStatus>> => {
     const parsed = inquiryReplySchema.safeParse(body);
     if (!parsed.success) refuse(parsed.error.flatten());
     return inquiryEndpoints.reply(id, body);
   },
 
-  close: async (id: string, body: CloseInquiryBody): Promise<AdminInquiry> => {
+  close: async (id: string, body: CloseInquiryBody): Promise<StatusAck<InquiryStatus>> => {
     const parsed = closeInquirySchema.safeParse(body);
     if (!parsed.success) refuse(parsed.error.flatten());
     return inquiryEndpoints.close(id, body);

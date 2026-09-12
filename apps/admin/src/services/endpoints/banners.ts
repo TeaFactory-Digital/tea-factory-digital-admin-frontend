@@ -23,17 +23,57 @@ import type {
   BannerTranslationBody,
   ContentPreview,
   LanguageCode,
-  Paged,
 } from '@tfd/domain';
 import { apiClient } from '../api/client';
+import type { MutationAck, StatusAck } from '../api/adapters';
 import { toParams } from './params';
 
+/**
+ * What `GET /admin/banners` actually puts on the wire.
+ *
+ * A bare array, and the headline is spelled `headline` rather than `title`
+ * (gap **G-09** — still a bare array). `staleLanguages` is absent entirely — the API computes
+ * `missingLanguages` and stops there, so the console cannot tell "never translated" from
+ * "translated before the English was corrected", which is half of what AC-08 is about.
+ */
+export interface ServedBannerRow {
+  id: string;
+  status: BannerListItem['status'];
+  imageUrl: string | null;
+  imageAspectRatio: number | null;
+  action: unknown;
+  startsAt: string;
+  endsAt: string | null;
+  window: BannerListItem['window'];
+  headline: string;
+  missingLanguages: LanguageCode[];
+  publishedByName: string | null;
+  updatedAt: string;
+}
+
 export const bannerEndpoints = {
+  /**
+   * Unpaged and bare — `bannerRepository` maps and wraps it.
+   *
+   * `status` and `window` are the only filters the API honours, and `window` implies
+   * `status: published`, which is right: a scheduled draft is not scheduled for anything.
+   */
   list: (query: BannerQuery = {}) =>
     apiClient
-      .get<Paged<BannerListItem>>('/admin/banners', { params: toParams(query) })
+      .get<ServedBannerRow[]>('/admin/banners', {
+        params: toParams({ status: query.status, window: query.window }),
+      })
       .then((response) => response.data),
 
+  /**
+   * One banner, **with its `translations`** — the call the editor is built on.
+   *
+   * It did not exist for a while (gap **G-08**), and nothing could be synthesised from
+   * the list row, which carries no copy at all: a banner's Sinhala headline is either
+   * sent or it is not. So the path and the screen were kept and the editor showed its
+   * error state, rather than opening three empty language tabs over a record that had
+   * text in it.
+   */
   get: (id: string) =>
     apiClient.get<AdminPromoBanner>(`/admin/banners/${id}`).then((response) => response.data),
 
@@ -45,30 +85,31 @@ export const bannerEndpoints = {
    * saved with a bad action looks published to the office and is inert on the phone.
    */
   create: (body: BannerDraft) =>
-    apiClient.post<AdminPromoBanner>('/admin/banners', body).then((response) => response.data),
+    apiClient.post<StatusAck>('/admin/banners', body).then((response) => response.data),
 
-  /** Artwork, window and action. Copy moves through `saveTranslation`. */
+  /** Artwork, window and action — the fields that are not copy. */
   patch: (id: string, body: BannerPatch) =>
-    apiClient
-      .patch<AdminPromoBanner>(`/admin/banners/${id}`, body)
-      .then((response) => response.data),
+    apiClient.patch<MutationAck>(`/admin/banners/${id}`, body).then((response) => response.data),
 
-  /** Save one language — a `PUT`, for the same reason M11's is. */
+  /** Save one language — a `PUT`, for the same reason M11's is. Implemented. */
   saveTranslation: (id: string, lang: LanguageCode, body: BannerTranslationBody) =>
     apiClient
-      .put<AdminPromoBanner>(`/admin/banners/${id}/translations/${lang}`, body)
+      .put<MutationAck>(`/admin/banners/${id}/translations/${lang}`, body)
       .then((response) => response.data),
 
-  /** What a reader in `lang` gets, resolved by the server rather than by this console. */
+  /**
+   * What a reader in `lang` gets, resolved by the server rather than by this console —
+   * and that is the whole point of it. A preview composed here would be a second
+   * implementation of the fallback rule, which is the AC-08 failure with the console's
+   * fingerprints on it. Banners have it now, as news always did (gap **G-08**, closed).
+   */
   preview: (id: string, lang: LanguageCode) =>
     apiClient
       .get<ContentPreview>(`/admin/banners/${id}/preview`, { params: toParams({ lang }) })
       .then((response) => response.data),
 
   publish: (id: string) =>
-    apiClient
-      .post<AdminPromoBanner>(`/admin/banners/${id}/publish`, {})
-      .then((response) => response.data),
+    apiClient.post<StatusAck>(`/admin/banners/${id}/publish`, {}).then((response) => response.data),
 
   /**
    * Take it down now, whatever the window says.
@@ -80,12 +121,16 @@ export const bannerEndpoints = {
    */
   unpublish: (id: string) =>
     apiClient
-      .post<AdminPromoBanner>(`/admin/banners/${id}/unpublish`, {})
+      .post<StatusAck>(`/admin/banners/${id}/unpublish`, {})
       .then((response) => response.data),
 
-  /** Out of the list, still in the record. There is no delete here either. */
+  /**
+   * Out of the list, still in the record. There is no delete here either.
+   *
+   * Banners were missing this while news had it (gap **G-08**), which was the asymmetry
+   * worth naming: the two content types were built to the same model deliberately, and an
+   * editor should not have to learn that one can be filed away and the other cannot.
+   */
   archive: (id: string) =>
-    apiClient
-      .post<AdminPromoBanner>(`/admin/banners/${id}/archive`, {})
-      .then((response) => response.data),
+    apiClient.post<StatusAck>(`/admin/banners/${id}/archive`, {}).then((response) => response.data),
 };

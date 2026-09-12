@@ -176,12 +176,16 @@ describe('M7 approve', () => {
     const request = await creditRepository.get(WITHIN_CEILING);
     const supplierBefore = await supplierRepository.get(request.supplierId);
 
-    const decided = await creditRepository.approve(
+    const ack = await creditRepository.approve(
       WITHIN_CEILING,
       { note: NOTE, ceilingSeen: request.eligibility.ceiling },
       { amount: request.amount, available: request.eligibility.available },
     );
+    expect(ack.status).toBe('approved');
 
+    // Read back: the decision response is `{ id, status }` (gap **G-11**). M7 is the one
+    // queue with a real `GET …/{id}` behind it.
+    const decided = await creditRepository.get(WITHIN_CEILING);
     expect(decided.status).toBe('approved');
     expect(decided.decision?.decidedByName).toBe('Ruwan Jayasuriya');
 

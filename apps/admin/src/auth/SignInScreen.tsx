@@ -20,7 +20,6 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { loginSchema, type LoginInput } from '@tfd/domain';
 import { useAuthStore } from './authStore';
-import { env } from '@/config/env';
 import { useFactory } from '@/config/RuntimeConfigProvider';
 import { Logo } from '@/brand/Logo';
 import { LanguageSwitcher } from '@/i18n/LanguageSwitcher';
@@ -28,7 +27,6 @@ import { Button } from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
 import { Card, CardBody } from '@/components/ui/Card';
 import { errorMessageKey } from '@/lib/errorMessage';
-import { MOCK_PASSWORD, mockUsers } from '@/services/mocks/seed';
 
 export function SignInScreen() {
   const { t } = useTranslation();
@@ -72,7 +70,6 @@ export function SignInScreen() {
           </CardBody>
         </Card>
 
-        {env.useMock ? <MockCredentials /> : null}
       </div>
     </div>
   );
@@ -150,51 +147,3 @@ function PasswordForm() {
   );
 }
 
-/**
- * Mock credentials, printed on screen while `VITE_USE_MOCK` is on.
- *
- * Deliberate: a demo credential that has to be looked up in a source file gets
- * pasted into a chat thread and outlives the demo. It renders in development and
- * in the hosted demo build (`npm run build:demo`) — where it is the only way a
- * visitor gets in, and where printing it costs nothing because the accounts are
- * fixtures. It cannot render in a real production build: `env.useMock` is false
- * there and `assertEnvUsable()` refuses to boot if it is not.
- */
-/**
- * Every mock identity, not a chosen two.
- *
- * Which account you sign in as decides what the console will let you do, and §12.1
- * spreads that across the roles v2 kept: the **clerk** works the queues, the
- * **manager** approves them, the **editor** writes what the app displays and the
- * **factory admin** publishes it and holds the configuration. Listing only two left
- * the others undiscoverable, and a reviewer concluding "the banner editor is broken"
- * when they were signed in as a clerk is the matrix working and the screen failing to
- * say so.
- *
- * The fixture also carries the **factory system** account, whose grants come from the
- * server rather than from any `ConsoleRole` — it is the only one that can move leaf,
- * and signing in as it is how a reviewer sees a bill run go stale.
- *
- * Derived from `mockUsers` rather than written out, so an identity added to the
- * fixture cannot go missing here.
- */
-function MockCredentials() {
-  const { t } = useTranslation();
-
-  return (
-    <Card>
-      <CardBody className="flex flex-col gap-xs">
-        <p className="text-label text-text-primary">{t('auth.demoCredentials')}</p>
-        {mockUsers.map((user) => (
-          <p key={user.id} className="numeric text-caption text-text-secondary">
-            {/* `factorySystem` for the account with no `ConsoleRole` at all: its grants come
-                from the server, so `roles[0]` is `undefined` and the key would render as
-                itself — the one line on this card that has to be written for a user rather
-                than derived from one. */}
-            {t(`auth.demoRole.${user.roles[0] ?? 'factorySystem'}`)}: {user.email} / {MOCK_PASSWORD}
-          </p>
-        ))}
-      </CardBody>
-    </Card>
-  );
-}

@@ -2,7 +2,7 @@
   "name": "teafactory-digital-admin",
   "version": "0.1.0",
   "private": true,
-  "description": "Tea Factory Digital — admin web console. White-label, multi-tenant, runtime-branded.",
+  "description": "Tea Factory Digital \u2014 admin web console. White-label, multi-tenant, runtime-branded.",
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -10,15 +10,13 @@
   "scripts": {
     "dev": "npm run dev --workspace @tfd/admin",
     "build": "npm run build --workspace @tfd/admin",
-    "build:demo": "npm run build:demo --workspace @tfd/admin",
     "preview": "npm run preview --workspace @tfd/admin",
     "typecheck": "tsc --build --force",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx,css,md,json}\"",
     "test": "vitest run --root apps/admin",
     "test:watch": "vitest --root apps/admin",
-    "e2e": "playwright test --config apps/admin/playwright.config.ts",
-    "e2e:demo": "playwright test --config apps/admin/playwright.demo.config.ts"
+    "e2e": "playwright test --config apps/admin/playwright.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
@@ -34,10 +32,5 @@
   },
   "engines": {
     "node": ">= 22.11.0"
-  },
-  "msw": {
-    "workerDirectory": [
-      "apps/admin/public"
-    ]
   }
 }

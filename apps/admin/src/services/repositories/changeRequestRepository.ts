@@ -8,10 +8,19 @@
  * (§9.3: the form is a courtesy, the server is the authority).
  */
 
-import { decisionSchema, type AdminChangeRequest, type ChangeRequestQuery, type DecisionBody, type Paged } from '@tfd/domain';
+import {
+  decisionSchema,
+  type AdminChangeRequest,
+  type ChangeRequestQuery,
+  type RequestStatus,
+  type DecisionBody,
+  type Paged,
+} from '@tfd/domain';
 import { changeRequestEndpoints } from '../endpoints/changeRequests';
+import type { StatusAck } from '../api/adapters';
 import { ApiError } from '../api/errors';
 
+/** Every state a change request can be in, newest-interest first. */
 /** Throws the same code the server would, so both paths render identically. */
 function assertDecidable(body: DecisionBody): void {
   const parsed = decisionSchema.safeParse(body);
@@ -29,6 +38,7 @@ export const changeRequestRepository = {
   list: (query: ChangeRequestQuery = {}): Promise<Paged<AdminChangeRequest>> =>
     changeRequestEndpoints.list({ page: 0, pageSize: 25, status: 'pending', ...query }),
 
+  /** One request, by id — the list sweep this needed is gone (**G-06** closed). */
   get: (id: string): Promise<AdminChangeRequest> => changeRequestEndpoints.get(id),
 
   /**
@@ -41,12 +51,12 @@ export const changeRequestRepository = {
    * while surfacing the server's identical refusal as `mutation.error`. One code
    * path, one shape.
    */
-  approve: async (id: string, body: DecisionBody): Promise<AdminChangeRequest> => {
+  approve: async (id: string, body: DecisionBody): Promise<StatusAck<RequestStatus>> => {
     assertDecidable(body);
     return changeRequestEndpoints.approve(id, body);
   },
 
-  reject: async (id: string, body: DecisionBody): Promise<AdminChangeRequest> => {
+  reject: async (id: string, body: DecisionBody): Promise<StatusAck<RequestStatus>> => {
     assertDecidable(body);
     return changeRequestEndpoints.reject(id, body);
   },

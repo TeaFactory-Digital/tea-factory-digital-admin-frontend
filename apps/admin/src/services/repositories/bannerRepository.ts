@@ -30,7 +30,8 @@ import {
   type LanguageCode,
   type Paged,
 } from '@tfd/domain';
-import { bannerEndpoints } from '../endpoints/banners';
+import { bannerEndpoints, type ServedBannerRow } from '../endpoints/banners';
+import { paginate, type MutationAck, type StatusAck } from '../api/adapters';
 import { ApiError } from '../api/errors';
 
 /** The app's allowlist, run before the save. Throws what the server would answer. */
@@ -88,13 +89,58 @@ function assertWindowUsable(startsAt: string | undefined, endsAt: string | null 
   }
 }
 
-export const bannerRepository = {
-  list: (query: BannerQuery = {}): Promise<Paged<BannerListItem>> =>
-    bannerEndpoints.list({ page: 0, pageSize: 25, ...query }),
+/**
+ * One served row into the grid row the console renders.
+ *
+ * Three things happen here and each is a gap being papered over rather than a preference:
+ * `headline` becomes `title`, `imageUrl` becomes the `hasImage` boolean the grid actually
+ * uses, and `staleLanguages` is filled in as empty because the API does not compute it
+ * (gap **G-08**).
+ *
+ * That last one is the one to keep an eye on. An empty `staleLanguages` renders as *"no
+ * translation is out of date"*, which is a claim rather than an absence — and AC-08 is
+ * precisely about copy that was translated and then left behind by a correction. The
+ * console cannot work it out either: it would need each translation's `updatedAt`, and
+ * the row carries one timestamp for the whole banner.
+ */
+function toBannerListItem(row: ServedBannerRow): BannerListItem {
+  return {
+    id: row.id,
+    title: row.headline,
+    status: row.status,
+    window: row.window,
+    startsAt: row.startsAt,
+    endsAt: row.endsAt,
+    hasImage: Boolean(row.imageUrl),
+    updatedAt: row.updatedAt,
+    // The API sends `publishedByName`, never an editor's name. `''` rather than a
+    // fabricated one — the column renders blank, which is true.
+    updatedByName: row.publishedByName ?? '',
+    missingLanguages: row.missingLanguages,
+    staleLanguages: [],
+  };
+}
 
+export const bannerRepository = {
+  /**
+   * **Filtered and paged here** — `GET /admin/banners` answers with every banner of this
+   * factory in one array (gap **G-09**). `q` is applied locally against the headline,
+   * because the API has no search on this resource at all and a banner list is short.
+   */
+  list: async (query: BannerQuery = {}): Promise<Paged<BannerListItem>> => {
+    const rows = await bannerEndpoints.list(query);
+    const needle = query.q?.trim().toLowerCase();
+    const items = rows
+      .map(toBannerListItem)
+      .filter((row) => (needle ? row.title.toLowerCase().includes(needle) : true));
+
+    return paginate(items, { page: query.page ?? 0, pageSize: query.pageSize ?? 25 });
+  },
+
+  /** ⚠ 404s until the API implements it — see `bannerEndpoints.get` (gap **G-08**). */
   get: (id: string): Promise<AdminPromoBanner> => bannerEndpoints.get(id),
 
-  create: async (body: BannerDraft): Promise<AdminPromoBanner> => {
+  create: async (body: BannerDraft): Promise<StatusAck> => {
     assertActionUsable(body.action);
     assertWindowUsable(body.startsAt, body.endsAt);
 
@@ -110,10 +156,26 @@ export const bannerRepository = {
       });
     }
 
-    return bannerEndpoints.create({ ...body, translations });
+    /**
+     * The **fallback language's copy travels flat**, not in a `translations` array.
+     *
+     * `POST /admin/banners` reads `title`, `body` and `buttonLabel` off the top level and
+     * writes them as the English translation; it has no `translations` field, and zod
+     * strips what it does not recognise — so a body carrying the array alone created a
+     * banner with no copy at all, and the create succeeded. The other languages are saved
+     * afterwards through `saveTranslation`, one at a time, as they are for news.
+     */
+    const fallback = translations[0]!;
+    return bannerEndpoints.create({
+      ...body,
+      title: fallback.title,
+      body: fallback.body,
+      buttonLabel: fallback.buttonLabel,
+    } as unknown as BannerDraft);
   },
 
-  patch: async (id: string, body: BannerPatch): Promise<AdminPromoBanner> => {
+  /** ⚠ 404s until the API implements it (gap **G-08**). */
+  patch: async (id: string, body: BannerPatch): Promise<MutationAck> => {
     if (body.action) assertActionUsable(body.action);
     assertWindowUsable(body.startsAt, body.endsAt);
     return bannerEndpoints.patch(id, body);
@@ -123,12 +185,14 @@ export const bannerRepository = {
     id: string,
     lang: LanguageCode,
     body: BannerTranslationBody,
-  ): Promise<AdminPromoBanner> => bannerEndpoints.saveTranslation(id, lang, parseTranslation(body)),
+  ): Promise<MutationAck> => bannerEndpoints.saveTranslation(id, lang, parseTranslation(body)),
 
+  /** ⚠ 404s until the API implements it (gap **G-08**). */
   preview: (id: string, lang: LanguageCode): Promise<ContentPreview> =>
     bannerEndpoints.preview(id, lang),
 
-  publish: (id: string): Promise<AdminPromoBanner> => bannerEndpoints.publish(id),
-  unpublish: (id: string): Promise<AdminPromoBanner> => bannerEndpoints.unpublish(id),
-  archive: (id: string): Promise<AdminPromoBanner> => bannerEndpoints.archive(id),
+  publish: (id: string): Promise<StatusAck> => bannerEndpoints.publish(id),
+  unpublish: (id: string): Promise<StatusAck> => bannerEndpoints.unpublish(id),
+  /** ⚠ 404s until the API implements it (gap **G-08**). */
+  archive: (id: string): Promise<StatusAck> => bannerEndpoints.archive(id),
 };

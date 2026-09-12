@@ -88,8 +88,6 @@ export const en = {
   'shell.skipToContent': 'Skip to content',
   'shell.degradedConfig':
     'Could not reach the factory configuration — showing bundled defaults. Branding and feature flags may be out of date.',
-  'shell.mockBanner':
-    'Mock data. Nothing here is a real record, and nothing is saved past a page reload.',
   /* The accessible name of the language pill. The options inside it are *not*
      translated — see i18n/languages.ts for why. */
   'shell.language': 'Language',
@@ -141,12 +139,6 @@ export const en = {
   'auth.forgotPassword': 'Forgotten your password?',
   'auth.forgotPasswordHint':
     'Ask your factory administrator to reset it. The console cannot email a reset link.',
-  'auth.demoCredentials': 'Mock sign-in',
-  'auth.demoRole.clerk': 'Clerk — change requests, suppliers',
-  'auth.demoRole.manager': 'Manager — approves credit and change requests',
-  'auth.demoRole.editor': 'Editor — writes news and static content',
-  'auth.demoRole.factoryAdmin': 'Factory admin — publishes content',
-  'auth.demoRole.factorySystem': 'Factory system — records leaf, rates and payouts',
 
   /* ────────────────────────────── dashboard ────────────────────────────── */
   'dashboard.title': 'Dashboard',
@@ -170,6 +162,7 @@ export const en = {
   'month.stage.billsGenerated': 'Bills generated',
   'month.stage.published': 'Published',
 
+  'dashboard.figureUnavailable': 'The API is not reporting this figure yet.',
   'dashboard.queue.changeRequests': 'Change requests',
   'dashboard.queue.advanceRequests': 'Advances',
   'dashboard.queue.loanRequests': 'Loans',
@@ -332,7 +325,7 @@ export const en = {
     'This is the only time it is shown. Close this and it is gone — you would have to create another one.',
   'suppliers.resetPassword.oneTime':
     'The supplier has to choose their own password the first time they sign in with this, so it stops working once they do. Until then, anyone holding it can sign in as them.',
-  'suppliers.resetPassword.recorded': 'Recorded against {{name}}, {{when}} · audit {{audit}}.',
+  'suppliers.resetPassword.recordedBy': 'Recorded against {{name}}, {{when}}.',
   'suppliers.resetPassword.sessionsEnded': '{{count}} open sessions were ended.',
   'suppliers.resetPassword.done': 'I have written it down',
 
@@ -1250,6 +1243,12 @@ export const en = {
     'You cannot change your own roles. Ask another administrator — this is what stops somebody locking themselves out halfway through a job.',
   'users.created': '{{name}} can now sign in',
   'users.createdHint': 'Tell them their password. It is all they need to sign in.',
+  'users.passwordLabel': 'First password',
+  'users.passwordOnce':
+    'This password is shown once. Write it down before closing — it cannot be read again.',
+  'users.passwordHandover':
+    'Give it to {{name}}. They sign in with {{email}} and this password, and should change it.',
+  'users.passwordDone': 'I have written it down',
   'users.confirmCreateBody': 'This will create a new console account with the selected roles.',
   'users.confirmEditBody': 'This will update the account details and access for this user.',
   'users.createFailed': 'The user was not created',

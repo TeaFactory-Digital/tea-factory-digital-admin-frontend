@@ -102,8 +102,6 @@ export const si: Record<TranslationKey, string> = {
   'shell.skipToContent': 'අන්තර්ගතයට යන්න',
   'shell.degradedConfig':
     'කර්මාන්තශාලා වින්‍යාසයට සම්බන්ධ විය නොහැකි විය — ඇතුළත් කර ඇති පෙරනිමි අගයන් පෙන්වයි. සන්නාමය සහ විශේෂාංග යාවත්කාලීන නොවිය හැක.',
-  'shell.mockBanner':
-    'ආදර්ශ දත්ත. මෙහි කිසිවක් සැබෑ වාර්තාවක් නොවේ, පිටුව නැවත පූරණය කළ පසු කිසිවක් ඉතිරි නොවේ.',
   /* The accessible name of the language pill. The options inside it are *not*
      translated — see i18n/languages.ts for why. */
   'shell.language': 'භාෂාව',
@@ -155,12 +153,6 @@ export const si: Record<TranslationKey, string> = {
   'auth.forgotPassword': 'මුරපදය අමතක වුණාද?',
   'auth.forgotPasswordHint':
     'එය නැවත සැකසීමට ඔබේ කර්මාන්තශාලා පරිපාලකගෙන් ඉල්ලා සිටින්න. කොන්සෝලයට නැවත සැකසීමේ සබැඳියක් තැපැල් කළ නොහැක.',
-  'auth.demoCredentials': 'ආදර්ශ පිවිසුම',
-  'auth.demoRole.clerk': 'ලිපිකරු — වෙනස් කිරීමේ ඉල්ලීම්, සැපයුම්කරුවන්',
-  'auth.demoRole.manager': 'කළමනාකරු — ණය සහ වෙනස් කිරීමේ ඉල්ලීම් අනුමත කරයි',
-  'auth.demoRole.editor': 'සංස්කාරක — පුවත් සහ ස්ථිර පිටු ලියයි',
-  'auth.demoRole.factoryAdmin': 'කර්මාන්තශාලා පරිපාලක — අන්තර්ගතය ප්‍රකාශයට පත් කරයි',
-  'auth.demoRole.factorySystem': 'කර්මාන්තශාලා පද්ධතිය — දළු, මිල සහ ගෙවීම් වාර්තා කරයි',
 
   /* ────────────────────────────── dashboard ────────────────────────────── */
   'dashboard.title': 'උපකරණ පුවරුව',
@@ -184,6 +176,7 @@ export const si: Record<TranslationKey, string> = {
   'month.stage.billsGenerated': 'බිල්පත් සාදා ඇත',
   'month.stage.published': 'ප්‍රකාශයට පත් කර ඇත',
 
+  'dashboard.figureUnavailable': 'API තවම මෙම අගය වාර්තා නොකරයි.',
   'dashboard.queue.changeRequests': 'වෙනස් කිරීමේ ඉල්ලීම්',
   'dashboard.queue.advanceRequests': 'අත්තිකාරම්',
   'dashboard.queue.loanRequests': 'ණය',
@@ -344,7 +337,7 @@ export const si: Record<TranslationKey, string> = {
     'මෙය පෙන්වන එකම අවස්ථාව මෙයයි. මෙය වසා දැමුවහොත් එය නැති වේ — ඔබට තවත් එකක් සෑදීමට සිදු වේ.',
   'suppliers.resetPassword.oneTime':
     'මෙයින් පළමු වරට පිවිසෙන විට සැපයුම්කරු තමන්ගේම මුරපදයක් තෝරාගත යුතුය, එබැවින් ඔවුන් එසේ කළ පසු මෙය ක්‍රියා විරහිත වේ. ඒ දක්වා, එය දරන ඕනෑම කෙනෙකුට ඔවුන් ලෙස පිවිසිය හැක.',
-  'suppliers.resetPassword.recorded': '{{name}} ට එරෙහිව සටහන් විය, {{when}} · විගණනය {{audit}}.',
+  'suppliers.resetPassword.recordedBy': '{{name}} ට එරෙහිව සටහන් විය, {{when}}.',
   'suppliers.resetPassword.sessionsEnded': 'විවෘත සැසි {{count}}ක් අවසන් කරන ලදී.',
   'suppliers.resetPassword.done': 'මම එය ලියාගත්තා',
 
@@ -1249,6 +1242,12 @@ export const si: Record<TranslationKey, string> = {
     'ඔබට ඔබේම භූමිකා වෙනස් කළ නොහැක. වෙනත් පරිපාලකයෙකුගෙන් ඉල්ලන්න — කාර්යයක් අඩකින් නවත්වා යමෙකු තමාවම අවහිර කර ගැනීම නවත්වන්නේ මෙයයි.',
   'users.created': '{{name}} දැන් පිවිසිය හැක',
   'users.createdHint': 'ඔවුන්ගේ මුරපදය ඔවුන්ට කියන්න. පිවිසීමට අවශ්‍ය වන්නේ එය පමණි.',
+  'users.passwordLabel': 'පළමු මුරපදය',
+  'users.passwordOnce':
+    'මෙම මුරපදය පෙන්වන්නේ එක් වරක් පමණි. වැසීමට පෙර එය ලියාගන්න — නැවත කියවිය නොහැක.',
+  'users.passwordHandover':
+    '{{name}} ට එය දෙන්න. ඔවුන් {{email}} සහ මෙම මුරපදය සමඟ පිවිසෙන අතර එය වෙනස් කළ යුතුය.',
+  'users.passwordDone': 'මම එය ලියාගත්තා',
   'users.confirmCreateBody': 'තෝරාගත් භූමිකා සමඟ නව කොන්සෝල ගිණුමක් සාදනු ලැබේ.',
   'users.confirmEditBody': 'මෙම පරිශීලකයාගේ ගිණුම් විස්තර සහ ප්‍රවේශය යාවත්කාලීන කරනු ලැබේ.',
   'users.createFailed': 'පරිශීලකයා සාදනු ලැබුවේ නැත',

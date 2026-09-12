@@ -164,10 +164,14 @@ describe('M11 news', () => {
     // Re-saving that language clears it, which is the whole workflow: the editor is told
     // what is behind, fixes it, and the flag goes away.
     const lang = article.staleLanguages[0]!;
-    const updated = await newsRepository.saveTranslation(article.id, lang, {
+    await newsRepository.saveTranslation(article.id, lang, {
       title: article.translations[lang]!.title,
       body: 'Re-translated after the English correction.',
     });
+
+    // Read back: a save acknowledges with `{ id }` (gap **G-11**), and the gap
+    // recomputation is a property of the record rather than of the write.
+    const updated = await newsRepository.get(article.id);
     expect(updated.staleLanguages).not.toContain(lang);
   }, 20_000);
 
@@ -211,7 +215,10 @@ describe('M11 news', () => {
     // Created as a draft — nothing reaches a supplier by being written.
     expect(created.status).toBe('draft');
     expect(created.slug).toBe('weighing-hours-change-from-monday');
-    expect(created.missingLanguages).toEqual(expect.arrayContaining(['si', 'ta']));
+
+    // The gaps are on the record, not on the create acknowledgement (gap **G-11**).
+    const draft = await newsRepository.get(created.id);
+    expect(draft.missingLanguages).toEqual(expect.arrayContaining(['si', 'ta']));
 
     /**
      * Publishing with gaps is **allowed**, and that is the AC-08 policy rather than a
@@ -220,7 +227,10 @@ describe('M11 news', () => {
      */
     signOut();
     await signInAs(ADMIN);
-    const published = await newsRepository.publish(created.id);
+    const ack = await newsRepository.publish(created.id);
+    expect(ack.status).toBe('published');
+
+    const published = await newsRepository.get(created.id);
     expect(published.status).toBe('published');
     expect(published.missingLanguages).toEqual(expect.arrayContaining(['si', 'ta']));
 
@@ -375,17 +385,20 @@ describe('M12 static content', () => {
     const before = await staticPageRepository.list();
     const target = before.find((page) => page.status === 'draft')!.slug;
 
-    const saved = await staticPageRepository.saveTranslation(target, 'en', {
+    await staticPageRepository.saveTranslation(target, 'en', {
       title: 'Credit terms',
       body: 'Advances are settled against the account for the month they were taken in.',
     });
     // Saving does not publish: the page has never been live, so the app is still showing
     // its bundled default until somebody decides otherwise.
-    expect(saved.status).toBe('draft');
+    expect((await staticPageRepository.get(target)).status).toBe('draft');
 
     signOut();
     await signInAs(ADMIN);
-    const published = await staticPageRepository.publish(target);
+    const ack = await staticPageRepository.publish(target);
+    expect(ack.status).toBe('published');
+
+    const published = await staticPageRepository.get(target);
     expect(published.status).toBe('published');
     expect(published.publishedByName).toBeTruthy();
 

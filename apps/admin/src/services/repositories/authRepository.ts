@@ -8,8 +8,8 @@
  * mock layer).
  */
 
-import { resolveGrants, type AuthSession } from '@tfd/domain';
-import { authEndpoints } from '../endpoints/auth';
+import { resolveGrants, type AuthSession, type CapabilityGrants, type ConsoleRole } from '@tfd/domain';
+import { authEndpoints, type MeResponse } from '../endpoints/auth';
 
 /**
  * Fill in grants the server did not send.
@@ -28,7 +28,16 @@ export const authRepository = {
     return hydrate(result.session);
   },
 
-  refresh: () => authEndpoints.refresh(),
+  /**
+   * Rotate, and take the whole session back.
+   *
+   * Hydrated like `login` is, and for the same reason: the grants the API sends are
+   * authoritative where it speaks, and the shipped §12.1 matrix fills what it leaves out.
+   * A rotation that returned an un-hydrated session would quietly narrow a clerk's
+   * console fifteen minutes after they signed in, which is the hardest kind of permission
+   * bug to reproduce.
+   */
+  refresh: async (): Promise<AuthSession> => hydrate(await authEndpoints.refresh()),
 
   /**
    * Sign-out never rejects.
@@ -45,8 +54,17 @@ export const authRepository = {
     }
   },
 
-  me: async () => {
+  /**
+   * The session as the API describes it, without rotating anything.
+   *
+   * **Not used on bootstrap** — `refresh` above already answers with the user and the
+   * grants, so asking again would be a second round trip for a payload the console is
+   * already holding. It is kept because it is the only way to re-read grants *without*
+   * spending a refresh token, and because `roles` is all it needs from the thin identity
+   * the endpoint returns (gap **G-03**).
+   */
+  me: async (): Promise<{ user: MeResponse['user']; grants: CapabilityGrants }> => {
     const { user, grants } = await authEndpoints.me();
-    return { user, grants: resolveGrants(user.roles, grants) };
+    return { user, grants: resolveGrants(user.roles as ConsoleRole[], grants) };
   },
 };
