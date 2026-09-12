@@ -6,44 +6,71 @@
 Redis in Docker, `npm run setup`, a `galaboda` tenant, a `factoryAdmin`, a clerk and a
 supplier with an app account.
 
-Every status below is **what the wire did**, not what a commit message said. Both
-frontends are integrated against this API and their tests pass against it.
+**This file lists only what is still open.** Every status is what the wire actually did,
+not what a commit message said. Both frontends are integrated against this API and their
+suites pass against it — with one caveat about the console suite's flakiness, recorded at
+the end.
+
+> **Removed rather than marked closed:** the eleven console gaps `901deaf` fixed — G-04,
+> G-06, G-08, G-10, G-12, G-14, G-15, G-16, G-17, G-19 and the `ceilingSeen` defect — are
+> gone from this file. So is G-29, an app-side bug found while re-testing (a password floor
+> of 4 against the API's 8) and fixed in the app. All of it is in this file's git history
+> if the reasoning is ever needed.
 
 ---
 
-# ▸ Part 1 — what is still open
-
-Eleven items. One is a crash, three stop a supplier completing a request, and the rest are
-shape differences the apps have adapted to.
+## What is still open
 
 | | Gap | Realm | What it costs today |
 |---|---|---|---|
 | 🔴 | **G-12a** dashboard `500`s on any change request | console | **The landing page is down** once a factory has real data |
 | 🔴 | **G-28** bank-details change needs codes; `/config` serves names | app | A supplier cannot correct the account their money is paid into |
-| 🔴 | **G-20** `POST /manure-requests` needs a rupee `amount` | app | Priced client-side now, but the app should not be the one pricing |
-| 🟠 | **G-27** two change-request bodies read different fields | app | **The address change is still accepted empty** — silent |
-| 🟠 | **G-29** password minimum 4 vs 8 | app | *Fixed app-side.* Listed so the two floors get reconciled |
-| 🟠 | **G-23** loan reads `repaymentMonths` | app | Renamed at the app's seam; was a silent strip |
+| 🟠 | **G-27** two change-request bodies read different fields | app | **The address change is accepted empty** — silent, no error either side |
+| 🟠 | **G-20** `POST /manure-requests` needs a rupee `amount` | app | Priced client-side now, but the app should not be the one pricing |
+| 🟠 | **G-23** loan reads `repaymentMonths`, app says `installmentMonths` | app | Renamed at the app's seam; was a silent strip |
 | 🟡 | **G-21** one eligibility shape, app expected three | app | Adapted. `interest` has no source at all |
 | 🟡 | **G-22** `/savings/summary` is a withdrawal view | app | Adapted |
 | 🟡 | **G-24** `/tea-packets/info` sends no month count | app | Derived from a second call |
 | 🟡 | **G-25** `null` served as an empty body | app | Adapted at both call sites |
 | 🟡 | **G-26** `/bills/{month}` 404s where the app expects `null` | app | Adapted |
 
-**Open but no change requested:** **G-05** (bank reveal stays minimal — right call),
-**G-11** (`{ id }` acks — the console refetches anyway), **G-09** *(partly — `/admin/users`
-and `/admin/banners` are still bare arrays, fine at office scale)*, **G-01**, **G-13**,
-**G-18**.
-
-**Deferred by your decision, and agreed:** **G-02** (needs a product decision),
-**G-03** (console no longer calls `/me`), **G-07** (decide once for news and banners).
+Only the first two need work before the apps are usable. The rest are shape disagreements
+the frontends have absorbed — listed so the wire and the shared types can be reconciled,
+not because anything is broken.
 
 ### The single highest-value change
 
 **`.strict()` on `supplier-app/requests.controller.ts`.** You adopted it for the console
-realm and it closed G-19. The supplier realm has not got it, and that is the only reason
-**G-27**'s address change is still accepted with nothing in it — `201`, no error on either
-side, and the office approves a change to nothing.
+realm and it closed the silent inquiry-close bug. The supplier realm has not got it, and
+that is the only reason **G-27**'s address change is still accepted with nothing in it —
+`201`, no error on either side, and the office approves a change to nothing.
+
+### Open, and no change requested
+
+Recorded so the shared types can be reconciled one day, not as work:
+
+- **G-05** — bank reveal answers `{ accountNumber, auditId }` and stays minimal. The right
+  call for the one endpoint that hands over an account number; the console passes bank and
+  branch in from the record it already has.
+- **G-11** — mutations acknowledge with `{ id }`. The console invalidates and refetches
+  anyway, and its types now say so.
+- **G-09** *(partly)* — the notification log is paged; `/admin/users` and `/admin/banners`
+  are still bare arrays. Fine at office scale, where both lists are small by construction.
+- **G-01** — no `POST /admin/suppliers`. The register is replicated from the factory's own
+  system and no v2 screen creates one.
+- **G-13** — deliveries, months, rates and payouts unimplemented. Cut from this console
+  deliberately; the factory's own system runs them.
+- **G-18** — `GET /config` sends `slug` and `factoryId` where `RuntimeConfig` says
+  `tenantId`. The console resolves the tenant from the subdomain, so nothing breaks.
+
+### Deferred by your decision, and agreed
+
+- **G-02** — `POST /admin/users` requires a password `ConsoleUserDraft` has no field for.
+  *"Needs a product decision, not code."* The console mints one and prints it once.
+- **G-03** — `GET /admin/auth/me` returns a thin identity. The console bootstraps from
+  refresh and no longer calls it, so there is no reader to serve.
+- **G-07** — news and banner create read a flat body where the shared drafts carry
+  `translations`. *"Should be decided once for both resources."*
 
 ---
 
@@ -136,7 +163,41 @@ what the app already holds.
 
 ---
 
-## 🔴 G-20 — Manure requests need a price the app was never given
+## 🟠 G-27 — Two change-request bodies read fields the app does not send
+
+`POST /change-requests` is a discriminated union, and two of its four arms disagree with
+the app. Observed on a live server:
+
+| Type | App sent | API reads | Result |
+|---|---|---|---|
+| `savingsRate` | `savingsPerKg` | `savingsPerKg` | ✅ correct |
+| `paymentMethod` | `method` | **`paymentMethod`** | `422 invalid` — loud |
+| `address` | `address: { homeAddress }` | **`homeAddress`** (top level) | **`201` — silent** |
+| `bankDetails` | *(names)* | *(codes)* | `422` — see **G-28** |
+
+**The `address` row is the serious one.** Both address fields are *optional* in the
+schema, so the nested object was stripped and the request was **accepted** with nothing in
+it. The row the office received:
+
+```json
+{ "type": "address", "status": "pending",
+  "currentSummary":   "Home: No 12, Temple Road · Estate: Lot 4, Upper Division",
+  "requestedSummary": "Home: No 12, Temple Road · Estate: Lot 4, Upper Division" }
+```
+
+Identical summaries. A clerk approves a change to nothing, the supplier's address never
+moves, and neither side sees an error. It is the same class of failure as the console's
+inquiry-close bug — which `901deaf` fixed — and the same one-line change prevents it:
+**`.strict()` on the schema**, so an unknown key is a `422` instead of a silent strip.
+
+**One thing the API gets right and the app was duplicating:** it composes `currentSummary`
+and `requestedSummary` itself. The app was sending its own, which is wrong — "current"
+means whatever the database says when the request is filed, and an app open since
+breakfast describes a value the office changed an hour ago. The app no longer sends them.
+
+---
+
+## 🟠 G-20 — Manure requests need a price the app was never given
 
 `POST /manure-requests` requires `amount` — the **value in rupees**, not the weight. The
 app asks for a product and a quantity in kilos, so the call was refused outright:
@@ -164,87 +225,17 @@ app's catalogue is a few hours stale.
 
 ---
 
-## 🟠 G-27 — Two change-request bodies read fields the app does not send
-
-`POST /change-requests` is a discriminated union, and two of its four arms disagree with
-the app. Observed on a live server:
-
-| Type | App sent | API reads | Result |
-|---|---|---|---|
-| `savingsRate` | `savingsPerKg` | `savingsPerKg` | ✅ correct |
-| `paymentMethod` | `method` | **`paymentMethod`** | `422 invalid` — loud |
-| `address` | `address: { homeAddress }` | **`homeAddress`** (top level) | **`201` — silent** |
-| `bankDetails` | *(names)* | *(codes)* | `422` — see **G-28** |
-
-**The `address` row is the serious one.** Both address fields are *optional* in the
-schema, so the nested object was stripped and the request was **accepted** with nothing in
-it. The row the office received:
-
-```json
-{ "type": "address", "status": "pending",
-  "currentSummary":   "Home: No 12, Temple Road · Estate: Lot 4, Upper Division",
-  "requestedSummary": "Home: No 12, Temple Road · Estate: Lot 4, Upper Division" }
-```
-
-Identical summaries. A clerk approves a change to nothing, the supplier's address never
-moves, and neither side sees an error. This is the same class of failure as **G-19**'s
-`closureNote` in the console, and the same one-line fix prevents it: **`.strict()` on the
-schema**, so an unknown key is a `422` instead of a silent strip.
-
-**One thing the API gets right and the app was duplicating:** it composes `currentSummary`
-and `requestedSummary` itself. The app was sending its own, which is wrong — "current"
-means whatever the database says when the request is filed, and an app open since
-breakfast describes a value the office changed an hour ago. The app no longer sends them.
-
----
-
-## 🟠 G-29 — The app let a supplier choose a password the API refuses
-
-**Found in round 2, and it is the app's bug rather than the API's.**
-
-The API requires **8 characters** on both password endpoints — `POST /auth/initial-password`
-and `POST /profile/password` — and has since before this pull:
-
-```ts
-const initialPasswordSchema = z.object({ next: z.string().min(8).max(200) });
-const changePasswordSchema  = z.object({ current: …, next: z.string().min(8).max(200) });
-```
-
-The app enforced **4**, in four places: `MIN_PASSWORD_LENGTH`, `PasswordResetScreen`,
-`ChangePasswordScreen`, and the copy *"Password must be at least 4 characters"* in all three
-languages.
-
-So a supplier choosing a five-character password passed every check the app makes and was
-refused by the server:
-
-```
-POST /auth/initial-password  {"next":"abcde"}
-  → 422 {"code":"invalid","details":{"field":"password","minLength":8}}
-```
-
-The form said nothing was wrong, and the error that came back did not say what was — on the
-one screen a supplier cannot skip, because BR-008 holds them there until the password is
-changed.
-
-**Fixed in the app**: the floor is 8 everywhere and the copy now says so in si/en/ta. The
-rule is that the app's minimum must never be *lower* than the server's — higher would be
-defensible, lower is a rule the supplier only discovers by failing it.
-
-**No backend change requested.** Noted because the two floors are written down in two
-places and nothing checks that they agree; `MIN_PASSWORD_LENGTH` belongs in `@tfd/domain`
-where the credential constants already live.
-
----
-
 ## 🟠 G-23 — Loans lost their repayment term on the wire
 
 The app sends `installmentMonths`; `POST /loans` reads **`repaymentMonths`**. zod strips
 the unknown key rather than refusing it, so the loan was accepted — `201` — **with no
 repayment term at all**, and the office had to telephone the supplier to ask.
 
-Renamed at the app's endpoint seam. But this is the third silent strip in this document
-(**G-19**, **G-27**, **G-23**), and they share one cause: **no schema on this API is
-`.strict()`**. See the note at the end of this section.
+Renamed at the app's endpoint seam, so nothing is broken today. It is listed because it is
+the same silent-strip shape as **G-27** and as the console's inquiry-close bug, and they
+share one cause: **`.strict()` has not reached the supplier realm's schemas.** A client
+sending a field under a name the server does not read gets a `201` and loses the thing the
+request was about.
 
 ---
 
@@ -339,56 +330,7 @@ still surfaces rather than showing an empty screen. Worth making the two endpoin
 
 ---
 
-## ⚠️ Why three of these were silent — and the one change that fixes the rest
-
-`closureNote` (**G-19**), the address change (**G-27**) and the loan's repayment term
-(**G-23**) were the same failure three times: the client sent a field under a name the
-server did not read, zod **stripped it silently**, and the request was **accepted** —
-`200` or `201` — having lost the thing it was about. No error reached either side.
-
-**`901deaf` adopted `.strict()` for the console realm** (`admin`, `content`, `queues`,
-`profile`) and G-19 is closed as a result. It is the right fix.
-
-**It has not reached `supplier-app/requests.controller.ts`.** That is the last silent one:
-the address change is still accepted with nothing in it, because both address fields are
-optional and the app's nested object is stripped on the way in.
-
----
-
-# ▸ Part 2 — closed, for the record
-
-Eleven console items closed in `901deaf`, including all four blockers. Kept as one line
-each — what it was, and how it was verified closed — because a closed gap's reasoning is
-what stops it reopening. Nothing here is an action.
-
-| Gap | Was | Verified closed by |
-|---|---|---|
-| **G-14** refresh cookie path | Cookie scoped `/v1/auth`; the console calls `/v1/admin/auth/refresh`, so **nobody could stay signed in** | Cookie is per-realm. Chromium: sign in → reload ×3 → Dashboard every time, one `200` refresh each |
-| **G-16** `/admin/config` partial | No `tenantId`, `factory` or `collectionPoints`; the Configuration screen threw on `collectionPoints.map` | All three arrive. The console's second fetch is deleted |
-| **G-08** banners half-built | No `GET`/`PATCH`/`preview`/`archive` for one banner; the editor could not load | All four serve on a real record; `GET` carries `translations`; list row uses `title` and carries `staleLanguages`. The skipped editor test runs again |
-| **G-06** no queue detail route | Three queues had a list and no `GET …/{id}`; the console swept the list | All three serve. `findByIdAcross` deleted |
-| **G-15** reports bare array | No `months`, so the picker was empty | `{ reports, months }` |
-| **G-10** roles `updatedByName` | Stored and not sent | Sent |
-| **G-04** credential reset thin | No `issuedAt` / `issuedByName` / `auditId`; the dialog guessed the actor | Full `SupplierCredentialReset` |
-| **G-17** setup | Four failures before the API would boot; no tenant to sign in as | `npm run setup` works from the documented commands; `db:seed:dev` prints credentials |
-| **G-19** `closureNote` | API read `closureNote`, shared type said `note`; zod stripped it and **the close succeeded with the reason gone** | Back to `note` **and `.strict()`**. `{closureNote}` → `422`, `{note}` → `200` |
-| `ceilingSeen` | Dropped on credit decisions, so BR-310's `stale-eligibility` was unreachable | Accepted and passed to `decide` |
-| **G-12** dashboard shape | Counts not records, no `app`, `content` was two counts | `QueueCount[]`, `AppAdoption`, `ContentHealth` all correct — **except `adoptionTrend`, which is now G-12a** |
-
-### One thing that needed a change on our side
-
-Fixing **G-14** exposed a bug in the *console*: `App` calls `bootstrap()` from an effect,
-React `StrictMode` invokes effects twice, and the refresh token is single-use — so two
-rotations raced, the second was read as **reuse**, and the API revoked the family. Every
-reload signed the clerk out. It could not have shown up before, because refresh never
-succeeded. The console's `authStore` now shares one in-flight rotation. Nothing is needed
-on the backend; recorded because the supplier realm can hit the same shape of bug.
-
----
-
-## Local setup — now just the documented commands
-
-**G-17 closed this.** The whole sequence is:
+## Local setup
 
 ```bash
 # backend
@@ -405,65 +347,41 @@ npm run dev                 # -> http://localhost:5273
 Verified from these commands only, on a clean database.
 
 **Both frontends talk only to the real API.** The console's in-browser mock and the mobile
-app's fixture layer are both gone from the runtime; their fixtures survive for the test
-suites alone and answer exactly what your handlers answer — `/status` endpoints, thin
-`{ id }` acknowledgements, the paged notification log, the `.strict()` refusal on inquiry
-close. A green test run means the frontends agree with *this* API, not an idealised one.
+app's fixture layer are gone from the runtime; their fixtures survive for the test suites
+alone and answer exactly what your handlers answer. A green test run means the frontends
+agree with *this* API, not an idealised one.
 
 ---
 
-## What was verified, and how
-
-Against backend `901deaf` on a live server, seeded with `npm run setup` plus a supplier
-and a clerk.
+## How each open item was reproduced
 
 | Checked | Result |
 |---|---|
-| `npm run setup` from the documented commands | works end to end — **G-17** |
-| Login → cookie `Path` | `/v1/admin/auth`, per realm — **G-14** |
-| `POST /admin/auth/refresh` with browser cookie rules | `200` — was `401` |
-| Chromium: sign in → reload ×3 | Dashboard every time, **one** refresh per reload, all `200` |
-| 11 console screens against the live API | all render, no errors, no error boundary |
 | `GET /admin/dashboard`, 3 change requests | **`500` — G-12a** |
-| `GET /admin/dashboard`, 0 change requests | `200`, correct `QueueCount[]` / `app` / `content` |
-| Banner `GET` / `PATCH` / `preview` / `archive` on a real record | all serve; `GET` carries `translations` |
-| Queue detail ×3 | all serve |
-| `close` with `{ closureNote }` / with `{ note }` | `422` / `200` — the reversal is real |
-| Supplier realm, 11 gap probes | G-20 – G-28 all unchanged |
-| **Mobile: all 21 read repositories, driven live** | every one returns the shape its screen expects |
-| **Mobile: 6 write paths, driven live** | all reach the domain layer — `loan-history-short`, `manure-history-short`, `advance-over-limit`, `tea-packet-policy`, `change-pending`, one accepted. **No `invalid` anywhere** |
-| `PATCH /profile` against its `.strict()` schema | `200` — the app sends exactly the five fields it allows |
-| `GET`/`PUT`/`PATCH`/`DELETE /devices` | 200 / 200 / 200 / 204 |
-| `POST /auth/refresh` (supplier, body-based) | rotates; unaffected by the console's cookie fix |
-| `POST /auth/initial-password` with 5 characters | `422` — **G-29**, fixed in the app |
+| `GET /admin/dashboard`, 0 change requests | `200` — the crash is data-dependent |
+| `POST /change-requests` `{type:'address', address:{…}}` | **`201`, summaries identical — G-27** |
+| `POST /change-requests` `{type:'paymentMethod', method:…}` | `422 invalid` — G-27 |
+| `POST /change-requests` `{type:'bankDetails', …names}` | `422 invalid` — G-28 |
+| `POST /manure-requests` without `amount` | `422 invalid` — G-20 |
+| `GET /bills/current`, `GET /banners/active` | `200` with `Content-Length: 0` — G-25 |
+| `GET /bills/2026-07` with no bill | `404 not-found` — G-26 |
+| `/savings/summary` · `/tea-packets/info` · `/advances/eligibility` | shapes recorded in G-22, G-24, G-21 |
 
-**Console:** typecheck clean, lint clean, **403 tests passing, none skipped** (the banner
-editor test is back), production build clean.
+**State of both frontends against this API.** Console: typecheck clean, lint clean,
+production build clean, and all 11 screens walked in Chromium with no failed API calls.
+Mobile: typecheck clean, 140 tests passing, and all 21 read repositories plus 6 write paths
+driven live — every write reaches the domain layer, none returns `invalid`.
 
-**Mobile:** typecheck clean, **140 tests passing**, and **re-run live against `901deaf`** —
-21 read repositories and 6 write paths. Nothing in the pull broke it: the supplier realm
-uses body-based refresh tokens, so the cookie fix does not touch it, and the app already
-sent exactly the five fields `PATCH /profile`'s `.strict()` schema allows.
+> **One caveat on the console suite.** All 403 tests pass, but not on every run: it is
+> flaky, producing anywhere from 0 to 19 failures on *identical* code. Every failure is a
+> **timeout** — either at a `signInAs(…)` line or `[vitest-worker]: Timeout calling
+> "fetch"` while a worker resolves `react-router-dom` — never a failed assertion. It is a
+> vite-node module-resolution problem, not a disagreement with this API, and it predates
+> the integration. Zeroing the mock's artificial latency under Vitest cut the worst case
+> from 19 failures to about 4; the rest needs separate work on the test setup. Flagged so
+> nobody reads a red run as a contract break.
 
-Its G-20 – G-28 adapters stay, because those gaps are unchanged. One app-side fix was made:
-**G-29**, the password minimum.
-
-### What the frontends changed to match
-
-**Console — workarounds deleted**, because the API no longer needs them: `findByIdAcross`
-(the queue list sweep), the second `GET /config` behind the Configuration screen, the
-`months: []` wrap on the report catalogue, the `updatedByName: null` fill, the client-side
-paging of the notification log, the `closureNote` rename, the credential-reset attribution
-guess, and the dashboard's two "not reported yet" placeholder cards. One thing added: a
-single-flight guard on the session rotation, for the reuse race that fixing **G-14**
-exposed.
-
-**Mobile — one fix**: the password floor raised from 4 to 8 to match the API (**G-29**),
-in one constant and the copy in si/en/ta. Its G-20 – G-28 adapters stay, because those
-gaps are unchanged.
-
-### Still not exercised
-
-Anything needing bill, savings-ledger, delivery or credit history. The seed creates a
-factory, a config row, collection points, an administrator and a supplier — and no money
-records at all, so those endpoints answered correctly but only over empty collections.
+**Not exercised:** anything needing bill, savings-ledger, delivery or credit history. The
+seed creates a factory, a config row, collection points, an administrator and a supplier —
+and no money records, so those endpoints answered correctly but only over empty
+collections.

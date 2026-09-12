@@ -971,8 +971,20 @@ function monthSummary(record: MonthRecord): MonthSummary {
 
 const nextId = () => String(++state.sequence);
 
-/** Latency worth having: it is what makes a missing loading state visible. */
-const LATENCY_MS = 180;
+/**
+ * Latency worth having **in a browser**: it is what makes a missing loading state visible.
+ *
+ * **Zero under Vitest**, and that is not a shortcut. Every handler awaits this, and a
+ * single assertion signs in, lists and acts — so 180 ms a call accumulates into seconds
+ * per test and the suite was timing out nondeterministically: the same code produced 0, 4,
+ * 9 and 19 failures on consecutive runs, every one of them `Test timed out in 30000ms`
+ * rather than a real assertion. A suite that fails differently each time is one nobody can
+ * read, and it hides the failures that mean something.
+ *
+ * The loading states it exists to expose are asserted directly where they matter, not by
+ * making every request slow.
+ */
+const LATENCY_MS = import.meta.env?.MODE === 'test' || process.env.VITEST ? 0 : 180;
 
 /* ──────────────────────────── M5 Bills helpers ──────────────────────────── */
 
