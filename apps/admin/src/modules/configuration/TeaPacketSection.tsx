@@ -8,10 +8,17 @@
  * `DEFAULT_TEA_PACKET_POLICY` — a real number, and not this factory's.
  *
  * Three fields, and the third is the one worth reading twice. `maxPacketsPerRequest` is a
- * **stock limit, not a credit limit**: it says how much of the store one supplier may take
- * at a time, which is why M18 has no eligibility working to show. Setting it to zero would
- * make every request refusable while the queue went on looking open, so it is refused
- * (`teaPacketPolicyProblems`) with the answer — turn the feature off instead.
+ * **stock limit, not a credit limit**: it says how much of the store one supplier may take,
+ * which is why M18 has no eligibility working to show. Setting it to zero would make every
+ * request refusable while the queue went on looking open, so it is refused
+ * (`teaPacketPolicyProblems`) with the answer, which is to turn the feature off instead.
+ *
+ * ⚠️ **The field is named per request and the allowance is per MONTH.** The factory has
+ * confirmed it, and the server enforces it monthly against a supplier's Colombo-month
+ * count. The stored name is unchanged because it is the name in `client_config` and on the
+ * wire, and renaming a column to settle a wording question is not worth a migration. The
+ * label and hint on this screen say month, because the person typing the number is setting
+ * a monthly allowance and the field name is not what they read.
  *
  * The line under the fields is the point of the screen, exactly as it is in
  * `ManureCatalogue`: **what a real request would put on a real account.** Somebody setting
@@ -113,7 +120,7 @@ export function TeaPacketSection(props: SectionProps) {
         </Field>
       </div>
 
-      <Field label={t('config.teaPackets.maxPerRequest')} hint={t('config.teaPackets.maxHint')}>
+      <Field label={t('config.teaPackets.maxPerMonth')} hint={t('config.teaPackets.maxHint')}>
         {({ id, describedBy }) => (
           <Input
             id={id}

@@ -45,12 +45,15 @@ export const userEndpoints = {
   /**
    * `409 email-taken` — the address is the identity, and two of them is two people.
    *
-   * **The API requires a `password`** and the domain's `ConsoleUserDraft` has no field
-   * for one (gap **G-02**): there is no invitation flow, so somebody's first credential
-   * is set by whoever creates the account. `userRepository` mints one rather than letting
-   * a dialog invent the policy.
+   * **`ConsoleUserDraft` carries the password now** (gap **G-02**, resolved). This used to
+   * splice the field in here, because the API required one and the shared type had no
+   * place for it, which meant the type described a body nobody sends.
+   *
+   * The office sets the first credential; there is no invitation flow, and there is no
+   * mail sender to build one on. `userRepository` mints the value rather than letting a
+   * dialog invent the policy.
    */
-  create: (body: ConsoleUserDraft & { password: string }) =>
+  create: (body: ConsoleUserDraft) =>
     apiClient.post<MutationAck>('/admin/users', body).then((response) => response.data),
 
   /**

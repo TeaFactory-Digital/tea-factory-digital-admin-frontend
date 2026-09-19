@@ -507,7 +507,70 @@ export interface CreditEligibility {
    * is the sentence that settles a dispute about a limit that has since moved.
    */
   computedAt: string;
+
+  /* ── Served by the supplier realm, read by the app, previously undeclared ──────────
+   *
+   * All four were on the wire and in use while this type said nothing about them, which
+   * is exactly the drift ADR-029 is about: a field a shared type does not know exists
+   * cannot be checked against anything, and the app had to declare its own copies.
+   * Declared here so the backend's vendor drift check can see them.
+   */
+
+  /**
+   * Recovery periods the factory offers, in monthly instalments.
+   *
+   * Served rather than hardcoded in a client (BR-315): a factory that lends over a
+   * different span needs no app release. Empty when it has configured none, which is a
+   * real answer and not a loading state.
+   */
+  installmentOptions: number[];
+
+  /**
+   * A request on this facility already awaiting a decision, or `null`.
+   *
+   * The screen withholds the button for the same reason the server would refuse it
+   * (`409 request-pending`). A control that 409s is a control that should not have been
+   * offered.
+   */
+  pendingRequestId: string | null;
+
+  /**
+   * Interest carried forward on the newest bill.
+   *
+   * **Not a split of `outstanding`**, which is still reported whole. Nothing computes
+   * interest on an advance yet, so this is `0` until the factory decides a basis, and an
+   * honest `0` beats a fabricated split: a supplier who adds two numbers and gets a
+   * third one telephones the office.
+   */
+  interest: number;
+
+  /**
+   * `monthsOfHistory >= requiredMonths`, computed server-side.
+   *
+   * Derived, and deliberately derived **once**: a boolean that disagreed with the two
+   * counts beside it would be unarguable and wrong, and two clients deriving it
+   * separately is two chances to disagree. This is the field a form gates on, never
+   * `averageMonthlyIncome`, which is `null` on the facilities not priced off an average.
+   */
+  hasRequiredHistory: boolean;
 }
+
+/**
+ * What `buildCreditEligibility` alone can answer: **the ceiling and its working.**
+ *
+ * The three fields left out are not part of the rule and are not derivable from bills.
+ * `installmentOptions` comes from the factory's configuration, `pendingRequestId` from a
+ * query for an undecided request, and `interest` from the newest bill's carry-forward.
+ * The builder is pure and clock-free by design, which is the whole reason AC-05 holds, so
+ * the server composes those three on top rather than the builder reaching for them.
+ *
+ * `hasRequiredHistory` stays in here, because it is exactly the two counts the builder
+ * already has.
+ */
+export type CreditEligibilityWorking = Omit<
+  CreditEligibility,
+  'installmentOptions' | 'pendingRequestId' | 'interest'
+>;
 
 /**
  * A credit request as the queue shows it.
@@ -1468,7 +1531,12 @@ export interface ContentTranslationBody {
  */
 export interface NewsArticleDraft {
   translations: Array<ContentTranslationBody & { lang: LanguageCode }>;
-  coverImageUrl?: string;
+  /**
+   * The cover image, **as an attachment id**, for the same reason `BannerPatch` takes
+   * one: the served `coverImageUrl` is a short-lived signed GET, so a console that sent
+   * back the URL it was given would be storing a value that expires.
+   */
+  coverImageAttachmentId?: string;
 }
 
 /** What may be changed without touching copy. */
@@ -1561,6 +1629,26 @@ export interface BannerDraft {
 
 /** What may be changed without touching copy. */
 export interface BannerPatch {
+  /**
+   * The artwork, **as an attachment id**, or `null` to take it off.
+   *
+   * Not a URL, and that is forced by the storage design rather than chosen: `attachments`
+   * has no `url` column because *"`attachment.url` is a SHORT-LIVED SIGNED GET generated
+   * per read"*. A console that sent back the URL it was given would be writing a value
+   * that expires, and the banner would render a broken image a few minutes later.
+   *
+   * So the write is an id and the read is `imageUrl`, freshly signed per response. The two
+   * are deliberately different fields rather than one that changes meaning by direction.
+   *
+   * **Omit to leave the artwork alone.** `null` means remove, which is a different
+   * instruction, and a patch that could not tell them apart would blank the picture of
+   * every banner whose window somebody nudged.
+   */
+  imageAttachmentId?: string | null;
+  /**
+   * Read-only in practice. Kept on the patch body for the one case the console does not
+   * yet have a screen for: pointing a banner at artwork hosted somewhere else entirely.
+   */
   imageUrl?: string | null;
   imageAspectRatio?: number | null;
   action?: BannerAction;
@@ -1734,6 +1822,24 @@ export interface ConsoleUserDraft {
   name: string;
   email: string;
   roles: ConsoleRole[];
+  /**
+   * The account's first password, **set by whoever creates it** (gap **G-02**, resolved).
+   *
+   * Declared here because `POST /admin/users` has always required it while this type had
+   * no field for one, so the console spliced it in at the endpoint and the shared type
+   * described a body nobody sends. That is the drift ADR-029 is about.
+   *
+   * The resolution is *the office sets it*, not *an invitation email goes out*: there is
+   * no mail sender in this system, and a flow that silently depends on one is a flow that
+   * never delivers an account. The factory confirmed it.
+   *
+   * ⚠️ **The account should therefore owe a password change on first sign-in**, which is
+   * the rule a supplier already lives under (BR-008). It does not yet. A first credential
+   * chosen by somebody else, for somebody else, is the one password the holder did not
+   * pick and may never change, and staff should not be held to a weaker rule than the
+   * farmers are. Tracked in `BACKEND-API-GAPS.md`.
+   */
+  password: string;
 }
 
 /** What the office may change afterwards. Email is not here — it is the identity. */

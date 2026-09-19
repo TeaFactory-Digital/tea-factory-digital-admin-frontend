@@ -1151,7 +1151,7 @@ export const en = {
     'A packet has to weigh something. Set the pack size before saving.',
   'config.impact.teaPacketPolicy.negative-price': 'A packet cannot cost less than nothing.',
   'config.impact.teaPacketPolicy.bad-max':
-    'The limit per request has to be at least one packet. To close the scheme, turn the feature off instead.',
+    'The monthly limit has to be at least one packet. To close the scheme, turn the feature off instead.',
   'config.impact.creditOutstanding':
     'Suppliers still owe LKR {{amount}} on {{facility}}. Turning it off would hide that, so this cannot be saved.',
   'config.impact.surfaceRemoved':
@@ -1167,11 +1167,23 @@ export const en = {
   'config.sectionHint.teaPackets': 'What a packet is and what it costs',
   'config.sectionDescription.teaPackets':
     'The pack the store issues, its price, and the most one supplier may ask for at a time. The price is what a request is charged at when it is approved.',
+  /* Image uploads (M11 news, M12 banners). */
+  'uploads.coverImage': 'Cover image',
+  'uploads.artwork': 'Banner artwork',
+  'uploads.hint': 'JPEG, PNG or WebP, up to {{max}} MB. Large photographs cost suppliers data to receive.',
+  'uploads.uploading': 'Sending the image…',
+  'uploads.remove': 'Remove image',
+  'uploads.unavailable': 'Image uploads are not available on this server yet. The article can be saved without one.',
+  'uploads.error.upload-type': 'That file type cannot be used. Choose a JPEG, PNG or WebP.',
+  'uploads.error.upload-too-large': 'That image is larger than {{max}} MB. Choose a smaller one.',
+  'uploads.error.upload-unreadable': 'That file is not an image the browser can read.',
+  'uploads.error.upload-failed': 'The image could not be sent. Try again.',
+
   'config.teaPackets.packGrams': 'Pack size (grams)',
   'config.teaPackets.pricePerPacket': 'Price per packet (LKR)',
-  'config.teaPackets.maxPerRequest': 'Most packets on one request',
+  'config.teaPackets.maxPerMonth': 'Most packets in one month',
   'config.teaPackets.maxHint':
-    'A stock limit, not a credit limit. A request over it can still be rejected with a note explaining the limit.',
+    'A stock limit, not a credit limit. The factory allows this many packets per supplier per calendar month, and the office can still reject a request with a note explaining the limit.',
   'config.teaPackets.flagOff':
     'Tea packets are switched off for this factory, so nothing here has any effect yet. Turn them on under Features first.',
   'config.section.payoutFile': 'Payout file',
@@ -1556,7 +1568,7 @@ export const en = {
   'teaPackets.problem.title': 'Outside the factory’s policy.',
   'teaPackets.problem.no-packets': 'The request is for no packets.',
   'teaPackets.problem.not-whole': 'The store issues whole packets only.',
-  'teaPackets.problem.over-max': 'More than {{max}} packets on one request.',
+  'teaPackets.problem.over-max': 'More than {{max}} packets, which is the whole month’s allowance.',
   'teaPackets.noPolicy.title': 'No tea-packet price has been set.',
   'teaPackets.noPolicy.body':
     'These requests are priced at the bundled default of {{price}} a packet. Set the factory’s own in Configuration.',

@@ -63,13 +63,20 @@ function requireReason(reason: string): string {
  * The first password for a new console account.
  *
  * There is **no invitation flow** — no email is sent, and the API requires a password on
- * creation (gap **G-02**). So one is minted here and handed back to the dialog to read out
+ * creation. The factory has confirmed the office sets it (gap **G-02**, resolved), which
+ * is the only answer this system can actually deliver: an invitation needs a mail sender
+ * and there is not one. So one is minted here and handed back to the dialog to read out
  * once, which is the pattern §21.16 already established for supplier credentials and the
  * one the office copy has always described: *"Tell them their password."*
  *
- * Minted in the browser rather than typed by the administrator on purpose. A human-chosen
- * first password for somebody else is chosen to be easy to say down a corridor, and it is
- * the one password the account holder did not pick and may never change.
+ * Minted in the browser rather than typed by the administrator on purpose, and that is
+ * the part worth keeping. A human-chosen first password for somebody else is chosen to be
+ * easy to say down a corridor, and it is the one password the account holder did not pick
+ * and may never change.
+ *
+ * ⚠️ Which is exactly why the account **should owe a password change on first sign-in**,
+ * the way a supplier does (BR-008). It does not yet, and that is the server's half. See
+ * `BACKEND-API-GAPS.md`.
  *
  * `crypto.getRandomValues`, never `Math.random`: this is a credential.
  */
@@ -118,8 +125,13 @@ export const userRepository = {
    * The response is not the user record — the API acknowledges with `{ id }` and the list
    * is refetched — but it does carry the password, because this is the only moment it
    * exists anywhere readable.
+   *
+   * Takes the draft **without** its password: the value is this module's to mint, not a
+   * caller's to choose, and a screen that could pass one would eventually pass a weak one.
+   * `ConsoleUserDraft` declares the field because the wire carries it; `Omit` is what says
+   * who fills it in.
    */
-  create: async (body: ConsoleUserDraft): Promise<CreatedConsoleUser> => {
+  create: async (body: Omit<ConsoleUserDraft, 'password'>): Promise<CreatedConsoleUser> => {
     const password = mintPassword();
     const { id } = await userEndpoints.create({ ...body, password });
     return { id, password };

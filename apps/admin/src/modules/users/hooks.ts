@@ -67,7 +67,10 @@ export function useLockoutContext(users: readonly LockoutCandidate[]) {
 export function useCreateUser() {
   const invalidate = useInvalidateUsers();
   return useMutation({
-    mutationFn: (body: ConsoleUserDraft) => userRepository.create(body),
+    // `Omit`, because the password is the repository's to mint. A screen that could
+    // pass one would eventually pass a weak one, and this is the only credential the
+    // account holder did not choose.
+    mutationFn: (body: Omit<ConsoleUserDraft, 'password'>) => userRepository.create(body),
     onSuccess: invalidate,
   });
 }

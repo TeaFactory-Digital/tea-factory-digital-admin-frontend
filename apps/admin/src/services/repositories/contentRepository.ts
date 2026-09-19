@@ -72,7 +72,7 @@ export const newsRepository = {
     /**
      * The **fallback language's copy travels flat**, not in a `translations` array.
      *
-     * `POST /admin/news` reads `title`, `excerpt`, `body` and `coverImageUrl` off the top
+     * `POST /admin/news` reads `title`, `excerpt`, `body` and the cover image off the top
      * level and writes them as the English translation; it has no `translations` field.
      * Sending the array alone means `title` and `body` never arrive and the API answers
      * `422 invalid` — which is at least loud, unlike the same mismatch on banners, where
@@ -87,7 +87,7 @@ export const newsRepository = {
       draft.translations[0]!;
 
     return newsEndpoints.create({
-      coverImageUrl: draft.coverImageUrl,
+      coverImageAttachmentId: draft.coverImageAttachmentId,
       title: fallback.title,
       excerpt: fallback.excerpt,
       body: fallback.body,

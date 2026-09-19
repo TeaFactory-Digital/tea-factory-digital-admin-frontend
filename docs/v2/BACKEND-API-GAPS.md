@@ -2,386 +2,269 @@
 
 **For:** the backend developer, `tea-factory-digital-backend`
 **From:** the two frontend integrations
-**Verified against:** backend `abf325a`, in **two** environments.
+**Verified against:** backend `0c43b39`, driven on your staging deployment
+`https://tfd-api-fja1.onrender.com`, tenant `galaboda`, as supplier `5708` and as both
+`admin@galaboda.lk` and `manager@galaboda.lk`.
 
-1. **Local**, API on `:3000`, Postgres and Redis in Docker, `npm run setup`, a `galaboda`
-   tenant, an administrator, and a supplier with an app account, eight published bills and
-   a manure catalogue.
-2. **Your staging deployment**, `https://tfd-api-fja1.onrender.com`, tenant `galaboda`,
-   signed in as `admin@galaboda.lk` and as supplier `5708`.
-
-Every API gap below reproduces in **both**. The three **deployment** items are staging
-only, and they are the ones stopping the console from using that box at all.
-
-**This file lists only what is still open.** Every status is what the wire actually did,
-not what a commit message said.
-
-> **Thank you: eight of the ten open gaps are closed, and both frontends are now
-> integrated against the closed versions.** G-12a, G-20, G-21, G-22, G-23, G-24, G-27 and
-> G-28 are gone from this file; they are in its git history if the reasoning is ever
-> needed. `app-wire.ts` and `app-parity.spec.ts` are the right mechanism, and they found
-> things neither side had spotted.
+> ## Nothing in this file is blocking.
 >
-> **Both frontends changed to match**, because several of your fixes made the app's old
-> workarounds wrong rather than merely redundant. See *What the frontends changed* below.
-> Nothing in either repo works around a closed gap any more.
+> **Every gap is closed.** All eight from the last round were verified on the wire, not
+> read off your summary, and both frontends have had their workarounds deleted rather
+> than left in place around a fixed server.
+>
+> What is left below is one item waiting on a re-vendor, one rule that follows from a
+> product answer that has now come back, **the upload contract for O1 now that both
+> frontend halves are built**, and the standing list of shapes both sides have agreed not
+> to change. The tea-packet question is answered too: **per month**, which is what you
+> already enforce.
 
 ---
 
-## What is still open
+## Still open
 
-| | Gap | Realm | What it costs today |
+| | Item | Owner | State |
 |---|---|---|---|
-| 🔴 | **D-01** `CORS_ORIGINS` is unset on staging | console | **No browser can reach the API.** The console is completely blocked on that box |
-| 🟠 | **D-02** the cold start outlasts both clients' timeouts | both | First request after an idle period always fails, on a free Render instance |
-| 🟠 | **G-31** manure `amount` is still honoured if the client sends one | app | A price the phone chose is believed over the factory's, so **G-20's guarantee is opt-in** |
-| 🟠 | **G-30** `PUT /devices` `500`s on an unknown notification category | app | A client bug reads as "the server is broken", on the one write every session makes |
-| 🟡 | **G-21a** four fields are on the wire and not in `CreditEligibility` | both | `interest`, `hasRequiredHistory`, `installmentOptions`, `pendingRequestId`: all used, none typed |
-| 🟡 | **G-32** `PUT`/`PATCH /devices` omit `id` and `registeredAt` | app | `GET /devices` has both; the writes answer a partial row |
-| 🟡 | **G-25** `null` served as an empty body | app | Adapted with `\|\| null` at both call sites |
-| 🟡 | **G-26** `GET /bills/{month}` 404s where the app expects `null` | app | Adapted |
-| 🟡 | **D-03** the staging factory has no credit rules, manure catalogue or packet policy | both | Three flag-enabled facilities cannot complete a request on staging |
+| 🟡 | **G-21a** four fields undeclared in `@tfd/domain` | ours, then yours | **Declared. Re-vendor when you like.** |
+| 🟠 | **G-02a** a console user does not owe a password change | yours | The office now sets the first password, so staff should be held to BR-008 like suppliers |
+| 🟠 | **O1** uploads: bucket, three endpoints, and news `PATCH` | yours | **Both frontend halves are built and waiting.** Contract below |
 
-**D-01 first, ahead of everything else in this file.** It is a dashboard setting rather
-than code, and until it is set the console cannot make a single call to staging. After
-that, G-31 is a one-line change and it is about money, and G-30 is the same species as the
-R1 uuid fix you already shipped. The rest are recorded so the wire and the shared types can
-be reconciled, not because anything is broken.
+### G-21a: the four fields are now declared
+
+You were right that this one was ours. `packages/domain/src/types/admin.ts` in this repo
+now declares all four on `CreditEligibility`:
+
+```ts
+installmentOptions: number[];
+pendingRequestId: string | null;
+interest: number;
+hasRequiredHistory: boolean;
+```
+
+Each carries a docblock saying why it exists, so the reasoning survives the vendor copy.
+
+**One thing to look at before you re-vendor**, because it changes a signature rather than
+only adding fields. Three of the four cannot come from `buildCreditEligibility`:
+`installmentOptions` is configuration, `pendingRequestId` is a query, and `interest` is
+the newest bill's carry-forward. The builder is pure and clock-free, which is exactly why
+AC-05 holds, so it should not be reaching for any of them.
+
+So the builder now returns a named subset and the server composes the rest, which is what
+your controller already does:
+
+```ts
+export type CreditEligibilityWorking = Omit<
+  CreditEligibility,
+  'installmentOptions' | 'pendingRequestId' | 'interest'
+>;
+
+export function buildCreditEligibility(…): CreditEligibilityWorking
+```
+
+`hasRequiredHistory` stayed **inside** the builder, because it is just the two counts it
+already has, and deriving it once is the point.
+
+Your `withAppEligibilityNames` should type-check against this unchanged. If the drift
+check complains, it will be about that return type rather than the fields.
+
+### G-02a: the decision came back, and it leaves you one change
+
+**The factory's answer is that the office sets the first password.** Not an invitation
+email, which settles it the only way this system can actually deliver: an invitation needs
+a mail sender and there is not one, so a flow built on it is a flow that never delivers an
+account.
+
+**Our half is done.** `ConsoleUserDraft` in `@tfd/domain` now declares `password`, so the
+shared type finally describes the body you have always required. The console used to
+splice that field in at the endpoint, which meant the type documented a request nobody
+sends. It still mints the value rather than letting an administrator type one, and that
+part is deliberate: a first password chosen by one person for another is chosen to be easy
+to say down a corridor.
+
+**Your half is the rule that should follow from it.** A console user created today does
+**not** owe a password change on first sign-in, where a supplier does (BR-008). That
+asymmetry was defensible while the question was open. It is not now: the office setting
+the credential is precisely the case BR-008 exists for, and it is the one password the
+holder did not choose and may never change.
+
+Staff should be held to the same rule as the farmers. You flagged this yourself in
+`questions-we-need-answered.md`, and the answer has arrived.
+
+### Tea packets: answered, and it is per month
+
+**The factory has confirmed the allowance is per calendar month.** Your monthly
+enforcement stands as it is, no code change, no second configured figure. You picked the
+stricter reading before the answer came back and it turned out to be the right one.
+
+The console copy is updated to match, in all three languages:
+
+- `config.teaPackets.maxPerRequest` is renamed `maxPerMonth`, and the label now reads
+  *"Most packets in one month"*.
+- The hint says the factory allows that many packets **per supplier per calendar month**.
+- `teaPackets.problem.over-max` says the request exceeds the whole month's allowance.
+- The `bad-max` save refusal says *monthly limit* rather than *limit per request*.
+
+**The stored field keeps its name.** `maxPacketsPerRequest` is what `client_config` and
+the wire call it, and renaming a column to settle a wording question is not worth a
+migration. Both sides now carry a docblock saying the name says request and the rule is
+month, so the next reader does not have to rediscover it.
+
+One thing worth stating, since it is now a documented asymmetry rather than an accident:
+`teaPacketRequestProblems` in `@tfd/domain` checks a **single request** against the monthly
+cap, so it catches only the unambiguous case of one request exceeding the whole month's
+allowance. It cannot see what the supplier has already taken, because that needs a query a
+pure function does not get. Your `tea-packets-over-limit`, with `requestedThisMonth` and
+`remainingThisMonth`, is the real check. A clean result from ours is the cheap half, run
+before a round trip, and not a promise of approval.
+
+The app needed no change: it already read `maxPacketsPerMonth`, `requestedThisMonth` and
+`remainingThisMonth` off `/tea-packets/info`, and its copy has always said *"this month"*.
 
 ---
 
-# Deployment
+## Fixed in `0c43b39`, verified on the wire
 
-Three things about `tfd-api-fja1.onrender.com` specifically. None of them is a defect in
-the code; all three stop the staging box doing the job it exists for.
+Driven against staging, not taken from the commit message.
 
-## 🔴 D-01: `CORS_ORIGINS` is unset, so no browser can reach the API
-
-```
-GET /v1/config              Origin: http://localhost:5273
-  → 200, vary: Origin,  and NO Access-Control-Allow-Origin        ← browser discards it
-
-OPTIONS /v1/admin/auth/login  Origin: https://tfd-console.vercel.app
-  → 404, no CORS headers at all                                   ← preflight fails
-```
-
-Tried from `http://localhost:5273` (the console's dev origin) and from a Vercel-shaped
-origin. Both identical. The preflight `404` is the harder half: every console request
-carries `Content-Type: application/json`, `X-Tenant` and `Authorization`, so **none of
-them is a simple request** and all of them are blocked before they are sent.
-
-`render.yaml` says exactly why, and it is deliberate:
-
-> ```yaml
-> # Empty until the console is deployed. Empty means NO browser origin is allowed,
-> # which is the safe default [...]
-> - key: CORS_ORIGINS
->   sync: false
-> ```
-
-`sync: false` means it is set by hand in the Render dashboard, and it has not been. That
-is the right default and it is also the last thing standing between the console and this
-deployment. The mobile app is unaffected, because a native client sends no `Origin`, which
-is why driving both realms with curl looked completely healthy.
-
-**The rest of the cross-site work is already correct**, which is worth saying because it
-means this really is one setting:
-
-```
-set-cookie: tfd_refresh=…; Path=/v1/admin/auth; HttpOnly; Secure; SameSite=None
-set-cookie: tfd_csrf=…;    Path=/v1/admin/auth;           Secure; SameSite=None
-```
-
-`SameSite=None`, `Secure`, refresh `HttpOnly` and the CSRF token readable, scoped to the
-auth path. `COOKIE_MODE=cross-site` is set in the blueprint and `assertCookieTopology`
-agrees with it. `enableCors` in `configure-app.ts` already allowlists every header the
-console sends (`Authorization`, `Content-Type`, `X-Tenant`, `Idempotency-Key`,
-`If-None-Match`, `X-CSRF-Token`) and already sets `credentials: true`. So this really is
-one variable.
-
-**What to set**, in the Render dashboard on the `tfd-api` service, comma separated with
-no trailing slash (`configure-app.ts` splits on `,` and trims):
-
-```
-CORS_ORIGINS=http://localhost:5273
-```
-
-Add the deployed console origin beside it when there is one:
-
-```
-CORS_ORIGINS=http://localhost:5273,https://<the-console-host>
-```
-
-`http://localhost:5273` is worth including permanently, not just as a stopgap. It is the
-console's dev-server origin, and it is how either of us drives a real browser against
-staging.
-
-A redeploy is needed for the change to take, because the value is read at boot.
-
-### What we did in the meantime
-
-The console now has `npm run dev:staging`, which routes `/v1` through a **Vite dev
-proxy** to this box. The page calls `localhost`, which is same origin, and Vite forwards
-the request from Node where CORS does not apply. That is a workaround for our own
-testing, not a fix and not a substitute: it only exists on a developer's machine, and a
-console deployed anywhere still cannot call this API until `CORS_ORIGINS` is set.
-
-Driven through that proxy, the whole cross-site chain works against staging: sign-in,
-`Set-Cookie`, a CSRF-protected refresh that returns a new access token, and a refresh
-**without** the `X-CSRF-Token` header correctly refused with `403 forbidden`
-`{"reason":"csrf"}`. So the server side of this is already right, and D-01 is the only
-thing in the way.
-
-## 🟠 D-02: the cold start outlasts both clients' timeouts
-
-Measured on the first request after the instance had been idle:
-
-```
-GET /health  →  200 in 32.9s
-```
-
-Against:
-
-| Client | Timeout | Result on a cold instance |
+| Gap | Check | Result |
 |---|---|---|
-| Console | `VITE_API_TIMEOUT_MS=20000` | fails |
-| Mobile | `timeoutMs: 15000` | fails, and shows *"The factory did not answer in time."* |
+| **D-01** CORS | `OPTIONS /v1/admin/auth/login`, `Origin: http://localhost:5273` | **`204`**, origin echoed, `credentials: true`, all six headers allowed |
+| **G-31** manure price | `POST /manure-requests {"amount":1,…}` for 100 kg of a 50 kg @ 4900 product | **`201` `amount: 9800`**. The client figure is ignored |
+| **G-30** bad category | `PUT /devices` with `categories: ["nonsense"]` | **`422 invalid`**, was `500 internal` |
+| **G-32** device writes | `PUT` and `PATCH /devices` | both carry `id` and `registeredAt` |
+| **G-25** `null` | `GET /banners/active` with none live | **`200`, literal `null`, `application/json`**, was an empty body |
+| **G-26** `/bills/{month}` | `GET /bills/2020-01` | **`200 null`**, was `404 not-found` |
+| **G-21a** income | `/loans/eligibility` and `/manure/eligibility` | `9531.66` and `null`. No coerced `0` |
+| **D-03** staging data | `GET /config` | credit rules, two manure products, packet policy all present |
 
-A free Render instance sleeps after inactivity, so **the first person to open either
-client after a quiet period always gets an error**, and a retry then works. That reads
-exactly like an intermittent backend fault and it will be reported as one.
+**All three credit facilities reach a success path**, which is the thing staging existed
+for and could not do before: advance ceiling `13020`, loan `28594.98`, manure `12090`.
 
-Not asking you to change the timeouts: 15 and 20 seconds are right for a rural connection
-and raising them to 35 would make every genuine failure take 35 seconds. Either a paid
-instance that does not sleep, or a keep-alive ping, or simply everyone knowing that the
-first request wakes the box. Worth agreeing which, so it is not diagnosed twice.
+**Every console endpoint answers.** Dashboard, credit requests, change requests,
+tea-packet requests, inquiries, suppliers, audit and reports as `manager`; users, news,
+banners, config, static pages and notifications as `admin`. The one `404` in our first
+sweep was our own path error (`/admin/tea-packets` instead of
+`/admin/tea-packet-requests`), not yours.
 
-## 🟡 D-03: the staging factory has no credit rules, catalogue or packet policy
+### D-02, the cold start: agreed, and no longer tracked
 
-`GET /v1/config` on staging:
-
-```json
-{ "creditRules": null, "manureProducts": null, "teaPackets": null,
-  "theme": null, "branding": null, "push": null,
-  "flags": { "enableLoans": true, "enableManure": true, "enableTeaPackets": true, … } }
-```
-
-The flags are all **on** and the configuration behind three of them is absent, so those
-facilities are reachable and cannot complete:
-
-- **Manure** cannot be priced at all. `priceManure` reads `manureProducts`, finds nothing,
-  and answers `422 manureType not in this factory's catalogue`. It is hidden right now only
-  because the history rung fires first (`409 manure-history-short`); give the supplier six
-  settled months and every manure request on staging starts failing.
-- **Tea packets** always report *"the factory has not set a price"*. Correct behaviour for
-  `policy: null`, and it means the screen can never be exercised past that state.
-- **Credit rules** are `null` while `installmentOptions` still comes back populated
-  (`[3…12]` for loans, `[1…6]` for manure), so those are platform defaults rather than this
-  factory's.
-
-The supplier also has no bills, so every credit ceiling is `0` and every facility answers
-`shortHistory` or `noSettledRate`. Nothing past a refusal ladder can be tested on staging
-as it stands.
-
-Not a code problem, and the "no invented suppliers" instinct in `staging.ts` was right. But
-a box meant for driving real clients needs enough data to reach a success path. A handful
-of published bills, a two-line manure catalogue and a tea-packet policy on the seeded
-factory would make the whole supplier app reachable.
+Accepted on your reasoning. We are pre-users and a 30-second first request is fine. Both
+clients raise their timeout for staging alone (45s against 20s and 15s), so a waking
+instance reads as slow rather than as a failure, and both notes say to put it back for a
+real deployment.
 
 ---
 
----
+## What the frontends deleted
 
-# API gaps
+Your fixes made these wrong rather than merely redundant, so none of them survives.
 
-Everything below reproduces on **both** the local box and staging.
+**Supplier app**
 
-## 🟠 G-31: the server prices manure unless the client would rather it did not
+- The `|| null` coercion at all three call sites (`billRepository`, `bannerRepository`,
+  `newsRepository`). `null` arrives as `null`.
+- The `not-found` to `null` translation in `billRepository.getBill`, and the `try/catch`
+  around it. A refusal now has no reason to be translated, so a `403` surfaces as a `403`.
+- The narrowed `DeviceAck` type. Both device writes are a full `RegisteredDevice` again.
+- The note claiming `averageMonthlyIncome` is coerced to `0`, which is no longer true.
 
-**This is the one that matters, and it is one line.**
+**Admin console**
 
-`credit.controller.ts` line 650:
+- The Vite dev proxy, and `VITE_DEV_PROXY_TARGET` with it. `npm run dev:staging` calls
+  staging directly now, which is the only arrangement that exercises the real preflight
+  and the real cross-site cookie.
 
-```ts
-const amount = body.amount ?? (await this.priceManure(tx, actor.factoryId, facility, body));
-```
+**A test replaced the two we deleted.** `__tests__/absentRecords.test.ts` pins the new
+contract: a null bill, a null month, a null banner and a null article all arrive as
+`null`, and a `403` on a bill still throws rather than reading as an absence. It asserts
+`toBeNull` rather than `toBeFalsy` on purpose, because `''` is falsy too and telling those
+two apart is the whole of what G-25 was.
 
-`priceManure` is a **fallback**, not a rule. A client that sends its own `amount` is
-believed, and nothing downstream re-prices: `priceManure` has exactly one call site, and
-the approval path reads the stored figure.
+### One thing we noticed while deleting them
 
-**Driven on a live server**, supplier with eight published bills, catalogue
-`{ name: 'Urea', packKg: 50, pricePerPack: 4900 }`:
-
-```
-POST /manure-requests {"manureType":"Urea","quantityKg":100,"installmentMonths":3}
-  → 201  "amount": 9800      ← two bags, priced by you. Correct.
-
-POST /manure-requests {"amount":1,"manureType":"Urea","quantityKg":100,...}
-  → 201  "amount": 1         ← 100 kg of urea, for one rupee.
-```
-
-The app no longer sends `amount`, so nothing exploits this today. It still matters for two
-reasons.
-
-**The staleness G-20 was about is not actually closed.** Your own reasoning was that *"a
-price the client computed is a price from whenever that client last loaded the config"*,
-and an app build already on a phone **is still sending its computed price**. Phones update
-when their owner allows it. The server redeploying does not retire those builds, and while
-`amount` is honoured they keep pricing their own requests from whatever catalogue they
-last saw.
-
-**It is a client-controlled figure that becomes a debt.** Not a privilege escalation,
-since the supplier is asking for *less*, but it is a number that lands on a credit account
-from the one place in this system where a guess moves money, and the ceiling check
-(`amount > answer.available`) passes trivially for a small one.
-
-**Suggested fix**, in the spirit of the tea-packet `unitPrice` rule you already cite:
-
-```ts
-const amount =
-  facility === 'manure'
-    ? await this.priceManure(tx, actor.factoryId, facility, body)
-    : (body.amount ?? throwMissingAmount());
-```
-
-Refusing a manure body that carries `amount` would also work and is louder, but it breaks
-every app build in the field, which is the sequencing lesson from your own `.strict()`
-commit. Ignoring the field does not.
+`GET /bills/{monthKey}` answering `200 null` for a month the office has **generated but
+not published** is a good decision and worth keeping deliberate. A `404` there against
+`null` for a month that was never generated would let a supplier tell the two apart, and
+that difference tells them the office has started on their account. It is recorded in
+`billRepository` so nobody "fixes" it back into a `404` later.
 
 ---
 
-## 🟠 G-30: an unknown notification category answers `500`, where an unknown platform answers `422`
+## O1, the object store: the frontends are now built, and here is the contract
 
-Same family as **R1**, the mistyped-uuid finding you closed with `UuidParamPipe`: a client
-mistake reported as a server fault.
+**Both frontend halves are written and tested.** The console has a file field on the news
+create dialog and the banner editor; the app renders a real cover on the feed and the
+article screen, and its banner artwork was already there. What does not exist is the
+server half, so every attempt currently ends at a `404` which the console renders as
+*"image uploads are not available on this server yet"* rather than as an error.
 
-```
-PUT /devices {"token":"…","platform":"blackberry","categories":["billPublished"]}
-  → 422 invalid  {"path":"platform","message":"expected one of \"ios\"|\"android\""}   ✅
+This replaces the note we sent last round. We said the frontends were not blocked on O1,
+which was true then because there was no image UI at all. There is now.
 
-PUT /devices {"token":"…","platform":"android","categories":["nonsense"]}
-  → 500 internal {"code":"internal","details":{"requestId":"39228781-…"}}              ❌
-```
-
-The log:
+### The three calls
 
 ```
-PrismaClientValidationError
-  Invalid `tx.device.upsert()` invocation … devices.controller.ts:101
-  Invalid value for argument `categories`. Expected NotificationCategory.
+POST /admin/uploads/sign
+  { filename, contentType, sizeBytes, entity, entityId? }
+  -> 201 { attachmentId, uploadUrl, headers?, expiresAt }
+
+PUT <uploadUrl>                      (browser to the store, no Authorization header)
+  -> 200
+
+POST /admin/uploads/{attachmentId}/confirm
+  -> 200 { id, url, contentType, sizeBytes }
 ```
 
-**Reproduced on staging as well**, so it is not an artefact of the local build.
+`entity` is one of `newsArticle | banner | changeRequest | creditRequest`. `entityId` is
+absent when the record does not exist yet, which is the ordinary case: a cover image is
+chosen in a create dialog, before the article has an id.
 
-`platform` is a `z.enum` and `categories` is not, so the array reaches Prisma unvalidated
-and the enum rejection surfaces as an uncoded `500`. That is the one code meaning *we are
-broken*, which in production is what pages somebody at night.
+**`headers` matters more than it looks.** S3 and MinIO disagree about which headers a
+signature covers, and a client guessing wrong gets a `403` from the store with nothing
+readable in it. Send back exactly what the `PUT` must reproduce.
 
-**Why this endpoint in particular.** `useNotifications.sync()` calls `PUT /devices` on
-every sign-in and again on every token rotation. It is the most frequently called write in
-the app, and it runs inside a `useEffect` where nothing surfaces the failure to the
-supplier. It would therefore arrive as a `500` rate in your logs with no user report
-attached to it.
+### What the clients send and read, and why they are different fields
 
-Both sides agree on the four values (`billPublished`, `requestDecided`, `newsArticle`,
-`inquiryReplied`), so this is not a live mismatch. It is the absence of the boundary that
-would make a future one legible. **A `z.enum([...])` on `categories`** closes it.
+The write is an **attachment id** and the read is a **URL**:
 
----
+| | Write | Read |
+| --- | --- | --- |
+| News | `coverImageAttachmentId` on `POST /admin/news` | `coverImageUrl` on the article |
+| Banner | `imageAttachmentId` on `PATCH /admin/banners/{id}` | `imageUrl` on the banner |
 
-## 🟡 G-21a: four fields are on the wire, used by both clients, and in neither shared type
+That asymmetry is forced by your own schema rather than chosen. `attachments` has no
+`url` column because *"`attachment.url` is a SHORT-LIVED SIGNED GET generated per read"*,
+so a console that sent back the URL it was given would be storing a value that expires,
+and the app would render a broken image a few minutes later. `@tfd/domain` now declares
+both write fields.
 
-G-21 is otherwise closed. `withAppEligibilityNames` is the right shape, `interest` now has
-a source, and the app reads the **domain** names rather than the aliases, so nothing here
-depends on the compatibility layer staying.
+⚠️ **Omit means leave alone; `null` means remove.** A patch that cannot tell those apart
+blanks the artwork of every banner whose window somebody nudged.
 
-What `@tfd/domain`'s `CreditEligibility` still does not declare:
+### Two smaller things the flow needs
 
-| Field | Served by | Read by | Note |
-|---|---|---|---|
-| `installmentOptions` | supplier realm | app, the whole repayment picker | BR-315: a factory lending over a different span needs no app release |
-| `pendingRequestId` | supplier realm | app, withholds the button | a control that `409`s is a control that should not have been offered |
-| `interest` | supplier realm | app, advance screen | `0` until a basis is decided, and honestly `0` |
-| `hasRequiredHistory` | supplier realm | app, gates the form | derived, but derived *server-side*, which is the point |
+**`PATCH /admin/news/{id}` has to come back**, at least for the cover image. There is no
+way to change an article's cover after creation today: `NewsDraftBody` takes one,
+`ContentTranslationBody` has no image field, and `saveTranslation` is the only write.
+Your `news.ts` docblock says *"an article's cover image and its copy both move through
+`saveTranslation`"*, and that is not accurate, which is worth correcting either way. This
+is precisely the case the same docblock anticipates: *"It comes back the day the editor
+grows a field that is not copy."* That day has arrived.
 
-All four are declared locally in the app's `endpoints.ts` instead. That works, and it is
-exactly the drift ADR-029 is about: a field a shared type does not know exists cannot be
-checked against anything.
+**A `confirmedAt`-less row needs a sweeper.** An upload whose connection dropped between
+the signature and the `PUT` leaves a reservation. Your schema comment already names the
+state; nothing collects it.
 
-**One narrower thing in the same payload.** `withAppEligibilityNames` coerces
-`averageMonthlyIncome` through `orZero`, so the **supplier** realm serves `0` where the
-type says `number | null` and BR-102 says *never `0`*. The **console** realm calls
-`forSupplier` raw and still gets `null`. This is harmless today: the app gates on
-`hasRequiredHistory` and never prints the zero as an income, and AC-05's load-bearing
-figures (`ceiling`, `outstanding`, `available`) come from one function and do match
-byte-for-byte. But one documented `null` contract is now false on one of the two realms,
-and that is the sort of thing which stays true only until somebody reads the type.
+### What we refuse client-side, so you know what you will actually receive
 
----
+JPEG, PNG and WebP only, and **5 MB**. The size is about the reader rather than the
+bucket: a cover renders a few hundred pixels wide on a phone, often over a connection that
+charges by the megabyte, and a 12 MB photograph straight off a camera looks identical to a
+300 KB one. Storage is the cheapest thing in this system and a farmer's data is not.
 
-## 🟡 G-32: the device writes answer a partial row
-
-`GET /devices` carries `id` and `registeredAt`. Thank you, that was G-09's sibling and it
-is fixed. The two writes did not follow:
-
-```
-GET   /devices            → {"id":"26d76e30-…","token":"…","platform":"android",
-                             "categories":[…],"registeredAt":"2026-09-19T13:47:50.898Z"}   ✅
-PUT   /devices            → {"token":"…","platform":"android","categories":[…]}            ← no id, no registeredAt
-PATCH /devices/{token}    → {"token":"…","platform":"android","categories":[…]}            ← same
-```
-
-The app declared `RegisteredDevice` for all three, which was a lie about two of them. It
-now declares a `DeviceAck` for the writes. Nothing reads either response
-(`useNotifications` awaits both and discards them), so this was a type defect rather than
-a blank screen. Worth making the three agree so it stays that way.
-
----
-
-## 🟡 G-25: `null` is served as an empty body
-
-Unchanged, and still worth a one-liner. `GET /bills/current` and `GET /banners/active` are
-both documented as answering `null` rather than `404`, which is the right decision. Nest
-serialises a `null` return as an **empty body**:
-
-```
-GET /banners/active?lang=en
-
-HTTP/1.1 200 OK
-X-Content-Type-Options: nosniff
-Content-Length: 0
-```
-
-No `Content-Type`, no `null` literal. axios hands an empty body over as `''`, so a caller
-comparing `bill === null` gets an empty string, and the declared type
-`GreenLeafBill | null` is a lie about what arrives. `GET /bills/current` behaves the same
-way on a supplier with no bills; once one exists it correctly answers the bill, so the
-empty body is reachable only in the state the `null` was designed for.
-
-Worked around with `|| null` at both call sites. An explicit `res.json(null)`, or a small
-interceptor, would let the type mean what it says.
-
----
-
-## 🟡 G-26: `GET /bills/{monthKey}` 404s where the app expects `null`
-
-Unchanged. `GET /bills/current` answers `null` for "no account yet", while
-`GET /bills/{monthKey}` throws `404 not-found` for the same situation one month over:
-
-```
-GET /bills/2025-03  →  404 {"code":"not-found","details":{"entity":"bill","monthKey":"2025-03"}}
-```
-
-A month the supplier *does* have a bill for answers `200` with the bill, as it should. The
-disagreement is only about the empty case.
-
-The app's contract is `GreenLeafBill | null` for both, and a month a supplier simply did
-not supply into is an ordinary state: the picker offers every month of the year. The app
-translates `not-found` to `null` and lets every other refusal through, so a `403` still
-surfaces rather than showing an empty screen. Worth making the two endpoints agree.
-
----
+Checked before signing, so a file that was never going to be accepted does not reserve a
+row. Your refusals are still the authority and we never permit anything you would refuse.
+Two coded ones would help an editor act: `upload-too-large` and `upload-type`, because a
+generic `invalid` on a file picker does not say which file to choose instead.
 
 ## Open, and no change requested
 
@@ -403,172 +286,48 @@ Recorded so the shared types can be reconciled one day, not as work:
 
 ## Deferred by your decision, and agreed
 
-- **G-02.** `POST /admin/users` requires a password `ConsoleUserDraft` has no field for.
-  *"Needs a product decision, not code."* The console mints one and prints it once.
 - **G-03.** `GET /admin/auth/me` returns a thin identity. The console bootstraps from
   refresh and no longer calls it, so there is no reader to serve.
 - **G-07.** News and banner create read a flat body where the shared drafts carry
   `translations`. *"Should be decided once for both resources."*
 
-## One question back, on a rule rather than a shape
-
-**Tea packets are now capped per month, and the console still labels the figure
-per-request.** You flagged this as a product decision and chose the stricter reading,
-which is the right default: a cap that can only refuse more than the screen promised is
-safe. The app now reads `maxPacketsPerMonth`, `requestedThisMonth` and
-`remainingThisMonth` straight off `/tea-packets/info`, so it agrees with enforcement
-either way.
-
-What the **console** shows is the other half. M18 and M14 label `maxPacketsPerRequest`
-with per-request copy, and it is now enforced per month. We have left the console copy
-alone rather than guess. Tell us which the factory wants, one figure relabelled or a
-separate monthly cap alongside the per-request one, and the console follows in an
-afternoon.
-
 ---
 
-## What the frontends changed
+## Running against staging
 
-Recorded because several of these were **not** optional: your fixes made the previous
-workarounds wrong, and both apps would have been broken against `abf325a` without them.
-
-### Supplier app: was broken, now fixed
-
-| | What it sent | What `abf325a` reads | Was |
-|---|---|---|---|
-| change request, `paymentMethod` | `paymentMethod` | `method` | **`422`, every payment-method change dead** |
-| change request, `address` | top-level `homeAddress` / `estateAddress` | nested `address` | **`422`, every address change dead** |
-| change request, `bankDetails` | *refused client-side* | `bankDetails: { bankName, branchName, accountNumber }` | **feature unreachable for no reason** |
-
-`.strict()` is why the first two were loud rather than silent, which is the outcome
-everyone wanted. It does mean the app had to ship with the server, which is worth noting
-for next time: an additive alias, which is what you did for `installmentMonths`, can land
-ahead of the client. A rename plus `.strict()` cannot.
-
-### Supplier app: workarounds removed
-
-- **Manure** no longer prices client-side and no longer sends `amount`. `deliveryNotes`
-  travels under its own name instead of being folded into `reason`.
-- **Loans** send `installmentMonths` and stop renaming it. One name only, never both:
-  your `.refine()` refuses a body carrying two, and it is right to.
-- **Tea packets** read the count off `/tea-packets/info`. The second `GET /tea-packets`
-  and the device-month derivation are gone. That also removed a real defect, because a
-  handset outside Asia/Colombo counted the allowance into the wrong month around midnight
-  on the 1st. Your Colombo-time count fixed it for free.
-- **Savings** reads `thisMonth`, `previousBalance` and `toDate` instead of deriving them
-  from the last two ledger rows. The headline stays your `balance`.
-- **Advance** reads `interest` instead of hardcoding `0`.
-- The `bank-change-unavailable` refusal code and its three translations are deleted.
-
-⚠️ **One inherited weakness worth knowing about**, since it is now yours: `thisMonth` is
-the **newest ledger entry's movement**, not a sum over the calendar month, so it reads `0`
-when nothing was posted rather than when nothing was saved. That is exactly what the app
-used to do and you reproduced it faithfully. Flagged only because the name now sits on
-your side of the wire.
-
-### Admin console: was broken, now fixed
-
-**The dashboard trends.** Camel-casing them server-side was the right call, and it is a
-breaking change: the console mapped `row.month_key` and `row.app_share`, so both charts
-would have rendered `undefined` for every point. The mapper is deleted; the sort stays.
-
-The mock fixture reproduced the snake_case rows *and* sent `total` as a plain `number`
-where you sent a `bigint`, which is precisely why a green console suite said nothing about
-an endpoint that was answering `500`. That fixture now matches the real payload.
-
-Nothing else on the console side moved. `/admin/reports/:id` to `:report` is the same wire
-path, and `note-required` on the withdrawal cancel is already handled: the console has no
-withdrawal screen, and the code is surfaced correctly everywhere else it appears.
-
----
-
-## Local setup
-
-```bash
-# backend
-npm install                 # prisma generate runs on postinstall
-cp .env.example .env
-npm run setup               # db:up + db:migrate + db:seed:dev
-npm run dev                 # -> http://localhost:3000/v1
-
+```sh
 # console
-npm run dev                 # -> http://localhost:5273
+npm run dev:staging       # -> http://localhost:5273, talking to the deployed API
 ```
 
-⚠️ **`db:seed:dev` creates no supplier with an app account**, so nothing in the supplier
-realm can be driven from a clean database without hand-writing one. The eight bills and
-the manure catalogue this round needed were hand-seeded too. A `db:seed:app`, giving one
-supplier, an app account with a printed password, a few published bills and a catalogue,
-would make the supplier realm reproducible the way `db:seed:dev` already makes the console
-realm.
+The dev server prints its target on startup, so `dev` and `dev:staging` cannot be
+confused for one another.
 
-Also worth knowing: **`idNumber` on `POST /auth/login` carries the supplier *code*, not
-the NIC** (Q16). It is documented in `supplier-auth.service.ts`, and it is not where a
-reader looks first.
+The mobile app points at `https://tfd-api-fja1.onrender.com/v1` from
+`src/config/clients/default/index.ts`, so a fresh build signs in with no setup.
 
-**Both frontends talk only to the real API.** The console's in-browser mock and the mobile
-app's fixture layer are gone from the runtime; their fixtures survive for the test suites
-alone and answer exactly what your handlers answer. A green test run means the frontends
-agree with *this* API, not an idealised one.
+⚠️ **The `/v1` suffix is load-bearing for the app** and was missing before this round.
+`client.ts` uses `baseUrl` as the axios `baseURL` unchanged and adds no prefix, while
+`endpoints.ts` asks for `/auth/login`. Without it every call is a `404`.
+
+Two things about the app worth knowing, neither of them yours:
+
+- **`react-native-config` is not wired into either native build**, so nothing in `.env` is
+  read. That includes `APP_CLIENT`, which means per-brand builds have never actually
+  selected a brand. Ours to fix.
+- **`idNumber` on `POST /auth/login` carries the supplier *code*, not the NIC** (Q16).
+  Documented in `supplier-auth.service.ts` and not where a reader looks first. Worth a
+  line in `api.md` if that file ever gets one.
 
 ---
 
-## How each item was checked
+## State of both frontends
 
-Driven against a live `abf325a`, not read off a diff. Local means Docker on `:3000`;
-staging means `tfd-api-fja1.onrender.com`. Blank means the check was not run there.
+- **Console:** typecheck clean, lint clean, production build clean, **410/410 tests**
+  (seven new, covering the upload flow and each of its four refusals).
+- **Mobile:** typecheck clean, **145/145 tests** (five new, pinning the `null` contract),
+  lint at its 4 pre-existing errors, all in screens untouched by this work.
+- **Every closed gap above re-driven against staging** rather than assumed.
 
-| Checked | Result |
-|---|---|
-| `GET /admin/dashboard`, 4 change requests present | **`200`**, G-12a closed |
-| `adoptionTrend` / `intakeTrend` | `{monthKey, appShare}` / `{monthKey, totalKgs}`, no `total`, closed |
-| `POST /change-requests` `{type:'address',address:{…}}` | `201`, closed |
-| `POST /change-requests` `{type:'address',address:{}}` | **`422`**, the silent-accept rung is gone |
-| `POST /change-requests` `{type:'paymentMethod',method:…}` | `201`, closed |
-| `POST /change-requests` `{type:'bankDetails',bankDetails:{…names}}` | `201`, G-28 closed |
-| `POST /manure-requests` no `amount`, 100 kg of a 50 kg @ 4900 product | `201` **`amount: 9800`**, G-20 closed |
-| `POST /manure-requests` `{"amount":1,…}`, same 100 kg | **`201` `amount: 1`**, **G-31** |
-| `POST /loans` `{installmentMonths}` | clears the schema, G-23 closed |
-| `GET /advances\|loans\|manure/eligibility` | domain names plus `interest` and `hasRequiredHistory`, G-21 closed |
-| `GET /savings/summary` | `thisMonth`, `previousBalance`, `toDate` and the withdrawal view, G-22 closed |
-| `GET /tea-packets/info` | policy plus `requestedThisMonth` and `remainingThisMonth`, G-24 closed |
-| `GET /inquiries` | status `pending`, `reply` alias present, closed |
-| `GET /devices` | carries `id`, closed |
-| `PUT /devices` bad `platform` / bad `categories` | `422` / **`500`**, **G-30** |
-| `PUT`/`PATCH /devices` response | no `id`, no `registeredAt`, **G-32** |
-| `GET /admin/suppliers/not-a-uuid` | `404 not-found`, R1 confirmed fixed |
-| `GET /bills/current`, `GET /banners/active`, no rows | `200` with `Content-Length: 0`, **G-25** |
-| `GET /bills/2025-03` with no bill | `404 not-found`, **G-26** |
-
-And on staging specifically:
-
-| Checked | Result |
-|---|---|
-| `GET /v1/config` and `OPTIONS` preflight, from two browser origins | no `Access-Control-Allow-Origin`, preflight `404`, **D-01** |
-| `POST /v1/admin/auth/login` `Set-Cookie` | `SameSite=None; Secure; HttpOnly` plus a readable `tfd_csrf`, correct |
-| `GET /health` on an idle instance | `200` in **32.9s**, against client timeouts of 20s and 15s, **D-02** |
-| `GET /v1/config` `creditRules` / `manureProducts` / `teaPackets` | all `null` while the flags are on, **D-03** |
-| `PUT /v1/devices` with a bad category | `500 internal`, **G-30** reproduced off the local box |
-| the 25 other contract checks | identical to local |
-
-**State of both frontends against this API.**
-
-- **Console:** typecheck clean, lint clean, production build clean, **403/403 tests pass**.
-- **Mobile:** typecheck clean, **140/140 tests pass**, lint back to its 4 pre-existing
-  errors, all in screens untouched by this work.
-- **A live contract probe** over both realms, asserting the exact fields each frontend now
-  reads: **27/27 against local Docker**, and **25/30 against staging**. The five staging
-  failures are the four CORS checks (D-01) and G-30. Every contract check that passes
-  locally also passes on staging.
-
-⚠️ **The console has not been driven against staging in a browser**, because D-01 makes
-that impossible. Its staging verification is curl-level only. As soon as `CORS_ORIGINS`
-includes the console origin we will point it at that box and walk all 11 screens.
-
-> **The console suite's flakiness is gone.** Last round it produced 0 to 19 timeout
-> failures on identical code. It has run clean since. If it returns, it is the vite-node
-> module-resolution problem described previously and not a contract break.
-
-**Not exercised:** savings ledger entries, delivery rows and payout lines. The hand-seeded
-bills gave credit history but no ledger and no `leaf_deliveries`, so `intakeTrend` and the
-savings ledger answered correctly over empty collections and nothing more.
+**Not exercised:** savings withdrawals through a full approval cycle, and push delivery,
+which is still waiting on FCM and APNs credentials (your O2).

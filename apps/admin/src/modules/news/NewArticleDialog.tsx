@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Dialog } from '@/components/ui/Dialog';
 import { Field, Input, Textarea } from '@/components/ui/Field';
+import { ImageField } from '@/components/ui/ImageField';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { useCreateNewsArticle } from '@/modules/content/hooks';
@@ -43,6 +44,13 @@ export function NewArticleDialog({
   const [title, setTitle] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [body, setBody] = useState('');
+  /**
+   * The cover image, as the attachment id the server issued.
+   *
+   * Optional at creation and deliberately so: an article is words first, and an editor
+   * who has the copy but not the picture should not be blocked from filing it.
+   */
+  const [coverImageAttachmentId, setCoverImageAttachmentId] = useState<string | undefined>();
   const [confirmingCreate, setConfirmingCreate] = useState(false);
 
   // Cleared on open, not on close: a dialog that kept the last article's text would
@@ -64,6 +72,7 @@ export function NewArticleDialog({
   async function confirmCreate() {
     try {
       const article = await create.mutateAsync({
+        coverImageAttachmentId,
         translations: [
           {
             lang: EDITORIAL_FALLBACK_LANGUAGE,
@@ -148,6 +157,15 @@ export function NewArticleDialog({
               />
             )}
           </Field>
+
+          {/* Last, because an article is words first. The copy above is required and
+              this is not, so it should not be the field an editor meets on the way in. */}
+          <ImageField
+            label={t('uploads.coverImage')}
+            entity="newsArticle"
+            onChange={(next) => setCoverImageAttachmentId(next?.attachmentId)}
+            hint={t('uploads.hint', { max: 5 })}
+          />
 
           <p className="text-caption text-text-secondary">{t('news.createDraftHint')}</p>
         </div>

@@ -127,25 +127,37 @@ switch to it.
 npm run dev:staging       # -> http://localhost:5273, talking to the deployed API
 ```
 
-Sign in with the staging accounts (`admin@galaboda.lk` and the rest) on tenant
-`galaboda`. Config lives in `apps/admin/.env.staging`, committed on purpose: it holds a
-public URL and a tenant slug, nothing secret.
+The dev server prints which API it is talking to on startup, so there is never a
+question of which one is running:
 
-Two things about that setup are worth knowing, because both look like bugs.
+```
+npm run dev            ->  API target  http://localhost:3000/v1
+npm run dev:staging    ->  API target  https://tfd-api-fja1.onrender.com/v1
+```
 
-**It goes through a Vite proxy, and it has to.** The staging box has `CORS_ORIGINS`
-unset, so it sends no `Access-Control-Allow-Origin` and answers every preflight with a
-`404`. Every console request carries `Content-Type: application/json` and `X-Tenant`, so
-none of them is a "simple" request and a browser blocks them all before they are sent.
-The proxy makes the page talk to `localhost`, which is same-origin, and Vite forwards the
-call from Node where CORS does not apply. Once the backend sets `CORS_ORIGINS`, delete
-`VITE_DEV_PROXY_TARGET` and point `VITE_API_BASE_URL` straight at the API.
+Config lives in `apps/admin/.env.staging`, committed on purpose: it holds a public URL
+and a tenant slug, nothing secret. The console calls staging **directly**, the way a
+deployed console would, which is also the only arrangement that exercises the real
+preflight and the real cross-site refresh cookie.
+
+Sign in on tenant `galaboda`. Which account matters:
+
+| Account | Use it for |
+| --- | --- |
+| `manager@galaboda.lk` | the queues: credit, change requests, tea packets, inquiries |
+| `manager2@galaboda.lk` | the second pair of eyes, for four-eyes approval |
+| `clerk@galaboda.lk` | the clerk's narrower view |
+| `admin@galaboda.lk` | users, content and config only |
+
+⚠️ **The admin account cannot open the credit queue.** That is `factoryAdmin` correctly
+having no money capability (§12.1), not a bug. Use `manager` for anything in a queue.
 
 **The first request after a quiet period takes about 33 seconds.** Staging is a free
-Render instance and it sleeps when idle. `.env.staging` therefore sets a 45s timeout
-where local uses 20s. If the first page load seems to hang, it is the box waking up.
+Render instance and it sleeps when idle, so `.env.staging` sets a 45s timeout where local
+uses 20s. If the first page load seems to hang, it is the box waking up. Accepted while
+we are pre-users; it goes away on a paid instance.
 
-See `docs/v2/BACKEND-API-GAPS.md` (D-01 and D-02) for the detail.
+See `docs/v2/BACKEND-API-GAPS.md` for the integration record.
 
 ---
 

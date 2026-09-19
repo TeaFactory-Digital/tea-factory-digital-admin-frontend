@@ -45,7 +45,8 @@ export interface NewsDraftBody {
   title: string;
   excerpt?: string;
   body: string;
-  coverImageUrl?: string;
+  /** See `NewsArticleDraft.coverImageAttachmentId`: an id, because the URL expires. */
+  coverImageAttachmentId?: string;
 }
 
 export const newsEndpoints = {

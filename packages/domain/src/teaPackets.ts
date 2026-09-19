@@ -27,13 +27,24 @@ export interface TeaPacketPolicy {
   /** LKR for one packet. */
   pricePerPacket: number;
   /**
-   * The most a supplier may ask for on one request.
+   * The most a supplier may take in a **calendar month**.
+   *
+   * ⚠️ **The name says request and the rule is monthly.** The field is kept under its
+   * original name because it is the name in `client_config` and on the wire, and renaming
+   * a stored column to settle a wording question is not worth a migration. The factory has
+   * confirmed the allowance is per month, and the server enforces it that way, counting a
+   * supplier's undecided and approved packets for the current Colombo month.
+   *
+   * Monthly is also the stricter reading, which is why it was enforced that way before the
+   * answer came back: a cap that can only refuse more than the screen promised disappoints
+   * somebody who was not reading it, while one that quietly allows more is a deduction
+   * nobody agreed to.
    *
    * A cap rather than an eligibility ceiling, and the difference is the whole reason
    * tea packets are not a `CreditFacility`: nothing here is priced off the supplier's
-   * leaf. This is the store saying how much stock one person may take at once, which is
-   * a policy the factory sets and an approver can see at a glance — not an arithmetic
-   * the app has to reproduce byte for byte (AC-05).
+   * leaf. This is the store saying how much stock one person may take, which is a policy
+   * the factory sets and an approver can see at a glance, not an arithmetic the app has to
+   * reproduce byte for byte (AC-05).
    */
   maxPacketsPerRequest: number;
 }
@@ -102,6 +113,15 @@ export type TeaPacketRequestProblem = 'no-packets' | 'over-max' | 'not-whole';
  * Checked in the console **and** owed by the API. The app validates before it submits,
  * but a request raised at the counter by a clerk goes through the same door, and the
  * cap is the factory's stock policy rather than a client-side courtesy.
+ *
+ * ⚠️ **`over-max` here is a single-request check against a monthly cap**, so it catches
+ * only the unambiguous case: one request that exceeds the month's whole allowance on its
+ * own. It cannot see what the supplier has already taken this month, because that needs a
+ * query this pure function does not get. The server does that count and refuses with
+ * `tea-packets-over-limit`, carrying `requestedThisMonth` and `remainingThisMonth`.
+ *
+ * So a clean result here is **not** a promise the request will be approved. It is the
+ * cheap half of the check, which is the right thing to run before a round trip.
  */
 export function teaPacketRequestProblems(
   policy: TeaPacketPolicy,

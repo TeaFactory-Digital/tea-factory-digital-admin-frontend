@@ -1151,7 +1151,7 @@ export const si: Record<TranslationKey, string> = {
     'පැකට්ටුවකට බරක් තිබිය යුතුය. සුරැකීමට පෙර පැකට් ප්‍රමාණය නියම කරන්න.',
   'config.impact.teaPacketPolicy.negative-price': 'පැකට්ටුවක මිල ශුන්‍යයට වඩා අඩු විය නොහැක.',
   'config.impact.teaPacketPolicy.bad-max':
-    'එක් ඉල්ලීමකට සීමාව අවම වශයෙන් පැකට් එකක් විය යුතුය. යෝජනා ක්‍රමය වසා දැමීමට, ඒ වෙනුවට විශේෂාංගය අක්‍රිය කරන්න.',
+    'මාසික සීමාව අවම වශයෙන් පැකට් එකක් විය යුතුය. යෝජනා ක්‍රමය වසා දැමීමට, ඒ වෙනුවට විශේෂාංගය අක්‍රිය කරන්න.',
   'config.impact.creditOutstanding':
     'සැපයුම්කරුවන් තවමත් {{facility}} සඳහා රු. {{amount}} ගෙවිය යුතුව ඇත. එය අක්‍රීය කිරීමෙන් එය සැඟවෙනු ඇත, එබැවින් මෙය සුරැකිය නොහැක.',
   'config.impact.surfaceRemoved': 'සැමට වහාම මෙය මෙනුවෙන් අස් වේ, තවද යෙදුම එය ලබා දීම නවතී.',
@@ -1167,11 +1167,23 @@ export const si: Record<TranslationKey, string> = {
   'config.sectionHint.teaPackets': 'පැකට්ටුවක් යනු කුමක්ද සහ එහි මිල',
   'config.sectionDescription.teaPackets':
     'ගබඩාව නිකුත් කරන පැකට්ටුව, එහි මිල, සහ එක් සැපයුම්කරුවෙකුට වරකට ඉල්ලිය හැකි උපරිමය. ඉල්ලීමක් අනුමත වන විට අය කරන්නේ මෙම මිලයි.',
+  /* Image uploads (M11 news, M12 banners). */
+  'uploads.coverImage': 'ආවරණ රූපය',
+  'uploads.artwork': 'බැනර් රූපය',
+  'uploads.hint': 'JPEG, PNG හෝ WebP, වැඩිම {{max}} MB. විශාල ඡායාරූප බාගත කිරීමට සැපයුම්කරුවන්ට දත්ත වියදම් වේ.',
+  'uploads.uploading': 'රූපය යවමින්…',
+  'uploads.remove': 'රූපය ඉවත් කරන්න',
+  'uploads.unavailable': 'මෙම සේවාදායකයේ රූප උඩුගත කිරීම තවම නොමැත. රූපයක් නොමැතිව ලිපිය සුරැකිය හැක.',
+  'uploads.error.upload-type': 'එම ගොනු වර්ගය භාවිත කළ නොහැක. JPEG, PNG හෝ WebP එකක් තෝරන්න.',
+  'uploads.error.upload-too-large': 'එම රූපය {{max}} MB ට වඩා විශාලයි. කුඩා එකක් තෝරන්න.',
+  'uploads.error.upload-unreadable': 'එම ගොනුව බ්‍රවුසරයට කියවිය හැකි රූපයක් නොවේ.',
+  'uploads.error.upload-failed': 'රූපය යැවිය නොහැකි විය. නැවත උත්සාහ කරන්න.',
+
   'config.teaPackets.packGrams': 'පැකට් ප්‍රමාණය (ග්‍රෑම්)',
   'config.teaPackets.pricePerPacket': 'පැකට්ටුවක මිල (රු.)',
-  'config.teaPackets.maxPerRequest': 'එක් ඉල්ලීමකට උපරිම පැකට් ගණන',
+  'config.teaPackets.maxPerMonth': 'එක් මාසයකට උපරිම පැකට් ගණන',
   'config.teaPackets.maxHint':
-    'මෙය තොග සීමාවකි, ණය සීමාවක් නොවේ. එය ඉක්මවූ ඉල්ලීමක් සීමාව පැහැදිලි කරන සටහනක් සමඟ ප්‍රතික්ෂේප කළ හැක.',
+    'මෙය තොග සීමාවකි, ණය සීමාවක් නොවේ. එක් සැපයුම්කරුවෙකුට එක් දින දර්ශන මාසයකට කර්මාන්තශාලාව අනුමත කරන පැකට් ගණන මෙයයි. සීමාව පැහැදිලි කරන සටහනක් සමඟ ඉල්ලීමක් ප්‍රතික්ෂේප කිරීමට කාර්යාලයට තවමත් හැකිය.',
   'config.teaPackets.flagOff':
     'මෙම කර්මාන්තශාලාව සඳහා තේ පැකට් අක්‍රියයි, එබැවින් මෙහි කිසිවක් තවම බලපාන්නේ නැත. පළමුව "විශේෂාංග" යටතේ ඒවා සක්‍රිය කරන්න.',
   'config.section.payoutFile': 'ගෙවීම් ගොනුව',
@@ -1550,7 +1562,7 @@ export const si: Record<TranslationKey, string> = {
   'teaPackets.problem.title': 'කර්මාන්තශාලාවේ ප්‍රතිපත්තියෙන් පිටත.',
   'teaPackets.problem.no-packets': 'ඉල්ලීම පැකට් කිසිවක් සඳහා නොවේ.',
   'teaPackets.problem.not-whole': 'ගබඩාව නිකුත් කරන්නේ සම්පූර්ණ පැකට් පමණි.',
-  'teaPackets.problem.over-max': 'එක් ඉල්ලීමකට පැකට් {{max}}කට වඩා වැඩියි.',
+  'teaPackets.problem.over-max': 'පැකට් {{max}}කට වඩා වැඩියි. එය මුළු මාසයේම දීමනාවයි.',
   'teaPackets.noPolicy.title': 'තේ පැකට් මිලක් තවම නියම කර නැත.',
   'teaPackets.noPolicy.body':
     'මෙම ඉල්ලීම් මිල ගණන් කරන්නේ පැකට්ටුවකට {{price}} යන පෙරනිමි අගය අනුවයි. කර්මාන්තශාලාවේම මිල "වින්‍යාසය" යටතේ ඇතුළත් කරන්න.',
