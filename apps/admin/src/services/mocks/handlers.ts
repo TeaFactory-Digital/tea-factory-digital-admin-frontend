@@ -2209,31 +2209,29 @@ export const handlers: HttpHandler[] = [
 
     /**
      * **The shape the API sends** — and it is `DashboardSummary` now for everything the
-     * console renders. **G-12 is largely closed**: `queues` carries the age of the oldest
-     * item and the §14.4 breach count, `app` reports the adoption figures that had no
-     * source at all, and `content` is the four silent failures rather than two published
-     * counts.
+     * console renders. **G-12 and G-12a are both closed**: `queues` carries the age of the
+     * oldest item and the §14.4 breach count, `app` reports the adoption figures that had
+     * no source at all, `content` is the four silent failures rather than two published
+     * counts, and both trends arrive camel-cased.
      *
-     * What still differs is `adoptionTrend`, which arrives as the raw SQL rows
-     * (`month_key` / `app_share`) — **G-12a**. The fixture reproduces that rather than
-     * tidying it, because the console maps it and the mapping needs exercising.
-     *
-     * `total` is sent as a **number** here where the server sends a Postgres `bigint`.
-     * That difference is why this fixture cannot reproduce the crash the real endpoint
-     * has: see **G-12a**, and the note in `dashboardRepository`.
+     * This fixture used to reproduce the raw SQL rows (`month_key` / `app_share` / `kgs`)
+     * because the server leaked them out of a raw query and the console translated them.
+     * It also sent `total` as a plain number where the server sent a Postgres `bigint`,
+     * which is precisely why it could **not** reproduce the `500` that `bigint` caused, and
+     * why a green suite here said nothing about an endpoint that was down. `total` is gone
+     * from the payload entirely; nothing ever read it.
      */
     return HttpResponse.json({
       queues: visible,
       app: summary.app,
       content: summary.content,
       adoptionTrend: summary.adoptionTrend.map((row) => ({
-        month_key: row.monthKey,
-        total: 0,
-        app_share: row.appShare,
+        monthKey: row.monthKey,
+        appShare: row.appShare,
       })),
       intakeTrend: summary.intakeTrend.map((row) => ({
-        month_key: row.date,
-        kgs: String(row.totalKgs),
+        monthKey: row.date,
+        totalKgs: row.totalKgs,
       })),
       /**
        * `FactorySyncStatus` rides HERE (ADR-005, Q18) — there is no

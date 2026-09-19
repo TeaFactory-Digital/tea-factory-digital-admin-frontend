@@ -16,7 +16,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,css,md,json}\"",
     "test": "vitest run --root apps/admin",
     "test:watch": "vitest --root apps/admin",
-    "e2e": "playwright test --config apps/admin/playwright.config.ts"
+    "e2e": "playwright test --config apps/admin/playwright.config.ts",
+    "dev:staging": "npm run dev:staging --workspace @tfd/admin"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",

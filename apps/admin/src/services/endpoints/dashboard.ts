@@ -23,20 +23,24 @@ import { apiClient } from '../api/client';
 /**
  * What `GET /admin/dashboard` sends.
  *
- * **Almost `DashboardSummary` now — gap G-12 is largely closed.** `queues` is a real
- * `QueueCount[]` carrying the age of the oldest item, `app` reports v2's headline
+ * **Effectively `DashboardSummary` now: G-12 and G-12a are both closed.** `queues` is a
+ * real `QueueCount[]` carrying the age of the oldest item, `app` reports v2's headline
  * adoption figures, and `content` is the four silent failures `ContentHealth` describes
  * rather than two published counts.
  *
- * Two things still differ, and both are recorded as **G-12a**:
+ * What G-12a was, because the shape of this interface is the record of it:
  *
- *  - **The trends are raw SQL rows** — `month_key` / `app_share` / `kgs` — where the rest
- *    of the API is camel-cased. Mapped in the repository.
- *  - **`adoptionTrend` carries a `total` that is a Postgres `bigint`**, which
- *    `JSON.stringify` cannot serialise. The endpoint therefore answers **`500` for any
- *    factory that has ever had a change request**, and `200` only while the table is
- *    empty. The console cannot work around a response it never receives; see
- *    `dashboardRepository` for what it does instead.
+ *  - **The endpoint answered `500` for any factory that had ever had a change request.**
+ *    `adoptionTrend` selected `count(*) AS total`, Prisma hands a Postgres `bigint` back
+ *    as a JavaScript `BigInt`, and `JSON.stringify` throws on one, so Express answered a
+ *    bare `500` with no domain code, from the serializer rather than from a handler. It
+ *    was **data-dependent**: empty table, `200`; three rows, `500`. It therefore passed on
+ *    every fresh machine and in CI, and would have fired on this console's landing page
+ *    the first morning a supplier filed anything. `total` is gone, nothing having read
+ *    it, and a `BigInt` replacer now nets the whole class of it server-side.
+ *  - **The trends were raw SQL rows** (`month_key`, `app_share`, `kgs`) where the rest
+ *    of the API is camel-cased. They are mapped server-side now, so this console no longer
+ *    translates snake_case that leaked out of a raw query.
  *
  * `cycle` and `today` are absent and that is fine — v2's dashboard does not render them.
  *
@@ -47,8 +51,9 @@ export interface ServedDashboard {
   queues: QueueCount[];
   app: AppAdoption;
   content: ContentHealth;
-  adoptionTrend: Array<{ month_key: string; total: number | string; app_share: number | null }>;
-  intakeTrend: Array<{ month_key: string; kgs: string }>;
+  adoptionTrend: Array<{ monthKey: string; appShare: number | null }>;
+  /** `totalKgs` is a `number`: the server casts the `SUM` to text and parses it. */
+  intakeTrend: Array<{ monthKey: string; totalKgs: number }>;
   sync: FactorySyncStatus | null;
   alerts: Array<{ key?: string; id?: string; severity?: DashboardAlert['severity']; params?: Record<string, string | number> }>;
 }

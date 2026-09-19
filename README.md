@@ -111,7 +111,8 @@ switch to it.
 
 | Command              |                                                                  |
 | -------------------- | ---------------------------------------------------------------- |
-| `npm run dev`        | Dev server, mock API on                                          |
+| `npm run dev`        | Dev server against a **local** API on `:3000`                    |
+| `npm run dev:staging`| Dev server against the **deployed staging** API                  |
 | `npm run build`      | Production bundle                                                |
 | `npm run build:demo` | Demo bundle — production build, mock API on, for preview hosting |
 | `npm run typecheck`  | `tsc --build`, all three projects                                |
@@ -119,6 +120,32 @@ switch to it.
 | `npm run test`       | Vitest — 351 tests                                               |
 | `npm run e2e`        | Playwright — 29 specs (`npx playwright install chromium` once)    |
 | `npm run e2e:demo`   | The same specs against the built demo bundle                     |
+
+### Running against staging
+
+```sh
+npm run dev:staging       # -> http://localhost:5273, talking to the deployed API
+```
+
+Sign in with the staging accounts (`admin@galaboda.lk` and the rest) on tenant
+`galaboda`. Config lives in `apps/admin/.env.staging`, committed on purpose: it holds a
+public URL and a tenant slug, nothing secret.
+
+Two things about that setup are worth knowing, because both look like bugs.
+
+**It goes through a Vite proxy, and it has to.** The staging box has `CORS_ORIGINS`
+unset, so it sends no `Access-Control-Allow-Origin` and answers every preflight with a
+`404`. Every console request carries `Content-Type: application/json` and `X-Tenant`, so
+none of them is a "simple" request and a browser blocks them all before they are sent.
+The proxy makes the page talk to `localhost`, which is same-origin, and Vite forwards the
+call from Node where CORS does not apply. Once the backend sets `CORS_ORIGINS`, delete
+`VITE_DEV_PROXY_TARGET` and point `VITE_API_BASE_URL` straight at the API.
+
+**The first request after a quiet period takes about 33 seconds.** Staging is a free
+Render instance and it sleeps when idle. `.env.staging` therefore sets a 45s timeout
+where local uses 20s. If the first page load seems to hang, it is the box waking up.
+
+See `docs/v2/BACKEND-API-GAPS.md` (D-01 and D-02) for the detail.
 
 ---
 

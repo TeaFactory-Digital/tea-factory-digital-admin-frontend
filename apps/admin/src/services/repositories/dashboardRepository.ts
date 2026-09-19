@@ -2,9 +2,10 @@
  * M1 Dashboard gateway.
  *
  * This was the widest gap between what the API sent and what the screen was written
- * against (gap **G-12**), and most of it is closed: `queues` arrives as real
- * `QueueCount` records with the age of the oldest item, `app` reports v2's headline
- * adoption figures, and `content` is `ContentHealth` rather than two published counts.
+ * against (gap **G-12**), and it is now closed, along with the `500` its rebuild
+ * introduced (**G-12a**): `queues` arrives as real `QueueCount` records with the age of
+ * the oldest item, `app` reports v2's headline adoption figures, `content` is
+ * `ContentHealth` rather than two published counts, and the trends arrive camel-cased.
  * The three `null`-guarded view fields this file used to carry are gone with it.
  *
  * The rule it still follows: **an absence is rendered as an absence.** Where the payload
@@ -38,19 +39,21 @@ export interface DashboardView {
 }
 
 /**
- * The raw SQL rows into the camel-cased series the chart reads (**G-12a**).
+ * The series the chart reads, oldest first.
  *
- * `total` is dropped rather than mapped: the chart plots the share, and the count behind
- * it is the field whose `bigint` type is what makes this endpoint fail to serialise at
- * all. Reading it would be adopting the problem.
+ * **No longer a rename** (**G-12a** closed). This used to map `month_key` → `monthKey`
+ * and `app_share` → `appShare`, because both leaked out of a raw query in snake_case
+ * while the rest of the API is camel. The server maps them now, and it also dropped the
+ * `total` this function deliberately ignored: a `count(*)`, which is a Postgres `bigint`,
+ * which `JSON.stringify` refuses, which made the whole endpoint answer `500` as soon as
+ * the factory had a single change request.
+ *
+ * The sort stays, and it is the only thing left here. It is asserted rather than assumed:
+ * the API orders ascending today, and a chart that silently drew backwards would look
+ * like a collapse rather than like a bug.
  */
 function toAdoptionTrend(rows: ServedDashboard['adoptionTrend']) {
-  return [...rows]
-    .map((row) => ({ monthKey: row.month_key, appShare: row.app_share }))
-    // Oldest first — a trend is read left to right. Asserted rather than assumed: the
-    // API orders ascending today, and a chart that silently drew backwards would look
-    // like a collapse rather than like a bug.
-    .sort((a, b) => a.monthKey.localeCompare(b.monthKey));
+  return [...rows].sort((a, b) => a.monthKey.localeCompare(b.monthKey));
 }
 
 /**
