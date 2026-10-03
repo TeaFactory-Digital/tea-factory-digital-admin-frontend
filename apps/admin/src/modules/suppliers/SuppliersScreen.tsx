@@ -23,7 +23,8 @@ import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
-import { SearchInput, Select } from '@/components/ui/Field';
+import { SearchInput } from '@/components/ui/Field';
+import { FilterSelect } from '@/components/ui/SelectMenu';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/states';
 import { formatAmount, formatDate } from '@/lib/format';
@@ -103,9 +104,7 @@ export function SuppliersScreen() {
         accessorKey: 'supplierCode',
         header: t('suppliers.column.code'),
         cell: (info) => (
-          <span className="numeric font-semibold text-text-primary">
-            {info.getValue<string>()}
-          </span>
+          <span className="numeric font-semibold text-text-primary">{info.getValue<string>()}</span>
         ),
       },
       { accessorKey: 'name', header: t('suppliers.column.name') },
@@ -230,57 +229,52 @@ export function SuppliersScreen() {
             />
           </div>
 
-          <Select
-            aria-label={t('suppliers.column.status')}
-            value={status ?? ''}
-            onChange={(event) => setParam('status', event.target.value || null)}
-            fullWidth={false}
-          >
-            <option value="">{t('suppliers.filter.allStatuses')}</option>
-            <option value="active">{t('suppliers.status.active')}</option>
-            <option value="suspended">{t('suppliers.status.suspended')}</option>
-            <option value="closed">{t('suppliers.status.closed')}</option>
-          </Select>
+          <FilterSelect
+            label={t('suppliers.column.status')}
+            allLabel={t('suppliers.filter.allStatuses')}
+            value={status ?? null}
+            onChange={(next) => setParam('status', next)}
+            options={[
+              { value: 'active', label: t('suppliers.status.active') },
+              { value: 'suspended', label: t('suppliers.status.suspended') },
+              { value: 'closed', label: t('suppliers.status.closed') },
+            ]}
+          />
 
-          <Select
-            aria-label={t('suppliers.column.point')}
-            value={collectionPoint ?? ''}
-            onChange={(event) => setParam('collectionPoint', event.target.value || null)}
-            fullWidth={false}
-          >
-            <option value="">{t('suppliers.filter.allPoints')}</option>
-            {/* Collection points come from the tenant's config, so a factory that
-                weighs at two points does not see another's four. */}
-            {config.collectionPoints.map((point) => (
-              <option key={point.id} value={point.name}>
-                {point.name}
-              </option>
-            ))}
-          </Select>
+          {/* Collection points come from the tenant's config, so a factory that weighs
+              at two points does not see another's four. */}
+          <FilterSelect
+            label={t('suppliers.column.point')}
+            allLabel={t('suppliers.filter.allPoints')}
+            value={collectionPoint ?? null}
+            onChange={(next) => setParam('collectionPoint', next)}
+            options={config.collectionPoints.map((point) => ({
+              value: point.name,
+              label: point.name,
+            }))}
+          />
 
           {/* The list behind the dashboard's adoption percentage. A figure nobody can
               turn into names is a figure nobody acts on, which is why the card links
               straight to `?hasApp=false`. */}
-          <Select
-            aria-label={t('suppliers.filter.appAny')}
-            value={hasApp ?? ''}
-            onChange={(event) => setParam('hasApp', event.target.value || null)}
-            fullWidth={false}
-          >
-            <option value="">{t('suppliers.filter.appAny')}</option>
-            <option value="false">{t('suppliers.filter.appMissing')}</option>
-            <option value="true">{t('suppliers.filter.appInstalled')}</option>
-          </Select>
+          <FilterSelect
+            label={t('suppliers.filter.appAny')}
+            allLabel={t('suppliers.filter.appAny')}
+            value={hasApp ?? null}
+            onChange={(next) => setParam('hasApp', next)}
+            options={[
+              { value: 'false', label: t('suppliers.filter.appMissing') },
+              { value: 'true', label: t('suppliers.filter.appInstalled') },
+            ]}
+          />
 
-          <Select
-            aria-label={t('suppliers.filter.noBankDetails')}
-            value={hasBankDetails ?? ''}
-            onChange={(event) => setParam('hasBankDetails', event.target.value || null)}
-            fullWidth={false}
-          >
-            <option value="">{t('suppliers.filter.anyBankDetails')}</option>
-            <option value="false">{t('suppliers.filter.noBankDetails')}</option>
-          </Select>
+          <FilterSelect
+            label={t('suppliers.filter.noBankDetails')}
+            allLabel={t('suppliers.filter.anyBankDetails')}
+            value={hasBankDetails ?? null}
+            onChange={(next) => setParam('hasBankDetails', next)}
+            options={[{ value: 'false', label: t('suppliers.filter.noBankDetails') }]}
+          />
         </div>
 
         <p className="shrink-0 px-md pt-sm text-caption text-text-secondary">
@@ -299,9 +293,7 @@ export function SuppliersScreen() {
           onPageChange={(next) => setParam('page', String(next))}
           sorting={sorting}
           onSortingChange={handleSortingChange}
-          emptyState={
-            <EmptyState title={t('common.noResults')} body={t('common.noResultsHint')} />
-          }
+          emptyState={<EmptyState title={t('common.noResults')} body={t('common.noResultsHint')} />}
         />
       </Card>
     </>
