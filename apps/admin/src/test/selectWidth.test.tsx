@@ -18,6 +18,8 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { vi } from 'vitest';
 import { Select } from '@/components/ui/Select';
 import { RoleMatrixView } from '@/modules/users/RoleMatrixView';
 import { renderWithProviders, signInAs, signOut } from './render';
@@ -49,6 +51,40 @@ describe('Select', () => {
     // The common case — a form field that lines up with the inputs above and below it.
     expect(wrapper).toHaveClass('w-full');
     expect(wrapper).not.toHaveClass('inline-block');
+  });
+});
+
+describe('Select as a popup list', () => {
+  it('opens a list and reports the choice as event.target.value', async () => {
+    const onChange = vi.fn();
+    render(
+      <Select aria-label="Status" value="" onChange={(event) => onChange(event.target.value)}>
+        <option value="">All statuses</option>
+        <option value="draft">Draft</option>
+      </Select>,
+    );
+
+    const trigger = screen.getByRole('combobox', { name: 'Status' });
+    // The empty "All" value shows, though Radix itself cannot hold an empty value.
+    expect(trigger).toHaveTextContent('All statuses');
+
+    await userEvent.click(trigger);
+    await userEvent.click(await screen.findByRole('option', { name: 'Draft' }));
+    expect(onChange).toHaveBeenCalledWith('draft');
+  });
+
+  it('hands back an empty string when "All" is chosen again', async () => {
+    const onChange = vi.fn();
+    render(
+      <Select aria-label="Status" value="draft" onChange={(event) => onChange(event.target.value)}>
+        <option value="">All statuses</option>
+        <option value="draft">Draft</option>
+      </Select>,
+    );
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Status' }));
+    await userEvent.click(await screen.findByRole('option', { name: 'All statuses' }));
+    expect(onChange).toHaveBeenCalledWith('');
   });
 });
 

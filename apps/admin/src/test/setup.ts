@@ -28,6 +28,11 @@ globalThis.ResizeObserver ??= class {
   disconnect() {}
 };
 
+// The same for pointer capture and scrolling, which a Radix Select calls when it opens.
+Element.prototype.hasPointerCapture ??= () => false;
+Element.prototype.releasePointerCapture ??= () => {};
+Element.prototype.scrollIntoView ??= () => {};
+
 afterEach(() => {
   server.resetHandlers();
   // Module-scope state survives between test files; a decided change request

@@ -3,17 +3,10 @@
  * and never hands Radix the empty string it refuses.
  */
 
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FilterSelect } from '@/components/ui/SelectMenu';
-
-// jsdom has no pointer capture or scrolling, both of which Radix Select calls on open.
-beforeAll(() => {
-  Element.prototype.hasPointerCapture ??= () => false;
-  Element.prototype.releasePointerCapture ??= () => {};
-  Element.prototype.scrollIntoView ??= () => {};
-});
 
 const OPTIONS = [
   { value: 'active', label: 'Active' },

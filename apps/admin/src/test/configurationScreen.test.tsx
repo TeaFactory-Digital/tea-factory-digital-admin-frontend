@@ -125,9 +125,10 @@ describe('the bank catalogue section', () => {
     expect(await screen.findByPlaceholderText('Bank of Ceylon')).toBeInTheDocument();
     expect(screen.queryByPlaceholderText('Akuressa')).not.toBeInTheDocument();
 
-    const picker = screen.getByRole('combobox', { name: /Edit branches/i });
-    const [, firstBank] = Array.from(picker.querySelectorAll('option'));
-    await user.selectOptions(picker, firstBank!.value);
+    // A popup list now, not a native <select>: open it and choose the first bank.
+    await user.click(screen.getByRole('combobox', { name: /Edit branches/i }));
+    const [, firstBank] = await screen.findAllByRole('option');
+    await user.click(firstBank!);
 
     // Exactly one branch editor — the chosen bank's.
     expect(await screen.findByPlaceholderText('Akuressa')).toBeInTheDocument();
