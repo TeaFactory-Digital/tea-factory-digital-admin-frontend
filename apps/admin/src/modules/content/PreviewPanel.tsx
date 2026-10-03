@@ -14,7 +14,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { Languages } from 'lucide-react';
-import type { ContentPreview, LanguageCode } from '@tfd/domain';
+import { parsePagePoints, type ContentPreview, type LanguageCode } from '@tfd/domain';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState, ErrorState, Spinner } from '@/components/ui/states';
 
@@ -80,13 +80,43 @@ export function PreviewPanel({
                   {preview.translation.excerpt}
                 </p>
               ) : null}
-              <p className="max-w-prose whitespace-pre-wrap text-body-small text-text-primary">
-                {preview.translation.body}
-              </p>
+              <PreviewBody body={preview.translation.body} />
             </article>
           </div>
         )}
       </CardBody>
     </Card>
+  );
+}
+
+/**
+ * The body as the app draws it: a page written as points (FAQ, terms, privacy) shows its
+ * points as numbered sections rather than with their `##` markers. Plain text is as typed.
+ */
+function PreviewBody({ body }: { body: string }) {
+  const { intro, points } = parsePagePoints(body);
+  if (points.length === 0) {
+    return (
+      <p className="max-w-prose whitespace-pre-wrap text-body-small text-text-primary">{body}</p>
+    );
+  }
+  return (
+    <div className="flex max-w-prose flex-col gap-sm">
+      {intro ? (
+        <p className="whitespace-pre-wrap text-body-small text-text-secondary">{intro}</p>
+      ) : null}
+      <ol className="flex flex-col divide-y divide-divider">
+        {points.map((point, index) => (
+          <li key={index} className="flex flex-col gap-xxs py-xs">
+            <span className="text-body-small font-semibold text-text-primary">
+              {index + 1}. {point.title}
+            </span>
+            <span className="whitespace-pre-wrap text-caption text-text-secondary">
+              {point.body}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }

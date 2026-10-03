@@ -23,10 +23,12 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
-import { FileText, Send } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import type { TFunction } from 'i18next';
+import { FileText, Pencil, Send } from 'lucide-react';
 import {
   EDITORIAL_FALLBACK_LANGUAGE,
+  POINT_PAGES,
   STATIC_PAGE_SLUGS,
   type AdminStaticPage,
   type LanguageCode,
@@ -36,7 +38,9 @@ import { useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { Card, CardBody, CardHeader, DetailRow } from '@/components/ui/Card';
+import { useFactory } from '@/config/RuntimeConfigProvider';
+import type { PointLabels } from '@/modules/content/PointsEditor';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, Spinner } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
@@ -206,6 +210,7 @@ export function StaticContentScreen() {
                 readOnly={!canWrite}
                 saving={save.isPending}
                 onSave={(body) => void submitSave(body)}
+                pointLabels={pointLabelsFor(slug, t)}
               />
 
               {!published ? (
@@ -247,6 +252,11 @@ export function StaticContentScreen() {
             </CardBody>
           </Card>
 
+          {/* The app's "Questions about these terms?" block under the terms. Its details
+              are the factory's own, kept in Configuration, so they are shown here with the
+              way to change them rather than edited twice. */}
+          {slug === 'terms' ? <TermsContactCard /> : null}
+
           <PreviewPanel
             lang={lang}
             preview={preview.data}
@@ -271,6 +281,65 @@ export function StaticContentScreen() {
   );
 }
 
+/** The labels the point editor uses, per page; `undefined` keeps one text box. */
+function pointLabelsFor(slug: StaticPageSlug, t: TFunction): PointLabels | undefined {
+  if (!POINT_PAGES.includes(slug)) return undefined;
+  if (slug === 'faq') {
+    return {
+      title: t('content.points.question'),
+      body: t('content.points.answer'),
+      add: t('content.points.addQuestion'),
+      item: (n) => t('content.points.questionN', { n }),
+    };
+  }
+  return {
+    title: t('content.points.sectionTitle'),
+    body: t('content.points.sectionBody'),
+    add: t('content.points.addSection'),
+    item: (n) => t('content.points.sectionN', { n }),
+  };
+}
+
+function TermsContactCard() {
+  const { t } = useTranslation();
+  const factory = useFactory();
+  const rows: Array<[string, string | undefined]> = [
+    [t('config.factory.name'), factory.name],
+    [t('config.factory.regNo'), factory.regNo],
+    [t('config.factory.location'), factory.location],
+    [t('config.factory.telephone'), factory.telephone],
+    [t('config.factory.supportEmail'), factory.supportEmail],
+  ];
+  return (
+    <Card>
+      <CardHeader
+        title={t('staticContent.contact.title')}
+        description={t('staticContent.contact.description')}
+        actions={
+          <Link
+            to="/configuration?section=factory"
+            className="inline-flex items-center gap-xxs text-body-small text-primary hover:underline"
+          >
+            <Pencil className="size-icon-xs" aria-hidden />
+            {t('staticContent.contact.edit')}
+          </Link>
+        }
+      />
+      <CardBody>
+        <dl className="divide-y divide-divider">
+          {rows.map(([label, value]) => (
+            <DetailRow
+              key={label}
+              label={label}
+              value={value?.trim() ? value : t('staticContent.contact.notSet')}
+            />
+          ))}
+        </dl>
+      </CardBody>
+    </Card>
+  );
+}
+
 function PageRow({
   page,
   active,
@@ -291,9 +360,7 @@ function PageRow({
       aria-current={active ? 'true' : undefined}
       className={cn(
         'flex w-full items-start gap-sm border-l-2 px-lg py-sm text-left',
-        active
-          ? 'border-primary bg-primary-muted'
-          : 'border-transparent hover:bg-surface-variant',
+        active ? 'border-primary bg-primary-muted' : 'border-transparent hover:bg-surface-variant',
       )}
     >
       <FileText className="mt-xxs size-icon-sm shrink-0 text-text-secondary" aria-hidden />

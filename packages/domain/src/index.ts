@@ -19,6 +19,7 @@ export * from './creditRules';
 export * from './factorySync';
 export * from './inquiry';
 export * from './content';
+export * from './pagePoints';
 export * from './banners';
 export * from './teaPackets';
 export * from './notifications';

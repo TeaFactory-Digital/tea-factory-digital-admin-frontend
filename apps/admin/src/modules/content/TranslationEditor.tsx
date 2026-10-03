@@ -30,11 +30,15 @@ import {
   type ContentTranslation,
   type ContentTranslationBody,
   type LanguageCode,
+  pagePointsProblem,
+  parsePagePoints,
+  serializePagePoints,
 } from '@tfd/domain';
 import { Button } from '@/components/ui/Button';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import { formatDateTime } from '@/lib/format';
 import { InfoTip } from '@/components/ui/Tooltip';
+import { PointsEditor, type PointLabels } from './PointsEditor';
 
 export function TranslationEditor({
   lang,
@@ -45,6 +49,7 @@ export function TranslationEditor({
   readOnly,
   saving,
   onSave,
+  pointLabels,
 }: {
   lang: LanguageCode;
   translation: ContentTranslation | undefined;
@@ -54,12 +59,25 @@ export function TranslationEditor({
   readOnly: boolean;
   saving: boolean;
   onSave: (body: ContentTranslationBody) => void;
+  /**
+   * Given, the body is edited as a list of points (FAQ, terms, privacy) instead of one
+   * text box. The points are written back into the same body text, so saving is unchanged.
+   */
+  pointLabels?: PointLabels;
 }) {
   const { t } = useTranslation();
 
   const [title, setTitle] = useState(translation?.title ?? '');
   const [excerpt, setExcerpt] = useState(translation?.excerpt ?? '');
   const [body, setBody] = useState(translation?.body ?? '');
+  /**
+   * The points as typed, kept apart from `body`.
+   *
+   * Rebuilding them from `body` on every keystroke trimmed each field as it was typed, so
+   * a space at the end of "Can I" vanished before the next letter arrived. The page text is
+   * written from these, trimmed, only for saving and for "unsaved changes".
+   */
+  const [pointsDraft, setPointsDraft] = useState(() => parsePagePoints(translation?.body ?? ''));
 
   /**
    * Follow the record, not the mount.
@@ -72,6 +90,7 @@ export function TranslationEditor({
     setTitle(translation?.title ?? '');
     setExcerpt(translation?.excerpt ?? '');
     setBody(translation?.body ?? '');
+    setPointsDraft(parsePagePoints(translation?.body ?? ''));
   }, [translation?.title, translation?.excerpt, translation?.body, translation?.updatedAt]);
 
   const dirty =
@@ -81,7 +100,9 @@ export function TranslationEditor({
 
   // The schema half of this refusal lives in `contentRepository`; this is so the button
   // is not offered for a translation that would say nothing.
-  const complete = title.trim().length > 0 && body.trim().length > 0;
+  const points = pointLabels ? pointsDraft : null;
+  const pointsProblem = points ? pagePointsProblem(points) : null;
+  const complete = title.trim().length > 0 && body.trim().length > 0 && !pointsProblem;
   const isFallback = lang === EDITORIAL_FALLBACK_LANGUAGE;
 
   return (
@@ -98,7 +119,18 @@ export function TranslationEditor({
           </p>
           <p className="mt-xxs text-body-small font-medium text-text-primary">{source.title}</p>
           <p className="mt-xxs whitespace-pre-wrap text-caption text-text-secondary">
-            {source.body}
+            {/* Points shown as "1. Title" rather than with their `##` markers. */}
+            {pointLabels
+              ? (() => {
+                  const parsed = parsePagePoints(source.body);
+                  return [
+                    parsed.intro,
+                    ...parsed.points.map((p, i) => `${i + 1}. ${p.title}\n${p.body}`),
+                  ]
+                    .filter(Boolean)
+                    .join('\n\n');
+                })()
+              : source.body}
           </p>
         </div>
       ) : null}
@@ -135,24 +167,37 @@ export function TranslationEditor({
         </Field>
       ) : null}
 
-      <Field label={t('content.field.body')} required hint={t('content.field.bodyHint')}>
-        {({ id, describedBy, required }) => (
-          <Textarea
-            id={id}
-            aria-describedby={describedBy}
-            required={required}
-            // Declared, so the base stylesheet's Sinhala and Tamil line height and
-            // wrapping rules apply while the copy is being typed rather than only once
-            // it is on a supplier's phone.
-            lang={lang}
-            rows={14}
-            maxLength={MAX_CONTENT_BODY_CHARS}
-            disabled={readOnly}
-            value={body}
-            onChange={(event) => setBody(event.target.value)}
-          />
-        )}
-      </Field>
+      {points && pointLabels ? (
+        <PointsEditor
+          value={points}
+          onChange={(next) => {
+            setPointsDraft(next);
+            setBody(serializePagePoints(next));
+          }}
+          labels={pointLabels}
+          lang={lang}
+          readOnly={readOnly}
+        />
+      ) : (
+        <Field label={t('content.field.body')} required hint={t('content.field.bodyHint')}>
+          {({ id, describedBy, required }) => (
+            <Textarea
+              id={id}
+              aria-describedby={describedBy}
+              required={required}
+              // Declared, so the base stylesheet's Sinhala and Tamil line height and
+              // wrapping rules apply while the copy is being typed rather than only once
+              // it is on a supplier's phone.
+              lang={lang}
+              rows={14}
+              maxLength={MAX_CONTENT_BODY_CHARS}
+              disabled={readOnly}
+              value={body}
+              onChange={(event) => setBody(event.target.value)}
+            />
+          )}
+        </Field>
+      )}
 
       {readOnly ? (
         <InfoTip label={t('tip.readOnly')} text={t('tip.readOnly')}>
@@ -173,16 +218,18 @@ export function TranslationEditor({
           {/* Said in words rather than left to a disabled button, because "nothing
               happens when I press save" is a support call either way. */}
           <p className="text-caption text-text-secondary">
-            {!complete
-              ? t('content.saveNeedsCopy')
-              : dirty
-                ? t('content.unsaved')
-                : translation
-                  ? t('content.savedAt', {
-                      when: formatDateTime(translation.updatedAt),
-                      name: translation.updatedByName,
-                    })
-                  : t('content.notWrittenYet')}
+            {pointsProblem === 'incomplete-point'
+              ? t('content.points.incomplete')
+              : !complete
+                ? t('content.saveNeedsCopy')
+                : dirty
+                  ? t('content.unsaved')
+                  : translation
+                    ? t('content.savedAt', {
+                        when: formatDateTime(translation.updatedAt),
+                        name: translation.updatedByName,
+                      })
+                    : t('content.notWrittenYet')}
           </p>
         </div>
       )}
