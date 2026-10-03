@@ -36,7 +36,31 @@ export const adminConfigRepository = {
    * collection points (**G-16**) and they had to be filled from the public projection of
    * the same row; the API carries the whole row now.
    */
-  get: (): Promise<AdminConfigResponse> => adminConfigEndpoints.get(),
+  /**
+   * **`null` JSON columns are turned into absences here.**
+   *
+   * `branding`, `theme` and `push` are nullable `Json` columns, and a factory that never
+   * set them is served `null` for each. The type, and every screen, reads `branding` as an
+   * object, so `branding.logoUrl` threw and took the whole Languages & branding section
+   * down. An empty `branding` and an absent `theme` / `push` are what "never set" means.
+   */
+  get: async (): Promise<AdminConfigResponse> => {
+    const served = await adminConfigEndpoints.get();
+    const config = served.config as RuntimeConfig & {
+      branding: RuntimeConfig['branding'] | null;
+      theme?: RuntimeConfig['theme'] | null;
+      push?: RuntimeConfig['push'] | null;
+    };
+    return {
+      ...served,
+      config: {
+        ...config,
+        branding: config.branding ?? {},
+        theme: config.theme ?? undefined,
+        push: config.push ?? undefined,
+      },
+    };
+  },
 
   /**
    * What a patch would cost, without saving it.

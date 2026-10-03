@@ -30,6 +30,7 @@ import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDateTime } from '@/lib/format';
 import { useNotificationTriggers, useSetNotificationTrigger } from './hooks';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 export function TriggersCard() {
   const { t } = useTranslation();
@@ -125,15 +126,17 @@ export function TriggersCard() {
         )}
 
         {!canChange ? (
-          <p className="border-t border-divider pt-md text-caption text-text-secondary">
-            {t('notifications.triggersNeedAdmin')}
-          </p>
+          <div className="border-t border-divider pt-md">
+            <InfoTip label={t('tip.readOnly')} text={t('tip.readOnly')}>
+              {t('notifications.triggersNeedAdmin')}
+            </InfoTip>
+          </div>
         ) : null}
 
         {/* §21.24 stated where the decision is made, rather than only in the docs. */}
-        <p className="rounded-md bg-surface-variant px-md py-sm text-caption text-text-secondary">
+        <InfoTip label={t('tip.openQuestion')} text={t('tip.openQuestion')}>
           {t('notifications.openQuestion')}
-        </p>
+        </InfoTip>
       </CardBody>
     </Card>
   );

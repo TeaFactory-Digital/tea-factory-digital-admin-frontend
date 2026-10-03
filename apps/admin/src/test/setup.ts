@@ -17,6 +17,17 @@ import { resetMockState } from '@/services/mocks/handlers';
  */
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 
+/**
+ * jsdom has no `ResizeObserver`, which Radix uses to place a tooltip or popup. Every
+ * browser the console supports has one; without this stand-in, any screen with an "i"
+ * tooltip fails to render in a test.
+ */
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 afterEach(() => {
   server.resetHandlers();
   // Module-scope state survives between test files; a decided change request

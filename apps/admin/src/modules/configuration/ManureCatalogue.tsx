@@ -17,6 +17,7 @@ import { manureAmount, manureProductProblems, type ManureProduct } from '@tfd/do
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Field';
 import { formatAmount, formatKg } from '@/lib/format';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 export function ManureCatalogue({
   products,
@@ -35,8 +36,10 @@ export function ManureCatalogue({
 
   return (
     <fieldset className="flex flex-col gap-sm">
-      <legend className="text-label text-text-primary">{t('config.manureProducts')}</legend>
-      <p className="text-caption text-text-secondary">{t('config.manureProductsHint')}</p>
+      <legend className="flex items-center gap-xxs text-label text-text-primary">
+        {t('config.manureProducts')}
+        <InfoTip label={t('tip.moreInfo')}>{t('config.manureProductsHint')}</InfoTip>
+      </legend>
 
       <ul className="flex flex-col gap-xs">
         {products.map((product, index) => (

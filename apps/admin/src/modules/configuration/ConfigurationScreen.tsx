@@ -63,6 +63,7 @@ import { CreditRulesSection } from './CreditRulesSection';
 import { TeaPacketSection } from './TeaPacketSection';
 import type { SectionProps } from './SectionFooter';
 import { useAdminConfig, useSaveConfig } from './hooks';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 const SECTIONS: Array<{
   id: string;
@@ -260,9 +261,9 @@ export function ConfigurationScreen() {
 
       {/* AC-12, stated on the screen it is about. An administrator who does not know this
           screen is the whole onboarding path will ask a developer for the next change. */}
-      <p className="rounded-md bg-surface-variant px-lg py-sm text-caption text-text-secondary">
+      <InfoTip label={t('tip.aboutScreen')} text={t('tip.aboutScreen')}>
         {t('config.ac12Note')}
-      </p>
+      </InfoTip>
 
       <ConfirmDialog
         open={confirmingSave !== null}

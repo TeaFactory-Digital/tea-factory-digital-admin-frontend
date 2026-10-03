@@ -34,6 +34,7 @@ import { formatMonthName } from '@/lib/format';
 import { SectionFooter, type SectionProps } from './SectionFooter';
 import { ManureCatalogue } from './ManureCatalogue';
 import { StringListEditor } from './StringListEditor';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -367,9 +368,9 @@ export function OperationsSection(props: SectionProps) {
 
       {/* The half of §21.9 that is still open, said where somebody would expect the console
           to start paying interest by itself. */}
-      <p className="rounded-md bg-surface-variant px-md py-sm text-caption text-text-secondary">
+      <InfoTip label={t('tip.interestNotApplied')} text={t('tip.interestNotApplied')}>
         {t('config.interestNotApplied')}
-      </p>
+      </InfoTip>
 
       <SectionFooter
         {...props}
@@ -427,8 +428,10 @@ export function AppearanceSection(props: SectionProps) {
   return (
     <CardBody className="flex flex-col gap-lg">
       <fieldset className="flex flex-col gap-sm">
-        <legend className="text-label text-text-primary">{t('config.contentLanguages')}</legend>
-        <p className="text-caption text-text-secondary">{t('config.contentLanguagesHint')}</p>
+        <legend className="flex items-center gap-xxs text-label text-text-primary">
+          {t('config.contentLanguages')}
+          <InfoTip label={t('tip.moreInfo')}>{t('config.contentLanguagesHint')}</InfoTip>
+        </legend>
 
         {SUPPORTED_LANGUAGES.map((lang) => (
           <Label key={lang} className="flex items-center gap-sm text-body-small text-text-primary">
@@ -606,8 +609,10 @@ export function PushSection(props: SectionProps) {
       </Field>
 
       <fieldset className="flex flex-col gap-sm">
-        <legend className="text-label text-text-primary">{t('config.pushCategories')}</legend>
-        <p className="text-caption text-text-secondary">{t('config.pushCategoriesHint')}</p>
+        <legend className="flex items-center gap-xxs text-label text-text-primary">
+          {t('config.pushCategories')}
+          <InfoTip label={t('tip.moreInfo')}>{t('config.pushCategoriesHint')}</InfoTip>
+        </legend>
 
         {NOTIFICATION_CATEGORIES.map((category) => {
           const enabled = categories.includes(category);

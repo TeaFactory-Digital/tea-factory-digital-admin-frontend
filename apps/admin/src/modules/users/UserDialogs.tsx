@@ -28,6 +28,7 @@ import { Label } from '@/components/ui/Label';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
+import { InfoTip } from '@/components/ui/Tooltip';
 import {
   useCreateUser,
   useLockoutContext,
@@ -228,8 +229,10 @@ export function UserDialog({
         </Field>
 
         <fieldset className="flex flex-col gap-xs">
-          <legend className="text-label text-text-primary">{t('users.field.roles')}</legend>
-          <p className="text-caption text-text-secondary">{t('users.field.rolesHint')}</p>
+          <legend className="flex items-center gap-xxs text-label text-text-primary">
+            {t('users.field.roles')}
+            <InfoTip label={t('tip.moreInfo')}>{t('users.field.rolesHint')}</InfoTip>
+          </legend>
 
           {ROLES.map((role) => (
             <Label key={role} className="flex items-center gap-sm text-body-small text-text-primary">

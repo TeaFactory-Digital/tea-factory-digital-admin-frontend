@@ -37,6 +37,7 @@ import { formatDateTime } from '@/lib/format';
 import { RoleMatrixView } from './RoleMatrixView';
 import { UserActionDialog, UserDialog } from './UserDialogs';
 import { useUsers, type UserAction } from './hooks';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 type View = 'users' | 'roles';
 
@@ -285,7 +286,9 @@ export function UsersScreen() {
       {/* No delete, stated once. An administrator who goes looking for it should find the
           reason rather than nothing. */}
       {view === 'users' ? (
-        <p className="text-caption text-text-secondary">{t('users.noDeleteHint')}</p>
+        <InfoTip label={t('tip.usersNoDelete')} text={t('tip.usersNoDelete')}>
+          {t('users.noDeleteHint')}
+        </InfoTip>
       ) : null}
 
       <UserDialog

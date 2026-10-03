@@ -42,6 +42,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { RevertButton } from '@/modules/configuration/StringListEditor';
 import { useToast } from '@/components/ui/Toast';
 import { formatDateTime } from '@/lib/format';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 /** A label above its value, the shape M2's supplier detail already reads in. */
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
@@ -169,9 +170,11 @@ export function ProfileScreen() {
             {/* The honest scope of all three: this machine, not this account. They are in
                 `localStorage` because they have to work on the sign-in screen, which has no
                 session to read a preference from. */}
-            <p className="border-t border-divider pt-md text-caption text-text-secondary">
-              {t('profile.preferencesScope')}
-            </p>
+            <div className="border-t border-divider pt-md">
+              <InfoTip label={t('tip.savedHere')} text={t('tip.savedHere')}>
+                {t('profile.preferencesScope')}
+              </InfoTip>
+            </div>
 
             <div className="flex flex-wrap items-center gap-sm border-t border-divider pt-md">
               <Button

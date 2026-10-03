@@ -48,6 +48,7 @@ import {
   NOT_AVAILABLE,
 } from '@/lib/format';
 import { useReportCatalogue, useReportRun } from './hooks';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 /**
  * One cell, formatted by what the column says it is.
@@ -191,7 +192,9 @@ export function ReportsScreen() {
           </CardBody>
 
           <CardBody className="border-t border-divider">
-            <p className="text-caption text-text-secondary">{t('reports.shortListNote')}</p>
+            <InfoTip label={t('tip.whyOnlyThese')} text={t('tip.whyOnlyThese')}>
+              {t('reports.shortListNote')}
+            </InfoTip>
           </CardBody>
         </Card>
 
@@ -361,7 +364,9 @@ export function ReportsScreen() {
             )}
 
             <CardBody className="border-t border-divider">
-              <p className="text-caption text-text-secondary">{t('reports.noExportNote')}</p>
+              <InfoTip label={t('tip.noDownload')} text={t('tip.noDownload')}>
+                {t('reports.noExportNote')}
+              </InfoTip>
             </CardBody>
           </Card>
         </div>

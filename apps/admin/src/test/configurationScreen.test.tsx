@@ -18,6 +18,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ConfigurationScreen } from '@/modules/configuration/ConfigurationScreen';
+import { http, HttpResponse } from 'msw';
+import { server } from '@/services/mocks/server';
+import { adminConfigEndpoints } from '@/services/endpoints/adminConfig';
 import { renderWithProviders, signInAs, signOut } from './render';
 
 const ADMIN = 'factoryadmin@galabodatea.lk';
@@ -112,7 +115,7 @@ describe('the bank catalogue section', () => {
     expect(await screen.findByPlaceholderText('Bank of Ceylon')).toBeInTheDocument();
   });
 
-  it('shows one bank\'s branches at a time, not every bank\'s at once', async () => {
+  it("shows one bank's branches at a time, not every bank's at once", async () => {
     const user = userEvent.setup();
     await signInAs(ADMIN);
     renderWithProviders(<ConfigurationScreen />, { route: '/configuration?section=banks' });
@@ -129,5 +132,28 @@ describe('the bank catalogue section', () => {
     // Exactly one branch editor — the chosen bank's.
     expect(await screen.findByPlaceholderText('Akuressa')).toBeInTheDocument();
     expect(screen.getAllByPlaceholderText('Akuressa')).toHaveLength(1);
+  });
+
+  /**
+   * A factory that never set its branding is served `branding: null` (a nullable JSON
+   * column), and `branding.logoUrl` took the Languages & branding section down with
+   * "This screen could not be shown".
+   */
+  it('opens Languages & branding for a factory whose branding, theme and push are null', async () => {
+    await signInAs(ADMIN);
+    // The fixture's own response, with the three columns a new factory leaves empty.
+    const real = await adminConfigEndpoints.get();
+    server.use(
+      http.get('*/admin/config', () =>
+        HttpResponse.json({
+          ...real,
+          config: { ...real.config, branding: null, theme: null, push: null },
+        }),
+      ),
+    );
+
+    renderWithProviders(<ConfigurationScreen />, { route: '/configuration?section=appearance' });
+
+    expect(await screen.findByText('Languages content is written in')).toBeInTheDocument();
   });
 });

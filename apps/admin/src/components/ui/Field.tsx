@@ -12,7 +12,9 @@
  */
 
 import { forwardRef, useId, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/cn';
+import { InfoTip } from './Tooltip';
 
 const CONTROL =
   'rounded-md border bg-surface px-md text-body-small text-text-primary placeholder:text-text-secondary disabled:bg-surface-variant disabled:text-disabled-contrast';
@@ -67,21 +69,33 @@ interface FieldProps {
  * both the hint and the error, and a component that renders its own input cannot
  * know which of them a caller supplied.
  */
+/**
+ * A text hint sits behind an "i" beside the label, not under the field.
+ *
+ * Hints filled whole forms with grey text that only matters the first time. The text stays
+ * in the page for screen readers, through `aria-describedby`, so the input is still
+ * described. A hint that is not plain text (a link, a live value) stays under the field.
+ */
 export function Field({ label, error, hint, required, children, className }: FieldProps) {
+  const { t } = useTranslation();
   const id = useId();
+  const longHint = typeof hint === 'string';
   const hintId = hint ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
   const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
 
   return (
     <div className={cn('flex flex-col gap-xs', className)}>
-      <label
-        htmlFor={id}
-        data-required={required || undefined}
-        className="text-label text-text-primary"
-      >
-        {label}
-      </label>
+      <div className="flex items-center gap-xxs">
+        <label
+          htmlFor={id}
+          data-required={required || undefined}
+          className="text-label text-text-primary"
+        >
+          {label}
+        </label>
+        {longHint ? <InfoTip label={t('tip.moreInfo')}>{hint}</InfoTip> : null}
+      </div>
 
       {children({
         id,
@@ -91,7 +105,7 @@ export function Field({ label, error, hint, required, children, className }: Fie
       })}
 
       {hint ? (
-        <p id={hintId} className="text-caption text-text-secondary">
+        <p id={hintId} className={longHint ? 'sr-only' : 'text-caption text-text-secondary'}>
           {hint}
         </p>
       ) : null}

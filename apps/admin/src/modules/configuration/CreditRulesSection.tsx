@@ -49,6 +49,7 @@ import { Select } from '@/components/ui/Select';
 import { Notice } from '@/components/ui/states';
 import { formatAmount } from '@/lib/format';
 import { SectionFooter, type SectionProps } from './SectionFooter';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 const BASES: CreditRuleBasis[] = ['thisMonthLeaf', 'lastSettledMonth', 'averageIncome'];
 
@@ -265,12 +266,12 @@ export function CreditRulesSection(props: SectionProps) {
              */}
             {facility === 'advance' ? null : (
               <fieldset className="flex flex-col gap-xxs">
-                <legend className="text-body-small font-medium text-text-primary">
+                <legend className="flex items-center gap-xxs text-body-small font-medium text-text-primary">
                   {t('config.creditRules.installments')}
+                  <InfoTip label={t('tip.moreInfo')}>
+                    {t('config.creditRules.installmentsHint')}
+                  </InfoTip>
                 </legend>
-                <p className="text-caption text-text-secondary">
-                  {t('config.creditRules.installmentsHint')}
-                </p>
                 <div className="flex flex-wrap gap-md pt-xs">
                   {termChoices(installmentOptionsFor(draft, facility)).map((months) => {
                     const offered = installmentOptionsFor(draft, facility);

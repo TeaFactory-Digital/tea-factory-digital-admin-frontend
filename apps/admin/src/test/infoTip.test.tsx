@@ -2,19 +2,10 @@
  * The "i" that holds guidance off the page until it is asked for.
  */
 
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { InfoTip } from '@/components/ui/Tooltip';
-
-// jsdom has no ResizeObserver, which Radix uses to position the popup. Browsers do.
-beforeAll(() => {
-  globalThis.ResizeObserver ??= class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  };
-});
 
 describe('InfoTip', () => {
   it('hides its text until hovered, then shows it in a tooltip', async () => {
