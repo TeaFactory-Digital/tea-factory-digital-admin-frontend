@@ -13,7 +13,10 @@
     // and checked nothing at all. Two screens shipped a missing import and went
     // blank in front of the office while the command "failed" for what looked
     // like a config nit. Nothing in this project needs the flag.
-    "baseUrl": ".",
+    //
+    // No `baseUrl` either: TypeScript 6 deprecates it, and `paths` has resolved
+    // relative to this file without it since 4.1. Every entry below starts with
+    // `./` or `../` for that reason.
     "paths": {
       "@/*": ["./src/*"],
       "@tfd/domain": ["../../packages/domain/src/index.ts"],
