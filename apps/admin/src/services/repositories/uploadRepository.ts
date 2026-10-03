@@ -85,19 +85,23 @@ function readDimensions(file: File): Promise<{ width: number; height: number }> 
 }
 
 /**
- * `404` on the signing endpoint means **the feature is not built yet**, not that the
- * article is missing.
+ * Two ways this server can have no uploads, and they are **not** the same thing.
  *
- * The `Attachment` table exists and nothing implements it (the backend's O1), so this is
- * the state the console will be in until that lands. Translating it into its own code
- * lets the editors say *"uploads are not available yet"*, which is true and actionable,
- * instead of *"not found"* over a file the editor can plainly see on their desktop.
+ * `503 upload-not-configured` is the API saying it is built but has no object store
+ * behind it, which is the state of a deployment whose bucket credentials are not set. It
+ * already reads correctly and is passed straight through.
+ *
+ * `404` is the older case: the endpoint does not exist at all. Kept because an app build
+ * pointed at a server from before O1 landed would otherwise report *"not found"* over a
+ * file the editor can plainly see on their desktop, which sends them looking for the
+ * wrong problem. Both resolve to the same thing on screen and neither is the editor's
+ * fault.
  */
 function asUploadRefusal(cause: unknown): never {
-  if (isApiError(cause) && (cause.status === 404 || cause.code === 'not-found')) {
+  if (isApiError(cause) && cause.status === 404) {
     throw new ApiError({
-      code: 'uploads-unavailable',
-      message: 'Image uploads are not available on this server yet.',
+      code: 'upload-not-configured',
+      message: 'This server has no image storage set up.',
       status: cause.status,
     });
   }

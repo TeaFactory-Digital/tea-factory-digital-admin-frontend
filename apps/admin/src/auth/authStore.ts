@@ -31,12 +31,36 @@ interface AuthState {
   accessToken: string | null;
   expiresAt: string | null;
 
+  /**
+   * BR-008: this account still has the password the office issued.
+   *
+   * A signed-in state, not a refused one. The API issues a token and then blocks every
+   * path except the handful that can clear the flag, so the console is authenticated and
+   * has exactly one screen it may show.
+   */
+  owesPasswordChange: boolean;
+
   bootstrap: () => Promise<void>;
   login: (email: string, password: string) => Promise<AuthStatus>;
   logout: () => Promise<void>;
   /** Used by the transport's 401 handler. Returns a fresh token, or null. */
   refresh: () => Promise<string | null>;
   clear: () => void;
+
+  /**
+   * Raise the flag from somewhere other than sign-in.
+   *
+   * **This exists because `POST /admin/auth/refresh` does not report it.** The console
+   * bootstraps from a rotation on every page load, so a clerk who reloads while owing a
+   * change comes back with the flag lost: the console would let them in and the API would
+   * then refuse every request, with nothing on screen saying why.
+   *
+   * The transport calls this when any response carries `password-change-required`, which
+   * turns that dead end into the screen that resolves it. See `BACKEND-API-GAPS.md`.
+   */
+  noteOwesPasswordChange: () => void;
+  /** Cleared locally once the API has accepted the new password, or the decision to keep. */
+  clearOwesPasswordChange: () => void;
 }
 
 /**
@@ -73,6 +97,10 @@ const anonymous = {
   grants: {} as CapabilityGrants,
   accessToken: null,
   expiresAt: null,
+  // Cleared with the session: the flag belongs to the account somebody was signed in as,
+  // and leaving it raised would greet the next person at this machine with a password
+  // screen for an account they are not using.
+  owesPasswordChange: false,
 };
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -99,8 +127,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   login: async (email, password) => {
-    const session = await authRepository.login(email, password);
+    const { session, passwordChangeRequired } = await authRepository.login(email, password);
     applySession(set, session);
+    set({ owesPasswordChange: passwordChangeRequired });
     return 'authenticated';
   },
 
@@ -108,6 +137,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await authRepository.logout();
     set({ ...anonymous });
   },
+
+  noteOwesPasswordChange: () => set({ owesPasswordChange: true }),
+  clearOwesPasswordChange: () => set({ owesPasswordChange: false }),
 
   refresh: async () => {
     const session = await rotateOnce();
@@ -166,12 +198,15 @@ export function connectAuthToTransport(): void {
     getAccessToken: () => useAuthStore.getState().accessToken,
     refresh: () => useAuthStore.getState().refresh(),
     onSessionLost: () => useAuthStore.getState().clear(),
+    onPasswordChangeRequired: () => useAuthStore.getState().noteOwesPasswordChange(),
   });
 }
 
 /* ─────────────────────────────── selectors ─────────────────────────────── */
 
 export const useCurrentUser = () => useAuthStore((s) => s.user);
+/** BR-008 outstanding. The gate in `guards.tsx` is its only reader. */
+export const useOwesPasswordChange = () => useAuthStore((s) => s.owesPasswordChange);
 export const useAuthStatus = () => useAuthStore((s) => s.status);
 
 /**

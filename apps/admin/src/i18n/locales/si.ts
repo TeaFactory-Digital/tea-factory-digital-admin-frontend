@@ -1167,13 +1167,27 @@ export const si: Record<TranslationKey, string> = {
   'config.sectionHint.teaPackets': 'පැකට්ටුවක් යනු කුමක්ද සහ එහි මිල',
   'config.sectionDescription.teaPackets':
     'ගබඩාව නිකුත් කරන පැකට්ටුව, එහි මිල, සහ එක් සැපයුම්කරුවෙකුට වරකට ඉල්ලිය හැකි උපරිමය. ඉල්ලීමක් අනුමත වන විට අය කරන්නේ මෙම මිලයි.',
+  /* BR-008 for the office, and the refusals it and uploads raise. */
+  'initialPassword.title': 'ඔබේම මුරපදයක් තෝරන්න',
+  'initialPassword.body': 'මෙම ගිණුමේ තවමත් තියෙන්නේ කාර්යාලය දුන් මුරපදයයි. ඔබට පමණක් දන්නා එකක් දාන්න, නැත්නම් ඔබට දුන් එක ශක්තිමත් නම් ඒකම තබාගන්න.',
+  'initialPassword.next': 'නව මුරපදය',
+  'initialPassword.confirm': 'නැවත ටයිප් කරන්න',
+  'initialPassword.hint': 'අවම වශයෙන් අක්ෂර {{min}}ක්.',
+  'initialPassword.tooShort': 'අවම වශයෙන් අක්ෂර {{min}}ක් භාවිත කරන්න.',
+  'initialPassword.mismatch': 'දෙක ගැළපෙන්නේ නැත.',
+  'initialPassword.submit': 'මෙම මුරපදය සුරකින්න',
+  'initialPassword.keep': 'මට දුන් මුරපදයම තබාගන්න',
+  'error.uploadType': 'එම ගොනු වර්ගය භාවිත කළ නොහැක. JPEG, PNG හෝ WebP එකක් තෝරන්න.',
+  'error.uploadTooLarge': 'එම රූපය විශාල වැඩියි. 5 MB ට අඩු එකක් තෝරන්න.',
+  'error.uploadNotConfigured': 'මෙම සේවාදායකයේ රූප ගබඩාවක් තවම සකසා නැත, එබැවින් රූප උඩුගත කළ නොහැක.',
+
   /* Image uploads (M11 news, M12 banners). */
   'uploads.coverImage': 'ආවරණ රූපය',
   'uploads.artwork': 'බැනර් රූපය',
   'uploads.hint': 'JPEG, PNG හෝ WebP, වැඩිම {{max}} MB. විශාල ඡායාරූප බාගත කිරීමට සැපයුම්කරුවන්ට දත්ත වියදම් වේ.',
   'uploads.uploading': 'රූපය යවමින්…',
   'uploads.remove': 'රූපය ඉවත් කරන්න',
-  'uploads.unavailable': 'මෙම සේවාදායකයේ රූප උඩුගත කිරීම තවම නොමැත. රූපයක් නොමැතිව ලිපිය සුරැකිය හැක.',
+  'uploads.unavailable': 'මෙම සේවාදායකයේ රූප ගබඩාවක් තවම සකසා නැත, එබැවින් රූප උඩුගත කළ නොහැක. අනෙක් සියල්ල සාමාන්‍ය ලෙස සුරැකේ.',
   'uploads.error.upload-type': 'එම ගොනු වර්ගය භාවිත කළ නොහැක. JPEG, PNG හෝ WebP එකක් තෝරන්න.',
   'uploads.error.upload-too-large': 'එම රූපය {{max}} MB ට වඩා විශාලයි. කුඩා එකක් තෝරන්න.',
   'uploads.error.upload-unreadable': 'එම ගොනුව බ්‍රවුසරයට කියවිය හැකි රූපයක් නොවේ.',

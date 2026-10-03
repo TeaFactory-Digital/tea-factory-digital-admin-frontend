@@ -23,6 +23,7 @@ import {
   type LanguageCode,
   type NewsArticleDraft,
   type NewsListItem,
+  type NewsPatch,
   type NewsQuery,
   type Paged,
   type StaticPageSlug,
@@ -95,10 +96,18 @@ export const newsRepository = {
   },
 
   /**
-   * There is no `patch`. `PATCH /admin/news/{id}` is not implemented (gap **G-07**) and
-   * nothing in this console called it: copy moves through `saveTranslation` and the
-   * lifecycle through the three verbs below.
+   * The cover image, after creation.
+   *
+   * This did not exist, and its absence was a real hole rather than a simplification:
+   * `ContentTranslationBody` has no image field, so once an article was created its
+   * cover could never be changed. Copy still moves through `saveTranslation` and the
+   * lifecycle through the three verbs below, because neither of those is this.
+   *
+   * Omit a field to leave it alone; `null` removes.
    */
+  patch: (id: string, body: NewsPatch): Promise<MutationAck> => newsEndpoints.patch(id, body),
+
+  /**
 
   /**
    * `async`, so the guard **rejects** rather than throwing synchronously.

@@ -81,7 +81,9 @@ export function ImageField({
       onChange({ attachmentId: uploaded.attachmentId, aspectRatio: uploaded.aspectRatio });
     } catch (cause) {
       const code = isApiError(cause) ? cause.code : 'upload-failed';
-      if (code === 'uploads-unavailable') setUnavailable(true);
+      // A server with no store is not a bad file: the picker is disabled and the message
+      // says so, rather than colouring it red as though the editor chose wrongly.
+      if (code === 'upload-not-configured') setUnavailable(true);
       else setError(t(`uploads.error.${code}`, { max: Math.round(MAX_IMAGE_BYTES / 1024 / 1024) }));
     } finally {
       setBusy(false);

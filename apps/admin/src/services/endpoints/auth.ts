@@ -72,4 +72,31 @@ export const authEndpoints = {
    * into two roles must not need a console deploy.
    */
   me: () => apiClient.get<MeResponse>('/admin/auth/me').then((response) => response.data),
+
+  /**
+   * BR-008: replace the password the office issued.
+   *
+   * `422 invalid` with `{ field: 'password', minLength: 12 }` when it is too short, and
+   * `maxLength: 200` when it is absurdly long. No code of its own for either.
+   *
+   * ⚠️ There is **no** refusal for re-entering the password already on the account, so
+   * the rule can be satisfied by retyping the one that was issued. See
+   * `BACKEND-API-GAPS.md`.
+   */
+  setInitialPassword: (next: string) =>
+    apiClient
+      .post<void>('/admin/auth/initial-password', { next })
+      .then((response) => response.data),
+
+  /**
+   * The other half of BR-008: **keeping the issued password is a decision, recorded once.**
+   *
+   * Not a way out of the rule but a way through it. A clerk who was handed a strong
+   * generated password has no reason to change it, and a flow with no exit but "type a new
+   * one" teaches people to type a weaker one.
+   */
+  keepInitialPassword: () =>
+    apiClient
+      .post<void>('/admin/auth/initial-password/keep')
+      .then((response) => response.data)
 };

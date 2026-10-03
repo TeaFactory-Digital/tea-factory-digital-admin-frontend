@@ -23,10 +23,34 @@ function hydrate(session: AuthSession): AuthSession {
 }
 
 export const authRepository = {
-  login: async (email: string, password: string): Promise<AuthSession> => {
+  /**
+   * Sign in, and report whether BR-008 is still outstanding.
+   *
+   * The flag travels beside the session rather than inside it, because it is a fact about
+   * the *account* rather than about this token: rotating does not resolve it and signing
+   * out does not clear it. Only setting a new password, or deliberately keeping the
+   * issued one, does.
+   */
+  login: async (
+    email: string,
+    password: string,
+  ): Promise<{ session: AuthSession; passwordChangeRequired: boolean }> => {
     const result = await authEndpoints.login({ email, password });
-    return hydrate(result.session);
+    return {
+      session: hydrate(result.session),
+      // `?? false` because an older server does not send it, and a console that read
+      // `undefined` as "owes a change" would wall off an office that owes nothing.
+      passwordChangeRequired: result.passwordChangeRequired ?? false,
+    };
   },
+
+  /** BR-008, resolved by choosing a new password. */
+  setInitialPassword: (next: string): Promise<void> =>
+    authEndpoints.setInitialPassword(next).then(() => undefined),
+
+  /** BR-008, resolved by deciding the issued password stands. */
+  keepInitialPassword: (): Promise<void> =>
+    authEndpoints.keepInitialPassword().then(() => undefined),
 
   /**
    * Rotate, and take the whole session back.

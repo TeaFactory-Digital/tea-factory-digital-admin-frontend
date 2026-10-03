@@ -128,7 +128,27 @@ export interface AuthSession {
  * session, and the tagged union that used to carry `mfaRequired` beside it is gone with
  * the step it described.
  */
-export type LoginResult = { status: 'authenticated'; session: AuthSession };
+export type LoginResult = {
+  status: 'authenticated';
+  session: AuthSession;
+  /**
+   * BR-008 for the office: **this account still has the password somebody else chose.**
+   *
+   * The factory settled that the office sets a console user's first credential rather
+   * than an invitation email going out, which makes it exactly the case BR-008 exists
+   * for: the one password the holder did not pick, may never change, and was very likely
+   * read out down a corridor. Staff are now held to the same rule as suppliers.
+   *
+   * Outside `session` on purpose, mirroring the supplier realm's login response, so
+   * neither client has to learn two shapes for one rule.
+   *
+   * ⚠️ **A session is still issued.** The flag is not a refusal, and treating it as one
+   * would lock the holder out of the only routes that can clear it. The API serves a
+   * token and then refuses every path except the handful that exist to resolve this
+   * (`/admin/auth/initial-password`, `.../keep`, refresh, logout, `me`, `/config`).
+   */
+  passwordChangeRequired: boolean;
+};
 
 /* ─────────────────────────────── Paging ─────────────────────────────── */
 
@@ -1529,6 +1549,23 @@ export interface ContentTranslationBody {
  * publishing seen earlier: a record with nothing to fall back to is a record that cannot
  * be shown to anybody, and creating one would only defer the error.
  */
+/**
+ * Changing an article's cover **after** it exists.
+ *
+ * Deliberately not part of `ContentTranslationBody`: a cover is not copy, it does not
+ * differ per language, and putting it on the translation write would mean saving Sinhala
+ * could change the picture English is showing.
+ *
+ * ⚠️ **Omit means leave alone; `null` means remove.** A patch that cannot tell those
+ * apart blanks the artwork of every article whose title somebody corrected.
+ */
+export interface NewsPatch {
+  /** An uploaded cover, by attachment id. `null` takes the picture off. */
+  coverImageAttachmentId?: string | null;
+  /** An image the factory hosts elsewhere. Superseded by an upload when both are sent. */
+  coverImageUrl?: string | null;
+}
+
 export interface NewsArticleDraft {
   translations: Array<ContentTranslationBody & { lang: LanguageCode }>;
   /**
@@ -1809,6 +1846,14 @@ export interface AdminConsoleUser extends ConsoleUser {
   canAdministerUsers: boolean;
   /** `true` when suspending or demoting this user would lock the factory out. */
   isLastAdministrator: boolean;
+  /**
+   * BR-008: still holding the password the office issued.
+   *
+   * On the row so the user list can show it. An account that has owed a change since it
+   * was created is one whose holder has probably never signed in, which is a different
+   * thing from a suspended one and worth being able to see.
+   */
+  owesPasswordChange?: boolean;
 }
 
 export interface UserQuery extends PageQuery {

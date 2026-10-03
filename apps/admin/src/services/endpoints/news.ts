@@ -23,6 +23,7 @@ import type {
   ContentTranslationBody,
   LanguageCode,
   NewsListItem,
+  NewsPatch,
   NewsQuery,
   Paged,
 } from '@tfd/domain';
@@ -68,13 +69,19 @@ export const newsEndpoints = {
     apiClient.post<CreatedArticle>('/admin/news', body).then((response) => response.data),
 
   /**
-   * **There is no `PATCH /admin/news/{id}`** (gap **G-07**).
+   * **The cover image, after creation.**
    *
-   * Nothing in this console calls one — an article's cover image and its copy both move
-   * through `saveTranslation`, and the lifecycle moves through the three verbs below — so
-   * the method is gone rather than left as a call that would 404. It comes back the day
-   * the editor grows a field that is not copy.
+   * This method was absent, with a note saying *"an article's cover image and its copy
+   * both move through `saveTranslation`"*. That was not true: `ContentTranslationBody`
+   * has no image field, so once an article existed its cover could never be changed. The
+   * same note predicted the fix, though: *"it comes back the day the editor grows a field
+   * that is not copy."*
+   *
+   * Omit a field to leave it alone; send `null` to remove.
    */
+  patch: (id: string, body: NewsPatch) =>
+    apiClient.patch<MutationAck>(`/admin/news/${id}`, body).then((response) => response.data),
+
 
   /**
    * Save one language.

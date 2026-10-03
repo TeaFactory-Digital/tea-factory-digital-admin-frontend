@@ -28,6 +28,7 @@ import { AuditPanel } from '@/components/AuditPanel';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { ImageField } from '@/components/ui/ImageField';
 import { Dialog } from '@/components/ui/Dialog';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, Spinner } from '@/components/ui/states';
@@ -45,6 +46,7 @@ import {
   useNewsArticle,
   useNewsAudit,
   useNewsLifecycle,
+  usePatchNewsArticle,
   useNewsPreview,
   useSaveNewsTranslation,
   type NewsLifecycleVerb,
@@ -66,6 +68,7 @@ export function NewsArticleScreen() {
   const preview = useNewsPreview(id, lang);
   const audit = useNewsAudit(id);
   const save = useSaveNewsTranslation(id ?? '');
+  const patch = usePatchNewsArticle(id ?? '');
   const lifecycle = useNewsLifecycle(id ?? '');
 
   if (article.isPending) {
@@ -193,6 +196,32 @@ export function NewsArticleScreen() {
         </Card>
 
         <div className="flex flex-col gap-lg">
+          {/* The cover, beside the preview rather than inside the translation editor: it
+              is one picture for all three languages, and a field that moved with the tab
+              would suggest otherwise. */}
+          <Card>
+            <CardHeader title={t('uploads.coverImage')} />
+            <CardBody>
+              <ImageField
+                label={t('uploads.coverImage')}
+                entity="newsArticle"
+                entityId={data.id}
+                currentUrl={data.coverImageUrl ?? null}
+                disabled={!canWrite || patch.isPending}
+                hint={t('uploads.hint', { max: 5 })}
+                onChange={(next) => {
+                  // `null` removes, an id replaces. Either way it is an immediate save:
+                  // there is no other control on this card to press, and a picture that
+                  // looked chosen but was not saved is the worst of the three states.
+                  void patch
+                    .mutateAsync({ coverImageAttachmentId: next?.attachmentId ?? null })
+                    .then(() => toast.success(t('content.saved', { language: '' })))
+                    .catch((cause) => toast.error(t('content.saveFailed'), t(errorMessageKey(cause))));
+                }}
+              />
+            </CardBody>
+          </Card>
+
           <PreviewPanel
             lang={lang}
             preview={preview.data}

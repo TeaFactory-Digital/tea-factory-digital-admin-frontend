@@ -170,7 +170,28 @@ describe('uploading an image', () => {
     expect(confirm).not.toHaveBeenCalled();
   });
 
-  it('translates a 404 on the signing endpoint into "not available yet"', async () => {
+  it('passes the server\'s own "no object store" refusal through unchanged', async () => {
+    vi.spyOn(uploadEndpoints, 'sign').mockRejectedValue(
+      new ApiError({
+        code: 'upload-not-configured',
+        message: 'This server has no object store.',
+        status: 503,
+      }),
+    );
+
+    const refused = await uploadRepository
+      .uploadImage(file(), 'newsArticle')
+      .catch((cause) => cause);
+
+    /**
+     * A `503` about the SERVER, not a `422` about the file. The editor chose nothing
+     * wrong, so `ImageField` disables the picker and explains rather than colouring the
+     * message red.
+     */
+    expect(isApiError(refused) && refused.code).toBe('upload-not-configured');
+  });
+
+  it('translates a 404 from a server predating uploads into the same refusal', async () => {
     vi.spyOn(uploadEndpoints, 'sign').mockRejectedValue(
       new ApiError({ code: 'not-found', message: 'Not found.', status: 404 }),
     );
@@ -180,9 +201,10 @@ describe('uploading an image', () => {
       .catch((cause) => cause);
 
     /**
-     * **The state every server is in today.** Reported as `not-found` this reads as though
-     * the article were missing, which sends an editor looking for the wrong problem.
+     * The endpoint existing at all is newer than some builds in the field. Left as
+     * `not-found` this reads as though the *article* were missing, which sends an editor
+     * looking for the wrong problem entirely.
      */
-    expect(isApiError(refused) && refused.code).toBe('uploads-unavailable');
+    expect(isApiError(refused) && refused.code).toBe('upload-not-configured');
   });
 });

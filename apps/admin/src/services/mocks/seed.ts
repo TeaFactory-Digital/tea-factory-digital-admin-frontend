@@ -193,6 +193,11 @@ export const MOCK_PASSWORD = 'demo1234';
 export interface MockUser extends ConsoleUser {
   password: string;
   grants: CapabilityGrants;
+  /**
+   * BR-008 for the office. Absent on every seeded user, so the gate stays out of the way
+   * of the suite; a test that is about the gate sets it first.
+   */
+  owesPasswordChange?: boolean;
 }
 
 export const mockUsers: MockUser[] = [

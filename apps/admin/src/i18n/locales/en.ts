@@ -1167,13 +1167,27 @@ export const en = {
   'config.sectionHint.teaPackets': 'What a packet is and what it costs',
   'config.sectionDescription.teaPackets':
     'The pack the store issues, its price, and the most one supplier may ask for at a time. The price is what a request is charged at when it is approved.',
+  /* BR-008 for the office, and the refusals it and uploads raise. */
+  'initialPassword.title': 'Choose your own password',
+  'initialPassword.body': 'This account still has the password the office issued. Set one only you know, or keep the one you were given if it is already strong.',
+  'initialPassword.next': 'New password',
+  'initialPassword.confirm': 'Type it again',
+  'initialPassword.hint': 'At least {{min}} characters.',
+  'initialPassword.tooShort': 'Use at least {{min}} characters.',
+  'initialPassword.mismatch': 'The two do not match.',
+  'initialPassword.submit': 'Save this password',
+  'initialPassword.keep': 'Keep the password I was given',
+  'error.uploadType': 'That file type cannot be used. Choose a JPEG, PNG or WebP.',
+  'error.uploadTooLarge': 'That image is too large. Choose one under 5 MB.',
+  'error.uploadNotConfigured': 'This server has no image storage set up yet, so images cannot be uploaded.',
+
   /* Image uploads (M11 news, M12 banners). */
   'uploads.coverImage': 'Cover image',
   'uploads.artwork': 'Banner artwork',
   'uploads.hint': 'JPEG, PNG or WebP, up to {{max}} MB. Large photographs cost suppliers data to receive.',
   'uploads.uploading': 'Sending the image…',
   'uploads.remove': 'Remove image',
-  'uploads.unavailable': 'Image uploads are not available on this server yet. The article can be saved without one.',
+  'uploads.unavailable': 'This server has no image storage set up yet, so images cannot be uploaded. Everything else saves normally.',
   'uploads.error.upload-type': 'That file type cannot be used. Choose a JPEG, PNG or WebP.',
   'uploads.error.upload-too-large': 'That image is larger than {{max}} MB. Choose a smaller one.',
   'uploads.error.upload-unreadable': 'That file is not an image the browser can read.',

@@ -2104,6 +2104,12 @@ export const handlers: HttpHandler[] = [
     return HttpResponse.json({
       status: 'authenticated',
       session: { ...issueSession(user), user: publicUser(user), grants: user.grants },
+      /*
+       * BR-008 for the office. `owesPasswordChange` is absent on every seeded user, so
+       * this is `false` throughout the suite and the gate stays out of the way of tests
+       * that are about something else. The one test that cares sets it on a user first.
+       */
+      passwordChangeRequired: user.owesPasswordChange ?? false,
     });
   }),
 
@@ -2140,8 +2146,36 @@ export const handlers: HttpHandler[] = [
     return HttpResponse.json({
       status: 'authenticated',
       session: { ...issueSession(user), user: publicUser(user), grants: user.grants },
+      /*
+       * **No `passwordChangeRequired` here, and that is the wire being reproduced.**
+       *
+       * `POST /admin/auth/refresh` does not report the flag, checked against staging
+       * rather than assumed. The console bootstraps from a rotation on every page load, so a
+       * clerk who reloads while owing a change comes back without it. Sending it here
+       * would paper over exactly the gap `authStore.noteOwesPasswordChange` exists to
+       * survive, and the suite would pass while a reload locked somebody out.
+       */
     });
   }),
+
+  /**
+   * A route that exists only to answer `password-change-required`.
+   *
+   * The real API attaches that refusal to a GUARD, not to an endpoint: every path except
+   * the handful that clear the flag answers it. A fixture cannot reproduce a guard
+   * without putting the check on all fifty handlers, so this stands in for "any ordinary
+   * request, made while BR-008 is outstanding".
+   *
+   * Named so it cannot be mistaken for a real endpoint, and reached only by
+   * `initialPassword.test.ts`.
+   */
+  http.get('*/admin/__password-change-probe', async () =>
+    fail({
+      status: 403,
+      code: 'password-change-required',
+      message: 'Set a password of your own before continuing.',
+    }),
+  ),
 
   http.post('*/admin/auth/logout', async ({ request }) => {
     const header = request.headers.get('Authorization');
@@ -6361,6 +6395,18 @@ export const handlers: HttpHandler[] = [
  * Reset between tests. Not used by the browser worker — a page reload does this
  * for free — but essential in Vitest, where module state persists across cases.
  */
+/**
+ * Mark a seeded console user as still owing a password change.
+ *
+ * Exported because the fixture clones `mockUsers` into `state.users` on every reset, so a
+ * test mutating the seed array changes nothing the handlers read, and mutating it before
+ * the reset is undone by the reset. This reaches the live row.
+ */
+export function setOwesPasswordChange(email: string, owes: boolean): void {
+  const user = state.users.find((one) => one.email.toLowerCase() === email.toLowerCase());
+  if (user) user.owesPasswordChange = owes;
+}
+
 export function resetMockState(): void {
   state.suppliers = mockSuppliers.map((s) => ({ ...s }));
   state.changeRequests = mockChangeRequests.map((r) => ({ ...r }));

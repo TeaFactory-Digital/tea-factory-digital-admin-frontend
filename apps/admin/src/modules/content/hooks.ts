@@ -18,6 +18,7 @@ import type {
   ContentTranslationBody,
   LanguageCode,
   NewsArticleDraft,
+  NewsPatch,
   NewsQuery,
   StaticPageSlug,
 } from '@tfd/domain';
@@ -102,6 +103,21 @@ export function useSaveNewsTranslation(id: string) {
   return useMutation({
     mutationFn: ({ lang, body }: { lang: LanguageCode; body: ContentTranslationBody }) =>
       newsRepository.saveTranslation(id, lang, body),
+    onSuccess: invalidate,
+  });
+}
+
+/**
+ * The cover image, on an article that already exists.
+ *
+ * Separate from `useSaveNewsTranslation` because a cover is not copy: it does not differ
+ * per language, and folding it into the translation write would mean saving Sinhala
+ * could change the picture English is showing.
+ */
+export function usePatchNewsArticle(id: string) {
+  const invalidate = useInvalidateArticle(id);
+  return useMutation({
+    mutationFn: (body: NewsPatch) => newsRepository.patch(id, body),
     onSuccess: invalidate,
   });
 }
