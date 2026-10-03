@@ -66,23 +66,27 @@ export function Sidebar({ summary }: { summary?: DashboardView }) {
        * the active styling when the dashboard is open — two things would then look
        * selected at once.
        */}
-      <div className="border-b border-border">
+      {/* `h-14`, the topbar's height, so the two bottom borders meet in one line. */}
+      <div className="flex h-14 shrink-0 items-center border-b border-border px-sm">
         <Link
           to="/"
           aria-label={t('nav.dashboard')}
-          className="block rounded-sm px-lg py-md hover:bg-surface-variant"
+          className="flex w-full items-center rounded-md px-sm py-xs transition-colors hover:bg-surface-variant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <Logo />
         </Link>
       </div>
 
-      <div className="flex-1 overflow-y-auto py-sm">
-        {sections.map((section) => (
-          <div key={section.titleKey} className="mb-md">
-            <h2 className="px-lg py-xs text-overline text-text-secondary uppercase">
+      <div className="flex-1 overflow-y-auto px-sm py-md">
+        {sections.map((section, index) => (
+          <div
+            key={section.titleKey}
+            className={cn(index > 0 && 'mt-md border-t border-divider pt-md')}
+          >
+            <h2 className="px-sm pb-xs text-overline tracking-wider text-text-secondary uppercase">
               {t(section.titleKey)}
             </h2>
-            <ul>
+            <ul className="flex flex-col gap-xxs">
               {section.items.map((item) => (
                 <li key={item.module}>
                   <SidebarLink item={item} pending={pendingFor(item)} />
@@ -96,6 +100,14 @@ export function Sidebar({ summary }: { summary?: DashboardView }) {
   );
 }
 
+/**
+ * One row: a rounded pill with the icon in its own small tile.
+ *
+ * The open screen is a solid pill in the factory's primary colour rather than a tinted
+ * row with an edge line, so "where am I" is answered at a glance from across the desk.
+ * Every colour is a brand token: the console is white-labelled, and a hard-coded green
+ * would be wrong for every factory whose brand is not green.
+ */
 function SidebarLink({ item, pending }: { item: NavItem; pending: number }) {
   const { t } = useTranslation();
   const Icon = item.icon;
@@ -106,16 +118,30 @@ function SidebarLink({ item, pending }: { item: NavItem; pending: number }) {
       end={item.to === '/'}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-sm border-l-2 px-lg py-sm text-body-small',
+          'group flex items-center gap-sm rounded-md px-xs py-xs text-body-small transition-colors duration-150',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
           isActive
-            ? 'border-primary bg-primary-muted font-semibold text-primary'
-            : 'border-transparent text-text-primary hover:bg-surface-variant',
+            ? 'bg-primary font-semibold text-primary-contrast shadow-sm'
+            : 'text-text-primary hover:bg-surface-variant',
         )
       }
     >
-      <Icon className="size-icon-md shrink-0" aria-hidden />
-      <span className="min-w-0 flex-1 truncate">{t(item.labelKey)}</span>
-      <CountBadge count={pending} />
+      {({ isActive }) => (
+        <>
+          <span
+            className={cn(
+              'flex size-8 shrink-0 items-center justify-center rounded-md transition-colors duration-150',
+              isActive
+                ? 'bg-primary-contrast/15 text-primary-contrast'
+                : 'bg-surface-variant text-text-secondary group-hover:bg-primary-muted group-hover:text-primary',
+            )}
+          >
+            <Icon className="size-icon-sm" aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1 truncate">{t(item.labelKey)}</span>
+          <CountBadge count={pending} />
+        </>
+      )}
     </NavLink>
   );
 }
