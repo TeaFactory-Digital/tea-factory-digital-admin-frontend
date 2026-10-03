@@ -799,8 +799,8 @@ export const si: Record<TranslationKey, string> = {
   'content.gap.missingDraft': '{{languages}} වලින් තවම ලියා නැත.',
   'content.gap.stale':
     '{{languages}} පිටපත එය පරිවර්තනය කළ ඉංග්‍රීසියට වඩා පැරණියි. යෙදුම එය දැනට වලංගු මෙන් පෙන්වයි, එබැවින් සැපයුම්කරුට කිසිවක් වැරදි ලෙස නොපෙනේ.',
-  'content.badge.missing': '{{count}}ක් නැත',
-  'content.badge.stale': '{{count}}ක් යාවත්කාලීන නැත',
+  'content.badge.missing': '{{language}} පරිවර්තනයක් නැත',
+  'content.badge.stale': '{{language}} යාවත්කාලීන කළ යුතුයි',
   'content.badge.gaps': 'නිවැරදි කිරීමට {{count}}ක්',
   'content.column.languages': 'භාෂා',
   'content.column.lastEdit': 'අවසන් සංස්කරණය',

@@ -795,8 +795,8 @@ export const en = {
   'content.gap.missingDraft': 'Not written yet in {{languages}}.',
   'content.gap.stale':
     'The {{languages}} copy is older than the English it was translated from. The app shows it as though it were current, so nothing looks wrong to the supplier.',
-  'content.badge.missing': '{{count}} missing',
-  'content.badge.stale': '{{count}} out of date',
+  'content.badge.missing': 'No {{language}} translation',
+  'content.badge.stale': '{{language}} needs updating',
   'content.badge.gaps': '{{count}} to fix',
   'content.column.languages': 'Languages',
   'content.column.lastEdit': 'Last edit',

@@ -816,8 +816,8 @@ export const ta: Record<TranslationKey, string> = {
   'content.gap.missingDraft': '{{languages}} இல் இன்னும் எழுதப்படவில்லை.',
   'content.gap.stale':
     '{{languages}} பாடம், அது மொழிபெயர்க்கப்பட்ட ஆங்கிலத்தை விடப் பழையது. செயலி அதைத் தற்போதையது போலவே காட்டுகிறது, எனவே வழங்குநருக்கு எதுவும் தவறாகத் தெரியாது.',
-  'content.badge.missing': '{{count}} இல்லை',
-  'content.badge.stale': '{{count}} காலாவதி',
+  'content.badge.missing': '{{language}} மொழிபெயர்ப்பு இல்லை',
+  'content.badge.stale': '{{language}} புதுப்பிக்க வேண்டும்',
   'content.badge.gaps': 'சரிசெய்ய {{count}}',
   'content.column.languages': 'மொழிகள்',
   'content.column.lastEdit': 'இறுதித் திருத்தம்',
