@@ -261,23 +261,35 @@ export function OperationsSection(props: SectionProps) {
   }, [props.config, props.config.collectionPoints, props.config.savings]);
 
   const currentPoints = props.config.collectionPoints.map((point) => point.name);
-  const dirty =
-    !same(points, currentPoints) ||
-    !same(rates, props.config.savings.perKgOptions) ||
-    !same(policy, savedPolicy) ||
-    !same(manureProducts, props.config.manureProducts ?? []);
+  const pointsChanged = !same(points, currentPoints);
+  const savingsChanged =
+    !same(rates, props.config.savings.perKgOptions) || !same(policy, savedPolicy);
+  const manureChanged = !same(manureProducts, props.config.manureProducts ?? []);
+  const dirty = pointsChanged || savingsChanged || manureChanged;
 
+  /**
+   * **Only the blocks that changed.**
+   *
+   * Sending all three on every save meant one block the server refuses took the others
+   * down with it: `PATCH /admin/config` does not accept `collectionPoints` yet
+   * (docs/v2/BACKEND-TODO.md #12), so a change to the savings rates alone failed with
+   * "Unrecognized key: collectionPoints". It is also what the audit entry should show.
+   */
   const patch: ConfigPatch = {
-    // An id is derived for a new point and preserved for an existing one, because M3's
-    // pickers key on the name while reports will want a stable id.
-    collectionPoints: points.map((name) => ({
-      id:
-        props.config.collectionPoints.find((point) => point.name === name)?.id ??
-        `cp-${name.toLowerCase().replace(/\s+/g, '-')}`,
-      name,
-    })),
-    savings: { perKgOptions: rates, ...policy },
-    manureProducts,
+    ...(pointsChanged
+      ? {
+          // An id is derived for a new point and preserved for an existing one, because
+          // M3's pickers key on the name while reports will want a stable id.
+          collectionPoints: points.map((name) => ({
+            id:
+              props.config.collectionPoints.find((point) => point.name === name)?.id ??
+              `cp-${name.toLowerCase().replace(/\s+/g, '-')}`,
+            name,
+          })),
+        }
+      : {}),
+    ...(savingsChanged ? { savings: { perKgOptions: rates, ...policy } } : {}),
+    ...(manureChanged ? { manureProducts } : {}),
   };
 
   return (

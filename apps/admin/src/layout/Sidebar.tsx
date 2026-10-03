@@ -88,7 +88,7 @@ export function Sidebar({ summary }: { summary?: DashboardView }) {
             </h2>
             <ul className="flex flex-col gap-xxs">
               {section.items.map((item) => (
-                <li key={item.module}>
+                <li key={item.to}>
                   <SidebarLink item={item} pending={pendingFor(item)} />
                 </li>
               ))}

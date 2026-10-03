@@ -15,7 +15,7 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ConfigurationScreen } from '@/modules/configuration/ConfigurationScreen';
 import { http, HttpResponse } from 'msw';
@@ -156,5 +156,64 @@ describe('the bank catalogue section', () => {
     renderWithProviders(<ConfigurationScreen />, { route: '/configuration?section=appearance' });
 
     expect(await screen.findByText('Languages content is written in')).toBeInTheDocument();
+  });
+
+  /**
+   * The section used to send `collectionPoints`, `savings` and `manureProducts` on every
+   * save. The API does not accept `collectionPoints` yet (BACKEND-TODO #12), so changing
+   * only a savings rate was refused because of a block nobody had touched.
+   */
+  it('saves only the blocks that changed in Collection & savings', async () => {
+    await signInAs(ADMIN);
+    const user = userEvent.setup();
+    let sent: Record<string, unknown> | null = null;
+    server.use(
+      http.patch('*/admin/config', async ({ request }) => {
+        sent = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ version: '2', changed: Object.keys(sent), warnings: [] });
+      }),
+    );
+
+    renderWithProviders(<ConfigurationScreen />, { route: '/configuration?section=operations' });
+
+    await user.type(await screen.findByRole('textbox', { name: 'Add a rate' }), '7{Enter}');
+    await user.click(screen.getByRole('button', { name: 'Save this section' }));
+    // A config save is confirmed in a dialog first.
+    await user.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Save this section' }),
+    );
+
+    await waitFor(() => expect(sent).not.toBeNull());
+    expect(Object.keys(sent!)).toEqual(['savings']);
+  });
+
+  /**
+   * A config whose lists are missing or `null`: no savings rate list, no collection
+   * points, `null` banks and fertilizer products, no usage counts. Each used to crash a
+   * section with "This screen could not be shown" (checked in Chromium).
+   */
+  it('opens Collection & savings when the config’s lists are missing or null', async () => {
+    await signInAs(ADMIN);
+    const real = await adminConfigEndpoints.get();
+    server.use(
+      http.get('*/admin/config', () =>
+        HttpResponse.json({
+          ...real,
+          config: {
+            ...real.config,
+            savings: { withdrawalMonth: 4, annualInterestRate: null },
+            collectionPoints: undefined,
+            banks: null,
+            manureProducts: null,
+          },
+          usage: {},
+        }),
+      ),
+    );
+
+    renderWithProviders(<ConfigurationScreen />, { route: '/configuration?section=operations' });
+
+    expect(await screen.findByRole('textbox', { name: 'Add a point' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Add a rate' })).toBeInTheDocument();
   });
 });

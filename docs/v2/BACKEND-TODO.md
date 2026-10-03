@@ -429,3 +429,91 @@ No backend work. That block under the terms shows the factory's name, registrati
 location, telephone and email, which the app already reads from `GET /config` (`factory`). They
 are edited in the console under **Configuration → The factory**, and the console's Terms page now
 shows them with a link there.
+
+---
+
+## 12. Configuration: three sections cannot be saved (`unrecognized_keys`)
+
+**Priority:** High. In the console, **Configuration → The factory**, **Collection & savings** and
+**Banks** all fail to save.
+
+**What is wrong**
+`PATCH /v1/admin/config` validates the body with a `.strict()` schema (`configPatchSchema`,
+`apps/api/src/modules/admin/admin.controller.ts`, around line 22) that lists only:
+`flags, savings, manureProducts, teaPackets, creditRules, localization, theme, branding, push, payouts`.
+
+The console also sends three more, so the whole save is refused:
+
+```json
+{ "code": "invalid", "details": { "issues": [
+  { "code": "unrecognized_keys", "message": "Unrecognized key: \"factory\"" } ] } }
+```
+
+| Console section | Sends | Refused because |
+|---|---|---|
+| The factory | `factory` | not in the schema |
+| Collection & savings | `collectionPoints` (with `savings` and `manureProducts` in the same request) | `collectionPoints` not in the schema, so savings and manure fail too |
+| Banks | `banks` | not in the schema (although `columnFor` already maps it) |
+
+`GET /admin/config` already **sends** all three, so the console shows them and lets the
+administrator edit them, but nothing can be saved.
+
+**Where**
+- `admin.controller.ts`: `configPatchSchema`
+- `apps/api/src/modules/admin/config-admin.service.ts`: `patch()` (around line 230)
+
+**What to do**
+
+**1. `banks`: the easy one.** It is a `client_config` column and `columnFor` already maps it.
+Add to the schema:
+```ts
+banks: z.array(z.object({ name: z.string().trim().min(1), branches: z.array(z.string()) })).optional(),
+```
+and add `'banks'` to `WHOLESALE_BLOCKS` (it is the whole list, not a merge).
+
+**2. `factory`: a different table.** These fields live on `factories`, not `client_config`
+(the `read()` method already reads them from there). Add to the schema:
+```ts
+factory: z.object({
+  name: z.string().trim().min(1).max(120).optional(),
+  telephone: z.string().trim().min(1).max(40).optional(),
+  regNo: z.string().trim().min(1).max(40).optional(),
+  location: z.string().trim().min(1).max(200).optional(),
+  supportEmail: z.string().trim().email().max(200).nullish(),
+  supportHours: z.string().trim().max(200).nullish(),
+  legalFooter: z.string().trim().max(1000).nullish(),
+}).strict().optional(),
+```
+In `patch()`, take `factory` **out** of the `client_config` loop and write it with
+`tx.factory.update({ where: { id: actor.factoryId }, data: { ...only the fields sent... } })`
+(`regNo` → `reg_no`, etc. are mapped by Prisma). The console sends `null` for an empty optional
+field (support hours, legal footer): store `null`. `name`, `telephone`, `regNo` and `location` are
+required columns, so never write `null` or `''` to them. Leave out of the update any field not sent.
+Remove `factory: 'factory'` from `columnFor`: there is no such `client_config` column.
+
+**3. `collectionPoints`: also a different table** (`collection_points`). The console sends the full
+list after the edit: `[{ "id": "<uuid or new>", "name": "MAKADURA" }, …]`. A new point has an id
+that is not a uuid (e.g. `cp-new-point`).
+- An item whose `id` is an existing point of this factory: update its `name`.
+- An item whose `id` is not an existing point: create it (`code` = the name upper-cased with
+  spaces as `-`, `active: true`).
+- An existing **active** point missing from the list: set `active = false`. Never delete it:
+  suppliers and deliveries reference it.
+- The existing impact check already refuses removing a point that still has deliveries
+  (`configImpact`); keep that working.
+
+Schema:
+```ts
+collectionPoints: z.array(z.object({ id: z.string().min(1), name: z.string().trim().min(1).max(80) })).optional(),
+```
+
+**4. Audit and version.** Keep one `config.update` audit entry per save with only the changed
+blocks (as today), and bump `client_config.version` even when only `factory` or
+`collectionPoints` changed, so the console's "someone else saved first" check still works.
+
+**Check**
+In the console, Configuration:
+1. **The factory**: change the telephone, save. Reload: it stays. The mobile app's terms screen
+   ("Questions about these terms?") shows the new number after its next config fetch.
+2. **Collection & savings**: add a point, save. It appears in the Suppliers collection-point filter.
+3. **Banks**: add a branch, save. Reload: it stays.

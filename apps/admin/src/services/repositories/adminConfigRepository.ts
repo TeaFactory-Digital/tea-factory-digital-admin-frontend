@@ -51,6 +51,10 @@ export const adminConfigRepository = {
       theme?: RuntimeConfig['theme'] | null;
       push?: RuntimeConfig['push'] | null;
     };
+    const list = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : []);
+    const savings = (config.savings ?? {}) as Partial<RuntimeConfig['savings']>;
+    const usage = (served.usage ?? {}) as Partial<ConfigUsage>;
+
     return {
       ...served,
       config: {
@@ -58,7 +62,27 @@ export const adminConfigRepository = {
         branding: config.branding ?? {},
         theme: config.theme ?? undefined,
         push: config.push ?? undefined,
+        /*
+         * The same rule for the lists and the savings block every section maps over: a
+         * value that is missing or not a list reads as empty, never as a crash. A section
+         * that called `.map` on `undefined` replaced the whole Configuration screen with
+         * "This screen could not be shown".
+         */
+        savings: { ...savings, perKgOptions: list<number>(savings.perKgOptions) },
+        collectionPoints: list<RuntimeConfig['collectionPoints'][number]>(config.collectionPoints),
+        banks: list<RuntimeConfig['banks'][number]>(config.banks),
+        manureProducts: Array.isArray(config.manureProducts) ? config.manureProducts : undefined,
       },
+      usage: {
+        ...usage,
+        savingsBalances: usage.savingsBalances ?? 0,
+        openPayoutRuns: usage.openPayoutRuns ?? 0,
+        outstandingCredit: { advance: 0, loan: 0, manure: 0, ...usage.outstandingCredit },
+        teaPacketsOutstanding: usage.teaPacketsOutstanding ?? 0,
+        deliveriesByPoint: usage.deliveriesByPoint ?? {},
+        suppliersByBank: usage.suppliersByBank ?? {},
+        contentByLanguage: usage.contentByLanguage ?? {},
+      } as ConfigUsage,
     };
   },
 
