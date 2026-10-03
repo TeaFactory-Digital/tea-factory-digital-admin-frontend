@@ -24,6 +24,7 @@ import {
   SPLIT_PANE_SCROLLER,
 } from '@/components/ui/layout';
 import { BannerEditorScreen } from '@/modules/banners/BannerEditorScreen';
+import { NewsArticleScreen } from '@/modules/news/NewsArticleScreen';
 import { ConfigurationScreen } from '@/modules/configuration/ConfigurationScreen';
 import { NotificationsScreen } from '@/modules/notifications/NotificationsScreen';
 import { StaticContentScreen } from '@/modules/static-content/StaticContentScreen';
@@ -207,5 +208,31 @@ describe('M11 banner editor', () => {
     expect(form).toHaveClass('lg:overflow-y-auto');
     // A preview that clips is a preview that lies about what the supplier will see.
     expect(preview).not.toHaveClass('lg:overflow-y-auto');
+  });
+
+  /**
+   * The news article is the exception to "pin the preview": its right column carries the
+   * cover, the preview, the lifecycle and the audit history, which is taller than a
+   * laptop window. Pinned, everything past the fold was unreachable, so each side scrolls.
+   */
+  it('scrolls the copy and the side column of a news article separately', async () => {
+    await signInAs(ADMIN);
+    const { container } = renderWithProviders(
+      <Routes>
+        <Route path="/news/:id" element={<NewsArticleScreen />} />
+      </Routes>,
+      { route: '/news/nws-1' },
+    );
+
+    await screen.findByText('What the supplier sees');
+
+    const pane = paneOf(container);
+    expect(pane).toHaveClass('lg:flex-1');
+
+    const [copy, side] = Array.from(pane!.children);
+    for (const column of [copy, side]) {
+      expect(column).toHaveClass('lg:overflow-y-auto');
+      expect(column).toHaveClass('lg:min-h-0');
+    }
   });
 });

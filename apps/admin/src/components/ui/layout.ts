@@ -42,7 +42,10 @@ export const GRID_CARD = 'flex min-h-[22rem] flex-1 flex-col';
  * | Screen | Fixed | Scrolls |
  * | --- | --- | --- |
  * | M14 configuration, M12 static content | the rail of sections/pages | the editor |
- * | M11 banner editor, M8 news article | the live preview | the form |
+ * | M11 banner editor | the live preview | the form |
+ *
+ * The M8 news article started in the second row and moved to both columns scrolling: its
+ * side column (cover, preview, lifecycle, audit) outgrew any reasonable floor.
  *
  * Both readings are the same fix and the same three rules — which side gets
  * {@link SPLIT_PANE_SCROLLER} is the only difference — so the **track is not included

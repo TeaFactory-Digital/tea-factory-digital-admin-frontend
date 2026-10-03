@@ -148,14 +148,14 @@ export function NewsArticleScreen() {
       <GapNotice gaps={data} published={published} />
 
       <div className={cn(SPLIT_PANE, 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]')}>
-        {/* The editor scrolls; the preview beside it does not.
+        {/* **Each side scrolls on its own.**
 
-            The opposite way round from M12 and M14, and for the same reason they are
-            that way round: the half that stays put is the half being *consulted*. Here
-            that is the preview — the whole point of writing an article beside a live
-            rendering is checking one against the other, which cannot be done when the
-            rendering scrolls out of sight exactly as the copy grows long enough to need
-            it.
+            The right side used to be pinned, as the banner editor's is. But here it holds
+            the cover, the preview, the lifecycle card and the audit history, which
+            together are taller than a laptop window, and a pinned column with no
+            scrollbar cannot be read past the fold. So both columns scroll and the page
+            does not: scrolling the history leaves the copy where it was, and the other
+            way round.
 
             `flex flex-col` as well as the scroller, because a bare `Card` in a grid
             stretches to the row and its body would scroll inside the card instead — the
@@ -195,7 +195,7 @@ export function NewsArticleScreen() {
           </CardBody>
         </Card>
 
-        <div className="flex flex-col gap-lg">
+        <div className={cn('flex flex-col gap-lg', SPLIT_PANE_SCROLLER)}>
           {/* The cover, beside the preview rather than inside the translation editor: it
               is one picture for all three languages, and a field that moved with the tab
               would suggest otherwise. */}
@@ -204,6 +204,8 @@ export function NewsArticleScreen() {
             <CardBody>
               <ImageField
                 label={t('uploads.coverImage')}
+                // The card header already says "Cover image".
+                hideLabel
                 entity="newsArticle"
                 entityId={data.id}
                 currentUrl={data.coverImageUrl ?? null}

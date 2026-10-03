@@ -17,6 +17,7 @@
  */
 
 import { HttpResponse, delay, http, type HttpHandler } from 'msw';
+import type { ServedBannerPreview, ServedContentPreview } from '../api/adapters';
 import type {
   AccessLevel,
   AdminBill,
@@ -39,7 +40,6 @@ import type {
   Capability,
   ConfigPatch,
   ConfigUsage,
-  ContentPreview,
   ContentStatus,
   ContentTranslation,
   ContentTranslations,
@@ -845,14 +845,21 @@ function serialiseStaticPage(record: StaticPageRecord, request: Request): AdminS
  * Resolved with the **shared** `resolveTranslation`, which is the same function the app
  * will call. An editor signing off copy the app never renders is the AC-08 failure with
  * the console's fingerprints on it, and this is what makes it structurally impossible.
+ *
+ * **In the API's shape, `resolved` rather than `translation`**, so the repository's
+ * `toContentPreview` is exercised rather than bypassed. This fixture once answered in the
+ * console's own shape, and every real preview read as "no copy in any language" while
+ * the tests passed.
  */
-function contentPreview(translations: ContentTranslations, lang: LanguageCode): ContentPreview {
+function contentPreview(
+  translations: ContentTranslations,
+  lang: LanguageCode,
+): ServedContentPreview {
   const resolved = resolveTranslation(translations, lang);
   return {
     lang,
-    translation: resolved?.translation ?? null,
+    resolved: resolved?.translation ?? null,
     usedFallback: resolved?.usedFallback ?? false,
-    fallbackLanguage: EDITORIAL_FALLBACK_LANGUAGE,
   };
 }
 
@@ -5778,11 +5785,27 @@ export const handlers: HttpHandler[] = [
 
     const url = new URL(request.url);
     const lang = (url.searchParams.get('lang') ?? EDITORIAL_FALLBACK_LANGUAGE) as LanguageCode;
-    return HttpResponse.json({
-      ...contentPreview(record.translations, lang),
-      action: record.action,
-      imageUrl: record.imageUrl ?? null,
-    });
+    // Flat, like the API, and resolved with the **banner** rule: a headline and a button
+    // is written copy, where the article rule would demand a body.
+    const wanted = record.translations[lang];
+    const fallback = record.translations[EDITORIAL_FALLBACK_LANGUAGE];
+    if (!isBannerWritten(wanted) && !isBannerWritten(fallback)) {
+      return fail({
+        status: 422,
+        code: 'fallback-language-required',
+        message: 'There is no copy in any language to preview.',
+      });
+    }
+    const used = isBannerWritten(wanted) ? wanted! : fallback!;
+    const served: ServedBannerPreview = {
+      lang: used.lang,
+      requestedLang: lang,
+      usedFallback: used.lang !== lang,
+      title: used.title,
+      body: used.body,
+      buttonLabel: used.buttonLabel,
+    };
+    return HttpResponse.json({ ...served, action: record.action, imageUrl: record.imageUrl ?? null });
   }),
 
   http.put('*/admin/banners/:id/translations/:lang', async ({ request, params }) => {

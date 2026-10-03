@@ -19,7 +19,6 @@
 
 import type {
   AdminNewsArticle,
-  ContentPreview,
   ContentTranslationBody,
   LanguageCode,
   NewsListItem,
@@ -28,7 +27,7 @@ import type {
   Paged,
 } from '@tfd/domain';
 import { apiClient } from '../api/client';
-import type { MutationAck, StatusAck } from '../api/adapters';
+import type { MutationAck, ServedContentPreview, StatusAck } from '../api/adapters';
 import { toParams } from './params';
 
 /** What `POST /admin/news` acknowledges with — the id, the slug it minted, the state. */
@@ -82,7 +81,6 @@ export const newsEndpoints = {
   patch: (id: string, body: NewsPatch) =>
     apiClient.patch<MutationAck>(`/admin/news/${id}`, body).then((response) => response.data),
 
-
   /**
    * Save one language.
    *
@@ -104,7 +102,7 @@ export const newsEndpoints = {
    */
   preview: (id: string, lang: LanguageCode) =>
     apiClient
-      .get<ContentPreview>(`/admin/news/${id}/preview`, { params: toParams({ lang }) })
+      .get<ServedContentPreview>(`/admin/news/${id}/preview`, { params: toParams({ lang }) })
       .then((response) => response.data),
 
   /** `422 fallback-translation-missing` · `409 already-published`. */

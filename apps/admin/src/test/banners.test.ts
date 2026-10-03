@@ -60,6 +60,21 @@ describe('M11 promo banners', () => {
     signOut();
   });
 
+  it('previews a headline-only banner in the fallback, read from the API’s flat shape', async () => {
+    await signInAs(EDITOR);
+    const created = await bannerRepository.create(draft());
+
+    // No body and no Tamil copy: the banner rule still calls it written, and a Tamil
+    // reader is shown the English. The API sends this flat, and the panel reads
+    // `translation`, so an unconverted answer would read as "no copy in any language".
+    const preview = await bannerRepository.preview(created.id, 'ta');
+    expect(preview.lang).toBe('ta');
+    expect(preview.usedFallback).toBe(true);
+    expect(preview.fallbackLanguage).toBe(EDITORIAL_FALLBACK_LANGUAGE);
+    expect(preview.translation?.lang).toBe(EDITORIAL_FALLBACK_LANGUAGE);
+    expect(preview.translation?.title).toBe('Fertilizer issue');
+  });
+
   it('reports where each banner is in its window, from the server’s clock', async () => {
     await signInAs(EDITOR);
     const page = await bannerRepository.list({ pageSize: 50 });

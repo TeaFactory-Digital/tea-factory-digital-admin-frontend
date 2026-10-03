@@ -16,7 +16,13 @@
  * on screen, and the office reads both as "nothing waiting".
  */
 
-import type { Paged } from '@tfd/domain';
+import {
+  EDITORIAL_FALLBACK_LANGUAGE,
+  type ContentPreview,
+  type ContentTranslation,
+  type LanguageCode,
+  type Paged,
+} from '@tfd/domain';
 
 /**
  * What every mutating endpoint on this API actually answers with.
@@ -92,5 +98,61 @@ export function paginate<T>(
     // `null` rather than `page + 1` at the end: a pager that offers a page which comes
     // back empty is worse than one that stops.
     nextPage: start + items.length < rows.length ? page + 1 : null,
+  };
+}
+
+/**
+ * What `GET /admin/news/:id/preview` and `GET /admin/static-pages/:slug/preview`
+ * actually put on the wire.
+ *
+ * The copy travels as **`resolved`**, not `translation`, and there is no
+ * `fallbackLanguage`. Read as a `ContentPreview` directly, `translation` was always
+ * `undefined`, so every preview said *"There is no copy in any language yet"* over an
+ * article that plainly had copy.
+ */
+export interface ServedContentPreview {
+  lang: LanguageCode;
+  resolved: ContentTranslation | null;
+  usedFallback: boolean;
+}
+
+export function toContentPreview(served: ServedContentPreview): ContentPreview {
+  return {
+    lang: served.lang,
+    translation: served.resolved ?? null,
+    usedFallback: served.usedFallback,
+    fallbackLanguage: EDITORIAL_FALLBACK_LANGUAGE,
+  };
+}
+
+/**
+ * What `GET /admin/banners/:id/preview` puts on the wire: **flat**.
+ *
+ * `lang` is the language of the copy actually used and `requestedLang` the one asked
+ * for, the reverse of the article shape. Nothing in any language is a `422` rather than
+ * a `null`, so there is always copy here.
+ */
+export interface ServedBannerPreview {
+  lang: LanguageCode;
+  requestedLang: LanguageCode;
+  usedFallback: boolean;
+  title: string;
+  body?: string | null;
+  buttonLabel: string;
+}
+
+export function toBannerPreview(served: ServedBannerPreview): ContentPreview {
+  return {
+    lang: served.requestedLang,
+    translation: {
+      lang: served.lang,
+      title: served.title,
+      body: served.body ?? '',
+      // Not sent for a preview, and the panel does not show them.
+      updatedAt: '',
+      updatedByName: '',
+    },
+    usedFallback: served.usedFallback,
+    fallbackLanguage: EDITORIAL_FALLBACK_LANGUAGE,
   };
 }

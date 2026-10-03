@@ -1236,7 +1236,12 @@ export const si: Record<TranslationKey, string> = {
   /* Image uploads (M11 news, M12 banners). */
   'uploads.coverImage': 'ආවරණ රූපය',
   'uploads.artwork': 'බැනර් රූපය',
-  'uploads.hint': 'JPEG, PNG හෝ WebP, වැඩිම {{max}} MB. විශාල ඡායාරූප බාගත කිරීමට සැපයුම්කරුවන්ට දත්ත වියදම් වේ.',
+  'uploads.hint': 'ඡායාරූප කුඩාවට තබන්න: ඒවා බාගත කිරීමට සැපයුම්කරුවන්ට ජංගම දත්ත සඳහා ගෙවීමට සිදු වේ.',
+  'uploads.choose': 'රූපයක් තෝරන්න',
+  'uploads.orDrag': 'හෝ මෙතැනට ඇදගෙන එන්න',
+  'uploads.formats': 'JPEG, PNG හෝ WebP, MB {{max}} දක්වා',
+  'uploads.replace': 'වෙනස් කරන්න',
+  'uploads.broken': 'මෙම රූපය පූරණය කළ නොහැකි විය. එය වෙනස් කරන්න හෝ ඉවත් කරන්න.',
   'uploads.uploading': 'රූපය යවමින්…',
   'uploads.remove': 'රූපය ඉවත් කරන්න',
   'uploads.unavailable': 'මෙම සේවාදායකයේ රූප ගබඩාවක් තවම සකසා නැත, එබැවින් රූප උඩුගත කළ නොහැක. අනෙක් සියල්ල සාමාන්‍ය ලෙස සුරැකේ.',

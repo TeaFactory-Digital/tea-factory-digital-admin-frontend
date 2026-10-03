@@ -30,7 +30,7 @@ import {
 } from '@tfd/domain';
 import { newsEndpoints, type CreatedArticle } from '../endpoints/news';
 import { staticPageEndpoints } from '../endpoints/staticPages';
-import type { MutationAck, StatusAck } from '../api/adapters';
+import { toContentPreview, type MutationAck, type StatusAck } from '../api/adapters';
 import { ApiError } from '../api/errors';
 
 /**
@@ -125,7 +125,7 @@ export const newsRepository = {
   ): Promise<MutationAck> => newsEndpoints.saveTranslation(id, lang, parseTranslation(body)),
 
   preview: (id: string, lang: LanguageCode): Promise<ContentPreview> =>
-    newsEndpoints.preview(id, lang),
+    newsEndpoints.preview(id, lang).then(toContentPreview),
 
   publish: (id: string): Promise<StatusAck> => newsEndpoints.publish(id),
   unpublish: (id: string): Promise<StatusAck> => newsEndpoints.unpublish(id),
@@ -160,10 +160,11 @@ export const staticPageRepository = {
     slug: StaticPageSlug,
     lang: LanguageCode,
     body: ContentTranslationBody,
-  ): Promise<MutationAck> => staticPageEndpoints.saveTranslation(slug, lang, parseTranslation(body)),
+  ): Promise<MutationAck> =>
+    staticPageEndpoints.saveTranslation(slug, lang, parseTranslation(body)),
 
   preview: (slug: StaticPageSlug, lang: LanguageCode): Promise<ContentPreview> =>
-    staticPageEndpoints.preview(slug, lang),
+    staticPageEndpoints.preview(slug, lang).then(toContentPreview),
 
   publish: (slug: StaticPageSlug): Promise<StatusAck> => staticPageEndpoints.publish(slug),
 };

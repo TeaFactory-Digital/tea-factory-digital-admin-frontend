@@ -21,11 +21,10 @@ import type {
   BannerPatch,
   BannerQuery,
   BannerTranslationBody,
-  ContentPreview,
   LanguageCode,
 } from '@tfd/domain';
 import { apiClient } from '../api/client';
-import type { MutationAck, StatusAck } from '../api/adapters';
+import type { MutationAck, ServedBannerPreview, StatusAck } from '../api/adapters';
 import { toParams } from './params';
 
 /**
@@ -105,7 +104,7 @@ export const bannerEndpoints = {
    */
   preview: (id: string, lang: LanguageCode) =>
     apiClient
-      .get<ContentPreview>(`/admin/banners/${id}/preview`, { params: toParams({ lang }) })
+      .get<ServedBannerPreview>(`/admin/banners/${id}/preview`, { params: toParams({ lang }) })
       .then((response) => response.data),
 
   publish: (id: string) =>

@@ -1266,7 +1266,12 @@ export const ta: Record<TranslationKey, string> = {
   /* Image uploads (M11 news, M12 banners). */
   'uploads.coverImage': 'அட்டைப் படம்',
   'uploads.artwork': 'பேனர் படம்',
-  'uploads.hint': 'JPEG, PNG அல்லது WebP, அதிகபட்சம் {{max}} MB. பெரிய புகைப்படங்கள் சப்ளையர்களுக்கு தரவுச் செலவை ஏற்படுத்தும்.',
+  'uploads.hint': 'படங்களைச் சிறியதாக வைத்திருங்கள்: அவற்றைப் பதிவிறக்க வழங்குநர்கள் மொபைல் டேட்டாவுக்குப் பணம் செலுத்துகிறார்கள்.',
+  'uploads.choose': 'படத்தைத் தேர்ந்தெடுக்கவும்',
+  'uploads.orDrag': 'அல்லது இங்கே இழுத்து விடவும்',
+  'uploads.formats': 'JPEG, PNG அல்லது WebP, {{max}} MB வரை',
+  'uploads.replace': 'மாற்று',
+  'uploads.broken': 'இந்தப் படத்தை ஏற்ற முடியவில்லை. அதை மாற்றவும் அல்லது நீக்கவும்.',
   'uploads.uploading': 'படம் அனுப்பப்படுகிறது…',
   'uploads.remove': 'படத்தை நீக்கு',
   'uploads.unavailable': 'இந்த சேவையகத்தில் பட சேமிப்பு இன்னும் அமைக்கப்படவில்லை, எனவே படங்களைப் பதிவேற்ற முடியாது. மற்ற அனைத்தும் இயல்பாகச் சேமிக்கப்படும்.',

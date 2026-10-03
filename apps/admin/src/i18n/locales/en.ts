@@ -1236,7 +1236,12 @@ export const en = {
   /* Image uploads (M11 news, M12 banners). */
   'uploads.coverImage': 'Cover image',
   'uploads.artwork': 'Banner artwork',
-  'uploads.hint': 'JPEG, PNG or WebP, up to {{max}} MB. Large photographs cost suppliers data to receive.',
+  'uploads.hint': 'Keep photos small: suppliers pay for the mobile data to download them.',
+  'uploads.choose': 'Choose an image',
+  'uploads.orDrag': 'or drag one here',
+  'uploads.formats': 'JPEG, PNG or WebP, up to {{max}} MB',
+  'uploads.replace': 'Replace',
+  'uploads.broken': 'This image could not be loaded. Replace it or remove it.',
   'uploads.uploading': 'Sending the image…',
   'uploads.remove': 'Remove image',
   'uploads.unavailable': 'This server has no image storage set up yet, so images cannot be uploaded. Everything else saves normally.',

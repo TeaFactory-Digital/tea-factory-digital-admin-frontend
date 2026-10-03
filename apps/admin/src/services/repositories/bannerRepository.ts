@@ -31,7 +31,7 @@ import {
   type Paged,
 } from '@tfd/domain';
 import { bannerEndpoints, type ServedBannerRow } from '../endpoints/banners';
-import { paginate, type MutationAck, type StatusAck } from '../api/adapters';
+import { paginate, toBannerPreview, type MutationAck, type StatusAck } from '../api/adapters';
 import { ApiError } from '../api/errors';
 
 /** The app's allowlist, run before the save. Throws what the server would answer. */
@@ -193,7 +193,7 @@ export const bannerRepository = {
 
   /** ⚠ 404s until the API implements it (gap **G-08**). */
   preview: (id: string, lang: LanguageCode): Promise<ContentPreview> =>
-    bannerEndpoints.preview(id, lang),
+    bannerEndpoints.preview(id, lang).then(toBannerPreview),
 
   publish: (id: string): Promise<StatusAck> => bannerEndpoints.publish(id),
   unpublish: (id: string): Promise<StatusAck> => bannerEndpoints.unpublish(id),

@@ -17,13 +17,12 @@
 
 import type {
   AdminStaticPage,
-  ContentPreview,
   ContentTranslationBody,
   LanguageCode,
   StaticPageSlug,
 } from '@tfd/domain';
 import { apiClient } from '../api/client';
-import type { MutationAck, StatusAck } from '../api/adapters';
+import type { MutationAck, ServedContentPreview, StatusAck } from '../api/adapters';
 import { toParams } from './params';
 
 export const staticPageEndpoints = {
@@ -51,7 +50,9 @@ export const staticPageEndpoints = {
   /** The server's resolution, so the console never previews its own fallback (AC-08). */
   preview: (slug: StaticPageSlug, lang: LanguageCode) =>
     apiClient
-      .get<ContentPreview>(`/admin/static-pages/${slug}/preview`, { params: toParams({ lang }) })
+      .get<ServedContentPreview>(`/admin/static-pages/${slug}/preview`, {
+        params: toParams({ lang }),
+      })
       .then((response) => response.data),
 
   /** `422 fallback-translation-missing` · `409 already-published`. */
