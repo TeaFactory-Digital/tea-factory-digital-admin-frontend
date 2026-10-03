@@ -25,7 +25,6 @@ import {
   Bell,
   ChartColumn,
   History,
-  Info,
   Landmark,
   MapPin,
   PiggyBank,
@@ -46,6 +45,7 @@ import { Dialog } from '@/components/ui/Dialog';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, Notice, Skeleton } from '@/components/ui/states';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import { InfoTip } from '@/components/ui/Tooltip';
 import { useToast } from '@/components/ui/Toast';
 import { AuditPanel } from '@/components/AuditPanel';
 import { useFeatureFlags } from '@/config/RuntimeConfigProvider';
@@ -140,24 +140,14 @@ export function SupplierDetailScreen() {
                 </>
               ) : (
                 /**
-                 * **Withheld and explained**, not withheld silently.
-                 *
-                 * §12.1 gives `suppliers: write` to the clerk alone — right, because these
-                 * are counter acts and the clerk is who sees the supplier's face. But a
-                 * manager or a factory administrator looking for the password reset and
-                 * finding *nothing at all* concludes the feature is missing, which is the
-                 * failure every other withheld control in this console avoids by saying
-                 * whose job it is.
-                 *
-                 * Held to a column and marked with the info glyph, because unbounded it
-                 * is two sentences of grey text sitting where a manager expects buttons
-                 * — the same width every time, so the heading beside it does not move
-                 * depending on who signed in.
+                 * **Withheld and explained**, not withheld silently: a manager finding no
+                 * reset button concludes the feature is missing. The explanation sits
+                 * behind an "i" rather than on the page, so it is there when asked for
+                 * and not two lines of grey text on every visit.
                  */
-                <p className="flex max-w-64 items-start gap-xs text-caption text-text-secondary">
-                  <Info className="mt-0.5 size-icon-xs shrink-0" aria-hidden />
+                <InfoTip label={t('suppliers.detail.counterActionsLabel')}>
                   {t('suppliers.detail.counterActionsHint')}
-                </p>
+                </InfoTip>
               )
             ) : null}
           </>

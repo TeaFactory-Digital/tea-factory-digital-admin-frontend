@@ -272,6 +272,7 @@ export const si: Record<TranslationKey, string> = {
   'suppliers.detail.creditLoan': 'ණය ශේෂය',
   'suppliers.detail.creditManure': 'පොහොර ශේෂය',
   'suppliers.detail.pendingRequests': 'විවෘත ඉල්ලීම්',
+  'suppliers.detail.counterActionsLabel': 'මට මෙම ගිණුම අත්හිටුවීමට හෝ යළි සැකසීමට නොහැක්කේ ඇයි?',
   'suppliers.detail.counterActionsHint':
     'සැපයුම්කරුවෙකු අත්හිටුවීම සහ ඔවුන්ගේ යෙදුම් මුරපදය නැවත සැකසීම කවුන්ටර කාර්යයන් වන බැවින් ඒවා කළ හැක්කේ ලිපිකරුවාට පමණි. මෙම කර්මාන්තශාලාව වෙනස් ලෙස ක්‍රියා කරන්නේ නම්, පරිශීලකයන් සහ භූමිකා යටතේ එය වෙනස් කරන්න.',
   'suppliers.detail.suspendedBecause': 'අත්හිටුවා ඇත: {{reason}}',

@@ -260,6 +260,7 @@ export const en = {
   'suppliers.detail.creditLoan': 'Loan balance',
   'suppliers.detail.creditManure': 'Manure balance',
   'suppliers.detail.pendingRequests': 'Open requests',
+  'suppliers.detail.counterActionsLabel': 'Why can’t I suspend or reset this account?',
   'suppliers.detail.counterActionsHint':
     'Suspending a supplier and resetting their app password are counter jobs, so only the clerk can do them. Change that under Users & roles if this factory works differently.',
   'suppliers.detail.suspendedBecause': 'Suspended: {{reason}}',

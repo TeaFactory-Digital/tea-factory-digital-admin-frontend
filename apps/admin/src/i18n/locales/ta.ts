@@ -275,6 +275,7 @@ export const ta: Record<TranslationKey, string> = {
   'suppliers.detail.creditLoan': 'கடன் நிலுவை',
   'suppliers.detail.creditManure': 'உர நிலுவை',
   'suppliers.detail.pendingRequests': 'திறந்த வேண்டுகோள்கள்',
+  'suppliers.detail.counterActionsLabel': 'இந்தக் கணக்கை ஏன் இடைநிறுத்தவோ மீட்டமைக்கவோ முடியவில்லை?',
   'suppliers.detail.counterActionsHint':
     'சப்ளையரை இடைநிறுத்துவதும் அவர்களின் செயலி கடவுச்சொல்லை மீட்டமைப்பதும் கவுண்டர் வேலைகள், எனவே அவற்றை எழுத்தர் மட்டுமே செய்ய முடியும். இந்தத் தொழிற்சாலை வேறுவிதமாகச் செயல்பட்டால், பயனர்கள் & பாத்திரங்கள் பகுதியில் அதை மாற்றவும்.',
   'suppliers.detail.suspendedBecause': 'இடைநிறுத்தப்பட்டது: {{reason}}',
