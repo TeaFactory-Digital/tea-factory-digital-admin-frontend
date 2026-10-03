@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "npm run dev --workspace @tfd/admin",
     "build": "npm run build --workspace @tfd/admin",
+    "build:staging": "npm run build:staging --workspace @tfd/admin",
     "preview": "npm run preview --workspace @tfd/admin",
     "typecheck": "tsc --build --force",
     "lint": "eslint .",
