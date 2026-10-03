@@ -231,7 +231,7 @@ export function UserDialog({
         <fieldset className="flex flex-col gap-xs">
           <legend className="flex items-center gap-xxs text-label text-text-primary">
             {t('users.field.roles')}
-            <InfoTip label={t('tip.moreInfo')}>{t('users.field.rolesHint')}</InfoTip>
+            <InfoTip label={t('tip.moreInfo')} compact>{t('users.field.rolesHint')}</InfoTip>
           </legend>
 
           {ROLES.map((role) => (

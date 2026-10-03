@@ -153,7 +153,7 @@ export function ImageField({
         <label htmlFor={inputId} className="text-label text-text-primary">
           {label}
         </label>
-        {hint && !hideLabel ? <InfoTip label={t('tip.moreInfo')}>{hint}</InfoTip> : null}
+        {hint && !hideLabel ? <InfoTip label={t('tip.moreInfo')} compact>{hint}</InfoTip> : null}
       </div>
 
       {/* Visually hidden, still focusable: the drop area below is its label, and a

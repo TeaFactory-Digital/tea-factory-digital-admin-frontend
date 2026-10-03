@@ -197,7 +197,7 @@ export function NewBannerDialog({
 
         <BannerActionField value={action} onChange={setAction} />
 
-        <div className="grid gap-sm sm:grid-cols-2">
+        <div className="grid items-start gap-sm sm:grid-cols-2">
           <Field label={t('banners.field.startsAt')} required>
             {({ id, describedBy, required }) => (
               <DateTimePicker

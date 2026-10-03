@@ -35,7 +35,7 @@ import { ErrorState, Spinner } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDateTime } from '@/lib/format';
-import { SPLIT_PANE, SPLIT_PANE_SCROLLER } from '@/components/ui/layout';
+import { SPLIT_PANE_EDITOR, SPLIT_PANE_SCROLLER } from '@/components/ui/layout';
 import { cn } from '@/lib/cn';
 import { GapNotice } from '@/modules/content/GapNotice';
 import { LanguageStrip } from '@/modules/content/LanguageStrip';
@@ -148,7 +148,7 @@ export function NewsArticleScreen() {
 
       <GapNotice gaps={data} published={published} />
 
-      <div className={cn(SPLIT_PANE, 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]')}>
+      <div className={cn(SPLIT_PANE_EDITOR, 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]')}>
         {/* **Each side scrolls on its own.**
 
             The right side used to be pinned, as the banner editor's is. But here it holds

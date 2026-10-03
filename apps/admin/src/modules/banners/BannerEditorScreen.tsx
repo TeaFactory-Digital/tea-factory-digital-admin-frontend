@@ -44,7 +44,7 @@ import { ErrorState, Notice, Spinner } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDateTime } from '@/lib/format';
-import { SPLIT_PANE, SPLIT_PANE_SCROLLER } from '@/components/ui/layout';
+import { SPLIT_PANE_EDITOR, SPLIT_PANE_SCROLLER } from '@/components/ui/layout';
 import { cn } from '@/lib/cn';
 import { LanguageStrip } from '@/modules/content/LanguageStrip';
 import { PreviewPanel } from '@/modules/content/PreviewPanel';
@@ -280,7 +280,7 @@ export function BannerEditorScreen() {
         </Notice>
       ) : null}
 
-      <div className={cn(SPLIT_PANE, 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]')}>
+      <div className={cn(SPLIT_PANE_EDITOR, 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]')}>
         {/* **Each side scrolls on its own**, as on the news article.
 
             The right side used to be pinned so the preview stayed beside the copy. But it
@@ -346,7 +346,7 @@ export function BannerEditorScreen() {
                 disabled={!canWrite}
               />
 
-              <div className="grid gap-sm sm:grid-cols-2">
+              <div className="grid items-start gap-sm sm:grid-cols-2">
                 <Field label={t('banners.field.startsAt')} required>
                   {({ id: fieldId, describedBy, required }) => (
                     <DateTimePicker

@@ -11,7 +11,13 @@
  * Radix is used where the platform has no equivalent — dialogs, toasts, menus.
  */
 
-import { forwardRef, useId, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
+import {
+  forwardRef,
+  useId,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type TextareaHTMLAttributes,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/cn';
 import { InfoTip } from './Tooltip';
@@ -94,7 +100,11 @@ export function Field({ label, error, hint, required, children, className }: Fie
         >
           {label}
         </label>
-        {longHint ? <InfoTip label={t('tip.moreInfo')}>{hint}</InfoTip> : null}
+        {longHint ? (
+          <InfoTip label={t('tip.moreInfo')} compact>
+            {hint}
+          </InfoTip>
+        ) : null}
       </div>
 
       {children({

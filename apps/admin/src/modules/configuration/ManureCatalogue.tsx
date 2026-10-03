@@ -38,7 +38,7 @@ export function ManureCatalogue({
     <fieldset className="flex flex-col gap-sm">
       <legend className="flex items-center gap-xxs text-label text-text-primary">
         {t('config.manureProducts')}
-        <InfoTip label={t('tip.moreInfo')}>{t('config.manureProductsHint')}</InfoTip>
+        <InfoTip label={t('tip.moreInfo')} compact>{t('config.manureProductsHint')}</InfoTip>
       </legend>
 
       <ul className="flex flex-col gap-xs">

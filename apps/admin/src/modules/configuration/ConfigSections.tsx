@@ -430,7 +430,7 @@ export function AppearanceSection(props: SectionProps) {
       <fieldset className="flex flex-col gap-sm">
         <legend className="flex items-center gap-xxs text-label text-text-primary">
           {t('config.contentLanguages')}
-          <InfoTip label={t('tip.moreInfo')}>{t('config.contentLanguagesHint')}</InfoTip>
+          <InfoTip label={t('tip.moreInfo')} compact>{t('config.contentLanguagesHint')}</InfoTip>
         </legend>
 
         {SUPPORTED_LANGUAGES.map((lang) => (
@@ -611,7 +611,7 @@ export function PushSection(props: SectionProps) {
       <fieldset className="flex flex-col gap-sm">
         <legend className="flex items-center gap-xxs text-label text-text-primary">
           {t('config.pushCategories')}
-          <InfoTip label={t('tip.moreInfo')}>{t('config.pushCategoriesHint')}</InfoTip>
+          <InfoTip label={t('tip.moreInfo')} compact>{t('config.pushCategoriesHint')}</InfoTip>
         </legend>
 
         {NOTIFICATION_CATEGORIES.map((category) => {

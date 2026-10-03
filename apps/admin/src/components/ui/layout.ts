@@ -86,6 +86,17 @@ export const SPLIT_PANE = 'grid gap-lg lg:min-h-[30rem] lg:flex-1';
 export const SPLIT_PANE_SCROLLER = 'lg:min-h-0 lg:overflow-y-auto';
 
 /**
+ * {@link SPLIT_PANE} for an editor where **both** columns scroll (banner, news article).
+ *
+ * The only difference is the floor: 16 rem instead of 30. `SPLIT_PANE`'s floor protects a
+ * pinned rail, which has no scrollbar and must never be clipped. Here neither column is
+ * pinned, so a shorter pane costs nothing but rows on screen. With 30 rem, the banner
+ * editor's header and its two notices left less than that on a laptop window, the pane
+ * overflowed by the difference and the whole page scrolled under both columns.
+ */
+export const SPLIT_PANE_EDITOR = 'grid gap-lg lg:min-h-64 lg:flex-1';
+
+/**
  * A two-column screen where **both** sides scroll and the page does not.
  *
  * {@link SPLIT_PANE} pins one column and scrolls the other. This is the other shape: a

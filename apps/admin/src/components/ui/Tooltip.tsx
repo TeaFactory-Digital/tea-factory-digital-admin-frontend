@@ -47,6 +47,7 @@ export function InfoTip({
   text,
   children,
   side = 'bottom',
+  compact = false,
 }: {
   /** The accessible name of the icon, e.g. "Why can't I do this?". */
   label: string;
@@ -57,6 +58,12 @@ export function InfoTip({
   text?: string;
   children: ReactNode;
   side?: 'top' | 'right' | 'bottom' | 'left';
+  /**
+   * No taller than a line of label text. Beside a form label the full 32px target made
+   * that label's row taller than its neighbours', so two fields side by side (Starts /
+   * Ends) no longer lined up. The negative margin keeps a comfortable hover area.
+   */
+  compact?: boolean;
 }) {
   return (
     <TooltipProvider delayDuration={150}>
@@ -68,7 +75,7 @@ export function InfoTip({
             className={cn(
               'inline-flex shrink-0 items-center justify-center gap-xxs rounded-full text-text-secondary transition-colors',
               'hover:bg-surface-variant hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-              text ? 'h-8 self-start px-sm text-caption' : 'size-8',
+              text ? 'h-8 self-start px-sm text-caption' : compact ? '-my-xs size-5' : 'size-8',
             )}
           >
             {text ? <span>{text}</span> : null}

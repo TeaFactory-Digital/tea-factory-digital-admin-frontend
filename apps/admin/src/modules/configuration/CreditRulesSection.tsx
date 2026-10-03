@@ -268,7 +268,7 @@ export function CreditRulesSection(props: SectionProps) {
               <fieldset className="flex flex-col gap-xxs">
                 <legend className="flex items-center gap-xxs text-body-small font-medium text-text-primary">
                   {t('config.creditRules.installments')}
-                  <InfoTip label={t('tip.moreInfo')}>
+                  <InfoTip label={t('tip.moreInfo')} compact>
                     {t('config.creditRules.installmentsHint')}
                   </InfoTip>
                 </legend>
