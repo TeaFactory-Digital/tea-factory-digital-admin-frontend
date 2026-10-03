@@ -893,6 +893,7 @@ export const en = {
   'content.badge.stale': '{{language}} needs updating',
   'content.badge.gaps': '{{count}} to fix',
   'content.column.languages': 'Languages',
+  'content.column.lastEdit': 'Last edit',
   'content.complete': 'Complete',
   'content.lens': 'Show',
 
@@ -1729,7 +1730,6 @@ export const en = {
   'banners.createConfirm': 'Create banner',
   'banners.createDraftHint': 'It is created as a draft. A factory administrator publishes it.',
   'banners.created': 'Banner created',
-  'banners.imageAttachFailed': 'The banner was created, but its image was not attached. Add it again in the editor.',
   'banners.createdHint': 'Add the other languages and the artwork.',
   'banners.createFailed': 'Could not create the banner',
   'banners.backToList': 'All banners',

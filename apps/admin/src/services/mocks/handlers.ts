@@ -568,8 +568,24 @@ function pushConfigOf(request: Request) {
  * suppliers' ids. For the log, a list that is exactly one point's suppliers is shown as
  * that point again, so the mock's log reads as the office wrote it.
  */
+/** A collection point's name from its id, as the tenant config holds them. */
+function pointNameOf(id: string | undefined): string | undefined {
+  for (const config of Object.values(mockConfigs)) {
+    const found = config.collectionPoints.find((point) => point.id === id);
+    if (found) return found.name;
+  }
+  return undefined;
+}
+
 function audienceFromServed(served: ServedAudience | undefined): NotificationAudience {
   if (!served || served.kind === 'all') return { kind: 'allSuppliers' };
+  if (served.kind === 'collectionPoint') {
+    return {
+      kind: 'collectionPoint',
+      collectionPoint: pointNameOf(served.collectionPointId) ?? '',
+      collectionPointId: served.collectionPointId,
+    };
+  }
   const ids = new Set(served.supplierIds ?? []);
   const chosen = state.suppliers.filter((supplier) => ids.has(supplier.id));
   const points = new Set(chosen.map((supplier) => supplier.collectionPoint));
@@ -599,11 +615,16 @@ function resolveReach(
   audience: ServedAudience,
 ): NotificationReach {
   const ids = audience.kind === 'suppliers' ? new Set(audience.supplierIds ?? []) : null;
-  const suppliers = state.suppliers.filter((supplier) =>
-    audienceMatches(
-      { id: supplier.id, collectionPoint: supplier.collectionPoint, status: supplier.status },
-      { kind: 'allSuppliers' },
-    ) && (ids === null || ids.has(supplier.id)),
+  const point =
+    audience.kind === 'collectionPoint' ? pointNameOf(audience.collectionPointId) : undefined;
+  const suppliers = state.suppliers.filter(
+    (supplier) =>
+      audienceMatches(
+        { id: supplier.id, collectionPoint: supplier.collectionPoint, status: supplier.status },
+        { kind: 'allSuppliers' },
+      ) &&
+      (ids === null || ids.has(supplier.id)) &&
+      (audience.kind !== 'collectionPoint' || supplier.collectionPoint === point),
   );
 
   let reachable = 0;
@@ -858,6 +879,8 @@ function toNewsListItem(record: NewsRecord, request: Request): NewsListItem {
     publishedByName: full.publishedByName ?? null,
     createdAt: full.createdAt,
     createdByName: full.createdByName,
+    updatedAt: full.updatedAt,
+    updatedByName: full.updatedByName,
     missingLanguages: full.missingLanguages,
     staleLanguages: full.staleLanguages,
   };
@@ -5726,6 +5749,7 @@ export const handlers: HttpHandler[] = [
       body?: string;
       buttonLabel?: string;
       imageUrl?: string;
+      imageAttachmentId?: string;
       imageAspectRatio?: number;
       action?: BannerAction;
       startsAt?: string;
@@ -5738,6 +5762,7 @@ export const handlers: HttpHandler[] = [
       'body',
       'buttonLabel',
       'imageUrl',
+      'imageAttachmentId',
       'imageAspectRatio',
       'action',
       'startsAt',

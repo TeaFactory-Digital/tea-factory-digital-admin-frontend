@@ -60,9 +60,11 @@ import { formatCount, formatDateTime } from '@/lib/format';
 import { ComposeDialog } from './ComposeDialog';
 import { TriggersCard } from './TriggersCard';
 import { useNotifications, useNotificationTriggers } from './hooks';
+import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 
 export function NotificationsScreen() {
   const { t } = useTranslation();
+  const { config } = useRuntimeConfig();
   const [params, setParams] = useSearchParams();
   const canSend = useCan('content', 'approve');
 
@@ -135,9 +137,7 @@ export function NotificationsScreen() {
            */
           if (!row.audience) {
             return (
-              <span className="text-text-secondary">
-                {t('notifications.audience.notRecorded')}
-              </span>
+              <span className="text-text-secondary">{t('notifications.audience.notRecorded')}</span>
             );
           }
           const kind = row.audience.kind as string;
@@ -146,7 +146,13 @@ export function NotificationsScreen() {
             <span className="text-text-primary">
               {kind === 'collectionPoint'
                 ? t('notifications.audience.collectionPoint', {
-                    point: row.audience.collectionPoint ?? '',
+                    // The API records the point's id; its name comes from the config.
+                    point:
+                      row.audience.collectionPoint ??
+                      config.collectionPoints.find(
+                        (cp) => cp.id === row.audience?.collectionPointId,
+                      )?.name ??
+                      '—',
                   })
                 : kind === 'supplier'
                   ? t('notifications.audience.supplier')
@@ -196,7 +202,7 @@ export function NotificationsScreen() {
         ),
       },
     ],
-    [t],
+    [t, config.collectionPoints],
   );
 
   return (

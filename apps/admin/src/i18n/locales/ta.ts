@@ -914,6 +914,7 @@ export const ta: Record<TranslationKey, string> = {
   'content.badge.stale': '{{language}} புதுப்பிக்க வேண்டும்',
   'content.badge.gaps': 'சரிசெய்ய {{count}}',
   'content.column.languages': 'மொழிகள்',
+  'content.column.lastEdit': 'கடைசித் திருத்தம்',
   'content.complete': 'முழுமையானது',
   'content.lens': 'காட்டு',
 
@@ -1775,7 +1776,6 @@ export const ta: Record<TranslationKey, string> = {
   'banners.createConfirm': 'பேனரை உருவாக்கு',
   'banners.createDraftHint': 'இது வரைவாக உருவாக்கப்படுகிறது. தொழிற்சாலை நிர்வாகி வெளியிடுவார்.',
   'banners.created': 'பேனர் உருவாக்கப்பட்டது',
-  'banners.imageAttachFailed': 'பேனர் உருவாக்கப்பட்டது, ஆனால் அதன் படம் இணைக்கப்படவில்லை. திருத்தியில் மீண்டும் சேர்க்கவும்.',
   'banners.createdHint': 'மற்ற மொழிகளையும் படத்தையும் சேர்க்கவும்.',
   'banners.createFailed': 'பேனரை உருவாக்க முடியவில்லை',
   'banners.backToList': 'அனைத்து பேனர்கள்',

@@ -50,8 +50,10 @@ import { toParams } from './params';
  * audience into this.
  */
 export interface ServedAudience {
-  kind: 'all' | 'suppliers';
+  kind: 'all' | 'suppliers' | 'collectionPoint';
   supplierIds?: string[];
+  /** For `collectionPoint`: the point's id (a uuid). */
+  collectionPointId?: string;
 }
 
 /** A composed send as the API takes it: the copy per language, not a flat title and body. */

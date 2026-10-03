@@ -897,6 +897,7 @@ export const si: Record<TranslationKey, string> = {
   'content.badge.stale': '{{language}} යාවත්කාලීන කළ යුතුයි',
   'content.badge.gaps': 'නිවැරදි කිරීමට {{count}}ක්',
   'content.column.languages': 'භාෂා',
+  'content.column.lastEdit': 'අවසන් සංස්කරණය',
   'content.complete': 'සම්පූර්ණයි',
   'content.lens': 'පෙන්වන්න',
 
@@ -1723,7 +1724,6 @@ export const si: Record<TranslationKey, string> = {
   'banners.createConfirm': 'බැනරය සාදන්න',
   'banners.createDraftHint': 'එය කෙටුම්පතක් ලෙස සෑදේ. ප්‍රකාශ කරන්නේ කර්මාන්තශාලා පරිපාලකයෙකි.',
   'banners.created': 'බැනරය සෑදිණි',
-  'banners.imageAttachFailed': 'බැනරය සාදන ලදී, නමුත් එහි රූපය අමුණා නැත. සංස්කාරකයේදී එය නැවත එක් කරන්න.',
   'banners.createdHint': 'අනෙක් භාෂා සහ පින්තූරය එකතු කරන්න.',
   'banners.createFailed': 'බැනරය සෑදිය නොහැකි විය',
   'banners.backToList': 'සියලු බැනර්',

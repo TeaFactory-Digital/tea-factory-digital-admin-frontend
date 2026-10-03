@@ -74,6 +74,9 @@ export function NewsScreen() {
     setParams(next, { replace: true });
   }
 
+  const rows = data?.items ?? [];
+  const showLastEdit = rows.some((row) => row.updatedAt);
+
   const columns = useMemo<ColumnDef<NewsListItem, unknown>[]>(
     () => [
       {
@@ -152,8 +155,25 @@ export function NewsScreen() {
           return <WhenWho at={row.createdAt} who={row.createdByName} />;
         },
       },
+      // Only when the API sends it, which it now does (BACKEND-TODO #4). A column of
+      // "Not available" on every row says nothing.
+      ...(showLastEdit
+        ? [
+            {
+              id: 'updatedAt',
+              header: t('content.column.lastEdit'),
+              enableSorting: false,
+              cell: (info: { row: { original: NewsListItem } }) => {
+                const row = info.row.original;
+                return row.updatedAt ? (
+                  <WhenWho at={row.updatedAt} who={row.updatedByName ?? null} />
+                ) : null;
+              },
+            } satisfies ColumnDef<NewsListItem, unknown>,
+          ]
+        : []),
     ],
-    [t],
+    [t, showLastEdit],
   );
 
   return (

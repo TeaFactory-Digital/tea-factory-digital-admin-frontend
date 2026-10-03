@@ -3,6 +3,33 @@
 Small backend fixes found while testing the admin console against staging.
 Each one says what is wrong, where, and what to change.
 
+## Status (3 October 2026)
+
+**#1 to #16 are done** on the backend (commits `ba76ea9`, `d284342`, `e6fe59f`). Thank you.
+The console has been updated to use them: banner artwork attached on create (#9), the
+collection-point audience sent as itself and named in the log (#14), and the news list's
+"Last edit" column back (#4).
+
+**Still open, for the backend:**
+
+1. **#11 content.** `static-pages.seed.json` is in this repo's `main` (it was already pushed).
+   It has been converted to your loader's shape (`translations` as an **array** of
+   `{ lang, title, body }`; the old file keyed them by language, which your filter would have
+   dropped) and written into
+   `apps/api/src/modules/tenant-defaults/static-pages.defaults.json` in your working copy. It
+   is **not committed**: please review and commit it.
+2. **Check your integration tests with real defaults.** With the file filled, every test
+   factory gets a published FAQ, Terms and Privacy at creation. Tests that assume those pages
+   start empty or as drafts may now fail, e.g. in `test/frontend-gaps-3.spec.ts`:
+   "and a draft does not" (expects the FAQ to be unpublished after writing it) and
+   "answers null for a page the office has not written" (expects no Terms). They were written
+   while the file was empty. Either give those tests a factory without defaults, or use a slug
+   that is not seeded (`about`, `savingsScheme`, `creditTerms`).
+3. **Your question about `collectionPoint`:** keep the payload (`{ id, name }`). The console's
+   types were already changed to match (`SupplierListItem` and `SupplierDetail`). Only the
+   fixture's internal `AdminSupplier` record still holds the name as a string, and that never
+   goes over the wire.
+
 ---
 
 ## 1. News cover image does not show in the mobile app

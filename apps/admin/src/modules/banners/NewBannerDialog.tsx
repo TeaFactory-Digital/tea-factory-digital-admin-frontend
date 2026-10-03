@@ -27,7 +27,6 @@ import { DateTimePicker } from '@/components/ui/DatePicker';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { ImageField } from '@/components/ui/ImageField';
-import { bannerRepository } from '@/services/repositories/bannerRepository';
 import { BannerActionField } from './BannerActionField';
 import { useCreateBanner } from './hooks';
 import { InfoTip } from '@/components/ui/Tooltip';
@@ -103,24 +102,11 @@ export function NewBannerDialog({
         action,
         startsAt: new Date(startsAt).toISOString(),
         endsAt: endsAt ? new Date(endsAt).toISOString() : null,
+        // In the same request: `POST /admin/banners` takes the attachment now.
+        ...(image
+          ? { imageAttachmentId: image.attachmentId, imageAspectRatio: image.aspectRatio }
+          : {}),
       });
-
-      /**
-       * The artwork is attached **after** the banner exists, with the same `PATCH` the
-       * editor uses. `POST /admin/banners` is strict and takes no attachment id yet
-       * (docs/v2/BACKEND-TODO.md). A failure here does not undo the banner: it is said,
-       * and the editor it opens on has the same picker to try again.
-       */
-      if (image) {
-        try {
-          await bannerRepository.patch(banner.id, {
-            imageAttachmentId: image.attachmentId,
-            imageAspectRatio: image.aspectRatio,
-          });
-        } catch (cause) {
-          toast.error(t('banners.imageAttachFailed'), t(errorMessageKey(cause)));
-        }
-      }
 
       toast.success(t('banners.created'), t('banners.createdHint'));
       onClose();

@@ -1579,10 +1579,12 @@ export interface NewsListItem extends ContentGaps {
   publishedByName: string | null;
   createdAt: string;
   createdByName: string;
-  /*
-   * No `updatedAt` / `updatedByName`: `GET /admin/news` does not send them, and a "Last
-   * edit" column read from fields that never arrive showed "Not available" on every row.
+  /**
+   * The last edit in any language. Optional: older API builds did not send it, and the
+   * "Last edit" column is shown only once it arrives.
    */
+  updatedAt?: string;
+  updatedByName?: string;
 }
 
 export interface NewsQuery extends PageQuery {
@@ -1716,6 +1718,8 @@ export interface BannerTranslationBody {
 export interface BannerDraft {
   translations: Array<BannerTranslationBody & { lang: LanguageCode }>;
   imageUrl?: string;
+  /** Uploaded artwork, attached at creation (the API takes it on create as well as patch). */
+  imageAttachmentId?: string;
   imageAspectRatio?: number;
   action: BannerAction;
   startsAt: string;

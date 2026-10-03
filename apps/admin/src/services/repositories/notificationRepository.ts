@@ -70,30 +70,28 @@ function toNotificationSend(row: ServedNotificationSend): NotificationSend {
 /**
  * The console's audience → the API's.
  *
- * The API takes everyone (`all`) or a list of supplier ids (`suppliers`); it has no
- * collection-point audience. Sent as the console's own shape, every send to a collection
- * point was refused (`audience.kind: expected "all" | "suppliers"`). So a point is resolved
- * here to the ids of its suppliers, from the suppliers list filtered by that point, the same
- * list the Suppliers screen shows. The API's limit is 5,000 ids, far above one point.
+ * The API takes `all`, `collectionPoint` (by id), or `suppliers` (a list of ids). A point
+ * is sent as itself, so the API filters on each supplier's registered point at send time
+ * and the log records the point. A point whose id the console does not have (only its
+ * name) is resolved to its suppliers' ids instead, from the suppliers list.
  */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 async function toServedAudience(audience: NotificationAudience): Promise<ServedAudience> {
   if (audience.kind === 'allSuppliers') return { kind: 'all' };
   if (audience.kind === 'supplier') {
     return { kind: 'suppliers', supplierIds: audience.supplierId ? [audience.supplierId] : [] };
   }
+  if (audience.collectionPointId && UUID.test(audience.collectionPointId)) {
+    return { kind: 'collectionPoint', collectionPointId: audience.collectionPointId };
+  }
 
   const ids: string[] = [];
   const pageSize = 200;
   for (let page = 0; ; page += 1) {
-    const rows = await supplierEndpoints.list({
-      collectionPointId: audience.collectionPointId,
-      page,
-      pageSize,
-    });
+    const rows = await supplierEndpoints.list({ page, pageSize });
     for (const row of rows.items) {
-      // Matched by name as well, for a point whose id the console did not have.
-      const point = row.collectionPoint;
-      if (audience.collectionPointId || point?.name === audience.collectionPoint) ids.push(row.id);
+      if (row.collectionPoint?.name === audience.collectionPoint) ids.push(row.id);
     }
     if (rows.items.length < pageSize || ids.length >= 5000) break;
   }
