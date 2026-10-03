@@ -161,6 +161,11 @@ export const ta: Record<TranslationKey, string> = {
   'dashboard.subtitle': 'ஒரு பார்வையில் இன்றைய நாள்',
   'dashboard.queues': 'வரிசைகள்',
   'dashboard.queueEmpty': 'காத்திருப்பது எதுவும் இல்லை',
+  'dashboard.allQueuesClear': 'எந்த வரிசையிலும் எதுவும் காத்திருக்கவில்லை.',
+  'dashboard.clearQueues': 'எதுவும் காத்திருக்கவில்லை:',
+  'dashboard.appRequestShareNone': 'இந்த மாதம் இன்னும் கோரிக்கைகள் எதுவும் இல்லை.',
+  'dashboard.trendOneMonth': 'இதுவரை {{month}} மட்டுமே. கோரிக்கைகள் உள்ள இரண்டு மாதங்கள் ஆனதும் கோடு தோன்றும்.',
+  'dashboard.trendEmpty': 'இன்னும் கோரிக்கைகள் இல்லை, எனவே வரைபடம் காட்ட எதுவும் இல்லை.',
   /* A queue the server reports that this version of the console has no screen for. Not
      "planned" — every module of the §18.1 scope is built; this is a newer API naming a
      queue this build has never heard of. */

@@ -25,8 +25,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { ArrowRight, Info, TriangleAlert } from 'lucide-react';
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import { ArrowRight, CircleCheck, Info, TriangleAlert } from 'lucide-react';
 import type {
   AppAdoption,
   ContentHealth,
@@ -60,11 +68,7 @@ export function DashboardScreen() {
         <DashboardSkeleton />
       ) : (
         <>
-          <section aria-label={t('dashboard.queues')} className="grid gap-md sm:grid-cols-2 xl:grid-cols-3">
-            {data.queues.map((queue) => (
-              <QueueCard key={queue.queue} queue={queue} />
-            ))}
-          </section>
+          <QueueSection queues={data.queues} />
 
           <div className="grid gap-lg lg:grid-cols-3">
             {/* Both were "not available" placeholders while the payload carried
@@ -97,7 +101,6 @@ export function DashboardScreen() {
               <AdoptionTrend data={data.adoptionTrend} />
             </CardBody>
           </Card>
-
         </>
       )}
     </>
@@ -105,6 +108,58 @@ export function DashboardScreen() {
 }
 
 /* ─────────────────────────────── queue cards ─────────────────────────────── */
+
+/**
+ * Worst first, and the empty queues out of the way.
+ *
+ * Six cards of equal weight, five of them reading 0, made the one queue with three items
+ * all past target look like one-sixth of the news. So: queues with anything waiting get a
+ * card, ordered by how many are past target and then by the age of the oldest; the empty
+ * ones collapse into one "all clear" line, each still a link.
+ */
+function QueueSection({ queues }: { queues: QueueCount[] }) {
+  const { t } = useTranslation();
+
+  const waiting = queues
+    .filter((queue) => queue.pending > 0)
+    .sort(
+      (a, b) =>
+        b.breachingSla - a.breachingSla ||
+        (a.oldestPendingAt ?? '').localeCompare(b.oldestPendingAt ?? ''),
+    );
+  const clear = queues.filter((queue) => queue.pending === 0);
+
+  return (
+    <section aria-label={t('dashboard.queues')} className="flex flex-col gap-md">
+      {waiting.length > 0 ? (
+        <div className="grid gap-md sm:grid-cols-2 xl:grid-cols-3">
+          {waiting.map((queue) => (
+            <QueueCard key={queue.queue} queue={queue} />
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <CardBody className="flex items-center gap-sm">
+            <CircleCheck className="size-icon-md shrink-0 text-success" aria-hidden />
+            <p className="text-body-small text-text-primary">{t('dashboard.allQueuesClear')}</p>
+          </CardBody>
+        </Card>
+      )}
+
+      {clear.length > 0 && waiting.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-xs text-caption text-text-secondary">
+          <CircleCheck className="size-icon-xs shrink-0 text-success" aria-hidden />
+          <span>{t('dashboard.clearQueues')}</span>
+          {clear.map((queue) => (
+            <Badge key={queue.queue} tone="neutral">
+              {t(`dashboard.queue.${queue.queue}`)}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
 
 /**
  * The filter that narrows a shared screen back down to the card that was clicked.
@@ -186,7 +241,11 @@ function QueueCard({ queue }: { queue: QueueCount }) {
   return (
     <Link
       to={`${target.to}?${search}`}
-      className="rounded-lg border border-border bg-surface p-lg hover:bg-surface-variant"
+      className={
+        queue.breachingSla > 0
+          ? 'rounded-lg border border-error bg-surface p-lg shadow-sm hover:bg-surface-variant'
+          : 'rounded-lg border border-border bg-surface p-lg hover:bg-surface-variant'
+      }
     >
       {body}
       <span className="mt-sm inline-flex items-center gap-xxs text-caption text-primary">
@@ -242,8 +301,12 @@ function AppAdoptionCard({ app }: { app: AppAdoption }) {
           {t('dashboard.appDevices', { count: app.devicesRegistered })}
         </p>
 
+        {/* `null` is "nothing raised this month", which is a fact to state rather than a
+            figure that is "not available". */}
         <p className="numeric text-body-small text-text-secondary">
-          {t('dashboard.appRequestShare', { value: formatPercent(app.appRequestShare) })}
+          {app.appRequestShare === null
+            ? t('dashboard.appRequestShareNone')
+            : t('dashboard.appRequestShare', { value: formatPercent(app.appRequestShare) })}
         </p>
       </CardBody>
     </Card>
@@ -354,6 +417,29 @@ function AlertRow({ alert }: { alert: DashboardAlert }) {
  * answer — reporting a trend the records do not contain (BR-102, as a chart).
  */
 function AdoptionTrend({ data }: { data: Array<{ monthKey: string; appShare: number | null }> }) {
+  const { t } = useTranslation();
+  const known = data.filter((row) => row.appShare !== null);
+
+  /**
+   * A line needs two points. With one month of history the chart was an empty grid with
+   * a dot in a corner, which reads as broken. Say what there is instead.
+   */
+  if (known.length < 2) {
+    const only = known[0];
+    return (
+      <div className="flex h-32 flex-col items-center justify-center gap-xs text-center">
+        {only ? (
+          <p className="numeric text-h2 text-text-primary">{formatPercent(only.appShare)}</p>
+        ) : null}
+        <p className="max-w-card text-body-small text-text-secondary">
+          {only
+            ? t('dashboard.trendOneMonth', { month: formatMonthKey(only.monthKey) })
+            : t('dashboard.trendEmpty')}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">

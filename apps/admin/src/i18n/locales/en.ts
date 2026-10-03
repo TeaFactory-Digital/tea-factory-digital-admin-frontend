@@ -146,6 +146,11 @@ export const en = {
   'dashboard.subtitle': 'The day at a glance',
   'dashboard.queues': 'Queues',
   'dashboard.queueEmpty': 'Nothing waiting',
+  'dashboard.allQueuesClear': 'Nothing is waiting in any queue.',
+  'dashboard.clearQueues': 'Nothing waiting:',
+  'dashboard.appRequestShareNone': 'No requests raised yet this month.',
+  'dashboard.trendOneMonth': 'Only {{month}} so far. The line appears once there are two months of requests.',
+  'dashboard.trendEmpty': 'No requests yet, so there is nothing to chart.',
   /* A queue the server reports that this version of the console has no screen for. Not
      "planned" — every module of the §18.1 scope is built; this is a newer API naming a
      queue this build has never heard of. */

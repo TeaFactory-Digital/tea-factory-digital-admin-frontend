@@ -160,6 +160,11 @@ export const si: Record<TranslationKey, string> = {
   'dashboard.subtitle': 'දවස එක බැල්මකින්',
   'dashboard.queues': 'පෝලිම්',
   'dashboard.queueEmpty': 'බලා සිටින කිසිවක් නැත',
+  'dashboard.allQueuesClear': 'කිසිදු පෝලිමක බලා සිටින කිසිවක් නැත.',
+  'dashboard.clearQueues': 'බලා සිටින කිසිවක් නැත:',
+  'dashboard.appRequestShareNone': 'මේ මාසයේ තවම ඉල්ලීම් කිසිවක් ලැබී නැත.',
+  'dashboard.trendOneMonth': 'තවම ඇත්තේ {{month}} පමණයි. ඉල්ලීම් ඇති මාස දෙකක් වූ පසු රේඛාව පෙන්වයි.',
+  'dashboard.trendEmpty': 'තවම ඉල්ලීම් නැති නිසා ප්‍රස්ථාරයක් පෙන්වීමට දෙයක් නැත.',
   /* A queue the server reports that this version of the console has no screen for. Not
      "planned" — every module of the §18.1 scope is built; this is a newer API naming a
      queue this build has never heard of. */
