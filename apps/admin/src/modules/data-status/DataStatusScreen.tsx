@@ -20,19 +20,25 @@ import { formatDate, formatDateTime } from '@/lib/format';
 import { cn } from '@/lib/cn';
 import { useFactorySync } from '@/layout/useFactorySync';
 
-const TONES: Record<FactorySyncState, BadgeTone> = {
+/** The sync's three states, plus `direct`: no sync configured, nothing to be behind. */
+type View = FactorySyncState | 'direct';
+
+const TONES: Record<View, BadgeTone> = {
+  direct: 'success',
   fresh: 'success',
   stale: 'warning',
   never: 'error',
 };
 
 const ICONS = {
+  direct: CheckCircle2,
   fresh: CheckCircle2,
   stale: AlertTriangle,
   never: PlugZap,
-} satisfies Record<FactorySyncState, unknown>;
+} satisfies Record<View, unknown>;
 
-const ICON_COLOURS: Record<FactorySyncState, string> = {
+const ICON_COLOURS: Record<View, string> = {
+  direct: 'bg-success-muted text-success',
   fresh: 'bg-success-muted text-success',
   stale: 'bg-warning-muted text-warning',
   never: 'bg-error-muted text-error',
@@ -40,13 +46,15 @@ const ICON_COLOURS: Record<FactorySyncState, string> = {
 
 export function DataStatusScreen() {
   const { t } = useTranslation();
-  const { status, state } = useFactorySync();
-  const Icon = ICONS[state];
+  const { status, state, configured } = useFactorySync();
+  const view: View = configured ? state : 'direct';
+  const Icon = ICONS[view];
 
   const when = formatDateTime(status?.lastSucceededAt);
   const covers = formatDate(status?.coversUpTo);
-  const body =
-    state === 'never'
+  const body = !configured
+    ? t('dataStatus.directBody')
+    : state === 'never'
       ? t('shell.syncNever')
       : state === 'stale'
         ? t('shell.syncStale', { when, covers })
@@ -68,7 +76,7 @@ export function DataStatusScreen() {
             <span
               className={cn(
                 'flex size-12 shrink-0 items-center justify-center rounded-full',
-                ICON_COLOURS[state],
+                ICON_COLOURS[view],
               )}
             >
               <Icon className="size-icon-md" aria-hidden />
@@ -76,30 +84,32 @@ export function DataStatusScreen() {
             <div className="flex flex-col gap-xs">
               <div className="flex flex-wrap items-center gap-sm">
                 <h2 className="text-subtitle text-text-primary">
-                  {t(`dataStatus.heading.${state}`)}
+                  {t(`dataStatus.heading.${view}`)}
                 </h2>
-                <Badge tone={TONES[state]}>{t(`dataStatus.state.${state}`)}</Badge>
+                <Badge tone={TONES[view]}>{t(`dataStatus.state.${view}`)}</Badge>
               </div>
               <p className="text-body-small text-text-secondary">{body}</p>
             </div>
           </CardBody>
         </Card>
 
-        <Card>
-          <CardHeader title={t('dataStatus.detailsTitle')} />
-          <CardBody>
-            <dl className="grid grid-cols-1 gap-md sm:grid-cols-3">
-              {rows.map(([label, value, format]) => (
-                <div key={label} className="flex flex-col gap-xxs">
-                  <dt className="text-caption text-text-secondary">{label}</dt>
-                  <dd className="numeric text-body-small text-text-primary">
-                    {value ? format(value) : t('dataStatus.notYet')}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </CardBody>
-        </Card>
+        {configured ? (
+          <Card>
+            <CardHeader title={t('dataStatus.detailsTitle')} />
+            <CardBody>
+              <dl className="grid grid-cols-1 gap-md sm:grid-cols-3">
+                {rows.map(([label, value, format]) => (
+                  <div key={label} className="flex flex-col gap-xxs">
+                    <dt className="text-caption text-text-secondary">{label}</dt>
+                    <dd className="numeric text-body-small text-text-primary">
+                      {value ? format(value) : t('dataStatus.notYet')}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </CardBody>
+          </Card>
+        ) : null}
 
         <Card>
           <CardHeader title={t('dataStatus.howTitle')} />

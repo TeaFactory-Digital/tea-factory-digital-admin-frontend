@@ -2269,9 +2269,11 @@ export const handlers: HttpHandler[] = [
       queues: visible,
       app: summary.app,
       content: summary.content,
+      // A percentage, as the API's `round(100.0 * …, 1)` sends it: the fixture holds a
+      // fraction, and serving that let a chart reading percentages as fractions pass.
       adoptionTrend: summary.adoptionTrend.map((row) => ({
         monthKey: row.monthKey,
-        appShare: row.appShare,
+        appShare: row.appShare === null ? null : Math.round(row.appShare * 1000) / 10,
       })),
       intakeTrend: summary.intakeTrend.map((row) => ({
         monthKey: row.date,

@@ -18,6 +18,8 @@ import {
   factorySyncState,
   openMinutesBetween,
 } from '@tfd/domain';
+import { http, HttpResponse } from 'msw';
+import { server } from '@/services/mocks/server';
 import { factorySyncRepository } from '@/services/repositories/factorySyncRepository';
 import { signInAs, signOut } from './render';
 
@@ -31,10 +33,12 @@ const colombo = (day: string, hh: number, mm = 0) =>
 describe('factorySyncState', () => {
   it('is fresh inside the threshold and stale beyond it', () => {
     expect(factorySyncState({ lastSucceededAt: hoursBefore(0.5) }, NOW)).toBe('fresh');
-    expect(factorySyncState({ lastSucceededAt: hoursBefore(FACTORY_SYNC_STALE_HOURS - 0.5) }, NOW))
-      .toBe('fresh');
-    expect(factorySyncState({ lastSucceededAt: hoursBefore(FACTORY_SYNC_STALE_HOURS + 0.5) }, NOW))
-      .toBe('stale');
+    expect(
+      factorySyncState({ lastSucceededAt: hoursBefore(FACTORY_SYNC_STALE_HOURS - 0.5) }, NOW),
+    ).toBe('fresh');
+    expect(
+      factorySyncState({ lastSucceededAt: hoursBefore(FACTORY_SYNC_STALE_HOURS + 0.5) }, NOW),
+    ).toBe('stale');
   });
 
   it('separates "never" from "stale", because they need different people', () => {
@@ -119,7 +123,7 @@ describe('the sync status endpoint', () => {
 
   it('reports a healthy sync from the mock, rather than 404ing', async () => {
     await signInAs('clerk@galabodatea.lk');
-    const status = await factorySyncRepository.get();
+    const status = (await factorySyncRepository.get())!;
 
     /**
      * The mock reports healthy because the fixture *is* the data — there is no factory
@@ -136,11 +140,42 @@ describe('the sync status endpoint', () => {
   it('resolves a failure to "we do not know" rather than throwing', async () => {
     // Signed out: the call is refused. A console that could not tell you how fresh its
     // figures are must still show you the figures.
-    const status = await factorySyncRepository.get();
+    const status = (await factorySyncRepository.get())!;
 
     expect(status.lastSucceededAt).toBeNull();
     // Which renders exactly like "never synced" — both mean the same thing to a reader
     // deciding whether to quote a number, so they are deliberately one state.
     expect(factorySyncState(status, new Date().toISOString())).toBe('never');
+  });
+
+  it('passes "no sync configured" through as null, which must not read as never synced', async () => {
+    await signInAs('clerk@galabodatea.lk');
+    server.use(
+      http.get('*/admin/dashboard', () =>
+        HttpResponse.json({
+          queues: [],
+          app: {
+            suppliersWithApp: 0,
+            totalSuppliers: 0,
+            devicesRegistered: 0,
+            appRequestShare: null,
+          },
+          content: {
+            articlesWithGaps: 0,
+            bannersLive: 0,
+            bannersExpired: 0,
+            staticPagesUnwritten: 0,
+          },
+          adoptionTrend: [],
+          intakeTrend: [],
+          sync: null,
+          alerts: [],
+        }),
+      ),
+    );
+
+    // Read as `never`, this put "do not quote any figure here" over every screen of a
+    // deployment that has no sync to be behind.
+    expect(await factorySyncRepository.get()).toBeNull();
   });
 });

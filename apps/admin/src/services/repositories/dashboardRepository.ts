@@ -48,12 +48,22 @@ export interface DashboardView {
  * which `JSON.stringify` refuses, which made the whole endpoint answer `500` as soon as
  * the factory had a single change request.
  *
- * The sort stays, and it is the only thing left here. It is asserted rather than assumed:
- * the API orders ascending today, and a chart that silently drew backwards would look
- * like a collapse rather than like a bug.
+ * The sort stays. It is asserted rather than assumed: the API orders ascending today, and
+ * a chart that silently drew backwards would look like a collapse rather than like a bug.
+ *
+ * **And `appShare` is divided by 100.** The API sends it as a percentage (`100` for every
+ * request from the app, `round(100.0 * …, 1)` in the query), while `app.appRequestShare`
+ * on the same payload is a fraction, and the chart and `formatPercent` read fractions.
+ * Unconverted, a month of 100% plotted at 10,000%. `null` stays `null`: a month with no
+ * requests has no share, which is not 0%.
  */
 function toAdoptionTrend(rows: ServedDashboard['adoptionTrend']) {
-  return [...rows].sort((a, b) => a.monthKey.localeCompare(b.monthKey));
+  return [...rows]
+    .sort((a, b) => a.monthKey.localeCompare(b.monthKey))
+    .map((row) => ({
+      monthKey: row.monthKey,
+      appShare: row.appShare === null ? null : row.appShare / 100,
+    }));
 }
 
 /**

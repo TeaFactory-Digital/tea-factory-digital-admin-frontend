@@ -1594,6 +1594,9 @@ export const en = {
   'dataStatus.lastAttempted': 'Last attempt',
   'dataStatus.coversUpTo': 'Covers up to',
   'dataStatus.notYet': 'Not yet',
+  'dataStatus.state.direct': 'Direct',
+  'dataStatus.heading.direct': 'Read directly from the factory’s records',
+  'dataStatus.directBody': 'This console is not a copy: it reads the factory’s own records, so there is no sync to fall behind.',
   'dataStatus.howTitle': 'How the figures get here',
   'dataStatus.howBody': 'Accounts, deliveries and balances are copied from the factory’s own system on a schedule. This console shows that copy, not a live reading, so always check the time above before quoting a figure to a supplier.',
 

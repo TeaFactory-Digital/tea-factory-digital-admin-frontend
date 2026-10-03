@@ -12,8 +12,14 @@ import { factorySyncRepository } from '@/services/repositories/factorySyncReposi
 import { qk } from '@/query/queryKeys';
 
 interface FactorySyncView {
-  status: FactorySyncStatus | undefined;
+  /** `null` when this deployment has no sync at all; `undefined` while loading. */
+  status: FactorySyncStatus | null | undefined;
   state: FactorySyncState;
+  /**
+   * `false` when the API reports no sync configured. There is then nothing to be behind,
+   * so the state reads `fresh` and nothing warns.
+   */
+  configured: boolean;
 }
 
 export function useFactorySync(): FactorySyncView {
@@ -45,5 +51,6 @@ export function useFactorySync(): FactorySyncView {
      * be a banner nobody reads by the end of the first morning.
      */
     state: data ? factorySyncState(data, new Date().toISOString()) : 'fresh',
+    configured: data !== null,
   };
 }

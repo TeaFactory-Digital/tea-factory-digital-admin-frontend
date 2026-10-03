@@ -1594,6 +1594,9 @@ export const si: Record<TranslationKey, string> = {
   'dataStatus.lastAttempted': 'අවසන් උත්සාහය',
   'dataStatus.coversUpTo': 'ආවරණය වන්නේ',
   'dataStatus.notYet': 'තවම නැත',
+  'dataStatus.state.direct': 'සෘජු',
+  'dataStatus.heading.direct': 'කර්මාන්තශාලාවේ වාර්තාවලින් සෘජුවම කියවයි',
+  'dataStatus.directBody': 'මෙම කොන්සෝලය පිටපතක් නොවේ: එය කර්මාන්තශාලාවේම වාර්තා කියවන නිසා, පසුපසින් සිටීමට සමමුහුර්තකරණයක් නැත.',
   'dataStatus.howTitle': 'අගයන් මෙහි පැමිණෙන ආකාරය',
   'dataStatus.howBody': 'ගිණුම්, දළු භාර දීම් සහ ශේෂයන් කර්මාන්තශාලාවේම පද්ධතියෙන් නියමිත වේලාවට පිටපත් කෙරේ. මෙම කොන්සෝලය පෙන්වන්නේ එම පිටපතයි, සජීවී කියවීමක් නොවේ. එබැවින් සැපයුම්කරුවෙකුට අගයක් කීමට පෙර ඉහත වේලාව සැමවිටම පරීක්ෂා කරන්න.',
 

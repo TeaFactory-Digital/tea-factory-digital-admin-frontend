@@ -51,6 +51,7 @@ export interface ServedDashboard {
   queues: QueueCount[];
   app: AppAdoption;
   content: ContentHealth;
+  /** `appShare` is a **percentage**, 0 to 100, unlike `app.appRequestShare` (a fraction). */
   adoptionTrend: Array<{ monthKey: string; appShare: number | null }>;
   /** `totalKgs` is a `number`: the server casts the `SUM` to text and parses it. */
   intakeTrend: Array<{ monthKey: string; totalKgs: number }>;

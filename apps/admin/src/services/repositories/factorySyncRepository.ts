@@ -21,16 +21,18 @@ import { dashboardEndpoints } from '../endpoints/dashboard';
  * because a status call timed out.
  */
 export const factorySyncRepository = {
-  async get(): Promise<FactorySyncStatus> {
+  async get(): Promise<FactorySyncStatus | null> {
     try {
       const { sync } = await dashboardEndpoints.get();
       /**
        * `null` from the API means **no sync is configured** — a unified deployment where
        * the console reads the factory's records directly and there is nothing to be
-       * behind. It resolves to the same all-null status as a failure, which is correct:
-       * in both cases there is no freshness to report, and the caption is not rendered.
+       * behind. Passed through as `null`, **not** turned into the all-null status a
+       * failure gets: that status reads as `never`, and it put "this console has never
+       * read from the factory's system ... do not quote any figure" over every screen of
+       * a deployment that has no sync to be behind.
        */
-      return sync ?? EMPTY;
+      return sync ?? null;
     } catch {
       /**
        * Indistinguishable from never having synced, on purpose. Both mean the office
