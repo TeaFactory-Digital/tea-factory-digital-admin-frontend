@@ -27,6 +27,7 @@ import { ExternalLink, Smartphone } from 'lucide-react';
 import type { BannerAction } from '@tfd/domain';
 import { bannerActionProblem, bannerTarget } from '@tfd/domain';
 import { Field, Input } from '@/components/ui/Field';
+import { useNewsList } from '@/modules/content/hooks';
 import { Select } from '@/components/ui/Select';
 import { Notice } from '@/components/ui/states';
 
@@ -38,7 +39,28 @@ import { Notice } from '@/components/ui/states';
  * redeployed and a hard list here would go stale in the direction that blocks work. What
  * it buys is that the common case is a click rather than a guess at spelling.
  */
-const KNOWN_SCREENS = ['home', 'news', 'savings', 'manure', 'advance', 'loan', 'inquiry', 'settings'];
+const APP_SCREENS = [
+  'home',
+  'news',
+  'income',
+  'savings',
+  'advance',
+  'loan',
+  'manure',
+  'tea-packets',
+  'inquiry',
+  'notifications',
+  'profile',
+  'payout',
+  'settings',
+  'faq',
+  'terms',
+  'privacy',
+  'support',
+] as const;
+
+/** Value of the "the news list" choice in the article picker. */
+const NEWS_LIST = '__list__';
 
 export function BannerActionField({
   value,
@@ -81,31 +103,12 @@ export function BannerActionField({
       </Field>
 
       {value.type === 'screen' ? (
-        <Field
-          label={t('banners.action.pathLabel')}
-          hint={t('banners.action.pathHint')}
+        <ScreenPicker
+          path={value.path}
+          disabled={disabled}
           error={problem && value.path ? t(problem) : undefined}
-        >
-          {({ id, describedBy, invalid }) => (
-            <>
-              <Input
-                id={id}
-                list="banner-known-screens"
-                placeholder="news/news-1"
-                aria-describedby={describedBy}
-                invalid={invalid}
-                disabled={disabled}
-                value={value.path}
-                onChange={(event) => onChange({ type: 'screen', path: event.target.value })}
-              />
-              <datalist id="banner-known-screens">
-                {KNOWN_SCREENS.map((path) => (
-                  <option key={path} value={path} />
-                ))}
-              </datalist>
-            </>
-          )}
-        </Field>
+          onChange={(path) => onChange({ type: 'screen', path })}
+        />
       ) : (
         <Field
           label={t('banners.action.urlLabel')}
@@ -149,6 +152,92 @@ export function BannerActionField({
               : t('banners.action.resolvedUrl', { url: target.url })}
           </span>
         </Notice>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * The app screen, chosen from a list rather than typed.
+ *
+ * The list is the mobile app's own link table (`navigation/linking.ts` there), so a
+ * banner can only point at a screen the app will open; a typed path could be anything,
+ * and the app silently draws no button for one it does not know. "News" adds a second
+ * choice: the news list, or one published article (`news/<id>`).
+ *
+ * A path saved before this field existed and not in the list is kept and shown as such,
+ * so opening an old banner never changes where its button goes.
+ */
+function ScreenPicker({
+  path,
+  onChange,
+  disabled,
+  error,
+}: {
+  path: string;
+  onChange: (path: string) => void;
+  disabled?: boolean;
+  error?: string;
+}) {
+  const { t } = useTranslation();
+  const clean = path.replace(/^\/+/, '');
+  const [screen, articleId] = clean.split('/');
+  const known = (APP_SCREENS as readonly string[]).includes(screen ?? '');
+  const isNews = screen === 'news';
+
+  const articles = useNewsList({ status: 'published', page: 0, pageSize: 100 });
+
+  return (
+    <div className="flex flex-col gap-sm">
+      <Field label={t('banners.action.pathLabel')} error={error}>
+        {({ id, describedBy, invalid }) => (
+          <Select
+            id={id}
+            aria-describedby={describedBy}
+            invalid={invalid}
+            disabled={disabled}
+            value={known ? screen : clean}
+            onChange={(event) => onChange(event.target.value)}
+          >
+            <option value="">{t('banners.action.pickScreen')}</option>
+            {APP_SCREENS.map((one) => (
+              <option key={one} value={one}>
+                {t(`banners.screen.${one}`)}
+              </option>
+            ))}
+            {clean && !known ? (
+              <option value={clean}>{t('banners.action.otherPath', { path: clean })}</option>
+            ) : null}
+          </Select>
+        )}
+      </Field>
+
+      {isNews ? (
+        <Field label={t('banners.action.article')} hint={t('banners.action.articleHint')}>
+          {({ id, describedBy }) => (
+            <Select
+              id={id}
+              aria-describedby={describedBy}
+              disabled={disabled}
+              value={articleId ?? NEWS_LIST}
+              onChange={(event) =>
+                onChange(event.target.value === NEWS_LIST ? 'news' : `news/${event.target.value}`)
+              }
+            >
+              <option value={NEWS_LIST}>{t('banners.action.newsList')}</option>
+              {(articles.data?.items ?? []).map((article) => (
+                <option key={article.id} value={article.id}>
+                  {article.title}
+                </option>
+              ))}
+              {/* An article no longer in the published list (archived, or beyond the
+                  first hundred) is kept rather than silently swapped for the list. */}
+              {articleId && !articles.data?.items.some((a) => a.id === articleId) ? (
+                <option value={articleId}>{t('banners.action.otherArticle')}</option>
+              ) : null}
+            </Select>
+          )}
+        </Field>
       ) : null}
     </div>
   );
