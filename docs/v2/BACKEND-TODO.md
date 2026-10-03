@@ -10,25 +10,37 @@ The console has been updated to use them: banner artwork attached on create (#9)
 collection-point audience sent as itself and named in the log (#14), and the news list's
 "Last edit" column back (#4).
 
-**Still open, for the backend:**
+**Still open, for the backend (checked against `main` at `4d51198`):**
 
-1. **#11 content.** `static-pages.seed.json` is in this repo's `main` (it was already pushed).
-   It has been converted to your loader's shape (`translations` as an **array** of
-   `{ lang, title, body }`; the old file keyed them by language, which your filter would have
-   dropped) and written into
-   `apps/api/src/modules/tenant-defaults/static-pages.defaults.json` in your working copy. It
-   is **not committed**: please review and commit it.
-2. **Check your integration tests with real defaults.** With the file filled, every test
-   factory gets a published FAQ, Terms and Privacy at creation. Tests that assume those pages
-   start empty or as drafts may now fail, e.g. in `test/frontend-gaps-3.spec.ts`:
-   "and a draft does not" (expects the FAQ to be unpublished after writing it) and
-   "answers null for a page the office has not written" (expects no Terms). They were written
-   while the file was empty. Either give those tests a factory without defaults, or use a slug
-   that is not seeded (`about`, `savingsScheme`, `creditTerms`).
-3. **Your question about `collectionPoint`:** keep the payload (`{ id, name }`). The console's
-   types were already changed to match (`SupplierListItem` and `SupplierDetail`). Only the
-   fixture's internal `AdminSupplier` record still holds the name as a string, and that never
-   goes over the wire.
+Everything in #1 to #16 is in the code, and the defaults file now has the FAQ, Terms and
+Privacy content (`4d51198`). Two things are left:
+
+1. **Three integration tests will now fail** (read from the code, not run here: no database
+   was available). `createTestApp()` runs `TenantDefaultsService.onApplicationBootstrap()`,
+   and nothing in the tests sets `TENANT_DEFAULTS=off`. So every test factory now **starts
+   with FAQ, Terms and Privacy published**, and these tests assume they start empty:
+
+   | File | Test | Why it fails now |
+   |---|---|---|
+   | `test/content.spec.ts` (~line 288) | "lists EVERY slug, written or not" | expects every page `draft` and `translations: {}` |
+   | `test/frontend-gaps-3.spec.ts` (~line 99) | "and a draft does not" | writes the FAQ and expects `/v1/pages/faq` to be `null`; the FAQ is already published |
+   | `test/frontend-gaps-3.spec.ts` (~line 133) | "answers null for a page the office has not written" | expects `/v1/pages/terms` to be `null`; Terms is already published |
+
+   Simplest fix: in those tests, use a slug that is never seeded (`about`, `savingsScheme`,
+   `creditTerms`) instead of `faq` / `terms`, and in "lists EVERY slug" assert only on the
+   unseeded slugs. Do **not** set `TENANT_DEFAULTS=off` in the harness: the trigger tests in
+   `frontend-gaps-3.spec.ts` (~line 290) rely on the boot pass having run.
+   Worth adding one test that the three default pages are published, in three languages,
+   with the factory's name in place of `{{factory}}`.
+
+2. **Deploy order.** Run `prisma migrate deploy` against Neon's direct host **before** the new
+   API starts: `20261003010000_news_updated_by` (news queries break without it) and
+   `20261003020000_backfill_bill_factory_snapshot`.
+
+**Your question about `collectionPoint`:** keep the payload (`{ id, name }`). The console's
+types were already changed to match (`SupplierListItem` and `SupplierDetail`). Only the
+fixture's internal `AdminSupplier` record still holds the name as a string, and that never
+goes over the wire.
 
 ---
 
