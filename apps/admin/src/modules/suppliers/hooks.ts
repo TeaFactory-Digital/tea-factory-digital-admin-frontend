@@ -13,6 +13,7 @@ import type { SupplierQuery } from '@tfd/domain';
 import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { qk } from '@/query/queryKeys';
+import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 
 /**
  * `enabled` is here for M3's code lookup, which must not search on an empty box:
@@ -63,9 +64,11 @@ export function useSupplierIncome(id: string | undefined, year: number | undefin
  * an error banner across the record.
  */
 export function useSupplierNotifications(id: string | undefined) {
+  const { config } = useRuntimeConfig();
+  const offered = config.push?.categories;
   return useQuery({
     queryKey: qk.suppliers.notifications(id ?? ''),
-    queryFn: () => supplierRepository.notifications(id!),
+    queryFn: () => supplierRepository.notifications(id!, offered),
     enabled: Boolean(id),
     throwOnError: false,
     retry: false,

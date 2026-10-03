@@ -19,8 +19,23 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
-import { ArrowRight, Ban, Info, RotateCcw } from 'lucide-react';
-import type { SupplierStatus } from '@tfd/domain';
+import {
+  ArrowRight,
+  Ban,
+  Bell,
+  ChartColumn,
+  History,
+  Info,
+  Landmark,
+  MapPin,
+  PiggyBank,
+  RotateCcw,
+  Smartphone,
+  UserRound,
+  Wallet,
+  type LucideIcon,
+} from 'lucide-react';
+import type { SupplierDetail, SupplierStatus } from '@tfd/domain';
 import { can } from '@tfd/domain';
 import { useAuthStore, useCan } from '@/auth/authStore';
 import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
@@ -58,6 +73,14 @@ const STATUS_TONES = { active: 'success', suspended: 'warning', closed: 'neutral
  */
 const SECTIONS = ['overview', 'money', 'income', 'notifications', 'activity'] as const;
 type Section = (typeof SECTIONS)[number];
+
+const SECTION_ICONS: Record<Section, LucideIcon> = {
+  overview: UserRound,
+  money: Wallet,
+  income: ChartColumn,
+  notifications: Bell,
+  activity: History,
+};
 
 export function SupplierDetailScreen() {
   const { t } = useTranslation();
@@ -153,15 +176,21 @@ export function SupplierDetailScreen() {
         </Notice>
       ) : null}
 
+      <SupplierSummary supplier={supplier} />
+
       <QuickActions supplierId={supplier.id} />
 
       <Tabs value={section} onValueChange={setSection}>
         <TabsList aria-label={t('suppliers.detail.sectionsLabel')}>
-          {SECTIONS.map((one) => (
-            <TabsTrigger key={one} value={one}>
-              {t(`suppliers.detail.tab.${one}`)}
-            </TabsTrigger>
-          ))}
+          {SECTIONS.map((one) => {
+            const Icon = SECTION_ICONS[one];
+            return (
+              <TabsTrigger key={one} value={one} className="gap-xs">
+                <Icon className="size-icon-sm shrink-0" aria-hidden />
+                {t(`suppliers.detail.tab.${one}`)}
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
 
         <TabsContent value="overview" className="grid gap-lg lg:grid-cols-2">
@@ -348,6 +377,96 @@ export function SupplierDetailScreen() {
         </TabsContent>
       </Tabs>
     </>
+  );
+}
+
+/**
+ * The four things a clerk checks first, before opening any tab: is the supplier on the
+ * app, can we pay them, what do we hold back, and where do they deliver. Each is a tile
+ * with its state in colour, so a missing bank account is seen rather than read.
+ */
+function SupplierSummary({ supplier }: { supplier: SupplierDetail }) {
+  const { t } = useTranslation();
+
+  const tiles: Array<{
+    key: string;
+    icon: LucideIcon;
+    label: string;
+    value: string;
+    hint?: string;
+    tone: 'success' | 'warning' | 'neutral';
+  }> = [
+    {
+      key: 'app',
+      icon: Smartphone,
+      label: t('suppliers.column.app'),
+      value: supplier.hasApp ? t('suppliers.app.installed') : t('suppliers.app.none'),
+      hint:
+        supplier.hasApp && supplier.lastAppSignInAt
+          ? t('suppliers.app.lastSignIn', { when: formatDate(supplier.lastAppSignInAt) })
+          : undefined,
+      tone: supplier.hasApp ? 'success' : 'neutral',
+    },
+    {
+      key: 'bank',
+      icon: Landmark,
+      label: t('suppliers.summary.bank'),
+      value: supplier.bankDetails ? t('suppliers.bankOnFile') : t('suppliers.noBankDetails'),
+      hint: supplier.bankDetails?.bankName,
+      tone: supplier.bankDetails ? 'success' : 'warning',
+    },
+    {
+      key: 'savings',
+      icon: PiggyBank,
+      label: t('suppliers.detail.savingsRate'),
+      value:
+        supplier.savingsPerKg === 0 ? t('suppliers.optedOut') : formatAmount(supplier.savingsPerKg),
+      tone: 'neutral',
+    },
+    {
+      key: 'point',
+      icon: MapPin,
+      label: t('suppliers.column.point'),
+      value: supplier.collectionPoint?.name ?? t('suppliers.noPoint'),
+      tone: supplier.collectionPoint ? 'neutral' : 'warning',
+    },
+  ];
+
+  const ICON_TONES = {
+    success: 'bg-success-muted text-success',
+    warning: 'bg-warning-muted text-warning',
+    neutral: 'bg-primary-muted text-primary',
+  } as const;
+
+  return (
+    <ul className="grid gap-sm sm:grid-cols-2 xl:grid-cols-4">
+      {tiles.map(({ key, icon: Icon, label, value, hint, tone }) => (
+        <li
+          key={key}
+          className="flex items-center gap-sm rounded-lg border border-border bg-surface p-md"
+        >
+          <span
+            aria-hidden
+            className={`flex size-10 shrink-0 items-center justify-center rounded-md ${ICON_TONES[tone]}`}
+          >
+            <Icon className="size-icon-sm" />
+          </span>
+          <span className="flex min-w-0 flex-col">
+            <span className="text-caption text-text-secondary">{label}</span>
+            <span
+              className={`truncate text-body-small font-semibold ${
+                tone === 'warning' ? 'text-warning' : 'text-text-primary'
+              }`}
+            >
+              {value}
+            </span>
+            {hint ? (
+              <span className="truncate text-caption text-text-secondary">{hint}</span>
+            ) : null}
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }
 

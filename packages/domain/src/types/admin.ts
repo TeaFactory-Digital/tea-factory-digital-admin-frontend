@@ -1326,9 +1326,10 @@ export interface SupplierNotificationStatus {
   recentSends: Array<{
     id: string;
     category: NotificationCategory;
-    title: string;
+    /** Not sent by the API yet (docs/v2/BACKEND-TODO.md); the category stands in. */
+    title?: string;
     sentAt: string;
-    origin: NotificationOrigin;
+    origin?: NotificationOrigin;
     deliveredToDevices: number;
     suppressedReason: 'optedOut' | 'noDevice' | null;
   }>;

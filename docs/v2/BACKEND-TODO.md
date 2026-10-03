@@ -186,3 +186,35 @@ three credit balances show numbers instead of "Credit balances are not available
 **Already fixed in the frontend (no backend change needed)**
 - The page no longer crashes when `creditBalances` is missing.
 - `collectionPoint` is read as `{ id, name }`, and the bank number as `accountNumberMasked`.
+
+---
+
+## 7. Supplier notifications: add the title of each send
+
+**Priority:** Low. The tab works without it, but shows the category name instead of the message title.
+
+**What is wrong**
+`GET /admin/suppliers/:id/notifications` sends each item in `sends` without a `title`.
+The office cannot tell two "Bill published" messages apart.
+
+**Where**
+`apps/api/src/modules/notifications/notifications.service.ts`, `forSupplier()` (around line 346).
+The query already loads `send.translations`. Only the mapping is missing.
+
+**What to do**
+In `sends: sends.map(...)`, add:
+
+- `title`: the send's title in the factory's fallback language (English), from `row.send.translations`.
+
+Nothing else needs to change. The console already reads `sends`, `sendId` and `optedIn`.
+
+**Check**
+Open a supplier, go to the Notifications tab. Under "Recent", each row shows the message title
+with the category beside it.
+
+**Already fixed in the frontend (no backend change needed)**
+- The tab no longer stays blank. It read `recentSends`; the API sends `sends`.
+- "Does the factory send this category?" is worked out by the console from the factory's
+  config (`push.categories`), so the API does not need to send it.
+- When push notifications are switched off for the factory, the tab now says so instead of
+  showing nothing.

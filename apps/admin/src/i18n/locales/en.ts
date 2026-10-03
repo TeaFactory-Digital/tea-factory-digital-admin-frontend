@@ -232,6 +232,8 @@ export const en = {
   'suppliers.filter.anyBankDetails': 'Any bank details',
   'suppliers.filter.noBankDetails': 'Missing bank details',
   'suppliers.noBankDetails': 'No bank details',
+  'suppliers.summary.bank': 'Bank details',
+  'suppliers.push.featureOff': 'This factory does not send push notifications, so there is nothing to show here. It can be switched on under Configuration.',
   'suppliers.detail.accountName': 'Account name',
   'suppliers.detail.balancesUnavailable': 'Credit balances are not available here yet.',
   'suppliers.noPoint': 'Not set',

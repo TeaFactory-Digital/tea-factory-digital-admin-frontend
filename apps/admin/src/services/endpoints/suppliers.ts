@@ -15,7 +15,8 @@ import type {
   SupplierIncomeHistory,
   SupplierDetail,
   SupplierListItem,
-  SupplierNotificationStatus,
+  NotificationCategory,
+  SupplierDevice,
   SupplierQuery,
   SupplierStatus,
   SupplierCredentialReset,
@@ -38,6 +39,32 @@ export interface RevealedAccountNumber {
   auditId: string;
 }
 
+
+/**
+ * What `GET /admin/suppliers/:id/notifications` actually sends.
+ *
+ * Not `SupplierNotificationStatus`: the sends travel as `sends` (no `id`, no `title`), a
+ * category carries `optedIn` rather than the offered/accepted/count working, and devices
+ * have no `id`. Read as the console's type, `recentSends.length` threw on `undefined`
+ * and the Notifications tab never rendered. `supplierRepository` converts it.
+ */
+export interface ServedSupplierNotifications {
+  hasApp: boolean;
+  devices: Array<{
+    platform: SupplierDevice['platform'];
+    categories: NotificationCategory[];
+    registeredAt: string;
+  }>;
+  categories: Array<{ category: NotificationCategory; optedIn: boolean; reachable: boolean }>;
+  sends: Array<{
+    sendId: string;
+    category: NotificationCategory;
+    sentAt: string;
+    deliveredToDevices: number;
+    suppressedReason: 'optedOut' | 'noDevice' | null;
+    title?: string;
+  }>;
+}
 
 export const supplierEndpoints = {
   list: (query: SupplierQuery) =>
@@ -76,7 +103,7 @@ export const supplierEndpoints = {
    */
   notifications: (id: string) =>
     apiClient
-      .get<SupplierNotificationStatus>(`/admin/suppliers/${id}/notifications`)
+      .get<ServedSupplierNotifications>(`/admin/suppliers/${id}/notifications`)
       .then((response) => response.data),
 
   /**

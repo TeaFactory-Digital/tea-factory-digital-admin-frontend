@@ -35,6 +35,8 @@ import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState, Notice, Skeleton } from '@/components/ui/states';
 import { formatDate, formatDateTime } from '@/lib/format';
+import { isApiError } from '@/services/api/errors';
+import { errorMessageKey } from '@/lib/errorMessage';
 import { useSupplierNotifications } from './hooks';
 
 /**
@@ -56,9 +58,27 @@ export function SupplierNotificationsPanel({ supplierId }: { supplierId: string 
   const { t } = useTranslation();
   const query = useSupplierNotifications(supplierId);
 
-  // Silent on a 403, like `AuditPanel`: a role that may read a supplier but not their
-  // device registry should get no panel rather than an error across the record.
-  if (query.error) return null;
+  /**
+   * Said, not silent. This used to return nothing on any error, and because the panel is
+   * the whole of its tab, the tab opened onto a blank page. The commonest cause is the
+   * factory not using push at all (`feature-disabled`), which deserves a sentence.
+   */
+  if (query.error) {
+    const disabled = isApiError(query.error) && query.error.code === 'feature-disabled';
+    return (
+      <Card>
+        <CardHeader title={t('suppliers.push.title')} />
+        <CardBody>
+          <Notice tone={disabled ? 'info' : 'error'}>
+            <span className="inline-flex items-center gap-xs">
+              <BellOff className="size-icon-sm shrink-0" aria-hidden />
+              {disabled ? t('suppliers.push.featureOff') : t(errorMessageKey(query.error))}
+            </span>
+          </Notice>
+        </CardBody>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -160,10 +180,13 @@ export function SupplierNotificationsPanel({ supplierId }: { supplierId: string 
                   {query.data.recentSends.map((send) => (
                     <li key={send.id} className="flex items-start gap-sm py-sm">
                       <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="text-body-small text-text-primary">{send.title}</span>
+                        {/* The API does not send a title yet; the category stands in. */}
+                        <span className="text-body-small text-text-primary">
+                          {send.title ?? t(`notifications.category.${send.category}`)}
+                        </span>
                         <span className="numeric text-caption text-text-secondary">
-                          {formatDateTime(send.sentAt)} ·{' '}
-                          {t(`notifications.category.${send.category}`)}
+                          {formatDateTime(send.sentAt)}
+                          {send.title ? ` · ${t(`notifications.category.${send.category}`)}` : ''}
                         </span>
                       </span>
                       {send.deliveredToDevices > 0 ? (

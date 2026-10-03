@@ -244,6 +244,8 @@ export const si: Record<TranslationKey, string> = {
   'suppliers.filter.anyBankDetails': 'ඕනෑම බැංකු විස්තරයක්',
   'suppliers.filter.noBankDetails': 'බැංකු විස්තර නැත',
   'suppliers.noBankDetails': 'බැංකු විස්තර නැත',
+  'suppliers.summary.bank': 'බැංකු විස්තර',
+  'suppliers.push.featureOff': 'මෙම කර්මාන්තශාලාව push දැනුම්දීම් යවන්නේ නැති නිසා මෙහි පෙන්වීමට දෙයක් නැත. එය වින්‍යාසය යටතේ සක්‍රිය කළ හැක.',
   'suppliers.detail.accountName': 'ගිණුමේ නම',
   'suppliers.detail.balancesUnavailable': 'ණය ශේෂයන් තවම මෙහි ලබා ගත නොහැක.',
   'suppliers.noPoint': 'සකසා නැත',

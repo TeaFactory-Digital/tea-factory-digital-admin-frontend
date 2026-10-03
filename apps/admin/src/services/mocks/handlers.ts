@@ -2430,15 +2430,15 @@ export const handlers: HttpHandler[] = [
      * than the supplier's phone). Listing only the offered ones would silently drop the
      * case from the panel.
      */
+    // The API's shape: `optedIn` per category, and `reachable` from the devices alone.
+    // Whether the factory offers a category is worked out by the console from config.
+    void offered;
     const categories = NOTIFICATION_CATEGORIES.map((category) => {
       const accepting = devices.filter((device) => device.categories.includes(category));
-      const offeredByFactory = offered.includes(category);
       return {
         category,
-        offeredByFactory,
-        acceptedOnSomeDevice: accepting.length > 0,
-        deviceCount: accepting.length,
-        reachable: offeredByFactory && accepting.length > 0,
+        optedIn: accepting.length > 0,
+        reachable: accepting.length > 0,
       };
     });
 
@@ -2451,11 +2451,9 @@ export const handlers: HttpHandler[] = [
       .map((send) => {
         const accepting = devices.filter((device) => device.categories.includes(send.category));
         return {
-          id: send.id,
+          sendId: send.id,
           category: send.category,
-          title: send.title,
           sentAt: send.sentAt!,
-          origin: send.origin,
           deliveredToDevices: accepting.length,
           /**
            * Why *this* supplier got nothing from a send that reached hundreds. The two
@@ -2471,11 +2469,11 @@ export const handlers: HttpHandler[] = [
         };
       });
 
+    // Exactly `GET /admin/suppliers/:id/notifications`: `sends`, not `recentSends`, and
+    // no ids on devices. The console's own shape here let a crash on the real API pass.
     return HttpResponse.json({
-      supplierId: supplier.id,
       hasApp: devices.length > 0,
       devices: devices.map((device) => ({
-        id: device.id,
         platform: device.platform,
         categories: device.categories,
         registeredAt: device.registeredAt,
@@ -2484,7 +2482,7 @@ export const handlers: HttpHandler[] = [
         // numbers is the same argument.
       })),
       categories,
-      recentSends,
+      sends: recentSends,
     });
   }),
 

@@ -12,6 +12,7 @@ import type {
   Paged,
   SupplierEditable,
   SupplierIncomeHistory,
+  NotificationCategory,
   SupplierNotificationStatus,
   SupplierDetail,
   SupplierListItem,
@@ -20,7 +21,11 @@ import type {
   SupplierCredentialReset,
 } from '@tfd/domain';
 import { IDENTITY_CHECK_MIN, identityCheckProblem } from '@tfd/domain';
-import { supplierEndpoints, type RevealedAccountNumber } from '../endpoints/suppliers';
+import {
+  supplierEndpoints,
+  type RevealedAccountNumber,
+  type ServedSupplierNotifications,
+} from '../endpoints/suppliers';
 
 /**
  * Re-exported so a screen can name what it is holding **without importing an endpoint**.
@@ -34,6 +39,46 @@ export type { RevealedAccountNumber };
 import type { MutationAck, StatusAck } from '../api/adapters';
 import { ApiError } from '../api/errors';
 
+function toNotificationStatus(
+  supplierId: string,
+  served: ServedSupplierNotifications,
+  offered: readonly NotificationCategory[] | undefined,
+): SupplierNotificationStatus {
+  const devices = served.devices ?? [];
+  return {
+    supplierId,
+    hasApp: served.hasApp,
+    devices: devices.map((device, index) => ({
+      // No id on the wire; registration time and position are unique enough for a key.
+      id: `${device.platform}-${device.registeredAt}-${index}`,
+      platform: device.platform,
+      categories: device.categories,
+      registeredAt: device.registeredAt,
+    })),
+    categories: (served.categories ?? []).map((one) => {
+      const offeredByFactory = offered ? offered.includes(one.category) : true;
+      const deviceCount = devices.filter((device) =>
+        device.categories.includes(one.category),
+      ).length;
+      return {
+        category: one.category,
+        offeredByFactory,
+        acceptedOnSomeDevice: one.optedIn,
+        deviceCount,
+        reachable: offeredByFactory && one.reachable,
+      };
+    }),
+    recentSends: (served.sends ?? []).map((send) => ({
+      id: send.sendId,
+      category: send.category,
+      title: send.title,
+      sentAt: send.sentAt,
+      deliveredToDevices: send.deliveredToDevices,
+      suppressedReason: send.suppressedReason,
+    })),
+  };
+}
+
 export const supplierRepository = {
   list: (query: SupplierQuery = {}): Promise<Paged<SupplierListItem>> =>
     supplierEndpoints.list({ page: 0, pageSize: 50, ...query }),
@@ -43,8 +88,17 @@ export const supplierRepository = {
   income: (id: string, year?: number): Promise<SupplierIncomeHistory> =>
     supplierEndpoints.income(id, year),
 
-  notifications: (id: string): Promise<SupplierNotificationStatus> =>
-    supplierEndpoints.notifications(id),
+  /**
+   * `offered` is the factory's own push categories (`config.push.categories`). The API
+   * does not say which categories the factory sends, and "the factory never sends this
+   * kind" is a different answer from "they switched it off". Absent, every category is
+   * taken as offered, so nothing is blamed on the factory without evidence.
+   */
+  notifications: async (
+    id: string,
+    offered?: readonly NotificationCategory[],
+  ): Promise<SupplierNotificationStatus> =>
+    toNotificationStatus(id, await supplierEndpoints.notifications(id), offered),
 
   /**
    * There is **no `create`**.
