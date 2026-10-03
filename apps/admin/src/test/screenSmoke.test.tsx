@@ -19,6 +19,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { Route, Routes } from 'react-router-dom';
 import { screen } from '@testing-library/react';
 import { CreditScreen } from '@/modules/credit/CreditScreen';
+import { DataStatusScreen } from '@/modules/data-status/DataStatusScreen';
 import { renderWithProviders, signInAs, signOut } from './render';
 
 const CLERK = 'clerk@galabodatea.lk';
@@ -43,5 +44,22 @@ describe('the credit queue', () => {
     expect(await screen.findByRole('checkbox')).toBeInTheDocument();
     // Awaited too: the grid shows a skeleton until the first page lands.
     expect(await screen.findByRole('table')).toBeInTheDocument();
+  });
+});
+
+describe('the data status page', () => {
+  it('explains where the figures come from, for any role', async () => {
+    await signInAs(CLERK);
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/data-status" element={<DataStatusScreen />} />
+      </Routes>,
+      { route: '/data-status' },
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Data status' })).toBeInTheDocument();
+    expect(screen.getByText('Last successful read')).toBeInTheDocument();
+    expect(screen.getByText('How the figures get here')).toBeInTheDocument();
   });
 });

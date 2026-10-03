@@ -99,6 +99,9 @@ const ConfigurationScreen = lazy(() =>
     default: m.ConfigurationScreen,
   })),
 );
+const DataStatusScreen = lazy(() =>
+  import('@/modules/data-status/DataStatusScreen').then((m) => ({ default: m.DataStatusScreen })),
+);
 const ProfileScreen = lazy(() =>
   import('@/modules/profile/ProfileScreen').then((m) => ({ default: m.ProfileScreen })),
 );
@@ -339,6 +342,11 @@ export const router = createBrowserRouter([
       {
         path: 'profile',
         element: <ProfileScreen />,
+      },
+      /** Where the figures come from. Ungated: anyone who sees a figure may ask. */
+      {
+        path: 'data-status',
+        element: <DataStatusScreen />,
       },
       {
         path: 'configuration',

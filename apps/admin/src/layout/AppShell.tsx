@@ -15,15 +15,12 @@ import { dashboardRepository } from '@/services/repositories/dashboardRepository
 import { qk } from '@/query/queryKeys';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { Notice, Spinner } from '@/components/ui/states';
-import { formatDate, formatDateTime } from '@/lib/format';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
-import { useFactorySync } from './useFactorySync';
 
 export function AppShell() {
   const { t } = useTranslation();
   const { degraded } = useRuntimeConfig();
-  const sync = useFactorySync();
 
   const { data: summary } = useQuery({
     queryKey: qk.dashboard,
@@ -51,26 +48,9 @@ export function AppShell() {
             so there is nothing to warn about. */}
         {degraded ? <Notice tone="error">{t('shell.degradedConfig')}</Notice> : null}
 
-        {/**
-          * Every money figure in this console is replicated from the factory's own
-          * system, so it is **as fresh as the last successful sync** — and the screens
-          * say "read-only", which implies "and current".
-          *
-          * Across the whole shell rather than on the bills grid, because a clerk quotes
-          * a balance from whichever screen happens to be open. `never` is separated from
-          * `stale` because they need different people: one is a deployment that was
-          * never finished, the other is a job that has stopped running.
-          */}
-        {sync.state === 'stale' ? (
-          <Notice tone="warning">
-            {t('shell.syncStale', {
-              when: formatDateTime(sync.status?.lastSucceededAt),
-              covers: formatDate(sync.status?.coversUpTo),
-            })}
-          </Notice>
-        ) : sync.state === 'never' ? (
-          <Notice tone="error">{t('shell.syncNever')}</Notice>
-        ) : null}
+        {/* The sync state is no longer a banner here: a chip in the top bar while the
+            figures are not current, and the full explanation on `/data-status`. See
+            `SyncStatusChip` for why. */}
 
         <a
           href="#main"

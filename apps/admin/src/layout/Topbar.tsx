@@ -14,6 +14,7 @@ import { Link } from 'react-router-dom';
 import { useAuthStore, useCurrentUser } from '@/auth/authStore';
 import { useFactory } from '@/config/RuntimeConfigProvider';
 import { Logo } from '@/brand/Logo';
+import { SyncStatusChip } from './SyncStatusChip';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
@@ -50,6 +51,7 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-md">
+        <SyncStatusChip />
 
         {user ? (
           <DropdownMenu>
