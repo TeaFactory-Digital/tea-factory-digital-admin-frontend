@@ -128,15 +128,33 @@ export function NotificationsScreen() {
         enableSorting: false,
         cell: (info) => {
           const row = info.row.original;
+          /*
+           * The API stores the audience as sent: `all`, or `suppliers` with their ids (a
+           * collection point is sent as its suppliers). Read as the console's own kinds
+           * only, a send to one point fell through to "All suppliers", which it was not.
+           */
+          if (!row.audience) {
+            return (
+              <span className="text-text-secondary">
+                {t('notifications.audience.notRecorded')}
+              </span>
+            );
+          }
+          const kind = row.audience.kind as string;
+          const ids = (row.audience as { supplierIds?: string[] }).supplierIds;
           return (
             <span className="text-text-primary">
-              {row.audience.kind === 'collectionPoint'
+              {kind === 'collectionPoint'
                 ? t('notifications.audience.collectionPoint', {
                     point: row.audience.collectionPoint ?? '',
                   })
-                : row.audience.kind === 'supplier'
+                : kind === 'supplier'
                   ? t('notifications.audience.supplier')
-                  : t('notifications.audience.allSuppliers')}
+                  : kind === 'suppliers'
+                    ? t('notifications.audience.suppliers', {
+                        count: ids?.length ?? row.targetedSuppliers,
+                      })
+                    : t('notifications.audience.allSuppliers')}
             </span>
           );
         },

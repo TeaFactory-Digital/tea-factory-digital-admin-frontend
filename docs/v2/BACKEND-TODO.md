@@ -517,3 +517,125 @@ In the console, Configuration:
    ("Questions about these terms?") shows the new number after its next config fetch.
 2. **Collection & savings**: add a point, save. It appears in the Suppliers collection-point filter.
 3. **Banks**: add a branch, save. Reload: it stays.
+
+---
+
+## 13. Notifications: every factory needs its trigger rows (and a push config)
+
+**Priority:** Medium. The console now works around the composer part; the triggers card is
+still empty.
+
+**What is wrong**
+- **No `notification_triggers` rows exist for any factory.** No seed creates them, and nothing
+  else does. So `GET /v1/admin/notifications/triggers` returns `[]`, and the Notifications
+  screen's "sent automatically" card has nothing to switch on or off.
+- **`client_config.push` is `null`** for a seeded factory (`tenant.ts` sets `push: undefined`).
+  Then `triggers()` marks every row `available: false`, and `POST /admin/notifications`
+  refuses with `push-not-configured`.
+
+The composer's **Kind** dropdown was empty because of both. The console now builds that list
+from `push.categories` (served by `GET /config`) instead of from trigger rows, and says
+"Push notifications are not set up…" with a link to Configuration → Notifications when `push` is
+`null`. So the composer works as soon as an administrator saves the Notifications section. The
+triggers card still needs the rows.
+
+**Where**
+- `apps/api/src/modules/notifications/notifications.service.ts`: `triggers()` (around line 52)
+- `apps/api/prisma/seed/tenant.ts`: `push: undefined` (around line 113)
+
+**What to do**
+
+**1. Create the four trigger rows for every factory, automatically.** Same approach as #11's
+default pages: one `ensureDefaultTriggers(tx, factoryId)` that creates a row per category **only
+if it is missing** (`createMany({ skipDuplicates: true })`), called on API start for every
+factory and when a factory is created.
+
+| `category` | `event` | `enabled` |
+|---|---|---|
+| `billPublished` | `month.publish` | `true` |
+| `requestDecided` | `request.decide` | `true` |
+| `newsArticle` | `news.publish` | `false` |
+| `inquiryReplied` | `inquiry.reply` | `true` |
+
+(`newsArticle` starts off: a factory that wants every circular pushed switches it on. This is
+how the console's mock behaves, keyed off `push.defaultCategories`.) Never change `enabled` on
+an existing row: that is the office's choice.
+
+**2. Optional but recommended: a default `push` config for new factories.** In `tenant.ts`
+(and any future "create factory"), instead of `push: undefined`:
+```ts
+push: {
+  topicPrefix: '<factory slug>',
+  categories: ['billPublished', 'requestDecided', 'newsArticle', 'inquiryReplied'],
+  defaultCategories: ['billPublished', 'requestDecided', 'inquiryReplied'],
+},
+```
+Without it, nothing can be sent until an administrator saves Configuration → Notifications once.
+That is a valid choice too; if you keep `null`, the console already explains it.
+
+**Check**
+1. Restart the API. Open Notifications in the console: the "sent automatically" card lists four
+   kinds, three switched on.
+2. Click **Write a notification**: the Kind dropdown lists the factory's offered kinds.
+
+---
+
+## 14. Optional: a collection-point audience for notifications
+
+**Priority:** Low. Sending works today; this only makes the log clearer.
+
+**What happens today**
+`POST /v1/admin/notifications` (and `/reach`) takes `audience: { kind: 'all' }` or
+`{ kind: 'suppliers', supplierIds: [...] }`. The console's composer offers "One collection point",
+so it looks up that point's suppliers and sends their ids. That works, but:
+
+- the log stores a list of ids, so it shows "Chosen suppliers (42)" instead of "MAKADURA only";
+- a supplier who joins the point a minute later is not included (the list was fixed at send time).
+
+**If you want it**
+Accept a third kind in `audienceSchema` (`notifications.controller.ts`, around line 23):
+```ts
+z.object({ kind: z.literal('collectionPoint'), collectionPointId: z.string().uuid() })
+```
+and in `computeReach()` filter suppliers by `collectionPointId`. Tell the frontend; the console will
+then send the point instead of the ids, and the log will name it.
+
+---
+
+## 15. Notifications log: send the audience, the sender and the linked record
+
+**Priority:** Medium. The console no longer crashes on it, but the log shows "Not recorded"
+in the audience column and no sender.
+
+**What is wrong**
+`GET /v1/admin/notifications` (the send log) leaves out fields that are already stored on
+`NotificationSend`. The Notifications screen reads them:
+
+| Field the screen reads | Stored as | Sent today? |
+|---|---|---|
+| `audience` | `audience` (Json) | ❌ |
+| `createdByName` | not stored: `createdById` (a console user id, `null` for automatic) | ❌ |
+| `entity`, `entityId` | `entity`, `entityId` | ❌ |
+| `failureReason` | `failureReason` | ❌ |
+
+Missing `audience` took the whole Notifications screen down ("This screen could not be shown")
+on the first logged send. The console now shows "Not recorded" instead.
+
+**Where**
+`apps/api/src/modules/notifications/notifications.service.ts`, `history()` (around line 318):
+the `rows.map(...)` that builds each item.
+
+**What to do**
+Add to each item, straight from the row:
+```ts
+audience: row.audience,            // as stored: { kind: 'all' } or { kind: 'suppliers', supplierIds }
+createdByName: <name of the console user `row.createdById`, or null>,  // one lookup for the page's ids
+entity: row.entity ?? null,
+entityId: row.entityId ?? null,
+failureReason: row.failureReason ?? null,
+```
+Keep `translations` as it is; the console reads the title and body from there.
+
+**Check**
+Send a notification to one collection point, open Notifications: the row shows the audience
+("Chosen suppliers (n)", or the point's name once #14 is done) and who sent it.

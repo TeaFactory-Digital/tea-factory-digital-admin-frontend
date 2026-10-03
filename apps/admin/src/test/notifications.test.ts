@@ -30,6 +30,7 @@ import {
   partitionDevices,
 } from '@tfd/domain';
 import { notificationRepository } from '@/services/repositories/notificationRepository';
+import { mockSendLog } from '@/services/mocks/handlers';
 import { billRepository } from '@/services/repositories/billRepository';
 import { monthRepository } from '@/services/repositories/monthRepository';
 import { newsRepository } from '@/services/repositories/contentRepository';
@@ -67,7 +68,10 @@ describe('M13 notifications', () => {
      * That is the closest thing to an answer to §21.24 that exists, and using it is the
      * difference between deferring the question and guessing at it.
      */
-    const on = triggers.filter((one) => one.enabled).map((one) => one.category).sort();
+    const on = triggers
+      .filter((one) => one.enabled)
+      .map((one) => one.category)
+      .sort();
     expect(on).toEqual(['billPublished', 'inquiryReplied', 'requestDecided']);
     expect(triggers.find((one) => one.category === 'newsArticle')?.enabled).toBe(false);
   });
@@ -153,7 +157,8 @@ describe('M13 notifications', () => {
     const log = await notificationRepository.list({ pageSize: 10 });
     expect(log.items[0]?.id).toBe(send.id);
     expect(log.items[0]?.origin).toBe('composed');
-    expect(log.items[0]?.createdByName).toBe('Chandima Bandara');
+    // The sender is the fixture's record: `GET /admin/notifications` does not send it.
+    expect(mockSendLog()[0]?.createdByName).toBe('Chandima Bandara');
   }, 20_000);
 
   it('refuses a send nobody would receive', async () => {
@@ -285,8 +290,10 @@ describe('M13 automatic triggers', () => {
   });
 
   async function sendsFor(category: string) {
-    const log = await notificationRepository.list({ pageSize: 100 });
-    return log.items.filter((send) => send.category === category && send.origin === 'automatic');
+    // The fixture's own log: the linked record and audience are not on the API's rows.
+    return mockSendLog().filter(
+      (send) => send.category === category && send.origin === 'automatic',
+    );
   }
 
   it('fires billPublished when a month is published, once', async () => {
@@ -406,9 +413,8 @@ describe('M13 automatic triggers', () => {
 
   it('fires requestDecided without the decision note', async () => {
     await signInAs(MANAGER);
-    const { changeRequestRepository } = await import(
-      '@/services/repositories/changeRequestRepository'
-    );
+    const { changeRequestRepository } =
+      await import('@/services/repositories/changeRequestRepository');
     const queue = await changeRequestRepository.list({ status: 'pending', pageSize: 10 });
     const target = queue.items.find((request) => request.createdById === null)!;
 
@@ -418,9 +424,7 @@ describe('M13 automatic triggers', () => {
 
     signOut();
     await signInAs(ADMIN);
-    const fired = (await sendsFor('requestDecided')).find(
-      (send) => send.entityId === target.id,
-    )!;
+    const fired = (await sendsFor('requestDecided')).find((send) => send.entityId === target.id)!;
 
     expect(fired).toBeTruthy();
     expect(fired.audience).toMatchObject({ kind: 'supplier', supplierId: target.supplierId });
@@ -433,8 +437,20 @@ describe('M13 automatic triggers', () => {
 describe('partitionDevices (the contract’s second push rule)', () => {
   it('splits on the device’s own category list, not on topic membership', () => {
     const devices = [
-      { id: 'a', token: 't', platform: 'android' as const, categories: ['billPublished' as const], registeredAt: '' },
-      { id: 'b', token: 't', platform: 'ios' as const, categories: ['newsArticle' as const], registeredAt: '' },
+      {
+        id: 'a',
+        token: 't',
+        platform: 'android' as const,
+        categories: ['billPublished' as const],
+        registeredAt: '',
+      },
+      {
+        id: 'b',
+        token: 't',
+        platform: 'ios' as const,
+        categories: ['newsArticle' as const],
+        registeredAt: '',
+      },
     ];
 
     const bills = partitionDevices(devices, 'billPublished');

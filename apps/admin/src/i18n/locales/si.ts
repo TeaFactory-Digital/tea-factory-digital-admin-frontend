@@ -1053,6 +1053,8 @@ export const si: Record<TranslationKey, string> = {
   'notifications.audience.allSuppliers': 'සෑම සැපයුම්කරුවෙක්ම',
   'notifications.audience.collectionPoint': '{{point}} පමණි',
   'notifications.audience.supplier': 'එක් සැපයුම්කරුවෙක්',
+  'notifications.audience.suppliers': 'තෝරාගත් සැපයුම්කරුවන් ({{count}})',
+  'notifications.audience.notRecorded': 'සටහන් කර නැත',
   'notifications.filterLabel': 'පෙන්වන්න',
   'notifications.filter.all': 'සියලුම දැනුම්දීම්',
   'notifications.filter.automatic': 'ස්වයංක්‍රීයව යැවූ',
@@ -1072,6 +1074,9 @@ export const si: Record<TranslationKey, string> = {
   'notifications.field.categoryHint':
     'යෙදුම විවෘත කරන තිරය තීරණය කරයි. යෙදුම හඳුනා නොගන්නා දේ නොසලකා හරියි, එබැවින් මෙය හුදෙක් පෙනුම සඳහා නොවේ.',
   'notifications.field.categoryPlaceholder': 'වර්ගයක් තෝරන්න',
+  'notifications.pushNotConfigured': 'මෙම කර්මාන්තශාලාව සඳහා push දැනුම්දීම් තවම සකසා නැති නිසා කිසිවක් යැවිය නොහැක.',
+  'notifications.noKindsOffered': 'මෙම කර්මාන්තශාලාව තවම කිසිදු දැනුම්දීම් වර්ගයක් ලබා නොදෙන නිසා කිසිවක් යැවිය නොහැක.',
+  'notifications.openPushSettings': 'වින්‍යාසය → දැනුම්දීම් යටතේ වර්ග තෝරන්න',
   'notifications.field.audience': 'යවන්නේ කාටද',
   'notifications.field.pickPoint': 'එකතු කිරීමේ ස්ථානයක් තෝරන්න',
   'notifications.audienceKind.allSuppliers': 'සෑම සැපයුම්කරුවෙක්ම',

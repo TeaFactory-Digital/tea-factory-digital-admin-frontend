@@ -1073,6 +1073,8 @@ export const ta: Record<TranslationKey, string> = {
   'notifications.audience.allSuppliers': 'ஒவ்வொரு வழங்குநரும்',
   'notifications.audience.collectionPoint': '{{point}} மட்டும்',
   'notifications.audience.supplier': 'ஒரு வழங்குநர்',
+  'notifications.audience.suppliers': 'தேர்ந்தெடுக்கப்பட்ட வழங்குநர்கள் ({{count}})',
+  'notifications.audience.notRecorded': 'பதிவு செய்யப்படவில்லை',
   'notifications.filterLabel': 'காட்டு',
   'notifications.filter.all': 'அனைத்து அறிவிப்புகள்',
   'notifications.filter.automatic': 'தானாகவே அனுப்பப்பட்டவை',
@@ -1092,6 +1094,9 @@ export const ta: Record<TranslationKey, string> = {
   'notifications.field.categoryHint':
     'செயலி எந்தத் திரையைத் திறக்கும் என்பதைத் தீர்மானிக்கிறது. செயலி அறியாத எதையும் புறக்கணிக்கிறது, எனவே இது வெறும் தோற்றத்திற்கானது அல்ல.',
   'notifications.field.categoryPlaceholder': 'வகை ஒன்றைத் தேர்ந்தெடுக்கவும்',
+  'notifications.pushNotConfigured': 'இந்தத் தொழிற்சாலைக்கு புஷ் அறிவிப்புகள் இன்னும் அமைக்கப்படவில்லை, எனவே எதையும் அனுப்ப முடியாது.',
+  'notifications.noKindsOffered': 'இந்தத் தொழிற்சாலை இன்னும் எந்த அறிவிப்பு வகையையும் வழங்கவில்லை, எனவே எதையும் அனுப்ப முடியாது.',
+  'notifications.openPushSettings': 'கட்டமைப்பு → அறிவிப்புகள் பகுதியில் வகைகளைத் தேர்ந்தெடுக்கவும்',
   'notifications.field.audience': 'யாருக்கு அனுப்புவது',
   'notifications.field.pickPoint': 'சேகரிப்பு நிலையம் ஒன்றைத் தேர்ந்தெடுக்கவும்',
   'notifications.audienceKind.allSuppliers': 'ஒவ்வொரு வழங்குநரும்',

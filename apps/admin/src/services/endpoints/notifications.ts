@@ -24,7 +24,6 @@
  */
 
 import type {
-  ComposeNotificationBody,
   NotificationAudience,
   NotificationCategory,
   NotificationReach,
@@ -32,6 +31,7 @@ import type {
   NotificationSend,
   NotificationTrigger,
   Paged,
+  LanguageCode,
 } from '@tfd/domain';
 import { apiClient } from '../api/client';
 import type { MutationAck } from '../api/adapters';
@@ -44,6 +44,50 @@ import { toParams } from './params';
  * are not echoed back. The composer does not need them: it has just typed them, and what
  * it shows afterwards is how far the message reached.
  */
+/**
+ * The audience **as the API takes it**: everyone, or a list of supplier ids. It has no
+ * collection-point or single-supplier kind; `notificationRepository` turns the console's
+ * audience into this.
+ */
+export interface ServedAudience {
+  kind: 'all' | 'suppliers';
+  supplierIds?: string[];
+}
+
+/** A composed send as the API takes it: the copy per language, not a flat title and body. */
+export interface ServedComposeBody {
+  category: NotificationCategory;
+  audience: ServedAudience;
+  translations: Array<{ lang: LanguageCode; title: string; body: string }>;
+}
+
+/**
+ * One row of `GET /admin/notifications` **as the API sends it**: the copy per language in
+ * `translations` rather than a flat title and body, and no audience, sender or entity.
+ * `notificationRepository.list` turns it into the console's `NotificationSend`.
+ */
+export interface ServedNotificationSend {
+  id: string;
+  category: NotificationCategory;
+  origin: NotificationSend['origin'];
+  status: NotificationSend['status'];
+  createdAt: string;
+  sentAt: string | null;
+  targetedSuppliers: number;
+  reachableDevices: number;
+  suppressedDevices: number;
+  suppliersWithoutDevice?: number;
+  translations?: Array<{ lang: string; title: string; body: string }>;
+  title?: string;
+  body?: string;
+  audience?: NotificationAudience | ServedAudience | null;
+  createdByName?: string | null;
+  createdById?: string | null;
+  entity?: string | null;
+  entityId?: string | null;
+  failureReason?: string | null;
+}
+
 export interface SendReceipt extends MutationAck {
   status: NotificationSend['status'];
   targetedSuppliers: number;
@@ -64,7 +108,7 @@ export const notificationEndpoints = {
    */
   list: (query: NotificationQuery) =>
     apiClient
-      .get<Paged<NotificationSend>>('/admin/notifications', { params: toParams(query) })
+      .get<Paged<ServedNotificationSend>>('/admin/notifications', { params: toParams(query) })
       .then((response) => response.data),
 
   /**
@@ -92,7 +136,7 @@ export const notificationEndpoints = {
    * a query string — and because the alternative is encoding a supplier id into a URL
    * that would then be cached.
    */
-  reach: (category: NotificationCategory, audience: NotificationAudience) =>
+  reach: (category: NotificationCategory, audience: ServedAudience) =>
     apiClient
       .post<NotificationReach>('/admin/notifications/reach', { category, audience })
       .then((response) => response.data),
@@ -103,6 +147,6 @@ export const notificationEndpoints = {
    * `422 unknown-category` · `409 category-disabled` · `409 no-recipients` ·
    * `409 push-not-configured` when the tenant has the flag on and no push block.
    */
-  send: (body: ComposeNotificationBody) =>
+  send: (body: ServedComposeBody) =>
     apiClient.post<SendReceipt>('/admin/notifications', body).then((response) => response.data),
 };

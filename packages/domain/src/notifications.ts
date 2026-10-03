@@ -66,8 +66,14 @@ export type NotificationAudienceKind = 'allSuppliers' | 'collectionPoint' | 'sup
 
 export interface NotificationAudience {
   kind: NotificationAudienceKind;
-  /** Required when `kind` is `collectionPoint`. */
+  /** Required when `kind` is `collectionPoint`. The point's name, as the log shows it. */
   collectionPoint?: string;
+  /**
+   * The point's id, when known. The API has no collection-point audience; the console
+   * resolves the point to its suppliers' ids (see `notificationRepository`), and the
+   * suppliers list filters by id.
+   */
+  collectionPointId?: string;
   /** Required when `kind` is `supplier`. */
   supplierId?: string;
 }

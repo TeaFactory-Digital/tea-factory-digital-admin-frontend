@@ -1836,7 +1836,12 @@ export interface NotificationSend {
   origin: NotificationOrigin;
   title: string;
   body: string;
-  audience: NotificationAudience;
+  /**
+   * `null` when the log does not say: `GET /admin/notifications` sends no audience
+   * (docs/v2/BACKEND-TODO.md #15). Reading `.kind` off the missing value took the whole
+   * Notifications screen down on the first logged send.
+   */
+  audience: NotificationAudience | null;
   /** For an automatic send, the record it fired from — so the log links back. */
   entity: string | null;
   entityId: string | null;

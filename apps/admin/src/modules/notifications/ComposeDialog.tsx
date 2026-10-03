@@ -26,6 +26,7 @@ import {
   type NotificationAudience,
   type NotificationCategory,
   type NotificationTrigger,
+  NOTIFICATION_CATEGORIES,
 } from '@tfd/domain';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -33,7 +34,8 @@ import { Dialog } from '@/components/ui/Dialog';
 import { Field, Textarea } from '@/components/ui/Field';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import { Spinner } from '@/components/ui/states';
+import { Notice, Spinner } from '@/components/ui/states';
+import { Link } from 'react-router-dom';
 import { useToast } from '@/components/ui/Toast';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { errorMessageKey } from '@/lib/errorMessage';
@@ -56,10 +58,24 @@ export function ComposeDialog({
   const { config } = useRuntimeConfig();
   const send = useSendNotification();
 
-  const available = useMemo(
-    () => (triggers ?? []).filter((trigger) => trigger.available),
-    [triggers],
-  );
+  /**
+   * **The kinds this factory offers**: `push.categories`, set under Configuration →
+   * Notifications. A manual send needs nothing else on the server.
+   *
+   * This used to be the *trigger* rows instead, which are about automatic sends: a factory
+   * with none (no seed creates them) or with `push` unset got an empty Kind list and no way
+   * to explain why. The triggers still count when the config is not loaded yet.
+   */
+  const pushConfigured = Boolean(config.push);
+  const available = useMemo(() => {
+    const offered = config.push?.categories ?? [];
+    if (offered.length > 0) {
+      return NOTIFICATION_CATEGORIES.filter((category) => offered.includes(category));
+    }
+    return (triggers ?? [])
+      .filter((trigger) => trigger.available)
+      .map((trigger) => trigger.category);
+  }, [config.push, triggers]);
 
   const [category, setCategory] = useState<NotificationCategory | ''>('');
   const [kind, setKind] = useState<NotificationAudience['kind']>('allSuppliers');
@@ -80,8 +96,15 @@ export function ComposeDialog({
   }, [open]);
 
   const audience = useMemo<NotificationAudience>(
-    () => (kind === 'collectionPoint' ? { kind, collectionPoint: point } : { kind: 'allSuppliers' }),
-    [kind, point],
+    () =>
+      kind === 'collectionPoint'
+        ? {
+            kind,
+            collectionPoint: point,
+            collectionPointId: config.collectionPoints.find((cp) => cp.name === point)?.id,
+          }
+        : { kind: 'allSuppliers' },
+    [kind, point, config.collectionPoints],
   );
 
   // Asked only once the audience is complete — see `useNotificationReach`.
@@ -154,7 +177,30 @@ export function ComposeDialog({
         }
       >
         <div className="flex flex-col gap-md">
-          <Field label={t('notifications.field.category')} required hint={t('notifications.field.categoryHint')}>
+          {/* Said, not left as an empty list: nothing can be sent until the factory has
+              chosen which kinds it offers, and the fix is on another screen. */}
+          {available.length === 0 ? (
+            <Notice tone="warning">
+              <span className="flex flex-col gap-xxs">
+                <span>
+                  {pushConfigured
+                    ? t('notifications.noKindsOffered')
+                    : t('notifications.pushNotConfigured')}
+                </span>
+                <Link
+                  to="/configuration?section=push"
+                  className="font-medium underline underline-offset-2"
+                >
+                  {t('notifications.openPushSettings')}
+                </Link>
+              </span>
+            </Notice>
+          ) : null}
+          <Field
+            label={t('notifications.field.category')}
+            required
+            hint={t('notifications.field.categoryHint')}
+          >
             {({ id, describedBy, required }) => (
               <Select
                 id={id}
@@ -164,9 +210,9 @@ export function ComposeDialog({
                 onChange={(event) => setCategory(event.target.value as NotificationCategory)}
               >
                 <option value="">{t('notifications.field.categoryPlaceholder')}</option>
-                {available.map((trigger) => (
-                  <option key={trigger.category} value={trigger.category}>
-                    {t(`notifications.category.${trigger.category}`)}
+                {available.map((one) => (
+                  <option key={one} value={one}>
+                    {t(`notifications.category.${one}`)}
                   </option>
                 ))}
               </Select>
@@ -182,7 +228,9 @@ export function ComposeDialog({
                   value={kind}
                   onChange={(event) => setKind(event.target.value as NotificationAudience['kind'])}
                 >
-                  <option value="allSuppliers">{t('notifications.audienceKind.allSuppliers')}</option>
+                  <option value="allSuppliers">
+                    {t('notifications.audienceKind.allSuppliers')}
+                  </option>
                   <option value="collectionPoint">
                     {t('notifications.audienceKind.collectionPoint')}
                   </option>
@@ -230,7 +278,10 @@ export function ComposeDialog({
               ) : reach.data ? (
                 <>
                   <p className="flex items-start gap-xs text-body-small text-text-primary">
-                    <Users className="mt-xxs size-icon-sm shrink-0 text-text-secondary" aria-hidden />
+                    <Users
+                      className="mt-xxs size-icon-sm shrink-0 text-text-secondary"
+                      aria-hidden
+                    />
                     {t('notifications.reachSummary', {
                       devices: formatCount(reach.data.reachableDevices),
                       suppliers: formatCount(reach.data.targetedSuppliers),

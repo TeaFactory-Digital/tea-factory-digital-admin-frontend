@@ -18,6 +18,7 @@
 
 import { HttpResponse, delay, http, type HttpHandler } from 'msw';
 import type { ServedBannerPreview, ServedContentPreview } from '../api/adapters';
+import type { ServedAudience } from '../endpoints/notifications';
 import type {
   AccessLevel,
   AdminBill,
@@ -560,16 +561,49 @@ function pushConfigOf(request: Request) {
 }
 
 /** Resolve an audience to suppliers, then to devices, honouring per-device consent. */
+/**
+ * The API's audience (`all`, or `suppliers` with ids) → the log's.
+ *
+ * The API takes no collection-point audience; the console resolves a point to its
+ * suppliers' ids. For the log, a list that is exactly one point's suppliers is shown as
+ * that point again, so the mock's log reads as the office wrote it.
+ */
+function audienceFromServed(served: ServedAudience | undefined): NotificationAudience {
+  if (!served || served.kind === 'all') return { kind: 'allSuppliers' };
+  const ids = new Set(served.supplierIds ?? []);
+  const chosen = state.suppliers.filter((supplier) => ids.has(supplier.id));
+  const points = new Set(chosen.map((supplier) => supplier.collectionPoint));
+  if (chosen.length > 1 && points.size === 1) {
+    return { kind: 'collectionPoint', collectionPoint: [...points][0]! };
+  }
+  return { kind: 'supplier', supplierId: chosen[0]?.id ?? '' };
+}
+
+/** The other way: an automatic send's audience, in the API's terms. */
+function servedFrom(audience: NotificationAudience): ServedAudience {
+  if (audience.kind === 'allSuppliers') return { kind: 'all' };
+  const ids = state.suppliers
+    .filter((supplier) =>
+      audienceMatches(
+        { id: supplier.id, collectionPoint: supplier.collectionPoint, status: supplier.status },
+        audience,
+      ),
+    )
+    .map((supplier) => supplier.id);
+  return { kind: 'suppliers', supplierIds: ids };
+}
+
 function resolveReach(
   request: Request,
   category: NotificationCategory,
-  audience: NotificationAudience,
+  audience: ServedAudience,
 ): NotificationReach {
+  const ids = audience.kind === 'suppliers' ? new Set(audience.supplierIds ?? []) : null;
   const suppliers = state.suppliers.filter((supplier) =>
     audienceMatches(
       { id: supplier.id, collectionPoint: supplier.collectionPoint, status: supplier.status },
-      audience,
-    ),
+      { kind: 'allSuppliers' },
+    ) && (ids === null || ids.has(supplier.id)),
   );
 
   let reachable = 0;
@@ -668,7 +702,7 @@ function fireAutomatic(
   const push = pushConfigOf(request);
   if (!push || !push.categories.includes(category)) return null;
 
-  const reach = resolveReach(request, category, audience);
+  const reach = resolveReach(request, category, servedFrom(audience));
   const now = new Date().toISOString();
 
   const send: NotificationSend = {
@@ -2445,7 +2479,7 @@ export const handlers: HttpHandler[] = [
     const recentSends = state.notificationSends
       // Only what actually went out. A queued or failed send tells the office about the
       // send, not about this supplier, and M13's log is where that belongs.
-      .filter((send) => send.sentAt !== null && audienceMatches(supplier, send.audience))
+      .filter((send) => send.sentAt !== null && send.audience !== null && audienceMatches(supplier, send.audience))
       .sort((a, b) => (b.sentAt ?? '').localeCompare(a.sentAt ?? ''))
       .slice(0, 10)
       .map((send) => {
@@ -5115,19 +5149,16 @@ export const handlers: HttpHandler[] = [
     const auth = authorize(request, 'content');
     if ('response' in auth) return auth.response;
 
+    // The API's shape: `all`, or `suppliers` with ids.
     const body = (await request.json()) as {
       category?: string;
-      audience?: NotificationAudience;
+      audience?: ServedAudience;
     };
     const check = checkSendable(request, String(body.category));
     if ('response' in check) return check.response;
 
     return HttpResponse.json(
-      resolveReach(
-        request,
-        body.category as NotificationCategory,
-        body.audience ?? { kind: 'allSuppliers' },
-      ),
+      resolveReach(request, body.category as NotificationCategory, body.audience ?? { kind: 'all' }),
     );
   }),
 
@@ -5154,7 +5185,23 @@ export const handlers: HttpHandler[] = [
     );
     if (category) rows = rows.filter((row) => row.category === category);
 
-    return HttpResponse.json(paginate(rows, url));
+    // The API's row, field for field: the copy as `translations`, and no audience, sender
+    // or entity. Serving the console's own shape let the screen read `audience.kind` in
+    // tests while the real log crashed it.
+    const served = rows.map((row) => ({
+      id: row.id,
+      category: row.category,
+      origin: row.origin,
+      status: row.status,
+      createdAt: row.createdAt,
+      sentAt: row.sentAt,
+      targetedSuppliers: row.targetedSuppliers,
+      reachableDevices: row.reachableDevices,
+      suppressedDevices: row.suppressedDevices,
+      suppliersWithoutDevice: 0,
+      translations: [{ lang: EDITORIAL_FALLBACK_LANGUAGE, title: row.title, body: row.body }],
+    }));
+    return HttpResponse.json(paginate(served, url));
   }),
 
   /**
@@ -5172,18 +5219,24 @@ export const handlers: HttpHandler[] = [
     const auth = authorize(request, 'content', 'approve');
     if ('response' in auth) return auth.response;
 
+    // The API's shape: the copy per language, and `all` / `suppliers` for the audience.
     const body = (await request.json()) as {
       category?: string;
-      title?: string;
-      body?: string;
-      audience?: NotificationAudience;
+      translations?: Array<{ lang: string; title: string; body: string }>;
+      audience?: ServedAudience;
     };
 
     const check = checkSendable(request, String(body.category));
     if ('response' in check) return check.response;
 
-    const title = body.title?.trim() ?? '';
-    const text = body.body?.trim() ?? '';
+    if (!Array.isArray(body.translations) || body.translations.length === 0) {
+      return fail({ status: 422, code: 'invalid', message: 'The request was not valid.' });
+    }
+    const copy =
+      body.translations.find((one) => one.lang === EDITORIAL_FALLBACK_LANGUAGE) ??
+      body.translations[0]!;
+    const title = copy.title?.trim() ?? '';
+    const text = copy.body?.trim() ?? '';
     if (title.length === 0 || text.length === 0) {
       return fail({ status: 422, code: 'invalid', message: 'A title and a message are required.' });
     }
@@ -5196,8 +5249,9 @@ export const handlers: HttpHandler[] = [
     }
 
     const category = body.category as NotificationCategory;
-    const audience = body.audience ?? { kind: 'allSuppliers' };
-    const reach = resolveReach(request, category, audience);
+    const served = body.audience ?? { kind: 'all' as const };
+    const audience = audienceFromServed(served);
+    const reach = resolveReach(request, category, served);
 
     /**
      * Nobody would receive it — refused rather than logged as sent.
@@ -6469,6 +6523,15 @@ export function setOwesPasswordChange(email: string, owes: boolean): void {
  * counts `GET /admin/suppliers/:id` does not send. Lets a test check the fixture's own
  * bookkeeping (an approval moves a balance) without the API pretending to serve it.
  */
+/**
+ * **Tests only.** The fixture's own send log, newest first, with the fields
+ * `GET /admin/notifications` does not send (sender, linked record, audience). Lets a test
+ * check what the fixture recorded without the API pretending to serve it.
+ */
+export function mockSendLog(): NotificationSend[] {
+  return [...state.notificationSends].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
 export function mockSupplierRecord(id: string): AdminSupplier {
   const supplier = state.suppliers.find((one) => one.id === id);
   if (!supplier) throw new Error(`No mock supplier ${id}`);

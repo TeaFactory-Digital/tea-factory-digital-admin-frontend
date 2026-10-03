@@ -1047,6 +1047,8 @@ export const en = {
   'notifications.audience.allSuppliers': 'Every supplier',
   'notifications.audience.collectionPoint': '{{point}} only',
   'notifications.audience.supplier': 'One supplier',
+  'notifications.audience.suppliers': 'Chosen suppliers ({{count}})',
+  'notifications.audience.notRecorded': 'Not recorded',
   'notifications.filterLabel': 'Show',
   'notifications.filter.all': 'All notifications',
   'notifications.filter.automatic': 'Sent automatically',
@@ -1066,6 +1068,9 @@ export const en = {
   'notifications.field.categoryHint':
     'Decides which screen the app opens. The app ignores anything it does not recognise, so this is not cosmetic.',
   'notifications.field.categoryPlaceholder': 'Choose a kind',
+  'notifications.pushNotConfigured': 'Push notifications are not set up for this factory yet, so nothing can be sent.',
+  'notifications.noKindsOffered': 'This factory does not offer any kind of notification yet, so nothing can be sent.',
+  'notifications.openPushSettings': 'Choose the kinds under Configuration → Notifications',
   'notifications.field.audience': 'Send to',
   'notifications.field.pickPoint': 'Choose a collection point',
   'notifications.audienceKind.allSuppliers': 'Every supplier',
