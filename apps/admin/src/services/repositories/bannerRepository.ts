@@ -106,18 +106,23 @@ function assertWindowUsable(startsAt: string | undefined, endsAt: string | null 
 function toBannerListItem(row: ServedBannerRow): BannerListItem {
   return {
     id: row.id,
-    title: row.headline,
+    // `title` now; `headline` on older API builds. Reading only `headline` left every
+    // row's title blank once the API renamed it.
+    title: row.title ?? row.headline ?? '',
     status: row.status,
     window: row.window,
     startsAt: row.startsAt,
     endsAt: row.endsAt,
-    hasImage: Boolean(row.imageUrl),
+    hasImage: row.hasImage ?? Boolean(row.imageUrl),
+    imageUrl: row.imageUrl,
+    action: (row.action ?? undefined) as BannerAction | undefined,
+    publishedByName: row.publishedByName,
     updatedAt: row.updatedAt,
-    // The API sends `publishedByName`, never an editor's name. `''` rather than a
-    // fabricated one — the column renders blank, which is true.
-    updatedByName: row.publishedByName ?? '',
-    missingLanguages: row.missingLanguages,
-    staleLanguages: [],
+    // The editor's name when the API sends it; the publisher's on older builds.
+    updatedByName: row.updatedByName ?? row.publishedByName ?? '',
+    missingLanguages: row.missingLanguages ?? [],
+    // Sent now; it was the one AC-08 half the list could not show.
+    staleLanguages: row.staleLanguages ?? [],
   };
 }
 

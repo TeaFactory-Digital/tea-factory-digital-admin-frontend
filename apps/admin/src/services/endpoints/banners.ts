@@ -44,10 +44,15 @@ export interface ServedBannerRow {
   startsAt: string;
   endsAt: string | null;
   window: BannerListItem['window'];
-  headline: string;
+  /** Older API builds called it `headline`; current ones send `title`. */
+  title?: string;
+  headline?: string;
+  hasImage?: boolean;
   missingLanguages: LanguageCode[];
+  staleLanguages?: LanguageCode[];
   publishedByName: string | null;
   updatedAt: string;
+  updatedByName?: string | null;
 }
 
 export const bannerEndpoints = {

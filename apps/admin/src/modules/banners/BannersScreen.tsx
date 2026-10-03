@@ -22,7 +22,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ColumnDef } from '@tanstack/react-table';
 import { CircleAlert, ImageOff, Plus } from 'lucide-react';
-import type { BannerListItem, BannerQuery, ContentStatus, LanguageCode } from '@tfd/domain';
+import type { BannerListItem, BannerQuery, ContentStatus } from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
 import { Badge, type BadgeTone } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -71,8 +71,7 @@ export function BannersScreen() {
   const query = useMemo<BannerQuery>(
     () => ({
       status: lens === 'draft' ? 'draft' : undefined,
-      window:
-        lens === 'live' || lens === 'scheduled' || lens === 'expired' ? lens : undefined,
+      window: lens === 'live' || lens === 'scheduled' || lens === 'expired' ? lens : undefined,
       q: debouncedSearch || undefined,
       page,
       pageSize: 25,
@@ -98,19 +97,11 @@ export function BannersScreen() {
         cell: (info) => {
           const row = info.row.original;
           return (
-            <span className="flex items-center gap-xs">
-              <span className="font-medium text-text-primary">{row.title}</span>
-              {/**
-               * No artwork is worth flagging and not worth refusing: the app draws a
-               * branded panel instead, which is a deliberate fallback rather than a
-               * broken image. The office should know which banners are in that state.
-               */}
-              {row.hasImage ? null : (
-                <span className="inline-flex items-center text-text-secondary">
-                  <ImageOff className="size-icon-xs" aria-hidden />
-                  <span className="sr-only">{t('banners.noArtwork')}</span>
-                </span>
-              )}
+            <span className="flex items-center gap-sm">
+              <ArtworkThumb url={row.imageUrl ?? null} hasImage={row.hasImage} />
+              <span className="font-medium text-text-primary">
+                {row.title || t('banners.untitled')}
+              </span>
               {row.missingLanguages.length > 0 ? (
                 <span className="inline-flex items-center text-warning">
                   <CircleAlert className="size-icon-xs" aria-hidden />
@@ -140,6 +131,30 @@ export function BannersScreen() {
         },
       },
       {
+        // Where the button goes. The one fact about a banner that cannot be seen from its
+        // headline, and the one most often got wrong.
+        id: 'action',
+        header: t('banners.action.kind'),
+        enableSorting: false,
+        cell: (info) => {
+          const action = info.row.original.action;
+          if (!action) return <span className="text-text-secondary">—</span>;
+          return action.type === 'url' ? (
+            <span className="flex max-w-56 flex-col">
+              <span className="text-caption text-text-secondary">{t('banners.action.url')}</span>
+              <span className="truncate text-body-small text-text-primary" title={action.url}>
+                {action.url}
+              </span>
+            </span>
+          ) : (
+            <span className="flex flex-col">
+              <span className="text-caption text-text-secondary">{t('banners.action.screen')}</span>
+              <span className="numeric text-body-small text-text-primary">{action.path}</span>
+            </span>
+          );
+        },
+      },
+      {
         accessorKey: 'status',
         header: t('common.status'),
         cell: (info) => {
@@ -152,14 +167,29 @@ export function BannersScreen() {
         header: t('banners.column.languages'),
         enableSorting: false,
         cell: (info) => {
-          const missing = info.getValue<LanguageCode[]>();
-          if (missing.length === 0) {
-            return <span className="text-caption text-text-secondary">{t('banners.complete')}</span>;
+          const row = info.row.original;
+          const missing = row.missingLanguages;
+          const stale = row.staleLanguages ?? [];
+          if (missing.length === 0 && stale.length === 0) {
+            return (
+              <span className="text-caption text-text-secondary">{t('banners.complete')}</span>
+            );
           }
+          // Out of date first, as on the news list: it is the worse failure, and the one
+          // that looks fine on the phone.
           return (
-            <Badge tone="warning">
-              {missing.map((lang) => t(`content.language.${lang}`)).join(', ')}
-            </Badge>
+            <span className="flex flex-wrap gap-xs">
+              {stale.map((lang) => (
+                <Badge key={`stale-${lang}`} tone="error">
+                  {t('content.badge.stale', { language: t(`content.language.${lang}`) })}
+                </Badge>
+              ))}
+              {missing.map((lang) => (
+                <Badge key={`missing-${lang}`} tone="warning">
+                  {t('content.badge.missing', { language: t(`content.language.${lang}`) })}
+                </Badge>
+              ))}
+            </span>
           );
         },
       },
@@ -255,5 +285,33 @@ export function BannersScreen() {
         onCreated={(id) => navigate(`/banners/${id}`)}
       />
     </>
+  );
+}
+
+/**
+ * The artwork, small enough to sit beside a headline, in the banner's own wide shape.
+ * The URL is signed and short-lived, so a broken thumbnail falls back to the "no
+ * artwork" icon instead of the browser's broken-image glyph.
+ */
+function ArtworkThumb({ url, hasImage }: { url: string | null; hasImage: boolean }) {
+  const { t } = useTranslation();
+  const [failed, setFailed] = useState(false);
+  return (
+    <span className="flex h-10 w-20 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-surface-variant text-text-secondary">
+      {url && !failed ? (
+        <img
+          src={url}
+          alt=""
+          loading="lazy"
+          className="h-full w-full object-cover"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <>
+          <ImageOff className="size-icon-sm" aria-hidden />
+          {!hasImage ? <span className="sr-only">{t('banners.noArtwork')}</span> : null}
+        </>
+      )}
+    </span>
   );
 }

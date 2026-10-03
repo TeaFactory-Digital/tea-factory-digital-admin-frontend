@@ -5700,15 +5700,8 @@ export const handlers: HttpHandler[] = [
     rows = sortRows(rows, url, (a, b) => b.startsAt.localeCompare(a.startsAt));
 
     /**
-     * **A bare array, `headline` rather than `title`, and no `staleLanguages`**
-     * (gaps **G-08**, **G-09**).
-     *
-     * The last of those is the one that matters: the API computes `missingLanguages` and
-     * stops, so the console cannot tell *never translated* from *translated, then the
-     * English was corrected* — which is half of what AC-08 is about. It cannot work it
-     * out either, because it would need each translation's `updatedAt` and the row
-     * carries one timestamp for the whole banner. `bannerRepository` fills `[]`, so this
-     * fixture must withhold it or the gap becomes untestable.
+     * A bare array, as `GET /admin/banners` sends it: `title` (it was `headline` before the
+     * API closed G-08/G-09), `hasImage`, `staleLanguages` and the editor's name.
      */
     return HttpResponse.json(
       rows.map((row) => ({
@@ -5720,10 +5713,13 @@ export const handlers: HttpHandler[] = [
         startsAt: row.startsAt,
         endsAt: row.endsAt,
         window: row.window,
-        headline: row.title,
+        title: row.title,
+        hasImage: row.hasImage,
         missingLanguages: row.missingLanguages,
+        staleLanguages: row.staleLanguages,
         publishedByName: state.banners.find((b) => b.id === row.id)?.publishedByName ?? null,
         updatedAt: row.updatedAt,
+        updatedByName: row.updatedByName,
       })),
     );
   }),

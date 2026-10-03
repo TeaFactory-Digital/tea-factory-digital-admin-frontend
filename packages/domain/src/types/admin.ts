@@ -1695,6 +1695,11 @@ export interface BannerListItem extends ContentGaps {
   startsAt: string;
   endsAt: string | null;
   hasImage: boolean;
+  /** Signed, short-lived; for the list's thumbnail only. */
+  imageUrl?: string | null;
+  /** Where the button goes, so the list can say it without opening each banner. */
+  action?: BannerAction;
+  publishedByName?: string | null;
   updatedAt: string;
   updatedByName: string;
 }
