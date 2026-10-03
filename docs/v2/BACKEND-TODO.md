@@ -279,3 +279,76 @@ So the console creates the banner first, then attaches the image with a second `
 imageAttachmentId: z.string().uuid().optional(),
 ```
 Tell the frontend, and the second request can go.
+
+---
+
+## 10. Static content never reaches the mobile app: add two supplier endpoints
+
+**Priority:** High. The office can write and publish the six fixed pages in the console
+(FAQ, savings scheme, credit terms, about, terms, privacy), but no supplier ever sees them.
+
+**What is wrong**
+Static pages have only **admin** endpoints (`/v1/admin/static-pages…`). There is no endpoint the
+mobile app can call, so a published page goes nowhere.
+
+**The mobile app is already built for this** (it reads the two endpoints below). Until they
+exist it shows the FAQ and terms bundled with the app, and hides the other four pages.
+
+**Where**
+`apps/api/src/modules/supplier-app/supplier-content.controller.ts`, next to `news` and
+`news/:id`. Copy their decorators and their `lang` handling (`this.language(lang)`).
+
+### Endpoint A: `GET /v1/pages?lang=si`
+
+The pages this factory has **published**, so the app can show a link for each.
+
+```json
+[
+  { "slug": "privacy", "title": "Privacy" },
+  { "slug": "savingsScheme", "title": "The savings scheme" }
+]
+```
+
+- Only rows of `StaticPage` with `status = 'published'`.
+- `title` is the requested language's title, or the fallback language's (English) when
+  that language is not written. Same rule as news: use `resolveTranslation(...)`.
+- Leave out a page whose fallback is not written either.
+- An empty array when nothing is published. Never `404`.
+
+### Endpoint B: `GET /v1/pages/:slug?lang=si`
+
+One published page.
+
+```json
+{
+  "slug": "faq",
+  "title": "Questions suppliers ask",
+  "body": "How is my rate set?\n\nBy the monthly auction.",
+  "lang": "en",
+  "usedFallback": true,
+  "updatedAt": "2026-10-03T06:30:00.000Z"
+}
+```
+
+- `lang` is the language the copy is **actually in**; `usedFallback` is `true` when that is not
+  the language asked for. (The app shows "not yet in your language" when it is.)
+- `updatedAt` is that translation's `updatedAt`.
+- `body` is sent exactly as stored. The app splits paragraphs on blank lines.
+- **`200 null`** (not `404`) when the page is not published, or the slug is valid but unwritten.
+  This matches `GET /news/:id`.
+- `404` only for a slug outside the six (`faq`, `savingsScheme`, `creditTerms`, `about`, `terms`,
+  `privacy`), using the same `assertSlug` as `StaticPagesService`.
+
+### For both
+
+- Realm `supplier`, `@TenantScope('token', …)`, `@NoCapability('a supplier acts only on themselves')`,
+  `@NoIdempotency('read-only')`, `@NoAudit('read-only')`.
+- **No feature flag** (`@NoFeature(...)`): the fixed pages are not a feature a factory turns off,
+  same as the admin side.
+- Read only `published` pages. A draft must never reach a phone.
+
+**Check**
+1. In the console, open Static content, write the FAQ in English, publish it.
+2. In the app, open Settings, then FAQ. The console's FAQ shows instead of the bundled one.
+3. Switch the app to Sinhala: the English FAQ shows with "not yet in your language".
+4. Publish Privacy. A "Privacy" row appears in the app's Settings and opens the page.
