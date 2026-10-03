@@ -639,3 +639,34 @@ Keep `translations` as it is; the console reads the title and body from there.
 **Check**
 Send a notification to one collection point, open Notifications: the row shows the audience
 ("Chosen suppliers (n)", or the point's name once #14 is done) and who sent it.
+
+---
+
+## 16. Seeded bills have an empty factory snapshot
+
+**Priority:** Low. The app now works around it; the data is still wrong.
+
+**What is wrong**
+`apps/api/prisma/seed/history.ts` inserts every bill with `factory_snapshot = '{}'::jsonb`
+(around lines 108 and 205). A bill's slip reads the factory name, telephone, registration number and
+location from that snapshot, so the app's bill header showed blanks and **"Save as PDF" crashed**
+(`Cannot read property 'toUpperCase' of undefined`).
+
+The app now fills any empty field from the factory's current config, so both work again, but a
+slip should carry the details it was issued under.
+
+**What to do**
+1. In `history.ts`, write the real snapshot instead of `'{}'`: read the factory row once and insert
+   `{"name", "telephone", "regNo", "location"}` (camelCase keys, as `bill.mapper.ts` reads them).
+2. Fix the bills already seeded on staging (one statement):
+   ```sql
+   UPDATE bills b
+      SET factory_snapshot = jsonb_build_object(
+            'name', f.name, 'telephone', f.telephone, 'regNo', f.reg_no, 'location', f.location)
+     FROM factories f
+    WHERE f.id = b.factory_id AND b.factory_snapshot = '{}'::jsonb;
+   ```
+3. Wherever real bills are created later (the factory sync), always write the snapshot. Never `{}`.
+
+**Check**
+`GET /v1/bills/<month>` returns `factory.name` and the other three fields filled.
