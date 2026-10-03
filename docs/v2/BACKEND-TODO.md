@@ -709,3 +709,59 @@ slip should carry the details it was issued under.
 
 **Check**
 `GET /v1/bills/<month>` returns `factory.name` and the other three fields filled.
+
+---
+
+## 17. Promo banner: skip the ones the supplier already closed
+
+**Priority:** Medium. Today one closed banner hides every other live banner on that phone.
+
+**What is wrong**
+`GET /v1/banners/active` returns **one** banner: the most recently started live one. The app
+remembers, on the phone, every banner the supplier has closed, and never shows those again.
+So when a supplier closes the newest banner, the server keeps sending that same one, the app
+keeps hiding it, and **the other live banners are never shown to that supplier**, even though
+they were never seen.
+
+**Where**
+`apps/api/src/modules/supplier-app/supplier-content.controller.ts`, `activeBanner()`
+(around line 165).
+
+**What to do**
+Accept an optional query parameter with the ids the phone has already closed, and leave them
+out:
+
+```
+GET /v1/banners/active?lang=si&exclude=<id>,<id>,<id>
+```
+
+```ts
+async activeBanner(
+  @Query('lang') lang: string | undefined,
+  @Query('exclude') exclude: string | undefined,
+  @Req() request: Request,
+) {
+  const excluded = (exclude ?? '')
+    .split(',')
+    .map((id) => id.trim())
+    .filter((id) => UUID.test(id))   // ignore anything that is not a uuid
+    .slice(0, 100);                  // a phone never needs more
+  …
+  where: {
+    …,
+    ...(excluded.length > 0 ? { id: { notIn: excluded } } : {}),
+  },
+```
+
+Everything else stays the same: still one banner (or `null`), same shape, same "most recently
+started wins" order. Without the parameter it behaves exactly as today, so older app builds are
+unaffected.
+
+**The app already sends it.** The mobile app now calls
+`/banners/active?lang=…&exclude=…` with the ids it has closed. Today's API ignores the extra
+parameter (it reads only `lang`), so nothing breaks before this ships; once it ships, the next
+live banner appears with no app update.
+
+**Check**
+Publish two live banners. In the app, close the newer one, then send the app to the background
+and back: the older banner now shows. Close it too: nothing shows.
