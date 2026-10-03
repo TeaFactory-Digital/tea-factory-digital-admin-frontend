@@ -23,6 +23,7 @@ import type {
   StaticPageSlug,
 } from '@tfd/domain';
 import { apiClient } from '../api/client';
+import type { MutationAck, StatusAck } from '../api/adapters';
 import { toParams } from './params';
 
 export const staticPageEndpoints = {
@@ -34,13 +35,17 @@ export const staticPageEndpoints = {
   list: () =>
     apiClient.get<AdminStaticPage[]>('/admin/static-pages').then((response) => response.data),
 
-  get: (slug: StaticPageSlug) =>
-    apiClient.get<AdminStaticPage>(`/admin/static-pages/${slug}`).then((response) => response.data),
+  /**
+   * **No `GET /admin/static-pages/{slug}`** (gap **G-07**), and nothing here needs one:
+   * the set is six pages, `list` returns all of them written or not, and the editor picks
+   * its page out of that. A per-slug fetch would be a second round trip for a row the
+   * screen is already holding.
+   */
 
   /** One language at a time, for the same reason as M11 — see `news.ts`. */
   saveTranslation: (slug: StaticPageSlug, lang: LanguageCode, body: ContentTranslationBody) =>
     apiClient
-      .put<AdminStaticPage>(`/admin/static-pages/${slug}/translations/${lang}`, body)
+      .put<MutationAck>(`/admin/static-pages/${slug}/translations/${lang}`, body)
       .then((response) => response.data),
 
   /** The server's resolution, so the console never previews its own fallback (AC-08). */
@@ -52,6 +57,6 @@ export const staticPageEndpoints = {
   /** `422 fallback-translation-missing` · `409 already-published`. */
   publish: (slug: StaticPageSlug) =>
     apiClient
-      .post<AdminStaticPage>(`/admin/static-pages/${slug}/publish`, {})
+      .post<StatusAck>(`/admin/static-pages/${slug}/publish`, {})
       .then((response) => response.data),
 };

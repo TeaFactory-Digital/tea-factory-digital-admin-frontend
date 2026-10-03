@@ -38,12 +38,25 @@ interface AuthBridge {
   refresh: () => Promise<string | null>;
   /** Called when refresh fails: clear the session and route to sign-in. */
   onSessionLost: () => void;
+  /**
+   * Called when the API refuses because BR-008 is outstanding.
+   *
+   * **This is a recovery path, not the main one.** The flag arrives on sign-in and the
+   * store keeps it. But `POST /admin/auth/refresh` does not report it, and the console
+   * bootstraps from a rotation on every page load, so a reload loses it: the console
+   * would let the clerk in and the API would then refuse everything with nothing on
+   * screen explaining why.
+   *
+   * Raising the flag from the refusal itself closes that hole wherever it appears.
+   */
+  onPasswordChangeRequired: () => void;
 }
 
 let authBridge: AuthBridge = {
   getAccessToken: () => null,
   refresh: async () => null,
   onSessionLost: () => {},
+  onPasswordChangeRequired: () => {},
 };
 
 export function setAuthBridge(bridge: AuthBridge): void {
@@ -170,7 +183,18 @@ apiClient.interceptors.response.use(
       authBridge.onSessionLost();
     }
 
-    throw normalizeError(error);
+    const normalized = normalizeError(error);
+
+    /*
+     * Not swallowed, only noticed. The caller still sees the refusal, because a screen
+     * that asked for something and was refused should know; raising the flag is what
+     * puts the screen that resolves it in front of the clerk.
+     */
+    if (normalized.code === 'password-change-required') {
+      authBridge.onPasswordChangeRequired();
+    }
+
+    throw normalized;
   },
 );
 

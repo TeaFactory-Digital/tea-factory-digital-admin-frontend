@@ -104,7 +104,12 @@ describe('M18 tea packet requests', () => {
      * assume there must be. If tea packets ever grow an eligibility rule, this case is
      * what fails first.
      */
-    const decided = await teaPacketRepository.approve(row.id, { note: NOTE });
+    const ack = await teaPacketRepository.approve(row.id, { note: NOTE });
+    expect(ack.status).toBe('approved');
+
+    // Read back — `{ id, status }` on the wire (gap **G-11**), and `get` sweeps the list
+    // because there is no `GET /admin/tea-packet-requests/{id}` (gap **G-06**).
+    const decided = await teaPacketRepository.get(row.id);
 
     expect(decided.status).toBe('approved');
     expect(decided.decision?.note).toBe(NOTE);

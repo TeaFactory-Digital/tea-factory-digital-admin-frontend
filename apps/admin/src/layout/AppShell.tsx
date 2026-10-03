@@ -13,7 +13,6 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardRepository } from '@/services/repositories/dashboardRepository';
 import { qk } from '@/query/queryKeys';
-import { env } from '@/config/env';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { Notice, Spinner } from '@/components/ui/states';
 import { formatDate, formatDateTime } from '@/lib/format';
@@ -44,10 +43,12 @@ export function AppShell() {
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
 
-        {/* Both notices are deliberately impossible to miss and impossible to
-            dismiss. A console silently serving fixtures, or silently showing
-            stale branding and flags, is worse than a permanent banner. */}
-        {env.useMock ? <Notice tone="warning">{t('shell.mockBanner')}</Notice> : null}
+        {/* Impossible to miss and impossible to dismiss. A console silently showing
+            stale branding and flags is worse than a permanent banner.
+
+            The mock banner that used to sit beside this one is gone with the mock
+            itself — there is no longer a state in which this console serves fixtures,
+            so there is nothing to warn about. */}
         {degraded ? <Notice tone="error">{t('shell.degradedConfig')}</Notice> : null}
 
         {/**

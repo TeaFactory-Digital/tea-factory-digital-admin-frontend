@@ -111,7 +111,8 @@ switch to it.
 
 | Command              |                                                                  |
 | -------------------- | ---------------------------------------------------------------- |
-| `npm run dev`        | Dev server, mock API on                                          |
+| `npm run dev`        | Dev server against a **local** API on `:3000`                    |
+| `npm run dev:staging`| Dev server against the **deployed staging** API                  |
 | `npm run build`      | Production bundle                                                |
 | `npm run build:demo` | Demo bundle — production build, mock API on, for preview hosting |
 | `npm run typecheck`  | `tsc --build`, all three projects                                |
@@ -119,6 +120,44 @@ switch to it.
 | `npm run test`       | Vitest — 351 tests                                               |
 | `npm run e2e`        | Playwright — 29 specs (`npx playwright install chromium` once)    |
 | `npm run e2e:demo`   | The same specs against the built demo bundle                     |
+
+### Running against staging
+
+```sh
+npm run dev:staging       # -> http://localhost:5273, talking to the deployed API
+```
+
+The dev server prints which API it is talking to on startup, so there is never a
+question of which one is running:
+
+```
+npm run dev            ->  API target  http://localhost:3000/v1
+npm run dev:staging    ->  API target  https://tfd-api-fja1.onrender.com/v1
+```
+
+Config lives in `apps/admin/.env.staging`, committed on purpose: it holds a public URL
+and a tenant slug, nothing secret. The console calls staging **directly**, the way a
+deployed console would, which is also the only arrangement that exercises the real
+preflight and the real cross-site refresh cookie.
+
+Sign in on tenant `galaboda`. Which account matters:
+
+| Account | Use it for |
+| --- | --- |
+| `manager@galaboda.lk` | the queues: credit, change requests, tea packets, inquiries |
+| `manager2@galaboda.lk` | the second pair of eyes, for four-eyes approval |
+| `clerk@galaboda.lk` | the clerk's narrower view |
+| `admin@galaboda.lk` | users, content and config only |
+
+⚠️ **The admin account cannot open the credit queue.** That is `factoryAdmin` correctly
+having no money capability (§12.1), not a bug. Use `manager` for anything in a queue.
+
+**The first request after a quiet period takes about 33 seconds.** Staging is a free
+Render instance and it sleeps when idle, so `.env.staging` sets a 45s timeout where local
+uses 20s. If the first page load seems to hang, it is the box waking up. Accepted while
+we are pre-users; it goes away on a paid instance.
+
+See `docs/v2/BACKEND-API-GAPS.md` for the integration record.
 
 ---
 

@@ -5,7 +5,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { applyTheme, brandForTenant, createTheme } from '@tfd/brand';
-import { assertEnvUsable, env } from '@/config/env';
+import { assertEnvUsable } from '@/config/env';
 import { tenantId } from '@/config/tenant';
 import { connectAuthToTransport } from '@/auth/authStore';
 import { App } from '@/app/App';
@@ -37,38 +37,20 @@ applyTheme(document.documentElement, createTheme('light', brandForTenant(tenantI
 connectAuthToTransport();
 
 /**
- * 4. Start the mock, if it is on, and **await it** before rendering.
+ * 4. Render.
  *
- * Without the await, the first requests race the service worker's registration
- * and fall through to a domain nobody owns — which looks exactly like the backend
- * being down.
- *
- * The `import.meta.env.DEV` guard is not redundant with `env.useMock`. Vite
- * replaces it with a literal `false` in a normal production build, so the whole
- * branch and the ~300 kB MSW chunk behind it are eliminated rather than shipped
- * as a lazy chunk nobody loads.
- *
- * The demo build (`npm run build:demo`) is the one exception. It is spelled
- * `import.meta.env.MODE === 'demo'` inline rather than `env.demoMode` so it stays
- * a *literal* the bundler can fold: in a normal production build this whole
- * condition collapses to `false` and the MSW chunk disappears as before. Reading
- * the flag off the `env` object instead would leave the branch un-foldable and
- * emit the chunk into every production `dist`.
+ * **Nothing is intercepted any more.** Every request on this page reaches the API at
+ * `VITE_API_BASE_URL`; there is no in-browser mock, no demo build and no `VITE_USE_MOCK`.
+ * The fixtures survive in `services/mocks/handlers.ts` for Vitest alone, where answering
+ * from a fixture is the point — but a running console that served them would be
+ * indistinguishable from a working one, which is the worst outcome available to an office
+ * that trusts what it sees.
  */
-async function start() {
-  if ((import.meta.env.DEV || import.meta.env.MODE === 'demo') && env.useMock) {
-    const { startMockWorker } = await import('@/services/mocks/browser');
-    await startMockWorker();
-  }
+const container = document.getElementById('root');
+if (!container) throw new Error('#root is missing from index.html');
 
-  const container = document.getElementById('root');
-  if (!container) throw new Error('#root is missing from index.html');
-
-  createRoot(container).render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
-  );
-}
-
-void start();
+createRoot(container).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);

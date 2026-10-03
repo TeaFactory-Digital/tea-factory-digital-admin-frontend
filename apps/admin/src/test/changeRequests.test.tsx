@@ -65,9 +65,17 @@ describe('M9 approve (AC-02, AC-09)', () => {
     const supplierBefore = await supplierRepository.get(before.supplierId);
     expect(supplierBefore.savingsPerKg).not.toBe(requested);
 
-    const after = await changeRequestRepository.approve('chg-2', {
+    const ack = await changeRequestRepository.approve('chg-2', {
       note: 'Rate change confirmed with the supplier at the counter.',
     });
+    expect(ack.status).toBe('approved');
+
+    /**
+     * Read back, because the decision response is `{ id, status }` (gap **G-11**) — who
+     * decided it and on what note lives on the record, and `get` sweeps the list for it
+     * since there is no `GET /admin/change-requests/{id}` (gap **G-06**).
+     */
+    const after = await changeRequestRepository.get('chg-2');
 
     expect(after.status).toBe('approved');
     expect(after.decision?.decidedByName).toBe('Nadeeka Perera');
@@ -95,8 +103,10 @@ describe('M9 approve (AC-02, AC-09)', () => {
     const supplierBefore = await supplierRepository.get(before.supplierId);
 
     const note = 'The requested method needs bank details on file first.';
-    const after = await changeRequestRepository.reject('chg-3', { note });
+    const ack = await changeRequestRepository.reject('chg-3', { note });
+    expect(ack.status).toBe('rejected');
 
+    const after = await changeRequestRepository.get('chg-3');
     expect(after.status).toBe('rejected');
     expect(after.decision?.note).toBe(note);
 
@@ -320,9 +330,12 @@ describe('server-side capability enforcement', () => {
   it('lets a manager decide a change request the clerk did not raise', async () => {
     await signInAs(MANAGER);
 
-    const decided = await changeRequestRepository.approve('chg-6', {
+    const ack = await changeRequestRepository.approve('chg-6', {
       note: 'Clerk raised this at the counter; verified against the passbook.',
     });
+    expect(ack.status).toBe('approved');
+
+    const decided = await changeRequestRepository.get('chg-6');
     expect(decided.status).toBe('approved');
     expect(decided.decision?.decidedByName).toBe('Ruwan Jayasuriya');
   });

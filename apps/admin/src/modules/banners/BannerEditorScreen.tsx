@@ -49,6 +49,7 @@ import { cn } from '@/lib/cn';
 import { LanguageStrip } from '@/modules/content/LanguageStrip';
 import { PreviewPanel } from '@/modules/content/PreviewPanel';
 import { useContentLanguages } from '@/modules/content/hooks';
+import { ImageField } from '@/components/ui/ImageField';
 import { BannerActionField } from './BannerActionField';
 import { BannerTranslationEditor } from './BannerTranslationEditor';
 import {
@@ -103,6 +104,17 @@ export function BannerEditorScreen() {
   const [draftAction, setDraftAction] = useState<BannerAction | null>(null);
   const [draftStartsAt, setDraftStartsAt] = useState<string | null>(null);
   const [draftEndsAt, setDraftEndsAt] = useState<string | null>(null);
+  /**
+   * The artwork, held as the **attachment id** the server will resolve.
+   *
+   * `undefined` means untouched, `null` means the editor took the picture off, and a
+   * record means they chose a new one. Three states rather than two, because "leave it
+   * alone" and "remove it" are different instructions and a nullable field alone cannot
+   * say which one an editor meant.
+   */
+  const [draftImage, setDraftImage] = useState<
+    { attachmentId: string; aspectRatio: number } | null | undefined
+  >(undefined);
 
   if (banner.isPending) {
     return (
@@ -126,7 +138,10 @@ export function BannerEditorScreen() {
   const actionProblem = bannerActionProblem(action);
   const windowBackwards = endsAt !== '' && endsAt < startsAt;
   const settingsDirty =
-    draftAction !== null || draftStartsAt !== null || draftEndsAt !== null;
+    draftAction !== null ||
+    draftStartsAt !== null ||
+    draftEndsAt !== null ||
+    draftImage !== undefined;
 
   /**
    * Where the banner is in its window **as the server last computed it**.
@@ -157,10 +172,22 @@ export function BannerEditorScreen() {
         action,
         startsAt: new Date(startsAt).toISOString(),
         endsAt: endsAt ? new Date(endsAt).toISOString() : null,
+        /*
+         * Sent only when touched. Spreading an `undefined` would put the key on the body
+         * with no value, and a server reading "present" as "set this" would blank the
+         * artwork of every banner whose window somebody nudged.
+         */
+        ...(draftImage === undefined
+          ? {}
+          : {
+              imageAttachmentId: draftImage?.attachmentId ?? null,
+              imageAspectRatio: draftImage?.aspectRatio ?? null,
+            }),
       });
       setDraftAction(null);
       setDraftStartsAt(null);
       setDraftEndsAt(null);
+      setDraftImage(undefined);
       toast.success(t('banners.settingsSaved'));
     } catch (cause) {
       toast.error(t('banners.settingsSaveFailed'), t(errorMessageKey(cause)));
@@ -297,6 +324,22 @@ export function BannerEditorScreen() {
               description={t('banners.settingsDescription')}
             />
             <CardBody className="flex flex-col gap-md">
+              {/* Artwork first: it is the thing a reader sees before any copy, and an
+                  editor checking a banner looks at the picture before the window. */}
+              <ImageField
+                label={t('uploads.artwork')}
+                entity="banner"
+                entityId={data.id}
+                currentUrl={data.imageUrl ?? null}
+                onChange={setDraftImage}
+                disabled={!canWrite}
+                hint={t('uploads.hint', { max: 5 })}
+                // Banner artwork is full-width in the app, so a wide frame here is what
+                // the editor will actually get. A square preview would flatter a picture
+                // that is about to be cropped.
+                previewClassName="aspect-[3/1]"
+              />
+
               <BannerActionField
                 value={action}
                 onChange={setDraftAction}

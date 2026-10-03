@@ -403,7 +403,12 @@ export type ContentTranslationInput = z.infer<typeof contentTranslationSchema>;
  * editor is looking at the form, not at a response.
  */
 export const newsArticleDraftSchema = z.object({
-  coverImageUrl: z.string().url('validation.url').optional().or(z.literal('')),
+  /*
+   * An id, not a URL, so there is no `.url()` to check. The value never comes from an
+   * editor's keyboard: it is minted by `POST /admin/uploads/sign` and handed straight
+   * through by `ImageField`, so the shape that matters is "the server issued this".
+   */
+  coverImageAttachmentId: z.string().min(1).optional(),
   translations: z
     .array(contentTranslationSchema.extend({ lang: languageCodeSchema }))
     .min(1, 'validation.required')

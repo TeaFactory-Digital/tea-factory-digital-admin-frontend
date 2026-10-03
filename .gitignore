@@ -16,3 +16,8 @@ blob-report/
 .playwright/
 .vercel
 .env*
+
+# Committed on purpose, like .env.development: a public staging URL and a tenant slug,
+# nothing secret. Testing against the deployed API should need no local setup.
+!.env.staging
+!apps/admin/.env.staging

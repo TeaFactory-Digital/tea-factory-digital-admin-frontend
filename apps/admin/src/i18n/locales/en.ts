@@ -88,8 +88,6 @@ export const en = {
   'shell.skipToContent': 'Skip to content',
   'shell.degradedConfig':
     'Could not reach the factory configuration — showing bundled defaults. Branding and feature flags may be out of date.',
-  'shell.mockBanner':
-    'Mock data. Nothing here is a real record, and nothing is saved past a page reload.',
   /* The accessible name of the language pill. The options inside it are *not*
      translated — see i18n/languages.ts for why. */
   'shell.language': 'Language',
@@ -141,12 +139,6 @@ export const en = {
   'auth.forgotPassword': 'Forgotten your password?',
   'auth.forgotPasswordHint':
     'Ask your factory administrator to reset it. The console cannot email a reset link.',
-  'auth.demoCredentials': 'Mock sign-in',
-  'auth.demoRole.clerk': 'Clerk — change requests, suppliers',
-  'auth.demoRole.manager': 'Manager — approves credit and change requests',
-  'auth.demoRole.editor': 'Editor — writes news and static content',
-  'auth.demoRole.factoryAdmin': 'Factory admin — publishes content',
-  'auth.demoRole.factorySystem': 'Factory system — records leaf, rates and payouts',
 
   /* ────────────────────────────── dashboard ────────────────────────────── */
   'dashboard.title': 'Dashboard',
@@ -170,6 +162,7 @@ export const en = {
   'month.stage.billsGenerated': 'Bills generated',
   'month.stage.published': 'Published',
 
+  'dashboard.figureUnavailable': 'The API is not reporting this figure yet.',
   'dashboard.queue.changeRequests': 'Change requests',
   'dashboard.queue.advanceRequests': 'Advances',
   'dashboard.queue.loanRequests': 'Loans',
@@ -332,7 +325,7 @@ export const en = {
     'This is the only time it is shown. Close this and it is gone — you would have to create another one.',
   'suppliers.resetPassword.oneTime':
     'The supplier has to choose their own password the first time they sign in with this, so it stops working once they do. Until then, anyone holding it can sign in as them.',
-  'suppliers.resetPassword.recorded': 'Recorded against {{name}}, {{when}} · audit {{audit}}.',
+  'suppliers.resetPassword.recordedBy': 'Recorded against {{name}}, {{when}}.',
   'suppliers.resetPassword.sessionsEnded': '{{count}} open sessions were ended.',
   'suppliers.resetPassword.done': 'I have written it down',
 
@@ -1158,7 +1151,7 @@ export const en = {
     'A packet has to weigh something. Set the pack size before saving.',
   'config.impact.teaPacketPolicy.negative-price': 'A packet cannot cost less than nothing.',
   'config.impact.teaPacketPolicy.bad-max':
-    'The limit per request has to be at least one packet. To close the scheme, turn the feature off instead.',
+    'The monthly limit has to be at least one packet. To close the scheme, turn the feature off instead.',
   'config.impact.creditOutstanding':
     'Suppliers still owe LKR {{amount}} on {{facility}}. Turning it off would hide that, so this cannot be saved.',
   'config.impact.surfaceRemoved':
@@ -1174,11 +1167,38 @@ export const en = {
   'config.sectionHint.teaPackets': 'What a packet is and what it costs',
   'config.sectionDescription.teaPackets':
     'The pack the store issues, its price, and the most one supplier may ask for at a time. The price is what a request is charged at when it is approved.',
+  /* BR-008 for the office, and the refusals it and uploads raise. */
+  'error.passwordUnchanged': 'That is the password you already have. Choose a different one, or keep the one you were given.',
+  'initialPassword.title': 'Choose your own password',
+  'initialPassword.body': 'This account still has the password the office issued. Set one only you know, or keep the one you were given if it is already strong.',
+  'initialPassword.next': 'New password',
+  'initialPassword.confirm': 'Type it again',
+  'initialPassword.hint': 'At least {{min}} characters.',
+  'initialPassword.tooShort': 'Use at least {{min}} characters.',
+  'initialPassword.mismatch': 'The two do not match.',
+  'initialPassword.submit': 'Save this password',
+  'initialPassword.keep': 'Keep the password I was given',
+  'error.uploadType': 'That file type cannot be used. Choose a JPEG, PNG or WebP.',
+  'error.uploadTooLarge': 'That image is too large. Choose one under 5 MB.',
+  'error.uploadNotConfigured': 'This server has no image storage set up yet, so images cannot be uploaded.',
+
+  /* Image uploads (M11 news, M12 banners). */
+  'uploads.coverImage': 'Cover image',
+  'uploads.artwork': 'Banner artwork',
+  'uploads.hint': 'JPEG, PNG or WebP, up to {{max}} MB. Large photographs cost suppliers data to receive.',
+  'uploads.uploading': 'Sending the image…',
+  'uploads.remove': 'Remove image',
+  'uploads.unavailable': 'This server has no image storage set up yet, so images cannot be uploaded. Everything else saves normally.',
+  'uploads.error.upload-type': 'That file type cannot be used. Choose a JPEG, PNG or WebP.',
+  'uploads.error.upload-too-large': 'That image is larger than {{max}} MB. Choose a smaller one.',
+  'uploads.error.upload-unreadable': 'That file is not an image the browser can read.',
+  'uploads.error.upload-failed': 'The image could not be sent. Try again.',
+
   'config.teaPackets.packGrams': 'Pack size (grams)',
   'config.teaPackets.pricePerPacket': 'Price per packet (LKR)',
-  'config.teaPackets.maxPerRequest': 'Most packets on one request',
+  'config.teaPackets.maxPerMonth': 'Most packets in one month',
   'config.teaPackets.maxHint':
-    'A stock limit, not a credit limit. A request over it can still be rejected with a note explaining the limit.',
+    'A stock limit, not a credit limit. The factory allows this many packets per supplier per calendar month, and the office can still reject a request with a note explaining the limit.',
   'config.teaPackets.flagOff':
     'Tea packets are switched off for this factory, so nothing here has any effect yet. Turn them on under Features first.',
   'config.section.payoutFile': 'Payout file',
@@ -1250,6 +1270,12 @@ export const en = {
     'You cannot change your own roles. Ask another administrator — this is what stops somebody locking themselves out halfway through a job.',
   'users.created': '{{name}} can now sign in',
   'users.createdHint': 'Tell them their password. It is all they need to sign in.',
+  'users.passwordLabel': 'First password',
+  'users.passwordOnce':
+    'This password is shown once. Write it down before closing — it cannot be read again.',
+  'users.passwordHandover':
+    'Give it to {{name}}. They sign in with {{email}} and this password, and should change it.',
+  'users.passwordDone': 'I have written it down',
   'users.confirmCreateBody': 'This will create a new console account with the selected roles.',
   'users.confirmEditBody': 'This will update the account details and access for this user.',
   'users.createFailed': 'The user was not created',
@@ -1557,7 +1583,7 @@ export const en = {
   'teaPackets.problem.title': 'Outside the factory’s policy.',
   'teaPackets.problem.no-packets': 'The request is for no packets.',
   'teaPackets.problem.not-whole': 'The store issues whole packets only.',
-  'teaPackets.problem.over-max': 'More than {{max}} packets on one request.',
+  'teaPackets.problem.over-max': 'More than {{max}} packets, which is the whole month’s allowance.',
   'teaPackets.noPolicy.title': 'No tea-packet price has been set.',
   'teaPackets.noPolicy.body':
     'These requests are priced at the bundled default of {{price}} a packet. Set the factory’s own in Configuration.',

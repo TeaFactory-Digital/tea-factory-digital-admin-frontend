@@ -27,18 +27,42 @@ import type {
   ComposeNotificationBody,
   NotificationAudience,
   NotificationCategory,
-  NotificationQuery,
   NotificationReach,
+  NotificationQuery,
   NotificationSend,
   NotificationTrigger,
   Paged,
 } from '@tfd/domain';
 import { apiClient } from '../api/client';
+import type { MutationAck } from '../api/adapters';
 import { toParams } from './params';
 
+/**
+ * What a send acknowledges with: the record's id and state, and the reach it went out to.
+ *
+ * Not the whole `NotificationSend` (gap **G-11**) — the translations it was composed from
+ * are not echoed back. The composer does not need them: it has just typed them, and what
+ * it shows afterwards is how far the message reached.
+ */
+export interface SendReceipt extends MutationAck {
+  status: NotificationSend['status'];
+  targetedSuppliers: number;
+  reachableDevices: number;
+  suppressedDevices: number;
+  suppliersWithoutDevice: number;
+}
+
 export const notificationEndpoints = {
-  /** The send log, newest first. Automatic and composed sends in one list. */
-  list: (query: NotificationQuery = {}) =>
+  /**
+   * The send log, newest first. Automatic and composed sends in one list.
+   *
+   * **Paged and filterable** — `G-09` is closed for this list. It used to answer a bare
+   * array capped at the newest 50 with the query ignored, and the cap was silent: a
+   * factory that sends daily lost sight of last month with nothing on screen saying the
+   * list had been cut, and filtering a truncated list to one category and finding three
+   * did not mean three were sent.
+   */
+  list: (query: NotificationQuery) =>
     apiClient
       .get<Paged<NotificationSend>>('/admin/notifications', { params: toParams(query) })
       .then((response) => response.data),
@@ -58,7 +82,7 @@ export const notificationEndpoints = {
   /** `409 category-disabled` for a category this tenant does not send. */
   setTrigger: (category: NotificationCategory, enabled: boolean) =>
     apiClient
-      .put<NotificationTrigger>(`/admin/notifications/triggers/${category}`, { enabled })
+      .put<MutationAck>(`/admin/notifications/triggers/${category}`, { enabled })
       .then((response) => response.data),
 
   /**
@@ -80,7 +104,5 @@ export const notificationEndpoints = {
    * `409 push-not-configured` when the tenant has the flag on and no push block.
    */
   send: (body: ComposeNotificationBody) =>
-    apiClient
-      .post<NotificationSend>('/admin/notifications', body)
-      .then((response) => response.data),
+    apiClient.post<SendReceipt>('/admin/notifications', body).then((response) => response.data),
 };

@@ -176,6 +176,17 @@ describe('M14 configuration', () => {
  * out of sight, which is exactly what happens as the copy grows long enough to need it.
  */
 describe('M11 banner editor', () => {
+  /**
+   * Skipped for a while, because the screen could not load: `GET /admin/banners/{id}` and
+   * its preview did not exist (gap **G-08**). Both are served now, so this runs again —
+   * and nothing about the assertion needed changing, which was the argument for skipping
+   * it rather than deleting it or propping it up with a fixture for a route the server
+   * did not have.
+   *
+   * The layout rule it protects: on a split pane the half that stays put is the half being
+   * *consulted*, and a preview that scrolls out of sight while the copy grows is a preview
+   * nobody can check against.
+   */
   it('scrolls the form and pins the preview', async () => {
     await signInAs(ADMIN);
     // Wrapped in a `Route`, because the screen reads `:id` from the path — rendered bare

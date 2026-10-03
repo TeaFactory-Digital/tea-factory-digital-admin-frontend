@@ -102,8 +102,6 @@ export const si: Record<TranslationKey, string> = {
   'shell.skipToContent': 'අන්තර්ගතයට යන්න',
   'shell.degradedConfig':
     'කර්මාන්තශාලා වින්‍යාසයට සම්බන්ධ විය නොහැකි විය — ඇතුළත් කර ඇති පෙරනිමි අගයන් පෙන්වයි. සන්නාමය සහ විශේෂාංග යාවත්කාලීන නොවිය හැක.',
-  'shell.mockBanner':
-    'ආදර්ශ දත්ත. මෙහි කිසිවක් සැබෑ වාර්තාවක් නොවේ, පිටුව නැවත පූරණය කළ පසු කිසිවක් ඉතිරි නොවේ.',
   /* The accessible name of the language pill. The options inside it are *not*
      translated — see i18n/languages.ts for why. */
   'shell.language': 'භාෂාව',
@@ -155,12 +153,6 @@ export const si: Record<TranslationKey, string> = {
   'auth.forgotPassword': 'මුරපදය අමතක වුණාද?',
   'auth.forgotPasswordHint':
     'එය නැවත සැකසීමට ඔබේ කර්මාන්තශාලා පරිපාලකගෙන් ඉල්ලා සිටින්න. කොන්සෝලයට නැවත සැකසීමේ සබැඳියක් තැපැල් කළ නොහැක.',
-  'auth.demoCredentials': 'ආදර්ශ පිවිසුම',
-  'auth.demoRole.clerk': 'ලිපිකරු — වෙනස් කිරීමේ ඉල්ලීම්, සැපයුම්කරුවන්',
-  'auth.demoRole.manager': 'කළමනාකරු — ණය සහ වෙනස් කිරීමේ ඉල්ලීම් අනුමත කරයි',
-  'auth.demoRole.editor': 'සංස්කාරක — පුවත් සහ ස්ථිර පිටු ලියයි',
-  'auth.demoRole.factoryAdmin': 'කර්මාන්තශාලා පරිපාලක — අන්තර්ගතය ප්‍රකාශයට පත් කරයි',
-  'auth.demoRole.factorySystem': 'කර්මාන්තශාලා පද්ධතිය — දළු, මිල සහ ගෙවීම් වාර්තා කරයි',
 
   /* ────────────────────────────── dashboard ────────────────────────────── */
   'dashboard.title': 'උපකරණ පුවරුව',
@@ -184,6 +176,7 @@ export const si: Record<TranslationKey, string> = {
   'month.stage.billsGenerated': 'බිල්පත් සාදා ඇත',
   'month.stage.published': 'ප්‍රකාශයට පත් කර ඇත',
 
+  'dashboard.figureUnavailable': 'API තවම මෙම අගය වාර්තා නොකරයි.',
   'dashboard.queue.changeRequests': 'වෙනස් කිරීමේ ඉල්ලීම්',
   'dashboard.queue.advanceRequests': 'අත්තිකාරම්',
   'dashboard.queue.loanRequests': 'ණය',
@@ -344,7 +337,7 @@ export const si: Record<TranslationKey, string> = {
     'මෙය පෙන්වන එකම අවස්ථාව මෙයයි. මෙය වසා දැමුවහොත් එය නැති වේ — ඔබට තවත් එකක් සෑදීමට සිදු වේ.',
   'suppliers.resetPassword.oneTime':
     'මෙයින් පළමු වරට පිවිසෙන විට සැපයුම්කරු තමන්ගේම මුරපදයක් තෝරාගත යුතුය, එබැවින් ඔවුන් එසේ කළ පසු මෙය ක්‍රියා විරහිත වේ. ඒ දක්වා, එය දරන ඕනෑම කෙනෙකුට ඔවුන් ලෙස පිවිසිය හැක.',
-  'suppliers.resetPassword.recorded': '{{name}} ට එරෙහිව සටහන් විය, {{when}} · විගණනය {{audit}}.',
+  'suppliers.resetPassword.recordedBy': '{{name}} ට එරෙහිව සටහන් විය, {{when}}.',
   'suppliers.resetPassword.sessionsEnded': 'විවෘත සැසි {{count}}ක් අවසන් කරන ලදී.',
   'suppliers.resetPassword.done': 'මම එය ලියාගත්තා',
 
@@ -1158,7 +1151,7 @@ export const si: Record<TranslationKey, string> = {
     'පැකට්ටුවකට බරක් තිබිය යුතුය. සුරැකීමට පෙර පැකට් ප්‍රමාණය නියම කරන්න.',
   'config.impact.teaPacketPolicy.negative-price': 'පැකට්ටුවක මිල ශුන්‍යයට වඩා අඩු විය නොහැක.',
   'config.impact.teaPacketPolicy.bad-max':
-    'එක් ඉල්ලීමකට සීමාව අවම වශයෙන් පැකට් එකක් විය යුතුය. යෝජනා ක්‍රමය වසා දැමීමට, ඒ වෙනුවට විශේෂාංගය අක්‍රිය කරන්න.',
+    'මාසික සීමාව අවම වශයෙන් පැකට් එකක් විය යුතුය. යෝජනා ක්‍රමය වසා දැමීමට, ඒ වෙනුවට විශේෂාංගය අක්‍රිය කරන්න.',
   'config.impact.creditOutstanding':
     'සැපයුම්කරුවන් තවමත් {{facility}} සඳහා රු. {{amount}} ගෙවිය යුතුව ඇත. එය අක්‍රීය කිරීමෙන් එය සැඟවෙනු ඇත, එබැවින් මෙය සුරැකිය නොහැක.',
   'config.impact.surfaceRemoved': 'සැමට වහාම මෙය මෙනුවෙන් අස් වේ, තවද යෙදුම එය ලබා දීම නවතී.',
@@ -1174,11 +1167,38 @@ export const si: Record<TranslationKey, string> = {
   'config.sectionHint.teaPackets': 'පැකට්ටුවක් යනු කුමක්ද සහ එහි මිල',
   'config.sectionDescription.teaPackets':
     'ගබඩාව නිකුත් කරන පැකට්ටුව, එහි මිල, සහ එක් සැපයුම්කරුවෙකුට වරකට ඉල්ලිය හැකි උපරිමය. ඉල්ලීමක් අනුමත වන විට අය කරන්නේ මෙම මිලයි.',
+  /* BR-008 for the office, and the refusals it and uploads raise. */
+  'error.passwordUnchanged': 'ඒක දැනටමත් ඔබට තියෙන මුරපදයමයි. වෙනත් එකක් තෝරන්න, නැත්නම් ඔබට දුන් එකම තබාගන්න.',
+  'initialPassword.title': 'ඔබේම මුරපදයක් තෝරන්න',
+  'initialPassword.body': 'මෙම ගිණුමේ තවමත් තියෙන්නේ කාර්යාලය දුන් මුරපදයයි. ඔබට පමණක් දන්නා එකක් දාන්න, නැත්නම් ඔබට දුන් එක ශක්තිමත් නම් ඒකම තබාගන්න.',
+  'initialPassword.next': 'නව මුරපදය',
+  'initialPassword.confirm': 'නැවත ටයිප් කරන්න',
+  'initialPassword.hint': 'අවම වශයෙන් අක්ෂර {{min}}ක්.',
+  'initialPassword.tooShort': 'අවම වශයෙන් අක්ෂර {{min}}ක් භාවිත කරන්න.',
+  'initialPassword.mismatch': 'දෙක ගැළපෙන්නේ නැත.',
+  'initialPassword.submit': 'මෙම මුරපදය සුරකින්න',
+  'initialPassword.keep': 'මට දුන් මුරපදයම තබාගන්න',
+  'error.uploadType': 'එම ගොනු වර්ගය භාවිත කළ නොහැක. JPEG, PNG හෝ WebP එකක් තෝරන්න.',
+  'error.uploadTooLarge': 'එම රූපය විශාල වැඩියි. 5 MB ට අඩු එකක් තෝරන්න.',
+  'error.uploadNotConfigured': 'මෙම සේවාදායකයේ රූප ගබඩාවක් තවම සකසා නැත, එබැවින් රූප උඩුගත කළ නොහැක.',
+
+  /* Image uploads (M11 news, M12 banners). */
+  'uploads.coverImage': 'ආවරණ රූපය',
+  'uploads.artwork': 'බැනර් රූපය',
+  'uploads.hint': 'JPEG, PNG හෝ WebP, වැඩිම {{max}} MB. විශාල ඡායාරූප බාගත කිරීමට සැපයුම්කරුවන්ට දත්ත වියදම් වේ.',
+  'uploads.uploading': 'රූපය යවමින්…',
+  'uploads.remove': 'රූපය ඉවත් කරන්න',
+  'uploads.unavailable': 'මෙම සේවාදායකයේ රූප ගබඩාවක් තවම සකසා නැත, එබැවින් රූප උඩුගත කළ නොහැක. අනෙක් සියල්ල සාමාන්‍ය ලෙස සුරැකේ.',
+  'uploads.error.upload-type': 'එම ගොනු වර්ගය භාවිත කළ නොහැක. JPEG, PNG හෝ WebP එකක් තෝරන්න.',
+  'uploads.error.upload-too-large': 'එම රූපය {{max}} MB ට වඩා විශාලයි. කුඩා එකක් තෝරන්න.',
+  'uploads.error.upload-unreadable': 'එම ගොනුව බ්‍රවුසරයට කියවිය හැකි රූපයක් නොවේ.',
+  'uploads.error.upload-failed': 'රූපය යැවිය නොහැකි විය. නැවත උත්සාහ කරන්න.',
+
   'config.teaPackets.packGrams': 'පැකට් ප්‍රමාණය (ග්‍රෑම්)',
   'config.teaPackets.pricePerPacket': 'පැකට්ටුවක මිල (රු.)',
-  'config.teaPackets.maxPerRequest': 'එක් ඉල්ලීමකට උපරිම පැකට් ගණන',
+  'config.teaPackets.maxPerMonth': 'එක් මාසයකට උපරිම පැකට් ගණන',
   'config.teaPackets.maxHint':
-    'මෙය තොග සීමාවකි, ණය සීමාවක් නොවේ. එය ඉක්මවූ ඉල්ලීමක් සීමාව පැහැදිලි කරන සටහනක් සමඟ ප්‍රතික්ෂේප කළ හැක.',
+    'මෙය තොග සීමාවකි, ණය සීමාවක් නොවේ. එක් සැපයුම්කරුවෙකුට එක් දින දර්ශන මාසයකට කර්මාන්තශාලාව අනුමත කරන පැකට් ගණන මෙයයි. සීමාව පැහැදිලි කරන සටහනක් සමඟ ඉල්ලීමක් ප්‍රතික්ෂේප කිරීමට කාර්යාලයට තවමත් හැකිය.',
   'config.teaPackets.flagOff':
     'මෙම කර්මාන්තශාලාව සඳහා තේ පැකට් අක්‍රියයි, එබැවින් මෙහි කිසිවක් තවම බලපාන්නේ නැත. පළමුව "විශේෂාංග" යටතේ ඒවා සක්‍රිය කරන්න.',
   'config.section.payoutFile': 'ගෙවීම් ගොනුව',
@@ -1249,6 +1269,12 @@ export const si: Record<TranslationKey, string> = {
     'ඔබට ඔබේම භූමිකා වෙනස් කළ නොහැක. වෙනත් පරිපාලකයෙකුගෙන් ඉල්ලන්න — කාර්යයක් අඩකින් නවත්වා යමෙකු තමාවම අවහිර කර ගැනීම නවත්වන්නේ මෙයයි.',
   'users.created': '{{name}} දැන් පිවිසිය හැක',
   'users.createdHint': 'ඔවුන්ගේ මුරපදය ඔවුන්ට කියන්න. පිවිසීමට අවශ්‍ය වන්නේ එය පමණි.',
+  'users.passwordLabel': 'පළමු මුරපදය',
+  'users.passwordOnce':
+    'මෙම මුරපදය පෙන්වන්නේ එක් වරක් පමණි. වැසීමට පෙර එය ලියාගන්න — නැවත කියවිය නොහැක.',
+  'users.passwordHandover':
+    '{{name}} ට එය දෙන්න. ඔවුන් {{email}} සහ මෙම මුරපදය සමඟ පිවිසෙන අතර එය වෙනස් කළ යුතුය.',
+  'users.passwordDone': 'මම එය ලියාගත්තා',
   'users.confirmCreateBody': 'තෝරාගත් භූමිකා සමඟ නව කොන්සෝල ගිණුමක් සාදනු ලැබේ.',
   'users.confirmEditBody': 'මෙම පරිශීලකයාගේ ගිණුම් විස්තර සහ ප්‍රවේශය යාවත්කාලීන කරනු ලැබේ.',
   'users.createFailed': 'පරිශීලකයා සාදනු ලැබුවේ නැත',
@@ -1551,7 +1577,7 @@ export const si: Record<TranslationKey, string> = {
   'teaPackets.problem.title': 'කර්මාන්තශාලාවේ ප්‍රතිපත්තියෙන් පිටත.',
   'teaPackets.problem.no-packets': 'ඉල්ලීම පැකට් කිසිවක් සඳහා නොවේ.',
   'teaPackets.problem.not-whole': 'ගබඩාව නිකුත් කරන්නේ සම්පූර්ණ පැකට් පමණි.',
-  'teaPackets.problem.over-max': 'එක් ඉල්ලීමකට පැකට් {{max}}කට වඩා වැඩියි.',
+  'teaPackets.problem.over-max': 'පැකට් {{max}}කට වඩා වැඩියි. එය මුළු මාසයේම දීමනාවයි.',
   'teaPackets.noPolicy.title': 'තේ පැකට් මිලක් තවම නියම කර නැත.',
   'teaPackets.noPolicy.body':
     'මෙම ඉල්ලීම් මිල ගණන් කරන්නේ පැකට්ටුවකට {{price}} යන පෙරනිමි අගය අනුවයි. කර්මාන්තශාලාවේම මිල "වින්‍යාසය" යටතේ ඇතුළත් කරන්න.',

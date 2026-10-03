@@ -18,9 +18,16 @@ import type {
   TeaPacketRequestQuery,
 } from '@tfd/domain';
 import { apiClient } from '../api/client';
+import type { StatusAck } from '../api/adapters';
 import { toParams } from './params';
 
 export const teaPacketEndpoints = {
+  /** One request, decided or not — a bookmarked link must open (**G-06**, now served). */
+  get: (id: string) =>
+    apiClient
+      .get<AdminTeaPacketRequest>(`/admin/tea-packet-requests/${id}`)
+      .then((response) => response.data),
+
   list: (query: TeaPacketRequestQuery) =>
     apiClient
       .get<Paged<AdminTeaPacketRequest>>('/admin/tea-packet-requests', {
@@ -28,10 +35,7 @@ export const teaPacketEndpoints = {
       })
       .then((response) => response.data),
 
-  get: (id: string) =>
-    apiClient
-      .get<AdminTeaPacketRequest>(`/admin/tea-packet-requests/${id}`)
-      .then((response) => response.data),
+  /** One request, by id. Absent for a while (gap **G-06**), so the repository swept the list. */
 
   /**
    * `409 four-eyes-violation` when the approver raised the request at the counter
@@ -44,11 +48,11 @@ export const teaPacketEndpoints = {
    */
   approve: (id: string, body: DecisionBody) =>
     apiClient
-      .post<AdminTeaPacketRequest>(`/admin/tea-packet-requests/${id}/approve`, body)
+      .post<StatusAck>(`/admin/tea-packet-requests/${id}/approve`, body)
       .then((response) => response.data),
 
   reject: (id: string, body: DecisionBody) =>
     apiClient
-      .post<AdminTeaPacketRequest>(`/admin/tea-packet-requests/${id}/reject`, body)
+      .post<StatusAck>(`/admin/tea-packet-requests/${id}/reject`, body)
       .then((response) => response.data),
 };

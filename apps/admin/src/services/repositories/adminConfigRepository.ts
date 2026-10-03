@@ -31,6 +31,11 @@ function currentOf(config: RuntimeConfig) {
 }
 
 export const adminConfigRepository = {
+  /**
+   * One request. It was two while `GET /admin/config` omitted the factory identity and the
+   * collection points (**G-16**) and they had to be filled from the public projection of
+   * the same row; the API carries the whole row now.
+   */
   get: (): Promise<AdminConfigResponse> => adminConfigEndpoints.get(),
 
   /**

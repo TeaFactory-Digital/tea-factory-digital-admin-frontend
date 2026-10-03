@@ -24,7 +24,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyRound } from 'lucide-react';
-import { IDENTITY_CHECK_MIN, formatSupplierPassword, type SupplierCredentialReset } from '@tfd/domain';
+import {
+  IDENTITY_CHECK_MIN,
+  formatSupplierPassword,
+  type SupplierCredentialReset,
+} from '@tfd/domain';
 import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -70,6 +74,7 @@ export function ResetPasswordDialog({
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [issued, setIssued] = useState<SupplierCredentialReset | null>(null);
+
 
   const suggestions: NoteSuggestion[] = IDENTITY_SUGGESTIONS.map((slug) => ({
     label: t(`suppliers.resetPassword.identitySuggest.${slug}`),
@@ -157,6 +162,9 @@ export function ResetPasswordDialog({
             </p>
 
             <p className="text-caption text-text-secondary">
+              {/* The server's own attribution — who issued it, when, and the audit row
+                  it wrote. The console used to have to guess the first two from the
+                  signed-in session and could not know the third at all (G-04). */}
               {t('suppliers.resetPassword.recorded', {
                 name: issued.issuedByName,
                 when: formatDateTime(issued.issuedAt),

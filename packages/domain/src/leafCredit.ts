@@ -20,7 +20,7 @@
 import { LIMIT_MULTIPLIER, REQUIRED_MONTHS_OF_HISTORY } from './constants';
 import type { CreditRule } from './creditRules';
 import { floor2, round2 } from './money';
-import type { CreditEligibility } from './types/admin';
+import type { CreditEligibilityWorking } from './types/admin';
 import type { CreditFacility, GreenLeafBill } from './types/app';
 
 /** Newest month first; the first entry is the month in progress. */
@@ -234,7 +234,7 @@ export function buildCreditEligibility({
   multiplier = LIMIT_MULTIPLIER,
   requiredMonths = REQUIRED_MONTHS_OF_HISTORY,
   rule,
-}: CreditEligibilityInput): CreditEligibility {
+}: CreditEligibilityInput): CreditEligibilityWorking {
   const current = billsNewestFirst(bills)[0] ?? null;
   const settled = lastSettledBill(bills) ?? null;
   const months = monthsOfHistory(bills);
@@ -275,6 +275,12 @@ export function buildCreditEligibility({
     reasonKey,
 
     monthsOfHistory: months,
+    /**
+     * Derived **here**, from the two counts immediately around it, so no client has to
+     * compare them itself. Two readers deriving one boolean is two chances to disagree,
+     * and this is the field the app gates a whole form on.
+     */
+    hasRequiredHistory: months >= effectiveRequiredMonths,
     /**
      * `0` for an advance under the **hard-coded** formula — not "unset", but "no months
      * are required". Under a configured rule the number is simply whatever the factory

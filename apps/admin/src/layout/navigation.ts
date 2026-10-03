@@ -85,8 +85,19 @@ export interface NavItem {
    * summed — the credit row is three queues behind one link, and a badge showing
    * only the advances would under-report the inbox it opens.
    */
-  queue?: QueueKey | QueueKey[];
+  queue?: DashboardQueueKey | DashboardQueueKey[];
 }
+
+/**
+ * The queue keys this console can render a card for.
+ *
+ * `QueueKey` names the three credit facilities separately, and the API counts them as
+ * one (`creditRequests`, gap **G-12**) — which for the badge is the truer figure anyway,
+ * since M7 is three facilities behind a single link. Widening the type here rather than
+ * splitting the count into thirds is what keeps the badge honest: a card labelled
+ * *Advances* over a number that includes loans would under-report the screen it opens.
+ */
+export type DashboardQueueKey = QueueKey | 'creditRequests';
 
 /** Every flag a row needs, as a list, so callers do not branch on the shape. */
 export function flagsOf(item: NavItem): FeatureFlagName[] {
@@ -95,7 +106,7 @@ export function flagsOf(item: NavItem): FeatureFlagName[] {
 }
 
 /** Every queue a row's badge counts. */
-export function queuesOf(item: NavItem): QueueKey[] {
+export function queuesOf(item: NavItem): DashboardQueueKey[] {
   if (!item.queue) return [];
   return Array.isArray(item.queue) ? item.queue : [item.queue];
 }
@@ -147,7 +158,10 @@ export const NAVIGATION: NavSection[] = [
         // then offers only the facilities that are on, and the API refuses the
         // rest with `feature-disabled` (AC-07).
         flag: ['enableAdvances', 'enableLoans', 'enableManure'],
-        queue: ['advanceRequests', 'loanRequests', 'manureRequests'],
+        // `creditRequests` beside the three: the API sends the combined count under
+        // that key, and the per-facility keys stay so a future API that splits them
+        // still finds this row.
+        queue: ['creditRequests', 'advanceRequests', 'loanRequests', 'manureRequests'],
       },
       {
         /**

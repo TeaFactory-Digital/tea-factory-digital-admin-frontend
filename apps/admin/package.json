@@ -7,12 +7,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:demo": "vite build --mode demo",
     "preview": "vite preview",
     "typecheck": "tsc --build --force",
     "test": "vitest run",
     "test:watch": "vitest",
-    "mock:init": "msw init public --save"
+    "mock:init": "msw init public --save",
+    "dev:staging": "vite --mode staging"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -54,10 +54,5 @@
     "tailwindcss": "^4.1.16",
     "vite": "^7.1.12",
     "vitest": "^3.2.4"
-  },
-  "msw": {
-    "workerDirectory": [
-      "public"
-    ]
   }
 }

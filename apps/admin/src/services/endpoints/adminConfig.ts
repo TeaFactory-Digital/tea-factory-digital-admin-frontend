@@ -17,9 +17,17 @@
 import type { ConfigPatch, ConfigUsage, RuntimeConfig } from '@tfd/domain';
 import { apiClient } from '../api/client';
 
+/**
+ * The authenticated row plus the usage counts — **the whole `RuntimeConfig`**.
+ *
+ * It briefly omitted `tenantId`, `factory` and `collectionPoints` (gap **G-16**), which
+ * took the Configuration screen down on `config.collectionPoints.map`. The API sends all
+ * three now, so the repository no longer has to fetch the public projection to fill them.
+ */
 export interface AdminConfigResponse {
   config: RuntimeConfig;
   usage: ConfigUsage;
+  version?: string;
 }
 
 export const adminConfigEndpoints = {
@@ -42,5 +50,7 @@ export const adminConfigEndpoints = {
    * ```
    */
   patch: (patch: ConfigPatch) =>
-    apiClient.patch<AdminConfigResponse>('/admin/config', patch).then((response) => response.data),
+    apiClient
+      .patch<AdminConfigResponse>('/admin/config', patch)
+      .then((response) => response.data),
 };

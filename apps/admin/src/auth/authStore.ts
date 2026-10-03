@@ -16,7 +16,6 @@ import type { AuthSession, CapabilityGrants, ConsoleUser } from '@tfd/domain';
 import { can as canDo, type AccessLevel, type Capability } from '@tfd/domain';
 import { authRepository } from '@/services/repositories/authRepository';
 import { setAuthBridge } from '@/services/api/client';
-import { isApiError } from '@/services/api/errors';
 
 /**
  * No `mfaRequired` between `anonymous` and `authenticated` any more: the second factor
@@ -32,12 +31,67 @@ interface AuthState {
   accessToken: string | null;
   expiresAt: string | null;
 
+  /**
+   * BR-008: this account still has the password the office issued.
+   *
+   * A signed-in state, not a refused one. The API issues a token and then blocks every
+   * path except the handful that can clear the flag, so the console is authenticated and
+   * has exactly one screen it may show.
+   */
+  owesPasswordChange: boolean;
+
   bootstrap: () => Promise<void>;
   login: (email: string, password: string) => Promise<AuthStatus>;
   logout: () => Promise<void>;
   /** Used by the transport's 401 handler. Returns a fresh token, or null. */
   refresh: () => Promise<string | null>;
   clear: () => void;
+
+  /**
+   * Raise the flag from somewhere other than sign-in.
+   *
+   * **This exists because `POST /admin/auth/refresh` does not report it.** The console
+   * bootstraps from a rotation on every page load, so a clerk who reloads while owing a
+   * change comes back with the flag lost: the console would let them in and the API would
+   * then refuse every request, with nothing on screen saying why.
+   *
+   * The transport calls this when any response carries `password-change-required`, which
+   * turns that dead end into the screen that resolves it. See `BACKEND-API-GAPS.md`.
+   */
+  noteOwesPasswordChange: () => void;
+  /** Cleared locally once the API has accepted the new password, or the decision to keep. */
+  clearOwesPasswordChange: () => void;
+}
+
+/**
+ * The rotation in flight, if any — **one at a time, shared by every caller.**
+ *
+ * The refresh token is **single-use**: the API rotates it on every call and treats a
+ * second presentation of a spent one as *reuse*, which revokes the whole family. So two
+ * concurrent rotations do not merely waste a round trip, they sign the clerk out.
+ *
+ * There are two ways to get two. `App` calls `bootstrap()` from an effect and React's
+ * `StrictMode` invokes effects twice in development — which produced exactly this: two
+ * `POST /admin/auth/refresh` on every page load, the second `401`, the family revoked,
+ * and the console back on the sign-in screen after every reload. The other way is a
+ * burst of screens each hitting a `401` at the same moment.
+ *
+ * It stayed invisible until the API's cookie path was fixed, because before that every
+ * refresh failed anyway and there was nothing to race.
+ */
+/** What a rotation answers: the session, and whether BR-008 is still outstanding. */
+type Rotation = { session: AuthSession; passwordChangeRequired: boolean };
+
+let rotating: Promise<Rotation | null> | null = null;
+
+function rotateOnce(): Promise<Rotation | null> {
+  rotating ??= authRepository
+    .refresh()
+    .catch(() => null)
+    .finally(() => {
+      rotating = null;
+    });
+  return rotating;
 }
 
 const anonymous = {
@@ -46,28 +100,48 @@ const anonymous = {
   grants: {} as CapabilityGrants,
   accessToken: null,
   expiresAt: null,
+  // Cleared with the session: the flag belongs to the account somebody was signed in as,
+  // and leaving it raised would greet the next person at this machine with a password
+  // screen for an account they are not using.
+  owesPasswordChange: false,
 };
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   ...anonymous,
   status: 'bootstrapping',
 
+  /**
+   * **One round trip, not two.**
+   *
+   * The rotation answers with the whole session — token, user and grants — because the
+   * API re-resolves grants on every refresh. A follow-up `GET /admin/auth/me` would ask
+   * for a payload already in hand, and would do it on the critical path of the first
+   * paint after every reload.
+   */
   bootstrap: async () => {
-    try {
-      const { accessToken, expiresAt } = await authRepository.refresh();
-      set({ accessToken, expiresAt });
-      const { user, grants } = await authRepository.me();
-      set({ status: 'authenticated', user, grants });
-    } catch {
-      // No refresh cookie, or it has expired. Not an error — it is the normal
-      // state of a browser that has never signed in.
-      set({ ...anonymous });
+    const rotation = await rotateOnce();
+    if (rotation) {
+      applySession(set, rotation.session);
+      /*
+       * **The flag survives a reload now**, because the rotation reports it.
+       *
+       * This is the whole of what G-33 was: the console bootstraps from a rotation on
+       * every page load, so a flag that only arrived at sign-in was a flag lost the
+       * moment anybody refreshed, and the console would render a dashboard whose every
+       * panel the API then refused.
+       */
+      set({ owesPasswordChange: rotation.passwordChangeRequired });
+      return;
     }
+    // No refresh cookie, or it has expired. Not an error — it is the normal state of a
+    // browser that has never signed in.
+    set({ ...anonymous });
   },
 
   login: async (email, password) => {
-    const session = await authRepository.login(email, password);
+    const { session, passwordChangeRequired } = await authRepository.login(email, password);
     applySession(set, session);
+    set({ owesPasswordChange: passwordChangeRequired });
     return 'authenticated';
   },
 
@@ -76,19 +150,40 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ ...anonymous });
   },
 
+  noteOwesPasswordChange: () => set({ owesPasswordChange: true }),
+  clearOwesPasswordChange: () => set({ owesPasswordChange: false }),
+
   refresh: async () => {
-    try {
-      const { accessToken, expiresAt } = await authRepository.refresh();
-      set({ accessToken, expiresAt });
-      return accessToken;
-    } catch (error) {
-      // A refresh that fails for any reason other than transport is terminal:
-      // retrying it on a dropped connection would sign a clerk out because the
-      // office wifi blinked.
-      if (isApiError(error) && error.code === 'network') return get().accessToken;
-      set({ ...anonymous });
-      return null;
+    const rotation = await rotateOnce();
+    if (rotation) {
+      const session = rotation.session;
+      /**
+       * The **user and the grants too**, not only the token.
+       *
+       * The API re-resolves grants on every rotation, so this is the moment a permission
+       * change reaches a console that has been open since the morning. Setting the token
+       * alone would leave a clerk holding the grant set they signed in with — which is
+       * either a lever that 403s or a screen they should have regained.
+       */
+      applySession(set, session);
+      // A mid-session rotation reports it too, so an office that has just been told to
+      // change a password does not have to sign out to discover it.
+      set({ owesPasswordChange: rotation.passwordChangeRequired });
+      return session.accessToken;
     }
+
+    /**
+     * A dropped connection is not a dead session.
+     *
+     * `rotateOnce` swallows the reason, so the distinction is drawn from what the store
+     * still holds: a token that has not expired is worth keeping while the office wifi
+     * blinks. Anything else is terminal, and clearing is what routes to sign-in.
+     */
+    const expiresAt = get().expiresAt;
+    if (expiresAt && Date.parse(expiresAt) > Date.now()) return get().accessToken;
+
+    set({ ...anonymous });
+    return null;
   },
 
   clear: () => set({ ...anonymous }),
@@ -119,12 +214,15 @@ export function connectAuthToTransport(): void {
     getAccessToken: () => useAuthStore.getState().accessToken,
     refresh: () => useAuthStore.getState().refresh(),
     onSessionLost: () => useAuthStore.getState().clear(),
+    onPasswordChangeRequired: () => useAuthStore.getState().noteOwesPasswordChange(),
   });
 }
 
 /* ─────────────────────────────── selectors ─────────────────────────────── */
 
 export const useCurrentUser = () => useAuthStore((s) => s.user);
+/** BR-008 outstanding. The gate in `guards.tsx` is its only reader. */
+export const useOwesPasswordChange = () => useAuthStore((s) => s.owesPasswordChange);
 export const useAuthStatus = () => useAuthStore((s) => s.status);
 
 /**

@@ -72,12 +72,18 @@ describe('issuing one against the mock API', () => {
 
     expect(isWellFormedSupplierPassword(issued.password)).toBe(true);
     expect(issued.password).toHaveLength(SUPPLIER_PASSWORD_LENGTH);
-    /**
-     * **The rule that makes the whole flow safe.** The office knows this password, so it has
-     * to die the moment the supplier uses it — the app forces a change while this is true.
-     */
-    expect(issued.owesPasswordChange).toBe(true);
+    // The grouped form the counter reads aloud is the console's own — `formatSupplierPassword`
+    // in the shared package, so both realms hyphenate the same way.
+    expect(formatSupplierPassword(issued.password).replace(/-/g, '')).toBe(issued.password);
 
+    /**
+     * **The rule that makes the whole flow safe.** The office knows this password, so it
+     * has to die the moment the supplier uses it — the app forces a change while this is
+     * true.
+     *
+     * Asserted on the **record**, because the reset response carries the password, its
+     * reading form and the session count and nothing about the account (gap **G-04**).
+     */
     const detail = await supplierRepository.get(supplier.id);
     expect(detail.owesPasswordChange).toBe(true);
     expect(detail.lastPasswordResetAt).toBeTruthy();
@@ -138,8 +144,14 @@ describe('issuing one against the mock API', () => {
     const entry = audit.items.find((one) => one.action === 'supplier.credentials.reset')!;
 
     expect(entry).toBeTruthy();
-    expect(entry.id).toBe(issued.auditId);
-    expect((entry.after as { reason: string }).reason).toBe(CHECK);
+    /**
+     * The entry is found by **entity and action**, not by an id from the response.
+     *
+     * `auditId` is not on the reset payload (gap **G-04**) — which is why the dialog no
+     * longer prints an audit reference. The entry still exists and still records the
+     * identity check, which is what this asserts.
+     */
+    expect((entry.after as { identityCheckNote: string }).identityCheckNote).toBe(CHECK);
 
     // The password appears nowhere in the entry, however it were serialised.
     expect(JSON.stringify(entry)).not.toContain(issued.password);

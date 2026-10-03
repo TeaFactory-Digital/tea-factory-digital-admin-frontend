@@ -17,6 +17,12 @@ const BY_CODE: Record<string, string> = {
   'four-eyes-violation': 'error.fourEyesViolation',
   'already-decided': 'error.alreadyDecided',
   'note-required': 'error.noteRequired',
+  /* BR-008: the new password is the one already on the account. */
+  'password-unchanged': 'error.passwordUnchanged',
+  /* Uploads (M11, M12). `upload-not-configured` is a 503 about the SERVER, not the file. */
+  'upload-type': 'error.uploadType',
+  'upload-too-large': 'error.uploadTooLarge',
+  'upload-not-configured': 'error.uploadNotConfigured',
   'stale-eligibility': 'error.staleEligibility',
   invalid: 'error.invalid',
   /**

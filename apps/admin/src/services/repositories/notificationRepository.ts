@@ -24,16 +24,18 @@ import {
   type NotificationTrigger,
   type Paged,
 } from '@tfd/domain';
-import { notificationEndpoints } from '../endpoints/notifications';
+import { notificationEndpoints, type SendReceipt } from '../endpoints/notifications';
+import type { MutationAck } from '../api/adapters';
 import { ApiError } from '../api/errors';
 
 export const notificationRepository = {
+  /** Server-paged and server-filtered — see the endpoint; **G-09** is closed here. */
   list: (query: NotificationQuery = {}): Promise<Paged<NotificationSend>> =>
     notificationEndpoints.list({ page: 0, pageSize: 25, ...query }),
 
   triggers: (): Promise<NotificationTrigger[]> => notificationEndpoints.triggers(),
 
-  setTrigger: (category: NotificationCategory, enabled: boolean): Promise<NotificationTrigger> =>
+  setTrigger: (category: NotificationCategory, enabled: boolean): Promise<MutationAck> =>
     notificationEndpoints.setTrigger(category, enabled),
 
   reach: (
@@ -45,7 +47,7 @@ export const notificationRepository = {
    * `async`, so the guard **rejects** rather than throwing synchronously — the defect the
    * content suite caught in `contentRepository`, not repeated here.
    */
-  send: async (body: ComposeNotificationBody): Promise<NotificationSend> => {
+  send: async (body: ComposeNotificationBody): Promise<SendReceipt> => {
     // Checked separately from the schema so the *reason* survives. A zod enum failure
     // says "invalid enum value"; this says the app would throw the message away, which is
     // the only sentence that explains why nothing happened.

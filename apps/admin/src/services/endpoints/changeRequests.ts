@@ -11,19 +11,27 @@
  * is nearly as bad — the note is what an auditor reads six months later.
  */
 
-import type { AdminChangeRequest, ChangeRequestQuery, DecisionBody, Paged } from '@tfd/domain';
+import type {
+  AdminChangeRequest,
+  ChangeRequestQuery,
+  RequestStatus,
+  DecisionBody,
+  Paged,
+} from '@tfd/domain';
 import { apiClient } from '../api/client';
+import type { StatusAck } from '../api/adapters';
 import { toParams } from './params';
 
 export const changeRequestEndpoints = {
-  list: (query: ChangeRequestQuery) =>
-    apiClient
-      .get<Paged<AdminChangeRequest>>('/admin/change-requests', { params: toParams(query) })
-      .then((response) => response.data),
-
+  /** One request, decided or not — a bookmarked link must open (**G-06**, now served). */
   get: (id: string) =>
     apiClient
       .get<AdminChangeRequest>(`/admin/change-requests/${id}`)
+      .then((response) => response.data),
+
+  list: (query: ChangeRequestQuery) =>
+    apiClient
+      .get<Paged<AdminChangeRequest>>('/admin/change-requests', { params: toParams(query) })
       .then((response) => response.data),
 
   /**
@@ -36,11 +44,11 @@ export const changeRequestEndpoints = {
    */
   approve: (id: string, body: DecisionBody) =>
     apiClient
-      .post<AdminChangeRequest>(`/admin/change-requests/${id}/approve`, body)
+      .post<StatusAck<RequestStatus>>(`/admin/change-requests/${id}/approve`, body)
       .then((response) => response.data),
 
   reject: (id: string, body: DecisionBody) =>
     apiClient
-      .post<AdminChangeRequest>(`/admin/change-requests/${id}/reject`, body)
+      .post<StatusAck<RequestStatus>>(`/admin/change-requests/${id}/reject`, body)
       .then((response) => response.data),
 };

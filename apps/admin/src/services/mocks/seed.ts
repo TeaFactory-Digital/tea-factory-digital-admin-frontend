@@ -78,6 +78,7 @@ import {
   SRI_LANKA_BANK_OPTIONS,
   billNumberFor,
   buildCreditEligibility,
+  installmentOptionsFor,
   monthsOfHistory,
   colomboDayOf,
   computeBillAmounts,
@@ -192,6 +193,11 @@ export const MOCK_PASSWORD = 'demo1234';
 export interface MockUser extends ConsoleUser {
   password: string;
   grants: CapabilityGrants;
+  /**
+   * BR-008 for the office. Absent on every seeded user, so the gate stays out of the way
+   * of the suite; a test that is about the gate sets it first.
+   */
+  owesPasswordChange?: boolean;
 }
 
 export const mockUsers: MockUser[] = [
@@ -2318,13 +2324,39 @@ export function eligibilityFor(
     rules?: CreditRules;
   } = {},
 ): CreditEligibility {
-  return buildCreditEligibility({
-    facility,
-    bills: creditHistoryFor(supplier.id, options.deliveries),
-    outstanding: supplier.creditBalances[facility],
-    computedAt: options.computedAt ?? new Date().toISOString(),
-    rule: options.rules?.[facility],
-  });
+  /*
+   * The pure rule, then the three fields the rule cannot know.
+   *
+   * `buildCreditEligibility` answers the ceiling and its working from bills alone, which
+   * is what makes AC-05 hold. `installmentOptions`, `pendingRequestId` and `interest`
+   * come from the factory's configuration, from a query for an undecided request, and
+   * from the newest bill's carry-forward, so the server composes them on top. This
+   * fixture composes them the same way, because a fixture that answers a different shape
+   * from the wire is how a green suite says nothing about a blank screen.
+   */
+  return {
+    ...buildCreditEligibility({
+      facility,
+      bills: creditHistoryFor(supplier.id, options.deliveries),
+      outstanding: supplier.creditBalances[facility],
+      computedAt: options.computedAt ?? new Date().toISOString(),
+      rule: options.rules?.[facility],
+    }),
+    installmentOptions: [...installmentOptionsFor(options.rules, facility)],
+    /**
+     * `null`, and it is a real simplification rather than an oversight: the seed has no
+     * index of undecided requests per supplier and facility, and the field exists so the
+     * app can withhold a button the server would `409` anyway. The console does not read
+     * it.
+     */
+    pendingRequestId: null,
+    /**
+     * `0` on the wire too, for every factory. Nothing computes interest on an advance
+     * yet, so this is the carry-forward figure and it stays zero until the factory
+     * decides a basis.
+     */
+    interest: 0,
+  };
 }
 
 /** What the office actually stocks. Free text on the wire — this is the fixture's list. */

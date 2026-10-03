@@ -14,6 +14,7 @@ import {
   type TeaPacketRequestQuery,
 } from '@tfd/domain';
 import { teaPacketEndpoints } from '../endpoints/teaPackets';
+import type { StatusAck } from '../api/adapters';
 import { ApiError } from '../api/errors';
 
 /** Throws the same code the server would, so both paths render identically. */
@@ -33,15 +34,16 @@ export const teaPacketRepository = {
   list: (query: TeaPacketRequestQuery = {}): Promise<Paged<AdminTeaPacketRequest>> =>
     teaPacketEndpoints.list({ page: 0, pageSize: 25, status: 'pending', ...query }),
 
+  /** One request, by id — the list sweep this needed is gone (**G-06** closed). */
   get: (id: string): Promise<AdminTeaPacketRequest> => teaPacketEndpoints.get(id),
 
   /** `async` so a validation failure rejects rather than throwing synchronously — see M9. */
-  approve: async (id: string, body: DecisionBody): Promise<AdminTeaPacketRequest> => {
+  approve: async (id: string, body: DecisionBody): Promise<StatusAck> => {
     assertDecidable(body);
     return teaPacketEndpoints.approve(id, body);
   },
 
-  reject: async (id: string, body: DecisionBody): Promise<AdminTeaPacketRequest> => {
+  reject: async (id: string, body: DecisionBody): Promise<StatusAck> => {
     assertDecidable(body);
     return teaPacketEndpoints.reject(id, body);
   },

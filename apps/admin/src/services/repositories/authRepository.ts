@@ -8,8 +8,8 @@
  * mock layer).
  */
 
-import { resolveGrants, type AuthSession } from '@tfd/domain';
-import { authEndpoints } from '../endpoints/auth';
+import { resolveGrants, type AuthSession, type CapabilityGrants, type ConsoleRole } from '@tfd/domain';
+import { authEndpoints, type MeResponse } from '../endpoints/auth';
 
 /**
  * Fill in grants the server did not send.
@@ -23,12 +23,53 @@ function hydrate(session: AuthSession): AuthSession {
 }
 
 export const authRepository = {
-  login: async (email: string, password: string): Promise<AuthSession> => {
+  /**
+   * Sign in, and report whether BR-008 is still outstanding.
+   *
+   * The flag travels beside the session rather than inside it, because it is a fact about
+   * the *account* rather than about this token: rotating does not resolve it and signing
+   * out does not clear it. Only setting a new password, or deliberately keeping the
+   * issued one, does.
+   */
+  login: async (
+    email: string,
+    password: string,
+  ): Promise<{ session: AuthSession; passwordChangeRequired: boolean }> => {
     const result = await authEndpoints.login({ email, password });
-    return hydrate(result.session);
+    return {
+      session: hydrate(result.session),
+      // `?? false` because an older server does not send it, and a console that read
+      // `undefined` as "owes a change" would wall off an office that owes nothing.
+      passwordChangeRequired: result.passwordChangeRequired ?? false,
+    };
   },
 
-  refresh: () => authEndpoints.refresh(),
+  /** BR-008, resolved by choosing a new password. */
+  setInitialPassword: (next: string): Promise<void> =>
+    authEndpoints.setInitialPassword(next).then(() => undefined),
+
+  /** BR-008, resolved by deciding the issued password stands. */
+  keepInitialPassword: (): Promise<void> =>
+    authEndpoints.keepInitialPassword().then(() => undefined),
+
+  /**
+   * Rotate, and take the whole session back.
+   *
+   * Hydrated like `login` is, and for the same reason: the grants the API sends are
+   * authoritative where it speaks, and the shipped §12.1 matrix fills what it leaves out.
+   * A rotation that returned an un-hydrated session would quietly narrow a clerk's
+   * console fifteen minutes after they signed in, which is the hardest kind of permission
+   * bug to reproduce.
+   */
+  refresh: async (): Promise<{ session: AuthSession; passwordChangeRequired: boolean }> => {
+    const result = await authEndpoints.refresh();
+    return {
+      session: hydrate(result.session),
+      // `?? false` for a server that predates the field. A console reading `undefined` as
+      // "owes a change" would wall off an office that owes nothing.
+      passwordChangeRequired: result.passwordChangeRequired ?? false,
+    };
+  },
 
   /**
    * Sign-out never rejects.
@@ -45,8 +86,17 @@ export const authRepository = {
     }
   },
 
-  me: async () => {
+  /**
+   * The session as the API describes it, without rotating anything.
+   *
+   * **Not used on bootstrap** — `refresh` above already answers with the user and the
+   * grants, so asking again would be a second round trip for a payload the console is
+   * already holding. It is kept because it is the only way to re-read grants *without*
+   * spending a refresh token, and because `roles` is all it needs from the thin identity
+   * the endpoint returns (gap **G-03**).
+   */
+  me: async (): Promise<{ user: MeResponse['user']; grants: CapabilityGrants }> => {
     const { user, grants } = await authEndpoints.me();
-    return { user, grants: resolveGrants(user.roles, grants) };
+    return { user, grants: resolveGrants(user.roles as ConsoleRole[], grants) };
   },
 };

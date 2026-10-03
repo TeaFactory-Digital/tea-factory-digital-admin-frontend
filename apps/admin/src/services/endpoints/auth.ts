@@ -8,7 +8,7 @@
  * path would invite sharing the realm.
  */
 
-import type { CapabilityGrants, ConsoleUser, LoginResult } from '@tfd/domain';
+import type { CapabilityGrants, LoginResult } from '@tfd/domain';
 import { apiClient, withoutAuth } from '../api/client';
 
 interface LoginBody {
@@ -16,9 +16,16 @@ interface LoginBody {
   password: string;
 }
 
-export interface RefreshResponse {
-  accessToken: string;
-  expiresAt: string;
+/**
+ * What the session half of `/admin/auth/me` actually carries.
+ *
+ * The API answers with an identity, not with the `ConsoleUser` record: no `email`, no
+ * `status`, no `lastLoginAt` (gap **G-03**). Typed honestly so that nothing downstream
+ * reads a field the wire never carried.
+ */
+export interface MeResponse {
+  user: { id: string; name: string; factoryId: string | null; roles: readonly string[] };
+  grants: CapabilityGrants;
 }
 
 export const authEndpoints = {
@@ -37,10 +44,25 @@ export const authEndpoints = {
    * The console runs on an office machine that other people use; a refresh token
    * in `localStorage` is a token any tab, extension or XSS can read, and it
    * outlives the session by design.
+   *
+   * **It answers with the whole session, not a token pair** — the same `LoginResult`
+   * envelope `login` returns, because the API re-resolves grants on every rotation and
+   * a rotation is the natural moment to notice that somebody's permissions changed.
+   * That is why `authStore.bootstrap()` needs no second call to `/me`: one rotation
+   * restores the token, the user and the grant set together.
+   *
+   * Unwrapped here rather than at the two call sites in `authStore`, so neither has to
+   * remember that `.accessToken` lives one level down. Reading it off the envelope
+   * yields `undefined`, and an `undefined` access token fails silently: the store holds
+   * it, every request goes out with no `Authorization` header, and the console presents
+   * as signed in and forbidden from everything.
    */
   refresh: () =>
     apiClient
-      .post<RefreshResponse>('/admin/auth/refresh', undefined, withoutAuth())
+      .post<LoginResult>('/admin/auth/refresh', undefined, withoutAuth())
+      // The WHOLE envelope, not `.session`. `passwordChangeRequired` rides beside it and
+      // this is the only place the console learns it after a reload: the bootstrap is a
+      // rotation, so a `.session` here is a flag silently dropped on every page load.
       .then((response) => response.data),
 
   logout: () => apiClient.post<void>('/admin/auth/logout').then(() => undefined),
@@ -52,8 +74,32 @@ export const authEndpoints = {
    * because "roles are data, not code" (§12.1) — a factory that splits `clerk`
    * into two roles must not need a console deploy.
    */
-  me: () =>
+  me: () => apiClient.get<MeResponse>('/admin/auth/me').then((response) => response.data),
+
+  /**
+   * BR-008: replace the password the office issued.
+   *
+   * `422 invalid` with `{ field: 'password', minLength: 12 }` when it is too short, and
+   * `maxLength: 200` when it is absurdly long. No code of its own for either.
+   *
+   * ⚠️ There is **no** refusal for re-entering the password already on the account, so
+   * the rule can be satisfied by retyping the one that was issued. See
+   * `BACKEND-API-GAPS.md`.
+   */
+  setInitialPassword: (next: string) =>
     apiClient
-      .get<{ user: ConsoleUser; grants: CapabilityGrants }>('/admin/auth/me')
+      .post<void>('/admin/auth/initial-password', { next })
       .then((response) => response.data),
+
+  /**
+   * The other half of BR-008: **keeping the issued password is a decision, recorded once.**
+   *
+   * Not a way out of the rule but a way through it. A clerk who was handed a strong
+   * generated password has no reason to change it, and a flow with no exit but "type a new
+   * one" teaches people to type a weaker one.
+   */
+  keepInitialPassword: () =>
+    apiClient
+      .post<void>('/admin/auth/initial-password/keep')
+      .then((response) => response.data)
 };

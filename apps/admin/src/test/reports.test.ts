@@ -50,8 +50,8 @@ describe('M16 reports', () => {
       expect(definition.params.length).toBeGreaterThan(0);
     }
 
-    // The months come with the list, newest first — a report is nearly always about the month
-    // just closed.
+    // The months come with the list, newest first — a report is nearly always about the
+    // month just closed. They were briefly absent (G-15), which left the picker empty.
     expect(served.months.length).toBeGreaterThan(1);
     expect([...served.months].sort().reverse()).toEqual(served.months);
   });

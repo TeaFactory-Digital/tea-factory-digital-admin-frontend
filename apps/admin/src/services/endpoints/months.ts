@@ -1,4 +1,15 @@
 /**
+ * ⚠ **None of this is implemented by the API** (gap **G-13**), and no v2 route reaches
+ * it: the internal-process modules — deliveries, rates, month close, payouts — were cut
+ * from this console because the factory's own system runs them.
+ *
+ * It is kept, deliberately, as the **executable statement of what those flows require**
+ * (`routes/router.tsx` → "what those flows require is still stated executably by the
+ * repositories, which is the form the other team can read"). Deleting it would delete
+ * the specification along with the dead code.
+ */
+
+/**
  * M4 Rates & month close — the irreversible module.
  *
  * Everything here is shaped by one fact: **publishing a month cannot be undone.**

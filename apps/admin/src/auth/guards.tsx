@@ -11,7 +11,8 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { AccessLevel, Capability } from '@tfd/domain';
 import type { PropsWithChildren } from 'react';
-import { useAuthStatus, useCan } from './authStore';
+import { useAuthStatus, useCan, useOwesPasswordChange } from './authStore';
+import { InitialPasswordScreen } from './InitialPasswordScreen';
 import { Spinner } from '@/components/ui/states';
 import { EmptyState } from '@/components/ui/states';
 import { useFeatureFlags } from '@/config/RuntimeConfigProvider';
@@ -20,6 +21,7 @@ import type { FeatureFlagName } from '@tfd/domain';
 /** Signed in, or sent to the sign-in screen with somewhere to come back to. */
 export function RequireAuth({ children }: PropsWithChildren) {
   const status = useAuthStatus();
+  const owesPasswordChange = useOwesPasswordChange();
   const location = useLocation();
 
   // `bootstrapping` is not `anonymous`. Redirecting during the refresh round trip
@@ -34,6 +36,22 @@ export function RequireAuth({ children }: PropsWithChildren) {
 
   if (status !== 'authenticated') {
     return <Navigate to="/sign-in" replace state={{ from: location.pathname }} />;
+  }
+
+  /*
+   * BR-008, and it sits INSIDE the authenticated branch deliberately.
+   *
+   * Owing a password change is a signed-in state, not a refused one: the API issues a
+   * token and then blocks every path except the handful that clear the flag. Treating it
+   * as "not authenticated" would bounce the clerk to sign-in, where the only thing they
+   * can do is present the same password again and arrive back here.
+   *
+   * Rendered in place rather than redirected to a route, so there is no URL a clerk can
+   * navigate away from and no console behind it to glimpse. Every screen behind this
+   * would be a spinner over a refusal.
+   */
+  if (owesPasswordChange) {
+    return <InitialPasswordScreen />;
   }
 
   return <>{children}</>;

@@ -81,6 +81,16 @@ export function UserDialog({
   const [touchedEmail, setTouchedEmail] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [confirmingSubmit, setConfirmingSubmit] = useState(false);
+  /**
+   * The new account's first password, shown **once**.
+   *
+   * There is no invitation email: the API takes a password at creation and the office
+   * hands it over, which is what `users.createdHint` has always said. Held here and
+   * dropped when the dialog closes — a credential left in component state is one a
+   * re-opened dialog would show to whoever is at the desk next, the same rule
+   * `ResetPasswordDialog` follows.
+   */
+  const [issuedPassword, setIssuedPassword] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -90,6 +100,7 @@ export function UserDialog({
     setTouchedName(false);
     setTouchedEmail(false);
     setSubmitted(false);
+    setIssuedPassword(null);
   }, [open, user]);
 
   const editing = user !== null;
@@ -114,12 +125,16 @@ export function UserDialog({
       if (editing) {
         await update.mutateAsync({ id: user.id, body: { name: name.trim(), roles }, context });
         toast.success(t('users.updated', { name: name.trim() }));
+        setConfirmingSubmit(false);
+        onClose();
       } else {
-        await create.mutateAsync({ name: name.trim(), email: email.trim(), roles });
+        const created = await create.mutateAsync({ name: name.trim(), email: email.trim(), roles });
         toast.success(t('users.created', { name: name.trim() }), t('users.createdHint'));
+        setConfirmingSubmit(false);
+        // The dialog stays OPEN on create, showing the password. Closing here would
+        // destroy the only copy of a credential nobody can re-read.
+        setIssuedPassword(created.password);
       }
-      setConfirmingSubmit(false);
-      onClose();
     } catch (cause) {
       // The dialog stays open: `last-admin` and `email-taken` are both information about
       // what to change, not a toast over a discarded form.
@@ -138,21 +153,43 @@ export function UserDialog({
         title={editing ? t('users.editTitle', { name: user.name }) : t('users.inviteTitle')}
         description={editing ? t('users.editBody') : t('users.inviteBody')}
         footer={
-          <>
-            <Button variant="secondary" onClick={onClose}>
-              {t('common.cancel')}
+          issuedPassword ? (
+            <Button variant="primary" onClick={onClose}>
+              {t('users.passwordDone')}
             </Button>
-            <Button
-              variant="primary"
-              disabled={!complete}
-              loading={create.isPending || update.isPending}
-              onClick={() => void submit()}
-            >
-              {editing ? t('common.save') : t('users.invite')}
-            </Button>
-          </>
+          ) : (
+            <>
+              <Button variant="secondary" onClick={onClose}>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="primary"
+                disabled={!complete}
+                loading={create.isPending || update.isPending}
+                onClick={() => void submit()}
+              >
+                {editing ? t('common.save') : t('users.invite')}
+              </Button>
+            </>
+          )
         }
       >
+        {issuedPassword ? (
+          <div className="flex flex-col gap-md">
+            <p
+              className="numeric select-all rounded-md bg-surface-variant px-lg py-md text-center text-h3 tracking-widest text-text-primary"
+              aria-label={t('users.passwordLabel')}
+            >
+              {issuedPassword}
+            </p>
+            <p className="rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
+              {t('users.passwordOnce')}
+            </p>
+            <p className="text-body-small text-text-secondary">
+              {t('users.passwordHandover', { name: name.trim(), email: email.trim() })}
+            </p>
+          </div>
+        ) : (
         <div className="flex flex-col gap-md">
         <Field label={t('users.field.name')} required error={showNameError ? t(showNameError) : undefined}>
           {({ id, required, invalid }) => (
@@ -218,6 +255,7 @@ export function UserDialog({
           ) : null}
         </fieldset>
         </div>
+        )}
       </Dialog>
 
       <ConfirmDialog

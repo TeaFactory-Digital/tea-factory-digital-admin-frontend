@@ -224,7 +224,13 @@ export function SupplierDetailScreen() {
             <CardHeader
               title={t('suppliers.detail.payout')}
               actions={
-                supplier.bankDetails ? <RevealBankDetailsDialog supplierId={supplier.id} /> : null
+                supplier.bankDetails ? (
+                  <RevealBankDetailsDialog
+                    supplierId={supplier.id}
+                    bankName={supplier.bankDetails.bankName}
+                    branchName={supplier.bankDetails.branchName}
+                  />
+                ) : null
               }
             />
             <CardBody>
