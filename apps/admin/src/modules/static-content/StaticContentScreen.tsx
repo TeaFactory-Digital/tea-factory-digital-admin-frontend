@@ -48,6 +48,7 @@ import { GapNotice } from '@/modules/content/GapNotice';
 import { LanguageStrip } from '@/modules/content/LanguageStrip';
 import { PreviewPanel } from '@/modules/content/PreviewPanel';
 import { TranslationEditor } from '@/modules/content/TranslationEditor';
+import { InfoTip } from '@/components/ui/Tooltip';
 import {
   useContentLanguages,
   usePublishStaticPage,
@@ -231,9 +232,9 @@ export function StaticContentScreen() {
                   ) : (
                     // §12.1: the editor writes, the factory admin puts it in front of
                     // every supplier. Said rather than shown as a disabled button.
-                    <p className="text-caption text-text-secondary">
+                    <InfoTip label={t('tip.adminPublishes')} text={t('tip.adminPublishes')}>
                       {t('staticContent.publishNeedsAdmin')}
-                    </p>
+                    </InfoTip>
                   )}
                 </div>
               ) : (

@@ -50,6 +50,7 @@ import { Badge } from '@/components/ui/Badge';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, Skeleton } from '@/components/ui/states';
 import { formatAge, formatCount, formatMonthKey, formatPercent, hoursSince } from '@/lib/format';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 export function DashboardScreen() {
   const { t } = useTranslation();
@@ -94,8 +95,7 @@ export function DashboardScreen() {
 
           <Card>
             <CardHeader
-              title={t('dashboard.adoptionTrend')}
-              description={t('dashboard.adoptionTrendHint')}
+              title={<TitleWithTip title={t('dashboard.adoptionTrend')} tip={t('dashboard.adoptionTrendHint')} />}
             />
             <CardBody>
               <AdoptionTrend data={data.adoptionTrend} />
@@ -277,7 +277,7 @@ function AppAdoptionCard({ app }: { app: AppAdoption }) {
 
   return (
     <Card>
-      <CardHeader title={t('dashboard.appAdoption')} description={t('dashboard.appAdoptionHint')} />
+      <CardHeader title={<TitleWithTip title={t('dashboard.appAdoption')} tip={t('dashboard.appAdoptionHint')} />} />
       <CardBody className="flex flex-col gap-xs">
         <p className="numeric text-h2 text-text-primary">{formatPercent(installed)}</p>
         <p className="text-body-small text-text-secondary">
@@ -351,8 +351,7 @@ function ContentHealthCard({ content }: { content: ContentHealth }) {
   return (
     <Card>
       <CardHeader
-        title={t('dashboard.contentHealth')}
-        description={t('dashboard.contentHealthHint')}
+        title={<TitleWithTip title={t('dashboard.contentHealth')} tip={t('dashboard.contentHealthHint')} />}
       />
       <CardBody className="flex flex-col gap-sm">
         <p className="numeric text-h2 text-text-primary">{formatCount(content.bannersLive)}</p>
@@ -507,5 +506,16 @@ function DashboardSkeleton() {
       </div>
       <Skeleton className="h-72" />
     </div>
+  );
+}
+
+/** A card title with its explanation behind an "i" rather than under it. */
+function TitleWithTip({ title, tip }: { title: string; tip: string }) {
+  const { t } = useTranslation();
+  return (
+    <span className="inline-flex items-center gap-xxs">
+      {title}
+      <InfoTip label={t('tip.moreInfo')}>{tip}</InfoTip>
+    </span>
   );
 }

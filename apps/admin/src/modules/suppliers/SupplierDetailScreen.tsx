@@ -511,15 +511,13 @@ function QuickActions({ supplierId }: { supplierId: string }) {
 
   return (
     <section aria-labelledby="supplier-quick-actions" className="flex flex-col gap-sm">
-      <div>
+      <div className="flex items-center gap-xxs">
         <h2 id="supplier-quick-actions" className="text-label text-text-primary">
           {t('suppliers.detail.quickActions')}
         </h2>
-        {/* Said once, above the row, rather than as a caption repeated on four cards
-            that would then be three-quarters identical text. */}
-        <p className="text-caption text-text-secondary">
+        <InfoTip label={t('tip.moreInfo')} side="right">
           {t('suppliers.detail.quickActionsHint')}
-        </p>
+        </InfoTip>
       </div>
 
       <ul className="grid gap-sm sm:grid-cols-2 xl:grid-cols-4">

@@ -52,6 +52,7 @@ import { useContentLanguages } from '@/modules/content/hooks';
 import { ImageField } from '@/components/ui/ImageField';
 import { BannerActionField } from './BannerActionField';
 import { BannerTranslationEditor } from './BannerTranslationEditor';
+import { InfoTip } from '@/components/ui/Tooltip';
 import {
   useBanner,
   useBannerAudit,
@@ -400,7 +401,9 @@ export function BannerEditorScreen() {
                   </p>
                 </div>
               ) : (
-                <p className="text-caption text-text-secondary">{t('content.readOnly')}</p>
+                <InfoTip label={t('tip.readOnly')} text={t('tip.readOnly')}>
+                  {t('content.readOnly')}
+                </InfoTip>
               )}
             </CardBody>
           </Card>
@@ -465,7 +468,9 @@ export function BannerEditorScreen() {
                 // §12.1: the editor writes, the factory admin publishes. The same
                 // boundary M11 draws between writing a circular and putting it in front
                 // of every supplier the factory has.
-                <p className="text-caption text-text-secondary">{t('banners.publishNeedsAdmin')}</p>
+                <InfoTip label={t('tip.adminPublishes')} text={t('tip.adminPublishes')}>
+                  {t('banners.publishNeedsAdmin')}
+                </InfoTip>
               )}
 
               {/* Publishing a banner whose button the app will refuse is the one refusal
@@ -475,7 +480,9 @@ export function BannerEditorScreen() {
                 <p className="text-caption text-error">{t('banners.publishNeedsAction')}</p>
               ) : null}
 
-              <p className="text-caption text-text-secondary">{t('banners.noDeleteHint')}</p>
+              <InfoTip label={t('tip.noDelete')} text={t('tip.noDelete')}>
+                {t('banners.noDeleteHint')}
+              </InfoTip>
             </CardBody>
           </Card>
 

@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { adminConfigRepository } from '@/services/repositories/adminConfigRepository';
 import { ImpactList } from './ImpactList';
 import { RevertButton } from './StringListEditor';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 /** What every section receives. `save` returns a promise so the footer can show progress. */
 export interface SectionProps {
@@ -54,9 +55,11 @@ export function SectionFooter({
 
   if (readOnly) {
     return (
-      <p className="border-t border-divider pt-md text-caption text-text-secondary">
-        {t('config.readOnly')}
-      </p>
+      <div className="border-t border-divider pt-md">
+        <InfoTip label={t('tip.readOnly')} text={t('tip.readOnly')}>
+          {t('config.readOnly')}
+        </InfoTip>
+      </div>
     );
   }
 

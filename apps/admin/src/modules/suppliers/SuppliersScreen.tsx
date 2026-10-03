@@ -29,6 +29,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/states';
 import { formatAmount, formatDate } from '@/lib/format';
 import { useSuppliers } from './hooks';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 const STATUS_TONES = { active: 'success', suspended: 'warning', closed: 'neutral' } as const;
 
@@ -260,7 +261,8 @@ export function SuppliersScreen() {
           rows move (§18.2 — the repetitive path is scanning rows). */}
       <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-center gap-sm border-b border-divider p-md">
-          <div className="min-w-64 flex-1">
+          <div className="flex min-w-64 flex-1 items-center gap-xs">
+            <div className="min-w-0 flex-1">
             <SearchInput
               label={t('suppliers.searchPlaceholder')}
               value={searchText}
@@ -270,6 +272,8 @@ export function SuppliersScreen() {
                 setParam('q', event.target.value || null);
               }}
             />
+            </div>
+            <InfoTip label={t('tip.searchHelp')}>{t('suppliers.searchHint')}</InfoTip>
           </div>
 
           <FilterSelect
@@ -320,9 +324,6 @@ export function SuppliersScreen() {
           />
         </div>
 
-        <p className="shrink-0 px-md pt-sm text-caption text-text-secondary">
-          {t('suppliers.searchHint')}
-        </p>
 
         <DataTable
           label={t('suppliers.title')}

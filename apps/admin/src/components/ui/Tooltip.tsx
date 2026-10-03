@@ -44,11 +44,17 @@ TooltipContent.displayName = 'TooltipContent';
  */
 export function InfoTip({
   label,
+  text,
   children,
   side = 'bottom',
 }: {
   /** The accessible name of the icon, e.g. "Why can't I do this?". */
   label: string;
+  /**
+   * A few words shown beside the icon, e.g. "Read only", where a lone "i" would leave
+   * the reader guessing what it is about. The full sentence stays in the tooltip.
+   */
+  text?: string;
   children: ReactNode;
   side?: 'top' | 'right' | 'bottom' | 'left';
 }) {
@@ -59,8 +65,13 @@ export function InfoTip({
           <button
             type="button"
             aria-label={label}
-            className="inline-flex size-8 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-surface-variant hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className={cn(
+              'inline-flex shrink-0 items-center justify-center gap-xxs rounded-full text-text-secondary transition-colors',
+              'hover:bg-surface-variant hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+              text ? 'h-8 self-start px-sm text-caption' : 'size-8',
+            )}
           >
+            {text ? <span>{text}</span> : null}
             <Info className="size-icon-sm" aria-hidden />
           </button>
         </TooltipTrigger>

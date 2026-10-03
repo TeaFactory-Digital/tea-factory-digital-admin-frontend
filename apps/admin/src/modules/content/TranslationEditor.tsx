@@ -34,6 +34,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import { formatDateTime } from '@/lib/format';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 export function TranslationEditor({
   lang,
@@ -154,7 +155,9 @@ export function TranslationEditor({
       </Field>
 
       {readOnly ? (
-        <p className="text-caption text-text-secondary">{t('content.readOnly')}</p>
+        <InfoTip label={t('tip.readOnly')} text={t('tip.readOnly')}>
+          {t('content.readOnly')}
+        </InfoTip>
       ) : (
         <div className="flex flex-wrap items-center gap-sm border-t border-divider pt-md">
           <Button

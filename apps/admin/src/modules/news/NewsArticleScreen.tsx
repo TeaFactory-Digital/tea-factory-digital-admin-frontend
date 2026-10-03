@@ -41,6 +41,7 @@ import { GapNotice } from '@/modules/content/GapNotice';
 import { LanguageStrip } from '@/modules/content/LanguageStrip';
 import { PreviewPanel } from '@/modules/content/PreviewPanel';
 import { TranslationEditor } from '@/modules/content/TranslationEditor';
+import { InfoTip } from '@/components/ui/Tooltip';
 import {
   useContentLanguages,
   useNewsArticle,
@@ -282,10 +283,14 @@ export function NewsArticleScreen() {
               ) : (
                 // §12.1: the editor writes, the factory admin publishes. Said rather
                 // than shown as a disabled button nobody can explain.
-                <p className="text-caption text-text-secondary">{t('news.publishNeedsAdmin')}</p>
+                <InfoTip label={t('tip.adminPublishes')} text={t('tip.adminPublishes')}>
+                  {t('news.publishNeedsAdmin')}
+                </InfoTip>
               )}
 
-              <p className="text-caption text-text-secondary">{t('news.noDeleteHint')}</p>
+              <InfoTip label={t('tip.noDelete')} text={t('tip.noDelete')}>
+                {t('news.noDeleteHint')}
+              </InfoTip>
             </CardBody>
           </Card>
 
