@@ -5659,6 +5659,27 @@ export const handlers: HttpHandler[] = [
       endsAt?: string | null;
     };
 
+    // `.strict()` on the server: a leftover `translations` array is a refusal, not a strip.
+    const allowed = [
+      'title',
+      'body',
+      'buttonLabel',
+      'imageUrl',
+      'imageAspectRatio',
+      'action',
+      'startsAt',
+      'endsAt',
+    ];
+    const unknown = Object.keys(body).filter((key) => !allowed.includes(key));
+    if (unknown.length > 0) {
+      return fail({
+        status: 422,
+        code: 'invalid',
+        message: 'The request was not valid.',
+        details: { source: 'body', unrecognized: unknown },
+      });
+    }
+
     /**
      * The action is checked **with the app's own resolver**, before anything is stored.
      *

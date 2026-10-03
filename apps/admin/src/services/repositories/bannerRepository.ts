@@ -164,10 +164,14 @@ export const bannerRepository = {
      * strips what it does not recognise — so a body carrying the array alone created a
      * banner with no copy at all, and the create succeeded. The other languages are saved
      * afterwards through `saveTranslation`, one at a time, as they are for news.
+     *
+     * The array itself is left off the wire: the API schema is `.strict()` and answers
+     * `400 unrecognized_keys` for a `translations` key rather than ignoring it.
      */
     const fallback = translations[0]!;
+    const { translations: _translations, ...rest } = body;
     return bannerEndpoints.create({
-      ...body,
+      ...rest,
       title: fallback.title,
       body: fallback.body,
       buttonLabel: fallback.buttonLabel,
