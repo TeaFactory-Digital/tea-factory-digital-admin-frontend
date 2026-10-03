@@ -201,7 +201,14 @@ export function NewsArticleScreen() {
               is one picture for all three languages, and a field that moved with the tab
               would suggest otherwise. */}
           <Card>
-            <CardHeader title={t('uploads.coverImage')} />
+            <CardHeader
+              title={
+                <span className="inline-flex items-center gap-xxs">
+                  {t('uploads.coverImage')}
+                  <InfoTip label={t('tip.moreInfo')}>{t('uploads.hint', { max: 5 })}</InfoTip>
+                </span>
+              }
+            />
             <CardBody>
               <ImageField
                 label={t('uploads.coverImage')}

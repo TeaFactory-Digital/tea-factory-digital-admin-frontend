@@ -39,6 +39,7 @@ import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatCount } from '@/lib/format';
 import { useNotificationReach, useSendNotification } from './hooks';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 export function ComposeDialog({
   open,
@@ -298,7 +299,9 @@ export function ComposeDialog({
 
           {/* Said before the button, not after: this is the one act in the console with no
               undo and no delivery report. */}
-          <p className="text-caption text-text-secondary">{t('notifications.noRecallHint')}</p>
+          <InfoTip label={t('tip.noRecall')} text={t('tip.noRecall')}>
+            {t('notifications.noRecallHint')}
+          </InfoTip>
         </div>
       </Dialog>
 

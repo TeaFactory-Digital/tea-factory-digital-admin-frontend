@@ -37,15 +37,15 @@ export const GRID_CARD = 'flex min-h-[22rem] flex-1 flex-col';
 /**
  * A two-column screen where **one side scrolls and the other stays put**.
  *
- * Four screens want this and they do not all want it the same way round:
+ * Two screens pin one side and scroll the other:
  *
  * | Screen | Fixed | Scrolls |
  * | --- | --- | --- |
  * | M14 configuration, M12 static content | the rail of sections/pages | the editor |
- * | M11 banner editor | the live preview | the form |
  *
- * The M8 news article started in the second row and moved to both columns scrolling: its
- * side column (cover, preview, lifecycle, audit) outgrew any reasonable floor.
+ * The M11 banner editor and the M8 news article started with the preview pinned and the
+ * form scrolling, and both moved to both columns scrolling: their side column (preview,
+ * lifecycle, audit) outgrew any reasonable floor and could not be scrolled.
  *
  * Both readings are the same fix and the same three rules — which side gets
  * {@link SPLIT_PANE_SCROLLER} is the only difference — so the **track is not included

@@ -147,7 +147,9 @@ export function ProfileScreen() {
             {/* Said rather than shown as a disabled form. There is no self-service endpoint
                 for a password change, and a control that cannot work is worse than a
                 sentence naming the person who can do it. */}
-            <p className="text-caption text-text-secondary">{t('profile.securityHint')}</p>
+            <InfoTip label={t('tip.passwordChange')} text={t('tip.passwordChange')}>
+              {t('profile.securityHint')}
+            </InfoTip>
           </CardBody>
         </Card>
 

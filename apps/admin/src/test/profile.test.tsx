@@ -78,10 +78,14 @@ describe('the profile screen', () => {
 
     // Asked of the whole screen, not one card: the claim is that no such control exists
     // anywhere on it.
-    expect(view.queryByLabelText(/password/i)).not.toBeInTheDocument();
+    // Inputs only: the "How to change your password" info icon is a button, not a field.
+    expect(view.queryByLabelText(/password/i, { selector: 'input' })).not.toBeInTheDocument();
     expect(view.queryByRole('textbox', { name: /password/i })).not.toBeInTheDocument();
-    // Said in a sentence instead, naming who can actually do it.
-    expect(view.getByText(/reset by a factory administrator/i)).toBeInTheDocument();
+    // Said in a sentence instead, naming who can actually do it, behind the info icon.
+    await userEvent.hover(view.getByRole('button', { name: /change your password/i }));
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      /reset by a factory administrator/i,
+    );
   });
 
   it('says nothing about a second factor, for a manager least of all', async () => {
@@ -187,7 +191,9 @@ describe('the profile screen', () => {
      * who cannot read the console changes the language before signing in — but once
      * inside, this screen is it.
      */
-    expect(await within(container).findByRole('radiogroup', { name: /language/i })).toBeInTheDocument();
+    expect(
+      await within(container).findByRole('radiogroup', { name: /language/i }),
+    ).toBeInTheDocument();
   });
 });
 

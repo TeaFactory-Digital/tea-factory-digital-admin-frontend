@@ -27,6 +27,7 @@ import { ImageField } from '@/components/ui/ImageField';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { useCreateNewsArticle } from '@/modules/content/hooks';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 export function NewArticleDialog({
   open,
@@ -167,7 +168,9 @@ export function NewArticleDialog({
             hint={t('uploads.hint', { max: 5 })}
           />
 
-          <p className="text-caption text-text-secondary">{t('news.createDraftHint')}</p>
+          <InfoTip label={t('tip.savedAsDraft')} text={t('tip.savedAsDraft')}>
+            {t('news.createDraftHint')}
+          </InfoTip>
         </div>
       </Dialog>
 

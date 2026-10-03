@@ -281,14 +281,13 @@ export function BannerEditorScreen() {
       ) : null}
 
       <div className={cn(SPLIT_PANE, 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]')}>
-        {/* The form scrolls; the preview beside it does not.
+        {/* **Each side scrolls on its own**, as on the news article.
 
-            The opposite way round from M12 and M14, and for the same reason they are
-            that way round: the half that stays put is the half being *consulted*. Here
-            that is the preview — the whole point of editing banner copy beside a live
-            rendering is checking one against the other, which cannot be done when the
-            rendering scrolls out of sight exactly as the copy grows long enough to
-            need it. */}
+            The right side used to be pinned so the preview stayed beside the copy. But it
+            also holds publishing and the banner's history, which together are taller than
+            a laptop window, and a pinned column has no scrollbar: everything below the
+            fold could not be reached. The preview is first in that column, so it is still
+            in view while the form is being edited. */}
         <div className={cn('flex flex-col gap-lg', SPLIT_PANE_SCROLLER)}>
           <Card>
             <CardHeader
@@ -409,7 +408,7 @@ export function BannerEditorScreen() {
           </Card>
         </div>
 
-        <div className="flex flex-col gap-lg">
+        <div className={cn('flex flex-col gap-lg', SPLIT_PANE_SCROLLER)}>
           <PreviewPanel
             lang={lang}
             preview={preview.data}

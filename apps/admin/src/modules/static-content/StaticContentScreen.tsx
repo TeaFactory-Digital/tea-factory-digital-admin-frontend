@@ -238,9 +238,11 @@ export function StaticContentScreen() {
                   )}
                 </div>
               ) : (
-                <p className="border-t border-divider pt-md text-caption text-text-secondary">
-                  {t('staticContent.editsAreLive')}
-                </p>
+                <div className="border-t border-divider pt-md">
+                  <InfoTip label={t('tip.editsAreLive')} text={t('tip.editsAreLive')}>
+                    {t('staticContent.editsAreLive')}
+                  </InfoTip>
+                </div>
               )}
             </CardBody>
           </Card>

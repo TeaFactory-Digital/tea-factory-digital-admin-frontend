@@ -188,7 +188,7 @@ describe('M11 banner editor', () => {
    * *consulted*, and a preview that scrolls out of sight while the copy grows is a preview
    * nobody can check against.
    */
-  it('scrolls the form and pins the preview', async () => {
+  it('scrolls the form and the side column separately', async () => {
     await signInAs(ADMIN);
     // Wrapped in a `Route`, because the screen reads `:id` from the path — rendered bare
     // it looks up a banner with no id and never leaves its loading state.
@@ -204,10 +204,13 @@ describe('M11 banner editor', () => {
     const pane = paneOf(container);
     expect(pane).toHaveClass('lg:flex-1');
 
-    const [form, preview] = Array.from(pane!.children);
-    expect(form).toHaveClass('lg:overflow-y-auto');
-    // A preview that clips is a preview that lies about what the supplier will see.
-    expect(preview).not.toHaveClass('lg:overflow-y-auto');
+    // Both scroll: the side column (preview, publishing, history) is taller than a laptop
+    // window, and pinned it left everything below the fold unreachable.
+    const [form, side] = Array.from(pane!.children);
+    for (const column of [form, side]) {
+      expect(column).toHaveClass('lg:overflow-y-auto');
+      expect(column).toHaveClass('lg:min-h-0');
+    }
   });
 
   /**

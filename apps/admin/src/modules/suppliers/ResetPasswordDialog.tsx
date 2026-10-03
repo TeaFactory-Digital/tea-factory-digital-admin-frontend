@@ -36,6 +36,7 @@ import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDateTime } from '@/lib/format';
 import { useResetSupplierCredentials } from './hooks';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 /**
  * The checks the counter actually performs — **only the ones that are checks.**
@@ -157,9 +158,9 @@ export function ResetPasswordDialog({
 
             {/* The property that makes this safe, stated to the person who now knows the
                 password. */}
-            <p className="text-body-small text-text-secondary">
+            <InfoTip label={t('tip.oneTimePassword')} text={t('tip.oneTimePassword')}>
               {t('suppliers.resetPassword.oneTime')}
-            </p>
+            </InfoTip>
 
             <p className="text-caption text-text-secondary">
               {/* The server's own attribution — who issued it, when, and the audit row

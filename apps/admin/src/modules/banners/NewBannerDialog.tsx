@@ -30,6 +30,7 @@ import { ImageField } from '@/components/ui/ImageField';
 import { bannerRepository } from '@/services/repositories/bannerRepository';
 import { BannerActionField } from './BannerActionField';
 import { useCreateBanner } from './hooks';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 /** Today, as the `datetime-local` inputs want it. Seconds dropped — nobody schedules those. */
 function localNow(): string {
@@ -236,7 +237,9 @@ export function NewBannerDialog({
           previewClassName="aspect-[3/1]"
         />
 
-        <p className="text-caption text-text-secondary">{t('banners.createDraftHint')}</p>
+        <InfoTip label={t('tip.savedAsDraft')} text={t('tip.savedAsDraft')}>
+          {t('banners.createDraftHint')}
+        </InfoTip>
       </div>
     </Dialog>
   );

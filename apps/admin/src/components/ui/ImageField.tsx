@@ -31,6 +31,7 @@ import { useTranslation } from 'react-i18next';
 import { AlertCircle, ImageOff, ImagePlus, Info, RefreshCw, Trash2 } from 'lucide-react';
 import { Button } from './Button';
 import { Spinner } from './states';
+import { InfoTip } from './Tooltip';
 import { isApiError } from '@/services/api/errors';
 import {
   uploadRepository,
@@ -145,12 +146,15 @@ export function ImageField({
 
   return (
     <div className="flex flex-col gap-xs">
-      <label
-        htmlFor={inputId}
-        className={cn('text-label text-text-primary', hideLabel && 'sr-only')}
-      >
-        {label}
-      </label>
+      {/* The hint waits behind an "i" beside the label rather than sitting under the
+          picker on every visit. With the label hidden (a card header names the field),
+          the caller shows the hint in that header instead. */}
+      <div className={cn('flex items-center gap-xxs', hideLabel && 'sr-only')}>
+        <label htmlFor={inputId} className="text-label text-text-primary">
+          {label}
+        </label>
+        {hint && !hideLabel ? <InfoTip label={t('tip.moreInfo')}>{hint}</InfoTip> : null}
+      </div>
 
       {/* Visually hidden, still focusable: the drop area below is its label, and a
           keyboard user tabs to this and presses Space exactly as before. */}
@@ -276,8 +280,9 @@ export function ImageField({
         </p>
       ) : null}
 
-      {hint && !error && !unavailable ? (
-        <p id={hintId} className="text-caption text-text-secondary">
+      {/* Kept for screen readers: the input is still described by it. */}
+      {hint ? (
+        <p id={hintId} className="sr-only">
           {hint}
         </p>
       ) : null}
