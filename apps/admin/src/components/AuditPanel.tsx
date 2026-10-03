@@ -19,6 +19,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/states';
 import { formatDateTime } from '@/lib/format';
 import { auditActionLabel } from '@/lib/auditLabels';
+import { AuditDetails } from '@/components/AuditDetails';
 
 export function AuditPanel({
   title,
@@ -79,14 +80,7 @@ export function AuditPanel({
                       rather than showing a dash that invites a question. */}
                   {entry.ip ? ` · ${entry.ip}` : ''}
                 </p>
-                {/* Before/after as JSON is not pretty, and it is deliberate: an
-                    audit entry is evidence, and a prettified summary is an
-                    interpretation of evidence. */}
-                {entry.after ? (
-                  <pre className="mt-xxs overflow-x-auto rounded-sm bg-surface-variant px-sm py-xs text-caption text-text-secondary">
-                    {JSON.stringify(entry.after)}
-                  </pre>
-                ) : null}
+                <AuditDetails before={entry.before} after={entry.after} />
               </li>
             ))}
           </ol>

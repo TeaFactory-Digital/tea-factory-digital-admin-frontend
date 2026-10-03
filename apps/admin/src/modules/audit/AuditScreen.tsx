@@ -23,6 +23,7 @@ import { Select } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/states';
 import { auditActionLabel } from '@/lib/auditLabels';
+import { AuditDetails } from '@/components/AuditDetails';
 import { formatDateTime } from '@/lib/format';
 
 const ENTITIES = ['changeRequest', 'supplier', 'monthlyRate'] as const;
@@ -141,12 +142,7 @@ export function AuditScreen() {
         enableSorting: false,
         cell: (info) => {
           const { before, after } = info.row.original;
-          return (
-            <span className="text-caption text-text-secondary">
-              {before ? `${JSON.stringify(before)} → ` : ''}
-              {after ? JSON.stringify(after) : ''}
-            </span>
-          );
+          return <AuditDetails before={before} after={after} />;
         },
       },
     ],
