@@ -2314,7 +2314,7 @@ export const handlers: HttpHandler[] = [
     const url = new URL(request.url);
     const q = url.searchParams.get('q')?.trim().toLowerCase();
     const status = url.searchParams.get('status');
-    const point = url.searchParams.get('collectionPoint');
+    const point = url.searchParams.get('collectionPointId');
     const hasBankDetails = url.searchParams.get('hasBankDetails');
     const hasApp = url.searchParams.get('hasApp');
 
@@ -2322,16 +2322,19 @@ export const handlers: HttpHandler[] = [
 
     if (q) {
       // Tolerates the division suffix: "5708" matches "5708 (MAKADURA)", and so
-      // does "makadura" — the office searches by whichever it remembers.
-      rows = rows.filter(
-        (s) =>
+      // does "makadura" — the office searches by whichever it remembers. The NIC is
+      // searched on the record, as the API does, though the row does not carry it.
+      rows = rows.filter((s) => {
+        const nic = state.suppliers.find((one) => one.id === s.id)?.nic ?? '';
+        return (
           s.supplierCode.toLowerCase().includes(q) ||
           s.name.toLowerCase().includes(q) ||
-          s.nic.toLowerCase().includes(q),
-      );
+          nic.toLowerCase().includes(q)
+        );
+      });
     }
     if (status) rows = rows.filter((s) => s.status === status);
-    if (point) rows = rows.filter((s) => s.collectionPoint === point);
+    if (point) rows = rows.filter((s) => s.collectionPoint?.id === point);
     if (hasBankDetails !== null) {
       rows = rows.filter((s) => s.hasBankDetails === (hasBankDetails === 'true'));
     }

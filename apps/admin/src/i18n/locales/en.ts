@@ -232,6 +232,8 @@ export const en = {
   'suppliers.filter.anyBankDetails': 'Any bank details',
   'suppliers.filter.noBankDetails': 'Missing bank details',
   'suppliers.noBankDetails': 'No bank details',
+  'suppliers.noPoint': 'Not set',
+  'suppliers.bankOnFile': 'Bank details on file',
   'suppliers.optedOut': 'Opted out',
 
   'suppliers.detail.profile': 'Profile',

@@ -388,21 +388,22 @@ export const mockSuppliers: AdminSupplier[] = Array.from({ length: 84 }, (_, i) 
 /** The `hasBankDetails: false` rows are what M4's close checklist will trip on. */
 const suppliersMissingBankDetails = mockSuppliers.filter((s) => !s.hasBankDetails).length;
 
+/**
+ * A list row **exactly as `GET /admin/suppliers` sends it today**: eight fields, the
+ * collection point as an object. The richer row this fixture used to serve let the
+ * screen pass its tests with columns the real API never fills.
+ */
 export function toListItem(supplier: AdminSupplier): SupplierListItem {
+  const point = COLLECTION_POINTS.find((one) => one.name === supplier.collectionPoint);
   return {
     id: supplier.id,
     supplierCode: supplier.supplierCode,
     name: supplier.name,
-    nic: supplier.nic,
-    collectionPoint: supplier.collectionPoint,
+    division: null,
     status: supplier.status,
-    paymentMethod: supplier.paymentMethod,
-    savingsPerKg: supplier.savingsPerKg,
+    collectionPoint: point ? { id: point.id, name: point.name } : null,
     hasBankDetails: supplier.hasBankDetails,
-    lastDeliveryAt: supplier.lastDeliveryAt,
-    pendingRequests: supplier.pendingRequests,
     hasApp: supplier.hasApp,
-    lastAppSignInAt: supplier.lastAppSignInAt,
   };
 }
 

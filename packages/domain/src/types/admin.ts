@@ -241,24 +241,33 @@ export interface SupplierListItem {
   id: string;
   supplierCode: string;
   name: string;
-  nic: string;
-  collectionPoint: string;
+  /** The suffix the office writes after the code, e.g. `MAKADURA`. */
+  division: string | null;
+  /** An object on the wire, not the point's name; `null` when none is set. */
+  collectionPoint: { id: string; name: string } | null;
   status: SupplierStatus;
-  paymentMethod: PaymentMethod;
-  savingsPerKg: number;
   hasBankDetails: boolean;
-  lastDeliveryAt: string | null;
-  pendingRequests: number;
-  /** v2's app-account columns. See `AdminSupplier`. */
+  /** v2's app-account column. See `AdminSupplier`. */
   hasApp: boolean;
-  lastAppSignInAt: string | null;
+  /*
+   * **Not sent by `GET /admin/suppliers` yet** (docs/v2/BACKEND-TODO.md). Optional so the
+   * screen can tell "not sent" from a real value and hide the column, rather than
+   * rendering "Not available" or a raw translation key on every row.
+   */
+  nic?: string;
+  paymentMethod?: PaymentMethod;
+  savingsPerKg?: number;
+  lastDeliveryAt?: string | null;
+  pendingRequests?: number;
+  lastAppSignInAt?: string | null;
 }
 
 export interface SupplierQuery extends PageQuery {
   /** Matches supplier code, name or NIC. Tolerates the division suffix. */
   q?: string;
   status?: SupplierStatus;
-  collectionPoint?: string;
+  /** The point's **id**: the API reads `collectionPointId` and ignores a name. */
+  collectionPointId?: string;
   /**
    * v2's working filter: who has not installed the app.
    *

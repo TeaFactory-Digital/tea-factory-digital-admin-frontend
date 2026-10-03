@@ -12,7 +12,7 @@
  * what they are looking at.
  */
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
@@ -42,7 +42,7 @@ export function SuppliersScreen() {
   const debouncedSearch = useDebounced(searchText, 250);
 
   const status = params.get('status') as SupplierStatus | null;
-  const collectionPoint = params.get('collectionPoint');
+  const collectionPointId = params.get('collectionPointId');
   const hasBankDetails = params.get('hasBankDetails');
   const hasApp = params.get('hasApp');
   const page = Number(params.get('page') ?? 0);
@@ -58,7 +58,7 @@ export function SuppliersScreen() {
     () => ({
       q: debouncedSearch || undefined,
       status: status ?? undefined,
-      collectionPoint: collectionPoint ?? undefined,
+      collectionPointId: collectionPointId ?? undefined,
       hasBankDetails: hasBankDetails ?? undefined,
       /**
        * Coerced here rather than passed through as a string, unlike `hasBankDetails`
@@ -72,7 +72,7 @@ export function SuppliersScreen() {
       sort: sorting[0]?.id ?? 'supplierCode',
       dir: sorting[0]?.desc ? 'desc' : 'asc',
     }),
-    [debouncedSearch, status, collectionPoint, hasBankDetails, hasApp, page, sorting],
+    [debouncedSearch, status, collectionPointId, hasBankDetails, hasApp, page, sorting],
   );
 
   const { data, isPending, error, refetch } = useSuppliers(query);
@@ -98,22 +98,56 @@ export function SuppliersScreen() {
     setParam('page', null);
   }
 
-  const columns = useMemo<ColumnDef<SupplierListItem, unknown>[]>(
-    () => [
+  /**
+   * Whether the API sent a field at all, judged from the page in hand.
+   *
+   * Six columns read fields `GET /admin/suppliers` does not send yet (see
+   * docs/v2/BACKEND-TODO.md). Rendered anyway they showed "Not available" or a raw
+   * translation key on every row, so a column is shown only once its field arrives, and
+   * the day the API adds one it appears with no frontend change.
+   */
+  const sent = useCallback(
+    (key: keyof SupplierListItem) => (data?.items ?? []).some((row) => row[key] !== undefined),
+    [data],
+  );
+
+  const columns = useMemo<ColumnDef<SupplierListItem, unknown>[]>(() => {
+    const all: Array<ColumnDef<SupplierListItem, unknown> & { needs?: keyof SupplierListItem }> = [
       {
         accessorKey: 'supplierCode',
         header: t('suppliers.column.code'),
-        cell: (info) => (
-          <span className="numeric font-semibold text-text-primary">{info.getValue<string>()}</span>
-        ),
+        cell: (info) => {
+          const row = info.row.original;
+          return (
+            <span className="flex flex-col">
+              <span className="numeric font-semibold text-text-primary">{row.supplierCode}</span>
+              {row.division ? (
+                <span className="text-caption text-text-secondary">{row.division}</span>
+              ) : null}
+            </span>
+          );
+        },
       },
       { accessorKey: 'name', header: t('suppliers.column.name') },
       {
         accessorKey: 'nic',
+        needs: 'nic',
         header: t('suppliers.column.nic'),
         cell: (info) => <span className="numeric">{info.getValue<string>()}</span>,
       },
-      { accessorKey: 'collectionPoint', header: t('suppliers.column.point') },
+      {
+        id: 'collectionPoint',
+        header: t('suppliers.column.point'),
+        enableSorting: false,
+        cell: (info) => {
+          const point = info.row.original.collectionPoint;
+          return point ? (
+            point.name
+          ) : (
+            <span className="text-text-secondary">{t('suppliers.noPoint')}</span>
+          );
+        },
+      },
       {
         accessorKey: 'status',
         header: t('suppliers.column.status'),
@@ -131,12 +165,15 @@ export function SuppliersScreen() {
           const row = info.row.original;
           return (
             <span className="flex items-center gap-xs">
-              {t(`suppliers.payment.${row.paymentMethod}`)}
+              {row.paymentMethod ? t(`suppliers.payment.${row.paymentMethod}`) : null}
               {/* Missing bank details is not cosmetic: it is an M4 exception that
                   will block publishing the month (AC-04), so it is flagged here
                   where a clerk can fix it weeks earlier. */}
               {!row.hasBankDetails ? (
                 <Badge tone="warning">{t('suppliers.noBankDetails')}</Badge>
+              ) : !row.paymentMethod ? (
+                // Until the method arrives, say the one thing the row does know.
+                <Badge tone="success">{t('suppliers.bankOnFile')}</Badge>
               ) : null}
             </span>
           );
@@ -144,9 +181,11 @@ export function SuppliersScreen() {
       },
       {
         accessorKey: 'savingsPerKg',
+        needs: 'savingsPerKg',
         header: t('suppliers.column.savings'),
         cell: (info) => {
-          const value = info.getValue<number>();
+          const value = info.getValue<number | undefined>();
+          if (value === undefined) return null;
           return value === 0 ? (
             <span className="text-text-secondary">{t('suppliers.optedOut')}</span>
           ) : (
@@ -179,15 +218,18 @@ export function SuppliersScreen() {
           return (
             <span className="flex flex-col">
               <Badge tone="success">{t('suppliers.app.installed')}</Badge>
-              <span className="numeric text-caption text-text-secondary">
-                {t('suppliers.app.lastSignIn', { when: formatDate(row.lastAppSignInAt) })}
-              </span>
+              {row.lastAppSignInAt !== undefined ? (
+                <span className="numeric text-caption text-text-secondary">
+                  {t('suppliers.app.lastSignIn', { when: formatDate(row.lastAppSignInAt) })}
+                </span>
+              ) : null}
             </span>
           );
         },
       },
       {
         accessorKey: 'lastDeliveryAt',
+        needs: 'lastDeliveryAt',
         header: t('suppliers.column.lastDelivery'),
         cell: (info) => (
           <span className="numeric text-text-secondary">
@@ -197,16 +239,17 @@ export function SuppliersScreen() {
       },
       {
         accessorKey: 'pendingRequests',
+        needs: 'pendingRequests',
         header: t('suppliers.column.pending'),
         enableSorting: false,
         cell: (info) => {
-          const count = info.getValue<number>();
+          const count = info.getValue<number | undefined>() ?? 0;
           return count > 0 ? <Badge tone="info">{count}</Badge> : null;
         },
       },
-    ],
-    [t],
-  );
+    ];
+    return all.filter((column) => !column.needs || sent(column.needs));
+  }, [t, sent]);
 
   return (
     <>
@@ -246,10 +289,10 @@ export function SuppliersScreen() {
           <FilterSelect
             label={t('suppliers.column.point')}
             allLabel={t('suppliers.filter.allPoints')}
-            value={collectionPoint ?? null}
-            onChange={(next) => setParam('collectionPoint', next)}
+            value={collectionPointId ?? null}
+            onChange={(next) => setParam('collectionPointId', next)}
             options={config.collectionPoints.map((point) => ({
-              value: point.name,
+              value: point.id,
               label: point.name,
             }))}
           />

@@ -102,3 +102,49 @@ because these fields never arrived.
 - `updatedByName`: the name on that same translation
 
 Tell the frontend when it ships and the column can come back.
+
+---
+
+## 5. Suppliers list: six fields are missing
+
+**Priority:** Medium. The console hides these columns until the fields arrive.
+
+**What is wrong**
+`GET /admin/suppliers` sends only 8 fields per row:
+`id, supplierCode, name, division, status, collectionPoint, hasBankDetails, hasApp`.
+
+The suppliers screen has columns for six more, and they are all empty today.
+
+**Where**
+`apps/api/src/modules/suppliers/suppliers.service.ts`, `list()` (around line 58).
+Add each field to the `select` and to the `rows.map(...)` that builds the row.
+
+**What to add to each row**
+
+| Field | Type | Where it comes from |
+|---|---|---|
+| `nic` | string | `supplier.nic` (a column, just select it) |
+| `paymentMethod` | `"cheque"`, `"bankTransfer"` or `"cash"` | `supplier.paymentMethod` (a column) |
+| `savingsPerKg` | number | `supplier.savingsPerKg` (a column). It is a `Decimal`: send it as a **number**, e.g. `toNumber(...)`. `0` means opted out, send `0`, not `null`. |
+| `lastDeliveryAt` | ISO string or `null` | newest `dayDate` in `LeafDelivery` for this supplier where `voidedAt` is `null`. `null` if none. |
+| `pendingRequests` | number | count of this supplier's change requests + credit requests + tea packet requests with status `pending`, plus inquiries with status `open`. `0` if none. |
+| `lastAppSignInAt` | ISO string or `null` | `SupplierAppAccount.lastSignInAt` (a column). `null` if never, or if there is no account. |
+
+**Please keep the list fast**
+Do the two counts and the "latest" lookups for the **whole page in one query each**
+(`groupBy` / `GROUP BY supplier_id` over the page's ids), not one query per row.
+A page is up to 200 suppliers.
+
+**Please do NOT**
+- Put a full bank account number in the list. `hasBankDetails` (true/false) is enough.
+- Send `null` for `savingsPerKg` or `pendingRequests`. Use `0`.
+
+**Check**
+Open `/suppliers` in the console. The NIC, Savings /kg, Last delivery and Pending columns
+appear on their own, with no frontend change. "Paid by" shows the method, and the App
+column shows "last <date>" under "Signed in".
+
+**Already fixed in the frontend (no backend change needed)**
+- `collectionPoint` is an object `{ id, name }`. The console now reads `.name`.
+- The collection point filter now sends `collectionPointId` (the id), which is what the API
+  reads. Before, it sent `collectionPoint=<name>`, which the API ignored, so the filter did nothing.
