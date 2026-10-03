@@ -10,18 +10,18 @@
  * the three cases below are the ones where getting that wrong costs somebody their
  * morning.
  *
- * ## The gap this suite is really guarding
+ * ## The reload, which used to be the hole
  *
- * `POST /admin/auth/refresh` does **not** report the flag, checked against staging rather
- * than assumed. The console bootstraps from a rotation on every page load, so a clerk who
- * reloads while owing a change comes back with the flag lost: the console would let them
- * in and the API would then refuse everything, with nothing on screen saying why.
+ * The console bootstraps from a rotation on every page load, and `POST /admin/auth/refresh`
+ * did not report the flag. A clerk who reloaded while owing a change came back without it:
+ * the console let them in and the API then refused everything, with nothing on screen
+ * saying why. That was G-33, and the API reports it on refresh now.
  *
- * `noteOwesPasswordChange`, driven from the transport whenever a response carries
- * `password-change-required`, is what turns that dead end back into the screen that
- * resolves it. The last test is that recovery, and it should outlive the gap: if the
- * backend starts reporting the flag on refresh, this still passes and simply stops being
- * the only thing standing between a clerk and a locked console.
+ * **Both halves are tested, and the second is deliberately kept.** The rotation carrying
+ * the flag is the design; `noteOwesPasswordChange`, driven from the transport whenever any
+ * response carries `password-change-required`, is the belt. A recovery that only works
+ * while the primary path is broken is a recovery nobody notices has rotted, so it is
+ * driven from a refusal directly rather than from a reload.
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -74,10 +74,25 @@ describe('BR-008 for a console user', () => {
     expect(useAuthStore.getState().owesPasswordChange).toBe(false);
   });
 
-  it('recovers the flag from a refusal when the session was restored without it', async () => {
+  it('carries the flag through a rotation, so a reload does not lose it', async () => {
+    setOwesPasswordChange(CLERK, true);
     await signInAs(CLERK);
-    // The post-reload state: a rotation restored the session and told us nothing about
-    // BR-008, because the API does not put it on the refresh response.
+    expect(useAuthStore.getState().owesPasswordChange).toBe(true);
+
+    // What a page reload does: the access token is gone and the session is rebuilt from
+    // the refresh cookie alone.
+    await useAuthStore.getState().bootstrap();
+
+    /**
+     * **G-33.** While the rotation dropped the flag, this came back `false`: the console
+     * rendered a dashboard and the API refused every panel on it.
+     */
+    expect(useAuthStore.getState().status).toBe('authenticated');
+    expect(useAuthStore.getState().owesPasswordChange).toBe(true);
+  });
+
+  it('still recovers the flag from a refusal, as a belt', async () => {
+    await signInAs(CLERK);
     expect(useAuthStore.getState().owesPasswordChange).toBe(false);
 
     const refused = await apiClient
@@ -86,8 +101,9 @@ describe('BR-008 for a console user', () => {
 
     expect(isApiError(refused) && refused.code).toBe('password-change-required');
     /**
-     * **The recovery.** Without this the console is signed in, shows a dashboard, and
-     * every panel on it fails with a refusal nobody has translated into an instruction.
+     * Driven from a refusal rather than from a reload **on purpose**. The rotation
+     * carries the flag now, so a reload-shaped test would pass through the primary path
+     * and prove nothing about this one, and the belt would rot unnoticed.
      */
     expect(useAuthStore.getState().owesPasswordChange).toBe(true);
   });

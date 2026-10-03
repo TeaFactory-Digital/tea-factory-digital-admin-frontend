@@ -2147,14 +2147,15 @@ export const handlers: HttpHandler[] = [
       status: 'authenticated',
       session: { ...issueSession(user), user: publicUser(user), grants: user.grants },
       /*
-       * **No `passwordChangeRequired` here, and that is the wire being reproduced.**
+       * **The flag, on the rotation too** (G-33, closed).
        *
-       * `POST /admin/auth/refresh` does not report the flag, checked against staging
-       * rather than assumed. The console bootstraps from a rotation on every page load, so a
-       * clerk who reloads while owing a change comes back without it. Sending it here
-       * would paper over exactly the gap `authStore.noteOwesPasswordChange` exists to
-       * survive, and the suite would pass while a reload locked somebody out.
+       * This deliberately omitted it for as long as the API did, so the suite could not
+       * go green over a reload that locked somebody out. The API reports it on refresh
+       * now, so the fixture does. The transport's recovery stays as a belt and is tested
+       * by driving a refusal directly, because a belt only exercised while the primary
+       * path is broken is a belt nobody notices has rotted.
        */
+      passwordChangeRequired: user.owesPasswordChange ?? false,
     });
   }),
 

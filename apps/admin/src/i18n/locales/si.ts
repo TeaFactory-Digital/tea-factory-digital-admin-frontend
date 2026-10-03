@@ -1168,6 +1168,7 @@ export const si: Record<TranslationKey, string> = {
   'config.sectionDescription.teaPackets':
     'ගබඩාව නිකුත් කරන පැකට්ටුව, එහි මිල, සහ එක් සැපයුම්කරුවෙකුට වරකට ඉල්ලිය හැකි උපරිමය. ඉල්ලීමක් අනුමත වන විට අය කරන්නේ මෙම මිලයි.',
   /* BR-008 for the office, and the refusals it and uploads raise. */
+  'error.passwordUnchanged': 'ඒක දැනටමත් ඔබට තියෙන මුරපදයමයි. වෙනත් එකක් තෝරන්න, නැත්නම් ඔබට දුන් එකම තබාගන්න.',
   'initialPassword.title': 'ඔබේම මුරපදයක් තෝරන්න',
   'initialPassword.body': 'මෙම ගිණුමේ තවමත් තියෙන්නේ කාර්යාලය දුන් මුරපදයයි. ඔබට පමණක් දන්නා එකක් දාන්න, නැත්නම් ඔබට දුන් එක ශක්තිමත් නම් ඒකම තබාගන්න.',
   'initialPassword.next': 'නව මුරපදය',

@@ -60,7 +60,10 @@ export const authEndpoints = {
   refresh: () =>
     apiClient
       .post<LoginResult>('/admin/auth/refresh', undefined, withoutAuth())
-      .then((response) => response.data.session),
+      // The WHOLE envelope, not `.session`. `passwordChangeRequired` rides beside it and
+      // this is the only place the console learns it after a reload: the bootstrap is a
+      // rotation, so a `.session` here is a flag silently dropped on every page load.
+      .then((response) => response.data),
 
   logout: () => apiClient.post<void>('/admin/auth/logout').then(() => undefined),
 

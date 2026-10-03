@@ -1168,6 +1168,7 @@ export const en = {
   'config.sectionDescription.teaPackets':
     'The pack the store issues, its price, and the most one supplier may ask for at a time. The price is what a request is charged at when it is approved.',
   /* BR-008 for the office, and the refusals it and uploads raise. */
+  'error.passwordUnchanged': 'That is the password you already have. Choose a different one, or keep the one you were given.',
   'initialPassword.title': 'Choose your own password',
   'initialPassword.body': 'This account still has the password the office issued. Set one only you know, or keep the one you were given if it is already strong.',
   'initialPassword.next': 'New password',

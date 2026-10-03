@@ -61,7 +61,15 @@ export const authRepository = {
    * console fifteen minutes after they signed in, which is the hardest kind of permission
    * bug to reproduce.
    */
-  refresh: async (): Promise<AuthSession> => hydrate(await authEndpoints.refresh()),
+  refresh: async (): Promise<{ session: AuthSession; passwordChangeRequired: boolean }> => {
+    const result = await authEndpoints.refresh();
+    return {
+      session: hydrate(result.session),
+      // `?? false` for a server that predates the field. A console reading `undefined` as
+      // "owes a change" would wall off an office that owes nothing.
+      passwordChangeRequired: result.passwordChangeRequired ?? false,
+    };
+  },
 
   /**
    * Sign-out never rejects.

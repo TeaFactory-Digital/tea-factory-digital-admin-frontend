@@ -79,9 +79,12 @@ interface AuthState {
  * It stayed invisible until the API's cookie path was fixed, because before that every
  * refresh failed anyway and there was nothing to race.
  */
-let rotating: Promise<AuthSession | null> | null = null;
+/** What a rotation answers: the session, and whether BR-008 is still outstanding. */
+type Rotation = { session: AuthSession; passwordChangeRequired: boolean };
 
-function rotateOnce(): Promise<AuthSession | null> {
+let rotating: Promise<Rotation | null> | null = null;
+
+function rotateOnce(): Promise<Rotation | null> {
   rotating ??= authRepository
     .refresh()
     .catch(() => null)
@@ -116,9 +119,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
    * paint after every reload.
    */
   bootstrap: async () => {
-    const session = await rotateOnce();
-    if (session) {
-      applySession(set, session);
+    const rotation = await rotateOnce();
+    if (rotation) {
+      applySession(set, rotation.session);
+      /*
+       * **The flag survives a reload now**, because the rotation reports it.
+       *
+       * This is the whole of what G-33 was: the console bootstraps from a rotation on
+       * every page load, so a flag that only arrived at sign-in was a flag lost the
+       * moment anybody refreshed, and the console would render a dashboard whose every
+       * panel the API then refused.
+       */
+      set({ owesPasswordChange: rotation.passwordChangeRequired });
       return;
     }
     // No refresh cookie, or it has expired. Not an error — it is the normal state of a
@@ -142,8 +154,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   clearOwesPasswordChange: () => set({ owesPasswordChange: false }),
 
   refresh: async () => {
-    const session = await rotateOnce();
-    if (session) {
+    const rotation = await rotateOnce();
+    if (rotation) {
+      const session = rotation.session;
       /**
        * The **user and the grants too**, not only the token.
        *
@@ -153,6 +166,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
        * either a lever that 403s or a screen they should have regained.
        */
       applySession(set, session);
+      // A mid-session rotation reports it too, so an office that has just been told to
+      // change a password does not have to sign out to discover it.
+      set({ owesPasswordChange: rotation.passwordChangeRequired });
       return session.accessToken;
     }
 
