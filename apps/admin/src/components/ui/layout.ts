@@ -82,8 +82,16 @@ export const GRID_CARD = 'flex min-h-[22rem] flex-1 flex-col';
  */
 export const SPLIT_PANE = 'grid gap-lg lg:min-h-[30rem] lg:flex-1';
 
-/** The one column of a {@link SPLIT_PANE} that scrolls. Put it on exactly one side. */
-export const SPLIT_PANE_SCROLLER = 'lg:min-h-0 lg:overflow-y-auto';
+/**
+ * A column of a split pane that scrolls on its own.
+ *
+ * **`relative` is load-bearing.** A visually hidden element (`sr-only`: a file input, a
+ * hint kept for screen readers) is `position: absolute`. Without a positioned ancestor
+ * inside the scroller, it is placed against the page instead, at its spot far down the
+ * column's content, and stretches the *window*: the banner editor scrolled the whole
+ * browser 403px, sidebar and all, while each column scrolled correctly inside it.
+ */
+export const SPLIT_PANE_SCROLLER = 'relative lg:min-h-0 lg:overflow-y-auto';
 
 /**
  * {@link SPLIT_PANE} for an editor where **both** columns scroll (banner, news article).

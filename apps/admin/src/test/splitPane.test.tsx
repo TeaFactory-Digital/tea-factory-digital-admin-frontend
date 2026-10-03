@@ -62,9 +62,21 @@ describe('SPLIT_PANE', () => {
   it('stays off below `lg`, where two nested scrollbars are worse', () => {
     // A wheel that stops working depending on where the pointer is.
     for (const rule of `${SPLIT_PANE} ${SPLIT_PANE_SCROLLER}`.split(' ')) {
-      if (rule.startsWith('grid') || rule.startsWith('gap-') || rule === '') continue;
+      // `relative` scrolls nothing; it only keeps hidden children inside the column.
+      if (rule.startsWith('grid') || rule.startsWith('gap-') || rule === 'relative' || rule === '')
+        continue;
       expect(rule.startsWith('lg:'), rule).toBe(true);
     }
+  });
+
+  it('is the positioning box for its hidden children, at every width', () => {
+    /**
+     * An `sr-only` file input or hint is `position: absolute`. With no positioned
+     * ancestor inside the scroller it is placed against the page, far down the column's
+     * content, and stretches the window: the banner editor scrolled the whole browser,
+     * sidebar and all, by 403px. Measured in Chromium, not visible to jsdom.
+     */
+    expect(SPLIT_PANE_SCROLLER.split(' ')).toContain('relative');
   });
 });
 

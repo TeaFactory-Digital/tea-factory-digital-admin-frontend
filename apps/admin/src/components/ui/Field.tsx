@@ -91,7 +91,7 @@ export function Field({ label, error, hint, required, children, className }: Fie
   const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
 
   return (
-    <div className={cn('flex flex-col gap-xs', className)}>
+    <div className={cn('relative flex flex-col gap-xs', className)}>
       <div className="flex items-center gap-xxs">
         <label
           htmlFor={id}

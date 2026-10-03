@@ -62,7 +62,7 @@ export function AppShell() {
         {/* 30 px from the sidebar on the left, 30 px from the window on the right
             (`--spacing-gutter`). The vertical padding stays on the shared scale —
             only the gutters are fixed geometry. */}
-        <main id="main" className="min-w-0 flex-1 overflow-y-auto px-gutter py-lg">
+        <main id="main" className="relative min-w-0 flex-1 overflow-y-auto px-gutter py-lg">
           {/**
            * `h-full` is what lets a grid screen fill the window instead of
            * growing past it.

@@ -145,7 +145,7 @@ export function ImageField({
   };
 
   return (
-    <div className="flex flex-col gap-xs">
+    <div className="relative flex flex-col gap-xs">
       {/* The hint waits behind an "i" beside the label rather than sitting under the
           picker on every visit. With the label hidden (a card header names the field),
           the caller shows the hint in that header instead. */}
