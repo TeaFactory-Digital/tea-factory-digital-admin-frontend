@@ -218,3 +218,64 @@ with the category beside it.
   config (`push.categories`), so the API does not need to send it.
 - When push notifications are switched off for the factory, the tab now says so instead of
   showing nothing.
+
+---
+
+## 8. Banner image does not show in the mobile app (or in the console)
+
+**Priority:** High. An uploaded banner image is saved but never shown anywhere.
+
+**What is wrong**
+The console uploads banner artwork as an attachment and saves it with
+`PATCH /admin/banners/:id { imageAttachmentId, imageAspectRatio }`. That part works: the id is stored
+in `Banner.imageAttachmentId`.
+
+But every place that **reads** a banner sends only the `imageUrl` column, which is `null` for an
+uploaded image. So:
+
+- the mobile app gets no `imageUrl` and shows the banner without a picture;
+- the console's banner editor and list show no picture either.
+
+This is the same problem as #1 (news cover), for banners.
+
+**Where**
+- `apps/api/src/modules/supplier-app/supplier-content.controller.ts`, the active banner endpoint
+  (around line 179): `imageUrl: row.imageUrl ?? undefined`. **This is the one the phone reads.**
+- `apps/api/src/modules/content/banners.service.ts`:
+  - `list()` (around line 59): `imageUrl: row.imageUrl` and `hasImage: Boolean(row.imageUrl)`
+  - the single-banner read (around line 283): same
+  - `preview()` (around line 333): `imageUrl: banner.imageUrl`
+
+**What to do**
+1. In each query above, add the attachment to the `include`:
+   ```ts
+   include: { translations: true, imageAttachment: { select: { storageKey: true } } }
+   ```
+2. Build `imageUrl` the way `NewsService.coverUrl()` does (`news.service.ts`, around line 39):
+   - attachment present (and storage configured): `storage.signDownload(storageKey)`
+   - otherwise: `row.imageUrl`
+3. Set `hasImage` from that result, not from the column.
+4. `BannersService` has no storage service yet: inject the same one `NewsService` uses.
+   Best: move `coverUrl()` into one shared helper and use it for news, banners and the
+   supplier endpoints (#1), so there is one copy.
+
+**Check**
+In the console, open a banner, upload artwork, save, publish it with a live window.
+- The editor shows the picture after a page reload.
+- The mobile app's banner shows the picture.
+
+---
+
+## 9. Optional: accept the image when a banner is created
+
+**Priority:** Low. The console already works around it.
+
+`POST /admin/banners` uses a `.strict()` schema (`bannerDraftSchema` in `content.controller.ts`,
+around line 84) with no `imageAttachmentId`, although `BannersService.create()` already supports it.
+So the console creates the banner first, then attaches the image with a second `PATCH`.
+
+**If you want one request:** add to `bannerDraftSchema`:
+```ts
+imageAttachmentId: z.string().uuid().optional(),
+```
+Tell the frontend, and the second request can go.

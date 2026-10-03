@@ -1695,6 +1695,7 @@ export const si: Record<TranslationKey, string> = {
   'banners.createConfirm': 'බැනරය සාදන්න',
   'banners.createDraftHint': 'එය කෙටුම්පතක් ලෙස සෑදේ. ප්‍රකාශ කරන්නේ කර්මාන්තශාලා පරිපාලකයෙකි.',
   'banners.created': 'බැනරය සෑදිණි',
+  'banners.imageAttachFailed': 'බැනරය සාදන ලදී, නමුත් එහි රූපය අමුණා නැත. සංස්කාරකයේදී එය නැවත එක් කරන්න.',
   'banners.createdHint': 'අනෙක් භාෂා සහ පින්තූරය එකතු කරන්න.',
   'banners.createFailed': 'බැනරය සෑදිය නොහැකි විය',
   'banners.backToList': 'සියලු බැනර්',

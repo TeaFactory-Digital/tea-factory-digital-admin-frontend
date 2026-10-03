@@ -26,6 +26,8 @@ import { Field, Input, Textarea } from '@/components/ui/Field';
 import { DateTimePicker } from '@/components/ui/DatePicker';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
+import { ImageField } from '@/components/ui/ImageField';
+import { bannerRepository } from '@/services/repositories/bannerRepository';
 import { BannerActionField } from './BannerActionField';
 import { useCreateBanner } from './hooks';
 
@@ -55,6 +57,7 @@ export function NewBannerDialog({
   const [action, setAction] = useState<BannerAction>({ type: 'screen', path: '' });
   const [startsAt, setStartsAt] = useState(localNow());
   const [endsAt, setEndsAt] = useState('');
+  const [image, setImage] = useState<{ attachmentId: string; aspectRatio: number } | null>(null);
 
   // Cleared on open, not on close: a dialog holding the last banner's text invites an
   // editor to publish something they only half-rewrote.
@@ -66,6 +69,7 @@ export function NewBannerDialog({
       setAction({ type: 'screen', path: '' });
       setStartsAt(localNow());
       setEndsAt('');
+      setImage(null);
     }
   }, [open]);
 
@@ -99,6 +103,24 @@ export function NewBannerDialog({
         startsAt: new Date(startsAt).toISOString(),
         endsAt: endsAt ? new Date(endsAt).toISOString() : null,
       });
+
+      /**
+       * The artwork is attached **after** the banner exists, with the same `PATCH` the
+       * editor uses. `POST /admin/banners` is strict and takes no attachment id yet
+       * (docs/v2/BACKEND-TODO.md). A failure here does not undo the banner: it is said,
+       * and the editor it opens on has the same picker to try again.
+       */
+      if (image) {
+        try {
+          await bannerRepository.patch(banner.id, {
+            imageAttachmentId: image.attachmentId,
+            imageAspectRatio: image.aspectRatio,
+          });
+        } catch (cause) {
+          toast.error(t('banners.imageAttachFailed'), t(errorMessageKey(cause)));
+        }
+      }
+
       toast.success(t('banners.created'), t('banners.createdHint'));
       onClose();
       // Straight into the editor: the next thing the office does is translate it and add
@@ -203,6 +225,16 @@ export function NewBannerDialog({
             )}
           </Field>
         </div>
+
+        {/* Optional, as on the editor: a headline and a button is a whole banner. Wide
+            frame, because the app shows the artwork full-width. */}
+        <ImageField
+          label={t('uploads.artwork')}
+          entity="banner"
+          onChange={setImage}
+          hint={t('uploads.hint', { max: 5 })}
+          previewClassName="aspect-[3/1]"
+        />
 
         <p className="text-caption text-text-secondary">{t('banners.createDraftHint')}</p>
       </div>
