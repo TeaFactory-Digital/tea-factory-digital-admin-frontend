@@ -94,7 +94,9 @@ export function SupplierDetailScreen() {
     <>
       <PageHeader
         title={supplier.name}
-        description={supplier.supplierCode}
+        description={
+          supplier.division ? `${supplier.supplierCode} · ${supplier.division}` : supplier.supplierCode
+        }
         breadcrumb={
           <Link to="/suppliers" className="hover:text-text-primary">
             {t('suppliers.title')}
@@ -145,7 +147,7 @@ export function SupplierDetailScreen() {
         </Notice>
       ) : null}
 
-      {supplier.pendingRequests > 0 ? (
+      {(supplier.pendingRequests ?? 0) > 0 ? (
         <Notice tone="info">
           {t('suppliers.detail.pendingRequests')}: {supplier.pendingRequests}
         </Notice>
@@ -201,17 +203,20 @@ export function SupplierDetailScreen() {
               <dl className="divide-y divide-divider">
                 <DetailRow
                   label={t('suppliers.column.point')}
-                  value={supplier.collectionPoint}
+                  value={supplier.collectionPoint?.name ?? t('suppliers.noPoint')}
                 />
                 <DetailRow
                   label={t('suppliers.detail.estateAddress')}
                   value={supplier.estateAddress ?? t('common.notAvailable')}
                 />
-                <DetailRow
-                  label={t('suppliers.column.lastDelivery')}
-                  value={formatDate(supplier.lastDeliveryAt)}
-                  numeric
-                />
+                {/* Not sent by the API yet; a row reading "Not available" says nothing. */}
+                {supplier.lastDeliveryAt !== undefined ? (
+                  <DetailRow
+                    label={t('suppliers.column.lastDelivery')}
+                    value={formatDate(supplier.lastDeliveryAt)}
+                    numeric
+                  />
+                ) : null}
               </dl>
             </CardBody>
           </Card>
@@ -252,9 +257,15 @@ export function SupplierDetailScreen() {
                       display choice the console could get wrong (§20.4). */}
                   <DetailRow
                     label={t('suppliers.detail.accountNumber')}
-                    value={supplier.bankDetails.accountNumber}
+                    value={supplier.bankDetails.accountNumberMasked}
                     numeric
                   />
+                  {supplier.bankDetails.accountName ? (
+                    <DetailRow
+                      label={t('suppliers.detail.accountName')}
+                      value={supplier.bankDetails.accountName}
+                    />
+                  ) : null}
                 </dl>
               ) : (
                 <Notice tone="warning">{t('suppliers.noBankDetails')}</Notice>
@@ -275,11 +286,13 @@ export function SupplierDetailScreen() {
                   }
                   numeric
                 />
-                <DetailRow
-                  label={t('suppliers.detail.savingsBalance')}
-                  value={formatMoney(supplier.savingsBalance)}
-                  numeric
-                />
+                {supplier.savingsBalance !== undefined ? (
+                  <DetailRow
+                    label={t('suppliers.detail.savingsBalance')}
+                    value={formatMoney(supplier.savingsBalance)}
+                    numeric
+                  />
+                ) : null}
               </dl>
             </CardBody>
           </Card>
@@ -287,23 +300,31 @@ export function SupplierDetailScreen() {
           <Card>
             <CardHeader title={t('suppliers.detail.credit')} />
             <CardBody>
-              <dl className="divide-y divide-divider">
-                <DetailRow
-                  label={t('suppliers.detail.creditAdvance')}
-                  value={formatMoney(supplier.creditBalances.advance)}
-                  numeric
-                />
-                <DetailRow
-                  label={t('suppliers.detail.creditLoan')}
-                  value={formatMoney(supplier.creditBalances.loan)}
-                  numeric
-                />
-                <DetailRow
-                  label={t('suppliers.detail.creditManure')}
-                  value={formatMoney(supplier.creditBalances.manure)}
-                  numeric
-                />
-              </dl>
+              {/* `creditBalances` is not sent by the API yet. Reading `.advance` off it
+                  took the whole screen down, so its absence is said in words. */}
+              {supplier.creditBalances ? (
+                <dl className="divide-y divide-divider">
+                  <DetailRow
+                    label={t('suppliers.detail.creditAdvance')}
+                    value={formatMoney(supplier.creditBalances.advance)}
+                    numeric
+                  />
+                  <DetailRow
+                    label={t('suppliers.detail.creditLoan')}
+                    value={formatMoney(supplier.creditBalances.loan)}
+                    numeric
+                  />
+                  <DetailRow
+                    label={t('suppliers.detail.creditManure')}
+                    value={formatMoney(supplier.creditBalances.manure)}
+                    numeric
+                  />
+                </dl>
+              ) : (
+                <p className="text-body-small text-text-secondary">
+                  {t('suppliers.detail.balancesUnavailable')}
+                </p>
+              )}
             </CardBody>
           </Card>
         </TabsContent>

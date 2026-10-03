@@ -237,6 +237,45 @@ export interface AdminSupplier extends Supplier {
 }
 
 /** The grid row. Deliberately smaller than the detail — thousands are listed. */
+/**
+ * One supplier **as `GET /admin/suppliers/:id` sends it**, which is what the detail
+ * screen reads. `AdminSupplier` stays the fixture's full record.
+ *
+ * - `collectionPoint` is `{ id, name }`, not a name.
+ * - `bankDetails` is the masked form: `accountNumberMasked`, never a full number.
+ * - Five fields are **not sent yet** (docs/v2/BACKEND-TODO.md) and are optional here, so
+ *   the screen says "not available" for them. Reading `creditBalances.advance` off an
+ *   absent object took the whole screen down.
+ */
+export interface SupplierDetail
+  extends Omit<
+    AdminSupplier,
+    | 'collectionPoint'
+    | 'bankDetails'
+    | 'hasBankDetails'
+    | 'lastDeliveryAt'
+    | 'savingsBalance'
+    | 'creditBalances'
+    | 'pendingRequests'
+    | 'deviceCount'
+  > {
+  division?: string | null;
+  collectionPoint: { id: string; name: string } | null;
+  bankDetails: {
+    bankName: string;
+    branchName: string;
+    accountName?: string;
+    /** e.g. "•••• 4821". */
+    accountNumberMasked: string;
+    updatedAt?: string;
+  } | null;
+  lastDeliveryAt?: string | null;
+  savingsBalance?: number;
+  creditBalances?: Record<CreditFacility, number>;
+  pendingRequests?: number;
+  deviceCount?: number;
+}
+
 export interface SupplierListItem {
   id: string;
   supplierCode: string;

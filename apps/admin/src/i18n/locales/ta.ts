@@ -247,6 +247,8 @@ export const ta: Record<TranslationKey, string> = {
   'suppliers.filter.anyBankDetails': 'எந்த வங்கி விவரமும்',
   'suppliers.filter.noBankDetails': 'வங்கி விவரங்கள் இல்லை',
   'suppliers.noBankDetails': 'வங்கி விவரங்கள் இல்லை',
+  'suppliers.detail.accountName': 'கணக்கின் பெயர்',
+  'suppliers.detail.balancesUnavailable': 'கடன் இருப்புகள் இன்னும் இங்கு கிடைக்கவில்லை.',
   'suppliers.noPoint': 'அமைக்கப்படவில்லை',
   'suppliers.bankOnFile': 'வங்கி விவரங்கள் உள்ளன',
   'suppliers.optedOut': 'விலகியுள்ளார்',

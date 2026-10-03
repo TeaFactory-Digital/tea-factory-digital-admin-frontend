@@ -10,10 +10,10 @@
  */
 
 import type {
-  AdminSupplier,
   Paged,
   SupplierEditable,
   SupplierIncomeHistory,
+  SupplierDetail,
   SupplierListItem,
   SupplierNotificationStatus,
   SupplierQuery,
@@ -46,7 +46,7 @@ export const supplierEndpoints = {
       .then((response) => response.data),
 
   get: (id: string) =>
-    apiClient.get<AdminSupplier>(`/admin/suppliers/${id}`).then((response) => response.data),
+    apiClient.get<SupplierDetail>(`/admin/suppliers/${id}`).then((response) => response.data),
 
   /**
    * This supplier's months — the same series the app shows them.

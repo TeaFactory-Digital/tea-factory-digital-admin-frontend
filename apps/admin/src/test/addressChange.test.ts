@@ -18,6 +18,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { changeRequestRepository } from '@/services/repositories/changeRequestRepository';
 import { supplierRepository } from '@/services/repositories/supplierRepository';
+import { mockSupplierRecord } from '@/services/mocks/handlers';
 import { isApiError } from '@/services/api/errors';
 import { signInAs, signOut } from './render';
 
@@ -119,11 +120,12 @@ describe('M9 · an address change is a request, not a save', () => {
   it('drops the supplier’s pending count when it is decided', async () => {
     await signInAs(MANAGER);
     const request = await changeRequestRepository.get(ADDRESS_REQUEST);
-    const before = await supplierRepository.get(request.supplierId);
+    // The fixture's own count: `GET /admin/suppliers/:id` does not send `pendingRequests`.
+    const before = mockSupplierRecord(request.supplierId);
 
     await changeRequestRepository.approve(ADDRESS_REQUEST, { note: NOTE });
 
-    const after = await supplierRepository.get(request.supplierId);
+    const after = mockSupplierRecord(request.supplierId);
     expect(after.pendingRequests).toBe(Math.max(0, before.pendingRequests - 1));
   });
 });

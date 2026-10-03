@@ -182,6 +182,7 @@ import {
   summariseDay,
   summarisePayoutRun,
   toListItem,
+  toSupplierDetail,
   type BannerRecord,
   type BillRunRecord,
   type MockUser,
@@ -2496,7 +2497,7 @@ export const handlers: HttpHandler[] = [
     if (!supplier) {
       return fail({ status: 404, code: '404', message: 'No such supplier.' });
     }
-    return HttpResponse.json(supplier);
+    return HttpResponse.json(toSupplierDetail(supplier));
   }),
 
   http.patch('*/admin/suppliers/:id', async ({ request, params }) => {
@@ -6457,6 +6458,17 @@ export const handlers: HttpHandler[] = [
 export function setOwesPasswordChange(email: string, owes: boolean): void {
   const user = state.users.find((one) => one.email.toLowerCase() === email.toLowerCase());
   if (user) user.owesPasswordChange = owes;
+}
+
+/**
+ * **Tests only.** The fixture's full record for one supplier, including the balances and
+ * counts `GET /admin/suppliers/:id` does not send. Lets a test check the fixture's own
+ * bookkeeping (an approval moves a balance) without the API pretending to serve it.
+ */
+export function mockSupplierRecord(id: string): AdminSupplier {
+  const supplier = state.suppliers.find((one) => one.id === id);
+  if (!supplier) throw new Error(`No mock supplier ${id}`);
+  return { ...supplier, creditBalances: { ...supplier.creditBalances } };
 }
 
 export function resetMockState(): void {

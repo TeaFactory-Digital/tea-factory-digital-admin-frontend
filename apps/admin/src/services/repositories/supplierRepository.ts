@@ -9,11 +9,11 @@
  */
 
 import type {
-  AdminSupplier,
   Paged,
   SupplierEditable,
   SupplierIncomeHistory,
   SupplierNotificationStatus,
+  SupplierDetail,
   SupplierListItem,
   SupplierQuery,
   SupplierStatus,
@@ -38,7 +38,7 @@ export const supplierRepository = {
   list: (query: SupplierQuery = {}): Promise<Paged<SupplierListItem>> =>
     supplierEndpoints.list({ page: 0, pageSize: 50, ...query }),
 
-  get: (id: string): Promise<AdminSupplier> => supplierEndpoints.get(id),
+  get: (id: string): Promise<SupplierDetail> => supplierEndpoints.get(id),
 
   income: (id: string, year?: number): Promise<SupplierIncomeHistory> =>
     supplierEndpoints.income(id, year),

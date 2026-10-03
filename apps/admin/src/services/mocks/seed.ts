@@ -62,6 +62,7 @@ import type {
   QueueKey,
   RuntimeConfig,
   StaticPageSlug,
+  SupplierDetail,
   SupplierListItem,
 } from '@tfd/domain';
 import {
@@ -404,6 +405,40 @@ export function toListItem(supplier: AdminSupplier): SupplierListItem {
     collectionPoint: point ? { id: point.id, name: point.name } : null,
     hasBankDetails: supplier.hasBankDetails,
     hasApp: supplier.hasApp,
+  };
+}
+
+/**
+ * One supplier **exactly as `GET /admin/suppliers/:id` sends it today**: the point as an
+ * object, the bank details masked under `accountNumberMasked`, and none of the five
+ * fields the API does not send. Serving the full record let the detail screen read
+ * `creditBalances.advance` in tests and crash on the real API.
+ */
+export function toSupplierDetail(supplier: AdminSupplier): SupplierDetail {
+  const {
+    collectionPoint,
+    bankDetails,
+    hasBankDetails: _hasBankDetails,
+    lastDeliveryAt: _lastDeliveryAt,
+    savingsBalance: _savingsBalance,
+    creditBalances: _creditBalances,
+    pendingRequests: _pendingRequests,
+    deviceCount: _deviceCount,
+    ...rest
+  } = supplier;
+  const point = COLLECTION_POINTS.find((one) => one.name === collectionPoint);
+  return {
+    ...rest,
+    division: null,
+    collectionPoint: point ? { id: point.id, name: point.name } : null,
+    bankDetails: bankDetails
+      ? {
+          bankName: bankDetails.bankName,
+          branchName: bankDetails.branchName,
+          accountName: supplier.name,
+          accountNumberMasked: bankDetails.accountNumber,
+        }
+      : null,
   };
 }
 

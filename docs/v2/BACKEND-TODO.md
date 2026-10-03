@@ -148,3 +148,41 @@ column shows "last <date>" under "Signed in".
 - `collectionPoint` is an object `{ id, name }`. The console now reads `.name`.
 - The collection point filter now sends `collectionPointId` (the id), which is what the API
   reads. Before, it sent `collectionPoint=<name>`, which the API ignored, so the filter did nothing.
+
+---
+
+## 6. Supplier detail page: six fields are missing
+
+**Priority:** Medium. The page used to crash on this. The frontend now handles it, but the
+page cannot show balances until these arrive.
+
+**What is wrong**
+`GET /admin/suppliers/:id` does not send these six fields, which the supplier page reads.
+
+**Where**
+`apps/api/src/modules/suppliers/suppliers.service.ts`, `byId()` (around line 123).
+Add each field to the object that `byId()` returns.
+
+**What to add**
+
+| Field | Type | Where it comes from |
+|---|---|---|
+| `hasBankDetails` | boolean | `bankDetails !== null`. The list already sends this; send it here too. |
+| `lastDeliveryAt` | ISO string or `null` | same as in the list (#5): newest `LeafDelivery.dayDate` where `voidedAt` is `null` |
+| `pendingRequests` | number | same as in the list (#5). `0` if none. |
+| `deviceCount` | number | count of `Device` rows for this supplier. `0` if none. |
+| `savingsBalance` | number | the supplier's current savings balance (from `SavingsEntry` minus `SavingsWithdrawal`, or wherever the savings statement reads it). Send a **number**, not a `Decimal`. |
+| `creditBalances` | `{ advance, loan, manure }`, all numbers | what the supplier still owes on each facility: one `CreditAccount` row per facility. Use the same balance the credit eligibility check uses (`balance`, or `externalBalance` when `balanceSource` says the factory system's figure is authoritative). Send `0` for a facility with no row, **always all three keys**. |
+
+**Please do NOT**
+- Send `creditBalances` as `null` or leave out a key. The page reads `creditBalances.advance`,
+  `.loan` and `.manure`.
+- Send a full bank account number. `accountNumberMasked` is what the page shows.
+
+**Check**
+Open a supplier in the console (`/suppliers/<id>`). On the Payout tab, the savings balance and the
+three credit balances show numbers instead of "Credit balances are not available here yet."
+
+**Already fixed in the frontend (no backend change needed)**
+- The page no longer crashes when `creditBalances` is missing.
+- `collectionPoint` is read as `{ id, name }`, and the bank number as `accountNumberMasked`.

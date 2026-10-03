@@ -269,7 +269,7 @@ describe('M2 supplier detail', () => {
     await signInAs(CLERK);
 
     const supplier = await supplierRepository.get('sup-1');
-    expect(supplier.bankDetails?.accountNumber).toMatch(/•/);
+    expect(supplier.bankDetails?.accountNumberMasked).toMatch(/•/);
 
     const revealed = await supplierRepository.revealBankDetails(
       'sup-1',

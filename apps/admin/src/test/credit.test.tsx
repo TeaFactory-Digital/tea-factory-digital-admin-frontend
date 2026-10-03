@@ -36,7 +36,7 @@ import {
 import { CreditRequestDetailScreen } from '@/modules/credit/CreditRequestDetailScreen';
 import { creditRepository } from '@/services/repositories/creditRepository';
 import { deliveryRepository } from '@/services/repositories/deliveryRepository';
-import { supplierRepository } from '@/services/repositories/supplierRepository';
+import { mockSupplierRecord } from '@/services/mocks/handlers';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { useAuthStore } from '@/auth/authStore';
 import { renderWithProviders, signInAs, signOut } from './render';
@@ -174,7 +174,7 @@ describe('M7 approve', () => {
   it('raises the supplier’s balance and records what it was decided against (AC-09)', async () => {
     await signInAs(MANAGER);
     const request = await creditRepository.get(WITHIN_CEILING);
-    const supplierBefore = await supplierRepository.get(request.supplierId);
+    const supplierBefore = mockSupplierRecord(request.supplierId);
 
     const ack = await creditRepository.approve(
       WITHIN_CEILING,
@@ -194,7 +194,7 @@ describe('M7 approve', () => {
      * as a `deductions.advance` line on the next bill. Without this write the
      * module would be a queue that decides things and changes nothing.
      */
-    const supplierAfter = await supplierRepository.get(request.supplierId);
+    const supplierAfter = mockSupplierRecord(request.supplierId);
     expect(supplierAfter.creditBalances.advance).toBe(
       round2(supplierBefore.creditBalances.advance + request.amount),
     );
