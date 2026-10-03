@@ -57,7 +57,26 @@ export const newsRepository = {
   list: (query: NewsQuery = {}): Promise<Paged<NewsListItem>> =>
     newsEndpoints.list({ page: 0, pageSize: 25, ...query }),
 
-  get: (id: string): Promise<AdminNewsArticle> => newsEndpoints.get(id),
+  /**
+   * **`updatedAt` / `updatedByName` are worked out here.**
+   *
+   * `GET /admin/news/:id` does not send them at the article level, so the heading read
+   * "Last edited by , —". Each translation carries its own, and the article's last edit is
+   * simply the newest of those: the same rule `AdminNewsArticle.updatedAt` documents. An
+   * article with no translation yet falls back to who created it and when.
+   */
+  get: async (id: string): Promise<AdminNewsArticle> => {
+    const served = (await newsEndpoints.get(id)) as AdminNewsArticle &
+      Partial<Pick<AdminNewsArticle, 'updatedAt' | 'updatedByName'>>;
+    const newest = Object.values(served.translations ?? {})
+      .filter((one) => one?.updatedAt)
+      .sort((a, b) => b!.updatedAt.localeCompare(a!.updatedAt))[0];
+    return {
+      ...served,
+      updatedAt: served.updatedAt ?? newest?.updatedAt ?? served.createdAt,
+      updatedByName: served.updatedByName ?? newest?.updatedByName ?? served.createdByName,
+    };
+  },
 
   create: async (body: NewsArticleDraft): Promise<CreatedArticle> => {
     const parsed = newsArticleDraftSchema.safeParse(body);

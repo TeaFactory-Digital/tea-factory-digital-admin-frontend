@@ -5577,7 +5577,13 @@ export const handlers: HttpHandler[] = [
 
     const record = state.news.find((candidate) => candidate.id === params.id);
     if (!record) return fail({ status: 404, code: '404', message: 'No such article.' });
-    return HttpResponse.json(serialiseNews(record, request));
+    // Without `updatedAt` / `updatedByName`, as the API sends it: the console derives
+    // them from the translations, and serving them here hid that it had to.
+    const { updatedAt: _updatedAt, updatedByName: _updatedByName, ...served } = serialiseNews(
+      record,
+      request,
+    );
+    return HttpResponse.json(served);
   }),
 
   /* ── M11 Promo banners ─────────────────────────────────────────────────── */

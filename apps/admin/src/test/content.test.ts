@@ -501,4 +501,17 @@ describe('AC-08 · gaps are relative to what the factory publishes in', () => {
     expect(response.status).toBe(422);
     expect(await response.json()).toMatchObject({ code: 'invalid' });
   });
+
+  it('works out the last edit from the translations, which is all the API sends', async () => {
+    await signInAs(EDITOR);
+    const row = (await newsRepository.list({ pageSize: 1 })).items[0]!;
+    const article = await newsRepository.get(row.id);
+
+    const newest = Object.values(article.translations)
+      .map((one) => one!)
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0]!;
+    // Never blank: "Last edited by , —" was the heading before this was derived.
+    expect(article.updatedByName).toBe(newest.updatedByName);
+    expect(article.updatedAt).toBe(newest.updatedAt);
+  });
 });
