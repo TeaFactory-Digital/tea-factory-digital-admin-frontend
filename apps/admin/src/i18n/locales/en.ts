@@ -850,7 +850,6 @@ export const en = {
   'content.badge.stale': '{{language}} needs updating',
   'content.badge.gaps': '{{count}} to fix',
   'content.column.languages': 'Languages',
-  'content.column.lastEdit': 'Last edit',
   'content.complete': 'Complete',
   'content.lens': 'Show',
 
@@ -871,6 +870,8 @@ export const en = {
   'news.backToList': 'Back to news',
   'news.column.title': 'Article',
   'news.column.published': 'Published',
+  'news.column.created': 'Created',
+  'news.notPublished': 'Not published yet',
   'news.status.draft': 'Draft',
   'news.status.published': 'Live',
   'news.status.archived': 'Archived',

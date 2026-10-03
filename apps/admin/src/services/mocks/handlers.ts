@@ -817,10 +817,12 @@ function toNewsListItem(record: NewsRecord, request: Request): NewsListItem {
     // would be unreadable while translating.
     title: fallback?.title ?? '—',
     status: full.status,
+    // The API's row, field for field, so the screen is tested against what it receives.
+    coverImageUrl: record.coverImageUrl ?? null,
     publishedAt: full.publishedAt,
-    updatedAt: full.updatedAt,
-    updatedByName: full.updatedByName,
-    hasCoverImage: Boolean(record.coverImageUrl),
+    publishedByName: full.publishedByName ?? null,
+    createdAt: full.createdAt,
+    createdByName: full.createdByName,
     missingLanguages: full.missingLanguages,
     staleLanguages: full.staleLanguages,
   };
@@ -5305,7 +5307,7 @@ export const handlers: HttpHandler[] = [
     // Newest first: a feed is read from the top, and the article the office is asking
     // about is almost always the one that just went out.
     rows = sortRows(rows, url, (a, b) =>
-      (b.publishedAt ?? b.updatedAt).localeCompare(a.publishedAt ?? a.updatedAt),
+      (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt),
     );
 
     return HttpResponse.json(paginate(rows, url));

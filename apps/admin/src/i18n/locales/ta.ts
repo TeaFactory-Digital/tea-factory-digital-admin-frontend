@@ -871,7 +871,6 @@ export const ta: Record<TranslationKey, string> = {
   'content.badge.stale': '{{language}} புதுப்பிக்க வேண்டும்',
   'content.badge.gaps': 'சரிசெய்ய {{count}}',
   'content.column.languages': 'மொழிகள்',
-  'content.column.lastEdit': 'இறுதித் திருத்தம்',
   'content.complete': 'முழுமையானது',
   'content.lens': 'காட்டு',
 
@@ -892,6 +891,8 @@ export const ta: Record<TranslationKey, string> = {
   'news.backToList': 'செய்திகளுக்குத் திரும்பு',
   'news.column.title': 'கட்டுரை',
   'news.column.published': 'வெளியிடப்பட்டது',
+  'news.column.created': 'உருவாக்கப்பட்டது',
+  'news.notPublished': 'இன்னும் வெளியிடப்படவில்லை',
   'news.status.draft': 'வரைவு',
   'news.status.published': 'செயலில்',
   'news.status.archived': 'காப்பகப்படுத்தப்பட்டது',

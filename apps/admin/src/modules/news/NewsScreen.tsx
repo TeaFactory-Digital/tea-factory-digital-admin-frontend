@@ -16,7 +16,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Plus } from 'lucide-react';
+import { Image as ImageIcon, Plus } from 'lucide-react';
 import type { ContentStatus, LanguageCode, NewsListItem, NewsQuery } from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
 import { Badge, type BadgeTone } from '@/components/ui/Badge';
@@ -55,8 +55,7 @@ export function NewsScreen() {
 
   const query = useMemo<NewsQuery>(
     () => ({
-      status:
-        lens === 'draft' || lens === 'published' || lens === 'archived' ? lens : undefined,
+      status: lens === 'draft' || lens === 'published' || lens === 'archived' ? lens : undefined,
       incomplete: lens === 'incomplete' || undefined,
       q: debouncedSearch || undefined,
       page,
@@ -85,10 +84,11 @@ export function NewsScreen() {
           const row = info.row.original;
           return (
             // The **fallback** title, always — a list whose titles changed with a
-            // selected language would be unreadable while translating.
-            <span className="flex max-w-card flex-col">
+            // selected language would be unreadable while translating. The slug is not
+            // shown: it is a link's spelling, and nobody picks an article by it.
+            <span className="flex max-w-card items-center gap-sm">
+              <CoverThumb url={row.coverImageUrl} />
               <span className="font-medium text-text-primary">{row.title}</span>
-              <span className="numeric text-caption text-text-secondary">{row.slug}</span>
             </span>
           );
         },
@@ -135,28 +135,21 @@ export function NewsScreen() {
         header: t('news.column.published'),
         enableSorting: false,
         cell: (info) => {
-          const value = info.getValue<string | null>();
-          return (
-            <span className="numeric whitespace-nowrap text-text-secondary">
-              {value ? formatDateTime(value) : '—'}
-            </span>
+          const row = info.row.original;
+          return row.publishedAt ? (
+            <WhenWho at={row.publishedAt} who={row.publishedByName} />
+          ) : (
+            <span className="text-caption text-text-secondary">{t('news.notPublished')}</span>
           );
         },
       },
       {
-        accessorKey: 'updatedAt',
-        header: t('content.column.lastEdit'),
+        accessorKey: 'createdAt',
+        header: t('news.column.created'),
         enableSorting: false,
         cell: (info) => {
           const row = info.row.original;
-          return (
-            <span className="flex flex-col">
-              <span className="numeric whitespace-nowrap text-text-secondary">
-                {formatDateTime(row.updatedAt)}
-              </span>
-              <span className="text-caption text-text-secondary">{row.updatedByName}</span>
-            </span>
-          );
+          return <WhenWho at={row.createdAt} who={row.createdByName} />;
         },
       },
     ],
@@ -236,5 +229,41 @@ export function NewsScreen() {
         onCreated={(id) => navigate(`/news/${id}`)}
       />
     </>
+  );
+}
+
+/** A date with the person under it, the shape both date columns share. */
+function WhenWho({ at, who }: { at: string; who: string | null }) {
+  return (
+    <span className="flex flex-col">
+      <span className="numeric whitespace-nowrap text-text-secondary">{formatDateTime(at)}</span>
+      {who ? <span className="text-caption text-text-secondary">{who}</span> : null}
+    </span>
+  );
+}
+
+/**
+ * The cover, small enough to sit beside a title.
+ *
+ * The URL is signed and short-lived, so a list left open long enough will hold expired
+ * links. A broken thumbnail falls back to the same placeholder as an article with no
+ * cover, rather than the browser's broken-image glyph.
+ */
+function CoverThumb({ url }: { url: string | null }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <span className="flex h-10 w-16 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-surface-variant text-text-secondary">
+      {url && !failed ? (
+        <img
+          src={url}
+          alt=""
+          loading="lazy"
+          className="h-full w-full object-cover"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <ImageIcon className="size-icon-sm" aria-hidden />
+      )}
+    </span>
   );
 }

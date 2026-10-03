@@ -1521,10 +1521,19 @@ export interface NewsListItem extends ContentGaps {
   slug: string;
   title: string;
   status: ContentStatus;
+  /**
+   * A **short-lived signed URL**, minted per read, or `null` when the article has no
+   * cover. Shown as a thumbnail; never stored or sent back.
+   */
+  coverImageUrl: string | null;
   publishedAt: string | null;
-  updatedAt: string;
-  updatedByName: string;
-  hasCoverImage: boolean;
+  publishedByName: string | null;
+  createdAt: string;
+  createdByName: string;
+  /*
+   * No `updatedAt` / `updatedByName`: `GET /admin/news` does not send them, and a "Last
+   * edit" column read from fields that never arrive showed "Not available" on every row.
+   */
 }
 
 export interface NewsQuery extends PageQuery {

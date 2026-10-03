@@ -854,7 +854,6 @@ export const si: Record<TranslationKey, string> = {
   'content.badge.stale': '{{language}} යාවත්කාලීන කළ යුතුයි',
   'content.badge.gaps': 'නිවැරදි කිරීමට {{count}}ක්',
   'content.column.languages': 'භාෂා',
-  'content.column.lastEdit': 'අවසන් සංස්කරණය',
   'content.complete': 'සම්පූර්ණයි',
   'content.lens': 'පෙන්වන්න',
 
@@ -875,6 +874,8 @@ export const si: Record<TranslationKey, string> = {
   'news.backToList': 'පුවත් වෙත ආපසු',
   'news.column.title': 'ලිපිය',
   'news.column.published': 'ප්‍රකාශයට පත් කළ දිනය',
+  'news.column.created': 'සාදන ලද දිනය',
+  'news.notPublished': 'තවම ප්‍රකාශයට පත් කර නැත',
   'news.status.draft': 'කෙටුම්පත',
   'news.status.published': 'සක්‍රීය',
   'news.status.archived': 'සංරක්ෂිත',
