@@ -35,6 +35,7 @@ import { SectionFooter, type SectionProps } from './SectionFooter';
 import { ManureCatalogue } from './ManureCatalogue';
 import { StringListEditor } from './StringListEditor';
 import { InfoTip } from '@/components/ui/Tooltip';
+import { OfficeHoursEditor } from './OfficeHoursEditor';
 
 
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -102,9 +103,16 @@ export function FactorySection(props: SectionProps) {
             <Input id={id} type="email" invalid={invalid} disabled={props.readOnly} {...field('supportEmail')} />
           )}
         </Field>
-        <Field label={t('config.factory.supportHours')}>
-          {({ id }) => <Input id={id} disabled={props.readOnly} {...field('supportHours')} />}
-        </Field>
+      </div>
+
+      {/* Its own full-width row: a week of opening times does not fit half a grid. */}
+      <div className="flex flex-col gap-xs">
+        <span className="text-label text-text-primary">{t('config.factory.supportHours')}</span>
+        <OfficeHoursEditor
+          value={draft.supportHours ?? ''}
+          disabled={props.readOnly}
+          onChange={(supportHours) => setDraft({ ...draft, supportHours })}
+        />
       </div>
 
       <Field label={t('config.factory.legalFooter')} hint={t('config.factory.legalFooterHint')}>
