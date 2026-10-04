@@ -29,6 +29,7 @@ const ACTION_KEYS: Record<string, string> = {
   'creditRequest.approve': 'audit.action.creditApprove',
   'creditRequest.reject': 'audit.action.creditReject',
   'inquiry.create': 'audit.action.inquiryCreate',
+  'inquiry.message': 'audit.action.inquiryMessage',
   'inquiry.reply': 'audit.action.inquiryReply',
   'inquiry.close': 'audit.action.inquiryClose',
   'news.create': 'audit.action.newsCreate',

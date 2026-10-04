@@ -19,7 +19,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Route, Routes } from 'react-router-dom';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { inquiryStatusForApp } from '@tfd/domain';
 import { InquiryDetailScreen } from '@/modules/inquiries/InquiryDetailScreen';
@@ -27,6 +27,7 @@ import { inquiryRepository } from '@/services/repositories/inquiryRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/services/mocks/server';
+import { en } from '@/i18n/locales/en';
 import { renderWithProviders, signInAs, signOut } from './render';
 
 const CLERK = 'clerk@galabodatea.lk';
@@ -224,7 +225,7 @@ describe('M10 detail screen', () => {
     renderDetail(OPEN);
 
     expect(await screen.findByText(inquiry.message)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^reply$/i })).toBeEnabled();
+    expect(screen.getByRole('textbox', { name: /your answer/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /close unanswered/i })).toBeEnabled();
   });
 
@@ -250,27 +251,23 @@ describe('M10 detail screen', () => {
     await signInAs(CLERK);
     renderDetail(OPEN);
 
-    await user.click(await screen.findByRole('button', { name: /^reply$/i }));
-
-    const dialog = await screen.findByRole('dialog');
-    const submit = within(dialog).getByRole('button', { name: /send reply/i });
+    const box = await screen.findByRole('textbox', { name: /your answer/i });
+    const submit = screen.getByRole('button', { name: /send reply/i });
     expect(submit).toBeDisabled();
 
-    await user.type(within(dialog).getByRole('textbox'), REPLY);
+    await user.type(box, REPLY);
     await waitFor(() => expect(submit).toBeEnabled());
   });
 
-  it('puts the question in front of the person answering it', async () => {
-    // A reply written from memory of the previous screen is how a supplier gets an
-    // answer to somebody else's question.
+  it('fills the reply box from a suggestion, and keeps it editable', async () => {
     const user = userEvent.setup();
     await signInAs(CLERK);
-    const inquiry = await inquiryRepository.get(OPEN);
     renderDetail(OPEN);
 
-    await user.click(await screen.findByRole('button', { name: /^reply$/i }));
-    const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText(inquiry.message)).toBeInTheDocument();
+    const box = await screen.findByRole('textbox', { name: /your answer/i });
+    await user.click(screen.getByRole('button', { name: en['inquiries.suggest.checking'] }));
+    expect(box).toHaveValue(en['inquiries.suggest.checking.text']);
+    expect(screen.getByRole('button', { name: /send reply/i })).toBeEnabled();
   });
 });
 
@@ -278,7 +275,7 @@ describe('M10 detail screen, by role', () => {
   it('offers Reply and Close unanswered to a clerk', async () => {
     await signInAs(CLERK);
     renderDetail(OPEN);
-    expect(await screen.findByRole('button', { name: /^reply$/i })).toBeInTheDocument();
+    expect(await screen.findByRole('textbox', { name: /your answer/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /close unanswered/i })).toBeInTheDocument();
   });
 
@@ -362,17 +359,14 @@ describe('M10 conversation (BACKEND-TODO #25)', () => {
     server.use(http.get('*/admin/inquiries/:id', () => HttpResponse.json(THREAD)));
     await signInAs(CLERK);
     renderDetail(THREAD.id);
-    expect(await screen.findByRole('button', { name: /^reply$/i })).toBeInTheDocument();
+    expect(await screen.findByRole('textbox', { name: /your answer/i })).toBeInTheDocument();
   });
 
-  it('puts the latest thing the supplier said in front of the person replying', async () => {
+  it('keeps the latest thing the supplier said right above the reply box', async () => {
     server.use(http.get('*/admin/inquiries/:id', () => HttpResponse.json(THREAD)));
-    const user = userEvent.setup();
     await signInAs(CLERK);
     renderDetail(THREAD.id);
-
-    await user.click(await screen.findByRole('button', { name: /^reply$/i }));
-    const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText('Will October be better?')).toBeInTheDocument();
+    expect(await screen.findByText('Will October be better?')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /your answer/i })).toBeInTheDocument();
   });
 });

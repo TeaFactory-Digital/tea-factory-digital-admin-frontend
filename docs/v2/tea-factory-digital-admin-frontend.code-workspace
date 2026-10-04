@@ -1,0 +1,13 @@
+{
+    "folders": [
+        {
+            "path": "../.."
+        },
+        {
+            "path": "../../../tea-factory-digital-backend"
+        },
+        {
+            "path": "../../../tea-factory-digital-mobile-frontend"
+        }
+    ]
+}
