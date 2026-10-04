@@ -15,14 +15,27 @@
  * a clerk who believes a text message went out is a clerk who does not follow up.
  */
 
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
-import { MessageSquare } from 'lucide-react';
+import {
+  ArrowUpRight,
+  Bell,
+  BellOff,
+  Building2,
+  CalendarClock,
+  CircleSlash,
+  Hourglass,
+  MessageSquare,
+  Smartphone,
+} from 'lucide-react';
+import { QUEUE_SLA_HOURS } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { ErrorState, Notice, Skeleton } from '@/components/ui/states';
+import { ErrorState, Skeleton } from '@/components/ui/states';
 import { AuditPanel } from '@/components/AuditPanel';
+import { cn } from '@/lib/cn';
 import { formatAge, formatDateTime } from '@/lib/format';
 import { InquiryActions } from './ReplyDialog';
 import { useNotificationTriggers } from '@/modules/notifications/hooks';
@@ -42,7 +55,7 @@ export function InquiryDetailScreen() {
    * Read from M13's trigger rather than stated, and **tolerant of a refusal**: a clerk
    * holds `inquiries: A` and may hold no `content` grant at all, in which case this 403s.
    * An unanswerable question is treated as "no push", which is the safer of the two
-   * wrong answers — it makes the clerk follow up rather than assume the supplier was told.
+   * wrong answers: it makes the clerk follow up rather than assume the supplier was told.
    */
   const triggers = useNotificationTriggers();
   const pushesOnReply = Boolean(
@@ -54,125 +67,176 @@ export function InquiryDetailScreen() {
     return (
       <div className="flex flex-col gap-lg">
         <Skeleton className="h-12 w-64" />
-        <Skeleton className="h-64" />
+        <div className="grid gap-lg lg:grid-cols-3">
+          <Skeleton className="h-80 lg:col-span-2" />
+          <Skeleton className="h-48" />
+        </div>
       </div>
     );
   }
+
+  const open = inquiry.status === 'open';
+  const late = open && inquiry.ageHours > QUEUE_SLA_HOURS.inquiries;
+  const fromApp = inquiry.channel === 'app';
 
   return (
     <>
       <PageHeader
         title={inquiry.subject}
-        description={`${inquiry.supplierCode} · ${inquiry.supplierName}`}
+        description={t('inquiries.detail.from', {
+          name: inquiry.supplierName,
+          code: inquiry.supplierCode,
+        })}
         breadcrumb={
           <Link to="/inquiries" className="hover:text-text-primary">
             {t('inquiries.title')}
           </Link>
         }
         actions={
-          <>
-            <Badge tone={STATUS_TONES[inquiry.status]}>
-              {t(`inquiries.status.${inquiry.status}`)}
-            </Badge>
-            {inquiry.status === 'open' ? (
-              <Badge tone="neutral">
-                {t('changeRequests.detail.waiting', { age: formatAge(inquiry.ageHours) })}
-              </Badge>
-            ) : null}
-          </>
+          <Badge tone={STATUS_TONES[inquiry.status]}>
+            {t(`inquiries.status.${inquiry.status}`)}
+          </Badge>
         }
       />
 
-      <div className="grid gap-lg lg:grid-cols-3">
-        <div className="flex flex-col gap-lg lg:col-span-2">
-          <Card>
-            <CardHeader
-              title={t('inquiries.detail.message')}
-              description={t('changeRequests.detail.submitted', {
-                when: formatDateTime(inquiry.createdAt),
-              })}
-            />
-            <CardBody className="flex flex-col gap-md">
-              <p className="text-body whitespace-pre-line text-text-primary">{inquiry.message}</p>
-
-              <p className="text-caption text-text-secondary">
-                {t('changeRequests.column.channel')}:{' '}
-                {t(`changeRequests.channel.${inquiry.channel}`)}
-                {inquiry.createdByName ? ` · ${inquiry.createdByName}` : ''}
-              </p>
-
-              <InquiryActions inquiry={inquiry} />
-            </CardBody>
-          </Card>
-
-          {inquiry.reply ? (
-            <Card>
-              <CardHeader
-                title={t('inquiries.detail.reply')}
-                description={t('inquiries.detail.repliedBy', {
-                  name: inquiry.reply.repliedByName,
-                  when: formatDateTime(inquiry.reply.repliedAt),
-                })}
+      <div className="grid items-start gap-lg lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader title={t('inquiries.detail.conversation')} />
+          <CardBody className="flex flex-col gap-lg">
+            <dl className="grid gap-md sm:grid-cols-3">
+              <Fact
+                icon={CalendarClock}
+                label={t('inquiries.detail.receivedLabel')}
+                value={formatDateTime(inquiry.createdAt)}
               />
-              <CardBody className="flex flex-col gap-md">
-                <blockquote className="border-l-2 border-primary pl-md text-body whitespace-pre-line text-text-primary">
-                  {inquiry.reply.body}
-                </blockquote>
-                {/**
-                 * Said plainly either way, because both mistakes are real: a clerk who
-                 * assumes a notification went out does not follow up, and one who assumes
-                 * it did not telephones a supplier who has already been told.
-                 */}
-                <Notice tone="info">
-                  <span>
-                    {pushesOnReply
-                      ? t('inquiries.detail.pushSent')
-                      : t('inquiries.detail.pushNotSent')}
+              <Fact
+                icon={fromApp ? Smartphone : Building2}
+                label={t('inquiries.detail.channelLabel')}
+                value={
+                  inquiry.createdByName
+                    ? `${t(`changeRequests.channel.${inquiry.channel}`)} · ${inquiry.createdByName}`
+                    : t(`changeRequests.channel.${inquiry.channel}`)
+                }
+              />
+              {open ? (
+                <Fact
+                  icon={Hourglass}
+                  label={t('inquiries.detail.waitingLabel')}
+                  value={formatAge(inquiry.ageHours)}
+                  tone={late ? 'error' : undefined}
+                />
+              ) : null}
+            </dl>
+
+            {/* The thread, shaped the way the supplier sees it in the app: their message,
+                then the office's answer underneath. */}
+            <ol className="flex flex-col gap-md border-t border-divider pt-lg">
+              <Message
+                side="supplier"
+                avatar={initials(inquiry.supplierName)}
+                name={inquiry.supplierName}
+                when={formatDateTime(inquiry.createdAt)}
+                body={inquiry.message}
+              />
+
+              {inquiry.reply ? (
+                <Message
+                  side="office"
+                  avatar={<Building2 className="size-icon-sm" aria-hidden />}
+                  name={inquiry.reply.repliedByName || t('inquiries.detail.office')}
+                  when={inquiry.reply.repliedAt ? formatDateTime(inquiry.reply.repliedAt) : ''}
+                  body={inquiry.reply.body}
+                  footer={
+                    /* Said plainly either way: a clerk who assumes a notification went
+                       out does not follow up, and one who assumes it did not telephones
+                       a supplier who has already been told. */
+                    <span className="flex items-center gap-xs">
+                      {pushesOnReply ? (
+                        <Bell className="size-icon-xs" aria-hidden />
+                      ) : (
+                        <BellOff className="size-icon-xs" aria-hidden />
+                      )}
+                      {pushesOnReply
+                        ? t('inquiries.detail.pushSent')
+                        : t('inquiries.detail.pushNotSent')}
+                    </span>
+                  }
+                />
+              ) : null}
+
+              {inquiry.status === 'closed' ? (
+                <li className="flex flex-col items-center gap-sm py-sm text-center">
+                  <span className="flex items-center gap-xs text-caption text-text-secondary">
+                    <CircleSlash className="size-icon-xs" aria-hidden />
+                    {inquiry.closedByName && inquiry.closedAt
+                      ? t('inquiries.detail.closedBy', {
+                          name: inquiry.closedByName,
+                          when: formatDateTime(inquiry.closedAt),
+                        })
+                      : t('inquiries.detail.closed')}
                   </span>
-                </Notice>
-              </CardBody>
-            </Card>
-          ) : null}
+                  {inquiry.closureNote ? (
+                    <p className="max-w-prose rounded-md bg-surface-variant px-md py-sm text-body-small text-text-primary">
+                      {inquiry.closureNote}
+                    </p>
+                  ) : null}
+                </li>
+              ) : null}
 
-          {inquiry.closureNote ? (
-            <Card>
-              <CardHeader
-                title={t('inquiries.detail.closed')}
-                description={t('inquiries.detail.closedBy', {
-                  name: inquiry.closedByName ?? '',
-                  when: formatDateTime(inquiry.closedAt),
-                })}
-              />
-              <CardBody>
-                <blockquote className="border-l-2 border-divider pl-md text-body text-text-primary">
-                  {inquiry.closureNote}
-                </blockquote>
-              </CardBody>
-            </Card>
-          ) : null}
-        </div>
+              {open ? (
+                <li className="flex items-center gap-sm self-end text-caption text-text-secondary">
+                  <span className="size-2 animate-pulse rounded-full bg-warning" aria-hidden />
+                  {t('inquiries.detail.awaitingReply')}
+                </li>
+              ) : null}
+            </ol>
+
+            {open ? (
+              <div className="border-t border-divider pt-lg">
+                <InquiryActions inquiry={inquiry} />
+              </div>
+            ) : null}
+          </CardBody>
+        </Card>
 
         <div className="flex flex-col gap-lg">
           <Card>
             <CardHeader title={t('changeRequests.column.supplier')} />
-            <CardBody className="flex flex-col gap-xs">
-              <p className="numeric text-subtitle text-text-primary">{inquiry.supplierCode}</p>
-              <p className="text-body-small text-text-secondary">{inquiry.supplierName}</p>
-              <Link
-                to={`/suppliers/${inquiry.supplierId}`}
-                className="mt-sm text-body-small text-primary underline"
-              >
-                {t('changeRequests.detail.supplierLink')}
-              </Link>
-              {/* Their earlier messages: the same question asked three times is a
-                  different problem from three different questions. */}
-              <Link
-                to={`/inquiries?supplierId=${inquiry.supplierId}&status=resolved`}
-                className="flex items-center gap-xs text-body-small text-primary underline"
-              >
-                <MessageSquare className="size-icon-sm" aria-hidden />
-                {t('inquiries.detail.history')}
-              </Link>
+            <CardBody className="flex flex-col gap-md">
+              <div className="flex items-center gap-md">
+                <span
+                  aria-hidden
+                  className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-muted text-subtitle font-semibold text-primary"
+                >
+                  {initials(inquiry.supplierName)}
+                </span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate text-subtitle text-text-primary">
+                    {inquiry.supplierName}
+                  </span>
+                  <span className="numeric text-caption text-text-secondary">
+                    {inquiry.supplierCode}
+                  </span>
+                </span>
+              </div>
+              <div className="flex flex-col gap-xs">
+                <Link
+                  to={`/suppliers/${inquiry.supplierId}`}
+                  className="inline-flex items-center gap-xs self-start text-body-small font-medium text-primary hover:underline"
+                >
+                  {t('changeRequests.detail.supplierLink')}
+                  <ArrowUpRight className="size-icon-sm" aria-hidden />
+                </Link>
+                {/* Their earlier messages: the same question asked three times is a
+                    different problem from three different questions. */}
+                <Link
+                  to={`/inquiries?supplierId=${inquiry.supplierId}&status=resolved`}
+                  className="inline-flex items-center gap-xs self-start text-body-small font-medium text-primary hover:underline"
+                >
+                  <MessageSquare className="size-icon-sm" aria-hidden />
+                  {t('inquiries.detail.history')}
+                </Link>
+              </div>
             </CardBody>
           </Card>
 
@@ -185,4 +249,91 @@ export function InquiryDetailScreen() {
       </div>
     </>
   );
+}
+
+/** One message in the thread: the supplier's on the left, the office's on the right. */
+function Message({
+  side,
+  avatar,
+  name,
+  when,
+  body,
+  footer,
+}: {
+  side: 'supplier' | 'office';
+  avatar: ReactNode;
+  name: string;
+  when: string;
+  body: string;
+  footer?: ReactNode;
+}) {
+  const office = side === 'office';
+  return (
+    <li className={cn('flex items-end gap-sm', office && 'flex-row-reverse')}>
+      <span
+        aria-hidden
+        className={cn(
+          'flex size-9 shrink-0 items-center justify-center rounded-full text-caption font-semibold',
+          office ? 'bg-primary text-primary-contrast' : 'bg-primary-muted text-primary',
+        )}
+      >
+        {avatar}
+      </span>
+      <div className={cn('flex max-w-[85%] flex-col gap-xxs', office && 'items-end')}>
+        <span className="text-caption text-text-secondary">
+          <span className="font-semibold text-text-primary">{name}</span>
+          {when ? ` · ${when}` : ''}
+        </span>
+        <p
+          className={cn(
+            'rounded-lg px-md py-sm text-body whitespace-pre-line text-text-primary',
+            office ? 'rounded-br-sm bg-primary-muted' : 'rounded-bl-sm bg-surface-variant',
+          )}
+        >
+          {body}
+        </p>
+        {footer ? <span className="text-caption text-text-secondary">{footer}</span> : null}
+      </div>
+    </li>
+  );
+}
+
+function Fact({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: typeof CalendarClock;
+  label: string;
+  value: ReactNode;
+  tone?: 'error';
+}) {
+  return (
+    <div className="flex items-start gap-sm">
+      <Icon
+        className={cn(
+          'mt-xxs size-icon-sm shrink-0',
+          tone === 'error' ? 'text-error' : 'text-text-secondary',
+        )}
+        aria-hidden
+      />
+      <div className="min-w-0">
+        <dt className="text-caption text-text-secondary">{label}</dt>
+        <dd
+          className={cn(
+            'text-body-small',
+            tone === 'error' ? 'font-semibold text-error' : 'text-text-primary',
+          )}
+        >
+          {value}
+        </dd>
+      </div>
+    </div>
+  );
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || '?';
 }

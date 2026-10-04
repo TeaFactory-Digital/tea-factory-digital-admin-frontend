@@ -6269,7 +6269,16 @@ export const handlers: HttpHandler[] = [
     if (!row) {
       return fail({ status: 404, code: 'not-found', message: 'No such inquiry.' });
     }
-    return HttpResponse.json(withInquiryAge(row));
+    // The API's shape: the answer flat, no `createdBy*` or `closedByName`. Serving the
+    // console's nested `reply` here is what hid an answered message showing no answer.
+    const { reply, createdById: _cid, createdByName: _cname, closedByName: _closer, ...rest } =
+      withInquiryAge(row);
+    return HttpResponse.json({
+      ...rest,
+      replyBody: reply?.body ?? null,
+      repliedByName: reply?.repliedByName ?? null,
+      repliedAt: reply?.repliedAt ?? null,
+    });
   }),
 
   http.get('*/admin/inquiries', async ({ request }) => {

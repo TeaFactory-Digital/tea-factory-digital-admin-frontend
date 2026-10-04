@@ -606,6 +606,14 @@ export const en = {
   'inquiries.detail.closed': 'Closed unanswered',
   'inquiries.detail.closedBy': 'Closed by {{name}}, {{when}}',
   'inquiries.detail.auditTitle': 'Audit trail',
+  'inquiries.detail.conversation': 'Conversation',
+  'inquiries.detail.from': 'From {{name}} · {{code}}',
+  'inquiries.detail.receivedLabel': 'Received',
+  'inquiries.detail.channelLabel': 'Sent through',
+  'inquiries.detail.waitingLabel': 'Waiting for',
+  'inquiries.detail.office': 'The office',
+  'inquiries.detail.awaitingReply': 'Waiting for a reply',
+  'inquiries.detail.readOnly': 'Your role can read messages but not answer them. A clerk replies to this message or closes it.',
   'inquiries.detail.history': 'Their earlier messages',
   'inquiries.detail.pushSent':
     'A notification was sent to their phone telling them there is an answer — the reply itself is only in the app, because a lock screen is read by whoever is holding it.',
@@ -712,6 +720,7 @@ export const en = {
   'audit.action.payoutLineFailed': 'Recorded a failed payment',
   'audit.action.creditApprove': 'Approved credit',
   'audit.action.creditReject': 'Rejected a credit request',
+  'audit.action.inquiryCreate': 'Sent a message',
   'audit.action.inquiryReply': 'Answered a supplier',
   'audit.action.inquiryClose': 'Closed a message unanswered',
 

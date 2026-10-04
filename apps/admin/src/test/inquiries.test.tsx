@@ -102,7 +102,9 @@ describe('M10 answering', () => {
 
     expect(after.status).toBe('closed');
     expect(after.closureNote).toBe(note);
-    expect(after.closedByName).toBe('Nadeeka Perera');
+    // Who closed it is not sent by the API yet (BACKEND-TODO #23); the screen says
+    // "Closed unanswered" without a name rather than inventing one.
+    expect(after.closedByName).toBeNull();
     // Closed is not answered: nothing was sent to the supplier.
     expect(after.reply).toBeNull();
   });
@@ -146,9 +148,9 @@ describe('M10 refusals', () => {
     });
 
     const endpoints = await import('@/services/endpoints/inquiries');
-    await expect(
-      endpoints.inquiryEndpoints.close(OPEN, { note: 'dup' }),
-    ).rejects.toMatchObject({ code: 'note-required' });
+    await expect(endpoints.inquiryEndpoints.close(OPEN, { note: 'dup' })).rejects.toMatchObject({
+      code: 'note-required',
+    });
   });
 
   it('refuses a second answer to a message somebody else already answered', async () => {
@@ -164,9 +166,9 @@ describe('M10 refusals', () => {
     // written as `status === 'resolved'` would let a closed message be answered.
     await signInAs(CLERK);
 
-    await expect(
-      inquiryRepository.reply(CLOSED_UNANSWERED, { body: REPLY }),
-    ).rejects.toMatchObject({ code: 'already-decided' });
+    await expect(inquiryRepository.reply(CLOSED_UNANSWERED, { body: REPLY })).rejects.toMatchObject(
+      { code: 'already-decided' },
+    );
   });
 
   it('refuses closing something already closed', async () => {
@@ -226,9 +228,11 @@ describe('M10 detail screen', () => {
 
   it('shows the answer and says whether a notification went to the phone', async () => {
     await signInAs(CLERK);
+    const answered = await inquiryRepository.get(ANSWERED);
     renderDetail(ANSWERED);
 
-    expect(await screen.findByText(/The answer/i)).toBeInTheDocument();
+    // The answer, in the thread under the question, as the supplier sees it.
+    expect(await screen.findByText(answered.reply!.body)).toBeInTheDocument();
     // M13 now exists, and `inquiryReplied` is on by default for this tenant — so the
     // screen must say a notification *was* sent. It used to assert the opposite, which
     // was true until M13 landed and is exactly the kind of copy that quietly becomes a
@@ -265,5 +269,30 @@ describe('M10 detail screen', () => {
     await user.click(await screen.findByRole('button', { name: /^reply$/i }));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText(inquiry.message)).toBeInTheDocument();
+  });
+});
+
+describe('M10 detail screen, by role', () => {
+  it('offers Reply and Close unanswered to a clerk', async () => {
+    await signInAs(CLERK);
+    renderDetail(OPEN);
+    expect(await screen.findByRole('button', { name: /^reply$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /close unanswered/i })).toBeInTheDocument();
+  });
+
+  it('shows a manager the message and says who answers, with no buttons', async () => {
+    // A manager holds `inquiries: R`; both endpoints require `A` and would refuse.
+    await signInAs(MANAGER);
+    renderDetail(OPEN);
+    expect(await screen.findByText(/your role can read messages/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^reply$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /close unanswered/i })).not.toBeInTheDocument();
+  });
+
+  it('shows the answer the API sends flat (replyBody, repliedByName)', async () => {
+    await signInAs(CLERK);
+    const answered = await inquiryRepository.get(ANSWERED);
+    renderDetail(ANSWERED);
+    expect(await screen.findByText(answered.reply!.body)).toBeInTheDocument();
   });
 });

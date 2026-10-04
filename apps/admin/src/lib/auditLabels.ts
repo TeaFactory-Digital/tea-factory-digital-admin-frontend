@@ -28,6 +28,7 @@ const ACTION_KEYS: Record<string, string> = {
   'payout.line.failed': 'audit.action.payoutLineFailed',
   'creditRequest.approve': 'audit.action.creditApprove',
   'creditRequest.reject': 'audit.action.creditReject',
+  'inquiry.create': 'audit.action.inquiryCreate',
   'inquiry.reply': 'audit.action.inquiryReply',
   'inquiry.close': 'audit.action.inquiryClose',
   'news.create': 'audit.action.newsCreate',

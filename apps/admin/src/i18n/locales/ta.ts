@@ -621,6 +621,14 @@ export const ta: Record<TranslationKey, string> = {
   'inquiries.detail.closed': 'பதிலின்றி மூடப்பட்டது',
   'inquiries.detail.closedBy': '{{name}} அவர்களால் {{when}} மூடப்பட்டது',
   'inquiries.detail.auditTitle': 'தணிக்கைத் தடம்',
+  'inquiries.detail.conversation': 'உரையாடல்',
+  'inquiries.detail.from': '{{name}} · {{code}} இடமிருந்து',
+  'inquiries.detail.receivedLabel': 'பெறப்பட்டது',
+  'inquiries.detail.channelLabel': 'அனுப்பிய வழி',
+  'inquiries.detail.waitingLabel': 'காத்திருக்கும் நேரம்',
+  'inquiries.detail.office': 'அலுவலகம்',
+  'inquiries.detail.awaitingReply': 'பதிலுக்காகக் காத்திருக்கிறது',
+  'inquiries.detail.readOnly': 'உங்கள் பங்கு செய்திகளைப் படிக்கலாம், ஆனால் பதிலளிக்க முடியாது. இந்தச் செய்திக்கு எழுத்தர் பதிலளிப்பார் அல்லது மூடுவார்.',
   'inquiries.detail.history': 'அவர்களின் முந்தைய செய்திகள்',
   'inquiries.detail.pushSent':
     'பதில் ஒன்று உள்ளது என்று அறிவிக்கும் அறிவிப்பு அவர்களின் தொலைபேசிக்கு அனுப்பப்பட்டது — பதில் மட்டும் செயலியில்தான் உள்ளது, ஏனெனில் பூட்டுத் திரையைப் படிப்பவர் அதை கையில் வைத்திருப்பவர்.',
@@ -728,6 +736,7 @@ export const ta: Record<TranslationKey, string> = {
   'audit.action.payoutLineFailed': 'தோல்வியடைந்த செலுத்தல் ஒன்றைப் பதிவு செய்தார்',
   'audit.action.creditApprove': 'கடன் ஒன்றை அனுமதித்தார்',
   'audit.action.creditReject': 'கடன் வேண்டுகோள் ஒன்றை நிராகரித்தார்',
+  'audit.action.inquiryCreate': 'செய்தி அனுப்பினார்',
   'audit.action.inquiryReply': 'வழங்குநர் ஒருவருக்குப் பதில் அளித்தார்',
   'audit.action.inquiryClose': 'செய்தி ஒன்றைப் பதிலின்றி மூடினார்',
 

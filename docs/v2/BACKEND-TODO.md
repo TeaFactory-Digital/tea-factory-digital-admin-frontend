@@ -12,6 +12,7 @@ and have been removed from this file.
 | 20 | Refresh always fails with `403 csrf`, so the console signs out on every reload | High |
 | 21 | Bank details change requests cannot be approved | High |
 | 22 | Credit request detail always answers `403 feature-disabled` | High |
+| 23 | Inquiry detail: send who closed it, and who entered it at the office | Low |
 
 ---
 
@@ -210,3 +211,23 @@ answers `200`; with it off, `403 feature-disabled`.
 **Check**
 In the console, open any credit request from the Credit queues screen. The detail shows, with
 the Approve and Reject buttons.
+
+---
+
+## 23. Inquiry detail: send who closed it, and who entered it at the office
+
+**Priority:** Low. Nothing breaks; the console shows "Closed unanswered" without a name.
+
+**What is wrong**
+`GET /v1/admin/inquiries/:id` (and the list) sends `closureNote` and `closedAt` but not
+**who** closed the message, and for a message a clerk entered for a supplier (walk-in,
+telephone) it does not say **who** entered it. The console has fields for both:
+`closedByName`, `createdById`, `createdByName`.
+
+**What to do**
+Add these three fields to the inquiry response (the same names as above), `null` when not set.
+If the table does not store them yet, store them when the inquiry is created and when it is
+closed, the same way `repliedByName` is stored on reply.
+
+**Check**
+Close a message in the console: the detail screen shows "Closed by <name>, <date and time>".

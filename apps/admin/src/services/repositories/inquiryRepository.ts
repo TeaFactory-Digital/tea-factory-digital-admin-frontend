@@ -29,13 +29,54 @@ function refuse(details: unknown): never {
   });
 }
 
+/**
+ * The served inquiry into the console's.
+ *
+ * The API sends the answer **flat** (`replyBody`, `repliedByName`, `repliedAt`) where the
+ * console reads one `reply` object, and leaves out `createdById`, `createdByName` and
+ * `closedByName`. Passed through as it was, `inquiry.reply` was always undefined: a
+ * message that had been answered showed no answer, and offered nothing to explain why.
+ * The nested shape is still accepted, for an API that starts sending it.
+ */
+type ServedInquiry = AdminInquiry & {
+  replyBody?: string | null;
+  repliedById?: string | null;
+  repliedByName?: string | null;
+  repliedAt?: string | null;
+};
+
+function toAdminInquiry(served: ServedInquiry): AdminInquiry {
+  const reply =
+    served.reply ??
+    (served.replyBody
+      ? {
+          body: served.replyBody,
+          repliedById: served.repliedById ?? '',
+          repliedByName: served.repliedByName ?? '',
+          repliedAt: served.repliedAt ?? '',
+        }
+      : null);
+  return {
+    ...served,
+    reply,
+    createdById: served.createdById ?? null,
+    createdByName: served.createdByName ?? null,
+    closedAt: served.closedAt ?? null,
+    closedByName: served.closedByName ?? null,
+    closureNote: served.closureNote ?? null,
+  };
+}
+
 export const inquiryRepository = {
   /** Open first and oldest first — the message that has waited longest is the one to answer. */
-  list: (query: InquiryQuery = {}): Promise<Paged<AdminInquiry>> =>
-    inquiryEndpoints.list({ page: 0, pageSize: 25, status: 'open', ...query }),
+  list: async (query: InquiryQuery = {}): Promise<Paged<AdminInquiry>> => {
+    const page = await inquiryEndpoints.list({ page: 0, pageSize: 25, status: 'open', ...query });
+    return { ...page, items: page.items.map((row) => toAdminInquiry(row as ServedInquiry)) };
+  },
 
   /** One inquiry, by id. The list sweep this used to need is gone — **G-06** is closed. */
-  get: (id: string): Promise<AdminInquiry> => inquiryEndpoints.get(id),
+  get: async (id: string): Promise<AdminInquiry> =>
+    toAdminInquiry((await inquiryEndpoints.get(id)) as ServedInquiry),
 
   reply: async (id: string, body: InquiryReplyBody): Promise<StatusAck<InquiryStatus>> => {
     const parsed = inquiryReplySchema.safeParse(body);

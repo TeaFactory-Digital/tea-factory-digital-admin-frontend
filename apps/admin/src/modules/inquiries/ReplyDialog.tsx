@@ -16,8 +16,9 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Reply, X } from 'lucide-react';
+import { Eye, Reply, X } from 'lucide-react';
 import type { AdminInquiry } from '@tfd/domain';
+import { useCan } from '@/auth/authStore';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Field, Textarea } from '@/components/ui/Field';
@@ -33,8 +34,23 @@ const MIN_CLOSURE_NOTE = 10;
 export function InquiryActions({ inquiry }: { inquiry: AdminInquiry }) {
   const { t } = useTranslation();
   const [verb, setVerb] = useState<InquiryVerb | null>(null);
+  /**
+   * `inquiries: A` is what both endpoints require, and only the clerk role holds it; a
+   * manager reads the queue (`R`) and an editor or administrator does not see it at all.
+   * Buttons the server will refuse are not offered: the reader is told who answers instead.
+   */
+  const canAnswer = useCan('inquiries', 'approve');
 
   if (inquiry.status !== 'open') return null;
+
+  if (!canAnswer) {
+    return (
+      <p className="flex items-start gap-sm rounded-md bg-surface-variant p-md text-body-small text-text-secondary">
+        <Eye className="mt-xxs size-icon-sm shrink-0" aria-hidden />
+        {t('inquiries.detail.readOnly')}
+      </p>
+    );
+  }
 
   return (
     <>
@@ -55,9 +71,7 @@ export function InquiryActions({ inquiry }: { inquiry: AdminInquiry }) {
         </Button>
       </div>
 
-      {verb ? (
-        <ReplyDialog inquiry={inquiry} verb={verb} onClose={() => setVerb(null)} />
-      ) : null}
+      {verb ? <ReplyDialog inquiry={inquiry} verb={verb} onClose={() => setVerb(null)} /> : null}
     </>
   );
 }
@@ -83,7 +97,9 @@ function ReplyDialog({
   function submit() {
     const trimmed = text.trim();
     answer.mutate(
-      replying ? { verb: 'reply', body: { body: trimmed } } : { verb: 'close', body: { note: trimmed } },
+      replying
+        ? { verb: 'reply', body: { body: trimmed } }
+        : { verb: 'close', body: { note: trimmed } },
       {
         onSuccess: () => {
           toast.success(replying ? t('inquiries.replied') : t('inquiries.closed'));
