@@ -36,6 +36,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, Skeleton } from '@/components/ui/states';
 import { AuditPanel } from '@/components/AuditPanel';
 import { InfoTip } from '@/components/ui/Tooltip';
+import { SPLIT_PANE_BOTH, SPLIT_PANE_SCROLLER } from '@/components/ui/layout';
 import { cn } from '@/lib/cn';
 import { formatAge, formatDate, formatDateTime } from '@/lib/format';
 import { isAnswerable } from './answerable';
@@ -105,11 +106,14 @@ export function InquiryDetailScreen() {
         }
       />
 
-      <div className="grid items-start gap-lg lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+      {/* The page does not scroll on a wide window: the chat scrolls inside its card, the
+          reply box stays under it, and the side column scrolls on its own. Below `lg` the
+          columns stack and the page scrolls as usual (see `SPLIT_PANE_BOTH`). */}
+      <div className={cn(SPLIT_PANE_BOTH, 'lg:grid-cols-3')}>
+        <Card className="flex flex-col lg:col-span-2 lg:min-h-0">
           <CardHeader title={t('inquiries.detail.conversation')} />
-          <CardBody className="flex flex-col gap-lg">
-            <dl className="grid gap-md sm:grid-cols-3">
+          <CardBody className="flex flex-col gap-lg lg:min-h-0 lg:flex-1">
+            <dl className="grid shrink-0 gap-md sm:grid-cols-3">
               <Fact
                 icon={CalendarClock}
                 label={t('inquiries.detail.receivedLabel')}
@@ -196,14 +200,14 @@ export function InquiryDetailScreen() {
             />
 
             {answerable ? (
-              <div className="border-t border-divider pt-lg">
+              <div className="shrink-0 border-t border-divider pt-lg">
                 <InquiryActions inquiry={inquiry} />
               </div>
             ) : null}
           </CardBody>
         </Card>
 
-        <div className="flex flex-col gap-lg">
+        <div className={cn('flex flex-col gap-lg', SPLIT_PANE_SCROLLER)}>
           <Card>
             <CardHeader title={t('changeRequests.column.supplier')} />
             <CardBody className="flex flex-col gap-md">
@@ -325,7 +329,10 @@ function ChatThread({
   }, [rows.length]);
 
   return (
-    <ol className="flex max-h-[60vh] flex-col gap-xs overflow-y-auto rounded-lg bg-surface-variant/50 p-md">
+    // Below `lg` a fixed height keeps a long thread from pushing the reply box far down
+    // the page; above it the card's height is the window's, and the thread takes the rest.
+    // `max-lg:` rather than a `lg:max-h-none` override: this theme's `none` sizes to 0.
+    <ol className="flex flex-col gap-xs overflow-y-auto rounded-lg bg-surface-variant/50 p-md max-lg:max-h-[60vh] lg:min-h-0 lg:flex-1">
       {rows.map((row) =>
         row.type === 'day' ? (
           <li key={row.key} className="my-sm self-center">
