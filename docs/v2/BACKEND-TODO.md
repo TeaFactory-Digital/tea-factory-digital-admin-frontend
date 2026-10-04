@@ -14,7 +14,9 @@ hiding the ones behind it as soon as this is deployed.
 
 1. **#18 (new).** The Reports screen's "App use" report counts only change requests; the
    dashboard counts all three request types. See #18 below.
-2. **Deploy: run the migrations on staging.** On 3 October staging answered `500` for
+2. **#19 (new, small).** A change request's detail does not say *when* it was decided, or who
+   by (id). See #19 below.
+3. **Deploy: run the migrations on staging.** On 3 October staging answered `500` for
    `GET /admin/news` and `GET /admin/dashboard` (every user, including the manager), because the
    new code expects `news_articles.updated_by_name` and `20261003010000_news_updated_by` had not
    been applied. Run `prisma migrate deploy` against Neon's direct host, then check the
@@ -771,3 +773,31 @@ nothing breaks, but if you want the API to filter, accept `from` and `to` (`YYYY
 **Check**
 For any month, the Reports screen's "Share from the app" equals the dashboard's adoption trend
 for that month.
+
+---
+
+## 19. Change request detail: send when it was decided
+
+**Priority:** Low. Nothing breaks; the console shows a dash for the time.
+
+**What is wrong**
+`GET /v1/admin/change-requests/:id` sends `decisionNote` and `decidedByName`, but not
+`decidedAt` or `decidedById`. Both are already stored (`decide()` writes them), so a decided
+request shows "Rejected by Ruwan Jayasuriya" with a dash instead of the date and time.
+
+**What to do**
+In `apps/api/src/modules/queues/change-requests.service.ts`, the row-to-response function
+(around line 114): add `decidedAt` and `decidedById` to the `select` and to the returned object:
+
+```ts
+decidedById: row.decidedById,
+decidedAt: row.decidedAt?.toISOString() ?? null,
+```
+
+**Optional:** if a request can carry documents (a bank letter, an ID photo), also send
+`attachments: [{ id, fileName, url }]`. The console shows them when present and an empty list
+when the key is missing.
+
+**Check**
+Open a decided request in the console: the line under the status shows the decision's date and
+time.

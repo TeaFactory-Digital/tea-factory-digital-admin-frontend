@@ -24,6 +24,8 @@ import { changeRequestRepository } from '@/services/repositories/changeRequestRe
 import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { ApiError } from '@/services/api/errors';
+import { http, HttpResponse } from 'msw';
+import { server } from '@/services/mocks/server';
 import { renderWithProviders, signInAs, signOut } from './render';
 
 const CLERK = 'clerk@galabodatea.lk';
@@ -221,6 +223,56 @@ describe('M9 detail screen', () => {
 
     await user.type(within(dialog).getByRole('textbox'), 'Passbook checked at the counter.');
     await waitFor(() => expect(submit).toBeEnabled());
+  });
+});
+
+describe('M9 detail screen, on the served shape', () => {
+  /** The staging answer, as it came: no `attachments`, and the decision flat. */
+  const SERVED = {
+    id: 'fbe0df4b-e4d4-4116-9d02-a5478b7963e0',
+    type: 'paymentMethod',
+    supplierId: 'sup-1',
+    supplierCode: '5708',
+    supplierName: 'Seeded Supplier',
+    currentSummary: 'bankTransfer',
+    requestedSummary: 'cash',
+    status: 'pending',
+    channel: 'app',
+    ageHours: 349,
+    createdAt: '2026-09-20T04:00:00.000Z',
+    createdById: null,
+    createdByName: null,
+    decisionNote: null,
+    decidedByName: null,
+  };
+
+  it('shows a request the API sends without attachments or a nested decision', async () => {
+    server.use(http.get('*/admin/change-requests/:id', () => HttpResponse.json(SERVED)));
+    await signInAs(MANAGER);
+    renderDetail(SERVED.id);
+
+    expect(
+      (await screen.findAllByText('Seeded Supplier', { exact: false })).length,
+    ).toBeGreaterThan(0);
+    expect(screen.queryByText(/could not be shown/i)).not.toBeInTheDocument();
+  });
+
+  it('reads a flat decision into the one the screen shows', async () => {
+    server.use(
+      http.get('*/admin/change-requests/:id', () =>
+        HttpResponse.json({
+          ...SERVED,
+          status: 'rejected',
+          decisionNote: 'The bank letter does not match the account name.',
+          decidedByName: 'Ruwan Jayasuriya',
+        }),
+      ),
+    );
+    await signInAs(MANAGER);
+    const request = await changeRequestRepository.get(SERVED.id);
+    expect(request.attachments).toEqual([]);
+    expect(request.decision?.note).toBe('The bank letter does not match the account name.');
+    expect(request.decision?.decidedByName).toBe('Ruwan Jayasuriya');
   });
 });
 

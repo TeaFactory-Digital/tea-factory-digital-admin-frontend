@@ -33,13 +33,46 @@ function assertDecidable(body: DecisionBody): void {
   }
 }
 
+/**
+ * A change request **as `GET /admin/change-requests/:id` sends it** → the console's shape.
+ *
+ * The API sends the decision flat (`decisionNote`, `decidedByName`, no `decidedAt`) and no
+ * `attachments` at all. The detail screen read `request.attachments.length` and
+ * `request.decision.note`, so every request crashed it ("This screen could not be shown").
+ * Both shapes are accepted, so a later API that nests them still works.
+ */
+function toAdminChangeRequest(served: AdminChangeRequest): AdminChangeRequest {
+  const raw = served as AdminChangeRequest & {
+    decisionNote?: string | null;
+    decidedByName?: string | null;
+    decidedById?: string | null;
+    decidedAt?: string | null;
+  };
+  const decision =
+    raw.decision ??
+    (raw.decisionNote || raw.decidedByName
+      ? {
+          note: raw.decisionNote ?? '',
+          decidedById: raw.decidedById ?? '',
+          decidedByName: raw.decidedByName ?? '',
+          decidedAt: raw.decidedAt ?? '',
+        }
+      : null);
+  return {
+    ...served,
+    decision,
+    attachments: Array.isArray(raw.attachments) ? raw.attachments : [],
+  };
+}
+
 export const changeRequestRepository = {
   /** Oldest first within a status — an inbox is worked front to back. */
   list: (query: ChangeRequestQuery = {}): Promise<Paged<AdminChangeRequest>> =>
     changeRequestEndpoints.list({ page: 0, pageSize: 25, status: 'pending', ...query }),
 
   /** One request, by id — the list sweep this needed is gone (**G-06** closed). */
-  get: (id: string): Promise<AdminChangeRequest> => changeRequestEndpoints.get(id),
+  get: async (id: string): Promise<AdminChangeRequest> =>
+    toAdminChangeRequest(await changeRequestEndpoints.get(id)),
 
   /**
    * `async` so a validation failure **rejects** rather than throwing

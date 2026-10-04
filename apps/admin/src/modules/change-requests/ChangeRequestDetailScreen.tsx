@@ -115,7 +115,10 @@ export function ChangeRequestDetailScreen() {
                   {t('changeRequests.detail.decidedBy', {
                     status: t(`changeRequests.status.${request.status}`),
                     name: request.decision.decidedByName,
-                    when: formatDateTime(request.decision.decidedAt),
+                    // Not sent by the current API; a dash rather than a made-up time.
+                    when: request.decision.decidedAt
+                      ? formatDateTime(request.decision.decidedAt)
+                      : '—',
                   })}
                 </p>
                 {/* The note the supplier reads, shown verbatim. */}

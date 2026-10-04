@@ -4530,7 +4530,15 @@ export const handlers: HttpHandler[] = [
     if (!row) {
       return fail({ status: 404, code: 'not-found', message: 'No such change request.' });
     }
-    return HttpResponse.json(withAge(row));
+    // The API's shape, not the console's: the decision is flat (`decisionNote`,
+    // `decidedByName`) and there is no `attachments` key. Serving the console's own shape
+    // here is what hid the crash on the detail screen.
+    const { decision, attachments: _attachments, ...rest } = withAge(row);
+    return HttpResponse.json({
+      ...rest,
+      decisionNote: decision?.note ?? null,
+      decidedByName: decision?.decidedByName ?? null,
+    });
   }),
 
   http.get('*/admin/change-requests', async ({ request }) => {
