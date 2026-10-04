@@ -800,6 +800,15 @@ export interface InquiryReply {
  * `inquiryStatusForApp` converts, so the API has one implementation of the
  * mapping and the app keeps the field it already reads (status.md §21.18).
  */
+/** One message in an inquiry's conversation, oldest first (BACKEND-TODO #25). */
+export interface InquiryMessage {
+  id: string;
+  author: 'supplier' | 'office';
+  authorName: string | null;
+  body: string;
+  createdAt: string;
+}
+
 export interface AdminInquiry extends Omit<Inquiry, 'status' | 'reply'> {
   supplierId: string;
   supplierCode: string;
@@ -816,6 +825,16 @@ export interface AdminInquiry extends Omit<Inquiry, 'status' | 'reply'> {
   /** Why it was closed unanswered. Mandatory on close, `null` otherwise. */
   closureNote: string | null;
   ageHours: number;
+  /**
+   * The conversation, oldest first; the first message is the original question. Built
+   * from `message` and `reply` by the repository when the API does not send it yet.
+   */
+  messages?: InquiryMessage[];
+  /**
+   * The API keeps a real conversation (it sent `messages`): the office may reply again to
+   * an answered inquiry. `false` on an API with one question and one answer.
+   */
+  threaded?: boolean;
 }
 
 export interface InquiryQuery extends PageQuery {

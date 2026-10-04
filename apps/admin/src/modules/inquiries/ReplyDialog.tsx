@@ -25,6 +25,7 @@ import { Field, Textarea } from '@/components/ui/Field';
 import { Notice } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey, isBlockingError } from '@/lib/errorMessage';
+import { isAnswerable } from './answerable';
 import { useAnswerInquiry, type InquiryVerb } from './hooks';
 
 /** A reply is the answer, not a note about one — so it is held to a longer minimum. */
@@ -41,7 +42,7 @@ export function InquiryActions({ inquiry }: { inquiry: AdminInquiry }) {
    */
   const canAnswer = useCan('inquiries', 'approve');
 
-  if (inquiry.status !== 'open') return null;
+  if (!isAnswerable(inquiry)) return null;
 
   if (!canAnswer) {
     return (
@@ -143,7 +144,12 @@ function ReplyDialog({
             somebody else's question. */}
         <div className="rounded-md bg-surface-variant p-md">
           <p className="text-overline text-text-secondary uppercase">{inquiry.subject}</p>
-          <p className="mt-xxs text-body-small text-text-primary">{inquiry.message}</p>
+          <p className="mt-xxs text-body-small whitespace-pre-line text-text-primary">
+            {/* In a conversation, the latest thing the supplier said is what is being
+                answered, not the question that opened it. */}
+            {[...(inquiry.messages ?? [])].reverse().find((one) => one.author === 'supplier')
+              ?.body ?? inquiry.message}
+          </p>
         </div>
 
         <Field

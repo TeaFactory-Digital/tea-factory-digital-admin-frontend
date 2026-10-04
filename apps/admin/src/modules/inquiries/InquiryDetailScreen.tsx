@@ -37,6 +37,7 @@ import { ErrorState, Skeleton } from '@/components/ui/states';
 import { AuditPanel } from '@/components/AuditPanel';
 import { cn } from '@/lib/cn';
 import { formatAge, formatDateTime } from '@/lib/format';
+import { isAnswerable } from './answerable';
 import { InquiryActions } from './ReplyDialog';
 import { useNotificationTriggers } from '@/modules/notifications/hooks';
 import { useInquiry, useInquiryAudit } from './hooks';
@@ -76,6 +77,10 @@ export function InquiryDetailScreen() {
   }
 
   const open = inquiry.status === 'open';
+  const answerable = isAnswerable(inquiry);
+  // Built by the repository from the question and the answer when the API sends no thread.
+  const thread = inquiry.messages ?? [];
+  const lastOfficeIndex = thread.map((message) => message.author).lastIndexOf('office');
   const late = open && inquiry.ageHours > QUEUE_SLA_HOURS.inquiries;
   const fromApp = inquiry.channel === 'app';
 
@@ -131,38 +136,47 @@ export function InquiryDetailScreen() {
             {/* The thread, shaped the way the supplier sees it in the app: their message,
                 then the office's answer underneath. */}
             <ol className="flex flex-col gap-md border-t border-divider pt-lg">
-              <Message
-                side="supplier"
-                avatar={initials(inquiry.supplierName)}
-                name={inquiry.supplierName}
-                when={formatDateTime(inquiry.createdAt)}
-                body={inquiry.message}
-              />
-
-              {inquiry.reply ? (
-                <Message
-                  side="office"
-                  avatar={<Building2 className="size-icon-sm" aria-hidden />}
-                  name={inquiry.reply.repliedByName || t('inquiries.detail.office')}
-                  when={inquiry.reply.repliedAt ? formatDateTime(inquiry.reply.repliedAt) : ''}
-                  body={inquiry.reply.body}
-                  footer={
-                    /* Said plainly either way: a clerk who assumes a notification went
-                       out does not follow up, and one who assumes it did not telephones
-                       a supplier who has already been told. */
-                    <span className="flex items-center gap-xs">
-                      {pushesOnReply ? (
-                        <Bell className="size-icon-xs" aria-hidden />
+              {thread.map((message, index) => {
+                const office = message.author === 'office';
+                // The push note belongs under the office's latest answer only.
+                const latestAnswer = office && index === lastOfficeIndex;
+                return (
+                  <Message
+                    key={message.id}
+                    side={message.author}
+                    avatar={
+                      office ? (
+                        <Building2 className="size-icon-sm" aria-hidden />
                       ) : (
-                        <BellOff className="size-icon-xs" aria-hidden />
-                      )}
-                      {pushesOnReply
-                        ? t('inquiries.detail.pushSent')
-                        : t('inquiries.detail.pushNotSent')}
-                    </span>
-                  }
-                />
-              ) : null}
+                        initials(inquiry.supplierName)
+                      )
+                    }
+                    name={
+                      message.authorName ||
+                      (office ? t('inquiries.detail.office') : inquiry.supplierName)
+                    }
+                    when={message.createdAt ? formatDateTime(message.createdAt) : ''}
+                    body={message.body}
+                    footer={
+                      latestAnswer ? (
+                        /* Said plainly either way: a clerk who assumes a notification
+                           went out does not follow up, and one who assumes it did not
+                           telephones a supplier who has already been told. */
+                        <span className="flex items-center gap-xs">
+                          {pushesOnReply ? (
+                            <Bell className="size-icon-xs" aria-hidden />
+                          ) : (
+                            <BellOff className="size-icon-xs" aria-hidden />
+                          )}
+                          {pushesOnReply
+                            ? t('inquiries.detail.pushSent')
+                            : t('inquiries.detail.pushNotSent')}
+                        </span>
+                      ) : undefined
+                    }
+                  />
+                );
+              })}
 
               {inquiry.status === 'closed' ? (
                 <li className="flex flex-col items-center gap-sm py-sm text-center">
@@ -191,7 +205,7 @@ export function InquiryDetailScreen() {
               ) : null}
             </ol>
 
-            {open ? (
+            {answerable ? (
               <div className="border-t border-divider pt-lg">
                 <InquiryActions inquiry={inquiry} />
               </div>

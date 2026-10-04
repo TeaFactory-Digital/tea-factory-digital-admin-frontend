@@ -25,6 +25,8 @@ import { inquiryStatusForApp } from '@tfd/domain';
 import { InquiryDetailScreen } from '@/modules/inquiries/InquiryDetailScreen';
 import { inquiryRepository } from '@/services/repositories/inquiryRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
+import { http, HttpResponse } from 'msw';
+import { server } from '@/services/mocks/server';
 import { renderWithProviders, signInAs, signOut } from './render';
 
 const CLERK = 'clerk@galabodatea.lk';
@@ -294,5 +296,83 @@ describe('M10 detail screen, by role', () => {
     const answered = await inquiryRepository.get(ANSWERED);
     renderDetail(ANSWERED);
     expect(await screen.findByText(answered.reply!.body)).toBeInTheDocument();
+  });
+});
+
+describe('M10 conversation (BACKEND-TODO #25)', () => {
+  /** An answered inquiry on an API that keeps the conversation: four messages. */
+  const THREAD = {
+    id: 'inq-thread',
+    supplierId: 'sup-1',
+    supplierCode: '5708',
+    supplierName: 'K.A. Sunil',
+    subject: 'Rate for September',
+    message: 'Why is the September rate lower?',
+    status: 'resolved',
+    channel: 'app',
+    ageHours: 2,
+    createdAt: '2026-10-01T04:00:00.000Z',
+    replyBody: 'The auction price fell in the second week.',
+    repliedByName: 'Nadeeka Perera',
+    repliedAt: '2026-10-01T06:00:00.000Z',
+    closureNote: null,
+    closedAt: null,
+    messages: [
+      {
+        id: 'm1',
+        author: 'supplier',
+        authorName: 'K.A. Sunil',
+        body: 'Why is the September rate lower?',
+        createdAt: '2026-10-01T04:00:00.000Z',
+      },
+      {
+        id: 'm2',
+        author: 'office',
+        authorName: 'Nadeeka Perera',
+        body: 'The auction price fell in the second week.',
+        createdAt: '2026-10-01T05:00:00.000Z',
+      },
+      {
+        id: 'm3',
+        author: 'supplier',
+        authorName: 'K.A. Sunil',
+        body: 'Will October be better?',
+        createdAt: '2026-10-01T05:30:00.000Z',
+      },
+      {
+        id: 'm4',
+        author: 'office',
+        authorName: 'Nadeeka Perera',
+        body: 'We will know after the first auction.',
+        createdAt: '2026-10-01T06:00:00.000Z',
+      },
+    ],
+  };
+
+  it('shows every message of the conversation, in order', async () => {
+    server.use(http.get('*/admin/inquiries/:id', () => HttpResponse.json(THREAD)));
+    await signInAs(CLERK);
+    renderDetail(THREAD.id);
+
+    const bodies = await screen.findAllByText(/September rate|auction price|October|first auction/);
+    expect(bodies.map((node) => node.textContent)).toEqual(THREAD.messages.map((m) => m.body));
+  });
+
+  it('lets a clerk reply again to an answered conversation', async () => {
+    server.use(http.get('*/admin/inquiries/:id', () => HttpResponse.json(THREAD)));
+    await signInAs(CLERK);
+    renderDetail(THREAD.id);
+    expect(await screen.findByRole('button', { name: /^reply$/i })).toBeInTheDocument();
+  });
+
+  it('puts the latest thing the supplier said in front of the person replying', async () => {
+    server.use(http.get('*/admin/inquiries/:id', () => HttpResponse.json(THREAD)));
+    const user = userEvent.setup();
+    await signInAs(CLERK);
+    renderDetail(THREAD.id);
+
+    await user.click(await screen.findByRole('button', { name: /^reply$/i }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('Will October be better?')).toBeInTheDocument();
   });
 });

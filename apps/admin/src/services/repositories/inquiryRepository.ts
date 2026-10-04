@@ -14,6 +14,7 @@ import {
   type CloseInquiryBody,
   type InquiryQuery,
   type InquiryReplyBody,
+  type InquiryMessage,
   type InquiryStatus,
   type Paged,
 } from '@tfd/domain';
@@ -39,6 +40,7 @@ function refuse(details: unknown): never {
  * The nested shape is still accepted, for an API that starts sending it.
  */
 type ServedInquiry = AdminInquiry & {
+  messages?: InquiryMessage[];
   replyBody?: string | null;
   repliedById?: string | null;
   repliedByName?: string | null;
@@ -56,9 +58,40 @@ function toAdminInquiry(served: ServedInquiry): AdminInquiry {
           repliedAt: served.repliedAt ?? '',
         }
       : null);
+  /*
+   * The conversation. Served as `messages` by an API that keeps one (BACKEND-TODO #25);
+   * otherwise built from the one question and the one answer, so the screen draws a
+   * thread either way and only the ability to reply again depends on the API.
+   */
+  const threaded = Array.isArray(served.messages);
+  const messages: InquiryMessage[] = threaded
+    ? served.messages!
+    : [
+        {
+          id: `${served.id}-question`,
+          author: 'supplier',
+          authorName: served.supplierName,
+          body: served.message,
+          createdAt: served.createdAt,
+        },
+        ...(reply
+          ? [
+              {
+                id: `${served.id}-answer`,
+                author: 'office' as const,
+                authorName: reply.repliedByName || null,
+                body: reply.body,
+                createdAt: reply.repliedAt,
+              },
+            ]
+          : []),
+      ];
+
   return {
     ...served,
     reply,
+    messages,
+    threaded,
     createdById: served.createdById ?? null,
     createdByName: served.createdByName ?? null,
     closedAt: served.closedAt ?? null,

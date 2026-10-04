@@ -14,6 +14,7 @@ and have been removed from this file.
 | 22 | Credit request detail always answers `403 feature-disabled` | High |
 | 23 | Inquiry detail: send who closed it, and who entered it at the office | Low |
 | 24 | Saving manure products turns the list into an object; manure requests break | High |
+| 25 | Inquiries as conversations: more than one message each way | Medium (new feature) |
 
 ---
 
@@ -284,3 +285,73 @@ opens again. Sending a request still needs steps 1 and 2.
 **Check**
 In the app, open Request manure, pick Urea and send. It answers `201`, and the request shows
 in the console's credit queue.
+
+---
+
+## 25. Inquiries as conversations: more than one message each way
+
+**Priority:** Medium. A new feature the office asked for. The console and the app are already
+built for it and switch on by themselves when the API sends `messages`; until then they
+work exactly as today.
+
+**What is wrong today**
+An inquiry holds one question (`message`) and one answer (`reply_body`). After the office
+answers, the supplier cannot say anything more about it, and the office cannot add a second
+answer (`POST /admin/inquiries/:id/reply` refuses `already-answered`). A supplier with a
+follow-up has to start a new inquiry, and the office loses the thread.
+
+**The rules**
+- **Open** (`open`, app `pending`): waiting for the office.
+- **Answered** (`resolved`, app `approved`): the office wrote last. The supplier may still
+  write; that moves it back to **Open** and into the queue.
+- **Closed** (`closed`, app `rejected`): the office ended it. Nobody can write; the supplier
+  starts a new inquiry.
+- The office may reply while it is Open **or** Answered (to add something). Replying makes it
+  Answered.
+
+**What to do**
+
+1. **Table** `inquiry_messages`: `id`, `factory_id`, `inquiry_id` (FK), `author`
+   (`'supplier' | 'office'`), `author_id` (nullable), `author_name` (nullable), `body`,
+   `created_at`. Index on `(inquiry_id, created_at)`. Row-level security like `inquiries`.
+2. **Backfill** in the migration: for every inquiry, one `supplier` row from `message` at
+   `created_at`, and one `office` row from `reply_body` at `replied_at` when it is set.
+   Keep the old columns for now (see step 6).
+3. **One message shape**, oldest first, on every response below:
+   ```json
+   { "id": "uuid", "author": "supplier", "authorName": "K.A. Sunil", "body": "...", "createdAt": "ISO" }
+   ```
+4. **Console endpoints**
+   - `GET /admin/inquiries/:id`: add `messages` (the first one is the original question).
+   - `GET /admin/inquiries`: add `lastMessageAt` and `lastAuthor`. While Open, measure
+     `ageHours` from the supplier's **latest** message, so a follow-up does not jump the
+     queue as if it had waited since the first question.
+   - `POST /admin/inquiries/:id/reply` `{ body }`: allowed when Open or Answered (still `409`
+     when Closed). Inserts an `office` message, sets the status to `resolved`, sends the
+     existing `inquiryReplied` push. Audit `inquiry.reply` as today.
+   - The `inquiryReplied` push: add `inquiryId` to its data (today it carries only
+     `supplierId`), so tapping it opens that conversation in the app instead of the list.
+   - `POST /admin/inquiries/:id/close`: unchanged.
+5. **App endpoints**
+   - `GET /inquiries`: add `messages` to each item.
+   - `GET /inquiries/:id`: one inquiry with `messages` (new).
+   - `POST /inquiries/:id/messages` `{ body }` (1 to 2000 characters, new): only the
+     supplier's own inquiry. Inserts a `supplier` message; if the status is `resolved`, sets it
+     back to `open`. Answers `409 inquiry-closed` when Closed. Returns the inquiry with
+     `messages`. Audit `inquiry.message`. `@Feature('enableInquiry')`, `@Idempotent()`.
+6. **Compatibility:** keep sending `message`, `reply` / `replyBody`, `repliedAt` and
+   `repliedByName` (the first question and the latest office answer) until both apps have
+   shipped, then they can go.
+
+**Already done**
+- Console: the detail screen shows the whole thread from `messages`, and lets a clerk reply
+  again to an Answered inquiry when `messages` is present.
+- App: Inquiries opens each conversation on its own screen, with a message box at the bottom
+  when `messages` is present and the inquiry is not Closed.
+
+**Check**
+1. In the app, send a question. In the console, reply. In the app, open it: the reply is
+   there, and the message box is too. Send a follow-up.
+2. In the console the inquiry is Open again, with both supplier messages and the reply in
+   order. Reply again; the app shows all four messages.
+3. Close it in the console. In the app the message box is gone, with a note that it is closed.
