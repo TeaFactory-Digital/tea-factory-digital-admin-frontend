@@ -622,6 +622,9 @@ export const si: Record<TranslationKey, string> = {
   'inquiries.detail.awaitingReply': 'පිළිතුරක් බලාපොරොත්තුවෙන්',
   'inquiries.detail.readOnly': 'ඔබේ භූමිකාවට පණිවිඩ කියවිය හැකි නමුත් පිළිතුරු දිය නොහැක. මෙම පණිවිඩයට ලිපිකරුවෙකු පිළිතුරු දෙයි හෝ එය වසයි.',
   'inquiries.detail.history': 'ඔවුන්ගේ පෙර පණිවිඩ',
+  'inquiries.detail.pushSentShort': 'සැපයුම්කරුට දැනුම් දුන්නා',
+  'inquiries.detail.pushNotSentShort': 'දුරකථන දැනුම්දීමක් නැත',
+  'inquiries.detail.pushWhy': 'මෙම දැනුම්දීම ගැන',
   'inquiries.detail.pushSent':
     'පිළිතුරක් ඇති බව දැනුම් දෙන දැනුම්දීමක් ඔවුන්ගේ දුරකථනයට යවා ඇත — පිළිතුර ම යෙදුම තුළ පමණක් ඇත, මන්ද අගුළු තිරය කියවන්නේ එය අතේ ඇති අයෙකි.',
   'inquiries.detail.pushNotSent':

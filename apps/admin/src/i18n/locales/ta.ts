@@ -630,6 +630,9 @@ export const ta: Record<TranslationKey, string> = {
   'inquiries.detail.awaitingReply': 'பதிலுக்காகக் காத்திருக்கிறது',
   'inquiries.detail.readOnly': 'உங்கள் பங்கு செய்திகளைப் படிக்கலாம், ஆனால் பதிலளிக்க முடியாது. இந்தச் செய்திக்கு எழுத்தர் பதிலளிப்பார் அல்லது மூடுவார்.',
   'inquiries.detail.history': 'அவர்களின் முந்தைய செய்திகள்',
+  'inquiries.detail.pushSentShort': 'வழங்குநருக்கு அறிவிக்கப்பட்டது',
+  'inquiries.detail.pushNotSentShort': 'தொலைபேசி அறிவிப்பு இல்லை',
+  'inquiries.detail.pushWhy': 'இந்த அறிவிப்பு பற்றி',
   'inquiries.detail.pushSent':
     'பதில் ஒன்று உள்ளது என்று அறிவிக்கும் அறிவிப்பு அவர்களின் தொலைபேசிக்கு அனுப்பப்பட்டது — பதில் மட்டும் செயலியில்தான் உள்ளது, ஏனெனில் பூட்டுத் திரையைப் படிப்பவர் அதை கையில் வைத்திருப்பவர்.',
   'inquiries.detail.pushNotSent':

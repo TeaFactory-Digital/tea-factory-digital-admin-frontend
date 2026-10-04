@@ -615,6 +615,9 @@ export const en = {
   'inquiries.detail.awaitingReply': 'Waiting for a reply',
   'inquiries.detail.readOnly': 'Your role can read messages but not answer them. A clerk replies to this message or closes it.',
   'inquiries.detail.history': 'Their earlier messages',
+  'inquiries.detail.pushSentShort': 'Supplier notified',
+  'inquiries.detail.pushNotSentShort': 'No phone notification',
+  'inquiries.detail.pushWhy': 'About this notification',
   'inquiries.detail.pushSent':
     'A notification was sent to their phone telling them there is an answer — the reply itself is only in the app, because a lock screen is read by whoever is holding it.',
   'inquiries.detail.pushNotSent':

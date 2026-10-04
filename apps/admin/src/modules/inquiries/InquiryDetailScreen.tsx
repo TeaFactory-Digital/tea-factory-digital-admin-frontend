@@ -20,7 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import {
   ArrowUpRight,
-  Bell,
+  BellRing,
   BellOff,
   Building2,
   CalendarClock,
@@ -35,6 +35,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, Skeleton } from '@/components/ui/states';
 import { AuditPanel } from '@/components/AuditPanel';
+import { InfoTip } from '@/components/ui/Tooltip';
 import { cn } from '@/lib/cn';
 import { formatAge, formatDate, formatDateTime } from '@/lib/format';
 import { isAnswerable } from './answerable';
@@ -143,15 +144,28 @@ export function InquiryDetailScreen() {
                 /* Said plainly either way: a clerk who assumes a notification went out
                    does not follow up, and one who assumes it did not telephones a
                    supplier who has already been told. */
-                <span className="flex items-center gap-xs">
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-xs rounded-full py-xxs pr-xxs pl-sm text-caption font-medium',
+                    pushesOnReply
+                      ? 'bg-success-muted text-success'
+                      : 'bg-surface text-text-secondary',
+                  )}
+                >
                   {pushesOnReply ? (
-                    <Bell className="size-icon-xs" aria-hidden />
+                    <BellRing className="size-icon-xs" aria-hidden />
                   ) : (
                     <BellOff className="size-icon-xs" aria-hidden />
                   )}
                   {pushesOnReply
-                    ? t('inquiries.detail.pushSent')
-                    : t('inquiries.detail.pushNotSent')}
+                    ? t('inquiries.detail.pushSentShort')
+                    : t('inquiries.detail.pushNotSentShort')}
+                  {/* The why, for whoever wants it, instead of two lines under every answer. */}
+                  <InfoTip compact label={t('inquiries.detail.pushWhy')}>
+                    {pushesOnReply
+                      ? t('inquiries.detail.pushSent')
+                      : t('inquiries.detail.pushNotSent')}
+                  </InfoTip>
                 </span>
               }
               footer={
@@ -401,7 +415,7 @@ function Bubble({
             {clock(message.createdAt)}
           </p>
         </div>
-        {note ? <span className="px-xs text-caption text-text-secondary">{note}</span> : null}
+        {note ? <span className="mt-xxs">{note}</span> : null}
       </div>
     </li>
   );

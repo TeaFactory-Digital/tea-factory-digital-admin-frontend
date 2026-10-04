@@ -241,7 +241,7 @@ describe('M10 detail screen', () => {
     // was true until M13 landed and is exactly the kind of copy that quietly becomes a
     // lie. A clerk who believes a message was pushed to the
     // supplier's phone is a clerk who does not follow up.
-    expect(screen.getByText(/A notification was sent to their phone/i)).toBeInTheDocument();
+    expect(screen.getByText('Supplier notified')).toBeInTheDocument();
     // Nothing to do on a message already answered.
     expect(screen.queryByRole('button', { name: /^reply$/i })).not.toBeInTheDocument();
   });
