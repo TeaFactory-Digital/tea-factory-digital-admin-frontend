@@ -3,44 +3,24 @@
 Small backend fixes found while testing the admin console against staging.
 Each one says what is wrong, where, and what to change.
 
-## Status (3 October 2026)
+## Status (4 October 2026)
 
-**#1 to #16 are done** on the backend (commits `ba76ea9`, `d284342`, `e6fe59f`). Thank you.
-The console has been updated to use them: banner artwork attached on create (#9), the
-collection-point audience sent as itself and named in the log (#14), and the news list's
-"Last edit" column back (#4).
+**Done on the backend: #1 to #17.** Latest: #17 (banner `exclude`) in `6235ef6`, and the three
+integration tests that assumed empty static pages now use the unseeded slugs (`about`,
+`creditTerms`), as suggested. The mobile app already sends `exclude`, so a closed banner stops
+hiding the ones behind it as soon as this is deployed.
 
-**Still open, for the backend (checked against `main` at `4d51198`):**
+**Still open:**
 
-Everything in #1 to #16 is in the code, and the defaults file now has the FAQ, Terms and
-Privacy content (`4d51198`). Two things are left:
+1. **#18 (new).** The Reports screen's "App use" report counts only change requests; the
+   dashboard counts all three request types. See #18 below.
+2. **Deploy: run the migrations on staging.** On 3 October staging answered `500` for
+   `GET /admin/news` and `GET /admin/dashboard` (every user, including the manager), because the
+   new code expects `news_articles.updated_by_name` and `20261003010000_news_updated_by` had not
+   been applied. Run `prisma migrate deploy` against Neon's direct host, then check the
+   dashboard opens.
 
-1. **Three integration tests will now fail** (read from the code, not run here: no database
-   was available). `createTestApp()` runs `TenantDefaultsService.onApplicationBootstrap()`,
-   and nothing in the tests sets `TENANT_DEFAULTS=off`. So every test factory now **starts
-   with FAQ, Terms and Privacy published**, and these tests assume they start empty:
-
-   | File | Test | Why it fails now |
-   |---|---|---|
-   | `test/content.spec.ts` (~line 288) | "lists EVERY slug, written or not" | expects every page `draft` and `translations: {}` |
-   | `test/frontend-gaps-3.spec.ts` (~line 99) | "and a draft does not" | writes the FAQ and expects `/v1/pages/faq` to be `null`; the FAQ is already published |
-   | `test/frontend-gaps-3.spec.ts` (~line 133) | "answers null for a page the office has not written" | expects `/v1/pages/terms` to be `null`; Terms is already published |
-
-   Simplest fix: in those tests, use a slug that is never seeded (`about`, `savingsScheme`,
-   `creditTerms`) instead of `faq` / `terms`, and in "lists EVERY slug" assert only on the
-   unseeded slugs. Do **not** set `TENANT_DEFAULTS=off` in the harness: the trigger tests in
-   `frontend-gaps-3.spec.ts` (~line 290) rely on the boot pass having run.
-   Worth adding one test that the three default pages are published, in three languages,
-   with the factory's name in place of `{{factory}}`.
-
-2. **Deploy order.** Run `prisma migrate deploy` against Neon's direct host **before** the new
-   API starts: `20261003010000_news_updated_by` (news queries break without it) and
-   `20261003020000_backfill_bill_factory_snapshot`.
-
-**Your question about `collectionPoint`:** keep the payload (`{ id, name }`). The console's
-types were already changed to match (`SupplierListItem` and `SupplierDetail`). Only the
-fixture's internal `AdminSupplier` record still holds the name as a string, and that never
-goes over the wire.
+**Answered:** `collectionPoint` stays `{ id, name }`; the console's types already match.
 
 ---
 
@@ -765,3 +745,29 @@ live banner appears with no app update.
 **Check**
 Publish two live banners. In the app, close the newer one, then send the app to the background
 and back: the older banner now shows. Close it too: nothing shows.
+
+---
+
+## 18. Reports: "App use" counts only change requests
+
+**Priority:** Medium. The Reports screen and the dashboard can disagree.
+
+**What is wrong**
+`GET /v1/admin/reports/channelShift` (`apps/api/src/modules/admin/reports.service.ts`, `run()`,
+around line 130) selects `FROM change_requests` only. The dashboard's adoption trend was fixed in
+#2 to count change, credit and tea packet requests together; this report still counts one table.
+The console's Reports screen now says it counts every request type, which is true of the
+dashboard and should be true here too.
+
+**What to do**
+Use the same `UNION ALL` of `change_requests`, `credit_requests` and `tea_packet_requests` that
+`DashboardService.appAdoption()` / `adoptionTrend()` use, then group by month as today. Optionally
+also return `fromOffice` (`total - fromApp`); the console works it out if it is absent.
+
+**Also, small:** the report ignores `from` / `to`. The console now applies the period itself, so
+nothing breaks, but if you want the API to filter, accept `from` and `to` (`YYYY-MM`) and add
+`WHERE month >= from AND month <= to`.
+
+**Check**
+For any month, the Reports screen's "Share from the app" equals the dashboard's adoption trend
+for that month.

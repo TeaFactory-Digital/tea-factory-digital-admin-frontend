@@ -41,3 +41,11 @@ export function useReportRun(id: ReportId | undefined, params: ReportRunParams, 
     staleTime: 60_000,
   });
 }
+
+export function useAppUse() {
+  return useQuery({
+    queryKey: [...qk.reports.list, 'appUse'],
+    queryFn: () => reportRepository.appUse(),
+    staleTime: 60_000,
+  });
+}

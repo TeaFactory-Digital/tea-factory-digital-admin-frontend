@@ -1,421 +1,366 @@
 /**
- * M16 Reports.
+ * M16 Reports, in v2: **app use over time**, the one report left.
  *
- * **One screen for every report, and the report describes itself.** The server sends its
- * columns with its rows, including what each column *is* — money, kilos, a count, a percentage
- * — so this screen formats without knowing which report it is looking at. That is not
- * generality for its own sake: the API is the only thing that knows a number's units, and a
- * grid that guessed would print `LKR 412.00` over a supplier count.
+ * It answers one question an office manager asks: *are suppliers moving from the counter
+ * to the app?* So the screen leads with the answer for the chosen period (four figures),
+ * then shows the trend month by month (a chart), then the numbers behind it (a table that
+ * can be downloaded). The earlier version was a generic report runner: a rail with one
+ * entry, a citation of the spec paragraph, a row counter and columns named after database
+ * fields, and the people reading it could not tell what any of it meant.
  *
- * **The list is short on purpose**, and the screen says so. modules.md records that M16 needs
- * the §19.1 warehouse shape more than it needs a report list, and §19.1 is not in this
- * repository — so the four reports here are the ones whose definition already exists in the
- * codebase, each carrying the citation that justifies it. A fifth would be a guess dressed as
- * a requirement, and a report the factory did not ask for is a query somebody maintains and
- * nobody reads.
- *
- * **There is no export.** §18.1 asks for CSV/XLSX and it is not built, exactly as it is not
- * for M17 — recorded in status.md rather than implied by a disabled download button. The grid
- * is a real `<table>`, so the office can select it and paste it into a spreadsheet, which is
- * where the office lives (§19.5).
+ * The API returns every month and ignores a date range, so the range is applied here.
  */
 
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
-import { FileBarChart } from 'lucide-react';
 import {
-  REPORT_DEFINITIONS,
-  REPORT_IDS,
-  isReportId,
-  missingReportParams,
-  type ReportColumn,
-  type ReportId,
-  type ReportRunParams,
-} from '@tfd/domain';
-import { Badge } from '@/components/ui/Badge';
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import { Building2, Download, Smartphone, Sigma, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
-import { Field, Input, Select } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { EmptyState, ErrorState, Spinner } from '@/components/ui/states';
-import { cn } from '@/lib/cn';
-import {
-  formatAmount,
-  formatCount,
-  formatDate,
-  formatKg,
-  formatMonthKey,
-  NOT_AVAILABLE,
-} from '@/lib/format';
-import { useReportCatalogue, useReportRun } from './hooks';
+import { EmptyState, ErrorState, Skeleton } from '@/components/ui/states';
 import { InfoTip } from '@/components/ui/Tooltip';
+import { cn } from '@/lib/cn';
+import { formatCount, formatMonthKey, formatPercent } from '@/lib/format';
+import type { AppUseMonth } from '@/services/repositories/reportRepository';
+import { useAppUse } from './hooks';
 
-/**
- * One cell, formatted by what the column says it is.
- *
- * `null` is never `0` (BR-102) and never blank: a supplier who has never delivered has no last
- * delivery, and a month with no requests has no adoption share — both render as an em dash,
- * because a zero there is a figure the office would quote.
- */
-function cell(value: string | number | null, column: ReportColumn, t: (key: string) => string) {
-  if (value === null || value === undefined) return NOT_AVAILABLE;
-
-  switch (column.type) {
-    case 'money':
-      return formatAmount(Number(value));
-    case 'kg':
-      return formatKg(Number(value));
-    case 'count':
-      return formatCount(Number(value));
-    case 'percent':
-      return `${formatAmount(Number(value))}%`;
-    case 'month':
-      return formatMonthKey(String(value));
-    case 'date':
-      return formatDate(String(value));
-    case 'metricKey':
-      // A row label is a key, not prose — localized like everything else.
-      return typeof value === 'string' ? t(`reports.metric.${value}`) || value : String(value);
-    default:
-      // `text` is literal: a supplier code, a collection point name, a person's name. Never
-      // run through `t()` — that was the bug (`reports.metric.5091`, `reports.metric.MAKADURA`).
-      return String(value);
-  }
-}
-
-const NUMERIC: ReportColumn['type'][] = ['money', 'kg', 'count', 'percent'];
+const RANGES = [3, 6, 12, 0] as const; // 0 = every month
+type Range = (typeof RANGES)[number];
 
 export function ReportsScreen() {
   const { t } = useTranslation();
-  const [params, setParams] = useSearchParams();
+  const query = useAppUse();
+  const [range, setRange] = useState<Range>(6);
 
-  const catalogue = useReportCatalogue();
+  const months = useMemo(() => {
+    const all = query.data ?? [];
+    return range === 0 ? all : all.slice(-range);
+  }, [query.data, range]);
 
-  const requested = params.get('report');
-  /**
-   * v2's default is the only report left. `REPORT_IDS[0]` rather than a literal, so the
-   * default follows the catalogue if the factory's own reporting ever adds to it again.
-   */
-  const id: ReportId = requested && isReportId(requested) ? requested : REPORT_IDS[0];
-  const definition = REPORT_DEFINITIONS[id];
-
-  /** Parameter state, defaulted so the common case runs on arrival. */
-  const monthOptions = catalogue.data?.months ?? [];
-  const [monthKey, setMonthKey] = useState('');
-  const [dormantMonths, setDormantMonths] = useState(3);
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-
-  const resolvedMonth = monthKey || monthOptions[0] || '';
-  const resolvedFrom = from || monthOptions.at(-1) || '';
-  const resolvedTo = to || monthOptions[0] || '';
-
-  const runParams = useMemo<ReportRunParams>(
-    () => ({
-      monthKey: definition.params.includes('month') ? resolvedMonth : undefined,
-      dormantMonths: definition.params.includes('dormantMonths') ? dormantMonths : undefined,
-      from: definition.params.includes('monthRange') ? resolvedFrom : undefined,
-      to: definition.params.includes('monthRange') ? resolvedTo : undefined,
-    }),
-    [definition, resolvedMonth, dormantMonths, resolvedFrom, resolvedTo],
-  );
-
-  const missing = missingReportParams(id, runParams);
-  const run = useReportRun(id, runParams, missing.length === 0);
-
-  function selectReport(next: string) {
-    const params2 = new URLSearchParams(params);
-    params2.set('report', next);
-    setParams(params2, { replace: true });
-  }
-
-  const result = run.data;
+  const totals = useMemo(() => {
+    const fromApp = months.reduce((sum, m) => sum + m.fromApp, 0);
+    const fromOffice = months.reduce((sum, m) => sum + m.fromOffice, 0);
+    const total = fromApp + fromOffice;
+    return { fromApp, fromOffice, total, share: total > 0 ? fromApp / total : null };
+  }, [months]);
 
   return (
     <>
-      <PageHeader
-        title={t('reports.title')}
-        description={t('reports.subtitle')}
-        actions={
-          result ? (
-            <span className="flex flex-col">
-              <span className="text-caption text-text-secondary">{t('reports.rows')}</span>
-              <span className="numeric text-subtitle text-text-primary">
-                {formatCount(result.rows.length)}
-              </span>
-            </span>
-          ) : null
-        }
-      />
+      <PageHeader title={t('reports.appUse.title')} description={t('reports.appUse.subtitle')} />
 
-      <div className="grid gap-lg lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
-        {/* The rail, like M12 and M14: a handful of named things, each with what defines it. */}
+      <div className="flex flex-wrap items-center justify-between gap-sm">
+        {/* The period, as presets: nobody picks "from" and "to" months to ask "lately". */}
+        <div
+          role="group"
+          aria-label={t('reports.appUse.period')}
+          className="inline-flex rounded-md border border-border bg-surface p-xxs"
+        >
+          {RANGES.map((value) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={range === value}
+              onClick={() => setRange(value)}
+              className={cn(
+                'rounded-sm px-md py-xs text-body-small transition-colors',
+                range === value
+                  ? 'bg-primary font-semibold text-primary-contrast'
+                  : 'text-text-primary hover:bg-surface-variant',
+              )}
+            >
+              {value === 0
+                ? t('reports.appUse.allMonths')
+                : t('reports.appUse.lastMonths', { count: value })}
+            </button>
+          ))}
+        </div>
+
+        <InfoTip label={t('reports.appUse.whatCounts')} text={t('reports.appUse.whatCounts')}>
+          {t('reports.appUse.whatCountsBody')}
+        </InfoTip>
+      </div>
+
+      {query.isPending ? (
+        <div className="flex flex-col gap-lg">
+          <div className="grid gap-md sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-24" />
+            ))}
+          </div>
+          <Skeleton className="h-72" />
+        </div>
+      ) : query.error ? (
+        <ErrorState error={query.error} onRetry={() => void query.refetch()} />
+      ) : months.length === 0 ? (
         <Card>
-          <CardHeader title={t('reports.available')} />
-          <CardBody className="p-0">
-            <ul>
-              {(catalogue.data?.reports ?? Object.values(REPORT_DEFINITIONS)).map((one) => (
-                <li key={one.id}>
-                  <button
-                    type="button"
-                    onClick={() => selectReport(one.id)}
-                    aria-current={one.id === id ? 'true' : undefined}
-                    className={cn(
-                      'flex w-full items-start gap-sm border-l-2 px-lg py-sm text-left',
-                      one.id === id
-                        ? 'border-primary bg-primary-muted'
-                        : 'border-transparent hover:bg-surface-variant',
-                    )}
-                  >
-                    <FileBarChart
-                      className="mt-xxs size-icon-sm shrink-0 text-text-secondary"
-                      aria-hidden
-                    />
-                    <span className="flex min-w-0 flex-col">
-                      <span
-                        className={cn(
-                          'text-body-small',
-                          one.id === id ? 'font-semibold text-primary' : 'text-text-primary',
-                        )}
-                      >
-                        {t(`reports.name.${one.id}`)}
-                      </span>
-                      {/* What defines it. A report with no citation is one somebody thought
-                          would be useful, and this module's constraint is that the
-                          requirement lives elsewhere (§19.1). */}
-                      <span className="text-caption text-text-secondary">{one.definedBy}</span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </CardBody>
-
-          <CardBody className="border-t border-divider">
-            <InfoTip label={t('tip.whyOnlyThese')} text={t('tip.whyOnlyThese')}>
-              {t('reports.shortListNote')}
-            </InfoTip>
+          <CardBody>
+            <EmptyState title={t('reports.appUse.empty')} body={t('reports.appUse.emptyHint')} />
           </CardBody>
         </Card>
+      ) : (
+        <>
+          <section
+            aria-label={t('reports.appUse.summary')}
+            className="grid gap-md sm:grid-cols-2 xl:grid-cols-4"
+          >
+            <Tile
+              icon={TrendingUp}
+              label={t('reports.appUse.share')}
+              value={formatPercent(totals.share)}
+              hint={t('reports.appUse.shareHint')}
+              tone="primary"
+            />
+            <Tile
+              icon={Smartphone}
+              label={t('reports.appUse.fromApp')}
+              value={formatCount(totals.fromApp)}
+              hint={t('reports.appUse.fromAppHint')}
+            />
+            <Tile
+              icon={Building2}
+              label={t('reports.appUse.fromOffice')}
+              value={formatCount(totals.fromOffice)}
+              hint={t('reports.appUse.fromOfficeHint')}
+            />
+            <Tile
+              icon={Sigma}
+              label={t('reports.appUse.total')}
+              value={formatCount(totals.total)}
+              hint={t('reports.appUse.totalHint')}
+            />
+          </section>
 
-        <div className="flex flex-col gap-lg">
           <Card>
             <CardHeader
-              title={t(`reports.name.${id}`)}
-              description={t(`reports.description.${id}`)}
+              title={t('reports.appUse.chartTitle')}
+              description={t('reports.appUse.chartHint')}
             />
-            <CardBody className="flex flex-wrap items-end gap-md">
-              {definition.params.includes('month') ? (
-                <Field label={t('money.pickMonth')} className="w-56">
-                  {({ id: fieldId }) => (
-                    <Select
-                      id={fieldId}
-                      value={resolvedMonth}
-                      onChange={(event) => setMonthKey(event.target.value)}
-                    >
-                      {monthOptions.map((month) => (
-                        <option key={month} value={month}>
-                          {formatMonthKey(month)}
-                        </option>
-                      ))}
-                    </Select>
-                  )}
-                </Field>
-              ) : null}
-
-              {definition.params.includes('dormantMonths') ? (
-                <Field
-                  label={t('reports.param.dormantMonths')}
-                  className="w-56"
-                  hint={t('reports.param.dormantMonthsHint')}
-                >
-                  {({ id: fieldId, describedBy }) => (
-                    <Input
-                      id={fieldId}
-                      aria-describedby={describedBy}
-                      type="number"
-                      min={1}
-                      max={36}
-                      className="numeric"
-                      value={dormantMonths}
-                      onChange={(event) => setDormantMonths(Number(event.target.value) || 1)}
-                    />
-                  )}
-                </Field>
-              ) : null}
-
-              {definition.params.includes('monthRange') ? (
-                <>
-                  <Field label={t('reports.param.from')} className="w-48">
-                    {({ id: fieldId }) => (
-                      <Select
-                        id={fieldId}
-                        value={resolvedFrom}
-                        onChange={(event) => setFrom(event.target.value)}
-                      >
-                        {monthOptions.map((month) => (
-                          <option key={month} value={month}>
-                            {formatMonthKey(month)}
-                          </option>
-                        ))}
-                      </Select>
-                    )}
-                  </Field>
-                  <Field label={t('reports.param.to')} className="w-48">
-                    {({ id: fieldId }) => (
-                      <Select
-                        id={fieldId}
-                        value={resolvedTo}
-                        onChange={(event) => setTo(event.target.value)}
-                      >
-                        {monthOptions.map((month) => (
-                          <option key={month} value={month}>
-                            {formatMonthKey(month)}
-                          </option>
-                        ))}
-                      </Select>
-                    )}
-                  </Field>
-                </>
-              ) : null}
-
-              {/* No "run" button: the report runs when it has what it needs. A button would be
-                  a second thing to press for an answer already available. */}
-              <p className="text-caption text-text-secondary">
-                {missing.length > 0 ? t('reports.needsParams') : t('reports.runsAutomatically')}
-              </p>
+            <CardBody>
+              <MonthsChart months={months} />
             </CardBody>
           </Card>
 
           <Card>
             <CardHeader
-              title={t('reports.results')}
+              title={t('reports.appUse.tableTitle')}
               actions={
-                result ? (
-                  <Badge tone="neutral">
-                    {t('reports.generatedAt', { when: formatDate(result.generatedAt) })}
-                  </Badge>
-                ) : null
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  iconLeft={<Download className="size-icon-sm" aria-hidden />}
+                  onClick={() => downloadCsv(months, t)}
+                >
+                  {t('reports.appUse.download')}
+                </Button>
               }
             />
-
-            {run.isPending && missing.length === 0 ? (
-              <CardBody className="flex justify-center py-xl">
-                <Spinner />
-              </CardBody>
-            ) : run.error ? (
-              <CardBody>
-                <ErrorState error={run.error} onRetry={() => void run.refetch()} compact />
-              </CardBody>
-            ) : !result ? (
-              <CardBody>
-                <EmptyState title={t('reports.noParams')} body={t('reports.noParamsHint')} />
-              </CardBody>
-            ) : result.rows.length === 0 ? (
-              <CardBody>
-                <EmptyState title={t('reports.empty')} body={t('reports.emptyHint')} />
-              </CardBody>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-data-cell" aria-label={t(`reports.name.${id}`)}>
-                  <thead className="sticky top-0 z-10 bg-table-header shadow-[inset_0_-1px_0_0_var(--color-border)]">
-                    <tr>
-                      {result.columns.map((column) => (
-                        <th
-                          key={column.key}
-                          scope="col"
-                          className={cn(
-                            'px-md py-sm text-data-header whitespace-nowrap uppercase text-text-secondary',
-                            NUMERIC.includes(column.type) ? 'text-right' : 'text-left',
-                          )}
-                        >
-                          {t(column.labelKey)}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {result.rows.map((row, index) => (
-                      <tr
-                        key={index}
-                        className={index % 2 === 1 ? 'border-b border-divider bg-table-row-alt' : 'border-b border-divider'}
-                      >
-                        {result.columns.map((column) => (
-                          <td
-                            key={column.key}
-                            className={cn(
-                              'px-md py-sm align-middle',
-                              NUMERIC.includes(column.type)
-                                ? 'numeric text-right text-text-primary'
-                                : 'text-text-primary',
-                            )}
-                          >
-                            {cell(row[column.key] ?? null, column, t)}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-
-                  {result.totals ? <ReportTotals columns={result.columns} totals={result.totals} /> : null}
-                </table>
-              </div>
-            )}
-
-            <CardBody className="border-t border-divider">
-              <InfoTip label={t('tip.noDownload')} text={t('tip.noDownload')}>
-                {t('reports.noExportNote')}
-              </InfoTip>
-            </CardBody>
+            <MonthsTable months={months} totals={totals} />
           </Card>
-        </div>
-      </div>
+        </>
+      )}
     </>
   );
 }
 
-/**
- * The totals row.
- *
- * Its own component so `totals` is a narrowed prop rather than a possibly-undefined field
- * read inside a closure — the version written inline needed a non-null assertion per cell,
- * which is three assertions to protect one condition already checked above it.
- *
- * A column with no entry renders **blank, not zero**. That is the whole point of the server
- * choosing which columns to total: a share of a share is not a share, and a supplier who
- * delivers to two points is not two suppliers. A zero there would be a figure the office
- * quotes.
- */
-function ReportTotals({
-  columns,
+function Tile({
+  icon: Icon,
+  label,
+  value,
+  hint,
+  tone = 'neutral',
+}: {
+  icon: typeof Smartphone;
+  label: string;
+  value: string;
+  hint: string;
+  tone?: 'primary' | 'neutral';
+}) {
+  return (
+    <Card>
+      <CardBody className="flex items-start gap-sm">
+        <span
+          aria-hidden
+          className={cn(
+            'flex size-10 shrink-0 items-center justify-center rounded-md',
+            tone === 'primary'
+              ? 'bg-primary text-primary-contrast'
+              : 'bg-primary-muted text-primary',
+          )}
+        >
+          <Icon className="size-icon-sm" />
+        </span>
+        <span className="flex min-w-0 flex-col">
+          <span className="text-caption text-text-secondary">{label}</span>
+          <span className="numeric text-h3 text-text-primary">{value}</span>
+          <span className="text-caption text-text-secondary">{hint}</span>
+        </span>
+      </CardBody>
+    </Card>
+  );
+}
+
+/** Requests per month, app and office stacked, so the app's slice can be seen growing. */
+function MonthsChart({ months }: { months: AppUseMonth[] }) {
+  const { t } = useTranslation();
+  const data = months.map((m) => ({
+    month: formatMonthKey(m.monthKey),
+    app: m.fromApp,
+    office: m.fromOffice,
+  }));
+  return (
+    <div className="h-72 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+          <CartesianGrid stroke="var(--color-divider)" vertical={false} />
+          <XAxis
+            dataKey="month"
+            stroke="var(--color-text-secondary)"
+            tickLine={false}
+            fontSize={12}
+          />
+          <YAxis
+            stroke="var(--color-text-secondary)"
+            tickLine={false}
+            axisLine={false}
+            allowDecimals={false}
+            width={40}
+            fontSize={12}
+          />
+          <Tooltip
+            cursor={{ fill: 'var(--color-surface-variant)' }}
+            contentStyle={{
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              fontSize: 'var(--text-caption)',
+            }}
+          />
+          <Legend wrapperStyle={{ fontSize: 12 }} />
+          <Bar
+            dataKey="app"
+            name={t('reports.appUse.fromApp')}
+            stackId="requests"
+            fill="var(--color-primary)"
+            radius={[0, 0, 0, 0]}
+          />
+          <Bar
+            dataKey="office"
+            name={t('reports.appUse.fromOffice')}
+            stackId="requests"
+            fill="var(--color-border)"
+            radius={[4, 4, 0, 0]}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function MonthsTable({
+  months,
   totals,
 }: {
-  columns: ReportColumn[];
-  totals: Record<string, number>;
+  months: AppUseMonth[];
+  totals: { fromApp: number; fromOffice: number; total: number; share: number | null };
 }) {
   const { t } = useTranslation();
-
+  const headers = [
+    t('reports.appUse.month'),
+    t('reports.appUse.fromApp'),
+    t('reports.appUse.fromOffice'),
+    t('reports.appUse.total'),
+    t('reports.appUse.share'),
+  ];
+  // Newest first in the table: the month just gone is the one people look up.
+  const rows = [...months].reverse();
   return (
-    <tfoot>
-      <tr className="border-t-2 border-border font-semibold">
-        {columns.map((column, index) => {
-          const value = totals[column.key];
-          return (
-            <td
-              key={column.key}
-              className={cn(
-                'px-md py-sm',
-                NUMERIC.includes(column.type)
-                  ? 'numeric text-right text-text-primary'
-                  : 'text-text-secondary',
-              )}
+    <div className="overflow-x-auto">
+      <table
+        className="w-full border-collapse text-data-cell"
+        aria-label={t('reports.appUse.tableTitle')}
+      >
+        <thead className="bg-table-header">
+          <tr>
+            {headers.map((label, index) => (
+              <th
+                key={label}
+                scope="col"
+                className={cn(
+                  'whitespace-nowrap px-md py-sm text-data-header text-text-secondary',
+                  index === 0 ? 'text-left' : 'text-right',
+                )}
+              >
+                {label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((m, index) => (
+            <tr
+              key={m.monthKey}
+              className={cn('border-b border-divider', index % 2 === 1 && 'bg-table-row-alt')}
             >
-              {index === 0 ? t('reports.total') : value === undefined ? '' : cell(value, column, t)}
-            </td>
-          );
-        })}
-      </tr>
-    </tfoot>
+              <td className="px-md py-sm text-text-primary">{formatMonthKey(m.monthKey)}</td>
+              <td className="numeric px-md py-sm text-right">{formatCount(m.fromApp)}</td>
+              <td className="numeric px-md py-sm text-right">{formatCount(m.fromOffice)}</td>
+              <td className="numeric px-md py-sm text-right">{formatCount(m.total)}</td>
+              <td className="numeric px-md py-sm text-right">
+                {m.appShare === null ? '—' : formatPercent(m.appShare)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="border-t-2 border-border font-semibold">
+            <td className="px-md py-sm text-text-primary">{t('reports.appUse.periodTotal')}</td>
+            <td className="numeric px-md py-sm text-right">{formatCount(totals.fromApp)}</td>
+            <td className="numeric px-md py-sm text-right">{formatCount(totals.fromOffice)}</td>
+            <td className="numeric px-md py-sm text-right">{formatCount(totals.total)}</td>
+            {/* The overall share, from the totals: an average of monthly percentages would
+                weigh a quiet month the same as a busy one. */}
+            <td className="numeric px-md py-sm text-right">{formatPercent(totals.share)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
   );
+}
+
+/** The table as a CSV file, the same columns and the same months as on screen. */
+function downloadCsv(months: AppUseMonth[], t: (key: string) => string) {
+  const header = [
+    t('reports.appUse.month'),
+    t('reports.appUse.fromApp'),
+    t('reports.appUse.fromOffice'),
+    t('reports.appUse.total'),
+    t('reports.appUse.share'),
+  ];
+  const lines = months.map((m) => [
+    m.monthKey,
+    m.fromApp,
+    m.fromOffice,
+    m.total,
+    m.appShare === null ? '' : (m.appShare * 100).toFixed(1),
+  ]);
+  const quote = (value: unknown) => `"${String(value).replace(/"/g, '""')}"`;
+  const csv = [header, ...lines].map((line) => line.map(quote).join(',')).join('\r\n');
+  // A byte-order mark, so Excel reads Sinhala and Tamil headers as UTF-8.
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `app-use-${months[0]?.monthKey ?? ''}-to-${months.at(-1)?.monthKey ?? ''}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
 }
