@@ -13,6 +13,7 @@ and have been removed from this file.
 | 21 | Bank details change requests cannot be approved | High |
 | 22 | Credit request detail always answers `403 feature-disabled` | High |
 | 23 | Inquiry detail: send who closed it, and who entered it at the office | Low |
+| 24 | Saving manure products turns the list into an object; manure requests break | High |
 
 ---
 
@@ -231,3 +232,55 @@ closed, the same way `repliedByName` is stored on reply.
 
 **Check**
 Close a message in the console: the detail screen shows "Closed by <name>, <date and time>".
+
+---
+
+## 24. Saving manure products turns the list into an object; manure requests break
+
+**Priority:** High. Suppliers cannot request manure: the app's screen did not open, and sending
+a request fails.
+
+**What is wrong**
+On staging, `GET /v1/config` serves `manureProducts` as an object keyed by index, not a list:
+
+```json
+"manureProducts": { "0": { "name": "Urea", ... }, "1": { "name": "T200 Mixture", ... } }
+```
+
+The cause is `PATCH /admin/config` in `apps/api/src/modules/admin/config-admin.service.ts`.
+`manureProducts` is not in `WHOLESALE_BLOCKS`, so it goes through the merge branch:
+
+```ts
+data[columnFor(block)] = { ...existing, ...(value as object) };
+```
+
+Spreading an array into an object gives `{ "0": ..., "1": ... }`. A product deleted in the
+console would also never be removed, because the old keys are kept.
+
+The same object then breaks the API itself: `credit.controller.ts` (around line 285) calls
+`products.find(...)` on it when pricing a manure request, which throws (`500`).
+
+**What to do**
+
+1. Add `manureProducts` to `WHOLESALE_BLOCKS`, like `banks`: the console always sends the
+   whole list.
+   ```ts
+   const WHOLESALE_BLOCKS = new Set(['teaPackets', 'creditRules', 'payouts', 'banks', 'manureProducts']);
+   ```
+   Please check every other block that holds a list the same way.
+2. Repair the rows already saved in this shape (staging has one). For example, once:
+   ```sql
+   UPDATE client_config
+      SET manure_products = (SELECT jsonb_agg(value ORDER BY key::int)
+                               FROM jsonb_each(manure_products))
+    WHERE jsonb_typeof(manure_products) = 'object';
+   ```
+3. Add a test: save `manureProducts` twice through `PATCH /admin/config`, the second time
+   with one product removed. `GET /config` answers a list with only the remaining product.
+
+**Already done in the app:** it now reads this object shape as a list, so the manure screen
+opens again. Sending a request still needs steps 1 and 2.
+
+**Check**
+In the app, open Request manure, pick Urea and send. It answers `201`, and the request shows
+in the console's credit queue.
