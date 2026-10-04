@@ -35,13 +35,36 @@ import { useDecideChangeRequest, type DecisionVerb } from './hooks';
 const MIN_NOTE = 10;
 
 /**
- * The sentences this queue writes all day, by verb — the words live in the string
- * tables, only the order is here. Approving and rejecting share no vocabulary, so
- * the clerk is never shown a chip for the decision they are not making.
+ * The notes this queue writes all day, by change type and verb. The words live in the
+ * string tables, only the choice and order are here.
+ *
+ * Per type, because a reason only helps when it fits: "Bring passbook" means nothing on
+ * an address change, and nothing in this queue carries a photo to call unclear. Approving
+ * and rejecting share no vocabulary, so the clerk is never shown a chip for the decision
+ * they are not making.
  */
-const SUGGESTIONS: Record<DecisionVerb, readonly string[]> = {
-  approve: ['passbook', 'nic', 'phone'],
-  reject: ['mismatch', 'document', 'unreadable'],
+const SUGGESTIONS: Record<ChangeRequestType, Record<DecisionVerb, readonly string[]>> = {
+  address: {
+    approve: ['phone', 'collector', 'addressUpdated'],
+    reject: ['addressIncomplete', 'outsideArea', 'notConfirmed'],
+  },
+  bankDetails: {
+    approve: ['passbook', 'nameMatches', 'phone'],
+    reject: ['mismatch', 'bringPassbook', 'notConfirmed'],
+  },
+  paymentMethod: {
+    approve: ['nextPayout', 'bankOnFile', 'phone'],
+    reject: ['noBankAccount', 'notConfirmed', 'visitOffice'],
+  },
+  savingsRate: {
+    approve: ['nextMonth', 'phone'],
+    reject: ['outstandingLoan', 'notConfirmed', 'visitOffice'],
+  },
+};
+/** For a type this console does not know yet: the reasons that fit any change. */
+const FALLBACK_SUGGESTIONS: Record<DecisionVerb, readonly string[]> = {
+  approve: ['phone'],
+  reject: ['notConfirmed', 'visitOffice'],
 };
 
 export function DecisionActions({ request }: { request: AdminChangeRequest }) {
@@ -113,7 +136,9 @@ function DecisionDialog({
   const tooShort = length < MIN_NOTE;
   const approving = verb === 'approve';
 
-  const suggestions: NoteSuggestion[] = SUGGESTIONS[verb].map((slug) => ({
+  const slugs =
+    SUGGESTIONS[request.type as ChangeRequestType]?.[verb] ?? FALLBACK_SUGGESTIONS[verb];
+  const suggestions: NoteSuggestion[] = slugs.map((slug) => ({
     label: t(`changeRequests.noteSuggest.${verb}.${slug}`),
     text: t(`changeRequests.noteSuggest.${verb}.${slug}.text`),
   }));

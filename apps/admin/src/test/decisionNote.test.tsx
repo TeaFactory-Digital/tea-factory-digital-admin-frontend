@@ -61,7 +61,7 @@ async function openSupplierDialog(
 
 /** Opens the reject dialog on a request the signed-in clerk did not raise. */
 async function openRejectDialog(user: ReturnType<typeof userEvent.setup>) {
-  renderDetail('chg-2');
+  renderDetail('chg-1');
   const reject = await screen.findByRole('button', { name: en['changeRequests.reject'] });
   await user.click(reject);
   return screen.getByRole('dialog');
@@ -103,12 +103,12 @@ describe('decision note suggestions', () => {
 
     await user.click(
       within(dialog).getByRole('button', {
-        name: en['changeRequests.noteSuggest.reject.document'],
+        name: en['changeRequests.noteSuggest.reject.bringPassbook'],
       }),
     );
 
     expect(note).toHaveValue(
-      `Spoke to Kamala at the counter. ${en['changeRequests.noteSuggest.reject.document.text']}`,
+      `Spoke to Kamala at the counter. ${en['changeRequests.noteSuggest.reject.bringPassbook.text']}`,
     );
   });
 
@@ -134,15 +134,35 @@ describe('decision note suggestions', () => {
     await signInAs(CLERK);
     const user = userEvent.setup();
 
-    renderDetail('chg-2');
-    await user.click(
-      await screen.findByRole('button', { name: en['changeRequests.approve'] }),
-    );
+    renderDetail('chg-1');
+    await user.click(await screen.findByRole('button', { name: en['changeRequests.approve'] }));
 
     const dialog = screen.getByRole('dialog');
     expect(
       within(dialog).getByRole('button', {
         name: en['changeRequests.noteSuggest.approve.passbook'],
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole('button', {
+        name: en['changeRequests.noteSuggest.reject.mismatch'],
+      }),
+    ).not.toBeInTheDocument();
+  });
+});
+
+describe('change request chips fit the change', () => {
+  it('offers savings reasons on a savings change, not bank ones', async () => {
+    await signInAs(CLERK);
+    const user = userEvent.setup();
+
+    renderDetail('chg-2');
+    await user.click(await screen.findByRole('button', { name: en['changeRequests.reject'] }));
+
+    const dialog = screen.getByRole('dialog');
+    expect(
+      within(dialog).getByRole('button', {
+        name: en['changeRequests.noteSuggest.reject.outstandingLoan'],
       }),
     ).toBeInTheDocument();
     expect(
@@ -164,11 +184,7 @@ describe('supplier identity-check suggestions', () => {
   it('clears the identity-check floor and unblocks the reset', async () => {
     await signInAs(CLERK);
     const user = userEvent.setup();
-    const dialog = await openSupplierDialog(
-      user,
-      'sup-1',
-      en['suppliers.action.resetPassword'],
-    );
+    const dialog = await openSupplierDialog(user, 'sup-1', en['suppliers.action.resetPassword']);
 
     const note = within(dialog).getByRole('textbox');
     const confirm = within(dialog).getByRole('button', {
@@ -183,9 +199,7 @@ describe('supplier identity-check suggestions', () => {
     );
 
     expect(note).toHaveValue(en['suppliers.resetPassword.identitySuggest.book.text']);
-    expect((note as HTMLTextAreaElement).value.length).toBeGreaterThanOrEqual(
-      IDENTITY_CHECK_MIN,
-    );
+    expect((note as HTMLTextAreaElement).value.length).toBeGreaterThanOrEqual(IDENTITY_CHECK_MIN);
     await waitFor(() => expect(confirm).toBeEnabled());
   });
 
@@ -200,11 +214,7 @@ describe('supplier identity-check suggestions', () => {
   it('offers no telephone chip, unlike the change-request queue', async () => {
     await signInAs(CLERK);
     const user = userEvent.setup();
-    const dialog = await openSupplierDialog(
-      user,
-      'sup-1',
-      en['suppliers.action.resetPassword'],
-    );
+    const dialog = await openSupplierDialog(user, 'sup-1', en['suppliers.action.resetPassword']);
 
     for (const chip of ['book', 'nic', 'known'] as const) {
       expect(
@@ -228,11 +238,7 @@ describe('supplier identity-check suggestions', () => {
   it('leaves the "known to staff" sentence open for the name', async () => {
     await signInAs(CLERK);
     const user = userEvent.setup();
-    const dialog = await openSupplierDialog(
-      user,
-      'sup-1',
-      en['suppliers.action.resetPassword'],
-    );
+    const dialog = await openSupplierDialog(user, 'sup-1', en['suppliers.action.resetPassword']);
 
     const note = within(dialog).getByRole('textbox');
     await user.click(
@@ -278,11 +284,7 @@ describe('supplier suspend and reactivate suggestions', () => {
   it('offers the reactivation sentences when reactivating', async () => {
     await signInAs(CLERK);
     const user = userEvent.setup();
-    const dialog = await openSupplierDialog(
-      user,
-      'sup-17',
-      en['suppliers.action.reactivate'],
-    );
+    const dialog = await openSupplierDialog(user, 'sup-17', en['suppliers.action.reactivate']);
 
     expect(
       within(dialog).getByRole('button', {
@@ -318,8 +320,6 @@ describe('toggleNoteSuggestion', () => {
 
   it('keeps the clerk’s own line breaks when removing', () => {
     const note = 'Passbook checked.\nSecond line the clerk wrote.';
-    expect(toggleNoteSuggestion(note, 'Passbook checked.')).toBe(
-      'Second line the clerk wrote.',
-    );
+    expect(toggleNoteSuggestion(note, 'Passbook checked.')).toBe('Second line the clerk wrote.');
   });
 });

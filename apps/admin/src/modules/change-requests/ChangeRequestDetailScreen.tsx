@@ -15,7 +15,6 @@ import {
   Building2,
   CalendarClock,
   CheckCircle2,
-  FileX2,
   Hourglass,
   Paperclip,
   Smartphone,
@@ -151,22 +150,12 @@ export function ChangeRequestDetailScreen() {
             </Card>
           ) : null}
 
-          <Card>
-            <CardHeader title={t('changeRequests.detail.evidence')} />
-            <CardBody>
-              {request.attachments.length === 0 ? (
-                <div className="flex items-start gap-md rounded-md border border-dashed border-border p-md">
-                  <FileX2 className="size-icon-md shrink-0 text-text-secondary" aria-hidden />
-                  <div>
-                    <p className="text-body-small font-medium text-text-primary">
-                      {t('changeRequests.detail.noEvidence')}
-                    </p>
-                    <p className="text-caption text-text-secondary">
-                      {t('changeRequests.detail.noEvidenceHint')}
-                    </p>
-                  </div>
-                </div>
-              ) : (
+          {/* Only when something is attached: the API does not send attachments yet,
+              and an empty card on every request is noise. */}
+          {request.attachments.length > 0 ? (
+            <Card>
+              <CardHeader title={t('changeRequests.detail.evidence')} />
+              <CardBody>
                 <ul className="grid gap-sm sm:grid-cols-2">
                   {request.attachments.map((attachment) => (
                     <li key={attachment.id}>
@@ -182,9 +171,9 @@ export function ChangeRequestDetailScreen() {
                     </li>
                   ))}
                 </ul>
-              )}
-            </CardBody>
-          </Card>
+              </CardBody>
+            </Card>
+          ) : null}
         </div>
 
         <div className="flex flex-col gap-lg">

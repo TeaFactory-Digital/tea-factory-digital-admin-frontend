@@ -5,22 +5,17 @@ Each one says what is wrong, where, and what to change.
 
 ## Status (4 October 2026)
 
-**Done on the backend: #1 to #17.** Latest: #17 (banner `exclude`) in `6235ef6`, and the three
-integration tests that assumed empty static pages now use the unseeded slugs (`about`,
-`creditTerms`), as suggested. The mobile app already sends `exclude`, so a closed banner stops
-hiding the ones behind it as soon as this is deployed.
+**Done on the backend: #1 to #18.** Latest: #18 in `6f1016f`. The "App use" report now counts
+change, credit and tea packet requests together, sends `fromOffice`, and accepts `from` / `to`.
+Checked on staging: it answers the same 5 requests the dashboard counts.
+
+**Deployed:** the staging migrations are applied. `GET /admin/news` and `GET /admin/dashboard`
+answer `200` again (checked 4 October).
 
 **Still open:**
 
-1. **#18 (new).** The Reports screen's "App use" report counts only change requests; the
-   dashboard counts all three request types. See #18 below.
-2. **#19 (new, small).** A change request's detail does not say *when* it was decided, or who
-   by (id). See #19 below.
-3. **Deploy: run the migrations on staging.** On 3 October staging answered `500` for
-   `GET /admin/news` and `GET /admin/dashboard` (every user, including the manager), because the
-   new code expects `news_articles.updated_by_name` and `20261003010000_news_updated_by` had not
-   been applied. Run `prisma migrate deploy` against Neon's direct host, then check the
-   dashboard opens.
+1. **#19 (small).** A change request's detail does not say *when* it was decided, or who by
+   (id). Still missing on staging after `6f1016f`. See #19 below.
 
 **Answered:** `collectionPoint` stays `{ id, name }`; the console's types already match.
 

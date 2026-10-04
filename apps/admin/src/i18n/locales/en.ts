@@ -390,7 +390,6 @@ export const en = {
   'changeRequests.detail.submitted': 'Submitted {{when}}',
   'changeRequests.detail.waiting': 'Waiting {{age}}',
   'changeRequests.detail.evidence': 'Evidence',
-  'changeRequests.detail.noEvidence': 'No files attached',
   'changeRequests.detail.decision': 'Decision',
   'changeRequests.detail.decidedBy': '{{status}} by {{name}}, {{when}}',
   'changeRequests.detail.auditTitle': 'Audit trail',
@@ -407,7 +406,6 @@ export const en = {
   'changeRequests.detail.waitingLabel': 'Waiting for',
   'changeRequests.detail.someone': 'someone',
   'changeRequests.detail.supplierReads': 'The note the supplier reads',
-  'changeRequests.detail.noEvidenceHint': 'Nothing was attached. If this change needs proof, ask the supplier to bring it to the office.',
   'changeRequests.detail.decideTitle': 'Your decision',
   'changeRequests.detail.decideHint': 'Check the change and the supplier record first. Either way, you write a short note the supplier reads.',
   'changeRequests.dialog.forSupplier': '{{type}} change for {{code}} · {{name}}',
@@ -428,27 +426,41 @@ export const en = {
     'e.g. The account name does not match the registered supplier name. Bring the passbook to the office.',
   'changeRequests.noteHelp': 'The supplier reads this. At least 10 characters.',
   /**
-   * The four sentences this queue writes all day. `.text` is what the supplier
+   * The notes this queue writes all day, per change type. `.text` is what the supplier
    * reads; the bare key is the chip, and stays short enough to scan.
    */
-  'changeRequests.noteSuggest.approve.passbook': 'Passbook checked',
-  'changeRequests.noteSuggest.approve.passbook.text':
-    'Passbook checked against the NIC at the counter.',
-  'changeRequests.noteSuggest.approve.nic': 'NIC seen',
-  'changeRequests.noteSuggest.approve.nic.text':
-    'Identity confirmed from the NIC at the office counter.',
   'changeRequests.noteSuggest.approve.phone': 'Confirmed by phone',
-  'changeRequests.noteSuggest.approve.phone.text':
-    'Confirmed with the supplier by telephone before approving.',
+  'changeRequests.noteSuggest.approve.phone.text': 'We called you and confirmed this change. It is now updated.',
+  'changeRequests.noteSuggest.approve.collector': 'Collector confirmed',
+  'changeRequests.noteSuggest.approve.collector.text': 'Our collector confirmed your new address. It is now updated.',
+  'changeRequests.noteSuggest.approve.addressUpdated': 'Address updated',
+  'changeRequests.noteSuggest.approve.addressUpdated.text': 'Your address is updated. Bills and letters will go to the new address.',
+  'changeRequests.noteSuggest.approve.passbook': 'Passbook checked',
+  'changeRequests.noteSuggest.approve.passbook.text': 'We checked your bank passbook. Payments will go to the new account from the next payout.',
+  'changeRequests.noteSuggest.approve.nameMatches': 'Name matches',
+  'changeRequests.noteSuggest.approve.nameMatches.text': 'The account name matches your registered name. Payments will go to this account from the next payout.',
+  'changeRequests.noteSuggest.approve.nextPayout': 'From next payout',
+  'changeRequests.noteSuggest.approve.nextPayout.text': 'Your new payment method applies from the next payout.',
+  'changeRequests.noteSuggest.approve.bankOnFile': 'Bank details on file',
+  'changeRequests.noteSuggest.approve.bankOnFile.text': 'Your bank details are on file, so payments will go to your bank account from the next payout.',
+  'changeRequests.noteSuggest.approve.nextMonth': 'From next month',
+  'changeRequests.noteSuggest.approve.nextMonth.text': 'Your new savings amount applies from next month\'s bill.',
+  'changeRequests.noteSuggest.reject.addressIncomplete': 'Address incomplete',
+  'changeRequests.noteSuggest.reject.addressIncomplete.text': 'The new address is not complete. Please send the full address with the village and post office.',
+  'changeRequests.noteSuggest.reject.outsideArea': 'Outside our area',
+  'changeRequests.noteSuggest.reject.outsideArea.text': 'The new address is outside our collection area. Please call the office to talk about it.',
+  'changeRequests.noteSuggest.reject.notConfirmed': 'Could not confirm',
+  'changeRequests.noteSuggest.reject.notConfirmed.text': 'We could not reach you to confirm this change. Please call or visit the office.',
   'changeRequests.noteSuggest.reject.mismatch': 'Name mismatch',
-  'changeRequests.noteSuggest.reject.mismatch.text':
-    'The account name does not match the registered supplier name. Bring the passbook to the office.',
-  'changeRequests.noteSuggest.reject.document': 'No document',
-  'changeRequests.noteSuggest.reject.document.text':
-    'No supporting document was produced. Bring the passbook and the NIC to the office.',
-  'changeRequests.noteSuggest.reject.unreadable': 'Photo unclear',
-  'changeRequests.noteSuggest.reject.unreadable.text':
-    'The photograph is not readable. Send a clearer picture and raise the request again.',
+  'changeRequests.noteSuggest.reject.mismatch.text': 'The account name does not match your registered name. Please bring your passbook and NIC to the office.',
+  'changeRequests.noteSuggest.reject.bringPassbook': 'Bring passbook',
+  'changeRequests.noteSuggest.reject.bringPassbook.text': 'To change your bank account, please bring your bank passbook and NIC to the office.',
+  'changeRequests.noteSuggest.reject.noBankAccount': 'No bank account',
+  'changeRequests.noteSuggest.reject.noBankAccount.text': 'Bank transfer needs a bank account on file. Please add your bank details first, then ask again.',
+  'changeRequests.noteSuggest.reject.visitOffice': 'Visit the office',
+  'changeRequests.noteSuggest.reject.visitOffice.text': 'This change has to be made at the office. Please visit us with your NIC.',
+  'changeRequests.noteSuggest.reject.outstandingLoan': 'Loan outstanding',
+  'changeRequests.noteSuggest.reject.outstandingLoan.text': 'Your savings amount cannot be lowered while you have an advance or loan to repay.',
   'changeRequests.approved': 'Approved. The app will show the new value on next refresh.',
   'changeRequests.rejected': 'Rejected. The current value is unchanged.',
 
