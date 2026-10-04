@@ -11,6 +11,7 @@ and have been removed from this file.
 | 19 | Change request detail: send when it was decided | Low |
 | 20 | Refresh always fails with `403 csrf`, so the console signs out on every reload | High |
 | 21 | Bank details change requests cannot be approved | High |
+| 22 | Credit request detail always answers `403 feature-disabled` | High |
 
 ---
 
@@ -154,3 +155,58 @@ in the console needs to change for steps 1 and 2.
 **Check**
 In the app, change the bank account. In the console, approve the request: it answers `200`, and
 the supplier's record shows the new bank and the new masked number.
+
+---
+
+## 22. Credit request detail always answers `403 feature-disabled`
+
+**Priority:** High. No credit request (advance, loan or manure) can be opened in the console,
+so none can be read before deciding it.
+
+**What is wrong**
+On staging, `GET /v1/admin/credit-requests/8878d038-ccc4-4300-9a5f-268a7a11777e` answers:
+
+```json
+{ "code": "feature-disabled", "details": { "flag": "enableLoans" } }
+```
+
+but the same request **is listed** by `GET /v1/admin/credit-requests?status=pending`, and the
+dashboard counts it as a pending loan. So `enableLoans` is on; the detail endpoint just does
+not see it.
+
+The cause is in `apps/api/src/core/features/feature.guard.ts`. For a `@FeatureFromRecord`
+route the guard returns **before** it loads the flags:
+
+```ts
+if (disposition.kind === 'fromRecord') return true;   // leaves early
+
+const flags = await this.flags.forFactory(state.actor.factoryId);
+(request as ...)[ENABLED_FLAGS] = flags;               // never reached for fromRecord
+```
+
+So `readFlags(request)` is `{}` in `creditRequestById`, and
+`CreditRequestsService.byId()` sees every facility flag as off.
+
+**What to do**
+Load the flags first, then return for `fromRecord`. Move the `fromRecord` line below the
+`ENABLED_FLAGS` assignment:
+
+```ts
+const request = context.switchToHttp().getRequest<Request>();
+const state = readAuthState(request);
+if (!state) throw new DomainError('unauthenticated', { reason: 'no session' });
+
+const flags = await this.flags.forFactory(state.actor.factoryId);
+(request as { [ENABLED_FLAGS]?: Record<string, boolean> })[ENABLED_FLAGS] = flags;
+
+// The handler checks the flag after loading the record (Q17): the guard only supplies them.
+if (disposition.kind === 'fromRecord') return true;
+if (disposition.kind === 'filter') return true;
+```
+
+Please also add a test: with `enableLoans` on, `GET /admin/credit-requests/:id` for a loan
+answers `200`; with it off, `403 feature-disabled`.
+
+**Check**
+In the console, open any credit request from the Credit queues screen. The detail shows, with
+the Approve and Reject buttons.
