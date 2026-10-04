@@ -9,6 +9,7 @@
  */
 
 const ACTION_KEYS: Record<string, string> = {
+  'changeRequest.create': 'audit.action.changeRequestCreate',
   'changeRequest.approve': 'audit.action.changeRequestApprove',
   'changeRequest.reject': 'audit.action.changeRequestReject',
   'supplier.update': 'audit.action.supplierUpdate',

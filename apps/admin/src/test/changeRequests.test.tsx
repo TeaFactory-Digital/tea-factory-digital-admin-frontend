@@ -24,6 +24,7 @@ import { changeRequestRepository } from '@/services/repositories/changeRequestRe
 import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { ApiError } from '@/services/api/errors';
+import { compareSummaries } from '@/lib/changeSummary';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/services/mocks/server';
 import { renderWithProviders, signInAs, signOut } from './render';
@@ -193,9 +194,10 @@ describe('M9 detail screen', () => {
     // Both values, not only the new one: the office is deciding whether to
     // *replace* something, and a screen showing one side asks them to approve a
     // change they cannot see.
-    expect(await screen.findByText(request.currentSummary)).toBeInTheDocument();
-    expect(await screen.findByText(request.requestedSummary)).toBeInTheDocument();
+    const [row] = compareSummaries(request.currentSummary, request.requestedSummary);
+    expect(await screen.findByText(row!.requested!)).toBeInTheDocument();
     expect(screen.getByText('Active now')).toBeInTheDocument();
+    expect(screen.getByText('Requested')).toBeInTheDocument();
 
     expect(await screen.findByRole('button', { name: /approve/i })).toBeEnabled();
     expect(await screen.findByRole('button', { name: /reject/i })).toBeEnabled();

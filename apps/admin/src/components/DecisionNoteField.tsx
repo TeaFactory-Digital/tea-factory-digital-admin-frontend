@@ -108,7 +108,7 @@ export function DecisionNoteField({
           />
 
           {suggestions.length > 0 ? (
-            <div role="group" aria-labelledby={groupId} className="flex flex-wrap items-center gap-xs">
+            <div role="group" aria-labelledby={groupId} className="mt-sm flex flex-wrap items-center gap-xs">
               <span id={groupId} className="text-caption text-text-secondary">
                 {suggestionsLabel}
               </span>

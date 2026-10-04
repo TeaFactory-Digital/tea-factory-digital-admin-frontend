@@ -17,8 +17,8 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, X } from 'lucide-react';
-import type { AdminChangeRequest } from '@tfd/domain';
+import { Check, CheckCircle2, Info, TriangleAlert, X, XCircle } from 'lucide-react';
+import type { AdminChangeRequest, ChangeRequestType } from '@tfd/domain';
 import { isSelfApproval } from '@tfd/domain';
 import { useCurrentUser } from '@/auth/authStore';
 import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
@@ -26,8 +26,10 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Notice } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
+import { cn } from '@/lib/cn';
 import { errorMessageKey, isBlockingError } from '@/lib/errorMessage';
 import { isApiError } from '@/services/api/errors';
+import { ChangeComparison } from './ChangeComparison';
 import { useDecideChangeRequest, type DecisionVerb } from './hooks';
 
 const MIN_NOTE = 10;
@@ -67,9 +69,12 @@ export function DecisionActions({ request }: { request: AdminChangeRequest }) {
 
   return (
     <>
-      <div className="flex flex-wrap gap-sm">
+      {/* Stacked and full width: this sits in the side column, and two equal buttons
+          say the two answers are equally fine. */}
+      <div className="flex flex-col gap-sm">
         <Button
           variant="primary"
+          className="w-full"
           iconLeft={<Check className="size-icon-sm" aria-hidden />}
           onClick={() => setVerb('approve')}
         >
@@ -77,6 +82,7 @@ export function DecisionActions({ request }: { request: AdminChangeRequest }) {
         </Button>
         <Button
           variant="danger"
+          className="w-full"
           iconLeft={<X className="size-icon-sm" aria-hidden />}
           onClick={() => setVerb('reject')}
         >
@@ -84,9 +90,7 @@ export function DecisionActions({ request }: { request: AdminChangeRequest }) {
         </Button>
       </div>
 
-      {verb ? (
-        <DecisionDialog request={request} verb={verb} onClose={() => setVerb(null)} />
-      ) : null}
+      {verb ? <DecisionDialog request={request} verb={verb} onClose={() => setVerb(null)} /> : null}
     </>
   );
 }
@@ -105,7 +109,8 @@ function DecisionDialog({
   const [note, setNote] = useState('');
   const decide = useDecideChangeRequest(request.id, request.supplierId);
 
-  const tooShort = note.trim().length < MIN_NOTE;
+  const length = note.trim().length;
+  const tooShort = length < MIN_NOTE;
   const approving = verb === 'approve';
 
   const suggestions: NoteSuggestion[] = SUGGESTIONS[verb].map((slug) => ({
@@ -118,9 +123,7 @@ function DecisionDialog({
       { verb, body: { note: note.trim() } },
       {
         onSuccess: () => {
-          toast.success(
-            approving ? t('changeRequests.approved') : t('changeRequests.rejected'),
-          );
+          toast.success(approving ? t('changeRequests.approved') : t('changeRequests.rejected'));
           onClose();
         },
         // The dialog stays open on failure. Closing it would discard the note the
@@ -139,8 +142,30 @@ function DecisionDialog({
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
-      title={approving ? t('changeRequests.approveTitle') : t('changeRequests.rejectTitle')}
-      description={approving ? t('changeRequests.approveBody') : t('changeRequests.rejectBody')}
+      size="md"
+      title={
+        <span className="flex items-center gap-sm">
+          <span
+            aria-hidden
+            className={cn(
+              'flex size-9 shrink-0 items-center justify-center rounded-full',
+              approving ? 'bg-success-muted text-success' : 'bg-error-muted text-error',
+            )}
+          >
+            {approving ? (
+              <CheckCircle2 className="size-icon-md" />
+            ) : (
+              <XCircle className="size-icon-md" />
+            )}
+          </span>
+          {approving ? t('changeRequests.approveTitle') : t('changeRequests.rejectTitle')}
+        </span>
+      }
+      description={t('changeRequests.dialog.forSupplier', {
+        type: t(`changeRequests.type.${request.type as ChangeRequestType}`),
+        code: request.supplierCode,
+        name: request.supplierName,
+      })}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
@@ -158,21 +183,23 @@ function DecisionDialog({
       }
     >
       <div className="flex flex-col gap-md">
-        <div className="grid gap-sm sm:grid-cols-2">
-          <div className="rounded-md bg-surface-variant p-md">
-            <p className="text-overline text-text-secondary uppercase">
-              {t('changeRequests.detail.currentHeading')}
-            </p>
-            <p className="mt-xxs text-body-small text-text-primary">{request.currentSummary}</p>
-          </div>
-          <div className="rounded-md bg-primary-muted p-md">
-            <p className="text-overline text-primary uppercase">
-              {t('changeRequests.detail.requestedHeading')}
-            </p>
-            <p className="mt-xxs text-body-small font-medium text-text-primary">
-              {request.requestedSummary}
-            </p>
-          </div>
+        <ChangeComparison request={request} layout="list" />
+
+        {/* What happens on the other side of the button, before it is pressed. */}
+        <div
+          className={cn(
+            'flex items-start gap-sm rounded-md p-md text-body-small',
+            approving ? 'bg-info-muted text-info' : 'bg-warning-muted text-warning',
+          )}
+        >
+          {approving ? (
+            <Info className="mt-xxs size-icon-sm shrink-0" aria-hidden />
+          ) : (
+            <TriangleAlert className="mt-xxs size-icon-sm shrink-0" aria-hidden />
+          )}
+          <span>
+            {approving ? t('changeRequests.approveBody') : t('changeRequests.rejectBody')}
+          </span>
         </div>
 
         <DecisionNoteField
@@ -189,15 +216,21 @@ function DecisionDialog({
           suggestions={suggestions}
           suggestionsLabel={t('common.noteSuggestions')}
         />
+        <p
+          aria-live="polite"
+          className={cn('-mt-sm text-caption', tooShort ? 'text-text-secondary' : 'text-success')}
+        >
+          {tooShort
+            ? t('changeRequests.noteCount', { count: length, min: MIN_NOTE })
+            : t('changeRequests.noteReady')}
+        </p>
 
         {/* A blocking refusal gets its own explanation inside the dialog, never a
             toast — the clerk has to understand why nothing happened. */}
         {alreadyDecided ? (
           <Notice tone="error">
             <span>
-              <strong className="font-semibold">
-                {t('changeRequests.alreadyDecided.title')}
-              </strong>{' '}
+              <strong className="font-semibold">{t('changeRequests.alreadyDecided.title')}</strong>{' '}
               {t('changeRequests.alreadyDecided.body')}
             </span>
           </Notice>
