@@ -278,6 +278,41 @@ describe('M9 detail screen, on the served shape', () => {
   });
 });
 
+describe('M9 bank change the API cannot apply yet', () => {
+  it('explains it instead of blaming the note, and stops the retry', async () => {
+    server.use(
+      http.post('*/admin/change-requests/:id/approve', () =>
+        HttpResponse.json(
+          {
+            code: 'invalid',
+            message: 'The request was not valid.',
+            details: {
+              reason: 'bank-details-approval-not-implemented',
+              hint: 'the account number is not carried on the request row (Q3)',
+            },
+          },
+          { status: 422 },
+        ),
+      ),
+    );
+    await signInAs(CLERK);
+    const user = userEvent.setup();
+    renderDetail('chg-1');
+
+    await user.click(await screen.findByRole('button', { name: /approve/i }));
+    const dialog = screen.getByRole('dialog');
+    await user.type(within(dialog).getByRole('textbox'), 'Passbook seen at the counter.');
+    const confirm = within(dialog).getByRole('button', { name: 'Approve' });
+    await user.click(confirm);
+
+    expect(
+      await within(dialog).findByText('Bank changes cannot be approved yet.'),
+    ).toBeInTheDocument();
+    expect(within(dialog).queryByText(/email or password/i)).not.toBeInTheDocument();
+    expect(confirm).toBeDisabled();
+  });
+});
+
 describe('M2 supplier detail', () => {
   /**
    * The quick actions are shortcuts into the queues, filtered to the supplier on

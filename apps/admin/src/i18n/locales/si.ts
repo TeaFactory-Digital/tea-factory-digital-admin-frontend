@@ -476,6 +476,8 @@ export const si: Record<TranslationKey, string> = {
   'changeRequests.fourEyes.title': 'මෙය තීරණය කළ හැක්කේ ඔබට නොවේ',
   'changeRequests.fourEyes.body':
     'ඔබ මෙම ඉල්ලීම සැපයුම්කරු වෙනුවෙන් ඉදිරිපත් කළ බැවින්, එය තීරණය කළ යුත්තේ වෙනත් අයෙකි. කළමනාකරුගෙන් හෝ වෙනත් ලිපිකරුවෙකුගෙන් ඉල්ලන්න.',
+  'changeRequests.bankNotReady.title': 'බැංකු වෙනස් කිරීම් තවම අනුමත කළ නොහැක.',
+  'changeRequests.bankNotReady.body': 'පද්ධතිය තවම නව ගිණුම් අංකය සුරකින්නේ නැති නිසා, මෙම වෙනස යෙදිය නොහැක. පද්ධතිය යාවත්කාලීන වන තුරු මෙය පොරොත්තුවෙන් තබන්න, නැතහොත් ප්‍රතික්ෂේප කර පාස් පොත කාර්යාලයට ගෙන එන ලෙස සැපයුම්කරුගෙන් ඉල්ලන්න.',
   'changeRequests.alreadyDecided.title': 'දැනටමත් තීරණය කර ඇත',
   'changeRequests.alreadyDecided.body':
     'පෝලිම විවෘතව තිබූ අතරතුර වෙනත් අයෙක් මෙය තීරණය කර ඇත. ඔවුන් තෝරාගත් දේ පෙන්වීමට නැවත පූරණය වෙමින්.',
@@ -1585,6 +1587,7 @@ export const si: Record<TranslationKey, string> = {
   'error.featureDisabled': 'මෙම කර්මාන්තශාලාව එම විශේෂාංගය භාවිත නොකරයි.',
   'error.notFound': 'එම වාර්තාව තවදුරටත් නොපවතී.',
   'error.invalid': 'විද්‍යුත් තැපෑල හෝ මුරපදය වැරදිය.',
+  'error.invalidRequest': 'සේවාදායකය මෙය පිළිගත්තේ නැත. විස්තර පරීක්ෂා කර නැවත උත්සාහ කරන්න.',
   'error.noteRequired': 'මෙය වාර්තා කිරීමට පෙර සටහනක් අවශ්‍යයි.',
   'error.fourEyesViolation': 'ඔබ මෙම වාර්තාව ඉදිරිපත් කළ බැවින්, ඔබට එය අනුමත කළ නොහැක.',
   'error.alreadyDecided': 'වෙනත් අයෙක් දැනටමත් මෙය තීරණය කර ඇත.',

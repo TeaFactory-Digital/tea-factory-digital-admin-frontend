@@ -27,7 +27,7 @@ import { Dialog } from '@/components/ui/Dialog';
 import { Notice } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/cn';
-import { errorMessageKey, isBlockingError } from '@/lib/errorMessage';
+import { errorMessageKey, errorReason, isBlockingError } from '@/lib/errorMessage';
 import { isApiError } from '@/services/api/errors';
 import { ChangeComparison } from './ChangeComparison';
 import { useDecideChangeRequest, type DecisionVerb } from './hooks';
@@ -160,6 +160,9 @@ function DecisionDialog({
 
   const blocking = isBlockingError(decide.error);
   const alreadyDecided = isApiError(decide.error) && decide.error.code === 'already-decided';
+  // Not a mistake in the note: the API cannot apply a bank change yet, so trying again
+  // cannot help. Explained in its own notice, with the button disabled.
+  const bankNotReady = errorReason(decide.error) === 'bank-details-approval-not-implemented';
 
   return (
     <Dialog
@@ -199,7 +202,7 @@ function DecisionDialog({
           <Button
             variant={approving ? 'primary' : 'danger'}
             loading={decide.isPending}
-            disabled={tooShort || blocking}
+            disabled={tooShort || blocking || bankNotReady}
             onClick={submit}
           >
             {approving ? t('changeRequests.approve') : t('changeRequests.reject')}
@@ -235,7 +238,11 @@ function DecisionDialog({
               ? t('changeRequests.notePlaceholderApprove')
               : t('changeRequests.notePlaceholderReject')
           }
-          error={decide.error && !blocking ? t(errorMessageKey(decide.error)) : undefined}
+          error={
+            decide.error && !blocking && !bankNotReady
+              ? t(errorMessageKey(decide.error))
+              : undefined
+          }
           value={note}
           onChange={setNote}
           suggestions={suggestions}
@@ -252,7 +259,14 @@ function DecisionDialog({
 
         {/* A blocking refusal gets its own explanation inside the dialog, never a
             toast — the clerk has to understand why nothing happened. */}
-        {alreadyDecided ? (
+        {bankNotReady ? (
+          <Notice tone="warning">
+            <span>
+              <strong className="font-semibold">{t('changeRequests.bankNotReady.title')}</strong>{' '}
+              {t('changeRequests.bankNotReady.body')}
+            </span>
+          </Notice>
+        ) : alreadyDecided ? (
           <Notice tone="error">
             <span>
               <strong className="font-semibold">{t('changeRequests.alreadyDecided.title')}</strong>{' '}

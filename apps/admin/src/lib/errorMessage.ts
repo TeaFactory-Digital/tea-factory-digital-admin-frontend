@@ -92,9 +92,31 @@ const BY_CODE: Record<string, string> = {
   '404': 'error.notFound',
 };
 
+/**
+ * By `details.reason`, checked before the code: `invalid` covers a dozen refusals, and
+ * the reason is the only part that says which one.
+ */
+const BY_REASON: Record<string, string> = {
+  // The API cannot apply a bank change yet: it does not keep the new account number.
+  'bank-details-approval-not-implemented': 'changeRequests.bankNotReady.body',
+};
+
+/** `details.reason`, when the server sent one. */
+export function errorReason(error: unknown): string | undefined {
+  if (!isApiError(error)) return undefined;
+  const reason = (error.details as { reason?: unknown } | undefined)?.reason;
+  return typeof reason === 'string' ? reason : undefined;
+}
+
 /** The i18n key for an error, falling back to a generic one. */
 export function errorMessageKey(error: unknown): string {
   if (!isApiError(error)) return 'error.unknown';
+  const reason = errorReason(error);
+  if (reason && BY_REASON[reason]) return BY_REASON[reason];
+  // `invalid` is also what a wrong password answers, with a 401. Any other `invalid` is a
+  // request the server refused, and "Email or password is incorrect" under a decision
+  // note sends the clerk looking for a password field.
+  if (error.code === 'invalid' && error.status !== 401) return 'error.invalidRequest';
   return BY_CODE[error.code] ?? 'error.unknown';
 }
 

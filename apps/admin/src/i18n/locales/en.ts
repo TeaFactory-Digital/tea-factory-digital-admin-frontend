@@ -467,6 +467,8 @@ export const en = {
   'changeRequests.fourEyes.title': 'You cannot decide this one',
   'changeRequests.fourEyes.body':
     'You raised this request on the supplier’s behalf, so someone else has to decide it. Ask a manager or another clerk.',
+  'changeRequests.bankNotReady.title': 'Bank changes cannot be approved yet.',
+  'changeRequests.bankNotReady.body': 'The system does not keep the new account number yet, so this change cannot be applied. Leave it pending until the factory system is updated, or reject it and ask the supplier to bring the passbook to the office.',
   'changeRequests.alreadyDecided.title': 'Already decided',
   'changeRequests.alreadyDecided.body':
     'Someone else decided this while the queue was open. Reloading to show what they chose.',
@@ -1587,6 +1589,7 @@ export const en = {
   'error.featureDisabled': 'This factory does not use that feature.',
   'error.notFound': 'That record no longer exists.',
   'error.invalid': 'Email or password is incorrect.',
+  'error.invalidRequest': 'The server did not accept this. Check the details and try again.',
   'error.noteRequired': 'A note is required before this can be recorded.',
   'error.fourEyesViolation': 'You raised this record, so you cannot approve it.',
   'error.alreadyDecided': 'Someone else has already decided this.',
