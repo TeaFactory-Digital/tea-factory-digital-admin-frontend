@@ -29,7 +29,6 @@ import type {
 import { apiClient } from '../api/client';
 import type { MutationAck, StatusAck } from '../api/adapters';
 
-
 export const userEndpoints = {
   /**
    * **Unpaged, and the query is ignored.**
@@ -73,6 +72,18 @@ export const userEndpoints = {
    * API's floor is 10 characters and `userRepository` refuses shorter before the request
    * leaves, so the clerk is stopped at the field rather than after the round trip.
    */
+  /** Delete in three days; access stops now (BACKEND-TODO #30). */
+  scheduleDeletion: (id: string, reason: string) =>
+    apiClient
+      .post<{ id: string; deletesAt: string }>(`/admin/users/${id}/deletion`, { reason })
+      .then((response) => response.data),
+
+  /** Undo a scheduled deletion while it is still waiting; the account works again. */
+  cancelDeletion: (id: string, reason: string) =>
+    apiClient
+      .delete<{ id: string }>(`/admin/users/${id}/deletion`, { data: { reason } })
+      .then((response) => response.data),
+
   setStatus: (id: string, status: 'active' | 'suspended', reason: string) =>
     apiClient
       .post<StatusAck<'active' | 'suspended'>>(`/admin/users/${id}/status`, { status, reason })

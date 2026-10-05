@@ -130,3 +130,42 @@ One row per month, **oldest first**, counting requests by the month they were **
 **Check**
 Approve one advance in the console, then open Reports, then Credit & tea packets: this
 month's Advances goes up by that amount and by one request.
+
+---
+
+## 30. Delete a console user, three days after it is asked for
+
+**Priority:** Medium. A new feature the office asked for. The console's Users screen is
+already built for it: a Delete button, a "Deletes on <date>" badge, and Cancel deletion.
+
+**The rules**
+- Deleting **waits three days**, so a mistake can be undone. During those days the account
+  **cannot sign in** (treat it as suspended, and end its sessions at once).
+- **Cancel deletion** during the three days makes the account active again.
+- After three days the account is **removed from the console**: it is gone from
+  `GET /admin/users`, cannot sign in, and its email can be used for a new account.
+- **Names stay on records.** Audit entries, decisions (`decidedByName`), replies and
+  published content keep the name they recorded. So do not cascade-delete anything, and
+  prefer a soft delete (`deleted_at`) on `console_users` over removing the row, because
+  other tables point at the user's id.
+- Same refusals as suspending: not your own account (`409 self-modification`), and not the
+  last person who can manage users (`409 last-admin`). A reason of at least 10 characters
+  (`422 note-required`).
+
+**What to do**
+1. `console_users`: add `deletes_at timestamptz null` and `deleted_at timestamptz null`.
+2. `POST /v1/admin/users/:id/deletion` `{ reason }`, capability `usersAndRoles: W`: set
+   `status = suspended`, `deletes_at = now() + 3 days`, bump the grant cache version, revoke
+   the user's refresh tokens. Answer `{ id, deletesAt }`. Audit `user.deletionScheduled`.
+3. `DELETE /v1/admin/users/:id/deletion` `{ reason }`: only while `deletes_at` is set and in
+   the future; clear it and set `status = active`. Audit `user.deletionCancelled`.
+4. `GET /admin/users`: add `deletesAt` to each row; leave out rows with `deleted_at` set.
+5. A sweep (hourly, like the upload sweeper): for rows whose `deletes_at` has passed, set
+   `deleted_at = now()` and free the email (for example append `#deleted-<id>` so the unique
+   index allows a new account). Audit `user.deleted`.
+6. Login and refresh refuse an account with `deleted_at` set, the same as an unknown email.
+
+**Check**
+In the console, delete a user: the row shows "Deletes on" three days ahead, and that person
+cannot sign in. Cancel it: they can sign in again. Let it pass (or move `deletes_at` back in a
+test): the row is gone, and their name still shows on audit entries they made.

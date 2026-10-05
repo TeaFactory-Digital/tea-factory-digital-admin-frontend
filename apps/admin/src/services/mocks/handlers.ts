@@ -1909,6 +1909,48 @@ export const handlers: HttpHandler[] = [
    * Suspend and reactivate — **one endpoint**, as with suppliers, because they are one
    * state machine and only one place should decide what transitions are legal.
    */
+  /**
+   * Delete in three days (BACKEND-TODO #30): access stops now (the account reads as
+   * suspended), and the row carries `deletesAt` until the sweep removes it.
+   */
+  http.post('*/admin/users/:id/deletion', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'usersAndRoles', 'write');
+    if ('response' in auth) return auth.response;
+    const index = state.users.findIndex((one) => one.id === params.id);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such user.' });
+    const before = state.users[index]!;
+    const { reason } = (await request.json()) as { reason?: string };
+    if (!reason || reason.trim().length < 10) {
+      return fail({ status: 422, code: 'note-required', message: 'A reason is required.' });
+    }
+    if (before.id === auth.user.id) {
+      return fail({ status: 409, code: 'self-modification', message: 'Not your own account.', details: { what: 'delete' } });
+    }
+    const candidates: LockoutCandidate[] = state.users.map((one) => ({ id: one.id, roles: one.roles, status: one.status }));
+    const next = { id: before.id, roles: before.roles, status: 'suspended' as const };
+    if (wouldLockOut(next, candidates.filter((one) => one.id !== before.id), roleMatrix())) {
+      return lockoutRefusal({ userId: before.id });
+    }
+    const deletesAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+    state.users[index] = { ...before, status: 'suspended', deletesAt };
+    return HttpResponse.json({ id: before.id, deletesAt });
+  }),
+
+  http.delete('*/admin/users/:id/deletion', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'usersAndRoles', 'write');
+    if ('response' in auth) return auth.response;
+    const index = state.users.findIndex((one) => one.id === params.id);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such user.' });
+    const before = state.users[index]!;
+    if (!before.deletesAt) {
+      return fail({ status: 409, code: 'invalid', message: 'No deletion is waiting.' });
+    }
+    state.users[index] = { ...before, status: 'active', deletesAt: null };
+    return HttpResponse.json({ id: before.id });
+  }),
+
   http.post('*/admin/users/:id/status', async ({ request, params }) => {
     await delay(LATENCY_MS);
     const auth = authorize(request, 'usersAndRoles', 'write');

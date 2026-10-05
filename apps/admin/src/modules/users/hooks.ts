@@ -91,7 +91,8 @@ export function useUpdateUser() {
   });
 }
 
-export type UserAction = 'suspend' | 'reactivate';
+/** `delete` waits three days; `restore` cancels a deletion that is still waiting. */
+export type UserAction = 'suspend' | 'reactivate' | 'delete' | 'restore';
 
 /**
  * Suspend and reactivate behind one mutation.
@@ -116,7 +117,11 @@ export function useUserAction() {
     }) =>
       action === 'suspend'
         ? userRepository.suspend(id, reason, context)
-        : userRepository.reactivate(id, reason),
+        : action === 'delete'
+          ? userRepository.scheduleDeletion(id, reason, context)
+          : action === 'restore'
+            ? userRepository.cancelDeletion(id, reason)
+            : userRepository.reactivate(id, reason),
     onSuccess: invalidate,
   });
 }

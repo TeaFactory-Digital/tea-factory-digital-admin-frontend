@@ -1945,6 +1945,14 @@ export interface AdminConsoleUser extends ConsoleUser {
    * thing from a suspended one and worth being able to see.
    */
   owesPasswordChange?: boolean;
+  /**
+   * When the account will be deleted, if somebody has asked for it (BACKEND-TODO #30).
+   *
+   * Deletion waits three days so a mistake can be undone. Access stops at once: the
+   * account cannot sign in while it waits. The person's name stays on every record they
+   * signed, so the audit trail and decisions still say who did what.
+   */
+  deletesAt?: string | null;
 }
 
 export interface UserQuery extends PageQuery {

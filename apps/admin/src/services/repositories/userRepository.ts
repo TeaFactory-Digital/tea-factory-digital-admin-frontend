@@ -111,9 +111,7 @@ export const userRepository = {
       if (query.status && user.status !== query.status) return false;
       if (query.role && !user.roles.includes(query.role)) return false;
       if (!needle) return true;
-      return (
-        user.name.toLowerCase().includes(needle) || user.email.toLowerCase().includes(needle)
-      );
+      return user.name.toLowerCase().includes(needle) || user.email.toLowerCase().includes(needle);
     });
 
     return paginate(matching, { page: query.page ?? 0, pageSize: query.pageSize ?? 50 });
@@ -182,6 +180,29 @@ export const userRepository = {
 
     return userEndpoints.setStatus(id, 'suspended', requireReason(reason));
   },
+
+  /**
+   * Delete in three days. Refused here for the same two reasons suspending is: deleting
+   * yourself, and deleting the last person who can manage users (the factory would be
+   * locked out of its own console once it went through).
+   */
+  scheduleDeletion: async (
+    id: string,
+    reason: string,
+    context: { all: readonly LockoutCandidate[]; actingUserId: string | undefined },
+  ): Promise<{ id: string; deletesAt: string }> => {
+    if (id === context.actingUserId) throw selfModification('delete');
+    const target = context.all.find((one) => one.id === id);
+    if (target) {
+      const next: LockoutCandidate = { ...target, status: 'suspended' };
+      const others = context.all.filter((one) => one.id !== id);
+      if (wouldLockOut(next, others)) throw lockout({ userId: id });
+    }
+    return userEndpoints.scheduleDeletion(id, requireReason(reason));
+  },
+
+  cancelDeletion: async (id: string, reason: string): Promise<{ id: string }> =>
+    userEndpoints.cancelDeletion(id, requireReason(reason)),
 
   reactivate: async (id: string, reason: string): Promise<StatusAck<'active' | 'suspended'>> =>
     userEndpoints.setStatus(id, 'active', requireReason(reason)),

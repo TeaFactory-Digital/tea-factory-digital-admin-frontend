@@ -28,6 +28,7 @@ import { Label } from '@/components/ui/Label';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
+import { formatDate } from '@/lib/format';
 import { InfoTip } from '@/components/ui/Tooltip';
 import {
   useCreateUser,
@@ -331,14 +332,14 @@ export function UserActionDialog({
           if (!next) onClose();
         }}
         title={user ? t(`users.${action}Title`, { name: user.name }) : ''}
-        description={t(`users.${action}Body`)}
+        description={t(`users.${action}Body`, { date: formatDate(threeDaysFromNow()) })}
         footer={
           <>
             <Button variant="secondary" onClick={onClose}>
               {t('common.cancel')}
             </Button>
             <Button
-              variant={action === 'reactivate' ? 'primary' : 'danger'}
+              variant={action === 'reactivate' || action === 'restore' ? 'primary' : 'danger'}
               disabled={blocked}
               loading={run.isPending}
               onClick={() => void submit()}
@@ -385,9 +386,9 @@ export function UserActionDialog({
           }
         }}
         title={user ? t(`users.${action}Title`, { name: user.name }) : ''}
-        description={t(`users.${action}Body`)}
+        description={t(`users.${action}Body`, { date: formatDate(threeDaysFromNow()) })}
         confirmLabel={t(`users.${action}Confirm`)}
-        confirmVariant={action === 'reactivate' ? 'primary' : 'danger'}
+        confirmVariant={action === 'reactivate' || action === 'restore' ? 'primary' : 'danger'}
         onConfirm={() => void confirmAction()}
         loading={run.isPending}
       >
@@ -397,4 +398,9 @@ export function UserActionDialog({
       </ConfirmDialog>
     </>
   );
+}
+
+/** When a deletion asked for now goes through. The server's date is the one on the row. */
+function threeDaysFromNow(): string {
+  return new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
 }

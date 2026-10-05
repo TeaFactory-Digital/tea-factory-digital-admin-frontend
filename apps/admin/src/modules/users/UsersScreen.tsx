@@ -20,7 +20,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Pencil, ShieldAlert, ShieldOff, UserPlus } from 'lucide-react';
+import { Pencil, ShieldAlert, ShieldOff, UserPlus, Trash2, Undo2 } from 'lucide-react';
 import type { AdminConsoleUser, ConsoleRole, UserQuery } from '@tfd/domain';
 import { useAuthStore, useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
@@ -33,7 +33,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/states';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { useDebounced } from '@/lib/useDebounced';
-import { formatDateTime } from '@/lib/format';
+import { formatDateTime, formatDate } from '@/lib/format';
 import { RoleMatrixView } from './RoleMatrixView';
 import { UserActionDialog, UserDialog } from './UserDialogs';
 import { useUsers, type UserAction } from './hooks';
@@ -130,9 +130,16 @@ export function UsersScreen() {
           const row = info.row.original;
           return (
             <span className="flex flex-col gap-xxs">
-              <Badge tone={row.status === 'active' ? 'success' : 'error'}>
-                {t(`users.status.${row.status}`)}
-              </Badge>
+              {row.deletesAt ? (
+                // Waiting out the three days: says when, so nobody wonders why it is still listed.
+                <Badge tone="error">
+                  {t('users.deletesOn', { date: formatDate(row.deletesAt) })}
+                </Badge>
+              ) : (
+                <Badge tone={row.status === 'active' ? 'success' : 'error'}>
+                  {t(`users.status.${row.status}`)}
+                </Badge>
+              )}
 
               {/* The answer to "who can get us back in", on the row. A factory that
                   suspends this person has locked itself out. */}
@@ -164,6 +171,20 @@ export function UsersScreen() {
           const row = info.row.original;
           if (!canEdit) return null;
           const isSelf = row.id === actingUserId;
+
+          // While a deletion waits, the one thing to do with the account is undo it.
+          if (row.deletesAt) {
+            return (
+              <Button
+                size="sm"
+                variant="secondary"
+                iconLeft={<Undo2 className="size-icon-sm" aria-hidden />}
+                onClick={() => setActing({ user: row, action: 'restore' })}
+              >
+                {t('users.restore')}
+              </Button>
+            );
+          }
 
           return (
             <span className="flex flex-wrap items-center gap-xs">
@@ -201,6 +222,17 @@ export function UsersScreen() {
                   {t('users.reactivate')}
                 </Button>
               )}
+
+              {/* Same two exclusions as suspending: not yourself, not the last way in. */}
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={isSelf || row.isLastAdministrator}
+                iconLeft={<Trash2 className="size-icon-sm" aria-hidden />}
+                onClick={() => setActing({ user: row, action: 'delete' })}
+              >
+                {t('users.delete')}
+              </Button>
             </span>
           );
         },
@@ -278,16 +310,17 @@ export function UsersScreen() {
             onRetry={() => void users.refetch()}
             getRowId={(row) => row.id}
             onPageChange={(next) => setParam('page', String(next))}
-            emptyState={<EmptyState title={t('common.noResults')} body={t('common.noResultsHint')} />}
+            emptyState={
+              <EmptyState title={t('common.noResults')} body={t('common.noResultsHint')} />
+            }
           />
         </Card>
       )}
 
-      {/* No delete, stated once. An administrator who goes looking for it should find the
-          reason rather than nothing. */}
+      {/* How deleting works, stated once: it waits three days, and names stay on records. */}
       {view === 'users' ? (
-        <InfoTip label={t('tip.usersNoDelete')} text={t('tip.usersNoDelete')}>
-          {t('users.noDeleteHint')}
+        <InfoTip label={t('tip.usersDelete')} text={t('tip.usersDelete')}>
+          {t('users.deleteHint')}
         </InfoTip>
       ) : null}
 

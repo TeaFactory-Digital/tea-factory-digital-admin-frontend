@@ -199,6 +199,8 @@ export interface MockUser extends ConsoleUser {
    * of the suite; a test that is about the gate sets it first.
    */
   owesPasswordChange?: boolean;
+  /** Set while a deletion waits its three days (BACKEND-TODO #30). */
+  deletesAt?: string | null;
 }
 
 export const mockUsers: MockUser[] = [
