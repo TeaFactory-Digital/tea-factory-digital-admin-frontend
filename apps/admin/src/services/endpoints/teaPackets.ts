@@ -19,7 +19,7 @@ import type {
 } from '@tfd/domain';
 import { apiClient } from '../api/client';
 import type { StatusAck } from '../api/adapters';
-import { toParams } from './params';
+import { toQueueParams } from './params';
 
 export const teaPacketEndpoints = {
   /** One request, decided or not — a bookmarked link must open (**G-06**, now served). */
@@ -31,7 +31,7 @@ export const teaPacketEndpoints = {
   list: (query: TeaPacketRequestQuery) =>
     apiClient
       .get<Paged<AdminTeaPacketRequest>>('/admin/tea-packet-requests', {
-        params: toParams(query),
+        params: toQueueParams(query),
       })
       .then((response) => response.data),
 

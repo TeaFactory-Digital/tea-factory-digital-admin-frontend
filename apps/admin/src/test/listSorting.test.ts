@@ -63,18 +63,20 @@ describe('server-side sorting', () => {
     expect(ages).toEqual([...ages].sort((a, b) => b - a));
   });
 
-  it('sorts the change-request queue by supplier code when asked', async () => {
+  it('does not send a sort to the change-request queue, which the API refuses', async () => {
+    // The real API takes no `sort` on the four queues and answers `422` for one. The mock
+    // used to sort here, which is how the console came to send it.
     await signInAs(CLERK);
 
-    const sorted = await changeRequestRepository.list({
+    const queue = await changeRequestRepository.list({
       status: 'pending',
       page: 0,
       pageSize: 25,
       sort: 'supplierCode',
       dir: 'asc',
     });
-
-    expect(codes(sorted.items)).toEqual([...codes(sorted.items)].sort((a, b) => a.localeCompare(b)));
+    const ages = queue.items.map((r) => r.ageHours);
+    expect(ages).toEqual([...ages].sort((a, b) => b - a));
   });
 
   it('reads the audit log newest-first by default and oldest-first on request', async () => {

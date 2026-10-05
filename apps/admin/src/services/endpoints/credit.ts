@@ -19,12 +19,12 @@ import type {
   Paged,
 } from '@tfd/domain';
 import { apiClient } from '../api/client';
-import { toParams } from './params';
+import { toQueueParams } from './params';
 
 export const creditEndpoints = {
   list: (query: CreditRequestQuery) =>
     apiClient
-      .get<Paged<AdminCreditRequest>>('/admin/credit-requests', { params: toParams(query) })
+      .get<Paged<AdminCreditRequest>>('/admin/credit-requests', { params: toQueueParams(query) })
       .then((response) => response.data),
 
   get: (id: string) =>

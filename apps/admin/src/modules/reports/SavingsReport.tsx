@@ -6,8 +6,8 @@
  * this console shows a copy and records nothing. A supplier's own lines are on their
  * record (Suppliers → Money → Savings passbook).
  *
- * Until the API serves the report (BACKEND-TODO #27) it answers `404`, and the tab says
- * the report is not available yet rather than showing an error.
+ * The API leaves the report out (`404`) when the factory runs no savings scheme, and the
+ * tab says so rather than showing an error.
  */
 
 import { useMemo, useState } from 'react';
@@ -65,8 +65,10 @@ export function SavingsReport() {
     return <Notice tone="info">{t('reports.savings.disabled')}</Notice>;
   }
   if (query.error) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
+  // The report is left out of the catalogue (and answers 404) when the factory runs no
+  // savings scheme, so a 404 here means exactly that.
   if (query.data === null) {
-    return <Notice tone="info">{t('reports.savings.notYet')}</Notice>;
+    return <Notice tone="info">{t('reports.savings.disabled')}</Notice>;
   }
   if (months.length === 0) {
     return (

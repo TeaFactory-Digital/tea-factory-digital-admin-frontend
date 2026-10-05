@@ -22,7 +22,7 @@ import type {
 } from '@tfd/domain';
 import { apiClient } from '../api/client';
 import type { StatusAck } from '../api/adapters';
-import { toParams } from './params';
+import { toQueueParams } from './params';
 
 export const inquiryEndpoints = {
   /** One inquiry, decided or not — a bookmarked link must open (**G-06**, now served). */
@@ -31,7 +31,7 @@ export const inquiryEndpoints = {
 
   list: (query: InquiryQuery) =>
     apiClient
-      .get<Paged<AdminInquiry>>('/admin/inquiries', { params: toParams(query) })
+      .get<Paged<AdminInquiry>>('/admin/inquiries', { params: toQueueParams(query) })
       .then((response) => response.data),
 
   /** One inquiry, by id. Absent for a while (gap **G-06**), so the repository swept the list. */

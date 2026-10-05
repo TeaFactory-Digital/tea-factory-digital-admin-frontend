@@ -22,7 +22,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import type { ColumnDef, SortingState } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import type { AdminTeaPacketRequest, RequestStatus, TeaPacketDeliveryMethod } from '@tfd/domain';
 import {
   DEFAULT_TEA_PACKET_POLICY,
@@ -63,8 +63,7 @@ export function TeaPacketsScreen() {
   const deliveryMethod = params.get('deliveryMethod') as TeaPacketDeliveryMethod | null;
   const supplierId = params.get('supplierId');
   const page = Number(params.get('page') ?? 0);
-
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'ageHours', desc: true }]);
+  // Oldest waiting first, always: the server orders the queue and takes no sort parameter.
   const [deciding, setDeciding] = useState<AdminTeaPacketRequest | null>(null);
 
   /**
@@ -84,10 +83,8 @@ export function TeaPacketsScreen() {
       q: debouncedSearch || undefined,
       page,
       pageSize: 25,
-      sort: sorting[0]?.id ?? 'ageHours',
-      dir: sorting[0]?.desc ? ('desc' as const) : ('asc' as const),
     }),
-    [status, deliveryMethod, supplierId, debouncedSearch, page, sorting],
+    [status, deliveryMethod, supplierId, debouncedSearch, page],
   );
 
   const { data, isPending, error, refetch } = useTeaPacketRequests(query);
@@ -303,11 +300,6 @@ export function TeaPacketsScreen() {
           onRetry={() => void refetch()}
           getRowId={(row) => row.id}
           onPageChange={(next) => setParam('page', String(next))}
-          sorting={sorting}
-          onSortingChange={(next) => {
-            setSorting(next);
-            setParam('page', null);
-          }}
           emptyState={
             <EmptyState
               title={status === 'pending' ? t('teaPackets.empty') : t('common.noResults')}

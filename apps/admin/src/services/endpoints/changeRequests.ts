@@ -20,7 +20,7 @@ import type {
 } from '@tfd/domain';
 import { apiClient } from '../api/client';
 import type { StatusAck } from '../api/adapters';
-import { toParams } from './params';
+import { toQueueParams } from './params';
 
 export const changeRequestEndpoints = {
   /** One request, decided or not — a bookmarked link must open (**G-06**, now served). */
@@ -31,7 +31,7 @@ export const changeRequestEndpoints = {
 
   list: (query: ChangeRequestQuery) =>
     apiClient
-      .get<Paged<AdminChangeRequest>>('/admin/change-requests', { params: toParams(query) })
+      .get<Paged<AdminChangeRequest>>('/admin/change-requests', { params: toQueueParams(query) })
       .then((response) => response.data),
 
   /**

@@ -15,7 +15,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import type { ColumnDef, SortingState } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import type { AdminCreditRequest, CreditFacility, RequestStatus } from '@tfd/domain';
 import { CREDIT_FACILITIES, CREDIT_FACILITY_FLAGS, QUEUE_SLA_HOURS } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
@@ -64,8 +64,7 @@ export function CreditScreen() {
   const overCeiling = params.get('overCeiling') === 'true';
   const supplierId = params.get('supplierId');
   const page = Number(params.get('page') ?? 0);
-
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'ageHours', desc: true }]);
+  // Oldest waiting first, always: the server orders the queue and takes no sort parameter.
 
   /**
    * Only the facilities this factory lends against.
@@ -88,10 +87,8 @@ export function CreditScreen() {
       q: debouncedSearch || undefined,
       page,
       pageSize: 25,
-      sort: sorting[0]?.id ?? 'ageHours',
-      dir: sorting[0]?.desc ? ('desc' as const) : ('asc' as const),
     }),
-    [status, facility, supplierId, overCeiling, debouncedSearch, page, sorting],
+    [status, facility, supplierId, overCeiling, debouncedSearch, page],
   );
 
   const { data, isPending, error, refetch } = useCreditRequests(query);
@@ -102,11 +99,6 @@ export function CreditScreen() {
     else next.delete(key);
     if (key !== 'page') next.delete('page');
     setParams(next, { replace: true });
-  }
-
-  function handleSortingChange(next: SortingState) {
-    setSorting(next);
-    setParam('page', null);
   }
 
   const columns = useMemo<ColumnDef<AdminCreditRequest, unknown>[]>(
@@ -286,8 +278,6 @@ export function CreditScreen() {
           getRowId={(row) => row.id}
           onRowActivate={(row) => navigate(`/credit/${row.id}`)}
           onPageChange={(next) => setParam('page', String(next))}
-          sorting={sorting}
-          onSortingChange={handleSortingChange}
           emptyState={
             <EmptyState
               title={status === 'pending' ? t('credit.empty') : t('common.noResults')}

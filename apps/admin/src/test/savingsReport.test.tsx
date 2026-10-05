@@ -43,7 +43,7 @@ describe('the savings report', () => {
     expect(screen.getAllByText('415').length).toBeGreaterThan(0);
   });
 
-  it('says the report is not available yet while the API does not serve it', async () => {
+  it('says the factory runs no savings scheme when the report is not served', async () => {
     server.use(
       http.get('*/admin/reports/savingsHeld', () =>
         HttpResponse.json({ code: 'not-found', message: 'No such report' }, { status: 404 }),
@@ -51,6 +51,6 @@ describe('the savings report', () => {
     );
     await signInAs('factoryadmin@galabodatea.lk');
     renderWithProviders(<SavingsReport />);
-    expect(await screen.findByText(/not available yet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/does not run a savings scheme/i)).toBeInTheDocument();
   });
 });

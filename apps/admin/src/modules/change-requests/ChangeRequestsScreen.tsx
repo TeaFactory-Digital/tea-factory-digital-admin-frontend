@@ -14,7 +14,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import type { ColumnDef, SortingState } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowRight } from 'lucide-react';
 import type { AdminChangeRequest, ChangeRequestType, RequestStatus } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
@@ -47,13 +47,10 @@ export function ChangeRequestsScreen() {
   const page = Number(params.get('page') ?? 0);
 
   /**
-   * Oldest first, expressed as a sort the clerk can see and change.
-   *
-   * `ageHours` descending *is* the queue's front-to-back order, so the default
-   * behaviour is unchanged — but it now shows in the column header, and a clerk
-   * chasing one supplier's request can sort by code instead of paging.
+   * Oldest waiting first, always. The server orders the queue and takes no `sort`
+   * parameter; sending one is refused (`422 unrecognized_keys`), so the headers are not
+   * sortable. To find one supplier, search or follow the supplier's own link.
    */
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'ageHours', desc: true }]);
 
   const query = useMemo(
     () => ({
@@ -63,10 +60,8 @@ export function ChangeRequestsScreen() {
       q: debouncedSearch || undefined,
       page,
       pageSize: 25,
-      sort: sorting[0]?.id ?? 'ageHours',
-      dir: sorting[0]?.desc ? ('desc' as const) : ('asc' as const),
     }),
-    [status, type, supplierId, debouncedSearch, page, sorting],
+    [status, type, supplierId, debouncedSearch, page],
   );
 
   const { data, isPending, error, refetch } = useChangeRequests(query);
@@ -81,15 +76,6 @@ export function ChangeRequestsScreen() {
     // the grid could never leave page 1.
     if (key !== 'page') next.delete('page');
     setParams(next, { replace: true });
-  }
-
-  /**
-   * Sorting starts a new pass over the list, so it goes back to the first page.
-   * Page 3 of "oldest first" is not page 3 of "by supplier code".
-   */
-  function handleSortingChange(next: SortingState) {
-    setSorting(next);
-    setParam('page', null);
   }
 
   const columns = useMemo<ColumnDef<AdminChangeRequest, unknown>[]>(
@@ -230,8 +216,6 @@ export function ChangeRequestsScreen() {
           getRowId={(row) => row.id}
           onRowActivate={(row) => navigate(`/change-requests/${row.id}`)}
           onPageChange={(next) => setParam('page', String(next))}
-          sorting={sorting}
-          onSortingChange={handleSortingChange}
           emptyState={
             <EmptyState
               title={status === 'pending' ? t('changeRequests.empty') : t('common.noResults')}

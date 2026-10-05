@@ -81,6 +81,9 @@ export function DataTable<Row>({
      * sorted grid whose headers deny it.
      */
     enableSortingRemoval: false,
+    // No sort handler, no sortable headers: a header that toggles an arrow and reorders
+    // nothing is a lie the clerk acts on.
+    enableSorting: Boolean(onSortingChange),
     state: sorting ? { sorting } : undefined,
     onSortingChange: onSortingChange
       ? (updater) => {

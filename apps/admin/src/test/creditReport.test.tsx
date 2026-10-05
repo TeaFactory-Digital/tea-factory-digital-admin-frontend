@@ -56,6 +56,6 @@ describe('the credit and tea packets report', () => {
     );
     await signInAs('factoryadmin@galabodatea.lk');
     renderWithProviders(<CreditReport />);
-    expect(await screen.findByText(/not available yet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/not available on this server/i)).toBeInTheDocument();
   });
 });
