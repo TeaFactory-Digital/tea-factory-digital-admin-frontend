@@ -23,18 +23,14 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
-import type {
-  AdminTeaPacketRequest,
-  RequestStatus,
-  TeaPacketDeliveryMethod,
-} from '@tfd/domain';
+import type { AdminTeaPacketRequest, RequestStatus, TeaPacketDeliveryMethod } from '@tfd/domain';
 import {
   DEFAULT_TEA_PACKET_POLICY,
   QUEUE_SLA_HOURS,
   isSelfApproval,
   teaPacketWeightKg,
 } from '@tfd/domain';
-import { useCurrentUser } from '@/auth/authStore';
+import { useCurrentUser, useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -55,6 +51,7 @@ export function TeaPacketsScreen() {
   const { t } = useTranslation();
   const user = useCurrentUser();
   const { config } = useRuntimeConfig();
+  const canDecide = useCan('creditRequests', 'approve');
   const [params, setParams] = useSearchParams();
 
   const [searchText, setSearchText] = useState(params.get('q') ?? '');
@@ -203,6 +200,9 @@ export function TeaPacketsScreen() {
               </span>
             );
           }
+          // Deciding needs `creditRequests: A`; a clerk reads this queue (`R`) and the API
+          // refused the decision with `403` after the note was written.
+          if (!canDecide) return null;
           return (
             <Button variant="secondary" onClick={() => setDeciding(row)}>
               {t('teaPackets.decide')}
@@ -211,7 +211,7 @@ export function TeaPacketsScreen() {
         },
       },
     ],
-    [t, policy, user],
+    [t, policy, user, canDecide],
   );
 
   return (

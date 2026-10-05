@@ -17,6 +17,7 @@
  *  - the dashboard (the sidebar badge and three queue cards)
  */
 
+import { useCan } from '@/auth/authStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreditDecisionBody, CreditRequestQuery } from '@tfd/domain';
 import { creditRepository } from '@/services/repositories/creditRepository';
@@ -40,10 +41,12 @@ export function useCreditRequest(id: string | undefined) {
 }
 
 export function useCreditRequestAudit(id: string | undefined) {
+  // The panel hides itself without `auditLog: R`; not asking avoids the `403` (clerk, editor).
+  const canRead = useCan('auditLog', 'read');
   return useQuery({
     queryKey: qk.audit.forEntity('creditRequest', id ?? ''),
     queryFn: () => auditRepository.forEntity('creditRequest', id!),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && canRead,
     throwOnError: false,
     retry: false,
   });

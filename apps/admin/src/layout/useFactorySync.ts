@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { factorySyncState, type FactorySyncState, type FactorySyncStatus } from '@tfd/domain';
 import { factorySyncRepository } from '@/services/repositories/factorySyncRepository';
 import { qk } from '@/query/queryKeys';
+import { useCan } from '@/auth/authStore';
 
 interface FactorySyncView {
   /** `null` when this deployment has no sync at all; `undefined` while loading. */
@@ -23,9 +24,13 @@ interface FactorySyncView {
 }
 
 export function useFactorySync(): FactorySyncView {
+  const canReadDashboard = useCan('reports', 'read');
   const { data } = useQuery({
     queryKey: qk.factorySync,
     queryFn: factorySyncRepository.get,
+    // Read from `GET /admin/dashboard`, which needs `reports: R`. An editor has none, and
+    // this polled every five minutes into a `403` on every screen they opened.
+    enabled: canReadDashboard,
     /**
      * Refetched on an interval, unlike anything else in this console.
      *

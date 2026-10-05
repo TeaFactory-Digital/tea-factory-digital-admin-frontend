@@ -11,6 +11,7 @@
  *  - the dashboard (the sidebar badge and the queue card)
  */
 
+import { useCan } from '@/auth/authStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ChangeRequestQuery, DecisionBody } from '@tfd/domain';
 import { changeRequestRepository } from '@/services/repositories/changeRequestRepository';
@@ -34,10 +35,12 @@ export function useChangeRequest(id: string | undefined) {
 }
 
 export function useChangeRequestAudit(id: string | undefined) {
+  // The panel hides itself without `auditLog: R`; not asking avoids the `403` (clerk, editor).
+  const canRead = useCan('auditLog', 'read');
   return useQuery({
     queryKey: qk.audit.forEntity('changeRequest', id ?? ''),
     queryFn: () => auditRepository.forEntity('changeRequest', id!),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && canRead,
     throwOnError: false,
     retry: false,
   });
@@ -69,7 +72,12 @@ export function useDecideChangeRequest(id: string, supplierId: string | undefine
       // `already-decided` means our copy is stale — someone else worked the same
       // inbox. Refetch so the UI shows what they actually chose rather than
       // leaving the clerk staring at a row that no longer exists in that state.
-      if (error && typeof error === 'object' && 'code' in error && error.code === 'already-decided') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === 'already-decided'
+      ) {
         void client.invalidateQueries({ queryKey: qk.changeRequests.detail(id) });
         void client.invalidateQueries({ queryKey: qk.changeRequests.all });
       }

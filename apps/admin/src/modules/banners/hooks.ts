@@ -13,6 +13,7 @@
  * the office looking at a stale answer to the one question they came here to ask.
  */
 
+import { useCan } from '@/auth/authStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   BannerDraft,
@@ -50,10 +51,12 @@ export function useBannerPreview(id: string | undefined, lang: LanguageCode) {
 }
 
 export function useBannerAudit(id: string | undefined) {
+  // The panel hides itself without `auditLog: R`; not asking avoids the `403` (clerk, editor).
+  const canRead = useCan('auditLog', 'read');
   return useQuery({
     queryKey: qk.audit.forEntity('promoBanner', id ?? ''),
     queryFn: () => auditRepository.forEntity('promoBanner', id!),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && canRead,
     // An editor has `content: W` and no `auditLog` grant (§12.1), so this 403s for the
     // person most likely to be on this screen. Not an error worth showing.
     throwOnError: false,

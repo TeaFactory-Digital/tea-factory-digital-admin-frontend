@@ -13,6 +13,7 @@
  * untouched language gets.
  */
 
+import { useCan } from '@/auth/authStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   ContentTranslationBody,
@@ -66,10 +67,12 @@ export function useNewsPreview(id: string | undefined, lang: LanguageCode) {
 }
 
 export function useNewsAudit(id: string | undefined) {
+  // The panel hides itself without `auditLog: R`; not asking avoids the `403` (clerk, editor).
+  const canRead = useCan('auditLog', 'read');
   return useQuery({
     queryKey: qk.audit.forEntity('newsArticle', id ?? ''),
     queryFn: () => auditRepository.forEntity('newsArticle', id!),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && canRead,
     // An editor has `content: W` and no `auditLog` grant at all (§12.1), so this 403s
     // for the person most likely to be on this screen. Not an error worth showing.
     throwOnError: false,

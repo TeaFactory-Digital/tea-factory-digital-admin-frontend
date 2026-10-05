@@ -94,7 +94,11 @@ export function SupplierDetailScreen() {
    * `403`: the tab is not offered rather than offered and broken.
    */
   const canReadRequests = useCan('creditRequests', 'read');
-  const sections = SECTIONS.filter((one) => one !== 'requests' || canReadRequests);
+  // The Activity tab is the audit trail and nothing else; without `auditLog: R` it was empty.
+  const canReadAudit = useCan('auditLog', 'read');
+  const sections = SECTIONS.filter(
+    (one) => (one !== 'requests' || canReadRequests) && (one !== 'activity' || canReadAudit),
+  );
 
   /**
    * In the URL, so a section is a link.

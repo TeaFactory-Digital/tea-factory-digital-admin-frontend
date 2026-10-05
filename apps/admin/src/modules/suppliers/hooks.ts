@@ -8,6 +8,7 @@
  * that once possible.
  */
 
+import { useCan } from '@/auth/authStore';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   AdminCreditRequest,
@@ -96,10 +97,12 @@ export function useSupplierNotifications(id: string | undefined) {
 }
 
 export function useSupplierAudit(id: string | undefined) {
+  // The panel hides itself without `auditLog: R`; not asking avoids the `403` (clerk, editor).
+  const canRead = useCan('auditLog', 'read');
   return useQuery({
     queryKey: qk.audit.forEntity('supplier', id ?? ''),
     queryFn: () => auditRepository.forEntity('supplier', id!),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && canRead,
     // A clerk without audit access sees no panel rather than an error — the
     // §12.1 matrix gives `auditLog` to accountant and above only.
     throwOnError: false,

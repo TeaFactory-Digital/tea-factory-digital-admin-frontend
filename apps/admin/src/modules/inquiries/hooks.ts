@@ -8,6 +8,7 @@
  * changed.
  */
 
+import { useCan } from '@/auth/authStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CloseInquiryBody, InquiryQuery, InquiryReplyBody } from '@tfd/domain';
 import { inquiryRepository } from '@/services/repositories/inquiryRepository';
@@ -31,10 +32,12 @@ export function useInquiry(id: string | undefined) {
 }
 
 export function useInquiryAudit(id: string | undefined) {
+  // The panel hides itself without `auditLog: R`; not asking avoids the `403` (clerk, editor).
+  const canRead = useCan('auditLog', 'read');
   return useQuery({
     queryKey: qk.audit.forEntity('inquiry', id ?? ''),
     queryFn: () => auditRepository.forEntity('inquiry', id!),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && canRead,
     throwOnError: false,
     retry: false,
   });
@@ -46,7 +49,10 @@ export function useAnswerInquiry(id: string) {
   const client = useQueryClient();
 
   return useMutation({
-    mutationFn: (variables: { verb: 'reply'; body: InquiryReplyBody } | { verb: 'close'; body: CloseInquiryBody }) =>
+    mutationFn: (
+      variables:
+        { verb: 'reply'; body: InquiryReplyBody } | { verb: 'close'; body: CloseInquiryBody },
+    ) =>
       variables.verb === 'reply'
         ? inquiryRepository.reply(id, variables.body)
         : inquiryRepository.close(id, variables.body),
@@ -61,7 +67,12 @@ export function useAnswerInquiry(id: string) {
     onError: (error: unknown) => {
       // Someone else answered it while this was open. Pull their answer in, so the
       // clerk reads what the supplier was actually told rather than a stale form.
-      if (error && typeof error === 'object' && 'code' in error && error.code === 'already-decided') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === 'already-decided'
+      ) {
         void client.invalidateQueries({ queryKey: qk.inquiries.detail(id) });
         void client.invalidateQueries({ queryKey: qk.inquiries.all });
       }

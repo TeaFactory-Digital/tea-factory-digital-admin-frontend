@@ -54,6 +54,7 @@ import { EmptyState, ErrorState, Skeleton } from '@/components/ui/states';
 import { formatAmount, formatKg, formatMonthKey } from '@/lib/format';
 import { SyncFreshness } from '@/components/SyncFreshness';
 import { useBill } from '@/modules/bills/hooks';
+import { useCan } from '@/auth/authStore';
 import { useSupplierIncome } from './hooks';
 
 type ViewMode = 'graph' | 'list' | 'chart';
@@ -102,6 +103,9 @@ export function SupplierIncomeHistory({ supplierId }: { supplierId: string }) {
   const { t } = useTranslation();
 
   const [view, setView] = useState<ViewMode>('graph');
+  // "Where the money went" reads the month's bill (`billing: R`). A factory administrator
+  // reads suppliers but not bills, and the view answered `403`, so it is not offered.
+  const canReadBills = useCan('billing', 'read');
   const [metric, setMetric] = useState<Metric>('earnings');
   /** `undefined` until the reader picks one — the server resolves it to the newest. */
   const [year, setYear] = useState<number | undefined>();
@@ -121,7 +125,9 @@ export function SupplierIncomeHistory({ supplierId }: { supplierId: string }) {
 
   // Only fetched in the chart view — a donut nobody is looking at is a bill nobody
   // asked for, on a connection the weighing point is sharing.
-  const bill = useBill(view === 'chart' ? (chartMonth?.billId ?? undefined) : undefined);
+  const bill = useBill(
+    view === 'chart' && canReadBills ? (chartMonth?.billId ?? undefined) : undefined,
+  );
 
   const bars = useMemo(
     () =>
@@ -200,17 +206,16 @@ export function SupplierIncomeHistory({ supplierId }: { supplierId: string }) {
           <TabsList aria-label={t('suppliers.income.views')}>
             <TabsTrigger value="graph">{t('suppliers.income.tab.graph')}</TabsTrigger>
             <TabsTrigger value="list">{t('suppliers.income.tab.list')}</TabsTrigger>
-            <TabsTrigger value="chart">{t('suppliers.income.tab.chart')}</TabsTrigger>
+            {canReadBills ? (
+              <TabsTrigger value="chart">{t('suppliers.income.tab.chart')}</TabsTrigger>
+            ) : null}
           </TabsList>
         </Tabs>
 
         {history.isPending ? (
           <Skeleton className="h-64" />
         ) : months.length === 0 ? (
-          <EmptyState
-            title={t('suppliers.income.empty')}
-            body={t('suppliers.income.emptyHint')}
-          />
+          <EmptyState title={t('suppliers.income.empty')} body={t('suppliers.income.emptyHint')} />
         ) : view === 'graph' ? (
           <>
             <Tabs value={metric} onValueChange={(value) => setMetric(value as Metric)}>
@@ -358,6 +363,8 @@ export function SupplierIncomeHistory({ supplierId }: { supplierId: string }) {
 }
 
 function MonthRow({ month }: { month: SupplierMonthSummary }) {
+  // The bill page needs `billing: R`; without it the row is the answer, not a link.
+  const canOpenBill = useCan('billing', 'read');
   const { t } = useTranslation();
 
   const row = (
@@ -393,7 +400,7 @@ function MonthRow({ month }: { month: SupplierMonthSummary }) {
 
   // A month with no bill is a month with nothing to open. Rendered as a row rather than
   // a dead link, because the row itself is the answer to "what happened in May".
-  if (!month.billId) {
+  if (!month.billId || !canOpenBill) {
     return <li className="flex">{row}</li>;
   }
 
