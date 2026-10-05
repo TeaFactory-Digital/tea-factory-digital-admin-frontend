@@ -106,6 +106,7 @@ export const si: Record<TranslationKey, string> = {
   'appearance.textSize.larger': 'වඩා විශාල',
   'common.openTimes': 'වේලාවක් තෝරන්න',
   'common.signOut': 'ඉවත් වන්න',
+  'common.updated': 'යාවත්කාලීන කළේ',
   'shell.signOutConfirmBody': 'කොන්සෝලයේ වැඩ කිරීම දිගටම කරගෙන යාමට නැවත පිවිසිය යුතු වේ.',
   'config.confirmSaveTitle': 'මෙම වින්‍යාස වෙනස්කම් සුරකින්නද?',
   'config.confirmSaveBody':
@@ -378,6 +379,7 @@ export const si: Record<TranslationKey, string> = {
     'ගිණුම වැරදීමකින් නතර කර තිබූ අතර එය පෙර පරිදිම නැවත සකසා ඇත.',
 
   'suppliers.resetPassword.title': 'යෙදුම් මුරපදය නැවත සකසන්න',
+  'suppliers.resetPassword.recorded': '{{name}} විසින් {{when}} නිකුත් කළා. විගණන සටහනේ සටහන් කර ඇත.',
   'suppliers.resetPassword.body':
     'මෙය {{name}} සඳහා නව මුරපදයක් සාදන අතර ඔවුන්ට විවෘතව ඇති ඕනෑම සැසියක් අවසන් කරයි. ඔවුන්ගේ පැරණි මුරපදය වහාම ක්‍රියා විරහිත වේ.',
   'suppliers.resetPassword.beforeYouStart':

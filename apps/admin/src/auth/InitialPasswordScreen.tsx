@@ -169,7 +169,7 @@ export function InitialPasswordScreen() {
             {/* The way out for somebody signed in as the wrong person on a shared
                 machine. Sign-out is one of the few paths the API leaves open here. */}
             <Button variant="ghost" onClick={() => void logout()} disabled={busy !== null}>
-              {t('nav.signOut')}
+              {t('common.signOut')}
             </Button>
           </CardBody>
         </Card>

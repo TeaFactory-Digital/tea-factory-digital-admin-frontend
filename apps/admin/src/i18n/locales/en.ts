@@ -92,6 +92,7 @@ export const en = {
   'appearance.textSize.larger': 'Larger',
   'common.openTimes': 'Choose a time',
   'common.signOut': 'Sign out',
+  'common.updated': 'Updated',
   'shell.signOutConfirmBody': 'You will need to sign in again to continue working in the console.',
   'config.confirmSaveTitle': 'Save these configuration changes?',
   'config.confirmSaveBody':
@@ -366,6 +367,7 @@ export const en = {
     'The account was stopped in error and has been put back as it was.',
 
   'suppliers.resetPassword.title': 'Reset app password',
+  'suppliers.resetPassword.recorded': 'Issued by {{name}}, {{when}}. Recorded in the audit trail.',
   'suppliers.resetPassword.body':
     'This creates a new password for {{name}} and ends any session they have open. Their old password stops working immediately.',
   'suppliers.resetPassword.beforeYouStart':

@@ -107,6 +107,7 @@ export const ta: Record<TranslationKey, string> = {
   'appearance.textSize.larger': 'மிகப் பெரிய',
   'common.openTimes': 'நேரத்தைத் தேர்ந்தெடு',
   'common.signOut': 'வெளியேறு',
+  'common.updated': 'புதுப்பிக்கப்பட்டது',
   'shell.signOutConfirmBody': 'கன்சோலில் தொடர்ந்து வேலை செய்ய மீண்டும் உள்நுழைய வேண்டும்.',
   'config.confirmSaveTitle': 'இந்தக் கட்டமைப்பு மாற்றங்களைச் சேமிக்கவா?',
   'config.confirmSaveBody':
@@ -382,6 +383,7 @@ export const ta: Record<TranslationKey, string> = {
     'கணக்கு தவறுதலாக நிறுத்தப்பட்டிருந்தது, முன்பு இருந்தபடியே மீட்டமைக்கப்பட்டது.',
 
   'suppliers.resetPassword.title': 'செயலி கடவுச்சொல்லை மீட்டமை',
+  'suppliers.resetPassword.recorded': '{{name}} {{when}} அன்று வழங்கினார். தணிக்கைப் பதிவில் பதிவு செய்யப்பட்டது.',
   'suppliers.resetPassword.body':
     'இது {{name}} க்குப் புதிய கடவுச்சொல்லை உருவாக்கி, அவர்களுக்குத் திறந்திருக்கும் அமர்வுகளை முடிக்கிறது. அவர்களின் பழைய கடவுச்சொல் உடனடியாக வேலை செய்யாது.',
   'suppliers.resetPassword.beforeYouStart':
