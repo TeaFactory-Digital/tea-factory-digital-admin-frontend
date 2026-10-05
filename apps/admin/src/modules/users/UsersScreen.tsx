@@ -20,7 +20,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Pencil, ShieldAlert, ShieldOff, UserPlus, Trash2, Undo2 } from 'lucide-react';
+import { Pencil, ShieldAlert, ShieldOff, UserPlus, Trash2, Undo2, KeyRound } from 'lucide-react';
 import type { AdminConsoleUser, ConsoleRole, UserQuery } from '@tfd/domain';
 import { useAuthStore, useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
@@ -36,6 +36,7 @@ import { useDebounced } from '@/lib/useDebounced';
 import { formatDateTime, formatDate } from '@/lib/format';
 import { RoleMatrixView } from './RoleMatrixView';
 import { UserActionDialog, UserDialog } from './UserDialogs';
+import { ResetUserPasswordDialog } from './ResetUserPasswordDialog';
 import { useUsers, type UserAction } from './hooks';
 import { InfoTip } from '@/components/ui/Tooltip';
 
@@ -56,6 +57,7 @@ export function UsersScreen() {
   const [editing, setEditing] = useState<AdminConsoleUser | null>(null);
   const [inviting, setInviting] = useState(false);
   const [acting, setActing] = useState<{ user: AdminConsoleUser; action: UserAction } | null>(null);
+  const [resetting, setResetting] = useState<AdminConsoleUser | null>(null);
 
   const query = useMemo<UserQuery>(
     () => ({
@@ -197,6 +199,17 @@ export function UsersScreen() {
                 {t('users.edit')}
               </Button>
 
+              {/* A forgotten password, for anyone but yourself (BACKEND-TODO #37). */}
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={isSelf}
+                iconLeft={<KeyRound className="size-icon-sm" aria-hidden />}
+                onClick={() => setResetting(row)}
+              >
+                {t('users.resetPassword.action')}
+              </Button>
+
               {row.status === 'active' ? (
                 <Button
                   size="sm"
@@ -333,6 +346,8 @@ export function UsersScreen() {
           setEditing(null);
         }}
       />
+
+      <ResetUserPasswordDialog user={resetting} onClose={() => setResetting(null)} />
 
       <UserActionDialog
         user={acting?.user ?? null}

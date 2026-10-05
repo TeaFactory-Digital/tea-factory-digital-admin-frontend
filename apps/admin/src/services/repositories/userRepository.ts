@@ -201,6 +201,16 @@ export const userRepository = {
     return userEndpoints.scheduleDeletion(id, requireReason(reason));
   },
 
+  /** Not your own: yours is changed from the user menu, with your current password. */
+  resetPassword: async (
+    id: string,
+    reason: string,
+    actingUserId: string | undefined,
+  ): Promise<{ password: string; issuedAt: string }> => {
+    if (id === actingUserId) throw selfModification('password');
+    return userEndpoints.resetPassword(id, requireReason(reason));
+  },
+
   cancelDeletion: async (id: string, reason: string): Promise<{ id: string }> =>
     userEndpoints.cancelDeletion(id, requireReason(reason)),
 

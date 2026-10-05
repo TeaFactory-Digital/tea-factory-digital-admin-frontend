@@ -140,6 +140,16 @@ export function useNewsLifecycle(id: string) {
   });
 }
 
+/** Schedule a draft to publish itself, or drop the schedule (`null`). */
+export function useScheduleNews(id: string) {
+  const invalidate = useInvalidateArticle(id);
+  return useMutation({
+    mutationFn: (publishAt: string | null) =>
+      publishAt ? newsRepository.schedule(id, publishAt) : newsRepository.cancelSchedule(id),
+    onSuccess: invalidate,
+  });
+}
+
 /* ─────────────────────── M12 Static content ─────────────────────── */
 
 export function useStaticPages() {

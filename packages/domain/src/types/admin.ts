@@ -800,6 +800,14 @@ export interface InquiryReply {
  * `inquiryStatusForApp` converts, so the API has one implementation of the
  * mapping and the app keeps the field it already reads (status.md §21.18).
  */
+/** An office-only note on an inquiry (BACKEND-TODO #35). Never sent to the supplier. */
+export interface InquiryNote {
+  id: string;
+  body: string;
+  authorName: string;
+  createdAt: string;
+}
+
 /** One message in an inquiry's conversation, oldest first (BACKEND-TODO #25). */
 export interface InquiryMessage {
   id: string;
@@ -830,6 +838,11 @@ export interface AdminInquiry extends Omit<Inquiry, 'status' | 'reply'> {
    * from `message` and `reply` by the repository when the API does not send it yet.
    */
   messages?: InquiryMessage[];
+  /** Who in the office is handling it (BACKEND-TODO #35); `null` while nobody is. */
+  assignedToId?: string | null;
+  assignedToName?: string | null;
+  /** Office-only notes on the inquiry, oldest first. The supplier never sees these. */
+  notes?: InquiryNote[];
   /**
    * The API keeps a real conversation (it sent `messages`): the office may reply again to
    * an answered inquiry. `false` on an API with one question and one answer.
@@ -1563,6 +1576,11 @@ export interface ContentGaps {
  */
 export interface AdminNewsArticle extends ContentGaps {
   id: string;
+  /**
+   * When a draft will publish itself, if it has been scheduled (BACKEND-TODO #36); `null`
+   * or absent when it has not.
+   */
+  scheduledPublishAt?: string | null;
   /** Stable link target. Derived from the fallback title, never from a translation. */
   slug: string;
   translations: ContentTranslations;
@@ -2089,6 +2107,8 @@ export interface AuditQuery extends PageQuery {
 export interface RuntimeConfig {
   /** Tenant id resolved from the subdomain, echoed back for verification. */
   tenantId: string;
+  /** The office's own chip sentences (BACKEND-TODO #38); absent until a factory saves some. */
+  noteSuggestions?: import('../config').NoteSuggestionsBlock;
   factory: {
     name: string;
     telephone: string;

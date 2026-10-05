@@ -147,6 +147,8 @@ export const newsRepository = {
     newsEndpoints.preview(id, lang).then(toContentPreview),
 
   publish: (id: string): Promise<StatusAck> => newsEndpoints.publish(id),
+  schedule: (id: string, publishAt: string) => newsEndpoints.schedule(id, publishAt),
+  cancelSchedule: (id: string) => newsEndpoints.cancelSchedule(id),
   unpublish: (id: string): Promise<StatusAck> => newsEndpoints.unpublish(id),
   archive: (id: string): Promise<StatusAck> => newsEndpoints.archive(id),
 };

@@ -20,6 +20,7 @@ import { Card } from '@/components/ui/Card';
 import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
 import { Select } from '@/components/ui/Field';
+import { ExportCsvButton } from '@/components/ExportCsvButton';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/states';
 import { auditActionLabel } from '@/lib/auditLabels';
@@ -151,7 +152,21 @@ export function AuditScreen() {
 
   return (
     <>
-      <PageHeader title={t('audit.title')} />
+      <PageHeader
+        title={t('audit.title')}
+        actions={
+          <ExportCsvButton
+            name="audit-log"
+            fetchPage={(page, pageSize) => auditRepository.list({ ...query, page, pageSize })}
+            columns={[
+              { header: t('export.column.when'), value: (e) => e.at },
+              { header: t('export.column.who'), value: (e) => e.actorName },
+              { header: t('export.column.action'), value: (e) => auditActionLabel(e.action, t) },
+              { header: t('export.column.record'), value: (e) => `${e.entity} ${e.entityId}` },
+            ]}
+          />
+        }
+      />
 
       {/* Fixed-height card, scrolling rows — see the note in SuppliersScreen. */}
       <Card className={GRID_CARD}>

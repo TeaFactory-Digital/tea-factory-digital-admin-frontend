@@ -37,6 +37,7 @@ import {
   Package,
   SlidersHorizontal,
   Warehouse,
+  MessageSquareQuote,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ConfigPatch } from '@tfd/domain';
@@ -61,6 +62,7 @@ import {
 import { BanksSection } from './BanksSection';
 import { CreditRulesSection } from './CreditRulesSection';
 import { TeaPacketSection } from './TeaPacketSection';
+import { NoteSuggestionsSection } from './NoteSuggestionsSection';
 import type { SectionProps } from './SectionFooter';
 import { useAdminConfig, useSaveConfig } from './hooks';
 import { InfoTip } from '@/components/ui/Tooltip';
@@ -94,6 +96,8 @@ const SECTIONS: Array<{
    * price* — and neither is a switch.
    */
   { id: 'creditRules', icon: BadgeDollarSign, Component: CreditRulesSection },
+  /** The office's own chip sentences under the decision and reply boxes (BACKEND-TODO #38). */
+  { id: 'notes', icon: MessageSquareQuote, Component: NoteSuggestionsSection },
 ];
 
 export function ConfigurationScreen() {

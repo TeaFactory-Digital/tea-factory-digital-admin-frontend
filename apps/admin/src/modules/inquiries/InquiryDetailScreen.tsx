@@ -41,6 +41,7 @@ import { cn } from '@/lib/cn';
 import { formatAge, formatDate, formatDateTime } from '@/lib/format';
 import { isAnswerable } from './answerable';
 import { InquiryActions } from './ReplyDialog';
+import { InquiryAssignmentCard, InquiryNotesCard } from './InquiryOfficeCards';
 import { useNotificationTriggers } from '@/modules/notifications/hooks';
 import { useInquiry, useInquiryAudit } from './hooks';
 
@@ -247,6 +248,9 @@ export function InquiryDetailScreen() {
               </div>
             </CardBody>
           </Card>
+
+          <InquiryAssignmentCard inquiry={inquiry} />
+          <InquiryNotesCard inquiry={inquiry} />
 
           <AuditPanel
             title={t('inquiries.detail.auditTitle')}

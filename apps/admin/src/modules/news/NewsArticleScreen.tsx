@@ -30,6 +30,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { ImageField } from '@/components/ui/ImageField';
 import { Dialog } from '@/components/ui/Dialog';
+import { ScheduleControl } from './ScheduleControl';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, Spinner } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
@@ -276,6 +277,9 @@ export function NewsArticleScreen() {
                       {t('news.unpublish')}
                     </Button>
                   )}
+
+                  {/* Publish later, at a chosen Colombo time (BACKEND-TODO #36). */}
+                  <ScheduleControl article={data} />
 
                   {data.status !== 'archived' ? (
                     <Button

@@ -109,6 +109,16 @@ export const newsEndpoints = {
   publish: (id: string) =>
     apiClient.post<StatusAck>(`/admin/news/${id}/publish`, {}).then((response) => response.data),
 
+  /** Publish a draft at a later time (BACKEND-TODO #36). `publishAt` is an ISO instant. */
+  schedule: (id: string, publishAt: string) =>
+    apiClient
+      .post<{ id: string; scheduledPublishAt: string }>(`/admin/news/${id}/schedule`, { publishAt })
+      .then((response) => response.data),
+
+  /** Drop the schedule; the article stays a draft. */
+  cancelSchedule: (id: string) =>
+    apiClient.delete<{ id: string }>(`/admin/news/${id}/schedule`).then((response) => response.data),
+
   /** Back to `draft`. The app drops it from the feed. */
   unpublish: (id: string) =>
     apiClient.post<StatusAck>(`/admin/news/${id}/unpublish`, {}).then((response) => response.data),

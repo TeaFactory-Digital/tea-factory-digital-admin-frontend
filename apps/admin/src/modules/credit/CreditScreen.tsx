@@ -25,6 +25,8 @@ import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
 import { SearchInput, Select } from '@/components/ui/Field';
 import { Label } from '@/components/ui/Label';
+import { creditRepository } from '@/services/repositories/creditRepository';
+import { ExportCsvButton } from '@/components/ExportCsvButton';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/states';
 import { useFeatureFlags } from '@/config/RuntimeConfigProvider';
@@ -203,7 +205,25 @@ export function CreditScreen() {
 
   return (
     <>
-      <PageHeader title={t('credit.title')} description={t('credit.subtitle')} />
+      <PageHeader
+        title={t('credit.title')}
+        description={t('credit.subtitle')}
+        actions={
+          <ExportCsvButton
+            name="credit-requests"
+            fetchPage={(page, pageSize) => creditRepository.list({ ...query, page, pageSize })}
+            columns={[
+              { header: t('export.column.date'), value: (r) => r.createdAt.slice(0, 10) },
+              { header: t('changeRequests.column.supplier'), value: (r) => `${r.supplierCode} ${r.supplierName}` },
+              { header: t('export.column.type'), value: (r) => t(`credit.facility.${r.facility}`) },
+              { header: t('export.column.amount'), value: (r) => r.amount.toFixed(2) },
+              { header: t('export.column.details'), value: (r) => r.manureType ?? r.reason ?? '' },
+              { header: t('common.status'), value: (r) => t(`credit.status.${r.status}`) },
+              { header: t('export.column.decidedBy'), value: (r) => r.decision?.decidedByName ?? '' },
+            ]}
+          />
+        }
+      />
 
       <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-center gap-sm border-b border-divider p-md">

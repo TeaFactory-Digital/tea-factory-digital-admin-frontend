@@ -37,7 +37,38 @@ import { creditRuleProblems, type CreditRules } from './creditRules';
  * resolved from the subdomain (`config/tenant.ts`), so an editable copy would be a second
  * source of truth for the one value everything else is keyed on.
  */
+/**
+ * The chip lists the office edits (BACKEND-TODO #38): each a set of sentences offered under
+ * a note or reply box. A list the factory has not saved uses the built-in sentences.
+ */
+export type NoteSuggestionKey =
+  | 'changeRequests.approve'
+  | 'changeRequests.reject'
+  | 'credit.approve'
+  | 'credit.reject'
+  | 'teaPackets'
+  | 'inquiries.reply';
+
+export const NOTE_SUGGESTION_KEYS: readonly NoteSuggestionKey[] = [
+  'changeRequests.approve',
+  'changeRequests.reject',
+  'credit.approve',
+  'credit.reject',
+  'teaPackets',
+  'inquiries.reply',
+];
+
+/** One chip: its short label and the sentence it adds, per language code. */
+export interface NoteSuggestionConfig {
+  label: Record<string, string>;
+  text: Record<string, string>;
+}
+
+export type NoteSuggestionsBlock = Partial<Record<NoteSuggestionKey, NoteSuggestionConfig[]>>;
+
 export interface ConfigPatch {
+  /** Saved whole: a chip deleted in the console must not survive a merge. */
+  noteSuggestions?: NoteSuggestionsBlock;
   factory?: {
     name?: string;
     telephone?: string;

@@ -26,6 +26,7 @@ import { Check, X } from 'lucide-react';
 import type { AdminCreditRequest } from '@tfd/domain';
 import { isSelfApproval } from '@tfd/domain';
 import { useCan, useCurrentUser } from '@/auth/authStore';
+import { useNoteSuggestions } from '@/components/useNoteSuggestions';
 import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -146,10 +147,12 @@ function CreditDecisionDialog({
   const tooShort = note.trim().length < MIN_NOTE;
   const approving = verb === 'approve';
 
-  const suggestions: NoteSuggestion[] = SUGGESTIONS[verb].map((slug) => ({
+  const builtIn: NoteSuggestion[] = SUGGESTIONS[verb].map((slug) => ({
     label: t(`credit.noteSuggest.${verb}.${slug}`),
     text: t(`credit.noteSuggest.${verb}.${slug}.text`),
   }));
+  // The factory's own sentences when it has saved some (Configuration, Common notes).
+  const suggestions = useNoteSuggestions(`credit.${verb}` as const, builtIn);
 
   function submit() {
     decide.mutate(

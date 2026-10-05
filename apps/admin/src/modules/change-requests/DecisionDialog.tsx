@@ -21,6 +21,7 @@ import { Check, CheckCircle2, Info, TriangleAlert, X, XCircle } from 'lucide-rea
 import type { AdminChangeRequest, ChangeRequestType } from '@tfd/domain';
 import { isSelfApproval } from '@tfd/domain';
 import { useCurrentUser } from '@/auth/authStore';
+import { useNoteSuggestions } from '@/components/useNoteSuggestions';
 import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -138,10 +139,12 @@ function DecisionDialog({
 
   const slugs =
     SUGGESTIONS[request.type as ChangeRequestType]?.[verb] ?? FALLBACK_SUGGESTIONS[verb];
-  const suggestions: NoteSuggestion[] = slugs.map((slug) => ({
+  const builtIn: NoteSuggestion[] = slugs.map((slug) => ({
     label: t(`changeRequests.noteSuggest.${verb}.${slug}`),
     text: t(`changeRequests.noteSuggest.${verb}.${slug}.text`),
   }));
+  // The factory's own sentences when it has saved some (Configuration, Common notes).
+  const suggestions = useNoteSuggestions(`changeRequests.${verb}` as const, builtIn);
 
   function submit() {
     decide.mutate(

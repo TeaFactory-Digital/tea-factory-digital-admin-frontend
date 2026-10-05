@@ -37,6 +37,8 @@ import { Card } from '@/components/ui/Card';
 import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
 import { SearchInput, Select } from '@/components/ui/Field';
+import { teaPacketRepository } from '@/services/repositories/teaPacketRepository';
+import { ExportCsvButton } from '@/components/ExportCsvButton';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState, Notice } from '@/components/ui/states';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
@@ -216,7 +218,24 @@ export function TeaPacketsScreen() {
 
   return (
     <>
-      <PageHeader title={t('teaPackets.title')} description={t('teaPackets.subtitle')} />
+      <PageHeader
+        title={t('teaPackets.title')}
+        description={t('teaPackets.subtitle')}
+        actions={
+          <ExportCsvButton
+            name="tea-packet-requests"
+            fetchPage={(page, pageSize) => teaPacketRepository.list({ ...query, page, pageSize })}
+            columns={[
+              { header: t('export.column.date'), value: (r) => r.createdAt.slice(0, 10) },
+              { header: t('changeRequests.column.supplier'), value: (r) => `${r.supplierCode} ${r.supplierName}` },
+              { header: t('export.column.packets'), value: (r) => r.packets },
+              { header: t('export.column.amount'), value: (r) => r.amount.toFixed(2) },
+              { header: t('export.column.delivery'), value: (r) => t(`teaPackets.delivery.${r.deliveryMethod}`) },
+              { header: t('common.status'), value: (r) => t(`credit.status.${r.status}`) },
+            ]}
+          />
+        }
+      />
 
       {/**
        * The one thing a factory can get wrong here without noticing: the flag is on, the

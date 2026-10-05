@@ -41,6 +41,21 @@ export const inquiryEndpoints = {
    * two clerks working one inbox is the normal case. `422 note-required` when the
    * reply is too short to be one.
    */
+  /** Take it on, or let it go (BACKEND-TODO #35). Only ever oneself: no user list needed. */
+  assign: (id: string, assignToMe: boolean) =>
+    apiClient
+      .post<{ id: string; assignedToId: string | null; assignedToName: string | null }>(
+        `/admin/inquiries/${id}/assignment`,
+        { assignToMe },
+      )
+      .then((response) => response.data),
+
+  /** An office-only note (BACKEND-TODO #35). */
+  addNote: (id: string, body: string) =>
+    apiClient
+      .post<{ id: string }>(`/admin/inquiries/${id}/notes`, { body })
+      .then((response) => response.data),
+
   reply: (id: string, body: InquiryReplyBody) =>
     apiClient
       .post<StatusAck<InquiryStatus>>(`/admin/inquiries/${id}/reply`, body)

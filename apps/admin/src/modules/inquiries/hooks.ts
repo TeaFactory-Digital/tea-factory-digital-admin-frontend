@@ -79,3 +79,29 @@ export function useAnswerInquiry(id: string) {
     },
   });
 }
+
+function useRefreshInquiry(id: string) {
+  const client = useQueryClient();
+  return () => {
+    void client.invalidateQueries({ queryKey: qk.inquiries.detail(id) });
+    void client.invalidateQueries({ queryKey: qk.inquiries.all });
+  };
+}
+
+/** Take the inquiry on, or let it go. */
+export function useAssignInquiry(id: string) {
+  const refresh = useRefreshInquiry(id);
+  return useMutation({
+    mutationFn: (assignToMe: boolean) => inquiryRepository.assign(id, assignToMe),
+    onSuccess: refresh,
+  });
+}
+
+/** Add an office-only note. */
+export function useAddInquiryNote(id: string) {
+  const refresh = useRefreshInquiry(id);
+  return useMutation({
+    mutationFn: (body: string) => inquiryRepository.addNote(id, body),
+    onSuccess: refresh,
+  });
+}

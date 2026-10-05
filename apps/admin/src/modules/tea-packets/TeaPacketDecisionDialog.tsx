@@ -23,6 +23,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AdminTeaPacketRequest, TeaPacketPolicy } from '@tfd/domain';
 import { teaPacketRequestProblems, teaPacketWeightKg } from '@tfd/domain';
+import { useNoteSuggestions } from '@/components/useNoteSuggestions';
 import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -58,10 +59,12 @@ export function TeaPacketDecisionDialog({
 
   const tooShort = note.trim().length < MIN_NOTE;
 
-  const suggestions: NoteSuggestion[] = SUGGESTIONS.map((slug) => ({
+  const builtIn: NoteSuggestion[] = SUGGESTIONS.map((slug) => ({
     label: t(`teaPackets.noteSuggest.${slug}`),
     text: t(`teaPackets.noteSuggest.${slug}.text`),
   }));
+  // The factory's own sentences when it has saved some (Configuration, Common notes).
+  const suggestions = useNoteSuggestions('teaPackets', builtIn);
 
   /**
    * What is wrong with the request as asked — the store's own limits, not the

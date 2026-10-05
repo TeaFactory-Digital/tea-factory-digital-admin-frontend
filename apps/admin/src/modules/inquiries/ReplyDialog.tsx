@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { Eye, Send, X } from 'lucide-react';
 import type { AdminInquiry } from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
+import { useNoteSuggestions } from '@/components/useNoteSuggestions';
 import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -74,10 +75,12 @@ function ReplyComposer({ inquiry }: { inquiry: AdminInquiry }) {
   const tooShort = length < MIN_REPLY;
   const blocking = isBlockingError(answer.error);
 
-  const suggestions: NoteSuggestion[] = REPLY_SUGGESTIONS.map((slug) => ({
+  const builtIn: NoteSuggestion[] = REPLY_SUGGESTIONS.map((slug) => ({
     label: t(`inquiries.suggest.${slug}`),
     text: t(`inquiries.suggest.${slug}.text`),
   }));
+  // The factory's own sentences when it has saved some (Configuration, Common notes).
+  const suggestions = useNoteSuggestions('inquiries.reply', builtIn);
 
   function send() {
     answer.mutate(

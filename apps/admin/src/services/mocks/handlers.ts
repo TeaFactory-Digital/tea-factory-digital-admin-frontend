@@ -1913,6 +1913,25 @@ export const handlers: HttpHandler[] = [
    * Delete in three days (BACKEND-TODO #30): access stops now (the account reads as
    * suspended), and the row carries `deletesAt` until the sweep removes it.
    */
+  /** A one-time password for a console user who forgot theirs (BACKEND-TODO #37). */
+  http.post('*/admin/users/:id/password/reset', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'usersAndRoles', 'write');
+    if ('response' in auth) return auth.response;
+    const index = state.users.findIndex((one) => one.id === params.id);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such user.' });
+    const { reason } = (await request.json()) as { reason?: string };
+    if (!reason || reason.trim().length < 10) {
+      return fail({ status: 422, code: 'note-required', message: 'A reason is required.' });
+    }
+    if (state.users[index]!.id === auth.user.id) {
+      return fail({ status: 409, code: 'self-modification', message: 'Not your own.', details: { what: 'password' } });
+    }
+    const password = 'Tf7Kq2Xw9';
+    state.users[index] = { ...state.users[index]!, password, owesPasswordChange: true };
+    return HttpResponse.json({ password, issuedAt: new Date().toISOString() });
+  }),
+
   http.post('*/admin/users/:id/deletion', async ({ request, params }) => {
     await delay(LATENCY_MS);
     const auth = authorize(request, 'usersAndRoles', 'write');
@@ -5548,6 +5567,35 @@ export const handlers: HttpHandler[] = [
   }),
 
   /** The preview. Before `/news/:id` so the literal segment wins. */
+  /** Publish later (BACKEND-TODO #36): the time is kept on the draft until then. */
+  http.post('*/admin/news/:id/schedule', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'content', 'approve');
+    if ('response' in auth) return auth.response;
+    const row = state.news.find((one) => one.id === String(params.id)) as
+      | ((typeof state.news)[number] & { scheduledPublishAt?: string | null })
+      | undefined;
+    if (!row) return fail({ status: 404, code: 'not-found', message: 'No such article.' });
+    const { publishAt } = (await request.json()) as { publishAt?: string };
+    if (!publishAt || new Date(publishAt).getTime() <= Date.now()) {
+      return fail({ status: 422, code: 'invalid', message: 'Pick a time in the future.' });
+    }
+    row.scheduledPublishAt = new Date(publishAt).toISOString();
+    return HttpResponse.json({ id: row.id, scheduledPublishAt: row.scheduledPublishAt });
+  }),
+
+  http.delete('*/admin/news/:id/schedule', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'content', 'approve');
+    if ('response' in auth) return auth.response;
+    const row = state.news.find((one) => one.id === String(params.id)) as
+      | ((typeof state.news)[number] & { scheduledPublishAt?: string | null })
+      | undefined;
+    if (!row) return fail({ status: 404, code: 'not-found', message: 'No such article.' });
+    row.scheduledPublishAt = null;
+    return HttpResponse.json({ id: row.id });
+  }),
+
   http.get('*/admin/news/:id/preview', async ({ request, params }) => {
     await delay(LATENCY_MS);
     const gate = featureGate(request, 'enableNews');
@@ -6390,6 +6438,41 @@ export const handlers: HttpHandler[] = [
    * supplier is counter work, and a manager reading the queue is oversight rather
    * than a second pair of hands.
    */
+  /** Take an inquiry on, or let it go (BACKEND-TODO #35). Only ever the caller. */
+  http.post('*/admin/inquiries/:id/assignment', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'inquiries', 'approve');
+    if ('response' in auth) return auth.response;
+    const index = state.inquiries.findIndex((one) => one.id === String(params.id));
+    if (index < 0) return fail({ status: 404, code: 'not-found', message: 'No such inquiry.' });
+    const { assignToMe } = (await request.json()) as { assignToMe?: boolean };
+    const row = state.inquiries[index]! as typeof state.inquiries[number] & {
+      assignedToId?: string | null;
+      assignedToName?: string | null;
+    };
+    row.assignedToId = assignToMe ? auth.user.id : null;
+    row.assignedToName = assignToMe ? auth.user.name : null;
+    return HttpResponse.json({ id: row.id, assignedToId: row.assignedToId, assignedToName: row.assignedToName });
+  }),
+
+  /** An office-only note (BACKEND-TODO #35). */
+  http.post('*/admin/inquiries/:id/notes', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'inquiries', 'read');
+    if ('response' in auth) return auth.response;
+    const row = state.inquiries.find((one) => one.id === String(params.id)) as
+      | (typeof state.inquiries[number] & { notes?: Array<Record<string, string>> })
+      | undefined;
+    if (!row) return fail({ status: 404, code: 'not-found', message: 'No such inquiry.' });
+    const { body } = (await request.json()) as { body?: string };
+    if (!body || body.trim().length < 2) {
+      return fail({ status: 422, code: 'note-required', message: 'A note needs some text.' });
+    }
+    const note = { id: `note-${Date.now()}`, body: body.trim(), authorName: auth.user.name, createdAt: new Date().toISOString() };
+    row.notes = [...(row.notes ?? []), note];
+    return HttpResponse.json({ id: note.id });
+  }),
+
   http.post('*/admin/inquiries/:id/reply', async ({ request, params }) => {
     await delay(LATENCY_MS);
     const gate = featureGate(request, 'enableInquiry');

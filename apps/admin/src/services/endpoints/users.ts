@@ -72,6 +72,17 @@ export const userEndpoints = {
    * API's floor is 10 characters and `userRepository` refuses shorter before the request
    * leaves, so the clerk is stopped at the field rather than after the round trip.
    */
+  /**
+   * A new one-time password for a console user who forgot theirs (BACKEND-TODO #37).
+   * Shown once; they must choose their own at the next sign-in.
+   */
+  resetPassword: (id: string, reason: string) =>
+    apiClient
+      .post<{ password: string; issuedAt: string }>(`/admin/users/${id}/password/reset`, {
+        reason,
+      })
+      .then((response) => response.data),
+
   /** Delete in three days; access stops now (BACKEND-TODO #30). */
   scheduleDeletion: (id: string, reason: string) =>
     apiClient

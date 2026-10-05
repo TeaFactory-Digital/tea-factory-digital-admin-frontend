@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
 import { Card, CardBody } from '@/components/ui/Card';
 import { errorMessageKey } from '@/lib/errorMessage';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 export function SignInScreen() {
   const { t } = useTranslation();
@@ -143,6 +144,14 @@ function PasswordForm() {
       <Button type="submit" variant="primary" loading={isSubmitting}>
         {isSubmitting ? t('auth.signingIn') : t('auth.signIn')}
       </Button>
+
+      {/* No mail sender, so no reset link: an administrator issues a new password
+          (Users & roles, then Reset password). Said here, where the question is asked. */}
+      <span className="self-center">
+        <InfoTip label={t('auth.forgot')} text={t('auth.forgot')}>
+          {t('auth.forgotBody')}
+        </InfoTip>
+      </span>
     </form>
   );
 }

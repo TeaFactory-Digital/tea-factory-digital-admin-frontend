@@ -97,6 +97,9 @@ function toAdminInquiry(served: ServedInquiry): AdminInquiry {
     closedAt: served.closedAt ?? null,
     closedByName: served.closedByName ?? null,
     closureNote: served.closureNote ?? null,
+    assignedToId: served.assignedToId ?? null,
+    assignedToName: served.assignedToName ?? null,
+    notes: Array.isArray(served.notes) ? served.notes : [],
   };
 }
 
@@ -110,6 +113,14 @@ export const inquiryRepository = {
   /** One inquiry, by id. The list sweep this used to need is gone — **G-06** is closed. */
   get: async (id: string): Promise<AdminInquiry> =>
     toAdminInquiry((await inquiryEndpoints.get(id)) as ServedInquiry),
+
+  assign: (id: string, assignToMe: boolean) => inquiryEndpoints.assign(id, assignToMe),
+
+  addNote: async (id: string, body: string) => {
+    const trimmed = body.trim();
+    if (trimmed.length < 2) refuse({ field: 'body' });
+    return inquiryEndpoints.addNote(id, trimmed);
+  },
 
   reply: async (id: string, body: InquiryReplyBody): Promise<StatusAck<InquiryStatus>> => {
     const parsed = inquiryReplySchema.safeParse(body);

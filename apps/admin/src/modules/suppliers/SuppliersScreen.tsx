@@ -25,6 +25,8 @@ import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
 import { SearchInput } from '@/components/ui/Field';
 import { FilterSelect } from '@/components/ui/SelectMenu';
+import { supplierRepository } from '@/services/repositories/supplierRepository';
+import { ExportCsvButton } from '@/components/ExportCsvButton';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/states';
 import { formatAmount, formatDate } from '@/lib/format';
@@ -254,7 +256,28 @@ export function SuppliersScreen() {
 
   return (
     <>
-      <PageHeader title={t('suppliers.title')} description={t('suppliers.subtitle')} />
+      <PageHeader
+        title={t('suppliers.title')}
+        description={t('suppliers.subtitle')}
+        actions={
+          <ExportCsvButton
+            name="suppliers"
+            fetchPage={(page, pageSize) => supplierRepository.list({ ...query, page, pageSize })}
+            columns={[
+              { header: t('suppliers.column.code'), value: (s) => s.supplierCode },
+              { header: t('suppliers.column.name'), value: (s) => s.name },
+              { header: t('suppliers.column.nic'), value: (s) => s.nic ?? '' },
+              { header: t('suppliers.column.point'), value: (s) => s.collectionPoint?.name ?? '' },
+              { header: t('common.status'), value: (s) => t(`suppliers.status.${s.status}`) },
+              { header: t('suppliers.column.payment'), value: (s) => (s.paymentMethod ? t(`suppliers.payment.${s.paymentMethod}`) : '') },
+              { header: t('suppliers.column.savings'), value: (s) => s.savingsPerKg ?? '' },
+              { header: t('suppliers.summary.bank'), value: (s) => (s.hasBankDetails ? t('common.yes') : t('common.no')) },
+              { header: t('suppliers.column.app'), value: (s) => (s.hasApp ? t('common.yes') : t('common.no')) },
+              { header: t('suppliers.column.lastDelivery'), value: (s) => s.lastDeliveryAt?.slice(0, 10) ?? '' },
+            ]}
+          />
+        }
+      />
 
       {/* The card takes the height the page header leaves and gives all of it to
           the grid: filters, column headers and pagination stay put, and only the

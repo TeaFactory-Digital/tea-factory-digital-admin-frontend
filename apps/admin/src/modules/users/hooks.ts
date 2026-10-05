@@ -141,3 +141,20 @@ export function useSetRoleGrants() {
     onSuccess: invalidate,
   });
 }
+
+/** Issue a console user a one-time password (BACKEND-TODO #37). */
+export function useResetUserPassword() {
+  const invalidate = useInvalidateUsers();
+  return useMutation({
+    mutationFn: ({
+      id,
+      reason,
+      actingUserId,
+    }: {
+      id: string;
+      reason: string;
+      actingUserId: string | undefined;
+    }) => userRepository.resetPassword(id, reason, actingUserId),
+    onSuccess: invalidate,
+  });
+}

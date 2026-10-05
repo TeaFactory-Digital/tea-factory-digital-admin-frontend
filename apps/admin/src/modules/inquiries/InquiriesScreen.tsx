@@ -23,6 +23,8 @@ import { Card } from '@/components/ui/Card';
 import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
 import { SearchInput, Select } from '@/components/ui/Field';
+import { inquiryRepository } from '@/services/repositories/inquiryRepository';
+import { ExportCsvButton } from '@/components/ExportCsvButton';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/states';
 import { useDebounced } from '@/lib/useDebounced';
@@ -116,6 +118,17 @@ export function InquiriesScreen() {
         ),
       },
       {
+        // Who has it, so two clerks do not answer the same supplier (BACKEND-TODO #35).
+        accessorKey: 'assignedToName',
+        header: t('inquiries.assign.title'),
+        enableSorting: false,
+        cell: (info) => (
+          <span className="text-body-small text-text-secondary">
+            {info.getValue<string | null>() ?? '—'}
+          </span>
+        ),
+      },
+      {
         accessorKey: 'ageHours',
         header: t('changeRequests.column.age'),
         cell: (info) => {
@@ -139,7 +152,23 @@ export function InquiriesScreen() {
 
   return (
     <>
-      <PageHeader title={t('inquiries.title')} description={t('inquiries.subtitle')} />
+      <PageHeader
+        title={t('inquiries.title')}
+        description={t('inquiries.subtitle')}
+        actions={
+          <ExportCsvButton
+            name="inquiries"
+            fetchPage={(page, pageSize) => inquiryRepository.list({ ...query, page, pageSize })}
+            columns={[
+              { header: t('export.column.date'), value: (r) => r.createdAt.slice(0, 10) },
+              { header: t('changeRequests.column.supplier'), value: (r) => `${r.supplierCode} ${r.supplierName}` },
+              { header: t('export.column.subject'), value: (r) => r.subject },
+              { header: t('common.status'), value: (r) => t(`inquiries.status.${r.status}`) },
+              { header: t('export.column.messages'), value: (r) => r.messages?.length ?? 1 },
+            ]}
+          />
+        }
+      />
 
       <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-center gap-sm border-b border-divider p-md">
