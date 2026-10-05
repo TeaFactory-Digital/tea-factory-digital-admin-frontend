@@ -66,7 +66,25 @@ export interface ServedSupplierNotifications {
   }>;
 }
 
+/**
+ * One line of a supplier's savings passbook, as `GET /admin/savings/:id/ledger` serves it:
+ * oldest first, `amount` signed (positive in, negative out), `balance` after the line.
+ */
+export interface SavingsLedgerLine {
+  monthKey: string;
+  month?: string;
+  amount: number;
+  balance: number;
+  source: 'openingBalance' | 'billDeduction' | 'adjustment' | 'withdrawal' | 'interest' | string;
+}
+
 export const supplierEndpoints = {
+  /** Read only: savings are the factory system's, and this console shows a copy. */
+  savingsLedger: (id: string) =>
+    apiClient
+      .get<SavingsLedgerLine[]>(`/admin/savings/${id}/ledger`)
+      .then((response) => response.data),
+
   list: (query: SupplierQuery) =>
     apiClient
       .get<Paged<SupplierListItem>>('/admin/suppliers', { params: toParams(query) })

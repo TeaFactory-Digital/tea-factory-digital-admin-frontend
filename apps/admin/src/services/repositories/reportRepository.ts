@@ -33,6 +33,34 @@ export const reportRepository = {
   },
 
   /**
+   * Savings held, month by month, oldest first; `null` while the API does not serve the
+   * report yet (it answers `404`), so the screen can say so instead of showing an error.
+   * Read only: the figures are the factory system's.
+   */
+  savingsHeld: async (): Promise<SavingsMonth[] | null> => {
+    let served: { rows?: Array<Record<string, unknown>> };
+    try {
+      served = (await reportEndpoints.run('savingsHeld' as ReportId, {})) as unknown as typeof served;
+    } catch (error) {
+      if (error instanceof ApiError && (error.code === 'not-found' || error.status === 404)) {
+        return null;
+      }
+      throw error;
+    }
+    return (served.rows ?? [])
+      .map((row) => ({
+        monthKey: String(row.monthKey ?? ''),
+        paidIn: Number(row.paidIn ?? 0),
+        // Sent as a positive amount; a negative one is read the same way.
+        takenOut: Math.abs(Number(row.takenOut ?? 0)),
+        balanceTotal: Number(row.balanceTotal ?? 0),
+        suppliersSaving: Number(row.suppliersSaving ?? 0),
+      }))
+      .filter((row) => /^\d{4}-\d{2}$/.test(row.monthKey))
+      .sort((a, b) => a.monthKey.localeCompare(b.monthKey));
+  },
+
+  /**
    * App use, month by month: every month there are requests, oldest first.
    *
    * Read from the `channelShift` report, whichever shape the API sends: the current API
@@ -62,6 +90,20 @@ export const reportRepository = {
       .sort((a, b) => a.monthKey.localeCompare(b.monthKey));
   },
 };
+
+/**
+ * Savings held by the factory, month by month (BACKEND-TODO #27): what suppliers paid in,
+ * what was taken out, and the balance held at the end of the month.
+ */
+export interface SavingsMonth {
+  monthKey: string;
+  paidIn: number;
+  takenOut: number;
+  /** Total balance held for all suppliers at the end of the month. */
+  balanceTotal: number;
+  /** Suppliers with a balance above zero at the end of the month. */
+  suppliersSaving: number;
+}
 
 export interface AppUseMonth {
   monthKey: string;

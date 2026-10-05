@@ -42,6 +42,16 @@ export function useReportRun(id: ReportId | undefined, params: ReportRunParams, 
   });
 }
 
+export function useSavingsHeld() {
+  return useQuery({
+    queryKey: [...qk.reports.list, 'savingsHeld'],
+    queryFn: () => reportRepository.savingsHeld(),
+    staleTime: 60_000,
+    // `403 feature-disabled` for a factory without a savings scheme: not worth retrying.
+    retry: false,
+  });
+}
+
 export function useAppUse() {
   return useQuery({
     queryKey: [...qk.reports.list, 'appUse'],

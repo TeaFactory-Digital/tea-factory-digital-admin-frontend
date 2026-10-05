@@ -55,6 +55,7 @@ import { formatAmount, formatDate, formatMoney } from '@/lib/format';
 import { ResetPasswordDialog } from './ResetPasswordDialog';
 import { RevealBankDetailsDialog } from './RevealBankDetailsDialog';
 import { SupplierIncomeHistory } from './SupplierIncomeHistory';
+import { SupplierSavingsLedger } from './SupplierSavingsLedger';
 import { SupplierNotificationsPanel } from './SupplierNotificationsPanel';
 import {
   useReactivateSupplier,
@@ -346,6 +347,8 @@ export function SupplierDetailScreen() {
               )}
             </CardBody>
           </Card>
+          {/* Every line in and out, read only: savings are the factory system's. */}
+          <SupplierSavingsLedger supplierId={supplier.id} />
         </TabsContent>
 
         {/* Its own section: it is the longest thing on the record and carries its own

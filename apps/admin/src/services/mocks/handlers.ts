@@ -4437,6 +4437,31 @@ export const handlers: HttpHandler[] = [
   }),
 
   /**
+   * One supplier's passbook at the API's real path, `GET /admin/savings/:supplierId/ledger`,
+   * in its real shape: a plain array, oldest first, `{ monthKey, month, amount, balance,
+   * source }`, and `suppliers: R` is enough to read it.
+   */
+  http.get('*/admin/savings/:supplierId/ledger', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gated = featureGate(request, 'enableSavings');
+    if (gated) return gated;
+    const auth = authorize(request, 'suppliers');
+    if ('response' in auth) return auth.response;
+
+    const rows = state.savingsLedger
+      .filter((entry) => entry.supplierId === params.supplierId)
+      .sort((a, b) => a.monthKey.localeCompare(b.monthKey) || a.id.localeCompare(b.id))
+      .map((entry) => ({
+        monthKey: entry.monthKey,
+        month: entry.month,
+        amount: entry.amount,
+        balance: entry.balance,
+        source: entry.source,
+      }));
+    return HttpResponse.json(rows);
+  }),
+
+  /**
    * One supplier's passbook. Registered before `/savings/accounts` — MSW matches
    * whole paths, but keeping the more specific route first is the rule that has
    * already caught two bugs in this file.

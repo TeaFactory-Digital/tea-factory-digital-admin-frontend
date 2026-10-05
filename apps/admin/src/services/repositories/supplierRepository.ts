@@ -24,6 +24,7 @@ import { IDENTITY_CHECK_MIN, identityCheckProblem } from '@tfd/domain';
 import {
   supplierEndpoints,
   type RevealedAccountNumber,
+  type SavingsLedgerLine,
   type ServedSupplierNotifications,
 } from '../endpoints/suppliers';
 
@@ -84,6 +85,8 @@ export const supplierRepository = {
     supplierEndpoints.list({ page: 0, pageSize: 50, ...query }),
 
   get: (id: string): Promise<SupplierDetail> => supplierEndpoints.get(id),
+
+  savingsLedger: (id: string): Promise<SavingsLedgerLine[]> => supplierEndpoints.savingsLedger(id),
 
   income: (id: string, year?: number): Promise<SupplierIncomeHistory> =>
     supplierEndpoints.income(id, year),

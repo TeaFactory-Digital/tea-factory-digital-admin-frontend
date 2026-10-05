@@ -46,6 +46,18 @@ export function useSupplier(id: string | undefined) {
  * year with data. Working that out here would mean fetching the history to discover
  * which year to ask for, which is the round trip the `years` field exists to avoid.
  */
+/** One supplier's savings passbook, oldest first. Read only. */
+export function useSupplierSavingsLedger(id: string | undefined) {
+  return useQuery({
+    queryKey: qk.savings.ledger(id ?? ''),
+    queryFn: () => supplierRepository.savingsLedger(id!),
+    enabled: Boolean(id),
+    // `403 feature-disabled` when the factory does not run a savings scheme: not a
+    // failure to retry, and the screen hides the passbook.
+    retry: false,
+  });
+}
+
 export function useSupplierIncome(id: string | undefined, year: number | undefined) {
   return useQuery({
     queryKey: qk.suppliers.income(id ?? '', year),
