@@ -390,6 +390,11 @@ export const en = {
   'suppliers.resetPassword.failed': 'No password was created',
   'suppliers.resetPassword.issuedBody': 'Write this down now and give it to the supplier.',
   'suppliers.resetPassword.passwordLabel': 'The new password',
+  'suppliers.resetPassword.showPassword': 'Show password',
+  'suppliers.resetPassword.hidePassword': 'Hide password',
+  'suppliers.resetPassword.copy': 'Copy',
+  'suppliers.resetPassword.copied': 'Copied',
+  'suppliers.resetPassword.copyFailed': 'Could not copy. Select the password and copy it by hand.',
   'suppliers.resetPassword.onceWarning':
     'This is the only time it is shown. Close this and it is gone — you would have to create another one.',
   'suppliers.resetPassword.oneTime':

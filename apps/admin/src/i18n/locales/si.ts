@@ -402,6 +402,11 @@ export const si: Record<TranslationKey, string> = {
   'suppliers.resetPassword.failed': 'මුරපදයක් සාදන ලද්දේ නැත',
   'suppliers.resetPassword.issuedBody': 'මෙය දැන් ලියාගෙන සැපයුම්කරුට දෙන්න.',
   'suppliers.resetPassword.passwordLabel': 'නව මුරපදය',
+  'suppliers.resetPassword.showPassword': 'මුරපදය පෙන්වන්න',
+  'suppliers.resetPassword.hidePassword': 'මුරපදය සඟවන්න',
+  'suppliers.resetPassword.copy': 'පිටපත් කරන්න',
+  'suppliers.resetPassword.copied': 'පිටපත් කළා',
+  'suppliers.resetPassword.copyFailed': 'පිටපත් කළ නොහැකි විය. මුරපදය තෝරා අතින් පිටපත් කරන්න.',
   'suppliers.resetPassword.onceWarning':
     'මෙය පෙන්වන එකම අවස්ථාව මෙයයි. මෙය වසා දැමුවහොත් එය නැති වේ — ඔබට තවත් එකක් සෑදීමට සිදු වේ.',
   'suppliers.resetPassword.oneTime':

@@ -23,15 +23,16 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyRound } from 'lucide-react';
+import { Check, Copy, Eye, EyeOff, KeyRound } from 'lucide-react';
 import {
   IDENTITY_CHECK_MIN,
-  formatSupplierPassword,
   type SupplierCredentialReset,
 } from '@tfd/domain';
 import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { Field } from '@/components/ui/Field';
+import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDateTime } from '@/lib/format';
@@ -143,14 +144,10 @@ export function ResetPasswordDialog({
       >
         {issued ? (
           <div className="flex flex-col gap-md">
-            {/* Shown once. Large, grouped and selectable — it is about to be copied onto a
-                slip of paper by hand. */}
-            <p
-              className="numeric select-all rounded-md bg-surface-variant px-lg py-md text-center text-h3 tracking-widest text-text-primary"
-              aria-label={t('suppliers.resetPassword.passwordLabel')}
-            >
-              {formatSupplierPassword(issued.password)}
-            </p>
+            {/* Shown once, exactly as the supplier types it: no dashes or spaces added.
+                A password field, hidden until asked for, so it is not read off the screen
+                by whoever is standing behind the counter. */}
+            <IssuedPasswordField password={issued.password} />
 
             <p className="rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
               {t('suppliers.resetPassword.onceWarning')}
@@ -195,5 +192,75 @@ export function ResetPasswordDialog({
         )}
       </Dialog>
     </>
+  );
+}
+
+/** The issued password in a read-only password field, with show/hide and copy. */
+function IssuedPasswordField({ password }: { password: string }) {
+  const { t } = useTranslation();
+  const toast = useToast();
+  const [visible, setVisible] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(password);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error(t('suppliers.resetPassword.copyFailed'));
+    }
+  }
+
+  return (
+    <Field label={t('suppliers.resetPassword.passwordLabel')}>
+      {({ id, describedBy }) => (
+        <div className="flex items-center gap-xs">
+          <div className="relative flex-1">
+            <Input
+              id={id}
+              aria-describedby={describedBy}
+              type={visible ? 'text' : 'password'}
+              value={password}
+              readOnly
+              autoComplete="off"
+              spellCheck={false}
+              className="numeric pr-11 text-subtitle"
+              onFocus={(event) => event.currentTarget.select()}
+            />
+            <button
+              type="button"
+              onClick={() => setVisible((shown) => !shown)}
+              aria-label={
+                visible
+                  ? t('suppliers.resetPassword.hidePassword')
+                  : t('suppliers.resetPassword.showPassword')
+              }
+              aria-pressed={visible}
+              className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-md text-text-secondary hover:text-primary"
+            >
+              {visible ? (
+                <EyeOff className="size-icon-sm" aria-hidden />
+              ) : (
+                <Eye className="size-icon-sm" aria-hidden />
+              )}
+            </button>
+          </div>
+          <Button
+            variant="secondary"
+            iconLeft={
+              copied ? (
+                <Check className="size-icon-sm" aria-hidden />
+              ) : (
+                <Copy className="size-icon-sm" aria-hidden />
+              )
+            }
+            onClick={() => void copy()}
+          >
+            {copied ? t('suppliers.resetPassword.copied') : t('suppliers.resetPassword.copy')}
+          </Button>
+        </div>
+      )}
+    </Field>
   );
 }

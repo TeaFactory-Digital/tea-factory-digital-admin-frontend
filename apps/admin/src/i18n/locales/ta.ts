@@ -406,6 +406,11 @@ export const ta: Record<TranslationKey, string> = {
   'suppliers.resetPassword.failed': 'கடவுச்சொல் உருவாக்கப்படவில்லை',
   'suppliers.resetPassword.issuedBody': 'இதை இப்போதே எழுதிக்கொண்டு சப்ளையரிடம் கொடுங்கள்.',
   'suppliers.resetPassword.passwordLabel': 'புதிய கடவுச்சொல்',
+  'suppliers.resetPassword.showPassword': 'கடவுச்சொல்லைக் காட்டு',
+  'suppliers.resetPassword.hidePassword': 'கடவுச்சொல்லை மறை',
+  'suppliers.resetPassword.copy': 'நகலெடு',
+  'suppliers.resetPassword.copied': 'நகலெடுக்கப்பட்டது',
+  'suppliers.resetPassword.copyFailed': 'நகலெடுக்க முடியவில்லை. கடவுச்சொல்லைத் தேர்ந்தெடுத்து கையால் நகலெடுக்கவும்.',
   'suppliers.resetPassword.onceWarning':
     'இது காட்டப்படும் ஒரே தருணம் இதுதான். இதை மூடினால் போய்விடும் — வேறொன்றை உருவாக்க வேண்டியிருக்கும்.',
   'suppliers.resetPassword.oneTime':
