@@ -23,10 +23,19 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Building2, Download, PiggyBank, Smartphone, Sigma, TrendingUp } from 'lucide-react';
+import {
+  Building2,
+  Download,
+  HandCoins,
+  PiggyBank,
+  Smartphone,
+  Sigma,
+  TrendingUp,
+} from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { SavingsReport } from './SavingsReport';
+import { CreditReport } from './CreditReport';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -41,14 +50,16 @@ const RANGES = [3, 6, 12, 0] as const; // 0 = every month
 type Range = (typeof RANGES)[number];
 
 /**
- * The reports, one tab each: **App use** (are suppliers moving to the app) and **Savings**
+ * The reports, one tab each: **App use** (are suppliers moving to the app), **Credit &
+ * tea packets** (what was given out), and **Savings**
  * (how much the factory is holding for suppliers). The tab is kept in the address, so a
  * link to the savings report opens on it.
  */
 export function ReportsScreen() {
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
-  const tab = params.get('report') === 'savings' ? 'savings' : 'appUse';
+  const asked = params.get('report');
+  const tab = asked === 'savings' || asked === 'credit' ? asked : 'appUse';
 
   return (
     <>
@@ -67,6 +78,10 @@ export function ReportsScreen() {
             <Smartphone className="size-icon-sm" aria-hidden />
             {t('reports.appUse.title')}
           </TabsTrigger>
+          <TabsTrigger value="credit" className="gap-xs">
+            <HandCoins className="size-icon-sm" aria-hidden />
+            {t('reports.credit.title')}
+          </TabsTrigger>
           <TabsTrigger value="savings" className="gap-xs">
             <PiggyBank className="size-icon-sm" aria-hidden />
             {t('reports.savings.title')}
@@ -74,6 +89,9 @@ export function ReportsScreen() {
         </TabsList>
         <TabsContent value="appUse" className="mt-lg flex flex-col gap-lg">
           <AppUseReport />
+        </TabsContent>
+        <TabsContent value="credit" className="mt-lg flex flex-col gap-lg">
+          <CreditReport />
         </TabsContent>
         <TabsContent value="savings" className="mt-lg flex flex-col gap-lg">
           <SavingsReport />

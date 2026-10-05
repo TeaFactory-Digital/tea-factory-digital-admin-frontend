@@ -8,8 +8,16 @@
  * that once possible.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { SupplierQuery } from '@tfd/domain';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import type {
+  AdminCreditRequest,
+  AdminTeaPacketRequest,
+  RequestStatus,
+  SupplierQuery,
+} from '@tfd/domain';
+import { creditRepository } from '@/services/repositories/creditRepository';
+import { teaPacketRepository } from '@/services/repositories/teaPacketRepository';
+import { isApiError } from '@/services/api/errors';
 import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { qk } from '@/query/queryKeys';
@@ -163,4 +171,74 @@ export function useResetSupplierCredentials(supplierId: string) {
       void client.invalidateQueries({ queryKey: qk.audit.all });
     },
   });
+}
+
+const HISTORY_STATUSES: RequestStatus[] = ['pending', 'approved', 'rejected'];
+/** The largest page the queues serve. A supplier with more is shown the latest this many. */
+const HISTORY_PAGE = 100;
+
+export interface SupplierRequestHistory {
+  credit: AdminCreditRequest[];
+  teaPackets: AdminTeaPacketRequest[];
+  isPending: boolean;
+  error: unknown;
+  refetch: () => void;
+}
+
+/**
+ * Every advance, loan, manure and tea packet request one supplier has made, in any status.
+ *
+ * Read from the two queues, once per status (they answer one status at a time), with
+ * `supplierId`. **Also filtered here by supplier**, because the API ignored that filter and
+ * returned every supplier's rows (BACKEND-TODO #28): without this, a supplier's history
+ * showed other people's requests. Once the API filters, this changes nothing.
+ *
+ * Tea packets answer `403 feature-disabled` for a factory that does not sell them; that is
+ * an empty list, not an error.
+ */
+export function useSupplierRequestHistory(supplierId: string | undefined): SupplierRequestHistory {
+  const enabled = Boolean(supplierId);
+  const credit = useQueries({
+    queries: HISTORY_STATUSES.map((status) => {
+      const query = { status, supplierId, page: 0, pageSize: HISTORY_PAGE };
+      return {
+        queryKey: qk.credit.list(query),
+        queryFn: () => creditRepository.list(query),
+        enabled,
+      };
+    }),
+  });
+  const tea = useQueries({
+    queries: HISTORY_STATUSES.map((status) => {
+      const query = { status, supplierId, page: 0, pageSize: HISTORY_PAGE };
+      return {
+        queryKey: qk.teaPackets.list(query),
+        queryFn: () => teaPacketRepository.list(query),
+        enabled,
+        retry: false,
+      };
+    }),
+  });
+
+  const teaDisabled = tea.some(
+    (one) => isApiError(one.error) && one.error.code === 'feature-disabled',
+  );
+  const mine = <T extends { supplierId: string; createdAt: string }>(rows: T[]) =>
+    rows
+      .filter((row) => row.supplierId === supplierId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  return {
+    credit: mine(credit.flatMap((one) => one.data?.items ?? [])),
+    teaPackets: teaDisabled ? [] : mine(tea.flatMap((one) => one.data?.items ?? [])),
+    isPending:
+      credit.some((one) => one.isPending) || (!teaDisabled && tea.some((one) => one.isPending)),
+    error:
+      credit.find((one) => one.error)?.error ??
+      (teaDisabled ? undefined : tea.find((one) => one.error)?.error),
+    refetch: () => {
+      credit.forEach((one) => void one.refetch());
+      tea.forEach((one) => void one.refetch());
+    },
+  };
 }

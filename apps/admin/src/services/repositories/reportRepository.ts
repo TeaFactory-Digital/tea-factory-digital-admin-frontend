@@ -33,6 +33,38 @@ export const reportRepository = {
   },
 
   /**
+   * Credit and tea packets given, month by month, oldest first; `null` while the API does
+   * not serve the report yet (`404`).
+   */
+  creditGiven: async (): Promise<CreditMonth[] | null> => {
+    let served: { rows?: Array<Record<string, unknown>> };
+    try {
+      served = (await reportEndpoints.run('creditGiven' as ReportId, {})) as unknown as typeof served;
+    } catch (error) {
+      if (error instanceof ApiError && (error.code === 'not-found' || error.status === 404)) {
+        return null;
+      }
+      throw error;
+    }
+    const n = (value: unknown) => Number(value ?? 0) || 0;
+    return (served.rows ?? [])
+      .map((row) => ({
+        monthKey: String(row.monthKey ?? ''),
+        advanceAmount: n(row.advanceAmount),
+        advanceCount: n(row.advanceCount),
+        loanAmount: n(row.loanAmount),
+        loanCount: n(row.loanCount),
+        manureAmount: n(row.manureAmount),
+        manureCount: n(row.manureCount),
+        teaPacketAmount: n(row.teaPacketAmount),
+        teaPackets: n(row.teaPackets),
+        rejected: n(row.rejected),
+      }))
+      .filter((row) => /^\d{4}-\d{2}$/.test(row.monthKey))
+      .sort((a, b) => a.monthKey.localeCompare(b.monthKey));
+  },
+
+  /**
    * Savings held, month by month, oldest first; `null` while the API does not serve the
    * report yet (it answers `404`), so the screen can say so instead of showing an error.
    * Read only: the figures are the factory system's.
@@ -103,6 +135,24 @@ export interface SavingsMonth {
   balanceTotal: number;
   /** Suppliers with a balance above zero at the end of the month. */
   suppliersSaving: number;
+}
+
+/**
+ * Credit and tea packets given, month by month (BACKEND-TODO #29). Amounts and counts are
+ * **approved** requests decided in that month; `rejected` counts the refusals.
+ */
+export interface CreditMonth {
+  monthKey: string;
+  advanceAmount: number;
+  advanceCount: number;
+  loanAmount: number;
+  loanCount: number;
+  manureAmount: number;
+  manureCount: number;
+  teaPacketAmount: number;
+  /** Packets, not requests. */
+  teaPackets: number;
+  rejected: number;
 }
 
 export interface AppUseMonth {

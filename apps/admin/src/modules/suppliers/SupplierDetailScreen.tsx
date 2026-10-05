@@ -33,6 +33,7 @@ import {
   UserRound,
   Wallet,
   type LucideIcon,
+  ClipboardList,
 } from 'lucide-react';
 import type { SupplierDetail, SupplierStatus } from '@tfd/domain';
 import { can } from '@tfd/domain';
@@ -56,13 +57,9 @@ import { ResetPasswordDialog } from './ResetPasswordDialog';
 import { RevealBankDetailsDialog } from './RevealBankDetailsDialog';
 import { SupplierIncomeHistory } from './SupplierIncomeHistory';
 import { SupplierSavingsLedger } from './SupplierSavingsLedger';
+import { SupplierRequestHistory } from './SupplierRequestHistory';
 import { SupplierNotificationsPanel } from './SupplierNotificationsPanel';
-import {
-  useReactivateSupplier,
-  useSupplier,
-  useSupplierAudit,
-  useSuspendSupplier,
-} from './hooks';
+import { useReactivateSupplier, useSupplier, useSupplierAudit, useSuspendSupplier } from './hooks';
 
 const STATUS_TONES = { active: 'success', suspended: 'warning', closed: 'neutral' } as const;
 
@@ -72,12 +69,13 @@ const STATUS_TONES = { active: 'success', suspended: 'warning', closed: 'neutral
  * `overview` is first and is the default because it answers *"is this the right
  * person"* — the question every visit to this screen starts with.
  */
-const SECTIONS = ['overview', 'money', 'income', 'notifications', 'activity'] as const;
+const SECTIONS = ['overview', 'money', 'requests', 'income', 'notifications', 'activity'] as const;
 type Section = (typeof SECTIONS)[number];
 
 const SECTION_ICONS: Record<Section, LucideIcon> = {
   overview: UserRound,
   money: Wallet,
+  requests: ClipboardList,
   income: ChartColumn,
   notifications: Bell,
   activity: History,
@@ -90,6 +88,13 @@ export function SupplierDetailScreen() {
   const { data: supplier, isPending, error, refetch } = useSupplier(id);
   const { data: audit, isPending: auditPending } = useSupplierAudit(id);
   const canEdit = useCan('suppliers', 'write');
+  /**
+   * The Requests tab reads the credit and tea packet queues, which need `creditRequests: R`.
+   * A factory administrator reads suppliers but not those queues, and every list answered
+   * `403`: the tab is not offered rather than offered and broken.
+   */
+  const canReadRequests = useCan('creditRequests', 'read');
+  const sections = SECTIONS.filter((one) => one !== 'requests' || canReadRequests);
 
   /**
    * In the URL, so a section is a link.
@@ -100,7 +105,7 @@ export function SupplierDetailScreen() {
    * flicking between sections is reading, not navigating, and Back should return to
    * the supplier list rather than walk back through five tabs.
    */
-  const section = (SECTIONS as readonly string[]).includes(params.get('tab') ?? '')
+  const section = (sections as readonly string[]).includes(params.get('tab') ?? '')
     ? (params.get('tab') as Section)
     : 'overview';
 
@@ -119,7 +124,9 @@ export function SupplierDetailScreen() {
       <PageHeader
         title={supplier.name}
         description={
-          supplier.division ? `${supplier.supplierCode} · ${supplier.division}` : supplier.supplierCode
+          supplier.division
+            ? `${supplier.supplierCode} · ${supplier.division}`
+            : supplier.supplierCode
         }
         breadcrumb={
           <Link to="/suppliers" className="hover:text-text-primary">
@@ -137,7 +144,11 @@ export function SupplierDetailScreen() {
                   {/* §21.16, answered: a random one-time password, handed over at the
                       counter, with the identity check recorded. */}
                   <ResetPasswordDialog supplierId={supplier.id} supplierName={supplier.name} />
-                  <StatusAction supplierId={supplier.id} name={supplier.name} status={supplier.status} />
+                  <StatusAction
+                    supplierId={supplier.id}
+                    name={supplier.name}
+                    status={supplier.status}
+                  />
                 </>
               ) : (
                 /**
@@ -173,7 +184,7 @@ export function SupplierDetailScreen() {
 
       <Tabs value={section} onValueChange={setSection}>
         <TabsList aria-label={t('suppliers.detail.sectionsLabel')}>
-          {SECTIONS.map((one) => {
+          {sections.map((one) => {
             const Icon = SECTION_ICONS[one];
             return (
               <TabsTrigger key={one} value={one} className="gap-xs">
@@ -353,6 +364,12 @@ export function SupplierDetailScreen() {
 
         {/* Its own section: it is the longest thing on the record and carries its own
             graph/list/chart switch, which was competing with the cards above it. */}
+        {canReadRequests ? (
+          <TabsContent value="requests">
+            <SupplierRequestHistory supplierId={supplier.id} />
+          </TabsContent>
+        ) : null}
+
         <TabsContent value="income">
           <SupplierIncomeHistory supplierId={supplier.id} />
         </TabsContent>

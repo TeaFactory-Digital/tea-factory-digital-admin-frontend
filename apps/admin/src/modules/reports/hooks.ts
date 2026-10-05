@@ -42,6 +42,15 @@ export function useReportRun(id: ReportId | undefined, params: ReportRunParams, 
   });
 }
 
+export function useCreditGiven() {
+  return useQuery({
+    queryKey: [...qk.reports.list, 'creditGiven'],
+    queryFn: () => reportRepository.creditGiven(),
+    staleTime: 60_000,
+    retry: false,
+  });
+}
+
 export function useSavingsHeld() {
   return useQuery({
     queryKey: [...qk.reports.list, 'savingsHeld'],
