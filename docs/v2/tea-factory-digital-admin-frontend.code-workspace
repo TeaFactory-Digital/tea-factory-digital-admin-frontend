@@ -8,6 +8,9 @@
         },
         {
             "path": "../../../tea-factory-digital-mobile-frontend"
+        },
+        {
+            "path": "../../../tea-factory-digital-website"
         }
     ]
 }
