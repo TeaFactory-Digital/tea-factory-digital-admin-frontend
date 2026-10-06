@@ -34,7 +34,7 @@ import { useDebounced } from '@/lib/useDebounced';
 import { formatAge, formatAmount } from '@/lib/format';
 import { useCreditRequests } from './hooks';
 
-const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error' } as const;
+const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'neutral' } as const;
 
 /**
  * The §14.4 target, per facility.
@@ -239,6 +239,7 @@ export function CreditScreen() {
             <option value="pending">{t('credit.filter.pending')}</option>
             <option value="approved">{t('credit.filter.approved')}</option>
             <option value="rejected">{t('credit.filter.rejected')}</option>
+            <option value="cancelled">{t('credit.filter.cancelled')}</option>
           </Select>
 
           <Select

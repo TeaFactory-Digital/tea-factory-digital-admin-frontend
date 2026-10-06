@@ -29,6 +29,7 @@ import type {
   RequestChannel,
   StaticPageSlug,
 } from '../constants';
+import type { NoteSuggestionsBlock } from '../config';
 import type { ContentTranslation, ContentTranslations } from '../content';
 import type { BannerTranslations } from '../banners';
 import type { NotificationAudience } from '../notifications';
@@ -234,6 +235,16 @@ export interface AdminSupplier extends Supplier {
   deviceCount: number;
   /** Most recent sign-in from the app, or `null` if never. */
   lastAppSignInAt: string | null;
+  /**
+   * The supplier asked, in the app, for their **app account** to be deleted. Their leaf,
+   * bills, savings and credit are the factory's records and stay. `hasApp` is already
+   * `false` for them; these say why, so "left the app" does not read as "never installed".
+   */
+  appDeletionRequestedAt?: string | null;
+  /** What they gave as the reason, when they gave one. */
+  appDeletionReason?: string | null;
+  /** When the sign-in itself was removed, within thirty days of the request. */
+  appAccountErasedAt?: string | null;
 }
 
 /** The grid row. Deliberately smaller than the detail — thousands are listed. */
@@ -288,6 +299,8 @@ export interface SupplierListItem {
   hasBankDetails: boolean;
   /** v2's app-account column. See `AdminSupplier`. */
   hasApp: boolean;
+  /** Set when they asked to leave the app. Detail only on the API today (BACKEND-TODO #39). */
+  appDeletionRequestedAt?: string | null;
   /*
    * **Not sent by `GET /admin/suppliers` yet** (docs/v2/BACKEND-TODO.md). Optional so the
    * screen can tell "not sent" from a real value and hide the column, rather than
@@ -2108,7 +2121,7 @@ export interface RuntimeConfig {
   /** Tenant id resolved from the subdomain, echoed back for verification. */
   tenantId: string;
   /** The office's own chip sentences (BACKEND-TODO #38); absent until a factory saves some. */
-  noteSuggestions?: import('../config').NoteSuggestionsBlock;
+  noteSuggestions?: NoteSuggestionsBlock;
   factory: {
     name: string;
     telephone: string;

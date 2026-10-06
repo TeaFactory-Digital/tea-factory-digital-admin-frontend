@@ -27,7 +27,7 @@ type Kind = CreditFacility | 'teaPackets';
 type Filter = 'all' | Kind;
 
 const KINDS: Kind[] = ['advance', 'loan', 'manure', 'teaPackets'];
-const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error' } as const;
+const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'neutral' } as const;
 const KIND_ICONS = { advance: Banknote, loan: HandCoins, manure: Leaf, teaPackets: Coffee };
 
 interface Row {

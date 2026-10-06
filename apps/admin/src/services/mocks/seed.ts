@@ -1473,7 +1473,7 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
     branding: {},
     push: {
       topicPrefix: 'galaboda',
-      categories: ['billPublished', 'requestDecided', 'newsArticle', 'inquiryReplied'],
+      categories: ['billPublished', 'requestDecided', 'newsArticle', 'inquiryReplied', 'leafWeighed'],
       defaultCategories: ['billPublished', 'requestDecided', 'inquiryReplied'],
     },
     collectionPoints: COLLECTION_POINTS.map((p) => ({ id: p.id, name: p.name })),

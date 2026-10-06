@@ -47,7 +47,7 @@ import { formatAge, formatAmount } from '@/lib/format';
 import { TeaPacketDecisionDialog } from './TeaPacketDecisionDialog';
 import { useTeaPacketRequests } from './hooks';
 
-const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error' } as const;
+const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'neutral' } as const;
 
 export function TeaPacketsScreen() {
   const { t } = useTranslation();
@@ -272,6 +272,7 @@ export function TeaPacketsScreen() {
             <option value="pending">{t('teaPackets.filter.pending')}</option>
             <option value="approved">{t('teaPackets.filter.approved')}</option>
             <option value="rejected">{t('teaPackets.filter.rejected')}</option>
+            <option value="cancelled">{t('teaPackets.filter.cancelled')}</option>
           </Select>
 
           {/**

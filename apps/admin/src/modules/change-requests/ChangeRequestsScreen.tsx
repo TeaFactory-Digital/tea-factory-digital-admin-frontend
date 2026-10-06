@@ -28,7 +28,7 @@ import { useDebounced } from '@/lib/useDebounced';
 import { formatAge } from '@/lib/format';
 import { useChangeRequests } from './hooks';
 
-const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error' } as const;
+const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'neutral' } as const;
 
 /** §14.4's target for a change request is three working days. */
 const SLA_HOURS = 72;

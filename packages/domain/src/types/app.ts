@@ -30,8 +30,14 @@ export interface FactoryInfo {
 /** How a supplier is paid by the factory. */
 export type PaymentMethod = 'cheque' | 'bankTransfer' | 'cash';
 
-/** Lifecycle of any request that needs factory sign-off. */
-export type RequestStatus = 'pending' | 'approved' | 'rejected';
+/**
+ * Lifecycle of any request that needs factory sign-off.
+ *
+ * `cancelled` is the supplier withdrawing a request while it still waited. It is not a
+ * decision: nobody in the office approved or refused it, so it is its own word rather than
+ * a kind of `rejected` (BACKEND-TODO #33).
+ */
+export type RequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
 
 /** A supplier's bank payout details. */
 export interface BankDetails {
@@ -341,7 +347,8 @@ export type NotificationCategory =
   | 'billPublished'
   | 'requestDecided'
   | 'newsArticle'
-  | 'inquiryReplied';
+  | 'inquiryReplied'
+  | 'leafWeighed';
 
 /**
  * Where a promo banner's button takes the supplier. `screen` stays in the app;

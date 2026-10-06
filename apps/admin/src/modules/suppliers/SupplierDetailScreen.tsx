@@ -395,6 +395,37 @@ export function SupplierDetailScreen() {
 }
 
 /**
+ * The app tile. A supplier who asked to delete their app account is told apart from one who
+ * never installed it: the office is asked "why is he not getting the messages any more?"
+ */
+function appTile(
+  supplier: SupplierDetail,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): { value: string; hint?: string; tone: 'success' | 'warning' | 'neutral' } {
+  if (supplier.appDeletionRequestedAt) {
+    const erased = supplier.appAccountErasedAt;
+    const when = t(erased ? 'suppliers.app.erasedOn' : 'suppliers.app.leftOn', {
+      when: formatDate(erased ?? supplier.appDeletionRequestedAt),
+    });
+    return {
+      value: t('suppliers.app.left'),
+      hint: supplier.appDeletionReason
+        ? t('suppliers.app.leftReason', { when, reason: supplier.appDeletionReason })
+        : when,
+      tone: 'warning',
+    };
+  }
+  return {
+    value: supplier.hasApp ? t('suppliers.app.installed') : t('suppliers.app.none'),
+    hint:
+      supplier.hasApp && supplier.lastAppSignInAt
+        ? t('suppliers.app.lastSignIn', { when: formatDate(supplier.lastAppSignInAt) })
+        : undefined,
+    tone: supplier.hasApp ? 'success' : 'neutral',
+  };
+}
+
+/**
  * The four things a clerk checks first, before opening any tab: is the supplier on the
  * app, can we pay them, what do we hold back, and where do they deliver. Each is a tile
  * with its state in colour, so a missing bank account is seen rather than read.
@@ -414,12 +445,7 @@ function SupplierSummary({ supplier }: { supplier: SupplierDetail }) {
       key: 'app',
       icon: Smartphone,
       label: t('suppliers.column.app'),
-      value: supplier.hasApp ? t('suppliers.app.installed') : t('suppliers.app.none'),
-      hint:
-        supplier.hasApp && supplier.lastAppSignInAt
-          ? t('suppliers.app.lastSignIn', { when: formatDate(supplier.lastAppSignInAt) })
-          : undefined,
-      tone: supplier.hasApp ? 'success' : 'neutral',
+      ...appTile(supplier, t),
     },
     {
       key: 'bank',

@@ -27,7 +27,7 @@ import { CreditDecisionActions } from './CreditDecisionDialog';
 import { EligibilityPanel } from './EligibilityPanel';
 import { useCreditRequest, useCreditRequestAudit } from './hooks';
 
-const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error' } as const;
+const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'neutral' } as const;
 
 export function CreditRequestDetailScreen() {
   const { t } = useTranslation();

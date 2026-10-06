@@ -50,6 +50,56 @@ const ACTION_KEYS: Record<string, string> = {
   'role.update': 'audit.action.roleUpdate',
 
   /**
+   * The names the API's action registry writes. Some of the older entries above use
+   * names from the contract that the server never adopted (`user.create` where it writes
+   * `consoleUser.create`); both are kept, so old seeded rows and real rows read the same.
+   */
+  'supplier.bankReveal': 'audit.action.supplierReveal',
+  'supplier.profileUpdate': 'audit.action.supplier.profile.update',
+  'staticPage.update': 'audit.action.staticPageSave',
+  'notificationRule.update': 'audit.action.notificationTrigger',
+  'consoleUser.create': 'audit.action.userCreate',
+  'consoleUser.update': 'audit.action.userUpdate',
+  'consoleUser.suspend': 'audit.action.userSuspend',
+  'consoleUser.reactivate': 'audit.action.userReactivate',
+  'roleMatrix.update': 'audit.action.roleUpdate',
+  'auth.signIn': 'audit.action.authSignIn',
+  'auth.signOut': 'audit.action.authSignOut',
+  'auth.refreshReuse': 'audit.action.authRefreshReuse',
+  'auth.passwordChange': 'audit.action.authPasswordChange',
+  'supplier.create': 'audit.action.supplierCreate',
+  'supplier.close': 'audit.action.supplierClose',
+  'supplier.credentialsReset': 'audit.action.supplierCredentialsReset',
+  'supplier.deletionRequested': 'audit.action.supplierDeletionRequested',
+  'creditRequest.create': 'audit.action.creditCreate',
+  'creditRequest.cancel': 'audit.action.creditCancel',
+  'teaPacketRequest.create': 'audit.action.teaPacketCreate',
+  'teaPacketRequest.cancel': 'audit.action.teaPacketCancel',
+  'teaPacketRequest.approve': 'audit.action.teaPacketApprove',
+  'teaPacketRequest.reject': 'audit.action.teaPacketReject',
+  'inquiry.assign': 'audit.action.inquiryAssign',
+  'inquiry.note': 'audit.action.inquiryNote',
+  'savingsWithdrawal.create': 'audit.action.savingsWithdrawalCreate',
+  'savingsWithdrawal.approve': 'audit.action.savingsWithdrawalApprove',
+  'savingsWithdrawal.reject': 'audit.action.savingsWithdrawalReject',
+  'news.schedule': 'audit.action.newsSchedule',
+  'news.scheduleCancel': 'audit.action.newsScheduleCancel',
+  'news.delete': 'audit.action.newsDelete',
+  'attachment.sign': 'audit.action.attachmentSign',
+  'attachment.confirm': 'audit.action.attachmentConfirm',
+  'attachment.sweep': 'audit.action.attachmentSweep',
+  'banner.create': 'audit.action.bannerCreate',
+  'banner.update': 'audit.action.bannerUpdate',
+  'banner.publish': 'audit.action.bannerPublish',
+  'banner.unpublish': 'audit.action.bannerUnpublish',
+  'banner.delete': 'audit.action.bannerDelete',
+  'device.register': 'audit.action.deviceRegister',
+  'device.remove': 'audit.action.deviceRemove',
+  'consoleUser.delete': 'audit.action.userDelete',
+  'platform.crossTenantAccess': 'audit.action.platformCrossTenant',
+  'factorySync.run': 'audit.action.factorySyncRun',
+
+  /**
    * v2 — **what the supplier did, in the app.**
    *
    * These are the only verbs in this map whose actor is not staff, and the reason they

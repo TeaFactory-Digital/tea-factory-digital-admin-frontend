@@ -44,6 +44,8 @@ export const NOTIFICATION_EVENTS: Record<NotificationCategory, string> = {
   requestDecided: 'changeRequest.decide',
   newsArticle: 'news.publish',
   inquiryReplied: 'inquiry.reply',
+  /** The day's leaf weight, sent when the day's deliveries arrive from the factory system. */
+  leafWeighed: 'delivery.sync',
 };
 
 export const NOTIFICATION_CATEGORIES = Object.keys(

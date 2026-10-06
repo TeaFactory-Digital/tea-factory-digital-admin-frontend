@@ -32,7 +32,7 @@ import { ChangeComparison } from './ChangeComparison';
 import { DecisionActions } from './DecisionDialog';
 import { useChangeRequest, useChangeRequestAudit } from './hooks';
 
-const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error' } as const;
+const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'neutral' } as const;
 /** Past this, the waiting time is shown as a problem rather than a fact. */
 const LATE_HOURS = 72;
 

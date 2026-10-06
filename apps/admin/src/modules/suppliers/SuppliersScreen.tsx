@@ -215,6 +215,9 @@ export function SuppliersScreen() {
         enableSorting: false,
         cell: (info) => {
           const row = info.row.original;
+          if (row.appDeletionRequestedAt) {
+            return <Badge tone="warning">{t('suppliers.app.left')}</Badge>;
+          }
           if (!row.hasApp) {
             return <Badge tone="neutral">{t('suppliers.app.none')}</Badge>;
           }

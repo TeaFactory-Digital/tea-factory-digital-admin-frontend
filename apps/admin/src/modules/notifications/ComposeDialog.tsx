@@ -43,6 +43,9 @@ import { formatCount } from '@/lib/format';
 import { useNotificationReach, useSendNotification } from './hooks';
 import { InfoTip } from '@/components/ui/Tooltip';
 
+/** Categories only the system sends; the office cannot compose one. */
+const AUTOMATIC_ONLY = new Set<NotificationCategory>(['leafWeighed']);
+
 export function ComposeDialog({
   open,
   onClose,
@@ -69,12 +72,15 @@ export function ComposeDialog({
   const pushConfigured = Boolean(config.push);
   const available = useMemo(() => {
     const offered = config.push?.categories ?? [];
-    if (offered.length > 0) {
-      return NOTIFICATION_CATEGORIES.filter((category) => offered.includes(category));
-    }
-    return (triggers ?? [])
-      .filter((trigger) => trigger.available)
-      .map((trigger) => trigger.category);
+    const kinds =
+      offered.length > 0
+        ? NOTIFICATION_CATEGORIES.filter((category) => offered.includes(category))
+        : (triggers ?? [])
+            .filter((trigger) => trigger.available)
+            .map((trigger) => trigger.category);
+    // The day's leaf weight is one supplier's own number, sent by the factory sync. A
+    // message the office writes by hand is never that.
+    return kinds.filter((category) => !AUTOMATIC_ONLY.has(category));
   }, [config.push, triggers]);
 
   const [category, setCategory] = useState<NotificationCategory | ''>('');
