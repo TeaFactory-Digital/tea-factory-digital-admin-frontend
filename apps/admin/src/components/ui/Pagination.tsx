@@ -78,7 +78,7 @@ export function Pagination({
      * ("Showing 51–84 of 84"), and the controls must not shuffle sideways when it
      * does — a clerk paging through a list clicks the same pixel every time.
      */
-    <div className="flex shrink-0 items-center justify-between gap-md border-t border-divider px-md py-sm">
+    <div className="flex shrink-0 items-center justify-between gap-md border-t border-divider px-lg py-sm">
       <div className="min-w-0">{children}</div>
 
       <nav aria-label={t('common.pagination')} className="flex shrink-0 items-center gap-xs">
@@ -92,7 +92,7 @@ export function Pagination({
          */}
         <span
           aria-current="page"
-          className="inline-flex size-9 items-center justify-center rounded-full bg-primary text-label text-primary-contrast numeric"
+          className="inline-flex size-9 items-center justify-center rounded-md bg-primary-muted text-label font-semibold text-text-primary ring-1 ring-primary/30 ring-inset numeric"
         >
           <span aria-hidden>{page + 1}</span>
           {/* A filled circle says nothing to a screen reader, and a bare "1" says

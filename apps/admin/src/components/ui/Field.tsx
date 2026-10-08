@@ -23,7 +23,7 @@ import { cn } from '@/lib/cn';
 import { InfoTip } from './Tooltip';
 
 const CONTROL =
-  'rounded-md border bg-surface px-md text-body-small text-text-primary placeholder:text-text-secondary disabled:bg-surface-variant disabled:text-disabled-contrast';
+  'rounded-md border bg-surface px-md text-body-small text-text-primary shadow-card transition-colors placeholder:text-text-secondary disabled:bg-surface-variant disabled:text-disabled-contrast';
 
 const CONTROL_OK = 'border-border';
 const CONTROL_BAD = 'border-error';

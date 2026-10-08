@@ -18,12 +18,14 @@ export function PageHeader({
   breadcrumb?: ReactNode;
 }) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-md">
+    <header className="flex animate-rise flex-wrap items-end justify-between gap-md">
       <div className="min-w-0">
-        {breadcrumb ? <div className="mb-xxs text-caption text-text-secondary">{breadcrumb}</div> : null}
-        <h1 className="text-h3 text-text-primary">{title}</h1>
+        {breadcrumb ? (
+          <div className="mb-xs text-label text-text-secondary">{breadcrumb}</div>
+        ) : null}
+        <h1 className="text-h2 font-semibold tracking-tight text-text-primary">{title}</h1>
         {description ? (
-          <p className="mt-xxs text-body-small text-text-secondary">{description}</p>
+          <p className="mt-xs text-body-small text-text-secondary">{description}</p>
         ) : null}
       </div>
       {actions ? <div className="flex shrink-0 flex-wrap items-center gap-sm">{actions}</div> : null}

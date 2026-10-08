@@ -172,18 +172,13 @@ export function DataTable<Row>({
                             ? 'descending'
                             : undefined
                       }
-                      className="px-md py-sm text-left text-data-header whitespace-nowrap text-text-secondary uppercase"
+                      className="px-lg py-sm text-left text-caption font-medium whitespace-nowrap text-text-secondary"
                     >
                       {canSort ? (
                         <button
                           type="button"
                           onClick={header.column.getToggleSortingHandler()}
-                          // `uppercase` is repeated from the `th` on purpose: the
-                          // UA stylesheet sets `text-transform: none` on form
-                          // controls, so a button does NOT inherit it. Without
-                          // this, sortable headers render mixed-case next to
-                          // uppercase non-sortable ones.
-                          className="inline-flex items-center gap-xxs rounded-sm uppercase hover:text-text-primary"
+                          className="inline-flex items-center gap-xxs rounded-sm transition-colors hover:text-text-primary"
                         >
                           {flexRender(header.column.columnDef.header, header.getContext())}
                           {direction === 'asc' ? (
@@ -222,13 +217,13 @@ export function DataTable<Row>({
                     : undefined
                 }
                 className={cn(
-                  'border-b border-divider',
+                  'border-b border-divider transition-colors duration-100',
                   index % 2 === 1 && 'bg-table-row-alt',
                   onRowActivate && 'cursor-pointer hover:bg-table-row-hover focus:bg-table-row-hover',
                 )}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-md py-sm align-middle">
+                  <td key={cell.id} className="px-lg py-md align-middle">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}

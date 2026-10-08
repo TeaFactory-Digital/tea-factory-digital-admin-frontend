@@ -21,7 +21,7 @@ async function signIn(page: Page, email: string) {
   await page.getByLabel(/^password$/i).fill(PASSWORD);
   await page.getByRole('button', { name: /^sign in$/i }).click();
 
-  await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: /dashboard|good (morning|afternoon|evening)/i })).toBeVisible({ timeout: 15_000 });
 }
 
 test('the Queues section links to all three of its modules', async ({ page }) => {
@@ -122,7 +122,7 @@ test('a factory that does not lend against income sees only the facilities it se
   await page.getByLabel(/^email$/i).fill(CLERK);
   await page.getByLabel(/^password$/i).fill(PASSWORD);
   await page.getByRole('button', { name: /^sign in$/i }).click();
-  await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: /dashboard|good (morning|afternoon|evening)/i })).toBeVisible({ timeout: 15_000 });
 
   // The override has to travel: the tenant is resolved from the URL on **every**
   // document load, so a bare `/credit` would re-resolve to the default factory and

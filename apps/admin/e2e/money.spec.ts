@@ -28,7 +28,7 @@ async function signIn(page: Page) {
   await page.getByLabel(/^email$/i).fill(CLERK);
   await page.getByLabel(/^password$/i).fill(PASSWORD);
   await page.getByRole('button', { name: /^sign in$/i }).click();
-  await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: /dashboard|good (morning|afternoon|evening)/i })).toBeVisible({ timeout: 15_000 });
 }
 
 test('reads a month’s bills and opens one supplier’s slip', async ({ page }) => {

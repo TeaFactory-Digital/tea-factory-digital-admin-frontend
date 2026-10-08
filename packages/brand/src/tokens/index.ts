@@ -105,15 +105,19 @@ export type TypographyVariants = Record<TypographyVariantName, TypographyVariant
  * Web default stack. The app resolves `System`; a browser needs the list
  * spelled out, and Sinhala/Tamil need a script fallback or the office sees
  * tofu boxes in the content editor.
+ *
+ * Inter first (loaded in `index.html`), for its tabular figures and its
+ * legibility at the 12–13 px a dense grid is set in. Every later entry is the
+ * fallback when the font cannot be fetched, so an offline office still renders.
  */
+const WEB_STACK =
+  "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Sinhala', 'Noto Sans Tamil', sans-serif";
+
 export const defaultFontFamily: FontFamilyTokens = {
-  regular:
-    "system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Sinhala', 'Noto Sans Tamil', sans-serif",
-  medium:
-    "system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Sinhala', 'Noto Sans Tamil', sans-serif",
-  semibold:
-    "system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Sinhala', 'Noto Sans Tamil', sans-serif",
-  bold: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Sinhala', 'Noto Sans Tamil', sans-serif",
+  regular: WEB_STACK,
+  medium: WEB_STACK,
+  semibold: WEB_STACK,
+  bold: WEB_STACK,
 };
 
 /**

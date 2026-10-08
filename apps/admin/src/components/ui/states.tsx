@@ -58,7 +58,7 @@ export function Skeleton({ className }: { className?: string }) {
   return (
     <span
       aria-hidden
-      className={cn('block animate-pulse rounded-sm bg-surface-variant', className)}
+      className={cn('block animate-pulse rounded-md bg-surface-variant', className)}
     />
   );
 }
@@ -91,7 +91,11 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center gap-sm px-lg py-xxxl text-center">
-      {icon ? <div className="text-text-secondary">{icon}</div> : null}
+      {icon ? (
+        <div className="flex size-12 items-center justify-center rounded-lg border border-border bg-surface-variant text-text-secondary shadow-card">
+          {icon}
+        </div>
+      ) : null}
       <p className="text-subtitle text-text-primary">{title}</p>
       {body ? <p className="max-w-prose text-body-small text-text-secondary">{body}</p> : null}
       {action}
@@ -155,7 +159,7 @@ export function Notice({
   return (
     <div
       role="status"
-      className={cn('flex items-start gap-sm px-lg py-sm text-body-small', tones[tone])}
+      className={cn('flex items-start gap-sm rounded-md px-lg py-sm text-body-small', tones[tone])}
     >
       {children}
     </div>

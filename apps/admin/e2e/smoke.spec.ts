@@ -21,7 +21,7 @@ test('signs in and reaches the dashboard', async ({ page }) => {
   await page.getByLabel(/^password$/i).fill(PASSWORD);
   await page.getByRole('button', { name: /^sign in$/i }).click();
 
-  await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: /dashboard|good (morning|afternoon|evening)/i })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(/galaboda/i).first()).toBeVisible();
 });
 
@@ -30,13 +30,13 @@ test('survives a page reload', async ({ page }) => {
   await page.getByLabel(/^email$/i).fill(CLERK);
   await page.getByLabel(/^password$/i).fill(PASSWORD);
   await page.getByRole('button', { name: /^sign in$/i }).click();
-  await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: /dashboard|good (morning|afternoon|evening)/i })).toBeVisible({ timeout: 15_000 });
 
   // The access token is held in memory by design, so a fresh document has none
   // and the session must be recovered from the refresh cookie. If this fails,
   // every browser refresh — and every deep link — bounces the clerk to sign-in.
   await page.reload();
-  await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: /dashboard|good (morning|afternoon|evening)/i })).toBeVisible({ timeout: 15_000 });
 
   // And a deep link opened cold, which is the same path.
   await page.goto('/suppliers');
@@ -80,7 +80,7 @@ test('a reduced-feature tenant loses the queues it does not use', async ({ page 
   await page.getByLabel(/^password$/i).fill(PASSWORD);
   await page.getByRole('button', { name: /^sign in$/i }).click();
 
-  await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: /dashboard|good (morning|afternoon|evening)/i })).toBeVisible({ timeout: 15_000 });
 
   const nav = page.getByRole('navigation').first();
   await expect(nav.getByText(/change requests/i)).toBeVisible();

@@ -1,118 +1,72 @@
 /**
- * The top bar: who is signed in, which factory, and the way out.
+ * The top bar: where you are, search, and whether the figures are current.
  *
- * The role is shown next to the name on purpose. A clerk who has been handed a
- * manager's laptop needs to know which identity they are acting as before they
- * approve something, and "why is the approve button missing" is the second most
- * common console support question after "which month is open".
+ * It sits on the canvas with no rule under it, so the page title below reads as the
+ * start of the page rather than as the second bar in a stack. The left side is a
+ * breadcrumb, *factory · module*, because a platform administrator moving between
+ * tenants needs the factory name in view on every screen.
+ *
+ * Who is signed in lives at the foot of the sidebar on a desk-sized window. Below `lg`
+ * the sidebar is hidden, so the same menu appears here instead.
  */
 
-import { useState } from 'react';
-import { ChevronDown, LogOut, UserRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
-import { useAuthStore, useCurrentUser } from '@/auth/authStore';
+import { useLocation } from 'react-router-dom';
 import { useFactory } from '@/config/RuntimeConfigProvider';
 import { Logo } from '@/brand/Logo';
 import { SyncStatusChip } from './SyncStatusChip';
 import { CommandMenu } from './CommandMenu';
-import { Button } from '@/components/ui/Button';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/DropdownMenu';
+import { NAVIGATION } from './navigation';
+import { UserMenu } from './UserMenu';
+
+/**
+ * The nav row that owns a path, by the longest matching prefix.
+ *
+ * `/suppliers/S-0042` belongs to `/suppliers`, and `/` only matches itself — otherwise
+ * every screen would claim to be the dashboard.
+ */
+function sectionLabelKey(pathname: string): string | null {
+  const items = NAVIGATION.flatMap((section) => section.items);
+  const match = items
+    .filter((item) =>
+      item.to === '/'
+        ? pathname === '/'
+        : pathname === item.to || pathname.startsWith(`${item.to}/`),
+    )
+    .sort((a, b) => b.to.length - a.to.length)[0];
+  return match?.labelKey ?? null;
+}
 
 export function Topbar() {
   const { t } = useTranslation();
-  const user = useCurrentUser();
   const factory = useFactory();
-  const logout = useAuthStore((s) => s.logout);
-  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
-
-  async function submitLogout() {
-    await logout();
-  }
+  const { pathname } = useLocation();
+  const labelKey = sectionLabelKey(pathname);
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between gap-md border-b border-border bg-surface px-lg">
+    <header className="flex h-16 shrink-0 items-center justify-between gap-md px-gutter">
       <div className="flex min-w-0 items-center gap-md">
         <span className="lg:hidden">
           <Logo showName={false} />
         </span>
-        <div className="min-w-0">
-          <p className="truncate text-body-small font-semibold text-text-primary">{factory.name}</p>
-          {factory.location ? (
-            <p className="truncate text-caption text-text-secondary">{factory.location}</p>
+        <p className="flex min-w-0 items-center gap-xs text-label text-text-secondary">
+          <span className="truncate">{factory.name}</span>
+          {labelKey ? (
+            <>
+              <span aria-hidden>·</span>
+              <span className="truncate text-text-primary">{t(labelKey)}</span>
+            </>
           ) : null}
-        </div>
+        </p>
       </div>
 
-      <div className="flex items-center gap-md">
-        <CommandMenu />
+      <div className="flex items-center gap-sm">
         <SyncStatusChip />
-
-        {user ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                iconRight={<ChevronDown className="size-icon-sm" />}
-              >
-                <span className="flex flex-col items-start">
-                  <span className="text-label">{user.name}</span>
-                  <span className="text-caption text-text-secondary">{user.roles.join(', ')}</span>
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" sideOffset={4} className="min-w-56 p-xs">
-              <div className="px-sm py-xs">
-                <p className="text-body-small text-text-primary">{user.name}</p>
-                <p className="text-caption text-text-secondary">{user.email}</p>
-              </div>
-              <DropdownMenuSeparator className="my-xs h-px bg-divider" />
-
-              <DropdownMenuItem asChild>
-                <Link
-                  to="/profile"
-                  className="flex cursor-pointer items-center gap-sm rounded-sm px-sm py-xs text-body-small text-text-primary outline-none data-highlighted:bg-surface-variant"
-                >
-                  <UserRound className="size-icon-sm" aria-hidden />
-                  {t('profile.title')}
-                </Link>
-              </DropdownMenuItem>
-
-              {/* Appearance and text size were here too, as a non-item block Radix keeps
-                  the menu open for. They live on M15 alone now: one home for a setting
-                  beats two, and the profile row above is the way to it.
-
-                    <AppearanceControls className="px-sm py-xs" />
-              */}
-              <DropdownMenuItem
-                onSelect={() => setConfirmingSignOut(true)}
-                className="flex cursor-pointer items-center gap-sm rounded-sm px-sm py-xs text-body-small text-text-primary outline-none data-highlighted:bg-surface-variant"
-              >
-                <LogOut className="size-icon-sm" aria-hidden />
-                {t('common.signOut')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
+        <CommandMenu />
+        <span className="lg:hidden">
+          <UserMenu placement="topbar" />
+        </span>
       </div>
-
-      <ConfirmDialog
-        open={confirmingSignOut}
-        onOpenChange={setConfirmingSignOut}
-        title={t('common.signOut')}
-        description={t('shell.signOutConfirmBody')}
-        confirmLabel={t('common.signOut')}
-        confirmVariant="danger"
-        onConfirm={() => void submitLogout()}
-      />
     </header>
   );
 }

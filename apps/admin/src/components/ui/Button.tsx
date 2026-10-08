@@ -20,9 +20,9 @@ type ButtonSize = 'sm' | 'md';
 
 const VARIANTS: Record<ButtonVariant, string> = {
   primary:
-    'bg-primary text-primary-contrast hover:opacity-90 disabled:bg-disabled disabled:text-disabled-contrast',
+    'bg-primary text-primary-contrast shadow-card hover:opacity-90 disabled:bg-disabled disabled:text-disabled-contrast disabled:shadow-none',
   secondary:
-    'bg-surface text-text-primary border border-border hover:bg-surface-variant disabled:text-disabled-contrast',
+    'bg-surface text-text-primary border border-border shadow-card hover:bg-surface-variant disabled:text-disabled-contrast disabled:shadow-none',
   ghost:
     'bg-transparent text-text-primary hover:bg-surface-variant disabled:text-disabled-contrast',
   // Destructive actions are the error colour, not a red hex — a factory whose
@@ -57,7 +57,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cn(
-        'inline-flex items-center justify-center rounded-md font-medium transition-opacity',
+        'inline-flex items-center justify-center rounded-md font-medium transition-[background-color,opacity,box-shadow] duration-150 active:translate-y-px',
         'disabled:cursor-not-allowed',
         VARIANTS[variant],
         SIZES[size],

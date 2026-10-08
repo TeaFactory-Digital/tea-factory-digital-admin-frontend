@@ -46,7 +46,11 @@ export function AppShell() {
             The mock banner that used to sit beside this one is gone with the mock
             itself — there is no longer a state in which this console serves fixtures,
             so there is nothing to warn about. */}
-        {degraded ? <Notice tone="error">{t('shell.degradedConfig')}</Notice> : null}
+        {degraded ? (
+          <div className="px-gutter pb-sm">
+            <Notice tone="error">{t('shell.degradedConfig')}</Notice>
+          </div>
+        ) : null}
 
         {/* The sync state is no longer a banner here: a chip in the top bar while the
             figures are not current, and the full explanation on `/data-status`. See
@@ -62,7 +66,7 @@ export function AppShell() {
         {/* 30 px from the sidebar on the left, 30 px from the window on the right
             (`--spacing-gutter`). The vertical padding stays on the shared scale —
             only the gutters are fixed geometry. */}
-        <main id="main" className="relative min-w-0 flex-1 overflow-y-auto px-gutter py-lg">
+        <main id="main" className="relative min-w-0 flex-1 overflow-y-auto px-gutter pt-xs pb-xxl">
           {/**
            * `h-full` is what lets a grid screen fill the window instead of
            * growing past it.

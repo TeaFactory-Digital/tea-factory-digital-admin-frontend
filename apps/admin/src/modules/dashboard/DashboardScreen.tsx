@@ -20,8 +20,16 @@
  * `DashboardSummary`. That is not an oversight: `cycle.awaitingRate` is *why the app is
  * showing a supplier blanks instead of amounts*, which is a telephone call this office
  * takes whether or not it closes the month.
+ *
+ * ## Layout
+ *
+ * Four headline tiles (waiting, on the app, requests from the app, devices), then the
+ * adoption trend beside the queues as a ring, then the queue cards beside what needs
+ * attention. Every figure on it is one the payload already carries: a tile without a
+ * history has no sparkline rather than an invented one.
  */
 
+import { useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -34,7 +42,22 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { ArrowRight, CircleCheck, Info, TriangleAlert } from 'lucide-react';
+import {
+  ArrowRight,
+  BellRing,
+  CircleCheck,
+  FileWarning,
+  ImageOff,
+  Inbox,
+  Info,
+  Languages,
+  Megaphone,
+  Send,
+  Smartphone,
+  TriangleAlert,
+  type LucideIcon,
+} from 'lucide-react';
+import { FACTORY_TIME_ZONE } from '@tfd/domain';
 import type {
   AppAdoption,
   ContentHealth,
@@ -44,16 +67,30 @@ import type {
 } from '@tfd/domain';
 import { dashboardRepository } from '@/services/repositories/dashboardRepository';
 import { qk } from '@/query/queryKeys';
+import { useCurrentUser } from '@/auth/authStore';
 import { NAVIGATION, queuesOf } from '@/layout/navigation';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { ErrorState, Skeleton } from '@/components/ui/states';
-import { formatAge, formatCount, formatMonthKey, formatPercent, hoursSince } from '@/lib/format';
 import { InfoTip } from '@/components/ui/Tooltip';
+import { StatCard } from '@/components/charts/StatCard';
+import { DeltaPill } from '@/components/charts/DeltaPill';
+import { Sparkline } from '@/components/charts/Sparkline';
+import { Meter } from '@/components/charts/Meter';
+import { DonutChart } from '@/components/charts/DonutChart';
+import { seriesColor } from '@/components/charts/palette';
+import { ChartTooltip } from '@/components/charts/ChartTooltip';
+import { GRID, LINE_CURSOR, X_AXIS, Y_AXIS, activeDot } from '@/components/charts/rechartsTheme';
+import { cn } from '@/lib/cn';
+import { formatAge, formatCount, formatMonthKey, formatPercent, hoursSince } from '@/lib/format';
+
+type Trend = Array<{ monthKey: string; appShare: number | null }>;
 
 export function DashboardScreen() {
   const { t } = useTranslation();
+  const user = useCurrentUser();
   const { data, isPending, error, refetch } = useQuery({
     queryKey: qk.dashboard,
     queryFn: dashboardRepository.get,
@@ -61,49 +98,380 @@ export function DashboardScreen() {
 
   if (error) return <ErrorState error={error} onRetry={() => void refetch()} />;
 
+  const firstName = user?.name.split(/\s+/)[0];
+
   return (
     <>
-      <PageHeader title={t('dashboard.title')} description={t('dashboard.subtitle')} />
+      <PageHeader
+        title={
+          firstName
+            ? t(`dashboard.greeting.${partOfDay()}`, { name: firstName })
+            : t('dashboard.title')
+        }
+        description={t('dashboard.subtitle')}
+      />
 
       {isPending || !data ? (
         <DashboardSkeleton />
       ) : (
         <>
-          <QueueSection queues={data.queues} />
+          <KpiRow queues={data.queues} app={data.app} trend={data.adoptionTrend} />
 
           <div className="grid gap-lg lg:grid-cols-3">
-            {/* Both were "not available" placeholders while the payload carried
-                neither (G-12). The API reports them now. */}
-            <AppAdoptionCard app={data.app} />
-            <ContentHealthCard content={data.content} />
-
-            <Card>
-              <CardHeader title={t('dashboard.alerts')} />
-              <CardBody>
-                {data.alerts.length === 0 ? (
-                  <p className="text-body-small text-text-secondary">{t('dashboard.noAlerts')}</p>
-                ) : (
-                  <ul className="flex flex-col gap-sm">
-                    {data.alerts.map((alert) => (
-                      <AlertRow key={alert.id} alert={alert} />
-                    ))}
-                  </ul>
-                )}
-              </CardBody>
-            </Card>
+            <AdoptionTrendCard trend={data.adoptionTrend} className="lg:col-span-2" />
+            <QueueMixCard queues={data.queues} />
           </div>
 
-          <Card>
-            <CardHeader
-              title={<TitleWithTip title={t('dashboard.adoptionTrend')} tip={t('dashboard.adoptionTrendHint')} />}
-            />
-            <CardBody>
-              <AdoptionTrend data={data.adoptionTrend} />
-            </CardBody>
-          </Card>
+          <div className="grid items-start gap-lg lg:grid-cols-3">
+            <QueueSection queues={data.queues} className="lg:col-span-2" />
+            <div className="flex flex-col gap-lg">
+              {/* Both were "not available" placeholders while the payload carried
+                  neither (G-12). The API reports them now. */}
+              <ContentHealthCard content={data.content} />
+              <AlertsCard alerts={data.alerts} />
+            </div>
+          </div>
         </>
       )}
     </>
+  );
+}
+
+/**
+ * Morning, afternoon or evening **at the factory**, not wherever the browser is.
+ *
+ * The office is in Sri Lanka; a platform administrator checking in from abroad should
+ * see the factory's day, the same clock every date on the console is read in (BR-104).
+ */
+function partOfDay(now: Date = new Date()): 'morning' | 'afternoon' | 'evening' {
+  const hour = Number(
+    new Intl.DateTimeFormat('en-GB', {
+      hour: 'numeric',
+      hourCycle: 'h23',
+      timeZone: FACTORY_TIME_ZONE,
+    }).format(now),
+  );
+  if (hour < 12) return 'morning';
+  if (hour < 17) return 'afternoon';
+  return 'evening';
+}
+
+/* ─────────────────────────────── headline tiles ─────────────────────────────── */
+
+/**
+ * The change in app-request share between the last two months, in percentage points.
+ *
+ * Only when **both** months have an answer. A month with no requests has no share, and a
+ * delta measured from it would be a number the records do not contain (BR-102).
+ */
+function monthOnMonth(trend: Trend): number | null {
+  const [previous, latest] = trend.slice(-2);
+  if (!previous || !latest || previous.appShare === null || latest.appShare === null) return null;
+  return Math.round((latest.appShare - previous.appShare) * 100);
+}
+
+function KpiRow({ queues, app, trend }: { queues: QueueCount[]; app: AppAdoption; trend: Trend }) {
+  const { t } = useTranslation();
+
+  const pending = queues.reduce((total, queue) => total + queue.pending, 0);
+  const overdue = queues.reduce((total, queue) => total + queue.breachingSla, 0);
+  const installed = app.totalSuppliers > 0 ? app.suppliersWithApp / app.totalSuppliers : null;
+  const withoutApp = Math.max(0, app.totalSuppliers - app.suppliersWithApp);
+  const delta = monthOnMonth(trend);
+
+  return (
+    <div className="grid gap-lg sm:grid-cols-2 xl:grid-cols-4">
+      <StatCard
+        icon={Inbox}
+        label={t('dashboard.kpi.waiting')}
+        period={t('dashboard.kpi.now')}
+        value={formatCount(pending)}
+        delta={
+          pending === 0 ? null : overdue > 0 ? (
+            <Badge tone="error">{t('dashboard.kpi.overdue', { count: overdue })}</Badge>
+          ) : (
+            <Badge tone="success">{t('dashboard.kpi.onTarget')}</Badge>
+          )
+        }
+        caption={pending === 0 ? t('dashboard.queueEmpty') : null}
+      />
+
+      {/* The share is the headline and the count under it is the working; **who has not
+          installed it** is field work at the counter, so it links to the people it is about. */}
+      <StatCard
+        icon={Smartphone}
+        label={
+          <TitleWithTip title={t('dashboard.appAdoption')} tip={t('dashboard.appAdoptionHint')} />
+        }
+        value={formatPercent(installed)}
+        caption={t('dashboard.appInstalled', {
+          withApp: formatCount(app.suppliersWithApp),
+          total: formatCount(app.totalSuppliers),
+        })}
+        footer={
+          <div className="flex flex-col gap-sm">
+            {installed !== null ? (
+              <Meter value={installed} label={t('dashboard.appAdoption')} />
+            ) : null}
+            {withoutApp > 0 ? (
+              <Link
+                to="/suppliers?hasApp=false"
+                className="inline-flex w-fit items-center gap-xxs text-caption font-medium text-primary hover:underline"
+              >
+                {t('dashboard.appWithout', { count: withoutApp })}
+                <ArrowRight className="size-icon-xs" aria-hidden />
+              </Link>
+            ) : null}
+          </div>
+        }
+      />
+
+      {/* `null` is "nothing raised this month", a fact to state rather than a figure that
+          is "not available", so the caption says it in words. */}
+      <StatCard
+        icon={Send}
+        label={t('dashboard.kpi.appRequests')}
+        period={t('dashboard.kpi.thisMonth')}
+        value={formatPercent(app.appRequestShare)}
+        delta={
+          app.appRequestShare !== null && delta !== null ? (
+            <DeltaPill delta={delta}>
+              {t('dashboard.kpi.points', { count: Math.abs(delta) })}
+            </DeltaPill>
+          ) : null
+        }
+        caption={
+          app.appRequestShare === null
+            ? t('dashboard.appRequestShareNone')
+            : delta !== null
+              ? t('dashboard.kpi.vsLastMonth')
+              : t('dashboard.kpi.ofAllRequests')
+        }
+        trend={<Sparkline values={trend.slice(-12).map((row) => row.appShare)} domain={[0, 1]} />}
+      />
+
+      <StatCard
+        icon={BellRing}
+        label={t('dashboard.kpi.devices')}
+        value={formatCount(app.devicesRegistered)}
+        caption={t('dashboard.kpi.devicesCaption')}
+      />
+    </div>
+  );
+}
+
+/* ─────────────────────────────── adoption trend ─────────────────────────────── */
+
+const RANGES = ['3', '6', '12'] as const;
+type Range = (typeof RANGES)[number];
+
+/**
+ * App-request share by month, with a 3/6/12-month window.
+ *
+ * Monthly rather than v1's fourteen days, and that is not a cosmetic swap: adoption moves
+ * when the office hands out passwords at the counter, which is a campaign rather than a
+ * day's weather. A daily line would be noise around a number that changes quarterly.
+ */
+function AdoptionTrendCard({ trend, className }: { trend: Trend; className?: string }) {
+  const { t } = useTranslation();
+  const [range, setRange] = useState<Range>('12');
+
+  const known = trend.filter((row) => row.appShare !== null);
+  const charted = known.length >= 2;
+  const shown = useMemo(() => trend.slice(-Number(range)), [trend, range]);
+  const latest = known[known.length - 1];
+  const delta = monthOnMonth(trend);
+
+  return (
+    <Card className={cn('flex animate-rise flex-col', className)}>
+      <CardHeader
+        title={
+          <TitleWithTip
+            title={t('dashboard.adoptionTrend')}
+            tip={t('dashboard.adoptionTrendHint')}
+          />
+        }
+        description={
+          charted && latest ? (
+            <span className="mt-xs flex flex-wrap items-baseline gap-sm">
+              <span className="numeric text-h3 font-semibold tracking-tight text-text-primary">
+                {formatPercent(latest.appShare)}
+              </span>
+              {delta !== null ? (
+                <DeltaPill delta={delta}>
+                  {t('dashboard.kpi.points', { count: Math.abs(delta) })}
+                </DeltaPill>
+              ) : null}
+              <span className="text-caption">{formatMonthKey(latest.monthKey)}</span>
+            </span>
+          ) : undefined
+        }
+        actions={
+          charted ? (
+            <Tabs value={range} onValueChange={(value) => setRange(value as Range)}>
+              <TabsList aria-label={t('dashboard.trendRange')}>
+                {RANGES.map((value) => (
+                  <TabsTrigger key={value} value={value} className="px-sm">
+                    {t('dashboard.trendMonths', { count: Number(value) })}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          ) : null
+        }
+      />
+      <CardBody className="flex flex-1 flex-col">
+        <AdoptionTrend data={shown} known={known} />
+      </CardBody>
+    </Card>
+  );
+}
+
+/**
+ * `connectNulls={false}` is the load-bearing prop. A month with no requests at all carries
+ * `null`, and joining across it would draw a straight line through a month that has no
+ * answer — reporting a trend the records do not contain (BR-102, as a chart).
+ */
+function AdoptionTrend({ data, known }: { data: Trend; known: Trend }) {
+  const { t } = useTranslation();
+
+  /**
+   * A line needs two points. With one month of history the chart was an empty grid with
+   * a dot in a corner, which reads as broken. Say what there is instead.
+   */
+  if (known.length < 2) {
+    const only = known[0];
+    return (
+      <div className="flex h-56 flex-col items-center justify-center gap-xs text-center">
+        {only ? (
+          <p className="numeric text-h2 font-semibold tracking-tight text-text-primary">
+            {formatPercent(only.appShare)}
+          </p>
+        ) : null}
+        <p className="max-w-card text-body-small text-text-secondary">
+          {only
+            ? t('dashboard.trendOneMonth', { month: formatMonthKey(only.monthKey) })
+            : t('dashboard.trendEmpty')}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-64 w-full flex-1">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+          {/* Through CSS variables, so the chart rebrands with everything else. */}
+          <defs>
+            <linearGradient id="adoption" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.22} />
+              <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid {...GRID} />
+          <XAxis
+            dataKey="monthKey"
+            tickFormatter={(value: string) => shortMonth(value)}
+            {...X_AXIS}
+          />
+          <YAxis
+            {...Y_AXIS}
+            width={44}
+            domain={[0, 1]}
+            ticks={[0, 0.25, 0.5, 0.75, 1]}
+            tickFormatter={(value: number) => `${Math.round(value * 100)}%`}
+          />
+          <Tooltip
+            cursor={LINE_CURSOR}
+            content={
+              <ChartTooltip
+                formatValue={(value) => formatPercent(value)}
+                formatLabel={(label) => formatMonthKey(String(label))}
+              />
+            }
+          />
+          <Area
+            type="monotone"
+            dataKey="appShare"
+            name={t('dashboard.adoptionTrend')}
+            connectNulls={false}
+            stroke="var(--color-primary)"
+            strokeWidth={2}
+            fill="url(#adoption)"
+            dot={false}
+            activeDot={activeDot('var(--color-primary)')}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/** `2026-09` → `Sep`. The year is in the tooltip, and twelve of them do not fit. */
+function shortMonth(monthKey: string): string {
+  const [year, month] = monthKey.split('-').map(Number);
+  if (!year || !month) return monthKey;
+  return new Intl.DateTimeFormat('en-GB', { month: 'short', timeZone: 'UTC' }).format(
+    new Date(Date.UTC(year, month - 1, 1)),
+  );
+}
+
+/* ─────────────────────────────── queue mix ─────────────────────────────── */
+
+/**
+ * Each queue's series slot, **by key**, so a queue keeps its colour when another empties
+ * and drops out of the ring. `creditRequests` (the combined count, G-12) shares the
+ * advances slot because the API sends one or the other, never both.
+ */
+const QUEUE_SLOT: Record<string, number> = {
+  changeRequests: 0,
+  inquiries: 1,
+  creditRequests: 2,
+  advanceRequests: 2,
+  loanRequests: 3,
+  teaPacketRequests: 4,
+  manureRequests: 5,
+};
+
+/**
+ * What is waiting, split by queue.
+ *
+ * Not links: the queue cards below are the way into each screen, and a second set of
+ * links to the same lists would only be two places to keep in step.
+ */
+function QueueMixCard({ queues }: { queues: QueueCount[] }) {
+  const { t } = useTranslation();
+  const waiting = queues
+    .filter((queue) => queue.pending > 0)
+    .sort((a, b) => (QUEUE_SLOT[a.queue] ?? 9) - (QUEUE_SLOT[b.queue] ?? 9));
+  const total = waiting.reduce((sum, queue) => sum + queue.pending, 0);
+
+  return (
+    <Card className="flex animate-rise flex-col">
+      <CardHeader title={t('dashboard.queueMix')} description={t('dashboard.kpi.now')} />
+      <CardBody className="flex flex-1 flex-col justify-center">
+        {total === 0 ? (
+          <div className="flex flex-col items-center gap-sm py-xl text-center">
+            <CircleCheck className="size-icon-xl text-success" aria-hidden />
+            <p className="text-body-small text-text-secondary">{t('dashboard.queueMixEmpty')}</p>
+          </div>
+        ) : (
+          <DonutChart
+            label={t('dashboard.queueMix')}
+            total={formatCount(total)}
+            totalLabel={t('dashboard.queueMixTotal')}
+            formatValue={formatCount}
+            showShare={waiting.length > 1}
+            segments={waiting.map((queue) => ({
+              key: queue.queue,
+              label: t(`dashboard.queue.${queue.queue}`),
+              value: queue.pending,
+              color: seriesColor(QUEUE_SLOT[queue.queue] ?? 9),
+            }))}
+          />
+        )}
+      </CardBody>
+    </Card>
   );
 }
 
@@ -117,7 +485,7 @@ export function DashboardScreen() {
  * card, ordered by how many are past target and then by the age of the oldest; the empty
  * ones collapse into one "all clear" line, each still a link.
  */
-function QueueSection({ queues }: { queues: QueueCount[] }) {
+function QueueSection({ queues, className }: { queues: QueueCount[]; className?: string }) {
   const { t } = useTranslation();
 
   const waiting = queues
@@ -130,34 +498,37 @@ function QueueSection({ queues }: { queues: QueueCount[] }) {
   const clear = queues.filter((queue) => queue.pending === 0);
 
   return (
-    <section aria-label={t('dashboard.queues')} className="flex flex-col gap-md">
-      {waiting.length > 0 ? (
-        <div className="grid gap-md sm:grid-cols-2 xl:grid-cols-3">
-          {waiting.map((queue) => (
-            <QueueCard key={queue.queue} queue={queue} />
-          ))}
-        </div>
-      ) : (
-        <Card>
-          <CardBody className="flex items-center gap-sm">
-            <CircleCheck className="size-icon-md shrink-0 text-success" aria-hidden />
-            <p className="text-body-small text-text-primary">{t('dashboard.allQueuesClear')}</p>
-          </CardBody>
-        </Card>
-      )}
+    <Card className={cn('animate-rise', className)}>
+      <CardHeader title={t('dashboard.queues')} description={t('dashboard.queuesHint')} />
+      <CardBody className="flex flex-col gap-md">
+        <section aria-label={t('dashboard.queues')} className="flex flex-col gap-md">
+          {waiting.length > 0 ? (
+            <div className="grid gap-md sm:grid-cols-2">
+              {waiting.map((queue) => (
+                <QueueCard key={queue.queue} queue={queue} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center gap-sm rounded-md bg-success-muted px-md py-sm">
+              <CircleCheck className="size-icon-md shrink-0 text-success" aria-hidden />
+              <p className="text-body-small text-text-primary">{t('dashboard.allQueuesClear')}</p>
+            </div>
+          )}
 
-      {clear.length > 0 && waiting.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-xs text-caption text-text-secondary">
-          <CircleCheck className="size-icon-xs shrink-0 text-success" aria-hidden />
-          <span>{t('dashboard.clearQueues')}</span>
-          {clear.map((queue) => (
-            <Badge key={queue.queue} tone="neutral">
-              {t(`dashboard.queue.${queue.queue}`)}
-            </Badge>
-          ))}
-        </div>
-      ) : null}
-    </section>
+          {clear.length > 0 && waiting.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-xs border-t border-divider pt-md text-caption text-text-secondary">
+              <CircleCheck className="size-icon-xs shrink-0 text-success" aria-hidden />
+              <span>{t('dashboard.clearQueues')}</span>
+              {clear.map((queue) => (
+                <Badge key={queue.queue} tone="neutral">
+                  {t(`dashboard.queue.${queue.queue}`)}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
+        </section>
+      </CardBody>
+    </Card>
   );
 }
 
@@ -193,19 +564,27 @@ function QueueCard({ queue }: { queue: QueueCount }) {
   );
 
   const label = t(`dashboard.queue.${queue.queue}`);
+  const Icon = target?.icon ?? Inbox;
 
   const body = (
     <>
-      <div className="flex items-baseline justify-between gap-sm">
-        <p className="text-label text-text-secondary">{label}</p>
+      <div className="flex items-center justify-between gap-sm">
+        <span className="flex min-w-0 items-center gap-sm">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-variant text-text-secondary">
+            <Icon className="size-icon-sm" aria-hidden />
+          </span>
+          <p className="truncate text-label text-text-secondary">{label}</p>
+        </span>
         {queue.breachingSla > 0 ? (
           <Badge tone="error">{t('dashboard.slaBreaching', { count: queue.breachingSla })}</Badge>
         ) : null}
       </div>
-      <p className="numeric mt-xs text-h2 text-text-primary">{formatCount(queue.pending)}</p>
+      <p className="numeric mt-md text-h2 font-semibold tracking-tight text-text-primary">
+        {formatCount(queue.pending)}
+      </p>
       {/* `oldestPendingAt` is now reported (G-12 closed), so `null` means one thing
           again: the queue is empty. */}
-      <p className="mt-xxs text-caption text-text-secondary">
+      <p className="mt-sm text-caption text-text-secondary">
         {queue.oldestPendingAt
           ? t('dashboard.oldestWaiting', { age: formatAge(hoursSince(queue.oldestPendingAt)) })
           : t('dashboard.queueEmpty')}
@@ -223,14 +602,12 @@ function QueueCard({ queue }: { queue: QueueCount }) {
    */
   if (!target) {
     return (
-      <Card className="opacity-70">
-        <CardBody>
-          {body}
-          <Badge tone="neutral" className="mt-sm">
-            {t('dashboard.noScreenForQueue')}
-          </Badge>
-        </CardBody>
-      </Card>
+      <div className="rounded-lg border border-border p-lg opacity-70">
+        {body}
+        <Badge tone="neutral" className="mt-sm">
+          {t('dashboard.noScreenForQueue')}
+        </Badge>
+      </div>
     );
   }
 
@@ -241,75 +618,64 @@ function QueueCard({ queue }: { queue: QueueCount }) {
   return (
     <Link
       to={`${target.to}?${search}`}
-      className={
+      className={cn(
+        'group rounded-lg border p-lg transition-[background-color,box-shadow] duration-150 hover:shadow-card',
         queue.breachingSla > 0
-          ? 'rounded-lg border border-error bg-surface p-lg shadow-sm hover:bg-surface-variant'
-          : 'rounded-lg border border-border bg-surface p-lg hover:bg-surface-variant'
-      }
+          ? 'border-error bg-error-muted/40 hover:bg-error-muted/60'
+          : 'border-border bg-surface hover:bg-surface-variant',
+      )}
     >
       {body}
-      <span className="mt-sm inline-flex items-center gap-xxs text-caption text-primary">
-        {label} <ArrowRight className="size-icon-xs" aria-hidden />
+      <span className="mt-md inline-flex items-center gap-xxs text-caption font-medium text-primary">
+        {label}
+        <ArrowRight
+          className="size-icon-xs transition-transform duration-150 group-hover:translate-x-0.5"
+          aria-hidden
+        />
       </span>
     </Link>
   );
 }
 
-/* ────────────────────────── v2: adoption & content ────────────────────────── */
+/* ────────────────────────── content & alerts ────────────────────────── */
 
-/**
- * How much of the supplier base is on the app.
- *
- * The share is the headline and the two counts under it are the working, in the order
- * somebody would act on them: **who has not installed it** is field work at the counter,
- * and **how many are still asking at the counter** is a trust problem no amount of
- * installing fixes.
- *
- * `appRequestShare` is `null` when nothing was raised this month, and it renders as an em
- * dash rather than `0%` — a month with no requests has no adoption share, and printing a
- * zero would report a collapse that did not happen (BR-102).
- */
-function AppAdoptionCard({ app }: { app: AppAdoption }) {
-  const { t } = useTranslation();
-
-  const installed = app.totalSuppliers > 0 ? app.suppliersWithApp / app.totalSuppliers : null;
-  const withoutApp = Math.max(0, app.totalSuppliers - app.suppliersWithApp);
+/** One line of the feed: a tinted icon tile, the sentence, and where it leads. */
+function FeedRow({
+  icon: Icon,
+  tone,
+  children,
+  to,
+}: {
+  icon: LucideIcon;
+  tone: 'info' | 'warning' | 'error' | 'neutral';
+  children: ReactNode;
+  to?: string;
+}) {
+  const tile = {
+    info: 'bg-info-muted text-info',
+    warning: 'bg-warning-muted text-warning',
+    error: 'bg-error-muted text-error',
+    neutral: 'bg-surface-variant text-text-secondary',
+  }[tone];
 
   return (
-    <Card>
-      <CardHeader title={<TitleWithTip title={t('dashboard.appAdoption')} tip={t('dashboard.appAdoptionHint')} />} />
-      <CardBody className="flex flex-col gap-xs">
-        <p className="numeric text-h2 text-text-primary">{formatPercent(installed)}</p>
-        <p className="text-body-small text-text-secondary">
-          {t('dashboard.appInstalled', {
-            withApp: formatCount(app.suppliersWithApp),
-            total: formatCount(app.totalSuppliers),
-          })}
-        </p>
-
-        {/* The number to act on, and a link to the people it is about. */}
-        {withoutApp > 0 ? (
+    <li className="flex items-start gap-md border-t border-divider py-sm first:border-t-0 first:pt-0">
+      <span className={cn('flex size-8 shrink-0 items-center justify-center rounded-md', tile)}>
+        <Icon className="size-icon-sm" aria-hidden />
+      </span>
+      <span className="min-w-0 pt-xs text-body-small text-text-primary">
+        {to ? (
           <Link
-            to="/suppliers?hasApp=false"
-            className="text-body-small text-primary underline-offset-2 hover:underline"
+            to={to}
+            className="underline decoration-border underline-offset-2 hover:decoration-primary"
           >
-            {t('dashboard.appWithout', { count: withoutApp })}
+            {children}
           </Link>
-        ) : null}
-
-        <p className="text-caption text-text-secondary">
-          {t('dashboard.appDevices', { count: app.devicesRegistered })}
-        </p>
-
-        {/* `null` is "nothing raised this month", which is a fact to state rather than a
-            figure that is "not available". */}
-        <p className="numeric text-body-small text-text-secondary">
-          {app.appRequestShare === null
-            ? t('dashboard.appRequestShareNone')
-            : t('dashboard.appRequestShare', { value: formatPercent(app.appRequestShare) })}
-        </p>
-      </CardBody>
-    </Card>
+        ) : (
+          children
+        )}
+      </span>
+    </li>
   );
 }
 
@@ -332,41 +698,57 @@ function ContentHealthCard({ content }: { content: ContentHealth }) {
       key: 'articlesWithGaps' as const,
       count: content.articlesWithGaps,
       to: '/news?lens=incomplete',
-      tone: 'text-warning',
+      icon: Languages,
+      tone: 'warning' as const,
     },
     {
       key: 'bannersExpired' as const,
       count: content.bannersExpired,
       to: '/banners?lens=expired',
-      tone: 'text-text-secondary',
+      icon: ImageOff,
+      tone: 'neutral' as const,
     },
     {
       key: 'staticPagesUnwritten' as const,
       count: content.staticPagesUnwritten,
       to: '/content',
-      tone: 'text-warning',
+      icon: FileWarning,
+      tone: 'warning' as const,
     },
   ].filter((row) => row.count > 0);
 
   return (
-    <Card>
+    <Card className="animate-rise">
       <CardHeader
-        title={<TitleWithTip title={t('dashboard.contentHealth')} tip={t('dashboard.contentHealthHint')} />}
+        title={
+          <TitleWithTip
+            title={t('dashboard.contentHealth')}
+            tip={t('dashboard.contentHealthHint')}
+          />
+        }
       />
-      <CardBody className="flex flex-col gap-sm">
-        <p className="numeric text-h2 text-text-primary">{formatCount(content.bannersLive)}</p>
-        <p className="text-body-small text-text-secondary">{t('dashboard.bannersLive')}</p>
+      <CardBody className="flex flex-col gap-md">
+        <div className="flex items-center gap-md rounded-md bg-surface-variant px-md py-sm">
+          <Megaphone className="size-icon-md shrink-0 text-primary" aria-hidden />
+          <p className="flex items-baseline gap-xs text-body-small text-text-secondary">
+            <span className="numeric text-title text-text-primary">
+              {formatCount(content.bannersLive)}
+            </span>
+            {t('dashboard.bannersLive')}
+          </p>
+        </div>
 
         {rows.length === 0 ? (
-          <p className="text-body-small text-success">{t('dashboard.contentClean')}</p>
+          <p className="flex items-center gap-xs text-body-small text-success">
+            <CircleCheck className="size-icon-sm shrink-0" aria-hidden />
+            {t('dashboard.contentClean')}
+          </p>
         ) : (
-          <ul className="flex flex-col gap-xxs">
+          <ul className="flex flex-col">
             {rows.map((row) => (
-              <li key={row.key} className={`text-body-small ${row.tone}`}>
-                <Link to={row.to} className="underline decoration-border hover:decoration-primary">
-                  {t(`dashboard.content.${row.key}`, { count: row.count })}
-                </Link>
-              </li>
+              <FeedRow key={row.key} icon={row.icon} tone={row.tone} to={row.to}>
+                {t(`dashboard.content.${row.key}`, { count: row.count })}
+              </FeedRow>
             ))}
           </ul>
         )}
@@ -375,136 +757,57 @@ function ContentHealthCard({ content }: { content: ContentHealth }) {
   );
 }
 
-/* ──────────────────────────────── alerts ──────────────────────────────── */
-
 const ALERT_ICONS = { info: Info, warning: TriangleAlert, error: TriangleAlert } as const;
-const ALERT_TONES = { info: 'text-info', warning: 'text-warning', error: 'text-error' } as const;
 
-function AlertRow({ alert }: { alert: DashboardAlert }) {
+function AlertsCard({ alerts }: { alerts: DashboardAlert[] }) {
   const { t } = useTranslation();
-  const Icon = ALERT_ICONS[alert.severity];
-
-  // The server sends a key and its parameters, never a sentence — so the copy
-  // stays in the console's string table and can be localized later (BR-110).
-  const message = t(alert.messageKey, alert.params);
 
   return (
-    <li className="flex items-start gap-sm">
-      <Icon className={`size-icon-md shrink-0 ${ALERT_TONES[alert.severity]}`} aria-hidden />
-      <span className="min-w-0 text-body-small text-text-primary">
-        {alert.href ? (
-          <Link to={alert.href} className="underline decoration-border hover:decoration-primary">
-            {message}
-          </Link>
+    <Card className="animate-rise">
+      <CardHeader title={t('dashboard.alerts')} />
+      <CardBody>
+        {alerts.length === 0 ? (
+          <p className="flex items-center gap-xs text-body-small text-text-secondary">
+            <CircleCheck className="size-icon-sm shrink-0 text-success" aria-hidden />
+            {t('dashboard.noAlerts')}
+          </p>
         ) : (
-          message
+          <ul className="flex flex-col">
+            {alerts.map((alert) => (
+              // The server sends a key and its parameters, never a sentence — so the copy
+              // stays in the console's string table and can be localized later (BR-110).
+              <FeedRow
+                key={alert.id}
+                icon={ALERT_ICONS[alert.severity]}
+                tone={alert.severity}
+                to={alert.href}
+              >
+                {t(alert.messageKey, alert.params)}
+              </FeedRow>
+            ))}
+          </ul>
         )}
-      </span>
-    </li>
-  );
-}
-
-/**
- * Twelve months of app-request share.
- *
- * Monthly rather than v1's fourteen days, and that is not a cosmetic swap: adoption moves
- * when the office hands out passwords at the counter, which is a campaign rather than a
- * day's weather. A daily line would be noise around a number that changes quarterly.
- *
- * `connectNulls={false}` is the load-bearing prop. A month with no requests at all carries
- * `null`, and joining across it would draw a straight line through a month that has no
- * answer — reporting a trend the records do not contain (BR-102, as a chart).
- */
-function AdoptionTrend({ data }: { data: Array<{ monthKey: string; appShare: number | null }> }) {
-  const { t } = useTranslation();
-  const known = data.filter((row) => row.appShare !== null);
-
-  /**
-   * A line needs two points. With one month of history the chart was an empty grid with
-   * a dot in a corner, which reads as broken. Say what there is instead.
-   */
-  if (known.length < 2) {
-    const only = known[0];
-    return (
-      <div className="flex h-32 flex-col items-center justify-center gap-xs text-center">
-        {only ? (
-          <p className="numeric text-h2 text-text-primary">{formatPercent(only.appShare)}</p>
-        ) : null}
-        <p className="max-w-card text-body-small text-text-secondary">
-          {only
-            ? t('dashboard.trendOneMonth', { month: formatMonthKey(only.monthKey) })
-            : t('dashboard.trendEmpty')}
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="h-64 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-          {/* Through CSS variables, so the chart rebrands with everything else. */}
-          <defs>
-            <linearGradient id="adoption" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.35} />
-              <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.02} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid stroke="var(--color-divider)" vertical={false} />
-          <XAxis
-            dataKey="monthKey"
-            tickFormatter={(value: string) => String(value).slice(5)}
-            stroke="var(--color-text-secondary)"
-            tickLine={false}
-            fontSize={12}
-          />
-          <YAxis
-            stroke="var(--color-text-secondary)"
-            tickLine={false}
-            axisLine={false}
-            width={56}
-            fontSize={12}
-            domain={[0, 1]}
-            tickFormatter={(value: number) => `${Math.round(value * 100)}%`}
-          />
-          <Tooltip
-            formatter={(value) => formatPercent(value == null ? null : Number(value))}
-            labelFormatter={(label) => formatMonthKey(String(label))}
-            contentStyle={{
-              background: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-md)',
-              fontSize: 'var(--text-caption)',
-            }}
-          />
-          <Area
-            type="monotone"
-            dataKey="appShare"
-            connectNulls={false}
-            stroke="var(--color-primary)"
-            strokeWidth={2}
-            fill="url(#adoption)"
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
+      </CardBody>
+    </Card>
   );
 }
 
 function DashboardSkeleton() {
   return (
     <div className="flex flex-col gap-lg">
-      <div className="grid gap-md sm:grid-cols-2 xl:grid-cols-3">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-28" />
+      <div className="grid gap-lg sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-36 rounded-lg" />
         ))}
       </div>
       <div className="grid gap-lg lg:grid-cols-3">
-        <Skeleton className="h-48" />
-        <Skeleton className="h-48" />
-        <Skeleton className="h-48" />
+        <Skeleton className="h-80 rounded-lg lg:col-span-2" />
+        <Skeleton className="h-80 rounded-lg" />
       </div>
-      <Skeleton className="h-72" />
+      <div className="grid gap-lg lg:grid-cols-3">
+        <Skeleton className="h-64 rounded-lg lg:col-span-2" />
+        <Skeleton className="h-64 rounded-lg" />
+      </div>
     </div>
   );
 }

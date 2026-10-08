@@ -152,7 +152,7 @@ export function StaticContentScreen() {
             a page an editor cannot reach and has no scrollbar to look for. */}
         <Card>
           <CardHeader title={t('staticContent.pagesTitle')} />
-          <CardBody className="p-0">
+          <CardBody flush>
             <ul>
               {pages.data.map((candidate) => (
                 <li key={candidate.slug}>

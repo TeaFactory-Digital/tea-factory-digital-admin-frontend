@@ -2,7 +2,7 @@ import { forwardRef, type InputHTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 
 const CONTROL =
-  'flex min-w-0 rounded-md border bg-surface px-md text-body-small text-text-primary placeholder:text-text-secondary disabled:bg-surface-variant disabled:text-disabled-contrast';
+  'flex min-w-0 rounded-md border bg-surface px-md text-body-small text-text-primary shadow-card transition-colors placeholder:text-text-secondary disabled:bg-surface-variant disabled:text-disabled-contrast';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   invalid?: boolean;

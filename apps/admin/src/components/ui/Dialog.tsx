@@ -38,11 +38,11 @@ export function Dialog({
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
-        <RadixDialog.Overlay className="fixed inset-0 z-40 bg-overlay" />
+        <RadixDialog.Overlay className="fixed inset-0 z-40 bg-overlay backdrop-blur-xs" />
         <RadixDialog.Content
           className={cn(
             'fixed top-1/2 left-1/2 z-50 w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2',
-            'rounded-lg border border-border bg-surface shadow-lg',
+            'rounded-lg border border-border bg-surface shadow-raised',
             'max-h-[calc(100vh-4rem)] overflow-y-auto',
             size === 'sm' ? 'max-w-dialog' : 'max-w-dialog-wide',
           )}

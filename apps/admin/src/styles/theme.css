@@ -78,6 +78,13 @@
   --color-table-row-alt: var(--brand-color-table-row-alt);
   --color-focus-ring: var(--brand-color-focus-ring);
 
+  /* Categorical chart series, in their fixed order (see `chart1` in @tfd/brand). */
+  --color-chart-1: var(--brand-color-chart1);
+  --color-chart-2: var(--brand-color-chart2);
+  --color-chart-3: var(--brand-color-chart3);
+  --color-chart-4: var(--brand-color-chart4);
+  --color-chart-5: var(--brand-color-chart5);
+
   /* ── Spacing ──────────────────────────────────────────────────────────────
    * Named tokens matching the shared scale, so `p-lg` is the same 16 the phone
    * uses. Tailwind's numeric scale (`p-4`, `gap-2`) stays available — it is a
@@ -229,6 +236,20 @@
   --size-icon-xl: var(--brand-icon-xl);
   --size-icon-xxl: var(--brand-icon-xxl);
 
+  /* ── Elevation ────────────────────────────────────────────────────────────
+   * Two steps, both mixed from the text colour so they deepen with the scheme
+   * instead of painting a black haze on a dark surface.
+   *
+   *  - `shadow-card`: a hairline lift for every panel. The border does the
+   *    separating; the shadow only says "this sits on the canvas".
+   *  - `shadow-raised`: menus, popovers, the command palette — things that
+   *    float over other content and must read as above it.
+   */
+  --shadow-card: 0 1px 2px color-mix(in srgb, var(--color-text-primary) 5%, transparent);
+  --shadow-raised:
+    0 1px 2px color-mix(in srgb, var(--color-text-primary) 6%, transparent),
+    0 12px 32px -8px color-mix(in srgb, var(--color-text-primary) 18%, transparent);
+
   /* ── Animation ────────────────────────────────────────────────────────────
    * The spinner's own rate. Faster than Tailwind's 1s `animate-spin`, because
    * the mark is a single arc: at one revolution a second an arc reads as slow,
@@ -241,6 +262,19 @@
    * means.
    */
   --animate-spinner: spin 0.75s linear infinite;
+
+  /* Cards settle into place on first paint. Short, and removed entirely under
+     reduced motion by the global rule below. */
+  --animate-rise: rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  /* The "live" dot's ring. */
+  --animate-ping: ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
 }
 
 /**

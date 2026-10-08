@@ -34,17 +34,11 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import {
-  Bar,
-  BarChart,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { DonutChart } from '@/components/charts/DonutChart';
+import { seriesColor } from '@/components/charts/palette';
+import { ChartTooltip } from '@/components/charts/ChartTooltip';
+import { BAR_CURSOR, GRID, MAX_BAR, X_AXIS, Y_AXIS } from '@/components/charts/rechartsTheme';
 import type { DeductionLines, SupplierMonthSummary } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
@@ -83,21 +77,14 @@ const DEDUCTION_KEYS: Array<keyof DeductionLines> = [
  * The donut's colours.
  *
  * Chart tokens rather than semantic ones: `--color-error` on a deduction slice would
- * say *this line is wrong*, and every one of these is a normal charge. They resolve
- * through CSS custom properties like every other colour here, so the chart rebrands
- * with the console (white-label.md → the golden rule).
+ * say *this line is wrong*, and every one of these is a normal charge.
+ *
+ * By **line**, in `DEDUCTION_KEYS` order, so transport is the same colour on every
+ * month's slip whichever lines happen to be present. The first five lines take the five
+ * series hues; the rest share the neutral "other" step, and the legend beside the ring
+ * names every one of them.
  */
-const SLICE_VARS = [
-  'var(--color-primary)',
-  'var(--color-secondary)',
-  'var(--color-info)',
-  'var(--color-primary-muted)',
-  'var(--color-warning)',
-  'var(--color-text-secondary)',
-  'var(--color-divider)',
-  'var(--color-success)',
-  'var(--color-border)',
-];
+const SLICE_VARS = DEDUCTION_KEYS.map((_, index) => seriesColor(index));
 
 export function SupplierIncomeHistory({ supplierId }: { supplierId: string }) {
   const { t } = useTranslation();
@@ -241,32 +228,27 @@ export function SupplierIncomeHistory({ supplierId }: { supplierId: string }) {
                       // Just the month number: twelve full month names do not fit, and
                       // the year is already on the picker above.
                       tickFormatter={(value: string) => String(value).slice(5)}
-                      stroke="var(--color-text-secondary)"
-                      tickLine={false}
-                      fontSize={12}
+                      {...X_AXIS}
                     />
-                    <YAxis
-                      stroke="var(--color-text-secondary)"
-                      tickLine={false}
-                      axisLine={false}
-                      width={72}
-                      fontSize={12}
-                    />
+                    <CartesianGrid {...GRID} />
+                    <YAxis {...Y_AXIS} width={72} />
                     <Tooltip
-                      formatter={(value) =>
-                        metric === 'earnings'
-                          ? formatAmount(Number(value))
-                          : formatKg(Number(value))
+                      cursor={BAR_CURSOR}
+                      content={
+                        <ChartTooltip
+                          formatValue={(value) =>
+                            metric === 'earnings' ? formatAmount(value) : formatKg(value)
+                          }
+                          formatLabel={(label) => formatMonthKey(String(label))}
+                        />
                       }
-                      labelFormatter={(label) => formatMonthKey(String(label))}
-                      contentStyle={{
-                        background: 'var(--color-surface)',
-                        border: '1px solid var(--color-border)',
-                        borderRadius: 'var(--radius-md)',
-                        fontSize: 'var(--text-caption)',
-                      }}
                     />
-                    <Bar dataKey="value" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                    <Bar
+                      dataKey="value"
+                      fill="var(--color-primary)"
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={MAX_BAR}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -305,55 +287,21 @@ export function SupplierIncomeHistory({ supplierId }: { supplierId: string }) {
                 body={t('suppliers.income.noDeductionsHint')}
               />
             ) : (
-              <div className="grid gap-md sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                <div className="h-64 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={slices}
-                        dataKey="value"
-                        nameKey="label"
-                        innerRadius="55%"
-                        outerRadius="85%"
-                        stroke="var(--color-surface)"
-                      >
-                        {slices.map((slice) => (
-                          <Cell key={slice.key} fill={slice.fill} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value) => formatAmount(Number(value))}
-                        contentStyle={{
-                          background: 'var(--color-surface)',
-                          border: '1px solid var(--color-border)',
-                          borderRadius: 'var(--radius-md)',
-                          fontSize: 'var(--text-caption)',
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* The figures beside the donut, not only in a tooltip. A clerk reading
-                    them aloud cannot hover, and the supplier is holding the slip. */}
-                <ul className="flex flex-col justify-center gap-xxs">
-                  {slices.map((slice) => (
-                    <li key={slice.key} className="flex items-center gap-sm">
-                      <span
-                        aria-hidden
-                        className="size-icon-xs shrink-0 rounded-sm"
-                        style={{ background: slice.fill }}
-                      />
-                      <span className="flex-1 text-body-small text-text-primary">
-                        {slice.label}
-                      </span>
-                      <span className="numeric text-body-small text-text-primary">
-                        {formatAmount(slice.value)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              /* The figures beside the ring, not only in a tooltip. A clerk reading them
+                 aloud cannot hover, and the supplier is holding the slip. */
+              <DonutChart
+                label={t('suppliers.income.month')}
+                total={formatAmount(slices.reduce((sum, slice) => sum + slice.value, 0))}
+                totalLabel={chartMonth ? formatMonthKey(chartMonth.monthKey) : ''}
+                formatValue={formatAmount}
+                showShare={slices.length > 1}
+                segments={slices.map((slice) => ({
+                  key: slice.key,
+                  label: slice.label,
+                  value: slice.value,
+                  color: slice.fill,
+                }))}
+              />
             )}
           </>
         )}

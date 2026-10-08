@@ -203,7 +203,7 @@ export function ConfigurationScreen() {
             ever outgrows `SPLIT_PANE`'s floor, raise the floor. */}
         <Card>
           <CardHeader title={t('config.sections')} />
-          <CardBody className="p-0">
+          <CardBody flush>
             <ul>
               {SECTIONS.map((one) => {
                 const Icon = one.icon;

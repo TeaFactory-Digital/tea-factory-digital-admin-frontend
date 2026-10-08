@@ -101,6 +101,19 @@ export default tseslint.config(
           message:
             'A t-shirt-named sizing utility resolves against --spacing-*, not --container-*: `max-w-md` is 12px here, not 28rem. Use a semantic layout token (max-w-card / max-w-dialog / max-w-dialog-wide / max-w-page) or the numeric scale (w-64, h-11).',
         },
+        {
+          /**
+           * The same collision, for line height.
+           *
+           * `leading-none` resolves against `--spacing-none` (0px) before Tailwind's own
+           * `--leading-none` (1), so it sets `line-height: 0` and the text below a figure
+           * draws on top of it. `leading-tight` and the rest have no spacing namesake and
+           * are safe.
+           */
+          selector: 'JSXAttribute[name.name="className"] Literal[value=/\\bleading-none\\b/]',
+          message:
+            '`leading-none` is `line-height: 0` here (it resolves against --spacing-none). Leave the type token\'s own line height, or use leading-tight.',
+        },
       ],
     },
   },

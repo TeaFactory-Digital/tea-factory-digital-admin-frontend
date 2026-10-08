@@ -27,7 +27,7 @@ export const SelectTrigger = forwardRef<
   <RadixSelect.Trigger
     ref={ref}
     className={cn(
-      'flex h-10 min-w-0 items-center justify-between gap-sm rounded-md border border-border bg-surface px-md text-body-small text-text-primary',
+      'flex h-10 min-w-0 items-center justify-between gap-sm rounded-md border border-border bg-surface px-md text-body-small text-text-primary shadow-card',
       'transition-colors hover:bg-surface-variant',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
       'data-[placeholder]:text-text-secondary disabled:cursor-not-allowed disabled:opacity-50',
@@ -53,7 +53,7 @@ export const SelectContent = forwardRef<
       ref={ref}
       position={position}
       className={cn(
-        'relative z-50 max-h-80 min-w-32 overflow-hidden rounded-md border border-border bg-surface shadow-lg',
+        'relative z-50 max-h-80 min-w-32 overflow-hidden rounded-md border border-border bg-surface shadow-raised',
         position === 'popper' &&
           'w-full min-w-[var(--radix-select-trigger-width)] data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1',
         className,

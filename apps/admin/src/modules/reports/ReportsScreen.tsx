@@ -23,6 +23,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { ChartTooltip } from '@/components/charts/ChartTooltip';
+import { BAR_CURSOR, GRID, MAX_BAR, X_AXIS, Y_AXIS } from '@/components/charts/rechartsTheme';
 import {
   Building2,
   Download,
@@ -125,7 +127,7 @@ function AppUseReport() {
         <div
           role="group"
           aria-label={t('reports.appUse.period')}
-          className="inline-flex rounded-md border border-border bg-surface p-xxs"
+          className="inline-flex gap-xxs rounded-md border border-border bg-surface p-xxs shadow-card"
         >
           {RANGES.map((value) => (
             <button
@@ -134,10 +136,10 @@ function AppUseReport() {
               aria-pressed={range === value}
               onClick={() => setRange(value)}
               className={cn(
-                'rounded-sm px-md py-xs text-body-small transition-colors',
+                'rounded-sm px-md py-xs text-body-small transition-colors duration-150',
                 range === value
-                  ? 'bg-primary font-semibold text-primary-contrast'
-                  : 'text-text-primary hover:bg-surface-variant',
+                  ? 'bg-primary-muted font-semibold text-text-primary ring-1 ring-primary/30 ring-inset'
+                  : 'text-text-secondary hover:bg-surface-variant hover:text-text-primary',
               )}
             >
               {value === 0
@@ -283,43 +285,37 @@ function MonthsChart({ months }: { months: AppUseMonth[] }) {
     <div className="h-72 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-          <CartesianGrid stroke="var(--color-divider)" vertical={false} />
-          <XAxis
-            dataKey="month"
-            stroke="var(--color-text-secondary)"
-            tickLine={false}
-            fontSize={12}
-          />
-          <YAxis
-            stroke="var(--color-text-secondary)"
-            tickLine={false}
-            axisLine={false}
-            allowDecimals={false}
-            width={40}
-            fontSize={12}
-          />
+          <CartesianGrid {...GRID} />
+          <XAxis dataKey="month" {...X_AXIS} />
+          <YAxis {...Y_AXIS} allowDecimals={false} width={40} />
           <Tooltip
-            cursor={{ fill: 'var(--color-surface-variant)' }}
-            contentStyle={{
-              background: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-md)',
-              fontSize: 'var(--text-caption)',
-            }}
+            cursor={BAR_CURSOR}
+            content={<ChartTooltip formatValue={(value) => formatCount(value)} />}
           />
-          <Legend wrapperStyle={{ fontSize: 12 }} />
+          <Legend
+            iconType="circle"
+            iconSize={8}
+            wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
+            formatter={(value) => <span className="text-text-secondary">{value}</span>}
+          />
           <Bar
+            maxBarSize={MAX_BAR}
             dataKey="app"
             name={t('reports.appUse.fromApp')}
             stackId="requests"
             fill="var(--color-primary)"
+            stroke="var(--color-surface)"
+            strokeWidth={2}
             radius={[0, 0, 0, 0]}
           />
           <Bar
+            maxBarSize={MAX_BAR}
             dataKey="office"
             name={t('reports.appUse.fromOffice')}
             stackId="requests"
-            fill="var(--color-border)"
+            fill="var(--color-disabled)"
+            stroke="var(--color-surface)"
+            strokeWidth={2}
             radius={[4, 4, 0, 0]}
           />
         </BarChart>

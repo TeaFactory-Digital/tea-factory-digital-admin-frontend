@@ -10,7 +10,11 @@ export const TabsList = forwardRef<
 >(({ className, ...props }, ref) => (
   <RadixTabs.List
     ref={ref}
-    className={cn('flex flex-wrap gap-xs', className)}
+    // A segmented control: one tray, the open tab a tinted key inside it.
+    className={cn(
+      'inline-flex w-fit flex-wrap gap-xxs rounded-md border border-border bg-surface p-xxs shadow-card',
+      className,
+    )}
     {...props}
   />
 ));
@@ -22,9 +26,9 @@ export const TabsTrigger = forwardRef<
   <RadixTabs.Trigger
     ref={ref}
     className={cn(
-      'inline-flex items-center justify-center rounded-md border px-md py-sm text-label outline-none transition-colors',
-      'border-border bg-surface text-text-primary hover:bg-surface-variant',
-      'data-[state=active]:border-primary data-[state=active]:bg-primary-muted data-[state=active]:font-semibold data-[state=active]:text-primary',
+      'inline-flex items-center justify-center gap-xs rounded-sm px-md py-xs text-label outline-none transition-colors duration-150',
+      'text-text-secondary hover:bg-surface-variant hover:text-text-primary',
+      'data-[state=active]:bg-primary-muted data-[state=active]:font-semibold data-[state=active]:text-text-primary data-[state=active]:ring-1 data-[state=active]:ring-primary/30 data-[state=active]:ring-inset',
       'disabled:pointer-events-none disabled:opacity-50',
       className,
     )}

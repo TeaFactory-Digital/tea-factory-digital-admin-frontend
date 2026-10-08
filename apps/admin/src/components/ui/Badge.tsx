@@ -12,6 +12,15 @@ import { cn } from '@/lib/cn';
 
 export type BadgeTone = 'neutral' | 'success' | 'warning' | 'error' | 'info' | 'primary';
 
+/**
+ * The tones that lead with a dot.
+ *
+ * Status tones only. A neutral chip is a label rather than a state, and the primary tone
+ * is the count badge, where a dot beside a number would read as a second figure. The dot
+ * is drawn in `currentColor`, so it is the pill's own text colour and needs no token.
+ */
+const DOT_TONES = new Set<BadgeTone>(['success', 'warning', 'error', 'info']);
+
 const TONES: Record<BadgeTone, string> = {
   neutral: 'bg-surface-variant text-text-secondary',
   success: 'bg-success-muted text-success',
@@ -25,11 +34,15 @@ export function Badge({
   tone = 'neutral',
   children,
   className,
+  dot = true,
 }: {
   tone?: BadgeTone;
   children: ReactNode;
   className?: string;
+  /** Off where the pill is not a state, e.g. a count. */
+  dot?: boolean;
 }) {
+  const showDot = dot && DOT_TONES.has(tone);
   return (
     <span
       className={cn(
@@ -47,11 +60,16 @@ export function Badge({
          * without touching vertical alignment — which `self-start` would have changed for
          * every badge sitting in a row.
          */
-        'inline-flex w-fit items-center rounded-pill px-sm py-xxs text-caption font-medium whitespace-nowrap',
+        'inline-flex w-fit items-center gap-xs rounded-pill px-sm py-xxs text-caption font-medium whitespace-nowrap',
         TONES[tone],
         className,
       )}
     >
+      {showDot ? (
+        <svg aria-hidden viewBox="0 0 6 6" className="size-1.5 shrink-0 fill-current">
+          <circle cx="3" cy="3" r="3" />
+        </svg>
+      ) : null}
       {children}
     </span>
   );
@@ -61,7 +79,7 @@ export function Badge({
 export function CountBadge({ count, tone = 'primary' }: { count: number; tone?: BadgeTone }) {
   if (count <= 0) return null;
   return (
-    <Badge tone={tone} className="numeric min-w-6 justify-center">
+    <Badge tone={tone} dot={false} className="numeric min-w-6 justify-center">
       {count > 99 ? '99+' : count}
     </Badge>
   );

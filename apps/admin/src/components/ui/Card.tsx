@@ -11,7 +11,7 @@ import { cn } from '@/lib/cn';
 
 export function Card({ children, className }: PropsWithChildren<{ className?: string }>) {
   return (
-    <section className={cn('rounded-lg border border-border bg-surface', className)}>
+    <section className={cn('rounded-lg border border-border bg-surface shadow-card', className)}>
       {children}
     </section>
   );
@@ -29,14 +29,16 @@ export function CardHeader({
   className?: string;
 }) {
   return (
+    // No rule under the header: the title's weight separates it from the body, the
+    // way the panels on the dashboard read. A grid below brings its own header line.
     <header
       className={cn(
-        'flex flex-wrap items-start justify-between gap-md border-b border-divider px-lg py-md',
+        'flex flex-wrap items-start justify-between gap-md px-lg pt-lg pb-md',
         className,
       )}
     >
       <div className="min-w-0">
-        <h2 className="text-title text-text-primary">{title}</h2>
+        <h2 className="text-subtitle font-semibold tracking-tight text-text-primary">{title}</h2>
         {description ? (
           <p className="mt-xxs text-body-small text-text-secondary">{description}</p>
         ) : null}
@@ -46,8 +48,17 @@ export function CardHeader({
   );
 }
 
-export function CardBody({ children, className }: PropsWithChildren<{ className?: string }>) {
-  return <div className={cn('px-lg py-md', className)}>{children}</div>;
+export function CardBody({
+  children,
+  className,
+  flush,
+}: PropsWithChildren<{ className?: string; flush?: boolean }>) {
+  // Full padding on its own; directly under a `CardHeader` the header's bottom
+  // padding already makes the gap, so the body drops its top and the two do not add up.
+  //
+  // `flush` rather than a `p-0` from the caller: `cn` joins without merging, so two
+  // paddings on one element are settled by stylesheet order, not by which was written last.
+  return <div className={cn(flush ? 'pb-sm' : 'p-lg [header+&]:pt-0', className)}>{children}</div>;
 }
 
 

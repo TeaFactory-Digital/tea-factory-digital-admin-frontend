@@ -126,20 +126,20 @@ export function CommandMenu() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="hidden items-center gap-sm rounded-md border border-border bg-surface-variant px-md py-xs text-body-small text-text-secondary hover:border-primary md:flex"
+        className="hidden h-9 w-64 items-center gap-sm rounded-md border border-border bg-surface px-sm text-body-small text-text-secondary shadow-card transition-colors hover:border-text-secondary md:flex"
       >
-        <Search className="size-icon-sm" aria-hidden />
-        {t('search.open')}
-        <kbd className="rounded-sm border border-border bg-surface px-xs text-caption">
+        <Search className="size-icon-sm shrink-0" aria-hidden />
+        <span className="flex-1 text-left">{t('search.open')}</span>
+        <kbd className="rounded-sm border border-border px-xs font-sans text-caption">
           {isMac ? '⌘K' : 'Ctrl K'}
         </kbd>
       </button>
 
       <RadixDialog.Root open={open} onOpenChange={setOpen}>
         <RadixDialog.Portal>
-          <RadixDialog.Overlay className="fixed inset-0 z-40 bg-overlay" />
+          <RadixDialog.Overlay className="fixed inset-0 z-40 bg-overlay backdrop-blur-xs" />
           <RadixDialog.Content
-            className="fixed top-[15vh] left-1/2 z-50 w-[calc(100vw-2rem)] max-w-dialog-wide -translate-x-1/2 overflow-hidden rounded-lg border border-border bg-surface shadow-lg"
+            className="fixed top-[15vh] left-1/2 z-50 w-[calc(100vw-2rem)] max-w-dialog-wide -translate-x-1/2 overflow-hidden rounded-lg border border-border bg-surface shadow-raised"
             aria-describedby={undefined}
           >
             <RadixDialog.Title className="sr-only">{t('search.open')}</RadixDialog.Title>

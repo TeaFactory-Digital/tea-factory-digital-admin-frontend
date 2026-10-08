@@ -22,6 +22,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { ChartTooltip } from '@/components/charts/ChartTooltip';
+import { BAR_CURSOR, GRID, MAX_BAR, X_AXIS, Y_AXIS } from '@/components/charts/rechartsTheme';
 import { Banknote, Coffee, Download, HandCoins, Leaf } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
@@ -96,7 +98,7 @@ export function CreditReport() {
       <div
         role="group"
         aria-label={t('reports.appUse.period')}
-        className="inline-flex self-start rounded-md border border-border bg-surface p-xxs"
+        className="inline-flex gap-xxs self-start rounded-md border border-border bg-surface p-xxs shadow-card"
       >
         {RANGES.map((value) => (
           <button
@@ -105,10 +107,10 @@ export function CreditReport() {
             aria-pressed={range === value}
             onClick={() => setRange(value)}
             className={cn(
-              'rounded-sm px-md py-xs text-body-small transition-colors',
+              'rounded-sm px-md py-xs text-body-small transition-colors duration-150',
               range === value
-                ? 'bg-primary font-semibold text-primary-contrast'
-                : 'text-text-primary hover:bg-surface-variant',
+                ? 'bg-primary-muted font-semibold text-text-primary ring-1 ring-primary/30 ring-inset'
+                : 'text-text-secondary hover:bg-surface-variant hover:text-text-primary',
             )}
           >
             {value === 0
@@ -213,48 +215,45 @@ function MonthsChart({ months }: { months: CreditMonth[] }) {
     <div className="h-72 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
-          <CartesianGrid stroke="var(--color-divider)" vertical={false} />
-          <XAxis
-            dataKey="month"
-            stroke="var(--color-text-secondary)"
-            tickLine={false}
-            fontSize={12}
-          />
-          <YAxis
-            stroke="var(--color-text-secondary)"
-            tickLine={false}
-            axisLine={false}
-            width={64}
-            fontSize={12}
-          />
+          <CartesianGrid {...GRID} />
+          <XAxis dataKey="month" {...X_AXIS} />
+          <YAxis {...Y_AXIS} width={64} />
           <Tooltip
-            cursor={{ fill: 'var(--color-surface-variant)' }}
-            formatter={(value) => formatMoney(Number(value))}
-            contentStyle={{
-              background: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-md)',
-              fontSize: 'var(--text-caption)',
-            }}
+            cursor={BAR_CURSOR}
+            content={<ChartTooltip formatValue={(value) => formatMoney(value)} />}
           />
-          <Legend wrapperStyle={{ fontSize: 12 }} />
+          <Legend
+            iconType="circle"
+            iconSize={8}
+            wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
+            formatter={(value) => <span className="text-text-secondary">{value}</span>}
+          />
           <Bar
+            maxBarSize={MAX_BAR}
             dataKey="advance"
             name={t('reports.credit.advances')}
             stackId="credit"
-            fill="var(--color-primary)"
+            fill="var(--color-chart-1)"
+            stroke="var(--color-surface)"
+            strokeWidth={2}
           />
           <Bar
+            maxBarSize={MAX_BAR}
             dataKey="loan"
             name={t('reports.credit.loans')}
             stackId="credit"
-            fill="var(--color-info)"
+            fill="var(--color-chart-2)"
+            stroke="var(--color-surface)"
+            strokeWidth={2}
           />
           <Bar
+            maxBarSize={MAX_BAR}
             dataKey="manure"
             name={t('reports.credit.manure')}
             stackId="credit"
-            fill="var(--color-success)"
+            fill="var(--color-chart-3)"
+            stroke="var(--color-surface)"
+            strokeWidth={2}
             radius={[4, 4, 0, 0]}
           />
         </BarChart>
