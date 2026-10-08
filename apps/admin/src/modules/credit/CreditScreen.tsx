@@ -153,11 +153,14 @@ export function CreditScreen() {
         enableSorting: false,
         cell: (info) => {
           const row = info.row.original;
-          const over = row.amount > row.eligibility.available;
+          const eligibility = row.eligibility;
+          // Rejected and cancelled rows carry no figures; a dash, not a crash.
+          if (!eligibility) return <span className="text-text-secondary">{formatAmount(null)}</span>;
+          const over = row.amount > eligibility.available;
           return (
             <span className="flex flex-col">
               <span className="numeric text-text-primary">
-                {formatAmount(row.eligibility.available)}
+                {formatAmount(eligibility.available)}
               </span>
               {/**
                * The judgement, on the row. Most of this queue is "yes, obviously",
@@ -166,7 +169,7 @@ export function CreditScreen() {
                */}
               {over ? (
                 <Badge tone="error">{t('credit.overCeilingShort')}</Badge>
-              ) : !row.eligibility.eligible ? (
+              ) : !eligibility.eligible ? (
                 <Badge tone="warning">{t('credit.notEligibleShort')}</Badge>
               ) : null}
             </span>

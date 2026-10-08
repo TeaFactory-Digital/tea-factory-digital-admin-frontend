@@ -139,7 +139,9 @@ export function formatMonthName(month: number): string {
  * Compact because it lives in a table cell next to a name, and the office reads
  * it as an urgency signal rather than a duration.
  */
-export function formatAge(hours: number): string {
+export function formatAge(hours: number | null | undefined): string {
+  // An age the API did not send is absent, not "NaN d" (BR-102).
+  if (hours === null || hours === undefined || !Number.isFinite(hours)) return NOT_AVAILABLE;
   if (hours < 1) return '< 1 h';
   if (hours < 48) return `${Math.floor(hours)} h`;
   return `${Math.floor(hours / 24)} d`;

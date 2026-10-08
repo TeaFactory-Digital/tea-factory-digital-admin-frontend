@@ -648,6 +648,7 @@ export const ta: Record<TranslationKey, string> = {
   'credit.detail.decision': 'தீர்மானம்',
   'credit.detail.decidedAgainst':
     '{{when}} கணக்கிடப்பட்ட {{ceiling}} வரம்பை அடிப்படையாகக் கொண்டு தீர்மானிக்கப்பட்டது.',
+  'credit.detail.noEligibility': 'இந்தக் கோரிக்கைக்குத் தகுதி விவரங்கள் சேமிக்கப்படவில்லை. கோரிக்கை அங்கீகரிக்கப்படும்போது மட்டுமே அவை பதிவு செய்யப்படும்.',
   'credit.detail.auditTitle': 'தணிக்கைத் தடம்',
   'credit.detail.otherRequests': 'அவர்களின் மற்ற திறந்த வேண்டுகோள்கள்',
 

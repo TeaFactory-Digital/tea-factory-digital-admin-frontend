@@ -4823,7 +4823,8 @@ export const handlers: HttpHandler[] = [
     if (status) rows = rows.filter((r) => r.status === status);
     if (facility) rows = rows.filter((r) => r.facility === facility);
     if (supplierId) rows = rows.filter((r) => r.supplierId === supplierId);
-    if (overCeiling === 'true') rows = rows.filter((r) => r.amount > r.eligibility.available);
+    if (overCeiling === 'true')
+      rows = rows.filter((r) => r.eligibility !== null && r.amount > r.eligibility.available);
     if (q) {
       rows = rows.filter(
         (r) =>

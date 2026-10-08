@@ -634,6 +634,7 @@ export const en = {
   'credit.detail.quantity': 'Quantity',
   'credit.detail.decision': 'Decision',
   'credit.detail.decidedAgainst': 'Decided against a ceiling of {{ceiling}}, worked out {{when}}.',
+  'credit.detail.noEligibility': 'No eligibility figures are kept for this request. They are recorded only when a request is approved.',
   'credit.detail.auditTitle': 'Audit trail',
   'credit.detail.otherRequests': 'Their other open requests',
 

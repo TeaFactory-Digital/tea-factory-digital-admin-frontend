@@ -32,6 +32,7 @@ import {
 import { adminConfigRepository } from '@/services/repositories/adminConfigRepository';
 import { creditRepository } from '@/services/repositories/creditRepository';
 import { signInAs, signOut } from './render';
+import { eligibilityOf } from './credit';
 
 const CLERK = 'clerk@galabodatea.lk';
 const FACTORY_ADMIN = 'factoryadmin@galabodatea.lk';
@@ -377,10 +378,10 @@ describe('M7 prices its queue with the tenant’s rule', () => {
     // A row with an actual ceiling: the fixture deliberately contains a short-history
     // supplier whose ceiling is zero, and halving a multiplier cannot move that.
     const row = before.items.find(
-      (one) => one.facility === 'loan' && one.eligibility.ceiling > 0,
+      (one) => one.facility === 'loan' && eligibilityOf(one).ceiling > 0,
     );
     expect(row).toBeDefined();
-    const ceilingBefore = row!.eligibility.ceiling;
+    const ceilingBefore = eligibilityOf(row!).ceiling;
 
     // Halve the multiplier through the configuration screen's own path.
     signOut();
@@ -403,6 +404,6 @@ describe('M7 prices its queue with the tenant’s rule', () => {
      * queue's ceilings move on the next read. Recomputed per request, never stored —
      * a cached ceiling would keep offering headroom the factory has withdrawn.
      */
-    expect(same.eligibility.ceiling).toBeLessThan(ceilingBefore);
+    expect(eligibilityOf(same).ceiling).toBeLessThan(ceilingBefore);
   }, 20_000);
 });

@@ -74,7 +74,20 @@ export function CreditRequestDetailScreen() {
 
       <div className="grid gap-lg lg:grid-cols-3">
         <div className="flex flex-col gap-lg lg:col-span-2">
-          <EligibilityPanel eligibility={request.eligibility} amount={request.amount} />
+          {/* A rejected or cancelled request carries no figures: the server keeps a
+              snapshot only for an approval. Said in words rather than left blank. */}
+          {request.eligibility ? (
+            <EligibilityPanel eligibility={request.eligibility} amount={request.amount} />
+          ) : (
+            <Card>
+              <CardHeader title={t('credit.eligibility.title')} />
+              <CardBody>
+                <p className="text-body-small text-text-secondary">
+                  {t('credit.detail.noEligibility')}
+                </p>
+              </CardBody>
+            </Card>
+          )}
 
           <Card>
             <CardHeader
@@ -146,12 +159,14 @@ export function CreditRequestDetailScreen() {
                   {request.decision.note}
                 </blockquote>
                 {/* What it was decided against, stated rather than implied. */}
-                <p className="numeric text-caption text-text-secondary">
-                  {t('credit.detail.decidedAgainst', {
-                    ceiling: formatAmount(request.eligibility.ceiling),
-                    when: formatDateTime(request.eligibility.computedAt),
-                  })}
-                </p>
+                {request.eligibility ? (
+                  <p className="numeric text-caption text-text-secondary">
+                    {t('credit.detail.decidedAgainst', {
+                      ceiling: formatAmount(request.eligibility.ceiling),
+                      when: formatDateTime(request.eligibility.computedAt),
+                    })}
+                  </p>
+                ) : null}
               </CardBody>
             </Card>
           ) : null}

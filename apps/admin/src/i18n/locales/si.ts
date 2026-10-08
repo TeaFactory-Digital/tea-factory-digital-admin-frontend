@@ -642,6 +642,7 @@ export const si: Record<TranslationKey, string> = {
   'credit.detail.quantity': 'ප්‍රමාණය',
   'credit.detail.decision': 'තීරණය',
   'credit.detail.decidedAgainst': '{{when}} ගණනය කළ {{ceiling}} සීමාවට එරෙහිව තීරණය කළා.',
+  'credit.detail.noEligibility': 'මෙම ඉල්ලීම සඳහා සුදුසුකම් සංඛ්‍යා සටහන් කර නැත. ඒවා සටහන් කරනු ලබන්නේ ඉල්ලීමක් අනුමත කළ විට පමණි.',
   'credit.detail.auditTitle': 'විගණන සටහන',
   'credit.detail.otherRequests': 'ඔවුන්ගේ අනෙකුත් විවෘත ඉල්ලීම්',
 

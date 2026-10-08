@@ -40,6 +40,7 @@ import { mockSupplierRecord } from '@/services/mocks/handlers';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { useAuthStore } from '@/auth/authStore';
 import { renderWithProviders, signInAs, signOut } from './render';
+import { eligibilityOf } from './credit';
 
 const CLERK = 'clerk@galabodatea.lk';
 const MANAGER = 'manager@galabodatea.lk';
@@ -76,7 +77,7 @@ describe('M7 eligibility (AC-05)', () => {
   it('prints a ceiling that equals its own working', async () => {
     await signInAs(CLERK);
     const request = await creditRepository.get(WITHIN_CEILING);
-    const { eligibility } = request;
+    const eligibility = eligibilityOf(request);
 
     expect(request.facility).toBe('advance');
     expect(eligibility.eligible).toBe(true);
@@ -128,7 +129,7 @@ describe('M7 eligibility (AC-05)', () => {
      * they can only be *made* to agree by both calling this function. If the API
      * ever grows its own copy, the identity below is what breaks.
      */
-    const { eligibility } = request;
+    const eligibility = eligibilityOf(request);
     expect(eligibility.limitMultiplier).not.toBeNull();
     expect(eligibility.averageMonthlyIncome).not.toBeNull();
     expect(eligibility.ceiling).toBe(
@@ -141,11 +142,11 @@ describe('M7 eligibility (AC-05)', () => {
     await signInAs(CLERK);
     const request = await creditRepository.get(SHORT_HISTORY);
 
-    expect(request.eligibility.eligible).toBe(false);
-    expect(request.eligibility.ceiling).toBe(0);
-    expect(request.eligibility.monthsOfHistory).toBeLessThan(REQUIRED_MONTHS_OF_HISTORY);
+    expect(eligibilityOf(request).eligible).toBe(false);
+    expect(eligibilityOf(request).ceiling).toBe(0);
+    expect(eligibilityOf(request).monthsOfHistory).toBeLessThan(REQUIRED_MONTHS_OF_HISTORY);
     // A key, not a sentence — the console localizes (BR-110).
-    expect(request.eligibility.reasonKey).toBe('credit.reason.shortHistory');
+    expect(eligibilityOf(request).reasonKey).toBe('credit.reason.shortHistory');
   });
 
   it('recomputes on every read instead of serving what was stored', async () => {
@@ -165,8 +166,8 @@ describe('M7 eligibility (AC-05)', () => {
     await signInAs(CLERK);
     const after = await creditRepository.get(WITHIN_CEILING);
 
-    expect(after.eligibility.pricedKgs).toBeGreaterThan(before.eligibility.pricedKgs!);
-    expect(after.eligibility.ceiling).toBeGreaterThan(before.eligibility.ceiling);
+    expect(eligibilityOf(after).pricedKgs).toBeGreaterThan(eligibilityOf(before).pricedKgs!);
+    expect(eligibilityOf(after).ceiling).toBeGreaterThan(eligibilityOf(before).ceiling);
   });
 });
 
@@ -178,8 +179,8 @@ describe('M7 approve', () => {
 
     const ack = await creditRepository.approve(
       WITHIN_CEILING,
-      { note: NOTE, ceilingSeen: request.eligibility.ceiling },
-      { amount: request.amount, available: request.eligibility.available },
+      { note: NOTE, ceilingSeen: eligibilityOf(request).ceiling },
+      { amount: request.amount, available: eligibilityOf(request).available },
     );
     expect(ack.status).toBe('approved');
 
@@ -207,7 +208,7 @@ describe('M7 approve', () => {
     // limit that has since moved.
     expect(entry?.after).toMatchObject({
       status: 'approved',
-      ceiling: request.eligibility.ceiling,
+      ceiling: eligibilityOf(request).ceiling,
     });
   });
 
@@ -224,11 +225,11 @@ describe('M7 approve', () => {
     await signInAs(CLERK);
     const request = await creditRepository.get('crd-7');
 
-    expect(request.eligibility.outstanding).toBeGreaterThan(0);
-    expect(request.eligibility.available).toBe(
-      round2(request.eligibility.ceiling - request.eligibility.outstanding),
+    expect(eligibilityOf(request).outstanding).toBeGreaterThan(0);
+    expect(eligibilityOf(request).available).toBe(
+      round2(eligibilityOf(request).ceiling - eligibilityOf(request).outstanding),
     );
-    expect(request.eligibility.available).toBeLessThan(request.eligibility.ceiling);
+    expect(eligibilityOf(request).available).toBeLessThan(eligibilityOf(request).ceiling);
   });
 });
 
@@ -242,8 +243,8 @@ describe('M7 refusals', () => {
         WITHIN_CEILING,
         // A figure that was never on screen — the shape of a queue rendered before
         // this morning's leaf was recorded.
-        { note: NOTE, ceilingSeen: round2(request.eligibility.ceiling + 1) },
-        { amount: request.amount, available: request.eligibility.available },
+        { note: NOTE, ceilingSeen: round2(eligibilityOf(request).ceiling + 1) },
+        { amount: request.amount, available: eligibilityOf(request).available },
       ),
     ).rejects.toMatchObject({ code: 'stale-eligibility' });
   });
@@ -267,8 +268,8 @@ describe('M7 refusals', () => {
     await expect(
       creditRepository.approve(
         WITHIN_CEILING,
-        { note: NOTE, ceilingSeen: asRendered.eligibility.ceiling },
-        { amount: asRendered.amount, available: asRendered.eligibility.available },
+        { note: NOTE, ceilingSeen: eligibilityOf(asRendered).ceiling },
+        { amount: asRendered.amount, available: eligibilityOf(asRendered).available },
       ),
     ).rejects.toMatchObject({ code: 'stale-eligibility' });
   });
@@ -286,7 +287,7 @@ describe('M7 refusals', () => {
 
     const decided = await creditRepository.reject('crd-5', {
       note: 'Asked at the counter to wait until the account is paid.',
-      ceilingSeen: round2(request.eligibility.ceiling + 1),
+      ceilingSeen: round2(eligibilityOf(request).ceiling + 1),
     });
     expect(decided.status).toBe('rejected');
   });
@@ -294,14 +295,14 @@ describe('M7 refusals', () => {
   it('refuses more than the supplier may draw, on the client and on the server', async () => {
     await signInAs(MANAGER);
     const request = await creditRepository.get(OVER_CEILING);
-    expect(request.amount).toBeGreaterThan(request.eligibility.available);
+    expect(request.amount).toBeGreaterThan(eligibilityOf(request).available);
 
     // The repository guard, so the button is never the thing that fails.
     await expect(
       creditRepository.approve(
         OVER_CEILING,
-        { note: NOTE, ceilingSeen: request.eligibility.ceiling },
-        { amount: request.amount, available: request.eligibility.available },
+        { note: NOTE, ceilingSeen: eligibilityOf(request).ceiling },
+        { amount: request.amount, available: eligibilityOf(request).available },
       ),
     ).rejects.toMatchObject({ code: 'over-ceiling' });
 
@@ -310,7 +311,7 @@ describe('M7 refusals', () => {
     await expect(
       endpoints.creditEndpoints.approve(OVER_CEILING, {
         note: NOTE,
-        ceilingSeen: request.eligibility.ceiling,
+        ceilingSeen: eligibilityOf(request).ceiling,
       }),
     ).rejects.toMatchObject({ code: 'over-ceiling' });
   });
@@ -326,8 +327,8 @@ describe('M7 refusals', () => {
     await expect(
       creditRepository.approve(
         OFFICE_RAISED,
-        { note: 'Approving my own request, which must not be allowed.', ceilingSeen: request.eligibility.ceiling },
-        { amount: request.amount, available: request.eligibility.available },
+        { note: 'Approving my own request, which must not be allowed.', ceilingSeen: eligibilityOf(request).ceiling },
+        { amount: request.amount, available: eligibilityOf(request).available },
       ),
     ).rejects.toMatchObject({ code: 'four-eyes-violation' });
   });
@@ -343,7 +344,7 @@ describe('M7 refusals', () => {
       creditRepository.approve(
         OFFICE_RAISED,
         { note: 'A note long enough to pass client validation.', ceilingSeen: 1 },
-        { amount: request.amount, available: request.eligibility.available },
+        { amount: request.amount, available: eligibilityOf(request).available },
       ),
     ).rejects.toMatchObject({ code: 'four-eyes-violation' });
   });
@@ -355,8 +356,8 @@ describe('M7 refusals', () => {
     await expect(
       creditRepository.approve(
         'crd-3',
-        { note: 'ok', ceilingSeen: request.eligibility.ceiling },
-        { amount: request.amount, available: request.eligibility.available },
+        { note: 'ok', ceilingSeen: eligibilityOf(request).ceiling },
+        { amount: request.amount, available: eligibilityOf(request).available },
       ),
     ).rejects.toMatchObject({ code: 'note-required' });
 
@@ -364,7 +365,7 @@ describe('M7 refusals', () => {
     await expect(
       endpoints.creditEndpoints.approve('crd-3', {
         note: 'no',
-        ceilingSeen: request.eligibility.ceiling,
+        ceilingSeen: eligibilityOf(request).ceiling,
       }),
     ).rejects.toMatchObject({ code: 'note-required' });
   });
@@ -377,8 +378,8 @@ describe('M7 refusals', () => {
     await expect(
       creditRepository.approve(
         ALREADY_APPROVED,
-        { note: 'Second decision, which must be refused rather than overwrite.', ceilingSeen: request.eligibility.ceiling },
-        { amount: request.amount, available: request.eligibility.available },
+        { note: 'Second decision, which must be refused rather than overwrite.', ceilingSeen: eligibilityOf(request).ceiling },
+        { amount: request.amount, available: eligibilityOf(request).available },
       ),
     ).rejects.toMatchObject({ code: 'already-decided' });
   });
@@ -400,8 +401,8 @@ describe('M7 refusals', () => {
 
     // Recomputing here would make every past approval look wrong the moment a
     // supplier's leaf changed.
-    expect(second.eligibility.ceiling).toBe(first.eligibility.ceiling);
-    expect(second.eligibility.computedAt).toBe(first.eligibility.computedAt);
+    expect(eligibilityOf(second).ceiling).toBe(eligibilityOf(first).ceiling);
+    expect(eligibilityOf(second).computedAt).toBe(eligibilityOf(first).computedAt);
   });
 });
 
@@ -423,8 +424,8 @@ describe('M7 permissions (§12.1)', () => {
     await expect(
       creditRepository.approve(
         'crd-8',
-        { note: NOTE, ceilingSeen: request.eligibility.ceiling },
-        { amount: request.amount, available: request.eligibility.available },
+        { note: NOTE, ceilingSeen: eligibilityOf(request).ceiling },
+        { amount: request.amount, available: eligibilityOf(request).available },
       ),
     ).rejects.toMatchObject({ code: 'forbidden' });
   });

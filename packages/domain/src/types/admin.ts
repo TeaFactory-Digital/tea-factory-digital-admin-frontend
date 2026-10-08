@@ -697,8 +697,13 @@ export interface AdminCreditRequest {
    * A ceiling cached on the row is a ceiling that goes stale the moment a delivery
    * is recorded, and the approver would be reading a figure from whenever the
    * request happened to be written.
+   *
+   * **`null` once a request is rejected or cancelled.** The server recomputes for a pending
+   * request and freezes the figures only on *approval*; a rejection lends nothing and a
+   * cancellation was never decided, so neither stores a snapshot. A screen that assumed one
+   * crashed on every past request that was not an approval.
    */
-  eligibility: CreditEligibility;
+  eligibility: CreditEligibility | null;
   /** Hours waiting — drives queue-age colouring against `QUEUE_SLA_HOURS`. */
   ageHours: number;
 }

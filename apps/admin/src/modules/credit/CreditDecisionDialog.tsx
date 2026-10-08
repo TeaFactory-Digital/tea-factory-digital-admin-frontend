@@ -23,7 +23,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, X } from 'lucide-react';
-import type { AdminCreditRequest } from '@tfd/domain';
+import type { AdminCreditRequest, CreditEligibility } from '@tfd/domain';
 import { isSelfApproval } from '@tfd/domain';
 import { useCan, useCurrentUser } from '@/auth/authStore';
 import { useNoteSuggestions } from '@/components/useNoteSuggestions';
@@ -52,9 +52,13 @@ export function CreditDecisionActions({ request }: { request: AdminCreditRequest
   const [verb, setVerb] = useState<CreditVerb | null>(null);
 
   const selfRaised = isSelfApproval(user, request.createdById);
-  const overCeiling = request.amount > request.eligibility.available;
+  const eligibility = request.eligibility;
 
-  if (request.status !== 'pending') return null;
+  // Read only after the status check: a rejected or cancelled request carries no
+  // eligibility (see `AdminCreditRequest.eligibility`), and nothing is decided without it.
+  if (request.status !== 'pending' || !eligibility) return null;
+
+  const overCeiling = request.amount > eligibility.available;
 
   /**
    * Checked here, unlike M9's dialog, because on this queue read and decide are
@@ -91,7 +95,7 @@ export function CreditDecisionActions({ request }: { request: AdminCreditRequest
             <strong className="font-semibold">{t('credit.overCeiling.title')}</strong>{' '}
             {t('credit.overCeiling.body', {
               amount: formatAmount(request.amount),
-              available: formatAmount(request.eligibility.available),
+              available: formatAmount(eligibility.available),
             })}
           </span>
         </Notice>
@@ -124,7 +128,12 @@ export function CreditDecisionActions({ request }: { request: AdminCreditRequest
       </div>
 
       {verb ? (
-        <CreditDecisionDialog request={request} verb={verb} onClose={() => setVerb(null)} />
+        <CreditDecisionDialog
+          request={request}
+          eligibility={eligibility}
+          verb={verb}
+          onClose={() => setVerb(null)}
+        />
       ) : null}
     </div>
   );
@@ -132,10 +141,13 @@ export function CreditDecisionActions({ request }: { request: AdminCreditRequest
 
 function CreditDecisionDialog({
   request,
+  eligibility,
   verb,
   onClose,
 }: {
   request: AdminCreditRequest;
+  /** Narrowed by the caller, which renders nothing for a request without figures. */
+  eligibility: CreditEligibility;
   verb: CreditVerb;
   onClose: () => void;
 }) {
@@ -161,9 +173,9 @@ function CreditDecisionDialog({
         body: {
           note: note.trim(),
           // The figure on screen, not one read back from the cache at submit time.
-          ceilingSeen: request.eligibility.ceiling,
+          ceilingSeen: eligibility.ceiling,
         },
-        check: { amount: request.amount, available: request.eligibility.available },
+        check: { amount: request.amount, available: eligibility.available },
       },
       {
         onSuccess: () => {
@@ -225,7 +237,7 @@ function CreditDecisionDialog({
               {t('credit.eligibility.ceiling')}
             </dt>
             <dd className="numeric text-body-small text-text-primary">
-              {formatAmount(request.eligibility.ceiling)}
+              {formatAmount(eligibility.ceiling)}
             </dd>
           </div>
           <div>
@@ -233,7 +245,7 @@ function CreditDecisionDialog({
               {t('credit.eligibility.available')}
             </dt>
             <dd className="numeric text-body-small text-text-primary">
-              {formatAmount(request.eligibility.available)}
+              {formatAmount(eligibility.available)}
             </dd>
           </div>
         </dl>
@@ -269,7 +281,7 @@ function CreditDecisionDialog({
               <strong className="font-semibold">{t('credit.overCeiling.title')}</strong>{' '}
               {t('credit.overCeiling.body', {
                 amount: formatAmount(request.amount),
-                available: formatAmount(request.eligibility.available),
+                available: formatAmount(eligibility.available),
               })}
             </span>
           </Notice>
