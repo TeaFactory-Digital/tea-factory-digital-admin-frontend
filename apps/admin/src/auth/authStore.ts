@@ -84,9 +84,22 @@ type Rotation = { session: AuthSession; passwordChangeRequired: boolean };
 
 let rotating: Promise<Rotation | null> | null = null;
 
+/**
+ * **Across tabs too.** Every tab shares the one refresh cookie, so two tabs refreshing at
+ * the same moment present the same token twice, and the API ends the session for both.
+ * A Web Lock queues them: the second tab waits, and its request then carries the cookie
+ * the first tab's rotation set. Browsers without the API (and jsdom) fall back to the
+ * per-tab promise above, which is what they had before.
+ */
+const REFRESH_LOCK = 'tfd-admin-refresh';
+
+function acrossTabs<T>(run: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator === 'undefined' ? undefined : navigator.locks;
+  return locks ? (locks.request(REFRESH_LOCK, run) as Promise<T>) : run();
+}
+
 function rotateOnce(): Promise<Rotation | null> {
-  rotating ??= authRepository
-    .refresh()
+  rotating ??= acrossTabs(() => authRepository.refresh())
     .catch(() => null)
     .finally(() => {
       rotating = null;

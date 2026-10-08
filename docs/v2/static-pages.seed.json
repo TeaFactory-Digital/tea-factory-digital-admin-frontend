@@ -1,5 +1,5 @@
 {
-  "_note": "Default static pages every factory starts with, all six, in en/si/ta. The backend seeds a page only for a factory that does not have it yet; after that the office edits it in the console (Static content) and can add, change or remove points. Bodies are in the points format: a line starting '## ' begins a point (an FAQ question, a terms section); text before the first point is an introduction. '{{factory}}' must be replaced with the factory's own name (factories.name) when inserting. See BACKEND-TODO.md #43.",
+  "_note": "Default static pages every factory starts with, all six, in en/si/ta. The backend gives a factory any page it does not have, published. It also replaces a page with this text when the office has never edited it (no translation saved by a person); a page the office has edited in any language is theirs and is never overwritten. After that the office edits pages in the console (Static content) and can add, change or remove points. Bodies are in the points format: a line starting '## ' begins a point (an FAQ question, a terms section); text before the first point is an introduction. '{{factory}}' is replaced with the factory's own name (factories.name) when inserting. See BACKEND-TODO.md #43.",
   "pages": [
     {
       "slug": "faq",
