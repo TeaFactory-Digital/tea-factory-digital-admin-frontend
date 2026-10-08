@@ -191,3 +191,10 @@ export function usePublishStaticPage(slug: StaticPageSlug) {
     onSuccess: invalidate,
   });
 }
+
+/** Fetched on demand, when the editor asks to restore a page's default text. */
+export function useStaticPageDefault(slug: StaticPageSlug) {
+  return useMutation({
+    mutationFn: (lang: LanguageCode) => staticPageRepository.defaultText(slug, lang),
+  });
+}

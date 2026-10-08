@@ -21,7 +21,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Save } from 'lucide-react';
+import { RotateCcw, Save } from 'lucide-react';
 import {
   EDITORIAL_FALLBACK_LANGUAGE,
   MAX_CONTENT_BODY_CHARS,
@@ -35,6 +35,7 @@ import {
   serializePagePoints,
 } from '@tfd/domain';
 import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import { formatDateTime } from '@/lib/format';
 import { InfoTip } from '@/components/ui/Tooltip';
@@ -50,6 +51,7 @@ export function TranslationEditor({
   saving,
   onSave,
   pointLabels,
+  onRestoreDefault,
 }: {
   lang: LanguageCode;
   translation: ContentTranslation | undefined;
@@ -64,6 +66,13 @@ export function TranslationEditor({
    * text box. The points are written back into the same body text, so saving is unchanged.
    */
   pointLabels?: PointLabels;
+  /**
+   * Given, the editor offers "Restore default text": the starting copy for this page and
+   * language, from the server. It only fills the form; nothing is stored until Save, so an
+   * editor who changes their mind leaves without saving and loses nothing. Resolves `null`
+   * when the server has no default for it.
+   */
+  onRestoreDefault?: () => Promise<{ title: string; body: string } | null>;
 }) {
   const { t } = useTranslation();
 
@@ -92,6 +101,25 @@ export function TranslationEditor({
     setBody(translation?.body ?? '');
     setPointsDraft(parsePagePoints(translation?.body ?? ''));
   }, [translation?.title, translation?.excerpt, translation?.body, translation?.updatedAt]);
+
+  const [confirmingRestore, setConfirmingRestore] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+
+  async function restoreDefault() {
+    if (!onRestoreDefault) return;
+    setRestoring(true);
+    try {
+      const copy = await onRestoreDefault();
+      if (copy) {
+        setTitle(copy.title);
+        setBody(copy.body);
+        setPointsDraft(parsePagePoints(copy.body));
+      }
+    } finally {
+      setRestoring(false);
+      setConfirmingRestore(false);
+    }
+  }
 
   const dirty =
     title !== (translation?.title ?? '') ||
@@ -215,6 +243,16 @@ export function TranslationEditor({
             {t('content.save', { language: t(`content.language.${lang}`) })}
           </Button>
 
+          {onRestoreDefault ? (
+            <Button
+              variant="ghost"
+              iconLeft={<RotateCcw className="size-icon-sm" aria-hidden />}
+              onClick={() => setConfirmingRestore(true)}
+            >
+              {t('content.restoreDefault')}
+            </Button>
+          ) : null}
+
           {/* Said in words rather than left to a disabled button, because "nothing
               happens when I press save" is a support call either way. */}
           <p className="text-caption text-text-secondary">
@@ -233,6 +271,18 @@ export function TranslationEditor({
           </p>
         </div>
       )}
+
+      {onRestoreDefault ? (
+        <ConfirmDialog
+          open={confirmingRestore}
+          onOpenChange={setConfirmingRestore}
+          title={t('content.restoreDefaultTitle', { language: t(`content.language.${lang}`) })}
+          description={t('content.restoreDefaultBody')}
+          confirmLabel={t('content.restoreDefault')}
+          onConfirm={restoreDefault}
+          loading={restoring}
+        />
+      ) : null}
     </div>
   );
 }

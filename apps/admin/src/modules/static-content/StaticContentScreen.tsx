@@ -57,6 +57,7 @@ import {
   useContentLanguages,
   usePublishStaticPage,
   useSaveStaticPageTranslation,
+  useStaticPageDefault,
   useStaticPagePreview,
   useStaticPages,
 } from '@/modules/content/hooks';
@@ -86,6 +87,7 @@ export function StaticContentScreen() {
 
   const preview = useStaticPagePreview(slug, lang);
   const save = useSaveStaticPageTranslation(slug);
+  const restoreDefault = useStaticPageDefault(slug);
   const publish = usePublishStaticPage(slug);
   const toast = useToast();
 
@@ -123,6 +125,22 @@ export function StaticContentScreen() {
       );
     } catch (cause) {
       toast.error(t('content.saveFailed'), t(errorMessageKey(cause)));
+    }
+  }
+
+  /** The default text for this language, or `null` (said in a toast) when there is none. */
+  async function loadDefault() {
+    try {
+      const copy = await restoreDefault.mutateAsync(lang);
+      if (copy) {
+        toast.success(t('content.restoreDefaultLoaded'), t('content.restoreDefaultLoadedHint'));
+      } else {
+        toast.error(t('content.restoreDefaultMissing'));
+      }
+      return copy;
+    } catch (cause) {
+      toast.error(t('content.restoreDefaultFailed'), t(errorMessageKey(cause)));
+      return null;
     }
   }
 
@@ -211,6 +229,7 @@ export function StaticContentScreen() {
                 saving={save.isPending}
                 onSave={(body) => void submitSave(body)}
                 pointLabels={pointLabelsFor(slug, t)}
+                onRestoreDefault={loadDefault}
               />
 
               {!published ? (

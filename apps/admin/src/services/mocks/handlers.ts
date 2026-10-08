@@ -17,6 +17,7 @@
  */
 
 import { HttpResponse, delay, http, type HttpHandler } from 'msw';
+import STATIC_PAGE_DEFAULTS from '../../../../../docs/v2/static-pages.seed.json';
 import type { ServedBannerPreview, ServedContentPreview } from '../api/adapters';
 import type { ServedAudience } from '../endpoints/notifications';
 import type {
@@ -6291,6 +6292,26 @@ export const handlers: HttpHandler[] = [
     const url = new URL(request.url);
     const lang = (url.searchParams.get('lang') ?? EDITORIAL_FALLBACK_LANGUAGE) as LanguageCode;
     return HttpResponse.json(contentPreview(record.translations, lang));
+  }),
+
+  /** BACKEND-TODO #44: the default text, served from the same file the API seeds from. */
+  http.get('*/admin/static-pages/:slug/default', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'content');
+    if ('response' in auth) return auth.response;
+
+    const lang = new URL(request.url).searchParams.get('lang') ?? EDITORIAL_FALLBACK_LANGUAGE;
+    const page = STATIC_PAGE_DEFAULTS.pages.find((one) => one.slug === params.slug);
+    const copy = page?.translations.find((one) => one.lang === lang);
+    if (!page || !copy) return fail({ status: 404, code: 'not-found', message: 'No default text.' });
+
+    const name = tenantConfig(request).factory.name;
+    return HttpResponse.json({
+      slug: page.slug,
+      lang: copy.lang,
+      title: copy.title.replaceAll('{{factory}}', name),
+      body: copy.body.replaceAll('{{factory}}', name),
+    });
   }),
 
   http.put('*/admin/static-pages/:slug/translations/:lang', async ({ request, params }) => {

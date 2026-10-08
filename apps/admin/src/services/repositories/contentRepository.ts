@@ -188,4 +188,20 @@ export const staticPageRepository = {
     staticPageEndpoints.preview(slug, lang).then(toContentPreview),
 
   publish: (slug: StaticPageSlug): Promise<StatusAck> => staticPageEndpoints.publish(slug),
+
+  /** The default text, or `null` when the server has none for it (or no such endpoint yet). */
+  defaultText: async (
+    slug: StaticPageSlug,
+    lang: LanguageCode,
+  ): Promise<{ title: string; body: string } | null> => {
+    try {
+      const served = await staticPageEndpoints.defaultText(slug, lang);
+      return { title: served.title, body: served.body };
+    } catch (error) {
+      if (error instanceof ApiError && (error.code === 'not-found' || error.status === 404)) {
+        return null;
+      }
+      throw error;
+    }
+  },
 };

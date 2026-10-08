@@ -25,6 +25,13 @@ import { apiClient } from '../api/client';
 import type { MutationAck, ServedContentPreview, StatusAck } from '../api/adapters';
 import { toParams } from './params';
 
+export interface StaticPageDefaultText {
+  slug: StaticPageSlug;
+  lang: LanguageCode;
+  title: string;
+  body: string;
+}
+
 export const staticPageEndpoints = {
   /**
    * Every page in the closed set, written or not.
@@ -51,6 +58,18 @@ export const staticPageEndpoints = {
   preview: (slug: StaticPageSlug, lang: LanguageCode) =>
     apiClient
       .get<ServedContentPreview>(`/admin/static-pages/${slug}/preview`, {
+        params: toParams({ lang }),
+      })
+      .then((response) => response.data),
+
+  /**
+   * The text the platform starts every factory with, for one page and language, with the
+   * factory's name already filled in (BACKEND-TODO #44). Read only: it changes nothing until
+   * the editor saves it like any other edit. `404` when there is no default for it.
+   */
+  defaultText: (slug: StaticPageSlug, lang: LanguageCode) =>
+    apiClient
+      .get<StaticPageDefaultText>(`/admin/static-pages/${slug}/default`, {
         params: toParams({ lang }),
       })
       .then((response) => response.data),
