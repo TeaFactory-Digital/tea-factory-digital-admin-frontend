@@ -5003,6 +5003,19 @@ export const handlers: HttpHandler[] = [
         },
       });
 
+      // `requestDecided` covers every queue the office decides, as on the API.
+      fireAutomatic(
+        request,
+        'requestDecided',
+        {
+          title: status === 'approved' ? 'Your request was approved' : 'Your request was not approved',
+          body: 'Open the app to see the decision and the note from the office.',
+          entity: 'creditRequest',
+          entityId: before.id,
+        },
+        { kind: 'supplier', supplierId: before.supplierId },
+      );
+
       void after;
       return HttpResponse.json({ id: before.id, status });
     }),
@@ -5182,6 +5195,19 @@ export const handlers: HttpHandler[] = [
           note,
         },
       });
+
+      // `requestDecided` covers every queue the office decides, as on the API.
+      fireAutomatic(
+        request,
+        'requestDecided',
+        {
+          title: status === 'approved' ? 'Your request was approved' : 'Your request was not approved',
+          body: 'Open the app to see the decision and the note from the office.',
+          entity: 'teaPacketRequest',
+          entityId: before.id,
+        },
+        { kind: 'supplier', supplierId: before.supplierId },
+      );
 
       return HttpResponse.json({ id: before.id, status });
     }),

@@ -1234,8 +1234,7 @@ export const ta: Record<TranslationKey, string> = {
   'notifications.category.leafWeighed': 'இன்றைய இலை எடை',
   'notifications.event.billPublished':
     'விலை மற்றும் மாத நிறைவில் ஒரு மாதம் வெளியிடப்படும்போது இயங்குகிறது.',
-  'notifications.event.requestDecided':
-    'மாற்ற வேண்டுகோள் ஒன்று அனுமதிக்கப்படும்போது அல்லது நிராகரிக்கப்படும்போது இயங்குகிறது.',
+  'notifications.event.requestDecided': 'அலுவலகம் ஒரு கோரிக்கையை (மாற்றம், கடன் அல்லது தேயிலைப் பொதிகள்) அனுமதிக்கும்போது அல்லது நிராகரிக்கும்போது இயங்குகிறது.',
   'notifications.event.newsArticle': 'செய்திக் கட்டுரை ஒன்று வெளியிடப்படும்போது இயங்குகிறது.',
   'notifications.event.inquiryReplied':
     'அலுவலகம் ஒரு செய்திக்குப் பதில் அளிக்கும்போது இயங்குகிறது.',

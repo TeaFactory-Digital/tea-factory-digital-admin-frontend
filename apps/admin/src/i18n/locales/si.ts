@@ -1215,8 +1215,7 @@ export const si: Record<TranslationKey, string> = {
   'notifications.category.leafWeighed': 'අද දළු බර',
   'notifications.event.billPublished':
     'මිල සහ මාසය අවසන් කිරීම යටතේ මාසයක් ප්‍රකාශයට පත් කළ විට ක්‍රියාත්මක වේ.',
-  'notifications.event.requestDecided':
-    'වෙනස් කිරීමේ ඉල්ලීමක් අනුමත හෝ ප්‍රතික්ෂේප කළ විට ක්‍රියාත්මක වේ.',
+  'notifications.event.requestDecided': 'කාර්යාලය ඉල්ලීමක් (වෙනස් කිරීමක්, ණයක් හෝ තේ පැකට්) අනුමත හෝ ප්‍රතික්ෂේප කළ විට ක්‍රියාත්මක වේ.',
   'notifications.event.newsArticle': 'පුවත් ලිපියක් ප්‍රකාශයට පත් කළ විට ක්‍රියාත්මක වේ.',
   'notifications.event.inquiryReplied': 'කාර්යාලය පණිවිඩයකට පිළිතුරු දුන් විට ක්‍රියාත්මක වේ.',
   'notifications.event.leafWeighed': 'කර්මාන්තශාලා පද්ධතියෙන් දවසේ කිරුම් ලැබුණු විට ක්‍රියාත්මක වේ.',

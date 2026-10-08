@@ -41,7 +41,8 @@ import type { NotificationCategory, RegisteredDevice } from './types/app';
  */
 export const NOTIFICATION_EVENTS: Record<NotificationCategory, string> = {
   billPublished: 'month.publish',
-  requestDecided: 'changeRequest.decide',
+  /** Any request the office decides: a change, credit, or tea packets. */
+  requestDecided: 'request.decide',
   newsArticle: 'news.publish',
   inquiryReplied: 'inquiry.reply',
   /** The day's leaf weight, sent when the day's deliveries arrive from the factory system. */
@@ -71,9 +72,9 @@ export interface NotificationAudience {
   /** Required when `kind` is `collectionPoint`. The point's name, as the log shows it. */
   collectionPoint?: string;
   /**
-   * The point's id, when known. The API has no collection-point audience; the console
-   * resolves the point to its suppliers' ids (see `notificationRepository`), and the
-   * suppliers list filters by id.
+   * The point's id, when known. The API takes a collection-point audience by this id and
+   * matches each supplier's registered point at send time. Only a point known by name
+   * alone is resolved to its suppliers' ids (see `notificationRepository`).
    */
   collectionPointId?: string;
   /** Required when `kind` is `supplier`. */

@@ -1210,7 +1210,7 @@ export const en = {
   'notifications.category.inquiryReplied': 'Message answered',
   'notifications.category.leafWeighed': 'Today’s leaf weight',
   'notifications.event.billPublished': 'Fires when a month is published in Rates & month close.',
-  'notifications.event.requestDecided': 'Fires when a change request is approved or rejected.',
+  'notifications.event.requestDecided': 'Fires when the office approves or rejects a request: a change, credit or tea packets.',
   'notifications.event.newsArticle': 'Fires when a news article is published.',
   'notifications.event.inquiryReplied': 'Fires when the office replies to a message.',
   'notifications.event.leafWeighed': 'Fires when the day’s weighings arrive from the factory system.',
