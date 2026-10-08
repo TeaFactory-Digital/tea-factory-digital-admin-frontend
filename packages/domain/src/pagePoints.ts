@@ -34,7 +34,14 @@ export interface PagePoints {
 }
 
 /** The pages edited as a list of points rather than as one block of text. */
-export const POINT_PAGES: readonly StaticPageSlug[] = ['faq', 'terms', 'privacy'];
+export const POINT_PAGES: readonly StaticPageSlug[] = [
+  'faq',
+  'savingsScheme',
+  'creditTerms',
+  'about',
+  'terms',
+  'privacy',
+];
 
 const MARKER = /^##(?:\s(.*))?$/;
 

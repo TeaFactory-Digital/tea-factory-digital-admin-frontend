@@ -60,7 +60,7 @@ export function TranslationEditor({
   saving: boolean;
   onSave: (body: ContentTranslationBody) => void;
   /**
-   * Given, the body is edited as a list of points (FAQ, terms, privacy) instead of one
+   * Given, the body is edited as a list of points (every static page) instead of one
    * text box. The points are written back into the same body text, so saving is unchanged.
    */
   pointLabels?: PointLabels;

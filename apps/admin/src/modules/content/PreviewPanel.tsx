@@ -90,7 +90,7 @@ export function PreviewPanel({
 }
 
 /**
- * The body as the app draws it: a page written as points (FAQ, terms, privacy) shows its
+ * The body as the app draws it: a page written as points (every static page) shows its
  * points as numbered sections rather than with their `##` markers. Plain text is as typed.
  */
 function PreviewBody({ body }: { body: string }) {
