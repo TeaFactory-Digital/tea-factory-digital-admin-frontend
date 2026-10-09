@@ -98,14 +98,15 @@ export function DashboardScreen() {
 
   if (error) return <ErrorState error={error} onRetry={() => void refetch()} />;
 
-  const firstName = user?.name.split(/\s+/)[0];
+  // The whole name: a first word alone gave "Good evening, The" for "The Manager".
+  const name = user?.name.trim();
 
   return (
     <>
       <PageHeader
         title={
-          firstName
-            ? t(`dashboard.greeting.${partOfDay()}`, { name: firstName })
+          name
+            ? t(`dashboard.greeting.${partOfDay()}`, { name })
             : t('dashboard.title')
         }
         description={t('dashboard.subtitle')}
