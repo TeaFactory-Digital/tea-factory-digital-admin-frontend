@@ -38,7 +38,7 @@ export function AppShell() {
       <Sidebar summary={summary} />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar />
+        <Topbar summary={summary} />
 
         {/* Impossible to miss and impossible to dismiss. A console silently showing
             stale branding and flags is worse than a permanent banner.

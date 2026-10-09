@@ -18,6 +18,8 @@ import { SyncStatusChip } from './SyncStatusChip';
 import { CommandMenu } from './CommandMenu';
 import { NAVIGATION } from './navigation';
 import { UserMenu } from './UserMenu';
+import { NotificationBell } from './NotificationBell';
+import type { DashboardView } from '@/services/repositories/dashboardRepository';
 
 /**
  * The nav row that owns a path, by the longest matching prefix.
@@ -37,7 +39,7 @@ function sectionLabelKey(pathname: string): string | null {
   return match?.labelKey ?? null;
 }
 
-export function Topbar() {
+export function Topbar({ summary }: { summary?: DashboardView }) {
   const { t } = useTranslation();
   const factory = useFactory();
   const { pathname } = useLocation();
@@ -63,6 +65,8 @@ export function Topbar() {
       <div className="flex items-center gap-sm">
         <SyncStatusChip />
         <CommandMenu />
+        {/* Top right: what is waiting, and what suppliers just did. */}
+        <NotificationBell summary={summary} />
         <span className="lg:hidden">
           <UserMenu placement="topbar" />
         </span>

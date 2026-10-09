@@ -13,6 +13,7 @@ for "Restore default text", read only and never counted as an office edit).
 | # | What | Priority |
 |---|------|----------|
 | 45 | Factory records without the factory system: the sync switch, entry and imports | High |
+| 46 | The console's notification bell: a feed of supplier actions, read per user | Medium |
 
 **Answers to the last note**
 - **FAQ and `{{factory}}`:** right, the FAQ names no factory in any language, so our check
@@ -62,3 +63,37 @@ brought forward in `grossAmount` and rounds the payment to `config.billSettings.
 so a bill and the app agree to the cent.
 
 **Check:** the list in §9 of that file.
+
+## 46. The console's notification bell: a feed of supplier actions
+
+The console's top bar now has a bell. Its first half is the waiting queues, from the
+existing `GET /admin/dashboard`; nothing new is needed for that. Its second half is
+**recent activity**: what suppliers did, with a dot on what this console user has not
+seen. The console shows "not available on this server yet" while this 404s.
+
+```
+GET  /admin/activity?limit=20   → ActivityFeed  { items: ActivityItem[], unread, readUpTo }
+POST /admin/activity/read       { upTo: ISO }  → { readUpTo }
+```
+
+Types and the permission per kind are in `packages/domain/src/activity.ts` (`vendor:pull`).
+
+- **Supplier actions only**, newest first: `creditRequest.created` / `.cancelled`,
+  `teaPacket.created` / `.cancelled`, `changeRequest.created`, `inquiry.created`,
+  `inquiry.replied` (a supplier's message after the first), and
+  `supplier.appDeletionRequested`. Only requests from the app (`channel: 'app'`); what the
+  office did stays in the audit log.
+- **Filtered by permission:** each kind needs read on `ACTIVITY_CAPABILITY[kind]`, the
+  capability of the screen it opens. A content editor is never told about a loan request.
+- **Read per user:** one `readUpTo` timestamp per console user and tenant. An item is
+  `unread` when it is later than that mark, or when the user has no mark yet. `unread` counts
+  every unread item, not only those in `items`. A mark never moves backwards.
+- `limit` 1 to 100, default 20. An event table written in the same transaction as the
+  action is the simplest source; deriving it per request from five tables also works at
+  this size.
+- No audit entry for reading the bell.
+
+**Check:** a supplier sends a loan request in the app; the manager's and the clerk's bells
+show it unread; the manager opens and closes the bell; the manager's is read, the clerk's
+is still unread; the editor never sees it.
+

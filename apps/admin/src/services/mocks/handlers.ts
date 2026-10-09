@@ -18,6 +18,8 @@
 
 import {
   isFactorySyncEnabled,
+  ACTIVITY_CAPABILITY,
+  type ActivityItem,
   factoryBillNumber,
   type SupplierTransportRate,
   IMPORT_KINDS,
@@ -222,6 +224,8 @@ import {
  * docs/mocks.md rather than discovered.
  */
 const state = {
+  /** Each console user's read mark on the notification bell (`activity.ts`). */
+  activityReadUpTo: new Map<string, string>(),
   /** Opening balances entered here while the factory-system sync is off. */
   openingBalances: new Map<string, OpeningBalancesRecord>(),
   /**
@@ -1606,6 +1610,69 @@ function withInquiryAge(inquiry: AdminInquiry): AdminInquiry {
 
 /* ──────────────────────────────── handlers ──────────────────────────────── */
 
+
+/* ─────────────────────────── the notification bell ─────────────────────────── */
+
+/**
+ * What suppliers did, newest first, derived from the records themselves: an app request
+ * is its creation, a cancellation its decision time, an inquiry reply its message. Office
+ * actions are left out (they are the audit log's). The real API keeps an event table.
+ */
+function supplierActivity(): Omit<ActivityItem, 'unread'>[] {
+  const out: Omit<ActivityItem, 'unread'>[] = [];
+  const who = (one: { supplierId: string; supplierCode: string; supplierName: string }) => ({
+    supplierId: one.supplierId,
+    supplierCode: one.supplierCode,
+    supplierName: one.supplierName,
+  });
+  for (const one of state.creditRequests) {
+    if (one.channel === 'app') {
+      out.push({ id: `cr-${one.id}`, kind: 'creditRequest.created', at: one.createdAt, entityId: one.id, facility: one.facility, amount: one.amount, ...who(one) });
+    }
+    if (one.status === 'cancelled') {
+      out.push({ id: `crx-${one.id}`, kind: 'creditRequest.cancelled', at: one.decision?.decidedAt ?? one.createdAt, entityId: one.id, facility: one.facility, amount: one.amount, ...who(one) });
+    }
+  }
+  for (const one of state.teaPacketRequests) {
+    if (one.channel === 'app') {
+      out.push({ id: `tp-${one.id}`, kind: 'teaPacket.created', at: one.createdAt, entityId: one.id, amount: one.amount, ...who(one) });
+    }
+    if (one.status === 'cancelled') {
+      out.push({ id: `tpx-${one.id}`, kind: 'teaPacket.cancelled', at: one.decision?.decidedAt ?? one.createdAt, entityId: one.id, amount: one.amount, ...who(one) });
+    }
+  }
+  for (const one of state.changeRequests) {
+    if (one.channel === 'app') {
+      out.push({ id: `ch-${one.id}`, kind: 'changeRequest.created', at: one.createdAt, entityId: one.id, changeType: one.type, ...who(one) });
+    }
+  }
+  for (const one of state.inquiries) {
+    if (one.channel === 'app') {
+      out.push({ id: `iq-${one.id}`, kind: 'inquiry.created', at: one.createdAt, entityId: one.id, subject: one.subject, ...who(one) });
+    }
+    // A supplier's later messages are replies; the first one is the inquiry itself.
+    (one.messages ?? [])
+      .filter((message) => message.author === 'supplier')
+      .slice(1)
+      .forEach((message) => {
+        out.push({ id: `iqr-${message.id}`, kind: 'inquiry.replied', at: message.createdAt, entityId: one.id, subject: one.subject, ...who(one) });
+      });
+  }
+  for (const one of state.suppliers) {
+    if (one.appDeletionRequestedAt) {
+      out.push({
+        id: `del-${one.id}`,
+        kind: 'supplier.appDeletionRequested',
+        at: one.appDeletionRequestedAt,
+        entityId: one.id,
+        supplierId: one.id,
+        supplierCode: one.supplierCode,
+        supplierName: one.name,
+      });
+    }
+  }
+  return out.sort((a, b) => b.at.localeCompare(a.at));
+}
 
 /* ─────────── Factory records, kept here while the factory-system sync is off ─────────── */
 
@@ -7245,6 +7312,38 @@ export const handlers: HttpHandler[] = [
     const saved = saveOpeningBalances(id, body, auth.user.name);
     recordBy(auth, 'supplier.openingBalances', 'supplier', id, { after: saved });
     return HttpResponse.json(saved);
+  }),
+
+  /** The notification bell: supplier actions this user may see, newest first. */
+  http.get('*/admin/activity', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const user = bearer(request);
+    if (!user) return fail({ status: 401, code: 'unauthenticated', message: 'Sign in required.' });
+    const limit = Math.min(Number(new URL(request.url).searchParams.get('limit')) || 20, 100);
+    const readUpTo = state.activityReadUpTo.get(user.id) ?? null;
+    const visible = supplierActivity()
+      .filter((one) => can(user.grants, ACTIVITY_CAPABILITY[one.kind], 'read'))
+      .map((one) => ({ ...one, unread: readUpTo === null || one.at > readUpTo }));
+    return HttpResponse.json({
+      items: visible.slice(0, limit),
+      unread: visible.filter((one) => one.unread).length,
+      readUpTo,
+    });
+  }),
+
+  /** Mark everything at or before `upTo` read, for this user only. Never moves backwards. */
+  http.post('*/admin/activity/read', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const user = bearer(request);
+    if (!user) return fail({ status: 401, code: 'unauthenticated', message: 'Sign in required.' });
+    const body = (await request.json().catch(() => ({}))) as { upTo?: string };
+    if (!body.upTo || Number.isNaN(Date.parse(body.upTo))) {
+      return fail({ status: 422, code: 'invalid', message: 'upTo must be a timestamp.' });
+    }
+    const previous = state.activityReadUpTo.get(user.id);
+    const upTo = previous && previous > body.upTo ? previous : body.upTo;
+    state.activityReadUpTo.set(user.id, upTo);
+    return HttpResponse.json({ readUpTo: upTo });
   }),
 
   /** The supplier's own transport rate per kilo; `null` puts them back on their point's. */

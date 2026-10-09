@@ -55,6 +55,8 @@ export const qk = {
   },
 
   dashboard: ['dashboard'] as const,
+  /** The notification bell's feed, per signed-in user. */
+  activity: ['activity'] as const,
 
   /**
    * How fresh the figures replicated from the factory's system are.
