@@ -8,14 +8,17 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { factorySyncState, type FactorySyncState, type FactorySyncStatus } from '@tfd/domain';
-import { factorySyncRepository } from '@/services/repositories/factorySyncRepository';
+import { UNAVAILABLE, factorySyncRepository } from '@/services/repositories/factorySyncRepository';
 import { qk } from '@/query/queryKeys';
 import { useCan } from '@/auth/authStore';
 
+/** The domain's three states, plus `unknown`: the status call itself failed. */
+export type SyncView = FactorySyncState | 'unknown';
+
 interface FactorySyncView {
-  /** `null` when this deployment has no sync at all; `undefined` while loading. */
+  /** `null` when this deployment has no sync at all; `undefined` while loading or unknown. */
   status: FactorySyncStatus | null | undefined;
-  state: FactorySyncState;
+  state: SyncView;
   /**
    * `false` when the API reports no sync configured. There is then nothing to be behind,
    * so the state reads `fresh` and nothing warns.
@@ -46,6 +49,8 @@ export function useFactorySync(): FactorySyncView {
     throwOnError: false,
     retry: false,
   });
+
+  if (data === UNAVAILABLE) return { status: undefined, state: 'unknown', configured: true };
 
   return {
     status: data,

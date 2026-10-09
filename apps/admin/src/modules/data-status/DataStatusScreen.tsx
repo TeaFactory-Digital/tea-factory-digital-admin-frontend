@@ -12,22 +12,22 @@
 
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, CheckCircle2, PlugZap } from 'lucide-react';
-import type { FactorySyncState } from '@tfd/domain';
 import { Badge, type BadgeTone } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { cn } from '@/lib/cn';
-import { useFactorySync } from '@/layout/useFactorySync';
+import { useFactorySync, type SyncView } from '@/layout/useFactorySync';
 
-/** The sync's three states, plus `direct`: no sync configured, nothing to be behind. */
-type View = FactorySyncState | 'direct';
+/** The sync's states, plus `direct`: no sync configured, nothing to be behind. */
+type View = SyncView | 'direct';
 
 const TONES: Record<View, BadgeTone> = {
   direct: 'success',
   fresh: 'success',
   stale: 'warning',
   never: 'error',
+  unknown: 'warning',
 };
 
 const ICONS = {
@@ -35,6 +35,7 @@ const ICONS = {
   fresh: CheckCircle2,
   stale: AlertTriangle,
   never: PlugZap,
+  unknown: AlertTriangle,
 } satisfies Record<View, unknown>;
 
 const ICON_COLOURS: Record<View, string> = {
@@ -42,6 +43,7 @@ const ICON_COLOURS: Record<View, string> = {
   fresh: 'bg-success-muted text-success',
   stale: 'bg-warning-muted text-warning',
   never: 'bg-error-muted text-error',
+  unknown: 'bg-warning-muted text-warning',
 };
 
 export function DataStatusScreen() {
@@ -54,7 +56,9 @@ export function DataStatusScreen() {
   const covers = formatDate(status?.coversUpTo);
   const body = !configured
     ? t('dataStatus.directBody')
-    : state === 'never'
+    : state === 'unknown'
+      ? t('dataStatus.unknownBody')
+      : state === 'never'
       ? t('shell.syncNever')
       : state === 'stale'
         ? t('shell.syncStale', { when, covers })

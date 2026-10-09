@@ -191,7 +191,8 @@ describe('with the factory-system sync off', () => {
       const found = await supplierRepository.list({ q: '9101' });
       expect(found.items.map((one) => one.name)).toContain('Sunil Gamage');
     });
-  });
+    // A whole form typed key by key; under the full suite's load it can pass 5 s.
+  }, 15_000);
 
   it('imports a file all or nothing, showing the server’s problems by row', async () => {
     await setSync(false);

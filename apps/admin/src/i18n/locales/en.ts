@@ -1957,12 +1957,13 @@ export const en = {
   /* ───────── Replication from the factory's own system (v2) ───────── */
   'shell.syncStale':
     'These figures may be out of date. The factory’s system was last read at {{when}}, covering up to {{covers}}. Check before quoting a balance to a supplier.',
-  'shell.syncNever':
-    'This console has never read from the factory’s system, so every account and balance shown is a placeholder. Do not quote any figure here.',
+  'shell.syncNever': 'This console has not yet received anything from the factory’s system, so accounts and balances may be missing or incomplete. Check the factory system before quoting a figure.',
   'sync.freshAsOf': 'Read from the factory’s system at {{when}}, covering up to {{covers}}.',
   'dataStatus.title': 'Data status',
   'dataStatus.subtitle': 'Where the figures in this console come from, and how current they are.',
-  'dataStatus.chip.never': 'Sample figures',
+  'dataStatus.chip.never': 'Never synced',
+  'dataStatus.chip.unknown': 'Sync status unknown',
+  'dataStatus.unknownBody': 'The console could not read the sync status just now, so it cannot say how current the figures are. They are real figures from the server; check the factory system before quoting one, and try again in a few minutes.',
   'dataStatus.chip.stale': 'Figures out of date',
   'dataStatus.chipHint': 'See why on the data status page',
   'dataStatus.state.fresh': 'Up to date',

@@ -62,8 +62,8 @@ export function SuppliersScreen() {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'supplierCode', desc: false }]);
 
   /**
-   * `hasBankDetails` is an ad-hoc extension — it is a filter the mock supports and
-   * `SupplierQuery` has never declared — so it is intersected in as a string. `hasApp` is
+   * `hasBankDetails` is a filter the API supports (`suppliers.service.ts`) and
+   * `SupplierQuery` has never declared, so it is intersected in as a string. `hasApp` is
    * a real field on the query type, which is why it is a boolean above and not here.
    */
   const query = useMemo<SupplierQuery & { hasBankDetails?: string }>(

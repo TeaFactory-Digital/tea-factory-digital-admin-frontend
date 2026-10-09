@@ -123,7 +123,8 @@ describe('the sync status endpoint', () => {
 
   it('reports a healthy sync from the mock, rather than 404ing', async () => {
     await signInAs('clerk@galabodatea.lk');
-    const status = (await factorySyncRepository.get())!;
+    const status = await factorySyncRepository.get();
+    if (!status || status === 'unavailable') throw new Error('expected a sync status');
 
     /**
      * The mock reports healthy because the fixture *is* the data — there is no factory
@@ -140,12 +141,8 @@ describe('the sync status endpoint', () => {
   it('resolves a failure to "we do not know" rather than throwing', async () => {
     // Signed out: the call is refused. A console that could not tell you how fresh its
     // figures are must still show you the figures.
-    const status = (await factorySyncRepository.get())!;
-
-    expect(status.lastSucceededAt).toBeNull();
-    // Which renders exactly like "never synced" — both mean the same thing to a reader
-    // deciding whether to quote a number, so they are deliberately one state.
-    expect(factorySyncState(status, new Date().toISOString())).toBe('never');
+    // Not "never synced": that labelled the real figures on screen as samples.
+    expect(await factorySyncRepository.get()).toBe('unavailable');
   });
 
   it('passes "no sync configured" through as null, which must not read as never synced', async () => {

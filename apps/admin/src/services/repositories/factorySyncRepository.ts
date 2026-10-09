@@ -21,7 +21,7 @@ import { dashboardEndpoints } from '../endpoints/dashboard';
  * because a status call timed out.
  */
 export const factorySyncRepository = {
-  async get(): Promise<FactorySyncStatus | null> {
+  async get(): Promise<FactorySyncStatus | null | typeof UNAVAILABLE> {
     try {
       const { sync } = await dashboardEndpoints.get();
       /**
@@ -35,17 +35,14 @@ export const factorySyncRepository = {
       return sync ?? null;
     } catch {
       /**
-       * Indistinguishable from never having synced, on purpose. Both mean the office
-       * cannot rely on what is on screen, and inventing a third state would ask the
-       * reader to tell apart two situations with the same consequence.
+       * **Not** "never synced". A timed-out status call says nothing about the figures on
+       * screen, which came from the API; reading it as `never` labelled real figures as
+       * samples. It is its own answer: the console does not know how fresh they are.
        */
-      return EMPTY;
+      return UNAVAILABLE;
     }
   },
 };
 
-const EMPTY: FactorySyncStatus = {
-  lastSucceededAt: null,
-  lastAttemptedAt: null,
-  coversUpTo: null,
-};
+/** The status call failed: freshness is unknown (not the same as never synced). */
+export const UNAVAILABLE = 'unavailable' as const;
