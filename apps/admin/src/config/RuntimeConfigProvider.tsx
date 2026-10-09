@@ -8,6 +8,7 @@
  * bundled defaults and reports `degraded`.
  */
 
+import { isFactorySyncEnabled } from '@tfd/domain';
 import {
   createContext,
   useContext,
@@ -65,5 +66,15 @@ export function useFactory() {
 /** The whole flag block, for a nav that decides many rows at once. */
 export function useFeatureFlags() {
   return useRuntimeConfig().config.flags;
+}
+
+/**
+ * Does the office keep the factory's records here? True when the factory-system sync is
+ * switched off: the entry screens and file imports are offered, and the bills are
+ * calculated here. False (the normal case): those records arrive from the factory's system
+ * and are read only.
+ */
+export function useKeepsFactoryRecords(): boolean {
+  return !isFactorySyncEnabled(useRuntimeConfig().config);
 }
 

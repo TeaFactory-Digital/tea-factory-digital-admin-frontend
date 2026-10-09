@@ -29,7 +29,12 @@ import { creditRepository } from '@/services/repositories/creditRepository';
 import { ExportCsvButton } from '@/components/ExportCsvButton';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/states';
-import { useFeatureFlags } from '@/config/RuntimeConfigProvider';
+import { useFeatureFlags, useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
+import { useCan } from '@/auth/authStore';
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { ImportMenu } from '@/components/ImportMenu';
+import { WalkInCreditDialog } from './WalkInCreditDialog';
 import { useDebounced } from '@/lib/useDebounced';
 import { formatAge, formatAmount } from '@/lib/format';
 import { useCreditRequests } from './hooks';
@@ -55,6 +60,11 @@ export function CreditScreen() {
   const navigate = useNavigate();
   const flags = useFeatureFlags();
   const [params, setParams] = useSearchParams();
+  // While the factory-system sync is off, counter requests are recorded here so the bill
+  // deducts them.
+  const keepsRecords = useKeepsFactoryRecords();
+  const canRecord = useCan('creditRequests', 'write');
+  const [recording, setRecording] = useState(false);
 
   const [searchText, setSearchText] = useState(params.get('q') ?? '');
   const debouncedSearch = useDebounced(searchText, 250);
@@ -204,19 +214,33 @@ export function CreditScreen() {
         title={t('credit.title')}
         description={t('credit.subtitle')}
         actions={
-          <ExportCsvButton
-            name="credit-requests"
-            fetchPage={(page, pageSize) => creditRepository.list({ ...query, page, pageSize })}
-            columns={[
-              { header: t('export.column.date'), value: (r) => r.createdAt.slice(0, 10) },
-              { header: t('changeRequests.column.supplier'), value: (r) => `${r.supplierCode} ${r.supplierName}` },
-              { header: t('export.column.type'), value: (r) => t(`credit.facility.${r.facility}`) },
-              { header: t('export.column.amount'), value: (r) => r.amount.toFixed(2) },
-              { header: t('export.column.details'), value: (r) => r.manureType ?? r.reason ?? '' },
-              { header: t('common.status'), value: (r) => t(`credit.status.${r.status}`) },
-              { header: t('export.column.decidedBy'), value: (r) => r.decision?.decidedByName ?? '' },
-            ]}
-          />
+          <div className="flex flex-wrap items-center gap-sm">
+            <ExportCsvButton
+              name="credit-requests"
+              fetchPage={(page, pageSize) => creditRepository.list({ ...query, page, pageSize })}
+              columns={[
+                { header: t('export.column.date'), value: (r) => r.createdAt.slice(0, 10) },
+                { header: t('changeRequests.column.supplier'), value: (r) => `${r.supplierCode} ${r.supplierName}` },
+                { header: t('export.column.type'), value: (r) => t(`credit.facility.${r.facility}`) },
+                { header: t('export.column.amount'), value: (r) => r.amount.toFixed(2) },
+                { header: t('export.column.details'), value: (r) => r.manureType ?? r.reason ?? '' },
+                { header: t('common.status'), value: (r) => t(`credit.status.${r.status}`) },
+                { header: t('export.column.decidedBy'), value: (r) => r.decision?.decidedByName ?? '' },
+              ]}
+            />
+            {keepsRecords && canRecord ? (
+              <>
+                <ImportMenu kinds={['walkInCredit']} />
+                <Button
+                  variant="primary"
+                  iconLeft={<Plus className="size-icon-sm" aria-hidden />}
+                  onClick={() => setRecording(true)}
+                >
+                  {t('records.walkIn.button')}
+                </Button>
+              </>
+            ) : null}
+          </div>
         }
       />
 
@@ -290,6 +314,7 @@ export function CreditScreen() {
           }
         />
       </Card>
+      {recording ? <WalkInCreditDialog onClose={() => setRecording(false)} /> : null}
     </>
   );
 }

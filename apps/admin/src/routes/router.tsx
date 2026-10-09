@@ -22,7 +22,13 @@
 import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppShell } from '@/layout/AppShell';
-import { RequireAnyFlag, RequireAuth, RequireCapability, RequireFlag } from '@/auth/guards';
+import {
+  RequireAnyFlag,
+  RequireAuth,
+  RequireCapability,
+  RequireFactoryRecords,
+  RequireFlag,
+} from '@/auth/guards';
 import { SignInScreen } from '@/auth/SignInScreen';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
 
@@ -42,6 +48,12 @@ const BillsScreen = lazy(() =>
 );
 const BillDetailScreen = lazy(() =>
   import('@/modules/bills/BillDetailScreen').then((m) => ({ default: m.BillDetailScreen })),
+);
+const DeliveriesScreen = lazy(() =>
+  import('@/modules/deliveries/DeliveriesScreen').then((m) => ({ default: m.DeliveriesScreen })),
+);
+const MonthCloseScreen = lazy(() =>
+  import('@/modules/months/MonthCloseScreen').then((m) => ({ default: m.MonthCloseScreen })),
 );
 const ChangeRequestsScreen = lazy(() =>
   import('@/modules/change-requests/ChangeRequestsScreen').then((m) => ({
@@ -155,6 +167,30 @@ export const router = createBrowserRouter([
           <RequireCapability capability="suppliers">
             <SupplierDetailScreen />
           </RequireCapability>
+        ),
+      },
+      /**
+       * The factory's records, kept here only while the factory-system sync is off
+       * (`factoryRecords.ts`). With it on, these arrive from the factory's own system.
+       */
+      {
+        path: 'deliveries',
+        element: (
+          <RequireFactoryRecords>
+            <RequireCapability capability="deliveries">
+              <DeliveriesScreen />
+            </RequireCapability>
+          </RequireFactoryRecords>
+        ),
+      },
+      {
+        path: 'rates',
+        element: (
+          <RequireFactoryRecords>
+            <RequireCapability capability="ratesAndMonthClose">
+              <MonthCloseScreen />
+            </RequireCapability>
+          </RequireFactoryRecords>
         ),
       },
       /**

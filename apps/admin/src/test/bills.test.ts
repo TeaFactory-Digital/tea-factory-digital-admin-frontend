@@ -83,8 +83,9 @@ describe('M5 bills', () => {
     expect(bill.totalRatePerKg).toBeCloseTo(round2(bill.ratePerKg! + bill.extraRatePerKg!), 2);
     expect(bill.greenLeafAmount).toBeCloseTo(round2(bill.totalKgs * bill.ratePerKg!), 2);
     expect(bill.extraPayment).toBeCloseTo(round2(bill.totalKgs * bill.extraRatePerKg!), 2);
+    // As the factory's slip prints it: the coins brought forward are part of the gross.
     expect(bill.grossAmount).toBeCloseTo(
-      round2(bill.greenLeafAmount! + bill.extraPayment!),
+      round2(bill.greenLeafAmount! + bill.extraPayment! + bill.coinsBroughtForward),
       2,
     );
 
@@ -109,7 +110,7 @@ describe('M5 bills', () => {
      */
     expect(Number.isInteger(bill.finalBalance)).toBe(true);
     expect(round2(bill.finalBalance! + bill.coinsCarriedForward)).toBeCloseTo(
-      round2(bill.balanceAmount! + bill.coinsBroughtForward),
+      round2(bill.balanceAmount! + bill.savingsWithdrawal),
       2,
     );
 
@@ -167,7 +168,7 @@ describe('M5 bills', () => {
       expect(bill.carryForward.nextMonthDeb).toBeGreaterThan(0);
       // What is carried is exactly what could not be paid.
       expect(bill.carryForward.nextMonthDeb).toBeCloseTo(
-        round2(-(bill.balanceAmount! + bill.coinsBroughtForward)),
+        round2(-(bill.balanceAmount! + bill.savingsWithdrawal)),
         2,
       );
     }
@@ -230,7 +231,11 @@ describe('M5 bills', () => {
     await monthRepository.setRate(month.monthKey, { ratePerKg: 200, extraRatePerKg: 0 });
     const second = await billRepository.generate(month.monthKey);
 
-    expect(second.grossTotal).toBeCloseTo(first.grossTotal * 2, 0);
+    // The gross carries the coins brought forward, which the rate does not touch: so the
+    // second run is twice the leaf plus the same coins, and those are under a rupee a bill.
+    const coins = round2(first.grossTotal * 2 - second.grossTotal);
+    expect(coins).toBeGreaterThanOrEqual(0);
+    expect(coins).toBeLessThan(first.billCount);
     // One run per month: a second set of figures beside the first is two answers
     // nobody can choose between.
     const page = await billRepository.list({ monthKey: month.monthKey, pageSize: 200 });

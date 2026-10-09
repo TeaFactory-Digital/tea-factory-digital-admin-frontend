@@ -58,6 +58,7 @@ import {
   MessageSquare,
   Newspaper,
   Package,
+  Scale,
   ScrollText,
   Settings,
   ShieldCheck,
@@ -86,6 +87,12 @@ export interface NavItem {
    * only the advances would under-report the inbox it opens.
    */
   queue?: DashboardQueueKey | DashboardQueueKey[];
+  /**
+   * Shown only while the factory-system sync is **off** and the office keeps the factory's
+   * records here (`factoryRecords.ts`). With the sync on, these records arrive from the
+   * factory's own system and there is nothing to enter.
+   */
+  factoryRecords?: true;
 }
 
 /**
@@ -103,6 +110,24 @@ export type DashboardQueueKey = QueueKey | 'creditRequests';
 export function flagsOf(item: NavItem): FeatureFlagName[] {
   if (!item.flag) return [];
   return Array.isArray(item.flag) ? item.flag : [item.flag];
+}
+
+/**
+ * Whether a row is shown: the factory buys the feature, keeps the records (for the rows
+ * that need it), and this user may read it. One rule for the sidebar and the search.
+ */
+export function isNavItemVisible(
+  item: NavItem,
+  flags: Partial<Record<FeatureFlagName, boolean>>,
+  canRead: (capability: Capability) => boolean,
+  keepsFactoryRecords: boolean,
+): boolean {
+  // Flag first: a feature the factory does not buy is not a permission question.
+  const needed = flagsOf(item);
+  const enabled = needed.length === 0 || needed.some((flag) => flags[flag]);
+  if (!enabled) return false;
+  if (item.factoryRecords && !keepsFactoryRecords) return false;
+  return canRead(item.capability);
 }
 
 /** Every queue a row's badge counts. */
@@ -207,6 +232,31 @@ export const NAVIGATION: NavSection[] = [
         to: '/bills',
         icon: FileText,
         capability: 'billing',
+      },
+    ],
+  },
+  {
+    /**
+     * The factory's own records, kept here only when its system is not connected. The
+     * console's purpose is still the app: these exist so the app has bills to show.
+     */
+    titleKey: 'nav.sectionRecords',
+    items: [
+      {
+        module: 'M3',
+        labelKey: 'nav.deliveries',
+        to: '/deliveries',
+        icon: Scale,
+        capability: 'deliveries',
+        factoryRecords: true,
+      },
+      {
+        module: 'M4',
+        labelKey: 'nav.rates',
+        to: '/rates',
+        icon: Gauge,
+        capability: 'ratesAndMonthClose',
+        factoryRecords: true,
       },
     ],
   },

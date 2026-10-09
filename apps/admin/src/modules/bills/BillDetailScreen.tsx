@@ -24,6 +24,7 @@
  * unanswered — see the notice at the foot of the page.
  */
 
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Lock, TriangleAlert } from 'lucide-react';
@@ -35,11 +36,17 @@ import { ErrorState, Spinner } from '@/components/ui/states';
 import { formatAmount, formatDateTime, formatKg, formatMoney, formatMonthKey } from '@/lib/format';
 import { billIsBalanced } from '@/services/repositories/billRepository';
 import { useBill } from './hooks';
+import { useCan } from '@/auth/authStore';
+import { useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
+import { OtherChargesDialog } from './OtherChargesDialog';
 
 export function BillDetailScreen() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const bill = useBill(id);
+  const keepsRecords = useKeepsFactoryRecords();
+  const canWriteBills = useCan('billing', 'write');
+  const [adjusting, setAdjusting] = useState(false);
 
   if (bill.isPending) {
     return (
@@ -54,6 +61,7 @@ export function BillDetailScreen() {
 
   const data = bill.data;
   const balanced = billIsBalanced(data);
+  const canAdjust = keepsRecords && canWriteBills && data.publishedAt === null;
 
   return (
     <>
@@ -172,14 +180,47 @@ export function BillDetailScreen() {
               {/* Iterated from the shared constant, in slip order, zeros included:
                   the nine lines are the document's shape, not a list of non-empty
                   values, and a missing row is a row the supplier asks about. */}
-              {DEDUCTION_CATEGORIES.map((category) => (
-                <DetailRow
-                  key={category}
-                  label={t(`bills.deduction.${category}`)}
-                  value={formatAmount(data.deductions[category])}
-                  numeric
-                />
-              ))}
+              {DEDUCTION_CATEGORIES.map((category) =>
+                category === 'otherCards' ? (
+                  <div key={category}>
+                    <DetailRow
+                      label={
+                        <span className="flex items-center gap-xs">
+                          {t(`bills.deduction.${category}`)}
+                          {/* The one typed line, and only on a bill this console calculated
+                              and the supplier cannot see yet. */}
+                          {canAdjust ? (
+                            <button
+                              type="button"
+                              onClick={() => setAdjusting(true)}
+                              className="rounded-sm px-xs text-caption font-medium text-primary hover:bg-primary-muted"
+                            >
+                              {t('records.otherCharges.edit')}
+                            </button>
+                          ) : null}
+                        </span>
+                      }
+                      value={formatAmount(data.deductions[category])}
+                      numeric
+                    />
+                    {data.otherCardsNote ? (
+                      <p className="pb-xs text-caption text-text-secondary">{data.otherCardsNote}</p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <DetailRow
+                    key={category}
+                    label={
+                      // The slip's "Loans / Advance 3": which instalment of the loan this is.
+                      category === 'loansAdvance' && data.loanInstalmentNo
+                        ? t('bills.deduction.loanInstalment', { n: data.loanInstalmentNo })
+                        : t(`bills.deduction.${category}`)
+                    }
+                    value={formatAmount(data.deductions[category])}
+                    numeric
+                  />
+                ),
+              )}
               <div className="mt-xs border-t border-divider pt-xs">
                 <DetailRow
                   label={<span className="font-semibold">{t('bills.deductionsTotal')}</span>}
@@ -341,6 +382,14 @@ export function BillDetailScreen() {
         <Lock className="mt-xxs size-icon-sm shrink-0" aria-hidden />
         {data.publishedAt ? t('bills.correctionsPublished') : t('bills.correctionsDraft')}
       </p>
+      {adjusting ? (
+        <OtherChargesDialog
+          billId={data.id}
+          amount={data.deductions.otherCards}
+          note={data.otherCardsNote}
+          onClose={() => setAdjusting(false)}
+        />
+      ) : null}
     </>
   );
 }

@@ -12,12 +12,15 @@ import { Link } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useFactorySync } from './useFactorySync';
+import { useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
 
 export function SyncStatusChip() {
   const { t } = useTranslation();
   const { state } = useFactorySync();
+  // With the sync off there is nothing to be behind: the office keeps the records here.
+  const keepsRecords = useKeepsFactoryRecords();
 
-  if (state === 'fresh') return null;
+  if (state === 'fresh' || keepsRecords) return null;
 
   return (
     <Link

@@ -14,7 +14,7 @@
 ## Who reads what
 
 **This document is the shared core.** Each audience has its own document holding the part
-that asks something of *them* — one home per fact, so nothing has to be kept in step
+that asks something of *them*: one home per fact, so nothing has to be kept in step
 between copies.
 
 | You are | Hand you | Which holds |
@@ -22,7 +22,7 @@ between copies.
 | **The existing Factory System team** | [factory-system-team.md](./factory-system-team.md) **+ [`factory-updates-sample.json`](./factory-updates-sample.json)** | The endpoint, field by field. The only document that asks them to build anything |
 | **The business analyst** | [business-analyst.md](./business-analyst.md) | The three conversations to run, and what each must produce in writing |
 | **The platform team** | [platform-team.md](./platform-team.md) | Consuming the endpoint, the credit ceiling, the freshness indicator |
-| **The factory's owner / management** | [factory-management.md](./factory-management.md) | The commercial and workflow decisions nobody else can make — **including who instructs the existing vendor** |
+| **The factory's owner / management** | [factory-management.md](./factory-management.md) | The commercial and workflow decisions nobody else can make, **including who instructs the existing vendor** |
 
 > **Sending this to the factory's vendor?** Send
 > [factory-system-team.md](./factory-system-team.md) and the sample JSON, not this file.
@@ -34,7 +34,7 @@ between copies.
 
 **The factory is giving its suppliers a mobile app.** That is the whole of it.
 
-The existing Factory System runs the business and **keeps running it, unchanged** —
+The existing Factory System runs the business and **keeps running it, unchanged**:
 leaf collection, monthly rates, Green Leaf Accounts, payouts, savings, advances,
 loans, manure and tea packets. Every rule, every calculation and every decision stays
 exactly where it is today.
@@ -71,11 +71,11 @@ office does the same work, in the same system, as before.**
 | Leaf, rates, accounts, payouts, savings | ✅ **Owns and decides** | Displays a copy |
 | Advances, loans, manure, tea packets | ✅ **Owns and decides** | Receives the request, displays the outcome |
 | Supplier registry, balances | ✅ **Owns** | Displays a copy |
-| Mobile app accounts, passwords, devices | — | ✅ Owns |
-| App content — news, banners, FAQ, terms | — | ✅ Owns |
-| Push notifications | — | ✅ Owns |
-| Which features the app shows | — | ✅ Owns |
-| The lending **rule** configuration | — | ✅ Owns (§3.4) |
+| Mobile app accounts, passwords, devices | None | ✅ Owns |
+| App content: news, banners, FAQ, terms | None | ✅ Owns |
+| Push notifications | None | ✅ Owns |
+| Which features the app shows | None | ✅ Owns |
+| The lending **rule** configuration | None | ✅ Owns (§3.4) |
 
 > **One sentence for the BA:** the Factory System remains the single source of truth
 > for everything about money. The App Platform is a window onto it, plus a letterbox
@@ -96,7 +96,7 @@ naming them so nobody proposes them later:
 | Calling an outside API before generating accounts | A change to the bill-run job |
 | Accepting a decision made elsewhere | A change to who may approve |
 
-**What *is* asked for is one read-only endpoint** — data going out. Reading does not
+**What *is* asked for is one read-only endpoint**: data going out. Reading does not
 change how the business works.
 
 Everything below is designed around that single ask.
@@ -104,8 +104,8 @@ Everything below is designed around that single ask.
 > ⚠️ **The constraint that is not technical.** The team that must build that endpoint does
 > not work for us, and a specification cannot create an obligation. Who instructs them,
 > and on what commercial basis, is
-> [factory-management.md §2](./factory-management.md#2-the-decision-the-project-actually-depends-on)
-> — and it blocks everything here.
+> [factory-management.md §2](./factory-management.md#2-the-decision-the-project-actually-depends-on),
+> and it blocks everything here.
 
 ---
 
@@ -126,7 +126,7 @@ This is the question that decides the design, so it comes before the endpoints.
 | | What it is |
 | --- | --- |
 | **App Platform** | An **inbox**. "Kamal asked for Rs. 10,000 on 2 August." That is a *message*, not a facility |
-| **Factory System** | The **record**. The advance itself — the balance, the instalments, the deduction on the account |
+| **Factory System** | The **record**. The advance itself: the balance, the instalments, the deduction on the account |
 
 Since only one system ever creates the record, **there is nothing to duplicate.** The
 matching problem does not need solving; it needs not to exist.
@@ -171,10 +171,10 @@ screen:
 | The clerk enters it into the Factory System | *unchanged* |
 | The Factory System decides it | *unchanged* |
 | The clerk tells Kamal | The clerk marks the request **Handled** in the new console, with the outcome |
-| — | Kamal's app shows it, and a notification is sent |
+| (nothing) | Kamal's app shows it, and a notification is sent |
 
 **The one new step is the last one**, and it takes a click. It exists so the supplier
-is told — which is the point of the whole project.
+is told, which is the point of the whole project.
 
 ### 3.4 Who decides, and what each side calculates
 
@@ -183,7 +183,7 @@ is told — which is the point of the whole project.
 The office enters the request into the Factory System exactly as it does today, the
 Factory System applies the factory's lending rules, and the clerk then records the
 outcome in the new console (§3.3's **Handled** step). The console is where a decision is
-*written down* — never where it is *made*. Deciding elsewhere would change who may
+*written down*, never where it is *made*. Deciding elsewhere would change who may
 approve, which [§2](#2-the-constraint-that-shapes-this-design) rules out.
 
 That leaves one question: what does the app show a supplier **before** they ask?
@@ -191,17 +191,17 @@ That leaves one question: what does the app show a supplier **before** they ask?
 #### The ceiling the app shows is this platform's, and the factory admin owns it
 
 **The lending rule is configuration in the new console, not a formula in anybody's
-build.** The factory administrator sets it under *Settings → Credit rules* — a basis, a
+build.** The factory administrator sets it under *Settings → Credit rules*: a basis, a
 multiplier, how many months to average, how many settled months are required, and an
 optional cap, per facility. See `modules.md` **M14 · Credit rules**.
 
 There is exactly **one implementation** of the arithmetic, `creditCeilingFromRule`
 (`packages/domain/src/leafCredit.ts`), shared between this platform and the mobile app.
-The supplier reads the factory's own configured policy, computed once — not a second
+The supplier reads the factory's own configured policy, computed once, not a second
 formula that agrees with the console's until the first policy change.
 
 **The console's request queue does not check against it.** Under this integration the
-queue *records* the factory's decision and nothing more — no `over-ceiling`, no
+queue *records* the factory's decision and nothing more: no `over-ceiling`, no
 `stale-eligibility`, and the button reads *"Approved by the factory"* (see
 [integration.md](./integration.md)). The ceiling's job here is to tell the supplier
 **what to ask for**, never to gate **what the office may approve**.
@@ -213,18 +213,18 @@ queue *records* the factory's decision and nothing more — no `over-ceiling`, n
 ```
 
 **This is why the ceiling is not a copy of anything.** The Factory System holds no
-lending rule for it to drift from — the factory's policy lives in the console, where the
+lending rule for it to drift from. The factory's policy lives in the console, where the
 administrator maintains it, and both screens read it from there.
 
 > ⚠️ **But the App Platform must never compute the right-hand term from its own
 > records.** A supplier who took an advance at the counter has a balance the platform has
-> never seen; subtracting only what it knows about shows headroom that is not there — and
+> never seen; subtracting only what it knows about shows headroom that is not there, and
 > a supplier shown Rs. 15,000 and refused it at the counter trusts the app less
 > afterwards, not more.
 
-**So the `outstanding*` fields must be the Factory System's complete balances** —
+**So the `outstanding*` fields must be the Factory System's complete balances**:
 counter-raised and app-raised together
-([factory-system-team.md §3](./factory-system-team.md#3-field-notes--please-read-these)).
+([factory-system-team.md §3](./factory-system-team.md#3-field-notes-please-read-these)).
 Configuring the rule in the console solves the left-hand term completely; **it does
 nothing for the right-hand one.** If the Factory System can report only app-raised credit,
 say so before build starts: the app would then have to stop showing a figure at all,
@@ -233,7 +233,7 @@ which is a product decision rather than an implementation detail.
 #### The one obligation this leaves on the factory
 
 The console computes the ceiling. **The office still decides the request.** So the
-configured rule must match what the office actually approves — if *Credit rules* says
+configured rule must match what the office actually approves. If *Credit rules* says
 3× the last settled month and the counter refuses anything above Rs. 30,000, the app is
 promising money the factory will not lend.
 
@@ -250,7 +250,7 @@ constraint:
 
 | Approach | Why not |
 | --- | --- |
-| Factory System stores our reference and echoes it | A schema and logic change — ruled out by §2 |
+| Factory System stores our reference and echoes it | A schema and logic change, ruled out by §2 |
 | Match on supplier + type + amount + date | Two advances of the same amount in a week match wrongly. Silent, and about money |
 | Clerk types our reference into a notes field | Workable, but a typo produces a silent wrong match |
 
@@ -290,8 +290,8 @@ Factory System, pulled automatically.
 **There is no second endpoint and no callback**, because there is nothing for the
 Factory System to receive: the office is the bridge, exactly as it is today.
 
-The endpoint itself — parameters, payload, field notes, volume, and the fallbacks if the
-Factory System cannot serve it as written — is
+The endpoint itself (parameters, payload, field notes, volume, and the fallbacks if the
+Factory System cannot serve it as written) is
 [factory-system-team.md](./factory-system-team.md).
 
 ---
@@ -310,7 +310,7 @@ Factory System cannot serve it as written — is
 
 ---
 
-## 6. Optional, later — not required now
+## 6. Optional, later: not required now
 
 If the Factory System team can do these **at some future point**, they remove the
 manual step in §3.3. None is needed for the first release, and none should delay it.

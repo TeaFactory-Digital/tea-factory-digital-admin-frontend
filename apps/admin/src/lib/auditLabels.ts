@@ -98,6 +98,11 @@ const ACTION_KEYS: Record<string, string> = {
   'consoleUser.delete': 'audit.action.userDelete',
   'platform.crossTenantAccess': 'audit.action.platformCrossTenant',
   'factorySync.run': 'audit.action.factorySyncRun',
+  // Factory records, kept in the console while the factory-system sync is off.
+  'supplier.openingBalances': 'audit.action.supplierOpeningBalances',
+  'bill.adjust': 'audit.action.billAdjust',
+  'supplier.transportRate': 'audit.action.supplierTransportRate',
+  'import.apply': 'audit.action.importApply',
 
   /**
    * v2 — **what the supplier did, in the app.**

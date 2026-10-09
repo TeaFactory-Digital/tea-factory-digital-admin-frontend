@@ -155,6 +155,16 @@ export interface GreenLeafBill {
   grossAmount: number | null;
 
   deductions: BillDeductions;
+  /**
+   * Which instalment of the supplier's loan `deductions.loansAdvance` is: the slip prints
+   * "Loans / Advance 3" for the third. `null` or absent when no loan was recovered.
+   */
+  loanInstalmentNo?: number | null;
+  /**
+   * Why `deductions.otherCards` was charged, in the office's words, shown under the line.
+   * Only bills calculated in the console (factory-system sync off) carry it.
+   */
+  otherCardsNote?: string | null;
 
   balanceAmount: number | null;
   coinsCarriedForward: number;

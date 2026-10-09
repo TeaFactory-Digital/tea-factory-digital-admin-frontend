@@ -21,6 +21,7 @@
  * than no warning: the office learns the screen is guessing.
  */
 
+import type { AdvanceInterestSetting, BillSettings, FactorySyncSetting } from './factoryRecords';
 import type { FeatureFlagName, FeatureFlagSet } from './types/admin';
 import type { LanguageCode } from './constants';
 import type { ManureProduct } from './deductionRates';
@@ -69,6 +70,12 @@ export type NoteSuggestionsBlock = Partial<Record<NoteSuggestionKey, NoteSuggest
 export interface ConfigPatch {
   /** Saved whole: a chip deleted in the console must not survive a merge. */
   noteSuggestions?: NoteSuggestionsBlock;
+  /** The factory-system sync switch. Saved whole. */
+  factorySync?: FactorySyncSetting;
+  /** Interest on an advance, for the bills calculated here. Saved whole. */
+  advanceInterest?: AdvanceInterestSetting;
+  /** Payment rounding and bill numbering. Saved whole. */
+  billSettings?: BillSettings;
   factory?: {
     name?: string;
     telephone?: string;

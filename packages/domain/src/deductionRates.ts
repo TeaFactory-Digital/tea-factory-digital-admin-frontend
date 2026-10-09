@@ -4,8 +4,9 @@
  * The question was *"which lines may the office set per supplier, and who may set them?"*,
  * and the answer reshaped it: **almost none of them are typed per supplier at all.**
  *
- *  - **Transport per kilo and stamps** are one factory-wide figure each, changed by the
- *    manager. They are in here.
+ *  - **Transport per kilo and stamps** are factory figures, changed by the manager. They
+ *    are in here. Transport may also differ by collection point (`transportByPoint`), and a
+ *    supplier may carry their own rate over both (`transportRateFor`).
  *  - **The credit instalments** are the supplier's own choice — they ask to repay, and they
  *    choose over how many months — with a share-of-gross cap the factory sets. The cap is in
  *    here; the choice arrives with the request.
@@ -13,8 +14,8 @@
  *    on this screen.
  *  - **Previous debts** is derived and never set by anybody.
  *
- * Which leaves `otherCards`, and the factory has not said what it is. That one line stays
- * uneditable and §21.10 stays open for it — see status.md.
+ * Which leaves `otherCards`, now named "other deductions": the one line the office types by
+ * hand, with a reason the supplier reads (`BillAdjustment` in `factoryRecords.ts`).
  *
  * **Why these need two people.** The factory's answer to *"does a change need a second
  * person?"* was yes, and it is the right instinct: transport at LKR 2.50/kg against LKR
@@ -31,8 +32,20 @@ import type { CreditFacility } from './types/app';
 /* ──────────────────────────────── the rates ──────────────────────────────── */
 
 export interface DeductionRates {
-  /** Collection from the estate, per kilo of green leaf. */
+  /**
+   * Collection from the estate, per kilo of green leaf. The factory-wide rate: used for a
+   * collection point with no rate of its own and a supplier with no rate of their own.
+   */
   transportPerKg: number;
+  /**
+   * A rate per collection point, keyed by the point's **id**, for a factory whose lorries
+   * cost more to the far divisions. A point missing here uses `transportPerKg`. Optional so
+   * a factory that set its rates before points had their own keeps working.
+   *
+   * A supplier may also carry their own rate (`AdminSupplier.transportPerKg`), which wins
+   * over both: see `transportRateFor`.
+   */
+  transportByPoint?: Record<string, number>;
   /** The flat stamp duty every account carries. */
   stamps: number;
   /**
@@ -55,7 +68,10 @@ export interface DeductionRates {
 export const DEFAULT_DEDUCTION_RATES: DeductionRates = {
   transportPerKg: 2.5,
   stamps: 25,
-  instalmentShares: { advance: 0.3, loan: 0.2, manure: 0.15 },
+  // An advance is cash given during the month and taken back in full on that month's bill,
+  // as the factory's slip shows (Rs. 40,000 of a Rs. 114,645 gross). Loans and fertilizer
+  // are spread over the supplier's chosen months, under a cap.
+  instalmentShares: { advance: 1, loan: 0.2, manure: 0.15 },
 };
 
 export type DeductionRateProblem =
@@ -71,7 +87,12 @@ export type DeductionRateProblem =
  */
 export function deductionRateProblems(rates: DeductionRates): DeductionRateProblem[] {
   const problems: DeductionRateProblem[] = [];
-  if (!(rates.transportPerKg >= 0)) problems.push('negative-transport');
+  if (
+    !(rates.transportPerKg >= 0) ||
+    Object.values(rates.transportByPoint ?? {}).some((rate) => !(rate >= 0))
+  ) {
+    problems.push('negative-transport');
+  }
   if (!(rates.stamps >= 0)) problems.push('negative-stamps');
   if (
     Object.values(rates.instalmentShares).some((share) => !(share >= 0) || share > 1)
@@ -83,6 +104,45 @@ export function deductionRateProblems(rates: DeductionRates): DeductionRateProbl
 
 export function areDeductionRatesUsable(rates: DeductionRates): boolean {
   return deductionRateProblems(rates).length === 0;
+}
+
+/* ──────────────────────────── transport per kilo ──────────────────────────── */
+
+/**
+ * The transport rate one kilo pays: **the supplier's own rate, else their collection
+ * point's, else the factory's.** One function so the bill, the supplier screen and the API
+ * cannot disagree about which rate a supplier is on.
+ *
+ * `supplierRate` is `null` or absent for a supplier on the point's rate, which is most of
+ * them. `0` is a real rate (a supplier who brings their own leaf) and wins like any other.
+ */
+export function transportRateFor(
+  rates: DeductionRates,
+  pointId: string | null | undefined,
+  supplierRate?: number | null,
+): number {
+  if (supplierRate !== null && supplierRate !== undefined) return supplierRate;
+  if (pointId && rates.transportByPoint?.[pointId] !== undefined) {
+    return rates.transportByPoint[pointId]!;
+  }
+  return rates.transportPerKg;
+}
+
+/**
+ * A month's transport line. Priced **per weighing's point**, not once for the supplier,
+ * because a supplier who delivers to two divisions travelled two distances. A supplier
+ * with their own rate pays it on every kilo, wherever it was weighed.
+ */
+export function transportChargeFor(
+  rates: DeductionRates,
+  kgsByPoint: ReadonlyArray<{ pointId: string | null; kgs: number }>,
+  supplierRate?: number | null,
+): number {
+  let total = 0;
+  for (const { pointId, kgs } of kgsByPoint) {
+    total += kgs * transportRateFor(rates, pointId, supplierRate);
+  }
+  return round2(total);
 }
 
 /* ─────────────────────────── the instalment itself ─────────────────────────── */
@@ -183,6 +243,16 @@ export function deductionRateDiff(
 
   if (current.transportPerKg !== proposed.transportPerKg) {
     out.push({ field: 'transportPerKg', from: current.transportPerKg, to: proposed.transportPerKg });
+  }
+  const pointIds = new Set([
+    ...Object.keys(current.transportByPoint ?? {}),
+    ...Object.keys(proposed.transportByPoint ?? {}),
+  ]);
+  for (const pointId of pointIds) {
+    // A point without its own rate pays the factory-wide one, so that is its "from" or "to".
+    const from = current.transportByPoint?.[pointId] ?? current.transportPerKg;
+    const to = proposed.transportByPoint?.[pointId] ?? proposed.transportPerKg;
+    if (from !== to) out.push({ field: `transportByPoint.${pointId}`, from, to });
   }
   if (current.stamps !== proposed.stamps) {
     out.push({ field: 'stamps', from: current.stamps, to: proposed.stamps });

@@ -31,6 +31,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
   BadgeDollarSign,
   Building2,
+  Cable,
   Landmark,
   Languages,
   Bell as BellIcon,
@@ -38,6 +39,7 @@ import {
   SlidersHorizontal,
   Warehouse,
   MessageSquareQuote,
+  Percent,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ConfigPatch } from '@tfd/domain';
@@ -63,6 +65,8 @@ import { BanksSection } from './BanksSection';
 import { CreditRulesSection } from './CreditRulesSection';
 import { TeaPacketSection } from './TeaPacketSection';
 import { NoteSuggestionsSection } from './NoteSuggestionsSection';
+import { FactorySystemSection } from './FactorySystemSection';
+import { BillCalculationSection } from './BillCalculationSection';
 import type { SectionProps } from './SectionFooter';
 import { useAdminConfig, useSaveConfig } from './hooks';
 import { InfoTip } from '@/components/ui/Tooltip';
@@ -74,6 +78,11 @@ const SECTIONS: Array<{
 }> = [
   { id: 'factory', icon: Building2, Component: FactorySection },
   { id: 'features', icon: SlidersHorizontal, Component: FeaturesSection },
+  /**
+   * Where the factory's records come from: its own system (the sync), or this console. It
+   * decides which screens exist and who calculates a bill, so it sits beside Features.
+   */
+  { id: 'factorySystem', icon: Cable, Component: FactorySystemSection },
   { id: 'operations', icon: Warehouse, Component: OperationsSection },
   /**
    * Split out of *Collection & payment* when the catalogue grew from a hand-typed five
@@ -96,6 +105,8 @@ const SECTIONS: Array<{
    * price* — and neither is a switch.
    */
   { id: 'creditRules', icon: BadgeDollarSign, Component: CreditRulesSection },
+  /** Payment rounding, bill numbers and advance interest, for the bills calculated here. */
+  { id: 'billCalculation', icon: Percent, Component: BillCalculationSection },
   /** The office's own chip sentences under the decision and reply boxes (BACKEND-TODO #38). */
   { id: 'notes', icon: MessageSquareQuote, Component: NoteSuggestionsSection },
 ];

@@ -16,19 +16,20 @@ import { useTranslation } from 'react-i18next';
 import { can } from '@tfd/domain';
 import type { DashboardView } from '@/services/repositories/dashboardRepository';
 import { useAuthStore } from '@/auth/authStore';
-import { useFactory, useFeatureFlags } from '@/config/RuntimeConfigProvider';
+import { useFactory, useFeatureFlags, useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
 import { Logo } from '@/brand/Logo';
 import { CountBadge } from '@/components/ui/Badge';
 import { Meter } from '@/components/charts/Meter';
 import { formatCount, formatPercent } from '@/lib/format';
 import { cn } from '@/lib/cn';
-import { NAVIGATION, flagsOf, queuesOf, type NavItem } from './navigation';
+import { NAVIGATION, isNavItemVisible, queuesOf, type NavItem } from './navigation';
 import { UserMenu } from './UserMenu';
 
 export function Sidebar({ summary }: { summary?: DashboardView }) {
   const { t } = useTranslation();
   const grants = useAuthStore((s) => s.grants);
   const flags = useFeatureFlags();
+  const keepsRecords = useKeepsFactoryRecords();
   const factory = useFactory();
 
   /**
@@ -47,14 +48,9 @@ export function Sidebar({ summary }: { summary?: DashboardView }) {
 
   const sections = NAVIGATION.map((section) => ({
     ...section,
-    items: section.items.filter((item) => {
-      // Flag first: a feature the factory does not buy is not a permission
-      // question, and asking it in the other order shows a manure queue to a
-      // manager at a factory that has never sold fertilizer.
-      const needed = flagsOf(item);
-      const enabled = needed.length === 0 || needed.some((flag) => flags[flag]);
-      return enabled && can(grants, item.capability, 'read');
-    }),
+    items: section.items.filter((item) =>
+      isNavItemVisible(item, flags, (c) => can(grants, c, 'read'), keepsRecords),
+    ),
   })).filter((section) => section.items.length > 0);
 
   const canSeeAdoption = can(grants, 'reports', 'read');

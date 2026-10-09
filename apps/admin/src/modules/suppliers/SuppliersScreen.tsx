@@ -17,7 +17,12 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import type { SupplierListItem, SupplierQuery, SupplierStatus } from '@tfd/domain';
-import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
+import { useKeepsFactoryRecords, useRuntimeConfig } from '@/config/RuntimeConfigProvider';
+import { useCan } from '@/auth/authStore';
+import { UserPlus } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { ImportMenu } from '@/components/ImportMenu';
+import { AddSupplierDialog } from './AddSupplierDialog';
 import { useDebounced } from '@/lib/useDebounced';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
@@ -39,6 +44,10 @@ export function SuppliersScreen() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { config } = useRuntimeConfig();
+  // While the factory-system sync is off, suppliers are registered here (one, or a file).
+  const keepsRecords = useKeepsFactoryRecords();
+  const canWrite = useCan('suppliers', 'write');
+  const [adding, setAdding] = useState(false);
   const [params, setParams] = useSearchParams();
 
   const [searchText, setSearchText] = useState(params.get('q') ?? '');
@@ -263,22 +272,36 @@ export function SuppliersScreen() {
         title={t('suppliers.title')}
         description={t('suppliers.subtitle')}
         actions={
-          <ExportCsvButton
-            name="suppliers"
-            fetchPage={(page, pageSize) => supplierRepository.list({ ...query, page, pageSize })}
-            columns={[
-              { header: t('suppliers.column.code'), value: (s) => s.supplierCode },
-              { header: t('suppliers.column.name'), value: (s) => s.name },
-              { header: t('suppliers.column.nic'), value: (s) => s.nic ?? '' },
-              { header: t('suppliers.column.point'), value: (s) => s.collectionPoint?.name ?? '' },
-              { header: t('common.status'), value: (s) => t(`suppliers.status.${s.status}`) },
-              { header: t('suppliers.column.payment'), value: (s) => (s.paymentMethod ? t(`suppliers.payment.${s.paymentMethod}`) : '') },
-              { header: t('suppliers.column.savings'), value: (s) => s.savingsPerKg ?? '' },
-              { header: t('suppliers.summary.bank'), value: (s) => (s.hasBankDetails ? t('common.yes') : t('common.no')) },
-              { header: t('suppliers.column.app'), value: (s) => (s.hasApp ? t('common.yes') : t('common.no')) },
-              { header: t('suppliers.column.lastDelivery'), value: (s) => s.lastDeliveryAt?.slice(0, 10) ?? '' },
-            ]}
-          />
+          <div className="flex flex-wrap items-center gap-sm">
+                      <ExportCsvButton
+                        name="suppliers"
+                        fetchPage={(page, pageSize) => supplierRepository.list({ ...query, page, pageSize })}
+                        columns={[
+                          { header: t('suppliers.column.code'), value: (s) => s.supplierCode },
+                          { header: t('suppliers.column.name'), value: (s) => s.name },
+                          { header: t('suppliers.column.nic'), value: (s) => s.nic ?? '' },
+                          { header: t('suppliers.column.point'), value: (s) => s.collectionPoint?.name ?? '' },
+                          { header: t('common.status'), value: (s) => t(`suppliers.status.${s.status}`) },
+                          { header: t('suppliers.column.payment'), value: (s) => (s.paymentMethod ? t(`suppliers.payment.${s.paymentMethod}`) : '') },
+                          { header: t('suppliers.column.savings'), value: (s) => s.savingsPerKg ?? '' },
+                          { header: t('suppliers.summary.bank'), value: (s) => (s.hasBankDetails ? t('common.yes') : t('common.no')) },
+                          { header: t('suppliers.column.app'), value: (s) => (s.hasApp ? t('common.yes') : t('common.no')) },
+                          { header: t('suppliers.column.lastDelivery'), value: (s) => s.lastDeliveryAt?.slice(0, 10) ?? '' },
+                        ]}
+                      />
+            {keepsRecords && canWrite ? (
+              <>
+                <ImportMenu kinds={['suppliers', 'openingBalances', 'transportRates']} />
+                <Button
+                  variant="primary"
+                  iconLeft={<UserPlus className="size-icon-sm" aria-hidden />}
+                  onClick={() => setAdding(true)}
+                >
+                  {t('records.supplier.add')}
+                </Button>
+              </>
+            ) : null}
+          </div>
         }
       />
 
@@ -366,6 +389,7 @@ export function SuppliersScreen() {
           emptyState={<EmptyState title={t('common.noResults')} body={t('common.noResultsHint')} />}
         />
       </Card>
+      {adding ? <AddSupplierDialog open onClose={() => setAdding(false)} /> : null}
     </>
   );
 }

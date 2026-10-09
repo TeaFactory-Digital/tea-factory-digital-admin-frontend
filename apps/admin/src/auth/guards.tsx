@@ -15,7 +15,7 @@ import { useAuthStatus, useCan, useOwesPasswordChange } from './authStore';
 import { InitialPasswordScreen } from './InitialPasswordScreen';
 import { Spinner } from '@/components/ui/states';
 import { EmptyState } from '@/components/ui/states';
-import { useFeatureFlags } from '@/config/RuntimeConfigProvider';
+import { useFeatureFlags, useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
 import type { FeatureFlagName } from '@tfd/domain';
 
 /** Signed in, or sent to the sign-in screen with somewhere to come back to. */
@@ -114,6 +114,23 @@ export function RequireAnyFlag({
 
   if (!needed.some((flag) => flags[flag])) {
     return <EmptyState title={t('error.featureDisabled')} />;
+  }
+  return <>{children}</>;
+}
+
+/**
+ * Open only while the factory-system sync is off.
+ *
+ * With the sync on, these records come from the factory's own system and an entry screen
+ * here would be a second source for the same weighing or bill. A bookmarked URL is told
+ * why rather than shown a form whose saves the API would refuse.
+ */
+export function RequireFactoryRecords({ children }: PropsWithChildren) {
+  const { t } = useTranslation();
+  if (!useKeepsFactoryRecords()) {
+    return (
+      <EmptyState title={t('records.syncOnTitle')} body={t('records.syncOnBody')} />
+    );
   }
   return <>{children}</>;
 }

@@ -83,11 +83,17 @@ export function isRoutedCapability(capability: Capability): boolean {
 export const DEFAULT_ROLE_MATRIX: Record<ConsoleRole, Record<Capability, AccessLevel>> = {
   clerk: {
     suppliers: W,
-    deliveries: R,
+    /*
+     * `W` for the two things a clerk does at the counter while the factory-system sync is
+     * off: enter the day's weighings, and record a credit request made in person. Neither
+     * screen exists with the sync on, so this grants nothing there. Recording a request is
+     * not deciding it: `A` stays with the manager (BR-501).
+     */
+    deliveries: W,
     ratesAndMonthClose: NONE,
     billing: R,
     payouts: R,
-    creditRequests: R,
+    creditRequests: W,
     creditAboveThreshold: NONE,
     changeRequests: A,
     inquiries: A,

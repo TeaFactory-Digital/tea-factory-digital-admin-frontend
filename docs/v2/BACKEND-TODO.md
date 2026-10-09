@@ -5,55 +5,60 @@ Each item says what is wrong, where, and what to change.
 
 ## Status (9 October 2026)
 
-**Done and removed from this file: #1 to #43** (latest in `792a474` and `687fec9`, checked on
-staging: galaboda's untouched Terms and Privacy now have the new text in en, si and ta; its
-FAQ, savings scheme, credit terms and about pages were edited in the console and were kept).
+**Done and removed from this file: #1 to #44** (latest: #44 in `b93c64f`, the default text
+for "Restore default text", read only and never counted as an office edit).
 
 **Still open:**
 
 | # | What | Priority |
 |---|------|----------|
-| 44 | Static pages: serve the default text, so the office can restore it | Medium |
+| 45 | Factory records without the factory system: the sync switch, entry and imports | High |
 
 **Answers to the last note**
-- **One refresh at a time:** confirmed, and now across tabs too.
-  - Console, one tab: every caller already shared one in-flight promise.
-  - Console, several tabs: was **not** covered. Fixed: the rotation now runs inside a Web
-    Lock (`navigator.locks`, name `tfd-admin-refresh`), so a second tab waits and then
-    sends the cookie the first tab's rotation set. Browsers without the API fall back to
-    the per-tab promise.
-  - Mobile app: one shared in-flight promise for every refresh, including the one at app
-    start, and a phone runs one copy of the app, so it cannot send two at once.
-- **Seed note:** updated. The `_note` in `static-pages.seed.json` now says untouched pages
-  are refreshed too. That changes the file, so please copy it over the defaults again
-  (only the `_note` differs; the pages are the same).
+- **FAQ and `{{factory}}`:** right, the FAQ names no factory in any language, so our check
+  was wrong; `terms/default?lang=si` is the one to check. Leave the FAQ as it is unless we
+  send a new seed file.
+- **`eligibility: null`:** the console already shows the request without the eligibility
+  panel when it is `null`, so nothing to change on our side.
+
+**Factory sync (Phase 10), for when it starts:** the request to the factory team now asks
+for every line of the printed bill. `factory-system-team.md` §3 and
+`factory-updates-sample.json` (bill `2026210869` is a real slip) add `greenLeafAmount`,
+`extraPayment`, `totalRatePerKg`, `loanInstalmentNo`, `savingsWithdrawal`, `savings`
+(This month / Previous / Todate), `billDateTime` and the bill's own `paymentMethod`, and
+say `grossAmount` includes the coins brought forward. Map them onto `BillRow`
+(`savingsThisMonth`, `savingsPrevious`, `savingsToDate` already exist; `loanInstalmentNo`
+is new) and store them as received.
 
 ---
 
-## 44. Static pages: serve the default text, so the office can restore it
+## 45. Factory records without the factory system
 
-The console's static page editor now has a **Restore default text** button. It loads the
-starting text for that page and language into the form; nothing is stored until the editor
-presses Save, which is the existing `PUT .../translations/:lang`. It is how an office that
-has edited a page can go back to the default, which the seed on its own never does for an
-edited page (#43).
+A factory whose own system cannot be reached switches the factory-system sync **off**, and
+the office keeps suppliers, daily leaf, monthly rates, bills, opening balances and counter
+credit requests in the console: one at a time, or from an Excel/CSV file. The console side is
+built and tested against the mock.
 
-The console calls this, and answers "not available on this server" while it 404s:
+**The full contract is in [`factory-records.md`](./factory-records.md):** the switch
+(`config.factorySync`), the endpoints (the v1 leaf and month endpoints, plus six new ones),
+the import format and its all-or-nothing rule, the bill calculation, the role change for the
+clerk, and the three new audit actions.
 
-```
-GET /admin/static-pages/:slug/default?lang=en|si|ta
-200 { "slug": "faq", "lang": "si", "title": "...", "body": "..." }
-```
+**To do:** build §4 of that file, refuse every record write with `409 factory-sync-on` while
+the sync is on, and `vendor:pull` (new `factoryRecords.ts`, `GreenLeafBill.otherCardsNote`,
+`RuntimeConfig.factorySync`, clerk `deliveries: W` and `creditRequests: W`).
 
-- The text comes from `static-pages.defaults.json` (the same file the seed uses), with
-  `{{factory}}` replaced by the factory's name, exactly as when seeding.
-- `lang` missing: use the editorial fallback (`en`).
-- `404 not-found` when the slug is not one of the six, or the file has no text for that
-  language.
-- Permission: the same as reading static pages (`content: R`). It is a read; the save that
-  may follow is the existing write and is audited as today.
-- It must not change the page or count as an office edit. Only the Save that follows does,
-  and after that the page is the office's, as #43 already treats it.
+**Added after the factory's answers (§8 of that file):** transport per collection point
+(`DeductionRates.transportByPoint`) and per supplier (`AdminSupplier.transportPerKg`,
+`PUT /admin/suppliers/:id/transport-rate`, import kind `transportRates`), and advance
+interest in Configuration (`config.advanceInterest`, used for `carryForward.loanInterest`).
+`otherCards` is now labelled "Other deductions"; the field name does not change.
 
-**Check:** `GET /admin/static-pages/faq/default?lang=si` answers the Sinhala FAQ from the
-defaults file with galaboda's name in it, and the page itself is unchanged.
+**And to match the factory's printed slip (§5):** `computeBillAmounts` now puts the coins
+brought forward in `grossAmount` and rounds the payment to `config.billSettings.paymentUnit`
+(galaboda pays in tens); the advance is taken back in full by default; bills carry
+`loanInstalmentNo`; and `billSettings.nextBillSerial` gives the factory's own bill numbers
+(`2026210869`). Check that the API uses the vendored function for every bill it calculates,
+so a bill and the app agree to the cent.
+
+**Check:** the list in §9 of that file.

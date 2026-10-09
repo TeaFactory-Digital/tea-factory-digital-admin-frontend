@@ -16,6 +16,25 @@
  * including the `/v1` prefix. First match wins, so specific routes come first.
  */
 
+import {
+  isFactorySyncEnabled,
+  factoryBillNumber,
+  type SupplierTransportRate,
+  IMPORT_KINDS,
+  importRowProblems,
+  billAdjustmentProblem,
+  computeBillAmounts,
+  maskAccountNumber,
+  type NewSupplier,
+  type OpeningBalances,
+  type OpeningBalancesRecord,
+  type WalkInCreditRequest,
+  type BillAdjustment,
+  type ImportKind,
+  type ImportRow,
+  type ImportRowProblem,
+  type ImportResult,
+} from '@tfd/domain';
 import { HttpResponse, delay, http, type HttpHandler } from 'msw';
 import STATIC_PAGE_DEFAULTS from '../../../../../docs/v2/static-pages.seed.json';
 import type { ServedBannerPreview, ServedContentPreview } from '../api/adapters';
@@ -203,6 +222,8 @@ import {
  * docs/mocks.md rather than discovered.
  */
 const state = {
+  /** Opening balances entered here while the factory-system sync is off. */
+  openingBalances: new Map<string, OpeningBalancesRecord>(),
   /**
    * The console's own users, mutable.
    *
@@ -1585,6 +1606,375 @@ function withInquiryAge(inquiry: AdminInquiry): AdminInquiry {
 
 /* ──────────────────────────────── handlers ──────────────────────────────── */
 
+
+/* ─────────── Factory records, kept here while the factory-system sync is off ─────────── */
+
+/** The most rows one file may carry. A season's weighings for one point fit comfortably. */
+const MAX_IMPORT_ROWS = 5000;
+
+/** The permission each import needs: the same one as entering a record by hand. */
+const IMPORT_CAPABILITY: Record<ImportKind, Capability> = {
+  suppliers: 'suppliers',
+  deliveries: 'deliveries',
+  monthlyRates: 'ratesAndMonthClose',
+  openingBalances: 'suppliers',
+  walkInCredit: 'creditRequests',
+  billAdjustments: 'billing',
+  transportRates: 'suppliers',
+};
+
+/**
+ * `409 factory-sync-on`: with the sync on these records come from the factory's own
+ * system, and a second source would be a second answer to "what did they deliver".
+ */
+function refuseWhileSyncOn(request: Request): Response | null {
+  if (!isFactorySyncEnabled(tenantConfig(request))) return null;
+  return fail({
+    status: 409,
+    code: 'factory-sync-on',
+    message: 'These records come from the factory system while the sync is on.',
+  });
+}
+
+/** By the factory's code: `5147` matches `5147 (DENIYAYA)`. */
+function supplierByCode(code: string): AdminSupplier | undefined {
+  const wanted = code.trim().toUpperCase();
+  const bare = wanted.split(/\s|\(/)[0];
+  return state.suppliers.find((one) => {
+    const own = one.supplierCode.toUpperCase();
+    return own === wanted || own.split(/\s|\(/)[0] === bare;
+  });
+}
+
+function hasBill(supplierId: string): boolean {
+  return state.bills.some((bill) => bill.supplierId === supplierId);
+}
+
+function newSupplierProblem(request: Request, body: NewSupplier): string | null {
+  if (supplierByCode(body.supplierCode)) return 'supplier-code-taken';
+  const points = tenantConfig(request).collectionPoints.map((point) => point.name);
+  if (!points.includes(body.collectionPoint)) return 'unknown-collection-point';
+  if (body.paymentMethod === 'bankTransfer' && !body.bankDetails?.accountNumber) {
+    return 'bank-details-required';
+  }
+  return null;
+}
+
+function addSupplier(body: NewSupplier): AdminSupplier {
+  const id = `sup-${nextId()}`;
+  const point = body.collectionPoint;
+  const supplier: AdminSupplier = {
+    id,
+    supplierCode: /\(/.test(body.supplierCode) ? body.supplierCode : `${body.supplierCode} (${point})`,
+    name: body.name,
+    nic: body.nic,
+    phone: body.phone || undefined,
+    email: body.email || undefined,
+    homeAddress: body.homeAddress,
+    estateAddress: body.estateAddress,
+    collectionPoint: point,
+    status: 'active',
+    bankDetails: body.bankDetails
+      ? { ...body.bankDetails, accountNumber: maskAccountNumber(body.bankDetails.accountNumber) }
+      : undefined,
+    hasBankDetails: Boolean(body.bankDetails),
+    paymentMethod: body.paymentMethod,
+    savingsPerKg: body.savingsPerKg,
+    savingsBalance: 0,
+    creditBalances: { advance: 0, loan: 0, manure: 0 },
+    registeredAt: new Date().toISOString(),
+    lastDeliveryAt: null,
+    pendingRequests: 0,
+    dateOfBirth: body.dateOfBirth || undefined,
+    hasApp: false,
+    deviceCount: 0,
+    lastAppSignInAt: null,
+  };
+  state.suppliers = [...state.suppliers, supplier];
+  return supplier;
+}
+
+function saveOpeningBalances(
+  supplierId: string,
+  body: OpeningBalances & { note: string },
+  byName: string,
+): OpeningBalancesRecord {
+  const saved: OpeningBalancesRecord = {
+    asOfMonth: body.asOfMonth,
+    advance: round2(body.advance),
+    loan: round2(body.loan),
+    manure: round2(body.manure),
+    teaPackets: round2(body.teaPackets),
+    savings: round2(body.savings),
+    previousDebt: round2(body.previousDebt),
+    note: body.note.trim(),
+    editable: true,
+    updatedAt: new Date().toISOString(),
+    updatedByName: byName,
+  };
+  state.openingBalances.set(supplierId, saved);
+  // The balances the app and the credit limits read start from these figures.
+  state.suppliers = state.suppliers.map((one) =>
+    one.id === supplierId
+      ? {
+          ...one,
+          savingsBalance: saved.savings,
+          creditBalances: { advance: saved.advance, loan: saved.loan, manure: saved.manure },
+        }
+      : one,
+  );
+  return saved;
+}
+
+function addWalkInRequest(
+  supplier: AdminSupplier,
+  body: WalkInCreditRequest,
+  user: MockUser,
+): AdminCreditRequest {
+  const created: AdminCreditRequest = {
+    id: `crd-${nextId()}`,
+    facility: body.facility,
+    supplierId: supplier.id,
+    supplierCode: supplier.supplierCode,
+    supplierName: supplier.name,
+    amount: round2(body.amount),
+    repaymentMonths: body.facility === 'loan' ? (body.repaymentMonths ?? null) : null,
+    reason: body.note.trim(),
+    manureType: body.facility === 'manure' ? (body.manureType ?? null) : null,
+    quantityKg: body.facility === 'manure' ? (body.quantityKg ?? null) : null,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    channel: 'office',
+    // The recorder is stored, so BR-501 refuses them as the approver.
+    createdById: user.id,
+    createdByName: user.name,
+    decision: null,
+    eligibility: eligibilityFor(supplier, body.facility, { computedAt: new Date().toISOString() }),
+    ageHours: 0,
+  };
+  state.creditRequests = [created, ...state.creditRequests];
+  return created;
+}
+
+/** The typed line changes; everything derived from it is recalculated, never patched. */
+function adjustBill(bill: AdminBill, body: BillAdjustment, paymentUnit?: number): void {
+  const { total: _total, ...lines } = bill.deductions;
+  const amounts = computeBillAmounts({
+    totalKgs: bill.totalKgs,
+    ratePerKg: bill.ratePerKg,
+    extraRatePerKg: bill.extraRatePerKg,
+    coinsBroughtForward: bill.coinsBroughtForward,
+    savingsWithdrawal: bill.savingsWithdrawal ?? 0,
+    deductions: { ...lines, otherCards: round2(body.otherCards) },
+    paymentUnit,
+  });
+  bill.deductions = amounts.deductions;
+  bill.balanceAmount = amounts.balanceAmount;
+  bill.coinsCarriedForward = amounts.coinsCarriedForward;
+  bill.finalBalance = amounts.finalBalance;
+  bill.carryForward = { ...bill.carryForward, nextMonthDeb: amounts.nextMonthDeb };
+  bill.otherCardsNote = body.otherCardsNote.trim() || null;
+}
+
+const num = (value: string | undefined) => (value && value.trim() !== '' ? Number(value) : 0);
+
+/** The checks only the server can make: what the rows refer to, and what is locked. */
+function importServerProblems(request: Request, kind: ImportKind, rows: ImportRow[]): ImportRowProblem[] {
+  const problems: ImportRowProblem[] = [];
+  const seen = new Set<string>();
+  const points = tenantConfig(request).collectionPoints.map((point) => point.name);
+
+  rows.forEach((row, index) => {
+    const line = index + 2;
+    const push = (column: string, code: string) => problems.push({ row: line, column, code });
+    const code = (row.supplierCode ?? '').trim();
+    const supplier = code ? supplierByCode(code) : undefined;
+
+    switch (kind) {
+      case 'suppliers': {
+        if (!code) return;
+        if (seen.has(code)) push('supplierCode', 'duplicate');
+        seen.add(code);
+        if (supplier) push('supplierCode', 'supplier-code-taken');
+        if (row.collectionPoint && !points.includes(row.collectionPoint)) {
+          push('collectionPoint', 'unknown-collection-point');
+        }
+        if (row.paymentMethod === 'bankTransfer' && !row.accountNumber?.trim()) {
+          push('accountNumber', 'bank-details-required');
+        }
+        return;
+      }
+      case 'deliveries': {
+        if (code && !supplier) push('supplierCode', 'unknown-supplier');
+        if (row.date && lockedMonth(monthKeyOf(row.date))) push('date', 'month-locked');
+        if (row.collectionPoint && !points.includes(row.collectionPoint)) {
+          push('collectionPoint', 'unknown-collection-point');
+        }
+        return;
+      }
+      case 'monthlyRates': {
+        if (!row.month) return;
+        if (seen.has(row.month)) push('month', 'duplicate');
+        seen.add(row.month);
+        if (!monthRecord(row.month)) push('month', 'unknown-month');
+        else if (lockedMonth(row.month)) push('month', 'month-locked');
+        return;
+      }
+      case 'openingBalances': {
+        if (!code) return;
+        if (seen.has(code)) push('supplierCode', 'duplicate');
+        seen.add(code);
+        if (!supplier) push('supplierCode', 'unknown-supplier');
+        else if (hasBill(supplier.id)) push('supplierCode', 'opening-balances-locked');
+        return;
+      }
+      case 'walkInCredit': {
+        if (code && !supplier) push('supplierCode', 'unknown-supplier');
+        if (row.facility === 'manure' && (!row.manureType || !(num(row.quantityKg) > 0))) {
+          push('quantityKg', 'required');
+        }
+        return;
+      }
+      case 'billAdjustments': {
+        if (!code || !row.month) return;
+        const key = `${row.month}:${code}`;
+        if (seen.has(key)) push('supplierCode', 'duplicate');
+        seen.add(key);
+        if (!supplier) return push('supplierCode', 'unknown-supplier');
+        if (lockedMonth(row.month)) return push('month', 'month-locked');
+        if (!state.bills.some((bill) => bill.supplierId === supplier.id && bill.monthKey === row.month)) {
+          push('supplierCode', 'no-bill');
+        }
+        if (num(row.otherCards) > 0 && (row.otherCardsNote ?? '').trim().length < 3) {
+          push('otherCardsNote', 'required');
+        }
+        return;
+      }
+      case 'transportRates': {
+        if (!code) return;
+        if (seen.has(code)) push('supplierCode', 'duplicate');
+        seen.add(code);
+        if (!supplier) push('supplierCode', 'unknown-supplier');
+        return;
+      }
+    }
+  });
+  return problems;
+}
+
+/** Called only once every row has passed, so each branch can trust its rows. */
+function applyImport(kind: ImportKind, rows: ImportRow[], user: MockUser, paymentUnit?: number): void {
+  const now = new Date().toISOString();
+  switch (kind) {
+    case 'suppliers':
+      for (const row of rows) {
+        addSupplier({
+          supplierCode: row.supplierCode!,
+          name: row.name!,
+          nic: row.nic!,
+          phone: row.phone,
+          collectionPoint: row.collectionPoint!,
+          paymentMethod: row.paymentMethod as NewSupplier['paymentMethod'],
+          savingsPerKg: num(row.savingsPerKg),
+          homeAddress: row.homeAddress,
+          bankDetails: row.accountNumber
+            ? { bankName: row.bankName ?? '', branchName: row.branchName ?? '', accountNumber: row.accountNumber }
+            : undefined,
+        });
+      }
+      return;
+    case 'deliveries': {
+      const batchId = `import-${nextId()}`;
+      const added: Delivery[] = rows.map((row) => {
+        const supplier = supplierByCode(row.supplierCode!)!;
+        return {
+          id: `del-${nextId()}`,
+          date: row.date!,
+          monthKey: monthKeyOf(row.date!),
+          supplierId: supplier.id,
+          supplierCode: supplier.supplierCode,
+          supplierName: supplier.name,
+          collectionPoint: row.collectionPoint || supplier.collectionPoint,
+          kgs: roundKg(num(row.kg)),
+          source: 'scaleFile',
+          batchId,
+          recordedById: user.id,
+          recordedByName: user.name,
+          recordedAt: now,
+          voidedAt: null,
+          voidedByName: null,
+          voidedReason: null,
+        };
+      });
+      state.deliveries = [...added, ...state.deliveries];
+      return;
+    }
+    case 'monthlyRates':
+      for (const row of rows) {
+        const record = monthRecord(row.month!)!;
+        record.rate = {
+          monthKey: row.month!,
+          ratePerKg: num(row.ratePerKg),
+          extraRatePerKg: num(row.extraRatePerKg),
+          enteredById: user.id,
+          enteredByName: user.name,
+          enteredAt: now,
+        };
+        if (record.stage === 'collecting' || record.stage === 'awaitingRate') record.stage = 'rateEntered';
+      }
+      return;
+    case 'openingBalances':
+      for (const row of rows) {
+        saveOpeningBalances(
+          supplierByCode(row.supplierCode!)!.id,
+          {
+            asOfMonth: row.asOfMonth!,
+            advance: num(row.advance),
+            loan: num(row.loan),
+            manure: num(row.manure),
+            teaPackets: num(row.teaPackets),
+            savings: num(row.savings),
+            previousDebt: num(row.previousDebt),
+            note: 'Imported from a file',
+          },
+          user.name,
+        );
+      }
+      return;
+    case 'walkInCredit':
+      for (const row of rows) {
+        addWalkInRequest(
+          supplierByCode(row.supplierCode!)!,
+          {
+            supplierId: '',
+            facility: row.facility as WalkInCreditRequest['facility'],
+            amount: num(row.amount),
+            repaymentMonths: row.repaymentMonths ? num(row.repaymentMonths) : undefined,
+            manureType: row.manureType || undefined,
+            quantityKg: row.quantityKg ? num(row.quantityKg) : undefined,
+            note: row.note!,
+          },
+          user,
+        );
+      }
+      return;
+    case 'billAdjustments':
+      for (const row of rows) {
+        const supplier = supplierByCode(row.supplierCode!)!;
+        const bill = state.bills.find((one) => one.supplierId === supplier.id && one.monthKey === row.month)!;
+        adjustBill(bill, { otherCards: num(row.otherCards), otherCardsNote: row.otherCardsNote ?? '' }, paymentUnit);
+      }
+      return;
+    case 'transportRates':
+      // An empty rate puts the supplier back on their collection point's.
+      for (const row of rows) {
+        const supplier = supplierByCode(row.supplierCode!)!;
+        supplier.transportPerKg = (row.transportPerKg ?? '').trim() === '' ? null : num(row.transportPerKg);
+      }
+      return;
+  }
+}
+
 export const handlers: HttpHandler[] = [
   /* ── M16 Reports ───────────────────────────────────────────────────────── */
 
@@ -2166,6 +2556,12 @@ export const handlers: HttpHandler[] = [
       };
     }
     if (patch.collectionPoints) config.collectionPoints = patch.collectionPoints.map((p) => ({ ...p }));
+    if (patch.factorySync) config.factorySync = { enabled: patch.factorySync.enabled };
+    if (patch.billSettings) config.billSettings = { ...patch.billSettings };
+    if (patch.advanceInterest) {
+      config.advanceInterest = { monthlyRatePercent: patch.advanceInterest.monthlyRatePercent };
+    }
+    if (patch.noteSuggestions) config.noteSuggestions = patch.noteSuggestions;
 
     /**
      * Audited **per section**, with only the sections that changed in before/after.
@@ -3215,6 +3611,37 @@ export const handlers: HttpHandler[] = [
     const runId = `run-${monthKey}-${nextId()}`;
     const generatedAt = new Date().toISOString();
     const carried = carriedInto(monthKey);
+    const config = tenantConfig(request);
+    const settings = config.billSettings;
+
+    /**
+     * The factory's own numbers, when it has set where they continue from: a supplier keeps
+     * the number this month already gave them, and a new bill takes the next serial.
+     */
+    const billNoFor =
+      settings?.nextBillSerial === undefined
+        ? undefined
+        : (supplierId: string) => {
+            const kept = state.bills.find((one) => one.monthKey === monthKey && one.supplierId === supplierId);
+            if (kept && /^\d{10}$/.test(kept.billNo)) return kept.billNo;
+            const serial = settings.nextBillSerial!;
+            settings.nextBillSerial = serial + 1;
+            return factoryBillNumber(Number(monthKey.slice(0, 4)), serial);
+          };
+
+    /** "Loans / Advance 3": the loan instalments on the bills just before this month. */
+    const loanInstalmentsBefore = new Map<string, number>();
+    for (const supplier of state.suppliers) {
+      const earlier = state.bills
+        .filter((one) => one.supplierId === supplier.id && one.monthKey < monthKey)
+        .sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+      let count = 0;
+      for (const bill of earlier) {
+        if (bill.deductions.loansAdvance > 0) count += 1;
+        else break;
+      }
+      loanInstalmentsBefore.set(supplier.id, count);
+    }
 
     const bills = generateBills({
       monthKey,
@@ -3234,6 +3661,10 @@ export const handlers: HttpHandler[] = [
       // generation, so a withdrawal recorded after a draft run appears when it is re-run.
       // §21.10: the factory's approved rates, and each supplier's chosen repayment period.
       deductionRates: activeDeductionRates(),
+      advanceInterest: config.advanceInterest,
+      paymentUnit: settings?.paymentUnit,
+      billNoFor,
+      loanInstalmentsBefore,
       repaymentMonths: new Map(
         state.suppliers.map((supplier) => [
           supplier.id,
@@ -3287,6 +3718,18 @@ export const handlers: HttpHandler[] = [
 
     // A re-run replaces the previous one rather than accumulating beside it: two
     // runs for one open month is two sets of figures nobody can choose between.
+    // The office's typed line survives a recomputation: re-generating after a corrected
+    // weighing must not silently drop the "other deductions" somebody entered.
+    for (const bill of bills) {
+      const previous = state.bills.find((one) => one.monthKey === monthKey && one.supplierId === bill.supplierId);
+      if (previous && (previous.deductions.otherCards > 0 || previous.otherCardsNote)) {
+        adjustBill(
+          bill,
+          { otherCards: previous.deductions.otherCards, otherCardsNote: previous.otherCardsNote ?? '' },
+          settings?.paymentUnit,
+        );
+      }
+    }
     state.bills = [...state.bills.filter((bill) => bill.monthKey !== monthKey), ...bills];
     const summary = summariseBillRun(monthKey, runId, bills, {
       generatedAt,
@@ -6735,6 +7178,185 @@ export const handlers: HttpHandler[] = [
   http.put('https://mock-storage.invalid/uploads/*', async () => {
     await delay(LATENCY_MS * 2);
     return new HttpResponse(null, { status: 200 });
+  }),
+
+  /* ── Factory records, kept here while the factory-system sync is off ───── */
+
+  /**
+   * Register a supplier (docs/v2/factory-records.md §4.1).
+   *
+   * The code is the factory's own, so it is matched on the number before any division
+   * suffix: `5147` and `5147 (DENIYAYA)` are the same supplier.
+   */
+  http.post('*/admin/suppliers', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'suppliers', 'write');
+    if ('response' in auth) return auth.response;
+    const syncOn = refuseWhileSyncOn(request);
+    if (syncOn) return syncOn;
+
+    const body = (await request.json()) as NewSupplier;
+    const problem = newSupplierProblem(request, body);
+    if (problem) {
+      return fail({
+        status: problem === 'supplier-code-taken' ? 409 : 422,
+        code: problem,
+        message: 'The supplier could not be registered.',
+      });
+    }
+    const supplier = addSupplier(body);
+    recordBy(auth, 'supplier.create', 'supplier', supplier.id, {
+      after: { supplierCode: supplier.supplierCode, name: supplier.name, channel: 'console' },
+    });
+    return HttpResponse.json({ id: supplier.id }, { status: 201 });
+  }),
+
+  http.get('*/admin/suppliers/:id/opening-balances', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'suppliers');
+    if ('response' in auth) return auth.response;
+    const found = state.openingBalances.get(String(params.id));
+    if (!found) return fail({ status: 404, code: 'not-found', message: 'No opening balances yet.' });
+    return HttpResponse.json({ ...found, editable: !hasBill(String(params.id)) });
+  }),
+
+  http.put('*/admin/suppliers/:id/opening-balances', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'suppliers', 'write');
+    if ('response' in auth) return auth.response;
+    const syncOn = refuseWhileSyncOn(request);
+    if (syncOn) return syncOn;
+
+    const id = String(params.id);
+    if (!state.suppliers.some((one) => one.id === id)) {
+      return fail({ status: 404, code: 'not-found', message: 'No such supplier.' });
+    }
+    if (hasBill(id)) {
+      return fail({
+        status: 409,
+        code: 'opening-balances-locked',
+        message: 'A bill has been generated for this supplier; the bills carry the balances now.',
+      });
+    }
+    const body = (await request.json()) as OpeningBalances & { note: string };
+    if (!body.note || body.note.trim().length < 10) {
+      return fail({ status: 422, code: 'note-required', message: 'Say where the figures came from.' });
+    }
+    const saved = saveOpeningBalances(id, body, auth.user.name);
+    recordBy(auth, 'supplier.openingBalances', 'supplier', id, { after: saved });
+    return HttpResponse.json(saved);
+  }),
+
+  /** The supplier's own transport rate per kilo; `null` puts them back on their point's. */
+  http.put('*/admin/suppliers/:id/transport-rate', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'suppliers', 'write');
+    if ('response' in auth) return auth.response;
+    const syncOn = refuseWhileSyncOn(request);
+    if (syncOn) return syncOn;
+
+    const supplier = state.suppliers.find((one) => one.id === params.id);
+    if (!supplier) return fail({ status: 404, code: 'not-found', message: 'No such supplier.' });
+    const body = (await request.json()) as SupplierTransportRate;
+    if (body.transportPerKg !== null && !(body.transportPerKg >= 0)) {
+      return fail({ status: 422, code: 'negative', message: 'A rate of 0 or more, or none.' });
+    }
+    if (!body.note || body.note.trim().length < 10) {
+      return fail({ status: 422, code: 'note-required', message: 'Say why this supplier pays a different rate.' });
+    }
+    const before = supplier.transportPerKg ?? null;
+    supplier.transportPerKg = body.transportPerKg;
+    recordBy(auth, 'supplier.transportRate', 'supplier', supplier.id, {
+      before: { transportPerKg: before },
+      after: { transportPerKg: body.transportPerKg, note: body.note.trim() },
+    });
+    return HttpResponse.json({ id: supplier.id });
+  }),
+
+  /** A credit request made at the counter: pending, channel `office`, decided by someone else. */
+  http.post('*/admin/credit-requests', async ({ request }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'creditRequests', 'write');
+    if ('response' in auth) return auth.response;
+    const syncOn = refuseWhileSyncOn(request);
+    if (syncOn) return syncOn;
+
+    const body = (await request.json()) as WalkInCreditRequest;
+    const supplier = state.suppliers.find((one) => one.id === body.supplierId);
+    if (!supplier) return fail({ status: 404, code: 'not-found', message: 'No such supplier.' });
+    if (!(body.amount > 0) || !body.note || body.note.trim().length < 10) {
+      return fail({ status: 422, code: 'invalid', message: 'An amount above 0 and a note are required.' });
+    }
+    const created = addWalkInRequest(supplier, body, auth.user);
+    recordBy(auth, 'creditRequest.create', 'creditRequest', created.id, {
+      after: { facility: created.facility, amount: created.amount, channel: 'office' },
+    });
+    return HttpResponse.json({ id: created.id }, { status: 201 });
+  }),
+
+  /** The bill's "other deductions" line, before the month is published. */
+  http.put('*/admin/bills/:id/adjustment', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'billing', 'write');
+    if ('response' in auth) return auth.response;
+    const syncOn = refuseWhileSyncOn(request);
+    if (syncOn) return syncOn;
+
+    const bill = state.bills.find((one) => one.id === params.id);
+    if (!bill) return fail({ status: 404, code: 'not-found', message: 'No such bill.' });
+    if (bill.publishedAt || lockedMonth(bill.monthKey)) {
+      return fail({ status: 409, code: 'month-locked', message: 'The month is published.' });
+    }
+    const body = (await request.json()) as BillAdjustment;
+    const problem = billAdjustmentProblem(body);
+    if (problem) return fail({ status: 422, code: problem, message: 'Check the amount and the reason.' });
+
+    const before = { otherCards: bill.deductions.otherCards, otherCardsNote: bill.otherCardsNote ?? null };
+    adjustBill(bill, body, tenantConfig(request).billSettings?.paymentUnit);
+    recordBy(auth, 'bill.adjust', 'bill', bill.id, {
+      before,
+      after: { otherCards: body.otherCards, otherCardsNote: body.otherCardsNote },
+    });
+    return HttpResponse.json({ id: bill.id });
+  }),
+
+  /**
+   * Many records from a file. **All rows or none**: the rows are checked in full first,
+   * and any problem refuses the whole file with every problem listed.
+   */
+  http.post('*/admin/imports/:kind', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const kind = String(params.kind) as ImportKind;
+    if (!IMPORT_KINDS.includes(kind)) {
+      return fail({ status: 404, code: 'not-found', message: 'No such import.' });
+    }
+    const auth = authorize(request, IMPORT_CAPABILITY[kind], 'write');
+    if ('response' in auth) return auth.response;
+    const syncOn = refuseWhileSyncOn(request);
+    if (syncOn) return syncOn;
+
+    const { rows, fileName } = (await request.json()) as { fileName: string; rows: ImportRow[] };
+    if (!Array.isArray(rows) || rows.length === 0 || rows.length > MAX_IMPORT_ROWS) {
+      return fail({
+        status: 422,
+        code: 'import-size',
+        message: `A file carries 1 to ${MAX_IMPORT_ROWS} rows.`,
+      });
+    }
+    const problems = [...importRowProblems(kind, rows), ...importServerProblems(request, kind, rows)];
+    if (problems.length > 0) {
+      return fail({
+        status: 422,
+        code: 'import-invalid',
+        message: 'Nothing was saved: some rows are wrong.',
+        details: { problems },
+      });
+    }
+    applyImport(kind, rows, auth.user, tenantConfig(request).billSettings?.paymentUnit);
+    recordBy(auth, 'import.apply', 'import', `${kind}-${nextId()}`, {
+      after: { kind, rows: rows.length, fileName },
+    });
+    return HttpResponse.json({ kind, saved: rows.length, problems: [] } satisfies ImportResult);
   }),
 ];
 

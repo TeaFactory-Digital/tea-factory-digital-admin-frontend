@@ -45,7 +45,8 @@ describe('the configuration screen', () => {
 
     // The rail offers all five, because AC-12 is about the *last* field a factory
     // needs being here, not the convenient ones.
-    expect(screen.getByRole('button', { name: /Factory/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /The factory/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Factory system/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Features/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Collection/ })).toBeInTheDocument();
   });

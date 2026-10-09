@@ -28,6 +28,7 @@ export * from './supplierCredentials';
 export * from './deductionRates';
 export * from './payoutExport';
 export * from './config';
+export * from './factoryRecords';
 export * from './rbac';
 export * from './users';
 export * from './reports';

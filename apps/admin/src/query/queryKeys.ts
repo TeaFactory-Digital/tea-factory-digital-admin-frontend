@@ -83,6 +83,8 @@ export const qk = {
      * consent state did not change because the office sent something.
      */
     notifications: (id: string) => ['suppliers', 'notifications', id] as const,
+    /** Under `suppliers` so a supplier import refreshes it with the rest. */
+    openingBalances: (id: string) => ['suppliers', 'opening-balances', id] as const,
   },
 
   /**

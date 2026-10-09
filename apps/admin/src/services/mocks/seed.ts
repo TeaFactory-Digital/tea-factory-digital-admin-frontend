@@ -67,6 +67,9 @@ import type {
 } from '@tfd/domain';
 import {
   DEFAULT_DEDUCTION_RATES,
+  advanceInterestFor,
+  transportChargeFor,
+  type AdvanceInterestSetting,
   DEFAULT_TEA_PACKET_POLICY,
   creditInstalment,
   type CreditRules,
@@ -1697,6 +1700,14 @@ interface BillGenerationContext {
   savingsWithdrawals?: Map<string, number>;
   /** The factory's approved deduction rates (§21.10). Defaulted for a run before any were set. */
   deductionRates?: DeductionRates;
+  /** Interest a month on an advance still owed (Configuration). Absent: none. */
+  advanceInterest?: AdvanceInterestSetting;
+  /** Pay in whole units of this many rupees (Configuration). Absent: 1. */
+  paymentUnit?: number;
+  /** The factory's bill number for a supplier. Absent: `GL/YYYY-MM/NNNN` by position. */
+  billNoFor?: (supplierId: string) => string;
+  /** Loan instalments already recovered on earlier bills in the current run of them. */
+  loanInstalmentsBefore?: Map<string, number>;
   /** Repayment periods the suppliers chose, per facility. Absent → the cap alone. */
   repaymentMonths?: Map<string, Partial<Record<CreditFacility, RepaymentPlan>>>;
 }
@@ -1776,14 +1787,26 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
       : 0;
 
     const coinsBroughtForward = round2(context.coinsBroughtForward.get(supplier.id) ?? 0);
-    const deductions = deductionLinesFor(
-      supplier,
-      totalKgs,
-      grossEstimate,
-      round2(context.debtBroughtForward.get(supplier.id) ?? 0),
-      context.deductionRates ?? DEFAULT_DEDUCTION_RATES,
-      context.repaymentMonths?.get(supplier.id),
-    );
+    const rates = context.deductionRates ?? DEFAULT_DEDUCTION_RATES;
+    const deductions = {
+      ...deductionLinesFor(
+        supplier,
+        totalKgs,
+        grossEstimate,
+        round2(context.debtBroughtForward.get(supplier.id) ?? 0),
+        rates,
+        context.repaymentMonths?.get(supplier.id),
+      ),
+      // Each weighing at its own point's rate, or every kilo at the supplier's own rate.
+      transportCharges: transportChargeFor(
+        rates,
+        deliveries.map((row) => ({
+          pointId: COLLECTION_POINTS.find((one) => one.name === row.collectionPoint)?.id ?? null,
+          kgs: row.kgs,
+        })),
+        supplier.transportPerKg,
+      ),
+    };
 
     /**
      * Savings asked back and not yet paid (§21.9).
@@ -1801,6 +1824,7 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
       coinsBroughtForward,
       savingsWithdrawal,
       deductions,
+      paymentUnit: context.paymentUnit,
     });
 
     const savingsPrevious = round2(context.savingsBefore.get(supplier.id) ?? 0);
@@ -1817,7 +1841,7 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
       factory: context.factory,
       supplierCode: supplier.supplierCode,
       supplierName: supplier.name,
-      billNo: billNumberFor(context.monthKey, index + 1),
+      billNo: context.billNoFor?.(supplier.id) ?? billNumberFor(context.monthKey, index + 1),
       billDateTime: context.generatedAt,
       month: slipMonthLabel(context.monthKey),
       monthKey: context.monthKey,
@@ -1836,6 +1860,10 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
       grossAmount: amounts.grossAmount,
 
       deductions: amounts.deductions,
+      loanInstalmentNo:
+        amounts.deductions.loansAdvance > 0
+          ? (context.loanInstalmentsBefore?.get(supplier.id) ?? 0) + 1
+          : null,
 
       balanceAmount: amounts.balanceAmount,
       coinsCarriedForward: amounts.coinsCarriedForward,
@@ -1851,7 +1879,11 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
         manureBalance: round2(
           Math.max(0, supplier.creditBalances.manure - amounts.deductions.manure),
         ),
-        loanInterest: round2(supplier.creditBalances.loan * 0.01),
+        // The configured monthly interest on the advance still owed (`advanceInterestFor`).
+        loanInterest: advanceInterestFor(
+          round2(Math.max(0, supplier.creditBalances.advance - amounts.deductions.advance)),
+          context.advanceInterest,
+        ),
       },
       savingsSummary: {
         thisMonth: amounts.deductions.savings,

@@ -30,6 +30,7 @@ import type {
   StaticPageSlug,
 } from '../constants';
 import type { NoteSuggestionsBlock } from '../config';
+import type { AdvanceInterestSetting, BillSettings, FactorySyncSetting } from '../factoryRecords';
 import type { ContentTranslation, ContentTranslations } from '../content';
 import type { BannerTranslations } from '../banners';
 import type { NotificationAudience } from '../notifications';
@@ -195,6 +196,12 @@ export interface AdminSupplier extends Supplier {
   nic: string;
   /** Division / weighing point this supplier delivers to. */
   collectionPoint: string;
+  /**
+   * The supplier's own transport rate per kilo, over their collection point's. `null` or
+   * absent: they pay the point's rate (`transportRateFor`). Set only while the factory keeps
+   * its records here; with the sync on, the factory system's bill carries the line.
+   */
+  transportPerKg?: number | null;
   registeredAt: string;
   /** ISO date of the most recent leaf delivery, or null if never. */
   lastDeliveryAt: string | null;
@@ -2214,6 +2221,19 @@ export interface RuntimeConfig {
    * division suffix. It is app-facing data with an internal-facing name.
    */
   collectionPoints: Array<{ id: string; name: string }>;
+  /**
+   * Is the factory's own system the source of suppliers, leaf, rates, bills and balances?
+   * Absent means on. Off: the office keeps those records in the console instead
+   * (`factoryRecords.ts`).
+   */
+  factorySync?: FactorySyncSetting;
+  /**
+   * Interest on an advance, for the bills calculated here (sync off). Absent means none.
+   * With the sync on, the factory system's bill carries its own interest figure.
+   */
+  advanceInterest?: AdvanceInterestSetting;
+  /** Payment rounding and bill numbering for the bills calculated here. Absent: defaults. */
+  billSettings?: BillSettings;
 }
 
 /**

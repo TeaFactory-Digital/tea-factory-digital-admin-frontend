@@ -46,6 +46,9 @@ import { Dialog } from '@/components/ui/Dialog';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, Notice, Skeleton } from '@/components/ui/states';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import { useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
+import { OpeningBalancesCard } from './OpeningBalancesCard';
+import { TransportRateCard } from './TransportRateCard';
 import { InfoTip } from '@/components/ui/Tooltip';
 import { useToast } from '@/components/ui/Toast';
 import { AuditPanel } from '@/components/AuditPanel';
@@ -86,6 +89,7 @@ export function SupplierDetailScreen() {
   const { id } = useParams<{ id: string }>();
   const [params, setParams] = useSearchParams();
   const { data: supplier, isPending, error, refetch } = useSupplier(id);
+  const keepsRecords = useKeepsFactoryRecords();
   const { data: audit, isPending: auditPending } = useSupplierAudit(id);
   const canEdit = useCan('suppliers', 'write');
   /**
@@ -364,6 +368,17 @@ export function SupplierDetailScreen() {
           </Card>
           {/* Every line in and out, read only: savings are the factory system's. */}
           <SupplierSavingsLedger supplierId={supplier.id} />
+          {/* Only while the office keeps the factory's records here: the balances this
+              console's first bill starts from. */}
+          {keepsRecords ? <OpeningBalancesCard supplierId={supplier.id} /> : null}
+          {/* The transport rate this console's bill charges them, and where it comes from. */}
+          {keepsRecords ? (
+            <TransportRateCard
+              supplierId={supplier.id}
+              point={supplier.collectionPoint}
+              ownRate={supplier.transportPerKg ?? null}
+            />
+          ) : null}
         </TabsContent>
 
         {/* Its own section: it is the longest thing on the record and carries its own

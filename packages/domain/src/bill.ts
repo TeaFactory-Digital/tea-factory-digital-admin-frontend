@@ -18,10 +18,18 @@
  *  - **The itemized lines are the truth, the total is derived** (BR-107). `total`
  *    is recomputed from the nine lines rather than trusted, because a stated total
  *    that disagrees with its own lines is the one error nobody spots on a slip.
- *  - **The factory pays whole rupees.** The sub-rupee remainder is the slip's
- *    "coins" line and it carries into the next account — which is what
- *    `coinsBroughtForward` and `coinsCarriedForward` are for, and why neither is
+ *  - **The factory pays in whole units of `paymentUnit` rupees** (1, 5 or 10). The
+ *    remainder is the slip's "coins" line and it carries into the next account, which is
+ *    what `coinsBroughtForward` and `coinsCarriedForward` are for, and why neither is
  *    ever `null`.
+ *
+ * **Laid out as the factory's printed slip** (galaboda, July 2026): the coins brought
+ * forward are part of the **gross**, so "Gross Amount" and "Balance Amount" are the figures
+ * on the paper, and the balance is what is paid before rounding:
+ *
+ *     Green Leaf 113,109.00 + Extra 1,528.50 + Coins B/F 7.41 = Gross 114,644.91
+ *     Gross 114,644.91 - deductions 46,418.00                  = Balance 68,226.91
+ *     paid in tens: 68,220.00, Coins C/F 6.91
  */
 
 import { round2, sumDeductionLines } from './money';
@@ -50,6 +58,11 @@ export interface BillFacts {
    */
   savingsWithdrawal: number;
   deductions: DeductionLines;
+  /**
+   * What the payment is rounded down to: `1` pays whole rupees, `10` pays in tens as the
+   * galaboda slip does. Absent means `1`. The rest is the coins carried forward.
+   */
+  paymentUnit?: number;
 }
 
 /** Every figure the slip prints that is *derived* rather than held. */
@@ -58,13 +71,14 @@ export interface BillAmounts {
   totalRatePerKg: number | null;
   greenLeafAmount: number | null;
   extraPayment: number | null;
+  /** Green leaf + extra + the coins brought forward, as the slip prints it. */
   grossAmount: number | null;
   /** The nine lines with their total recomputed (BR-107). */
   deductions: BillDeductions;
   balanceAmount: number | null;
   /** Sub-rupee remainder held back for the next account. Never `null`. */
   coinsCarriedForward: number;
-  /** Whole rupees the factory pays. `0` when the account owes more than it earned. */
+  /** What the factory pays, in whole `paymentUnit`s. `0` when the account owes more than it earned. */
   finalBalance: number | null;
   /** The unpaid negative balance, carried into next month's account as debt. */
   nextMonthDeb: number;
@@ -127,16 +141,17 @@ export function computeBillAmounts(facts: BillFacts): BillAmounts {
 
   const greenLeafAmount = round2(facts.totalKgs * facts.ratePerKg);
   const extraPayment = round2(facts.totalKgs * facts.extraRatePerKg);
-  const grossAmount = round2(greenLeafAmount + extraPayment);
+  // The slip's gross: the coins held back last month are paid out on this account.
+  const grossAmount = round2(greenLeafAmount + extraPayment + facts.coinsBroughtForward);
   const balanceAmount = round2(grossAmount - deductions.total);
   /**
-   * The withdrawal joins **after** the balance, with the coins.
+   * The withdrawal joins **after** the balance.
    *
-   * `balanceAmount` means "what the leaf earned, less what was taken off", and a supplier's
-   * own savings coming back is neither. Keeping it out of that figure is what lets the slip
-   * print a balance a supplier can check against their kilos.
+   * `balanceAmount` is the slip's "Balance Amount", and a supplier's own savings coming
+   * back is not part of what the leaf earned. Keeping it out of that figure is what lets
+   * the slip print a balance a supplier can check against their kilos.
    */
-  const payable = round2(balanceAmount + facts.coinsBroughtForward + facts.savingsWithdrawal);
+  const payable = round2(balanceAmount + facts.savingsWithdrawal);
 
   /**
    * An account that owes more than it earned pays nothing and carries the
@@ -161,9 +176,10 @@ export function computeBillAmounts(facts: BillFacts): BillAmounts {
     };
   }
 
-  // Whole rupees out, cents held back. `Math.floor` rather than `floor2`: the
-  // granularity here is a rupee, not a cent.
-  const finalBalance = Math.floor(payable);
+  // Whole units out, the rest held back. Worked in cents so 68,220.00 / 10 is not
+  // 6,821.9999 in floating point.
+  const unit = facts.paymentUnit && facts.paymentUnit > 0 ? facts.paymentUnit : 1;
+  const finalBalance = Math.floor(Math.round(payable * 100) / (unit * 100)) * unit;
 
   return {
     auctionResultAvailable: true,
@@ -195,6 +211,18 @@ export function slipMonthLabel(monthKey: string): string {
   const [year, month] = monthKey.split('-');
   const name = SLIP_MONTHS[Number(month) - 1];
   return name && year ? `${name} ${year}` : monthKey;
+}
+
+/**
+ * The factory's own bill number, as the galaboda slip prints it: the year, then a running
+ * serial across the whole factory, six digits: `2026210869`.
+ *
+ * The serial continues from the factory's last paper bill (`BillSettings.nextBillSerial`),
+ * so the first bill this system prints follows the last one the old system did. A
+ * re-generated month keeps each supplier's number.
+ */
+export function factoryBillNumber(year: number, serial: number): string {
+  return `${year}${String(serial).padStart(6, '0')}`;
 }
 
 /**

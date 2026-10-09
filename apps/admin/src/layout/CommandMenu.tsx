@@ -16,10 +16,10 @@ import * as RadixDialog from '@radix-ui/react-dialog';
 import { CornerDownLeft, Search, UserRound } from 'lucide-react';
 import { can } from '@tfd/domain';
 import { useAuthStore } from '@/auth/authStore';
-import { useFeatureFlags } from '@/config/RuntimeConfigProvider';
+import { useFeatureFlags, useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
 import { cn } from '@/lib/cn';
 import { supplierRepository } from '@/services/repositories/supplierRepository';
-import { NAVIGATION, flagsOf } from './navigation';
+import { NAVIGATION, isNavItemVisible } from './navigation';
 
 interface Result {
   key: string;
@@ -34,6 +34,7 @@ export function CommandMenu() {
   const navigate = useNavigate();
   const grants = useAuthStore((s) => s.grants);
   const flags = useFeatureFlags();
+  const keepsRecords = useKeepsFactoryRecords();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [active, setActive] = useState(0);
@@ -68,11 +69,7 @@ export function CommandMenu() {
   const pages = useMemo<Result[]>(() => {
     const lower = needle.toLowerCase();
     return NAVIGATION.flatMap((section) => section.items)
-      .filter((item) => {
-        const needed = flagsOf(item);
-        const enabled = needed.length === 0 || needed.some((flag) => flags[flag]);
-        return enabled && can(grants, item.capability, 'read');
-      })
+      .filter((item) => isNavItemVisible(item, flags, (c) => can(grants, c, 'read'), keepsRecords))
       .map((item) => ({
         key: `page-${item.to}`,
         label: t(item.labelKey),
@@ -81,7 +78,7 @@ export function CommandMenu() {
         icon: item.icon,
       }))
       .filter((item) => !lower || item.label.toLowerCase().includes(lower));
-  }, [needle, flags, grants, t]);
+  }, [needle, flags, grants, keepsRecords, t]);
 
   const results: Result[] = [
     ...(suppliers.data?.items ?? []).map((supplier) => ({
