@@ -1,5 +1,5 @@
 /**
- * M14 against the mock API — and **AC-12**.
+ * M14 against the mock API, and **AC-12**.
  *
  * The criterion is *"a new factory goes live without a code deploy"*, and white-label.md
  * says a new factory is a DNS record and a `client_config` row. So the first test here is
@@ -9,7 +9,7 @@
  *
  * The rest is about the thing that makes a config screen dangerous: **its edits reach
  * across every other module, and the person making them cannot see any of them from here.**
- * So the refusals are the interesting part, and the line they draw is money —
+ * So the refusals are the interesting part, and the line they draw is money:
  *
  *  - turning off a feature that is holding a **liability** is refused (`flag-has-records`),
  *    because a savings balance disappearing from the only screen that reports it is not a
@@ -84,7 +84,7 @@ describe('M14 configuration', () => {
     );
 
     expect(saved.config.factory.telephone).toBe('041-9999999');
-    // A `PATCH` of one section, so nothing else moved — the failure a whole-row `PUT`
+    // A `PATCH` of one section, so nothing else moved: the failure a whole-row `PUT`
     // produces when two administrators edit different sections.
     expect(saved.config.flags).toEqual(config.flags);
     expect(saved.config.banks).toEqual(config.banks);
@@ -100,7 +100,7 @@ describe('M14 configuration', () => {
    *
    * Driven with `fetch` against `galaboda` rather than through the repositories, and the
    * reason is worth recording: the axios client pins `X-Tenant` to the tenant resolved once
-   * at module load, and under jsdom — whose hostname carries no subdomain — that is
+   * at module load, and under jsdom (whose hostname carries no subdomain) that is
    * `env.defaultTenant`, which has no fixture. So `configRepository.get()` is *always*
    * degraded in Vitest. Asserting through it would have been asserting the test environment.
    */
@@ -121,7 +121,7 @@ describe('M14 configuration', () => {
 
     const after = await (await fetch('http://localhost/config', { headers })).json();
     expect(after.flags.enableNews).toBe(false);
-    // And the row still says which factory it belongs to — see `tenantConfig`.
+    // And the row still says which factory it belongs to: see `tenantConfig`.
     expect(after.tenantId).toBe('galaboda');
   }, 20_000);
 
@@ -130,7 +130,7 @@ describe('M14 configuration', () => {
    *
    * The criterion is that a flag off removes the surface *and* the endpoint refuses. Until
    * now the endpoint half could only be asserted where some fixture tenant happened to have
-   * a flag off — which is why status.md carried "`enableInquiry` has no off-tenant" as a gap.
+   * a flag off, which is why status.md carried "`enableInquiry` has no off-tenant" as a gap.
    * With M14 the off-tenant is made rather than found.
    *
    * This test failed when it was written: the mock's `flagsOf` read the **seed**, so a flag
@@ -149,7 +149,7 @@ describe('M14 configuration', () => {
      */
     await signInAs(CLERK);
     const clerkToken = useAuthStore.getState().accessToken;
-    // Explicit, because under Vitest the resolved tenant is `base` — the console's own
+    // Explicit, because under Vitest the resolved tenant is `base`: the console's own
     // requests would not be answered from galaboda's row.
     const asClerk = { Authorization: `Bearer ${clerkToken}`, 'X-Tenant': 'galaboda' };
 
@@ -179,7 +179,7 @@ describe('M14 configuration', () => {
    * counts as a gap** (AC-08).
    *
    * M14 warns that dropping a language means "nothing will tell you it is out of date". That
-   * warning is only true if the server stops counting it — and the same seed-versus-state bug
+   * warning is only true if the server stops counting it, and the same seed-versus-state bug
    * meant it went on counting Tamil as missing for a factory that no longer authored in it,
    * which is an office being told it has unfinished work it does not have.
    */
@@ -203,7 +203,7 @@ describe('M14 configuration', () => {
       body: JSON.stringify({ localization: { contentLanguages: ['en', 'si'] } }),
     });
 
-    // Not a gap any more. The copy is untouched — it stops being *counted*, which is
+    // Not a gap any more. The copy is untouched: it stops being *counted*, which is
     // precisely what the impact list said would happen.
     expect(await countTamil()).toBe(0);
   }, 20_000);
@@ -216,7 +216,7 @@ describe('M14 configuration', () => {
     expect(usage.savingsBalances).toBeGreaterThan(0);
 
     /**
-     * Refused, and refused **on the client too** — the repository runs the same
+     * Refused, and refused **on the client too**: the repository runs the same
      * `configImpact` the server does, so the editor is told before a round trip and the two
      * can never disagree about which change is the problem.
      */
@@ -251,7 +251,7 @@ describe('M14 configuration', () => {
       config,
       usage,
     );
-    // A warning, not a block — a factory that has stopped running a news feed is entitled
+    // A warning, not a block: a factory that has stopped running a news feed is entitled
     // to say so, and the console tells them the surface disappears end to end (AC-07).
     expect(impacts).toHaveLength(1);
     expect(impacts[0]).toMatchObject({ severity: 'warns', field: 'flags.enableNews' });
@@ -347,7 +347,7 @@ describe('M14 configuration', () => {
     expect(entry).toBeTruthy();
     /**
      * Only the edited section, because a config row is large and an entry carrying the
-     * whole thing on every save is an entry nobody reads — which defeats AC-09 for the one
+     * whole thing on every save is an entry nobody reads, which defeats AC-09 for the one
      * record whose edits reach across every module.
      */
     expect(Object.keys(entry!.after as object)).toEqual(['factory']);
@@ -359,8 +359,8 @@ describe('M14 configuration', () => {
     const { config, usage } = await adminConfigRepository.get();
     /**
      * Asserted against the resolved tenant rather than a literal. Vitest runs in jsdom,
-     * whose hostname carries no subdomain, so the tenant falls back to `env.defaultTenant`
-     * — and a test hard-coding `galaboda` would be asserting the fixture rather than the
+     * whose hostname carries no subdomain, so the tenant falls back to `env.defaultTenant`,
+     * and a test hard-coding `galaboda` would be asserting the fixture rather than the
      * resolution.
      */
     expect(config.tenantId).toBe(tenantId);
@@ -375,7 +375,7 @@ describe('M14 configuration', () => {
 
   it('gives a clerk read access and nothing more (§12.1)', async () => {
     await signInAs(CLERK);
-    // `flagsAndBranding: R` — a clerk can see how the factory is set up.
+    // `flagsAndBranding: R`: a clerk can see how the factory is set up.
     await expect(adminConfigRepository.get()).resolves.toBeTruthy();
   });
 });
@@ -453,7 +453,7 @@ describe('configImpact (the shared rule)', () => {
  * The flag set as a **runtime** value.
  *
  * The type has always been shared; the type is also erased. An API checking its own list
- * against `FeatureFlagSet` catches nothing when both sides are renamed in one pull — each
+ * against `FeatureFlagSet` catches nothing when both sides are renamed in one pull: each
  * half type-checks, the served payload and the console's expectations stop meeting, and a
  * factory finds a feature quietly off. These assert the two properties that make the
  * schema worth having: it knows the whole set, and it is lenient in the direction that
@@ -472,7 +472,7 @@ describe('featureFlagSetSchema', () => {
     /**
      * The forward-compatible half, and the reason the console does **not** call
      * `.strict()`. A server one release ahead must not cost this console the other
-     * fourteen flags — which would turn a new feature into every existing module
+     * fourteen flags, which would turn a new feature into every existing module
      * reverting to its bundled default.
      */
     const parsed = featureFlagSetSchema.parse({ ...bundledConfig.flags, enableSomethingNew: true });

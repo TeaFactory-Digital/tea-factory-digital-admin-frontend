@@ -3,7 +3,7 @@
  *
  * domain-logic.md is explicit that this is "data, not code: a factory will want
  * to split or merge these roles, and that must not be a deploy". So the table
- * below is the *offline default* — the shape the platform ships with. The
+ * below is the *offline default*: the shape the platform ships with. The
  * authoritative grants come from the server on `GET /admin/auth/me`, and
  * `resolveGrants` merges them.
  *
@@ -31,8 +31,8 @@ const W: AccessLevel = 'write';
 const A: AccessLevel = 'approve';
 
 /**
- * Ordered weakest→strongest. `write` implies `read`, and `approve` implies both
- * — an approver who could not read the record could not approve responsibly.
+ * Ordered weakest→strongest. `write` implies `read`, and `approve` implies both:
+ * an approver who could not read the record could not approve responsibly.
  */
 const ACCESS_ORDER: AccessLevel[] = ['none', 'read', 'write', 'approve'];
 
@@ -44,12 +44,12 @@ const rank = (level: AccessLevel): number => ACCESS_ORDER.indexOf(level);
  *
  * Kept as columns in the matrix rather than dropped from `Capability`: the server holds
  * the same table and still grants these to roles over there, so removing the keys would
- * be a migration of every role record for no gain — and a `RoleMatrix` whose shape
+ * be a migration of every role record for no gain, and a `RoleMatrix` whose shape
  * differed from the server's would be a different type, not a smaller one.
  *
  * But **kept in the data is not the same as shown in the UI**. Rendered, they are three
  * rows an administrator can set to `approve`, get a success toast for, and change nothing
- * whatsoever by — the same failure as a role that grants nothing, one level down. So M15
+ * whatsoever by: the same failure as a role that grants nothing, one level down. So M15
  * hides these rows and preserves their values untouched; see `RoleMatrixView`.
  *
  * Derived from nothing and listed by hand on purpose: "which capabilities does this
@@ -71,11 +71,11 @@ export function isRoutedCapability(capability: Capability): boolean {
  * §12.1's table, for the five roles v2 kept.
  *
  * **`weigher` and `accountant` are not here**, and that is a decision rather than an
- * omission — see `ConsoleRole`. Both existed for capabilities the factory's own console
+ * omission; see `ConsoleRole`. Both existed for capabilities the factory's own console
  * now owns, so in this build neither could do anything but read.
  *
- * The three capabilities those roles were built around — `deliveries`,
- * `ratesAndMonthClose`, `payouts` — **do** stay, granting access to nothing this build
+ * The three capabilities those roles were built around (`deliveries`,
+ * `ratesAndMonthClose`, `payouts`) **do** stay, granting access to nothing this build
  * routes. A role is a person somebody assigns and then wonders about; a capability key is
  * a column in a matrix the server also holds, and dropping one is a migration of every
  * role record for no gain.
@@ -195,7 +195,7 @@ export function grantsFromRoles(roles: ConsoleRole[]): CapabilityGrants {
  * The asymmetry is on purpose. A server that has been reconfigured to split
  * "clerk" into two roles sends grants this build has never heard of, and those
  * must be honoured. A server that sends nothing for a capability has not
- * revoked it — it has said nothing, and the shipped default applies.
+ * revoked it; it has said nothing, and the shipped default applies.
  */
 export function resolveGrants(
   roles: ConsoleRole[],
@@ -231,7 +231,7 @@ export function isSelfApproval(
 }
 
 /**
- * Above the manager's threshold, approval **escalates rather than widens** — a
+ * Above the manager's threshold, approval **escalates rather than widens**: a
  * second clerk is not a substitute for a manager (§12.1).
  *
  * The threshold itself is tenant policy and still unanswered (status.md §21.6),

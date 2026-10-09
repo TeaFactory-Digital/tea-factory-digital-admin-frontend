@@ -1,8 +1,8 @@
 /**
- * M1 Dashboard — the day at a glance.
+ * M1 Dashboard: the day at a glance.
  *
- * **One request, not one per queue.** The alternative — fanning out to five list
- * endpoints with `pageSize=1` and reading totals — works, but it puts five round
+ * **One request, not one per queue.** The alternative (fanning out to five list
+ * endpoints with `pageSize=1` and reading totals) works, but it puts five round
  * trips and five database counts behind the first screen every clerk opens, on a
  * connection shared with the phones. The server can answer this from indexes.
  *
@@ -42,7 +42,7 @@ import { apiClient } from '../api/client';
  *    of the API is camel-cased. They are mapped server-side now, so this console no longer
  *    translates snake_case that leaked out of a raw query.
  *
- * `cycle` and `today` are absent and that is fine — v2's dashboard does not render them.
+ * `cycle` and `today` are absent and that is fine: v2's dashboard does not render them.
  *
  * `sync` rides here on purpose rather than on an endpoint of its own: the API has no
  * `GET /admin/factory-sync` and says so (ADR-005, Q18). A resolved decision, not a gap.

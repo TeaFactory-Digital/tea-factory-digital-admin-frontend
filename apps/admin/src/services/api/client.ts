@@ -1,6 +1,6 @@
 /**
  * The one axios instance. **Nothing outside `services/api` and
- * `services/endpoints` may import axios** — the lint config enforces it.
+ * `services/endpoints` may import axios**: the lint config enforces it.
  *
  * Two things here are the fixes api.md §17.7 asks for before a real API lands,
  * written in from the start rather than discovered at integration:
@@ -29,7 +29,7 @@ import { ApiError, TRANSPORT_CODES } from './errors';
  * How the transport reaches the session without importing the auth store.
  *
  * The store imports repositories, repositories import endpoints, endpoints
- * import this module — so this module cannot import the store. The store
+ * import this module, so this module cannot import the store. The store
  * registers itself here at start-up instead.
  */
 interface AuthBridge {
@@ -69,7 +69,7 @@ const SKIP_AUTH = 'x-skip-auth';
 /**
  * The double-submit CSRF token, read from the cookie the API set.
  *
- * Readable on purpose — this cookie is **not** `httpOnly`, unlike the refresh token
+ * Readable on purpose: this cookie is **not** `httpOnly`, unlike the refresh token
  * beside it. That is the whole mechanism: a sibling subdomain can cause the browser
  * to *send* our cookies but cannot *read* them across origins, so echoing one back in
  * a header proves the request came from a page that could read it.
@@ -97,7 +97,7 @@ export const apiClient: AxiosInstance = axios.create({
     Accept: 'application/json',
   },
   // Cookies carry the refresh token, and the API is on a different subdomain
-  // from the console — so credentials must be sent cross-origin. The backend
+  // from the console, so credentials must be sent cross-origin. The backend
   // needs a matching `Access-Control-Allow-Credentials` and an explicit origin
   // allowlist (a wildcard is illegal with credentials).
   withCredentials: true,
@@ -115,7 +115,7 @@ apiClient.interceptors.request.use((config) => {
    * CSRF **above the `SKIP_AUTH` return, not below it.**
    *
    * The one call this token exists to protect is `POST /admin/auth/refresh`, and that
-   * is a `withoutAuth()` request — it carries no bearer token by design, because the
+   * is a `withoutAuth()` request: it carries no bearer token by design, because the
    * refresh cookie *is* its credential. Setting the header after the early return
    * would therefore attach it to every request except the one that needs it.
    */
@@ -135,7 +135,7 @@ apiClient.interceptors.request.use((config) => {
   /**
    * Idempotency on every mutation (§17.5).
    *
-   * **A network-retry guard, not a double-click guard** — the distinction matters
+   * **A network-retry guard, not a double-click guard**: the distinction matters
    * to whoever implements the server half. The key is minted per *request*, so
    * the only thing that replays it is the transport itself: the refresh-on-401
    * path below re-sends the same config, and `headers.has(…)` is what keeps the
@@ -143,12 +143,12 @@ apiClient.interceptors.request.use((config) => {
    * second request with a **new** key, and the server must not treat it as a
    * duplicate.
    *
-   * What actually stops the second act is server state — `already-decided`,
+   * What actually stops the second act is server state: `already-decided`,
    * `four-eyes-violation`, `already-approved`. Those refusals are load-bearing;
    * this header is not a substitute for them.
    *
    * The one place the key is a *business* key is the delivery batch, which
-   * overrides it with `batchId` (`endpoints/deliveries.ts`) — there a repeat
+   * overrides it with `batchId` (`endpoints/deliveries.ts`): there a repeat
    * genuinely is the same weighing session.
    */
   if (mutation && !config.headers.has('Idempotency-Key')) {
@@ -213,7 +213,7 @@ function isAuthEndpoint(url: string | undefined): boolean {
 /**
  * The error envelope, even when axios did not parse it.
  *
- * A request made with `responseType: 'text'` — M6's payout file is the one — gets its
+ * A request made with `responseType: 'text'` (M6's payout file is the one) gets its
  * **error** body handed over as a string too, so the domain `code` never reached the line
  * below and every refusal from that endpoint degraded to its bare HTTP status. `409` is
  * `run-not-approved` *and* `export-template-invalid`, and the console shows different

@@ -2,13 +2,13 @@
  * The chrome's language control: a three-segment pill, one segment per language.
  *
  * A two-state toggle is the usual shape for this and it does not survive a third
- * option — "off" stops meaning anything once there are three answers. So the knob
+ * option: "off" stops meaning anything once there are three answers. So the knob
  * stays (it is what makes the control read as *one setting* rather than three
  * buttons) and slides across thirds instead of ends.
  *
  * Two things it must get right, both of which a plain row of buttons gets wrong:
  *
- *  1. **Every option is in its own script, always.** See `./languages.ts` — the
+ *  1. **Every option is in its own script, always.** See `./languages.ts`: the
  *     labels do not go through `t()`. A clerk who cannot read the active language is
  *     precisely the person using this control.
  *  2. **It is one stop, not three.** `radiogroup` semantics with a roving tabindex,
@@ -28,7 +28,7 @@ interface LanguageSwitcherProps {
   /**
    * Drive it from a draft instead of from the live language.
    *
-   * Omitted — the sign-in screen — a press applies immediately, which is the right
+   * Omitted (the sign-in screen), a press applies immediately, which is the right
    * behaviour on the one screen where somebody may not be able to read what they are
    * confirming. Supplied, the caller owns the value and decides when it lands: M15 holds
    * the three preferences as a draft and applies them together behind one confirmation.
@@ -90,7 +90,7 @@ export function LanguageSwitcher({ className, value, onChange }: LanguageSwitche
     >
       {/*
         The knob. One element that slides rather than a background on each segment,
-        so the movement reads as a single setting changing position — and so only one
+        so the movement reads as a single setting changing position, and so only one
         thing animates, which is what keeps it smooth on the office's older laptops.
 
         Positioned with a transform over a third of the track. `aria-hidden` because
@@ -121,7 +121,7 @@ export function LanguageSwitcher({ className, value, onChange }: LanguageSwitche
             // is not a language name. `title` gives the same thing to a mouse.
             aria-label={language.name}
             title={language.name}
-            // Roving tabindex — only the checked segment is reachable by Tab.
+            // Roving tabindex: only the checked segment is reachable by Tab.
             tabIndex={checked ? 0 : -1}
             onClick={() => select(index)}
             /*
@@ -137,7 +137,7 @@ export function LanguageSwitcher({ className, value, onChange }: LanguageSwitche
                * captions use, and the extra vertical padding with it.
                *
                * Both are for the same reason: at 12px, සිං and தமிழ் are cramped in a
-               * way EN is not — Indic scripts carry their meaning in diacritics and
+               * way EN is not: Indic scripts carry their meaning in diacritics and
                * conjunct forms that Latin puts in letter outlines, so the same pixel
                * height buys materially less legibility. It also lifts the control to
                * roughly the height of the tenant `Select` beside it, which is the

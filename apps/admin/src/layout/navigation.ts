@@ -3,12 +3,12 @@
  *
  * Every row carries two gates, and the order they apply in matters:
  *
- *  1. **`flag`** — does this factory buy the feature at all? A tenant without
+ *  1. **`flag`**: does this factory buy the feature at all? A tenant without
  *     manure has no manure row, and no manure endpoint either (AC-07).
- *  2. **`capability`** — may *this* user see it? A courtesy: the server enforces
+ *  2. **`capability`**: may *this* user see it? A courtesy: the server enforces
  *     per endpoint, and hiding a lever that would 403 is kinder than offering it.
  *
- * There used to be a third gate — `status: 'built' | 'planned'`, which rendered a
+ * There used to be a third gate: `status: 'built' | 'planned'`, which rendered a
  * disabled row with a *Planned* chip so a walkthrough could see the shape of the
  * whole console. Every row became `built` and the branch that rendered the other
  * case was unreachable. It is gone rather than kept warm: a rendering path no row
@@ -16,14 +16,14 @@
  *
  * ---
  *
- * ## v2 — what this console is for
+ * ## v2: what this console is for
  *
  * **This console manages the mobile app. It does not run the factory.**
  *
  * v1 built §18.1's seventeen modules, which was the right scope when the console
  * was going to be "the other half of every flow the app can only ask for". The
- * factory already has its own console for its internal processes — leaf coming in,
- * the auction rate, the month closing, bills, money going out — so six of those
+ * factory already has its own console for its internal processes (leaf coming in,
+ * the auction rate, the month closing, bills, money going out) so six of those
  * seventeen were building a second answer to questions that already had one. Two
  * systems recording the same weighing is not redundancy; it is a reconciliation
  * somebody does by hand every month.
@@ -39,7 +39,7 @@
  *  - The flags, the brand and the bank list would need a deploy to change (M14).
  *
  * The internal-process rows and their screens are **gone**. What those flows require
- * is still stated executably — by the mock handlers, the repositories and the domain
+ * is still stated executably: by the mock handlers, the repositories and the domain
  * arithmetic, which is the layer the factory's own console has to satisfy anyway. A
  * screen nobody routes to is not a specification; it is a second implementation that
  * rots without a test able to reach it.
@@ -69,7 +69,7 @@ import {
 export interface NavItem {
   /** The §18.1 module id, so a bug report can cite it. */
   module: string;
-  /** i18n key — never a literal (BR-110). */
+  /** i18n key, never a literal (BR-110). */
   labelKey: string;
   to: string;
   icon: LucideIcon;
@@ -83,7 +83,7 @@ export interface NavItem {
   flag?: FeatureFlagName | FeatureFlagName[];
   /**
    * Reads the pending count for a badge from the dashboard summary. An array is
-   * summed — the credit row is three queues behind one link, and a badge showing
+   * summed: the credit row is three queues behind one link, and a badge showing
    * only the advances would under-report the inbox it opens.
    */
   queue?: DashboardQueueKey | DashboardQueueKey[];
@@ -99,7 +99,7 @@ export interface NavItem {
  * The queue keys this console can render a card for.
  *
  * `QueueKey` names the three credit facilities separately, and the API counts them as
- * one (`creditRequests`, gap **G-12**) — which for the badge is the truer figure anyway,
+ * one (`creditRequests`, gap **G-12**), which for the badge is the truer figure anyway,
  * since M7 is three facilities behind a single link. Widening the type here rather than
  * splitting the count into thirds is what keeps the badge honest: a card labelled
  * *Advances* over a number that includes loans would under-report the screen it opens.
@@ -190,7 +190,7 @@ export const NAVIGATION: NavSection[] = [
       },
       {
         /**
-         * M18 — the queue v1 never had.
+         * M18: the queue v1 never had.
          *
          * Its own row rather than a fourth filter on M7: a tea-packet request has no
          * eligibility working to show, so it would have been the one row in that queue
@@ -273,13 +273,13 @@ export const NAVIGATION: NavSection[] = [
       },
       {
         /**
-         * The banner editor — §18.1 puts it inside M11 and it gets its own row, because
+         * The banner editor: §18.1 puts it inside M11 and it gets its own row, because
          * v1 proved the alternative: the flag shipped, the app type shipped, and with no
          * row and no screen a factory could turn the feature on and find nothing behind
          * it. A surface reachable only from inside another module's detail page is a
          * surface the office does not know it has.
          *
-         * Gated on `enablePromoBanner`, not `enableNews` — see `router.tsx`.
+         * Gated on `enablePromoBanner`, not `enableNews`: see `router.tsx`.
          */
         module: 'M11',
         labelKey: 'nav.banners',
@@ -314,12 +314,12 @@ export const NAVIGATION: NavSection[] = [
          *
          * §19.3 calls app adoption and channel shift *"the two KPIs that justify the
          * project"*, which makes it the only report an app-management console owes
-         * anybody. The other three — dormant suppliers, leaf by collection point, the
-         * month summary — are the factory's own console's, and are gone from
+         * anybody. The other three (dormant suppliers, leaf by collection point, the
+         * month summary) are the factory's own console's, and are gone from
          * `REPORT_IDS` in `reports/hooks.ts`.
          *
          * **No flag.** `enableReports` was console-only and is gone with M6's; the same
-         * argument as M12 and M15 applies to what is left — a factory does not decline
+         * argument as M12 and M15 applies to what is left: a factory does not decline
          * to know whether its own app is being used.
          */
         module: 'M16',

@@ -1,5 +1,5 @@
 /**
- * Promo banners — the shared half of M11's banner editor.
+ * Promo banners: the shared half of M11's banner editor.
  *
  * **A verbatim port of the app's `src/services/banners`**, and the port is the whole
  * point of the file. A banner's button is factory-authored content that arrives over
@@ -9,7 +9,7 @@
  *
  * That silent refusal is safe in the app and useless in the console. An editor who
  * types `teafactory://manure` and saves would be told nothing, and the banner would
- * go live with a dead button — the failure nobody reports, because from the office's
+ * go live with a dead button: the failure nobody reports, because from the office's
  * side it looks published. So the console runs the **app's own resolver** at the
  * moment of authoring and refuses what the phone would drop.
  *
@@ -34,7 +34,7 @@ export const ALLOWED_BANNER_SCHEMES = ['https:', 'tel:', 'mailto:'] as const;
 
 /**
  * A deep-link path as the app's linking config writes them: lowercase segments,
- * optionally with an id — `manure`, `bill/2026-07`, `news/news-1`.
+ * optionally with an id: `manure`, `bill/2026-07`, `news/news-1`.
  *
  * Anchored, and with no `.` allowed, so `..` cannot appear and a path cannot carry a
  * scheme, a host or a query string.
@@ -51,7 +51,7 @@ export type BannerTarget =
  * What the button will do on the phone, or `null` if this action is not something the
  * app is prepared to act on.
  *
- * In the app `null` is a real answer — the banner still renders and can still be
+ * In the app `null` is a real answer: the banner still renders and can still be
  * dismissed. In the console it is a refusal: see `bannerActionProblem`.
  */
 export function bannerTarget(action: BannerAction | undefined): BannerTarget | null {
@@ -80,7 +80,7 @@ export function bannerTarget(action: BannerAction | undefined): BannerTarget | n
 }
 
 /**
- * Why the app would drop this action, as an i18n key — or `null` when it is fine.
+ * Why the app would drop this action, as an i18n key, or `null` when it is fine.
  *
  * A **key naming the specific rule**, not a boolean, because "invalid action" sends the
  * editor back to a field with no idea what is wrong with it. The three cases are three
@@ -129,8 +129,8 @@ export function bannerWindowState(
  * One language's copy of a banner.
  *
  * Extends `ContentTranslation` rather than restating it, so a banner's translations are
- * structurally a `ContentTranslations` and `resolveTranslation` — the shared function
- * that *is* AC-08 — resolves a banner exactly as it resolves an article. `buttonLabel`
+ * structurally a `ContentTranslations` and `resolveTranslation` (the shared function
+ * that *is* AC-08) resolves a banner exactly as it resolves an article. `buttonLabel`
  * is the one field an article has no equivalent of.
  *
  * **`body` stays required, and empty is a real value.** The app's `PromoBanner` makes it
@@ -152,7 +152,7 @@ export type BannerTranslations = Partial<Record<LanguageCode, BannerTranslation>
  *
  * Deliberately **not** `content.ts`'s `isWritten`. That one requires a title and a
  * body, which is right for an article and wrong for a banner: the supporting line is
- * optional — plenty of banners are a headline and a button — while a button with no
+ * optional (plenty of banners are a headline and a button), while a button with no
  * label is a button nobody can read. Reusing `isWritten` would have marked a perfectly
  * good headline-only banner as missing and a label-less one as written, which is both
  * halves of AC-08 pointing the wrong way.
@@ -176,7 +176,7 @@ export function missingBannerTranslations(
  * A banner-shaped copy of `staleTranslations` rather than a call to it, and the one line
  * that differs is the reason: that function asks `isWritten`, so a headline-only banner
  * counts as unwritten and its staleness would never be reported. The failure is quiet in
- * exactly the way the stale check exists to catch — the English headline is corrected,
+ * exactly the way the stale check exists to catch: the English headline is corrected,
  * the Sinhala one goes on saying the old thing, and nothing anywhere looks wrong.
  */
 export function staleBannerTranslations(
@@ -203,7 +203,7 @@ export function staleBannerTranslations(
  * Same shape as `publishability` for an article, and the same asymmetry: the fallback
  * language is the only hard requirement, everything else is a gap the office is told
  * about and may publish over. A banner with a refused action is a **block** rather than
- * a gap — unlike a missing translation there is nothing for the app to fall back to,
+ * a gap: unlike a missing translation there is nothing for the app to fall back to,
  * and the supplier gets artwork with no way out of it.
  */
 export function bannerPublishability(
@@ -223,7 +223,7 @@ export function bannerPublishability(
 /**
  * The single-language projection the app receives.
  *
- * The console holds every language at once and the phone holds one — the same
+ * The console holds every language at once and the phone holds one, the same
  * asymmetry `AdminNewsArticle` has with `NewsArticle`, and it is resolved with the
  * same fallback rule. Returns `null` when even the fallback is unwritten, which is the
  * one state that must never reach a supplier.

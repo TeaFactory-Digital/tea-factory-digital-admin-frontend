@@ -1,5 +1,5 @@
 /**
- * M5 Bills — the read model, and the one act that writes it.
+ * M5 Bills: the read model, and the one act that writes it.
  *
  * A bill is **derived, not authored** (api.md §16): daily deliveries and a monthly
  * rate are the facts, and a bill is what falls out of them. That single sentence
@@ -14,7 +14,7 @@
  *    the bills become the documents suppliers hold.
  *  - Whether a *published* bill may be corrected is §21.8 and still unanswered. The
  *    console assumes it may not. If the factory says otherwise, that is a new
- *    audited reversal endpoint — never a relaxation of the lock.
+ *    audited reversal endpoint, never a relaxation of the lock.
  */
 
 import type { AdminBill, BillListItem, BillMonth, BillQuery, BillRun, Paged } from '@tfd/domain';
@@ -26,7 +26,7 @@ export const billEndpoints = {
    * The months a money screen can be pointed at.
    *
    * Its own endpoint rather than `GET /admin/months`, which §12.1 gates on
-   * `ratesAndMonthClose` — a capability the clerk does not have while still holding
+   * `ratesAndMonthClose`: a capability the clerk does not have while still holding
    * `billing: R`. A picker is not a reason to widen access to the month close.
    */
   months: () =>
@@ -57,8 +57,8 @@ export const billEndpoints = {
    * Recompute the month's bills.
    *
    * ⚠ **Not implemented by the API, and not reached by this console** (gap **G-13**).
-   * M5 is read-only in v2 — generating and publishing a month are the factory's own
-   * console's job — so `BillsScreen` has no button behind this. It stays as the stated
+   * M5 is read-only in v2 (generating and publishing a month are the factory's own
+   * console's job) so `BillsScreen` has no button behind this. It stays as the stated
    * shape of the call for whoever builds that side.
    *
    * `409 month-locked` once published · `409 rate-missing` with no auction result ·

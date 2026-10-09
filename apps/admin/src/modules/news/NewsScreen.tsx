@@ -1,8 +1,8 @@
 /**
- * M11 News — the factory's feed.
+ * M11 News: the factory's feed.
  *
  * A grid rather than a card wall, because the question the office brings to this screen is
- * not "what have we published" — it is **"what is live and wrong"**. So the two columns
+ * not "what have we published"; it is **"what is live and wrong"**. So the two columns
  * that carry the most are the status and the language gaps, and *Live with a gap* is a
  * filter rather than something to spot: an article published three weeks ago that a
  * Sinhala supplier is still reading in English will never be found by scrolling.
@@ -86,7 +86,7 @@ export function NewsScreen() {
         cell: (info) => {
           const row = info.row.original;
           return (
-            // The **fallback** title, always — a list whose titles changed with a
+            // The **fallback** title, always: a list whose titles changed with a
             // selected language would be unreadable while translating. The slug is not
             // shown: it is a link's spelling, and nobody picks an article by it.
             <span className="flex max-w-card items-center gap-sm">

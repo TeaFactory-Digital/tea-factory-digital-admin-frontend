@@ -25,7 +25,7 @@ assertEnvUsable();
  *
  * The stylesheet's tokens are `var(--brand-*)` with no fallback values, so a paint
  * before this line would be unstyled. Doing it here rather than in a `useEffect`
- * is what makes the first frame branded — and it is why `theme.css` can avoid
+ * is what makes the first frame branded, and it is why `theme.css` can avoid
  * duplicating the palette in CSS.
  *
  * `BrandProvider` re-applies once `GET /config` lands, which is how a rebrand from
@@ -42,7 +42,7 @@ connectAuthToTransport();
  * **Nothing is intercepted any more.** Every request on this page reaches the API at
  * `VITE_API_BASE_URL`; there is no in-browser mock, no demo build and no `VITE_USE_MOCK`.
  * The fixtures survive in `services/mocks/handlers.ts` for Vitest alone, where answering
- * from a fixture is the point — but a running console that served them would be
+ * from a fixture is the point, but a running console that served them would be
  * indistinguishable from a working one, which is the worst outcome available to an office
  * that trusts what it sees.
  */

@@ -1,9 +1,9 @@
 /**
- * M17 Audit log — who did what.
+ * M17 Audit log: who did what.
  *
  * Read-only by contract: append-only, never updated or deleted (BR-502), and it
  * outlives everything it describes (§20.4). There is deliberately no write
- * method on this module — the console never posts an audit entry, because an
+ * method on this module: the console never posts an audit entry, because an
  * audit trail the client can author is not evidence of anything. Entries are a
  * side effect of the mutation that caused them, recorded server-side.
  *

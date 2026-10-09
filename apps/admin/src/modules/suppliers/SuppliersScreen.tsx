@@ -1,5 +1,5 @@
 /**
- * M2 Suppliers — the list.
+ * M2 Suppliers: the list.
  *
  * Search is the primary interaction, so it takes the focus on mount and it is
  * debounced rather than submitted: the office knows a supplier by their code and
@@ -75,7 +75,7 @@ export function SuppliersScreen() {
       /**
        * Coerced here rather than passed through as a string, unlike `hasBankDetails`
        * beside it: `hasApp` is a **typed field on `SupplierQuery`**, so the query object
-       * has to carry a boolean. `null` — the parameter absent from the URL — stays
+       * has to carry a boolean. `null` (the parameter absent from the URL) stays
        * `undefined`, which is what means *no filter at all* rather than "false".
        */
       hasApp: hasApp === null ? undefined : hasApp === 'true',
@@ -93,7 +93,7 @@ export function SuppliersScreen() {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
-    // Changing a filter resets to page 0 — page 7 of a new filter is nowhere.
+    // Changing a filter resets to page 0: page 7 of a new filter is nowhere.
     // Changing the *page* obviously must not, which is what this guard is for:
     // without it `setParam('page', '1')` set the page and then deleted it, and
     // the grid could never leave page 1.
@@ -210,11 +210,11 @@ export function SuppliersScreen() {
          * v2's first column about a supplier: **do they have the app?**
          *
          * Ahead of the delivery date on purpose. The registry is the factory's own
-         * console's now, and what this screen is for is app support — so the question a
+         * console's now, and what this screen is for is app support, so the question a
          * clerk arrives with is "are they using it", not "when did they last deliver".
          *
          * Three states, not two: signed in with notifications, signed in with none
-         * registered (they turned them off, or the token expired — a supplier who will
+         * registered (they turned them off, or the token expired: a supplier who will
          * never see a `billPublished` push), and never installed at all. Collapsing the
          * middle one into "has the app" would hide the reason a supplier says they were
          * never told their account was ready.
@@ -307,7 +307,7 @@ export function SuppliersScreen() {
 
       {/* The card takes the height the page header leaves and gives all of it to
           the grid: filters, column headers and pagination stay put, and only the
-          rows move (§18.2 — the repetitive path is scanning rows). */}
+          rows move (§18.2: the repetitive path is scanning rows). */}
       <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-center gap-sm border-b border-divider p-md">
           <div className="flex min-w-64 flex-1 items-center gap-xs">

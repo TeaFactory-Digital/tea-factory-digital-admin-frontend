@@ -4,7 +4,7 @@
  * Radix here rather than a native `<dialog>` because focus trapping, scroll
  * locking and `aria-describedby` wiring are exactly the things a hand-rolled
  * modal gets subtly wrong, and this dialog is where irreversible decisions are
- * confirmed — an approve, a reject, a suspension, a full account number.
+ * confirmed: an approve, a reject, a suspension, a full account number.
  */
 
 import * as RadixDialog from '@radix-ui/react-dialog';

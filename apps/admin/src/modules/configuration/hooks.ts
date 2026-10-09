@@ -4,7 +4,7 @@
  * The invalidation here is the widest in the console, and it has to be: a config save can
  * turn a module off. `qk.config` is what `RuntimeConfigProvider` reads, so invalidating it
  * is what makes the sidebar lose a row, the theme change colour, and M11's language tabs
- * appear or disappear — **without a reload**. A mutation that only refreshed this screen
+ * appear or disappear, **without a reload**. A mutation that only refreshed this screen
  * would leave an administrator looking at a saved form beside a sidebar that still offers
  * the feature they just removed.
  *

@@ -1,5 +1,5 @@
 /**
- * `@tfd/brand` — design tokens and the runtime-branding machinery.
+ * `@tfd/brand`: design tokens and the runtime-branding machinery.
  *
  * Shared with the mobile app in principle and with the console in practice. The
  * tokens themselves travel unchanged; what differs is the sink (`css.ts`).

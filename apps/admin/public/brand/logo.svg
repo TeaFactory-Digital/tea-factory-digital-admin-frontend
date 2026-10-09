@@ -1,5 +1,5 @@
 <!-- viewBox is trimmed to the artwork's own bounds (no padding): the containers
-     that draw this — sidebar, topbar, sign-in, splash, favicon — all size it by
+     that draw this (sidebar, topbar, sign-in, splash, favicon) all size it by
      the box, so slack inside the file would show up as a mark that renders
      smaller than the space reserved for it. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="3 4 122 104" width="122" height="104" role="img" aria-label="Tea factory">
@@ -12,7 +12,7 @@
     static splash before any JavaScript has parsed.
 
     A tenant that uploads its own artwork overrides this at runtime through
-    `branding.logoUrl` in `GET /config` — see apps/admin/src/brand/assets.ts.
+    `branding.logoUrl` in `GET /config`: see apps/admin/src/brand/assets.ts.
     The colours are literal on purpose: this is artwork, not a themed surface,
     and a mark that changed hue per tenant would stop being a mark.
   -->
@@ -40,7 +40,7 @@
 
        Both are held a few units short of the leaf's own start and end points.
        A round cap adds half the stroke width past the coordinate, and at the
-       tapered tip that is enough to leak a white spur outside the leaf — which
+       tapered tip that is enough to leak a white spur outside the leaf, which
        at 16 px reads as a rendering fault rather than a vein. -->
   <g fill="none" stroke="#FFFFFF" stroke-linecap="round">
     <path d="M47 85C47 59 50 33 63 14" stroke-width="3.5" />

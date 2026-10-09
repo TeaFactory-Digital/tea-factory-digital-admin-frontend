@@ -19,7 +19,7 @@
  *    architecture.md §4 surviving onto the web.
  *
  * There are deliberately NO fallback values in the `var()` calls. Fallbacks
- * would mean the palette is written twice — here and in `@tfd/brand` — and the
+ * would mean the palette is written twice (here and in `@tfd/brand`) and the
  * copies would drift. Instead `main.tsx` applies the bundled tenant theme
  * synchronously before the first React render, so a paint never happens without
  * brand properties present.
@@ -33,7 +33,7 @@
    * is no `bg-red-500` in this codebase: a status colour that is not
    * `error`/`warning`/`success`/`info` is a colour the factory cannot rebrand.
    * `transparent` and `currentColor` survive because they are structural, not
-   * brand — a transparent border is a layout device, not a shade.
+   * brand: a transparent border is a layout device, not a shade.
    */
   --color-*: initial;
   --color-transparent: transparent;
@@ -87,7 +87,7 @@
 
   /* ── Spacing ──────────────────────────────────────────────────────────────
    * Named tokens matching the shared scale, so `p-lg` is the same 16 the phone
-   * uses. Tailwind's numeric scale (`p-4`, `gap-2`) stays available — it is a
+   * uses. Tailwind's numeric scale (`p-4`, `gap-2`) stays available: it is a
    * scale step, not a magic number, and `w-*`/`h-*`/`inset-*` are built on it.
    * Prefer the named token when the value is spacing; reach for the numeric
    * scale for one-off geometry.
@@ -109,7 +109,7 @@
    * between the content and the window on the right.
    *
    * Off the shared scale (which steps 24 → 32) and a fixed px value, because it
-   * is page geometry rather than brand or rhythm — the same reason the layout
+   * is page geometry rather than brand or rhythm: the same reason the layout
    * widths below are fixed rems. Named so the two edges cannot drift apart: they
    * are one measurement, set once here.
    */
@@ -121,7 +121,7 @@
    *
    * Tailwind's sizing utilities (`max-w-*`, `w-*`, `h-*`) resolve a NAMED value
    * against `--spacing-*` **before** `--container-*`. Defining `--spacing-md`
-   * therefore silently redefines `max-w-md` from 28rem to 12px — and nothing
+   * therefore silently redefines `max-w-md` from 28rem to 12px, and nothing
    * errors, the page just collapses to a column one word wide. Restoring
    * `--container-md` does not win it back; spacing is matched first.
    *
@@ -242,8 +242,8 @@
    *
    *  - `shadow-card`: a hairline lift for every panel. The border does the
    *    separating; the shadow only says "this sits on the canvas".
-   *  - `shadow-raised`: menus, popovers, the command palette — things that
-   *    float over other content and must read as above it.
+   *  - `shadow-raised`: menus, popovers, the command palette (things that
+   *    float over other content and must read as above it).
    */
   --shadow-card: 0 1px 2px color-mix(in srgb, var(--color-text-primary) 5%, transparent);
   --shadow-raised:
@@ -315,7 +315,7 @@
   }
 
   /* The required marker is drawn, not written. A text node inside the label
-     becomes part of the field's accessible name — "Email star" — and no
+     becomes part of the field's accessible name ("Email star") and no
      `aria-hidden` suppresses that reliably. Required is conveyed to assistive
      technology by the control's own `required` attribute (see ui/Field.tsx). */
   label[data-required]::after {

@@ -2,7 +2,7 @@
  * Test render helper: the real provider stack, minus the router's browser history.
  *
  * It signs in through the real endpoint rather than injecting a fake session,
- * because the session shape and the grants are part of what is under test — a
+ * because the session shape and the grants are part of what is under test: a
  * hand-built session object would let an RBAC regression pass.
  */
 
@@ -17,7 +17,7 @@ import { MOCK_PASSWORD } from '@/services/mocks/seed';
 
 connectAuthToTransport();
 
-/** No retries and no caching between tests — a retry turns a failure into a hang. */
+/** No retries and no caching between tests: a retry turns a failure into a hang. */
 function createTestQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {

@@ -1,5 +1,5 @@
 /**
- * Zod schemas — the validation half of the shared model.
+ * Zod schemas: the validation half of the shared model.
  *
  * These are shared with the backend for the same reason the types are: the
  * console validates so the clerk is told immediately, and the server validates
@@ -67,7 +67,7 @@ export type UpdateUserInput = z.infer<typeof updateUserSchema>;
  *
  * The note is not administrative garnish: the app renders it back to the
  * supplier as the reason, so an empty one produces a rejection the supplier
- * cannot understand and will phone about. A minimum length is deliberate —
+ * cannot understand and will phone about. A minimum length is deliberate:
  * "no" is a note that passes `min(1)` and fails the intent.
  */
 export const decisionSchema = z.object({
@@ -87,8 +87,8 @@ export type DecisionInput = z.infer<typeof decisionSchema>;
  * field to be forgotten on the path that needs it, and a rejection carrying the
  * ceiling it was made against is a better audit record than one that does not.
  *
- * `nonnegative` rather than `positive`: zero is a real ceiling — it is what a
- * supplier who has not delivered this month has — and refusing to *transmit* it
+ * `nonnegative` rather than `positive`: zero is a real ceiling (it is what a
+ * supplier who has not delivered this month has), and refusing to *transmit* it
  * would make the one case that most needs recording the one case that cannot be.
  */
 export const creditDecisionSchema = decisionSchema.extend({
@@ -105,7 +105,7 @@ export type CreditDecisionInput = z.infer<typeof creditDecisionSchema>;
 /**
  * The reply the supplier reads in the app.
  *
- * Longer minimum than a decision note — twenty characters rather than ten —
+ * Longer minimum than a decision note (twenty characters rather than ten)
  * because this is not a justification filed beside a record, it **is** the answer.
  * "Yes" and "Come to the office" are replies that close a ticket and produce a
  * telephone call, which is the outcome this queue exists to remove.
@@ -162,7 +162,7 @@ export type SupplierEditableInput = z.infer<typeof supplierEditableSchema>;
 /**
  * A supplier code carries its division suffix, e.g. `5708 (MAKADURA)`.
  *
- * Uniqueness is **per factory** (§16.2) so this cannot be checked client-side —
+ * Uniqueness is **per factory** (§16.2) so this cannot be checked client-side:
  * the server answers `supplier-code-taken`. Shape is all that is validated here.
  */
 export const supplierCodeSchema = z
@@ -260,7 +260,7 @@ export const pageQuerySchema = z.object({
 });
 
 /**
- * A `monthKey` — `"2026-07"`. Months travel as keys, never as display strings
+ * A `monthKey`: `"2026-07"`. Months travel as keys, never as display strings
  * (§17.1), because the console and the app localize month names differently.
  */
 export const monthKeySchema = z
@@ -274,7 +274,7 @@ export const monthKeySchema = z
  *
  * `positive` on the rate and `nonnegative` on the extra, deliberately different:
  * a month with no auction rate is a month with no rate *entered*, which is a
- * different state from zero — while an extra of zero is a real answer the factory
+ * different state from zero, while an extra of zero is a real answer the factory
  * gives most months. The precision guard is `round2`, because a rate is money and
  * money is two places (§16).
  */
@@ -297,7 +297,7 @@ export type MonthlyRateInput = z.infer<typeof monthlyRateSchema>;
  * Resolving an exception takes a note, and the note is the whole point.
  *
  * A month that closed with eleven exceptions marked resolved and no reasons is a
- * month nobody can defend six months later — which is exactly when it is asked
+ * month nobody can defend six months later, which is exactly when it is asked
  * about (AC-04).
  */
 export const resolveExceptionSchema = z.object({
@@ -355,7 +355,7 @@ export const approvePayoutRunSchema = z.object({
  *
  * **A failure needs a reason and a payment does not**, and the asymmetry is the
  * point: "paid" is self-explanatory, while a refused transfer is something the
- * office has to act on — the supplier has not been paid, and the note is what the
+ * office has to act on: the supplier has not been paid, and the note is what the
  * next person picking the run up has to work from.
  */
 export const markPayoutLineSchema = z
@@ -397,7 +397,7 @@ export type ContentTranslationInput = z.infer<typeof contentTranslationSchema>;
 /**
  * Creating an article.
  *
- * At least one translation, and the **fallback language must be among them** — a record
+ * At least one translation, and the **fallback language must be among them**: a record
  * with nothing to fall back to cannot be shown to anybody, so creating one would only
  * defer the error to the publish. Checked here as well as on the server because the
  * editor is looking at the form, not at a response.
@@ -433,7 +433,7 @@ export const notificationCategorySchema = z.enum([
  * Who a send is aimed at.
  *
  * Refined rather than left as three optional fields, because "collection point" with no
- * point named resolves to **everybody** — the audience widens silently, which is the one
+ * point named resolves to **everybody**: the audience widens silently, which is the one
  * way this module can do real harm.
  */
 export const notificationAudienceSchema = z
@@ -479,15 +479,15 @@ export type ComposeNotificationInput = z.infer<typeof composeNotificationSchema>
  *
  * **Why a schema at all, when the type already exists.** A type is erased. The API
  * checks its own flag list against `FeatureFlagSet` at compile time, which catches
- * nothing when both sides are renamed in one pull — each half type-checks, the served
+ * nothing when both sides are renamed in one pull: each half type-checks, the served
  * payload and the console's expectations no longer meet, and the failure surfaces as a
  * feature that is quietly off for every factory. Parsing at start-up turns that into a
  * boot failure with the offending name in it.
  *
  * Unknown keys are **stripped, not refused**, so a console on an older build survives a
- * server that has learned a fifteenth flag. A consumer that wants the opposite — the
+ * server that has learned a fifteenth flag. A consumer that wants the opposite (the
  * API validating its own list, where an unrecognised flag is a bug rather than a newer
- * peer — should call `.strict()` on it at the call site.
+ * peer) should call `.strict()` on it at the call site.
  */
 const featureFlagShape: Record<FeatureFlagName, z.ZodBoolean> = {
   enableSavings: z.boolean(),
@@ -520,8 +520,8 @@ export const featureFlagPatchSchema = featureFlagSetSchema.partial();
 /**
  * Every flag name, in declaration order.
  *
- * The runtime half of `FeatureFlagName`. Anything that needs to *iterate* the flags —
- * a settings screen, a server's start-up check, a migration — reads this rather than
+ * The runtime half of `FeatureFlagName`. Anything that needs to *iterate* the flags
+ * (a settings screen, a server's start-up check, a migration) reads this rather than
  * keeping its own list, which is the list that goes stale.
  */
 export const FEATURE_FLAG_NAMES = Object.keys(featureFlagShape) as FeatureFlagName[];

@@ -77,7 +77,7 @@ describe('Logo', () => {
     expect(markOf(container)).toHaveAttribute('src', BUNDLED_LOGO_URL);
 
     // And if even the bundled file cannot be served, the wordmark still names the
-    // factory — the promise white-label.md makes about going live without artwork.
+    // factory: the promise white-label.md makes about going live without artwork.
     fireEvent.error(markOf(container)!);
     expect(markOf(container)).toBeNull();
     expect(screen.getByText('GT')).toBeInTheDocument();
@@ -118,7 +118,7 @@ describe('SplashScreen', () => {
   it('gives up on a boot that never settles', () => {
     vi.useFakeTimers();
     // A `/config` that hangs and a session still recovering from the refresh
-    // cookie — the console must not be stuck behind a logo. The sign-in form
+    // cookie: the console must not be stuck behind a logo. The sign-in form
     // works without either answer.
     mocks.loading = true;
     useAuthStore.setState({ status: 'bootstrapping' });

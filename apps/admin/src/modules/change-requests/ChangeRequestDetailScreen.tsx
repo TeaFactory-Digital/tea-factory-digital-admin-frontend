@@ -1,5 +1,5 @@
 /**
- * M9 — one change request.
+ * M9: one change request.
  *
  * §18.1 describes this screen as "current vs requested side by side, evidence
  * attachment, approve/reject with note". The side-by-side is the whole design:
@@ -134,7 +134,7 @@ export function ChangeRequestDetailScreen() {
                     // Not sent by the current API; a dash rather than a made-up time.
                     when: request.decision.decidedAt
                       ? formatDateTime(request.decision.decidedAt)
-                      : '—',
+                      : '-',
                   })}
                 </p>
                 {/* The note the supplier reads, shown verbatim. */}

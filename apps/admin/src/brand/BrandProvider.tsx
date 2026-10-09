@@ -42,7 +42,7 @@ import { useAppearance } from './useAppearance';
  * `data-scheme` and `color-scheme`, so this is the toggle.
  *
  * It is read from `localStorage` rather than from `client_config` because §12.1 makes
- * configuration writable by the factory admin alone — see `appearance.ts`.
+ * configuration writable by the factory admin alone: see `appearance.ts`.
  */
 export function BrandProvider({ children }: PropsWithChildren) {
   const { config } = useRuntimeConfig();
@@ -50,7 +50,7 @@ export function BrandProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     const bundled = brandForTenant(tenantId);
-    // Served over bundled, per token — so a factory that changes only `primary`
+    // Served over bundled, per token, so a factory that changes only `primary`
     // in M14 keeps the rest of its bundled palette.
     const override = mergeThemeOverrides(
       bundled.theme,
@@ -70,12 +70,12 @@ export function BrandProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     const name = config.factory.name?.trim();
-    document.title = name ? `${name} — Console` : 'Tea Factory Console';
+    document.title = name ? `${name} · Console` : 'Tea Factory Console';
   }, [config.factory.name]);
 
   useEffect(() => {
     // Falls back to the bundled mark rather than returning early. `index.html`
-    // already points at it, so this is belt and braces — but it is also what
+    // already points at it, so this is belt and braces, but it is also what
     // restores the default icon if a factory *clears* its `faviconUrl` in M14,
     // which a bail-out here would leave showing the old one until a reload.
     const href = config.branding.faviconUrl?.trim() || BUNDLED_LOGO_URL;

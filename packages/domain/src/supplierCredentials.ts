@@ -1,15 +1,15 @@
 /**
- * A supplier's app password — **§21.15 and §21.16, as the factory answered them.**
+ * A supplier's app password: **§21.15 and §21.16, as the factory answered them.**
  *
  * *The password is generated at random and handed to the supplier by the office. If they
  * ask for a reset, the console offers to generate a new one.*
  *
  * That is the right flow for this factory and the alternatives are worse: about a fifth of
  * suppliers have no email, there is no SMS gateway, and the office knows these people by
- * face — a counter handover with the supplier's own book is stronger identity proof than an
+ * face: a counter handover with the supplier's own book is stronger identity proof than an
  * OTP. But it has one dangerous property, and everything here exists because of it:
  *
- * > **The office knows the password.** Whoever generated it can sign in as that supplier —
+ * > **The office knows the password.** Whoever generated it can sign in as that supplier:
  * > read their bills and bank details, and raise a change request *as them*. A bank-details
  * > change approved later would be indistinguishable from the real supplier asking.
  *
@@ -17,7 +17,7 @@
  *
  *  1. **The password is one-time.** `owesPasswordChange` is set the moment it is issued, and
  *     the app must force a change at first sign-in. The credential the office knows is dead
- *     the moment the supplier uses it. **This is the load-bearing one** — without it, every
+ *     the moment the supplier uses it. **This is the load-bearing one**: without it, every
  *     password the office ever issued stays valid for ever.
  *  2. **How identity was checked is recorded**, mandatory and audited. "A supplier asked for
  *     a reset" is fine at the counter and dangerous on the telephone, where anyone who knows
@@ -26,7 +26,7 @@
  *     account, which is the only reason to reset it.
  *
  * **Generation is the server's, never the console's.** A client that minted credentials
- * would be a client whose randomness and whose rules nobody can audit — so this file holds
+ * would be a client whose randomness and whose rules nobody can audit, so this file holds
  * the *shape* and the API holds the generator.
  */
 
@@ -34,13 +34,13 @@
  * The alphabet a password is drawn from.
  *
  * No `O/0`, `I/1/l`, `S/5` or `B/8`: this is read off a slip of paper by somebody typing on
- * a phone keypad, and a character they cannot distinguish is a support call — or worse, a
+ * a phone keypad, and a character they cannot distinguish is a support call, or worse, a
  * supplier who concludes the app is broken and stops using it. Upper case only for the same
  * reason, since case is invisible when a clerk writes it by hand.
  */
 export const SUPPLIER_PASSWORD_ALPHABET = 'ACDEFGHJKMNPQRTUVWXY34679';
 
-/** Nine characters, shown as three groups. ~41 bits — a one-time credential, not a secret. */
+/** Nine characters, shown as three groups. ~41 bits: a one-time credential, not a secret. */
 export const SUPPLIER_PASSWORD_LENGTH = 9;
 
 /** `K7M2XPQR4` → `K7M-2XP-QR4`. Grouping is what makes it transcribable without errors. */
@@ -63,7 +63,7 @@ export function identityCheckProblem(reason: string): 'too-short' | null {
 }
 
 /**
- * What a reset answers with — **once**.
+ * What a reset answers with, **once**.
  *
  * The password is in this payload and nowhere else: not stored in a readable form, not
  * re-fetchable, not in a list. A clerk who closes the dialog generates another one, which is
@@ -78,7 +78,7 @@ export interface SupplierCredentialReset {
   supplierCode: string;
   /** Plain text, this once. Show it, do not persist it, do not log it. */
   password: string;
-  /** Always `true` on a fresh issue — the app must force a change at first sign-in. */
+  /** Always `true` on a fresh issue: the app must force a change at first sign-in. */
   owesPasswordChange: boolean;
   issuedAt: string;
   issuedByName: string;

@@ -1,5 +1,5 @@
 /**
- * M10 — one message, and the answer to it.
+ * M10: one message, and the answer to it.
  *
  * Laid out as a conversation rather than as a record with fields, because that is
  * what it is: the supplier said something, the office says something back, and the
@@ -8,10 +8,10 @@
  * answer that only makes sense next to a screen the supplier does not have.
  *
  * **Whether a notification is sent is read, not asserted.** §17.5's `inquiryReplied`
- * category now has M13 behind it, and whether it fires is a per-factory trigger — so this
+ * category now has M13 behind it, and whether it fires is a per-factory trigger, so this
  * screen asks rather than claiming either way. It used to say flatly that nothing was
  * sent, which was true until M13 landed and would have quietly become a lie. A reply
- * lands in the app the next time it is opened. The note under the reply says so —
+ * lands in the app the next time it is opened. The note under the reply says so:
  * a clerk who believes a text message went out is a clerk who does not follow up.
  */
 

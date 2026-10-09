@@ -1,16 +1,16 @@
 /**
- * M18 Tea packet requests — the queue v1 never had.
+ * M18 Tea packet requests: the queue v1 never had.
  *
  * The app has offered `RequestTeaPacketsScreen` since its first release and this console
  * had nothing behind it: no type, no endpoint, no row. A supplier could ask the factory
  * for its own tea and the request went nowhere. Every other `pending` in the app is a
- * queue somewhere, and closing that loop is what M9, M10 and M7 were built for — this
+ * queue somewhere, and closing that loop is what M9, M10 and M7 were built for: this
  * was the one left open.
  *
  * **One screen, no detail page.** M7 needs a detail route because AC-05 makes it print
  * the eligibility working, line by line, so the approver sees exactly what the supplier
- * saw. There is no working here — a tea-packet request is a supplier, a number of
- * packets and a delivery method — so every column fits in the grid and a detail page
+ * saw. There is no working here: a tea-packet request is a supplier, a number of
+ * packets and a delivery method, so every column fits in the grid and a detail page
  * would put a click between a clerk and a decision they can already make.
  *
  * The two columns that are not obvious are the ones the storekeeper actually needs:
@@ -69,8 +69,8 @@ export function TeaPacketsScreen() {
   /**
    * The store's policy, or the bundled default.
    *
-   * Read here rather than per row because it is what turns a packet count into a weight
-   * — and a factory that has never opened M14 still gets a number rather than a blank
+   * Read here rather than per row because it is what turns a packet count into a weight,
+   * and a factory that has never opened M14 still gets a number rather than a blank
    * column, which is the whole reason `DEFAULT_TEA_PACKET_POLICY` is not zeroes.
    */
   const policy = config.teaPackets ?? DEFAULT_TEA_PACKET_POLICY;
@@ -188,7 +188,7 @@ export function TeaPacketsScreen() {
            * BR-501, on the row rather than in the dialog.
            *
            * A clerk who raised the request at the counter cannot decide it, and the
-           * control is **withheld with the reason** rather than disabled — the same
+           * control is **withheld with the reason** rather than disabled, the same
            * choice M7 makes about `over-ceiling`. A disabled button invites "why?" and
            * a hover title is a reason nobody reads.
            */

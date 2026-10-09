@@ -9,7 +9,7 @@
 /**
  * Adds the sentence to the note, or takes it back out if it is already there.
  *
- * Adding never overwrites — a clerk's own words survive every chip they press, and
+ * Adding never overwrites: a clerk's own words survive every chip they press, and
  * two chips compose into one note. Removing collapses the run of spaces it leaves
  * behind but keeps newlines: a clerk who wrote two paragraphs meant them.
  */

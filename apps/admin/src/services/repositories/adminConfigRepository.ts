@@ -3,7 +3,7 @@
  *
  * The guard here is the one that matters most in the whole layer, because a config save is
  * the only edit in the console that can **turn another module off**. So the impact rules run
- * before anything leaves the browser — using `configImpact` from `@tfd/domain`, the same
+ * before anything leaves the browser: using `configImpact` from `@tfd/domain`, the same
  * function the API refuses with. Two implementations of "you cannot hide a savings balance"
  * would drift, and the drift would show up as the console warning about one thing while the
  * server refuses on another.
@@ -91,7 +91,7 @@ export const adminConfigRepository = {
    *
    * Pure and local: the console already holds the current config and the usage counts, so
    * asking the server what a change would do would be a round trip for an answer both
-   * sides can already compute — and computing it locally is what lets the editor show the
+   * sides can already compute, and computing it locally is what lets the editor show the
    * consequence *while* the toggle is being considered rather than after it is pressed.
    */
   impactOf: (patch: ConfigPatch, config: RuntimeConfig, usage: ConfigUsage): ConfigImpact[] =>

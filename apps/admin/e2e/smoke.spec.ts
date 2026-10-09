@@ -34,7 +34,7 @@ test('survives a page reload', async ({ page }) => {
 
   // The access token is held in memory by design, so a fresh document has none
   // and the session must be recovered from the refresh cookie. If this fails,
-  // every browser refresh — and every deep link — bounces the clerk to sign-in.
+  // every browser refresh, and every deep link, bounces the clerk to sign-in.
   await page.reload();
   await expect(page.getByRole('heading', { name: /dashboard|good (morning|afternoon|evening)/i })).toBeVisible({ timeout: 15_000 });
 
@@ -73,7 +73,7 @@ test('applies the tenant brand as CSS custom properties', async ({ page }) => {
 
 test('a reduced-feature tenant loses the queues it does not use', async ({ page }) => {
   // `highland` has no loans and no manure (mirroring mobile's clientB), so those
-  // rows must be absent rather than empty — "otherwise a clerk is staffing an
+  // rows must be absent rather than empty: "otherwise a clerk is staffing an
   // inbox nothing can reach".
   await page.goto('/sign-in?tenant=highland');
   await page.getByLabel(/^email$/i).fill(CLERK);
@@ -91,7 +91,7 @@ test('a reduced-feature tenant loses the queues it does not use', async ({ page 
    * v2's own flags, which is the other half of AC-07.
    *
    * `highland` runs the reduced set: no tea packets and no promo banner, so both rows
-   * are absent while Bills stays — it is app support and gated on nothing. The
+   * are absent while Bills stays: it is app support and gated on nothing. The
    * **endpoint** refuses the same calls with `feature-disabled`
    * (`src/test/teaPackets.test.ts`, `src/test/banners.test.ts`), which is what makes
    * this a policy rather than a hidden link.

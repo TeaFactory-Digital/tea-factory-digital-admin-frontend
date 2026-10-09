@@ -41,8 +41,8 @@ export const BRAND_VAR_PREFIX = '--brand';
 /**
  * Colour values that may be written into a style declaration.
  *
- * Served theme values are **factory-authored content** — someone types them into
- * M14 — so they are validated before being applied, the same way the app
+ * Served theme values are **factory-authored content** (someone types them into
+ * M14), so they are validated before being applied, the same way the app
  * validates a promo banner's action URL before acting on it. A malformed value
  * is dropped and the base token stands, which degrades to "unbranded but
  * working" rather than "broken stylesheet".
@@ -61,7 +61,7 @@ export function isSafeScaleValue(value: unknown): value is number {
 /**
  * Flatten a resolved theme into the custom properties the stylesheet expects.
  *
- * Returned rather than applied so this stays pure and testable — `applyTheme`
+ * Returned rather than applied so this stays pure and testable: `applyTheme`
  * is the side effect.
  */
 export function themeToCssVars(theme: Theme): Record<string, string> {
@@ -113,7 +113,7 @@ export function themeToCssVars(theme: Theme): Record<string, string> {
  * Write a theme onto an element (normally `document.documentElement`).
  *
  * Returns the property names written, so a caller can clean up when the tenant
- * changes — a platform admin switching tenants must not leave the previous
+ * changes: a platform admin switching tenants must not leave the previous
  * factory's `secondary` behind because the new one does not override it.
  */
 export function applyTheme(element: HTMLElement, theme: Theme): string[] {

@@ -1,5 +1,5 @@
 /**
- * M7 Credit queues — advances, loans and manure on credit.
+ * M7 Credit queues: advances, loans and manure on credit.
  *
  * One set of endpoints for three facilities, because the office does one job with
  * them: read a request, read what the supplier may draw, decide. They differ only
@@ -35,11 +35,11 @@ export const creditEndpoints = {
   /**
    * Four refusals, and every one of them moves money if it is missed:
    *
-   *  - `409 four-eyes-violation` — the approver raised it (BR-501)
-   *  - `409 already-decided` — somebody else worked the same inbox
-   *  - `409 stale-eligibility` — the ceiling moved under the screen (BR-310)
-   *  - `409 over-ceiling` — the amount was never inside the ceiling
-   *  - `422 note-required` — a decision nobody can reconstruct (AC-06)
+   *  - `409 four-eyes-violation`: the approver raised it (BR-501)
+   *  - `409 already-decided`: somebody else worked the same inbox
+   *  - `409 stale-eligibility`: the ceiling moved under the screen (BR-310)
+   *  - `409 over-ceiling`: the amount was never inside the ceiling
+   *  - `422 note-required`: a decision nobody can reconstruct (AC-06)
    *
    * `ceilingSeen` travels in the body for the third of those. It is the figure the
    * approver had on screen, and the server compares rather than trusts it.

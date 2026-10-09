@@ -3,7 +3,7 @@
  *
  * **This exists because of one sentence in `docs/v2/platform-team.md` §3:** accounts and
  * balances in this console are *as fresh as the last successful sync*. A clerk reading a
- * balance to a supplier over the telephone has no way to know that — the screen says
+ * balance to a supplier over the telephone has no way to know that: the screen says
  * "read-only" and implies "and current".
  *
  * The day it matters is the day somebody quotes a figure that changed four hours ago,
@@ -12,7 +12,7 @@
  * ## Why this is not "just show a timestamp"
  *
  * A timestamp in the corner is read by nobody. What the office needs is the **judgement**
- * — *is this current enough to quote?* — which is why `factorySyncState` returns a state
+ * (*is this current enough to quote?*), which is why `factorySyncState` returns a state
  * rather than an age, and why a stale sync raises a notice across the whole shell rather
  * than a caption on one screen. The figure is quoted from whichever screen happens to be
  * open.
@@ -21,15 +21,15 @@
 /**
  * How long a gap has to be before the office should be told, in hours.
  *
- * Sized against the agreed pull cadence — hourly — so this is roughly *three attempts
+ * Sized against the agreed pull cadence (hourly), so this is roughly *three attempts
  * have failed*, not *one was slow*. A threshold that fired on a single missed poll would
  * put a red banner over a working console most mornings, and a banner the office learns
  * to ignore is worse than no banner.
  *
- * **Measured in polling hours, not wall-clock hours** — see {@link openMinutesBetween}.
+ * **Measured in polling hours, not wall-clock hours**; see {@link openMinutesBetween}.
  *
  * A default rather than a policy: once the factory's own operations team has a number,
- * it belongs in `client_config` beside `QUEUE_SLA_HOURS` — and the console must then
+ * it belongs in `client_config` beside `QUEUE_SLA_HOURS`, and the console must then
  * display the served figure rather than this one.
  */
 export const FACTORY_SYNC_STALE_HOURS = 3;
@@ -54,7 +54,7 @@ export interface SyncWindow {
 /** 05:30 – 20:00 Colombo: open before the morning session, closed after the evening one. */
 export const DEFAULT_SYNC_WINDOW: SyncWindow = { openMinute: 5 * 60 + 30, closeMinute: 20 * 60 };
 
-/** Colombo is UTC+05:30 the year round — no daylight saving, so this is a constant. */
+/** Colombo is UTC+05:30 the year round: no daylight saving, so this is a constant. */
 const COLOMBO_OFFSET_MINUTES = 330;
 
 /** Minutes since the Colombo-local epoch, so that `% 1440` is the local minute of day. */
@@ -62,16 +62,16 @@ function colomboMinutes(iso: string): number {
   return Math.floor(Date.parse(iso) / 60_000) + COLOMBO_OFFSET_MINUTES;
 }
 
-/** Beyond this, the answer is "stale" whatever the arithmetic says — don't loop over years. */
+/** Beyond this, the answer is "stale" whatever the arithmetic says; don't loop over years. */
 const MAX_DAYS_WALKED = 90;
 
 /**
- * Elapsed **polling time** between two instants — wall-clock hours minus the hours the
+ * Elapsed **polling time** between two instants: wall-clock hours minus the hours the
  * platform was never going to call anyway.
  *
  * This is the whole reason the freshness banner is trustworthy once polling follows the
  * office's hours. Measured in wall-clock, a sync that succeeded at eight last night is
- * ten hours old when the first clerk signs in at half past six — and a console that
+ * ten hours old when the first clerk signs in at half past six, and a console that
  * showed a red "figures may be out of date" banner every single morning, correctly,
  * would be one the office stopped reading by the end of the first week.
  *
@@ -86,7 +86,7 @@ export function openMinutesBetween(
 ): number {
   const from = colomboMinutes(fromIso);
   const to = colomboMinutes(toIso);
-  // Includes the clock-skew case — the factory's clock ahead of ours is not elapsed time.
+  // Includes the clock-skew case: the factory's clock ahead of ours is not elapsed time.
   if (to <= from) return 0;
 
   const { openMinute, closeMinute } = window;
@@ -112,7 +112,7 @@ export interface FactorySyncOptions {
 /**
  * Three states, because "not fresh" hides two very different situations.
  *
- * `never` is not a worse `stale` — it is a **deployment** problem rather than an
+ * `never` is not a worse `stale`; it is a **deployment** problem rather than an
  * operational one. A console that has never synced is showing nothing but its own
  * fixtures, and telling the office it is "a bit behind" would be false.
  */
@@ -133,7 +133,7 @@ export interface FactorySyncStatus {
   /**
    * The last factory-local date the platform holds data for.
    *
-   * What the office actually needs in a sentence — *"we have everything up to the 7th"*
+   * What the office actually needs in a sentence: *"we have everything up to the 7th"*
    * is answerable to a supplier, where *"synced 4 hours ago"* is not.
    */
   coversUpTo: string | null;
@@ -142,7 +142,7 @@ export interface FactorySyncStatus {
 /**
  * Clock-free by design: `now` is passed in.
  *
- * Same rule as `bill.ts` and `leafCredit.ts` — a function that read `Date.now()` could
+ * Same rule as `bill.ts` and `leafCredit.ts`: a function that read `Date.now()` could
  * not be tested against a fixed fixture, and this one decides whether a banner appears
  * over every screen in the console.
  */
@@ -158,8 +158,8 @@ export function factorySyncState(
 
   /**
    * Polling hours rather than wall-clock hours, so the overnight gap the schedule
-   * *intends* is not reported as a fault. A negative gap — the factory's clock ahead of
-   * ours — falls out of this as zero: skewed clocks are normal between two systems, and
+   * *intends* is not reported as a fault. A negative gap (the factory's clock ahead of
+   * ours) falls out of this as zero: skewed clocks are normal between two systems, and
    * a console that cried "stale" because the other end was ninety seconds fast would be
    * crying wolf.
    */

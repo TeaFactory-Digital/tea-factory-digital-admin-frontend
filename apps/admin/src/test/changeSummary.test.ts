@@ -3,7 +3,7 @@ import { compareSummaries } from '@/lib/changeSummary';
 
 describe('compareSummaries', () => {
   it('pairs labelled parts and marks only the one that changes', () => {
-    expect(compareSummaries('Home: — · Estate: —', 'Home: Probe Road · Estate: —')).toEqual([
+    expect(compareSummaries('Home: - · Estate: -', 'Home: Probe Road · Estate: -')).toEqual([
       { label: 'Home', current: null, requested: 'Probe Road', changed: true },
       { label: 'Estate', current: null, requested: null, changed: false },
     ]);

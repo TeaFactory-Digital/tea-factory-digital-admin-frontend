@@ -1,9 +1,9 @@
 /**
- * M14 Configuration — the `client_config` row.
+ * M14 Configuration: the `client_config` row.
  *
  * **This screen is AC-12.** white-label.md: *"A new factory is a DNS record and a
  * `client_config` row. No build, no deploy."* So the criterion is not whether this screen
- * exists — it is whether the **last** field a factory needs is on it. One value that still
+ * exists; it is whether the **last** field a factory needs is on it. One value that still
  * requires a developer makes AC-12 false, which is why the sections here cover the whole
  * payload rather than the parts that were convenient.
  *
@@ -16,13 +16,13 @@
  *  - **The rail is static and only the editor scrolls.** A rail that scrolls away is a rail
  *    you have to scroll back to before you can switch sections, and the payout-file section
  *    is several windows tall. So the two columns fill the window and the editor owns the
- *    scrollbar — see `SPLIT_PANE` in `components/ui/layout` for the three rules that make
+ *    scrollbar. See `SPLIT_PANE` in `components/ui/layout` for the three rules that make
  *    that work and the short-screen floor that keeps it from repeating `GRID_CARD`'s bug.
  *
  * The dangerous part is not the editing, it is that these edits reach across every other
  * module and the person making them cannot see any of them from here. So every section
  * shows the cost of what is drafted **before** it is saved, computed from the same
- * `configImpact` the API refuses with — see `ImpactList`.
+ * `configImpact` the API refuses with. See `ImpactList`.
  */
 
 import { useState } from 'react';
@@ -96,13 +96,13 @@ const SECTIONS: Array<{
   /**
    * v2. Beside the other things a supplier chooses from the app rather than under
    * *Operations*, because a price buried under a heading about collection points is a
-   * price nobody sets — and M18 then quotes the bundled default at real suppliers.
+   * price nobody sets, and M18 then quotes the bundled default at real suppliers.
    */
   { id: 'teaPackets', icon: Package, Component: TeaPacketSection },
   /**
    * The factory's lending policy. Beside the tea-packet price rather than under
-   * *Features*, because both answer the same kind of question — *how much, and at what
-   * price* — and neither is a switch.
+   * *Features*, because both answer the same kind of question: *how much, and at what
+   * price*, and neither is a switch.
    */
   { id: 'creditRules', icon: BadgeDollarSign, Component: CreditRulesSection },
   /** Payment rounding, bill numbers and advance interest, for the bills calculated here. */
@@ -158,7 +158,7 @@ export function ConfigurationScreen() {
       setConfirmingSave(null);
       /**
        * The toast says what *else* changed, because a config save is the only edit in the
-       * console whose effect is mostly somewhere the reader is not looking — the sidebar,
+       * console whose effect is mostly somewhere the reader is not looking: the sidebar,
        * the theme, another module's tabs.
        */
       toast.success(t('config.saved'), t('config.savedHint'));
@@ -264,7 +264,7 @@ export function ConfigurationScreen() {
             className="lg:shrink-0"
           />
           {/* The one scroller on the screen. `min-h-0` is what lets it shrink below its own
-              content — without it the editor pushes the pane taller and the rail scrolls
+              content; without it the editor pushes the pane taller and the rail scrolls
               away with it, which is the whole thing this layout is avoiding. */}
           <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
             {/* Keyed by section, so switching remounts the editor and cannot carry one

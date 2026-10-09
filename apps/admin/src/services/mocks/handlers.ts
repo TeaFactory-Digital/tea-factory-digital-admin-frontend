@@ -1,5 +1,5 @@
 /**
- * MSW handlers — the stand-in API.
+ * MSW handlers: the stand-in API.
  *
  * Written as an **executable specification** of `docs/api-contract.md`, not as a
  * convenience. Every refusal below is a refusal the real backend must reproduce,
@@ -218,7 +218,7 @@ import {
 
 /**
  * The mock's state lives in module scope, so it survives navigation but not a
- * reload — the same property the mobile app's `mockDb` has, and the same caveat:
+ * reload, the same property the mobile app's `mockDb` has, and the same caveat:
  * **writes do not survive a refresh.** That is a feature for a demo (the fixture
  * is always the same) and a trap in a manual test, so it is stated in
  * docs/mocks.md rather than discovered.
@@ -235,7 +235,7 @@ const state = {
    * and rewrites roles, and a suspension leaking into the next test would leave a suite
    * unable to sign in as anybody.
    *
-   * **Authentication reads this, not the fixture** — see `bearer()`. That is what makes a
+   * **Authentication reads this, not the fixture**; see `bearer()`. That is what makes a
    * suspension and a role change take effect rather than being cosmetic.
    */
   users: mockUsers.map((user) => ({ ...user, roles: [...user.roles] })),
@@ -250,7 +250,7 @@ const state = {
   /**
    * §21.10's rates, and the changes waiting for a second person.
    *
-   * `null` until a factory sets its own — `DEFAULT_DEDUCTION_RATES` is what a factory that
+   * `null` until a factory sets its own; `DEFAULT_DEDUCTION_RATES` is what a factory that
    * has never touched them is running on, and the screen says as much rather than
    * presenting a guess as the factory's own decision.
    */
@@ -298,7 +298,7 @@ const state = {
   savingsLedger: mockSavingsLedger.map((entry) => ({ ...entry })),
   /**
    * M7's queue. The stored `eligibility` on each row is the fixture's snapshot and
-   * is **replaced on every read** — see `withCreditEligibility`. It is kept on the
+   * is **replaced on every read**; see `withCreditEligibility`. It is kept on the
    * record only so a decided request retains the figures it was decided against.
    */
   creditRequests: mockCreditRequests.map((request) => ({ ...request })),
@@ -316,7 +316,7 @@ const state = {
    * The `client_config` row per tenant, deep-cloned.
    *
    * Deep, because a config is nested three levels and a shallow copy would let M14 mutate
-   * the seed — so `resetMockState()` would hand the mutated object back and a test that
+   * the seed, so `resetMockState()` would hand the mutated object back and a test that
    * turned a flag off would leave it off for every test after it.
    */
   configs: {} as Record<string, RuntimeConfig>,
@@ -360,7 +360,7 @@ function cloneMonths(): Record<string, MonthRecord> {
  * The four reports, each one a query over live state.
  *
  * Written as one function returning columns **with** rows, because the API is the only thing
- * that knows whether a number is money, kilos or a count — and a grid that guessed would print
+ * that knows whether a number is money, kilos or a count, and a grid that guessed would print
  * `LKR 412.00` over a supplier count. Totals are per-report rather than derived from the
  * column types: summing kilos is a fact, summing a percentage is nonsense.
  */
@@ -370,7 +370,7 @@ function runReport(
 ): Pick<ReportResult, 'id' | 'columns' | 'rows' | 'totals'> {
   switch (id) {
     /**
-     * App adoption and channel shift — *"the two KPIs that justify the project"* (§19.3).
+     * App adoption and channel shift: *"the two KPIs that justify the project"* (§19.3).
      *
      * Measured as the share of requests that arrived from the app rather than being keyed in
      * by the office, which is only measurable because every request carries `channel`. That
@@ -440,7 +440,7 @@ function runReport(
 /**
  * The role matrix this factory is actually using.
  *
- * Starts as the shipped default and becomes the tenant's own the first time it is edited —
+ * Starts as the shipped default and becomes the tenant's own the first time it is edited,
  * which is `rbac.ts`'s doc comment made true rather than aspirational: *"the table above is
  * the offline default. The authority is the `grants` object the server sends."*
  */
@@ -449,7 +449,7 @@ function roleMatrix(): Record<ConsoleRole, Record<Capability, AccessLevel>> {
    * **Read-only: this must not materialise `state.roleMatrix`.**
    *
    * It used to be `state.roleMatrix ??= clone(DEFAULT)`, which meant the first *read* of the
-   * matrix set it — and `customised` is `state.roleMatrix !== null`, so simply opening the
+   * matrix set it, and `customised` is `state.roleMatrix !== null`, so simply opening the
    * screen reported the factory as having changed its roles. The flag exists to tell an
    * administrator whether this factory has diverged from the shipped table; one that turns
    * itself on when looked at answers nothing.
@@ -534,7 +534,7 @@ function configUsage(): ConfigUsage {
      * Approved and not yet recovered on a `deductions.tea` line.
      *
      * Derived from the requests rather than from a balance on the supplier, because
-     * unlike credit there is no facility to hold one — the value goes straight onto the
+     * unlike credit there is no facility to hold one: the value goes straight onto the
      * next account. Approved-but-unpublished is exactly the window in which turning the
      * flag off would hide tea the factory has already handed over.
      */
@@ -550,11 +550,11 @@ function configUsage(): ConfigUsage {
 }
 
 /**
- * The tenant's live config — the mock's `client_config` row.
+ * The tenant's live config: the mock's `client_config` row.
  *
  * **`tenantId` is stamped with the tenant the row is being served for**, and that is not
  * cosmetic. A tenant outside the fixture (Vitest resolves to `base`, since jsdom's hostname
- * carries no subdomain) falls back to Galaboda's row as a stand-in — and without this line
+ * carries no subdomain) falls back to Galaboda's row as a stand-in, and without this line
  * that row goes on claiming to *be* Galaboda. The console then displays one factory id while
  * the API keys its audit entries on another, which is precisely the second-source-of-truth
  * problem `tenant-immutable` exists to refuse. Found by the M14 audit test, not by reading.
@@ -575,7 +575,7 @@ function tenantConfig(request: Request): RuntimeConfig {
  *
  * `hillcountry` has `enablePushNotifications: true` and **no `push` block**, which is a
  * real state rather than a fixture oversight: the flag is on and nobody has configured
- * the categories. The console must say so — `push-not-configured` — rather than sending
+ * the categories. The console must say so (`push-not-configured`) rather than sending
  * into a void or crashing on an undefined.
  *
  * Read from **live state**, because configuring it is M14's job and a comment that says so
@@ -726,8 +726,8 @@ function checkSendable(
 /**
  * Fire an automatic notification, if this factory has that trigger on.
  *
- * Called from the module that owns the event — `month.publish`, `news.publish` and the
- * two decision paths — rather than from a scheduler watching the audit log. The event is
+ * Called from the module that owns the event (`month.publish`, `news.publish` and the
+ * two decision paths) rather than from a scheduler watching the audit log. The event is
  * the fact; whether it notifies is policy, and the policy lives in one row.
  *
  * **Never throws and never blocks.** A push that could not be sent must not roll back the
@@ -779,7 +779,7 @@ function fireAutomatic(
   return send;
 }
 
-/** Deep enough to isolate the translations map — see the `state.news` comment. */
+/** Deep enough to isolate the translations map; see the `state.news` comment. */
 function cloneNews(record: NewsRecord): NewsRecord {
   return { ...record, translations: { ...record.translations } };
 }
@@ -794,7 +794,7 @@ function cloneStaticPage(record: StaticPageRecord): StaticPageRecord {
  * `missingBannerTranslations` rather than `missingTranslations`, and the difference is
  * load-bearing: the article rule requires a title and a **body**, a banner's rule requires
  * a title and a **button label**. Using the article's here would mark a perfectly good
- * headline-only banner as missing and a label-less one as written — both halves of AC-08
+ * headline-only banner as missing and a label-less one as written: both halves of AC-08
  * pointing the wrong way at once.
  *
  * Staleness reuses `staleTranslations` unchanged, because "written before the English it
@@ -848,7 +848,7 @@ function cloneBanner(record: BannerRecord): BannerRecord {
  * The languages **this tenant** authors in.
  *
  * Read per request rather than fixed, because it is what makes a gap a gap: `highland`
- * authors in English and Tamil, so it is not missing Sinhala — it never asked for it. A
+ * authors in English and Tamil, so it is not missing Sinhala; it never asked for it. A
  * server that reported gaps against the platform's three languages would tell that
  * factory it had unfinished work it does not have, and an office told to ignore a
  * warning stops reading warnings.
@@ -859,7 +859,7 @@ function contentLanguagesOf(request: Request): LanguageCode[] {
   return tenantConfig(request).localization.contentLanguages;
 }
 
-/** The newest edit in any language — the record's own `updatedAt`. */
+/** The newest edit in any language: the record's own `updatedAt`. */
 function newestEdit(translations: ContentTranslations): ContentTranslation | null {
   return Object.values(translations).reduce<ContentTranslation | null>(
     (newest, one) => (!newest || (one && one.updatedAt > newest.updatedAt) ? (one ?? newest) : newest),
@@ -897,7 +897,7 @@ function toNewsListItem(record: NewsRecord, request: Request): NewsListItem {
     slug: full.slug,
     // The **fallback** title, always: a list whose titles changed with the selected tab
     // would be unreadable while translating.
-    title: fallback?.title ?? '—',
+    title: fallback?.title ?? '-',
     status: full.status,
     // The API's row, field for field, so the screen is tested against what it receives.
     coverImageUrl: record.coverImageUrl ?? null,
@@ -978,7 +978,7 @@ function readTranslationBody(
   const text = body.body?.trim() ?? '';
 
   // The server half of `isWritten`. A translation that exists and says nothing counts as
-  // written everywhere it is read, so the gap AC-08 requires to be visible disappears —
+  // written everywhere it is read, so the gap AC-08 requires to be visible disappears,
   // and a supplier gets a blank article.
   if (title.length === 0 || text.length === 0) {
     return fail({
@@ -999,7 +999,7 @@ function readTranslationBody(
 /**
  * The live stage of a month.
  *
- * Falls back to the calendar for a month outside the fixture's window — a clerk
+ * Falls back to the calendar for a month outside the fixture's window: a clerk
  * scrolling back two years should see "published", not a month with no state.
  */
 function stageOf(monthKey: string): MonthCycleStage {
@@ -1014,8 +1014,8 @@ function lockedMonth(monthKey: string): boolean {
  * The record for a month the API knows about, or `null`.
  *
  * Deliberately **not** materialized on demand. An earlier version created a record
- * for whatever arrived in the path, which meant a typo'd or stale `?month=` — or a
- * key from another screen's select — rendered a plausible published month with zero
+ * for whatever arrived in the path, which meant a typo'd or stale `?month=` (or a
+ * key from another screen's select) rendered a plausible published month with zero
  * leaf in it. A month the factory has no records for is a `404`, not an empty one.
  */
 function monthRecord(monthKey: string): MonthRecord | null {
@@ -1068,7 +1068,7 @@ const nextId = () => String(++state.sequence);
  * Latency worth having **in a browser**: it is what makes a missing loading state visible.
  *
  * **Zero under Vitest**, and that is not a shortcut. Every handler awaits this, and a
- * single assertion signs in, lists and acts — so 180 ms a call accumulates into seconds
+ * single assertion signs in, lists and acts, so 180 ms a call accumulates into seconds
  * per test and the suite was timing out nondeterministically: the same code produced 0, 4,
  * 9 and 19 failures on consecutive runs, every one of them `Test timed out in 30000ms`
  * rather than a real assertion. A suite that fails differently each time is one nobody can
@@ -1090,7 +1090,7 @@ function billRunFor(monthKey: string): BillRunRecord | null {
  *
  * Never stored, because staleness is a *relationship* between the run and the
  * delivery rows, and a stored flag would go on lying the moment somebody voided a
- * weighing. A published month cannot be stale — nothing can change under it (BR-108).
+ * weighing. A published month cannot be stale: nothing can change under it (BR-108).
  */
 function serialiseBillRun(run: BillRunRecord): BillRun {
   const rows = state.deliveries.filter((row) => row.monthKey === run.monthKey && !row.voidedAt);
@@ -1143,7 +1143,7 @@ function carriedInto(monthKey: string) {
     debts.set(bill.supplierId, bill.carryForward.nextMonthDeb);
   }
 
-  // The savings balance of record is the ledger's, not the registry's — see M8.
+  // The savings balance of record is the ledger's, not the registry's; see M8.
   for (const entry of state.savingsLedger) {
     if (entry.monthKey < monthKey) savings.set(entry.supplierId, entry.balance);
   }
@@ -1168,7 +1168,7 @@ function savingsBalanceOf(supplierId: string): number {
  * bill would put money in a passbook against a figure the office might still
  * re-generate.
  */
-/** The rates in force. Read-only — must not materialise, or `customised` would lie. */
+/** The rates in force. Read-only: must not materialise, or `customised` would lie. */
 function activeDeductionRates(): DeductionRates {
   return state.deductionRates ?? DEFAULT_DEDUCTION_RATES;
 }
@@ -1182,7 +1182,7 @@ function savingsPolicyOf(request: Request): SavingsPolicy {
   };
 }
 
-/** Outstanding requests for one supplier — what the next bill will have to carry. */
+/** Outstanding requests for one supplier: what the next bill will have to carry. */
 function pendingWithdrawalsFor(supplierId: string): SavingsWithdrawal[] {
   return state.savingsWithdrawals.filter(
     (one) => one.supplierId === supplierId && one.status === 'pending',
@@ -1197,8 +1197,8 @@ function pendingWithdrawalsFor(supplierId: string): SavingsWithdrawal[] {
  * passbook should move. A withdrawal credited at *request* time would take a supplier's
  * balance down weeks before they were paid.
  *
- * The entry is **negative**, which is what `SavingsLedgerEntry` documents — positive is a
- * contribution, negative a withdrawal — so the running balance needs no special case.
+ * The entry is **negative**, which is what `SavingsLedgerEntry` documents: positive is a
+ * contribution, negative a withdrawal, so the running balance needs no special case.
  */
 function settleWithdrawalsFor(monthKey: string, publishedAt: string): number {
   let settled = 0;
@@ -1252,7 +1252,7 @@ function postSavingsFor(monthKey: string, publishedAt: string): number {
 
   for (const bill of bills) {
     // Idempotent: publishing is once-only, but a replayed request must not credit
-    // a supplier twice — and this is money.
+    // a supplier twice, and this is money.
     if (state.savingsLedger.some((entry) => entry.billId === bill.id)) continue;
 
     const balance = round2(savingsBalanceOf(bill.supplierId) + bill.deductions.savings);
@@ -1313,10 +1313,10 @@ function featureGate(request: Request, flag: FeatureFlagName): Response | null {
  * The mock's substitute for the httpOnly refresh cookie.
  *
  * Without it, reloading the page signs you out: the console holds its access
- * token in memory (by design — see `authStore`), so on a fresh document it asks
+ * token in memory (by design; see `authStore`), so on a fresh document it asks
  * `POST /admin/auth/refresh` to recover the session. The real API answers from a
  * rotating httpOnly cookie that survives the reload. The mock's session map is
- * module state, which does not — so every refresh bounced the developer back to
+ * module state, which does not, so every refresh bounced the developer back to
  * sign-in, and the console looked broken when it was behaving correctly.
  *
  * `sessionStorage` is the closest honest analogue: scoped to the tab, cleared
@@ -1379,7 +1379,7 @@ function bearer(request: Request): MockUser | null {
    * M15 suspends accounts and changes roles, and both have to *mean* something: a suspended
    * user must stop being able to act, and a re-roled one must get their new grants on the
    * next request rather than at the next deploy. Reading the immutable fixture here would
-   * have made every M15 write cosmetic — the screen would say "suspended" and the account
+   * have made every M15 write cosmetic: the screen would say "suspended" and the account
    * would carry on working.
    */
   return state.users.find((u) => u.id === userId) ?? null;
@@ -1453,13 +1453,13 @@ function tenantOf(request: Request): string {
 
 /** A tenant's flags, so `feature-disabled` can be answered the way AC-07 needs. */
 /**
- * This tenant's flags, from **live state** — which is what makes AC-07 more than a fixture.
+ * This tenant's flags, from **live state**, which is what makes AC-07 more than a fixture.
  *
  * It used to read the seed, so a flag turned off in M14 removed the sidebar row and the
  * route while every endpoint behind them went on answering. That is precisely the half of
  * AC-07 the criterion exists to insist on ("the surface *and* the endpoint"), and it made
  * the answer depend on whether some fixture tenant happened to have the flag off. Now any
- * flag can be turned off in the console and the endpoint refuses — see the AC-07 case in
+ * flag can be turned off in the console and the endpoint refuses; see the AC-07 case in
  * `configuration.test.ts`.
  */
 function flagsOf(request: Request) {
@@ -1485,8 +1485,8 @@ function paginate<T>(items: T[], url: URL): Paged<T> {
  * Returns a copy. `state.audit` is handed out unfiltered when no filter is set, and
  * an in-place sort would reorder the mock's own log as a side effect of reading it.
  *
- * `fallback` keeps each list's own default order — oldest-first for a queue,
- * newest-first for a log — so "no sort" is not silently "sorted by whatever the
+ * `fallback` keeps each list's own default order (oldest-first for a queue,
+ * newest-first for a log), so "no sort" is not silently "sorted by whatever the
  * fixture order happens to be".
  */
 function sortRows<T>(rows: T[], url: URL, fallback: (a: T, b: T) => number): T[] {
@@ -1548,7 +1548,7 @@ function publicUser(user: MockUser): ConsoleUser {
   return rest;
 }
 
-/** Hours since an ISO timestamp — what every queue's age column is derived from. */
+/** Hours since an ISO timestamp: what every queue's age column is derived from. */
 const ageHoursOf = (createdAt: string): number =>
   (Date.now() - new Date(createdAt).getTime()) / 3_600_000;
 
@@ -2049,7 +2049,7 @@ export const handlers: HttpHandler[] = [
    * The reports this factory can run. Registered before `/admin/reports/:id`.
    *
    * Served rather than hardcoded in the console, because which reports exist is a property of
-   * the warehouse behind them (§19.1) — and when that lands, the list grows without a console
+   * the warehouse behind them (§19.1), and when that lands, the list grows without a console
    * release.
    */
   http.get('*/admin/reports', async ({ request }) => {
@@ -2058,7 +2058,7 @@ export const handlers: HttpHandler[] = [
     if ('response' in auth) return auth.response;
 
     /**
-     * `{ reports, months }` — **G-15 is closed**. It briefly answered a bare array with no
+     * `{ reports, months }`: **G-15 is closed**. It briefly answered a bare array with no
      * months, which left the picker empty and made a month-scoped report impossible to
      * run. The months matter because §12.1 gives the factory administrator `reports: R`
      * and `billing: none`, so this is the only place they can learn which months exist.
@@ -2075,7 +2075,7 @@ export const handlers: HttpHandler[] = [
    * **Every figure is derived from live state at request time**, which is the whole reason
    * these four exist and nothing else does: each is a query anybody can re-run against the
    * records it came from. A stored result would be a second answer waiting to disagree with
-   * them — the same argument that keeps a bill a read model over deliveries and a rate.
+   * them: the same argument that keeps a bill a read model over deliveries and a rate.
    *
    * §19.5 says a report should run off a read replica so a month-close query does not compete
    * with a clerk entering deliveries. Here it reads the same store; that is a scaling gap and
@@ -2128,7 +2128,7 @@ export const handlers: HttpHandler[] = [
 
   /**
    * The §12.1 matrix, as served. Registered before `/admin/roles/:role` is irrelevant
-   * (different methods) but before `/admin/users` matters not at all — kept adjacent so the
+   * (different methods) but before `/admin/users` matters not at all; kept adjacent so the
    * module reads in one place.
    */
   http.get('*/admin/roles', async ({ request }) => {
@@ -2137,7 +2137,7 @@ export const handlers: HttpHandler[] = [
     if ('response' in auth) return auth.response;
 
     /**
-     * `updatedByName` is carried — **G-10 is closed**. *"Who widened this, and from what"*
+     * `updatedByName` is carried: **G-10 is closed**. *"Who widened this, and from what"*
      * is the only question ever asked of this table, and the API withheld the answer for
      * a while; the console had to fill `null`.
      */
@@ -2152,7 +2152,7 @@ export const handlers: HttpHandler[] = [
   }),
 
   /**
-   * Edit one role's grants — **the promise rbac.md makes.** §12.1 is data, not code.
+   * Edit one role's grants: **the promise rbac.md makes.** §12.1 is data, not code.
    *
    * The refusal here is the lockout nobody thinks of: strip `usersAndRoles` from every role
    * and the factory is locked out with every user still holding the roles they had. Not one
@@ -2196,7 +2196,7 @@ export const handlers: HttpHandler[] = [
      */
     recordBy(auth, 'role.update', 'role', role, { before, after: grants });
 
-    // `{ id }`, not the matrix (gap **G-11**) — the console invalidates and refetches.
+    // `{ id }`, not the matrix (gap **G-11**); the console invalidates and refetches.
     return HttpResponse.json({ id: role });
   }),
 
@@ -2258,7 +2258,7 @@ export const handlers: HttpHandler[] = [
     }
     /**
      * **A password is required** (gap **G-02**), and `ConsoleUserDraft` has no field for
-     * one — the contract assumed an invitation flow that does not exist.
+     * one: the contract assumed an invitation flow that does not exist.
      *
      * So the console mints one and prints it once. The fixture enforces the API's floor of
      * 12, because a console that quietly sent a short one would fail only against the real
@@ -2364,7 +2364,7 @@ export const handlers: HttpHandler[] = [
   }),
 
   /**
-   * Suspend and reactivate — **one endpoint**, as with suppliers, because they are one
+   * Suspend and reactivate: **one endpoint**, as with suppliers, because they are one
    * state machine and only one place should decide what transitions are legal.
    */
   /**
@@ -2488,7 +2488,7 @@ export const handlers: HttpHandler[] = [
    * The authenticated config, **and** what a change to it would cost.
    *
    * **Registered before the public `/config` handler, and it has to be.** That handler's
-   * path is a wildcard followed by `/config`, and MSW's wildcard matches across segments —
+   * path is a wildcard followed by `/config`, and MSW's wildcard matches across segments,
    * so it swallows `/admin/config` and answers it with the unauthenticated payload. Placed
    * after it, this endpoint returned `404 tenant-unknown` for every request, which is
    * exactly the class of bug the "specific routes first" note at the top of this file
@@ -2511,7 +2511,7 @@ export const handlers: HttpHandler[] = [
    */
   http.patch('*/admin/config', async ({ request }) => {
     await delay(LATENCY_MS);
-    // `write` — §12.1 gives `flagsAndBranding: W` to the factory admin and the platform
+    // `write`: §12.1 gives `flagsAndBranding: W` to the factory admin and the platform
     // admin, and `R` to the manager. A manager may read the configuration and not change it.
     const auth = authorize(request, 'flagsAndBranding', 'write');
     if ('response' in auth) return auth.response;
@@ -2576,7 +2576,7 @@ export const handlers: HttpHandler[] = [
     }
 
     // Section by section, so a patch that names one block never blanks another. The
-    // sections that are lists are replaced wholesale — a merged bank list would keep
+    // sections that are lists are replaced wholesale: a merged bank list would keep
     // branches the factory has just removed, which is the bug `configRepository.merge`
     // documents on the read side.
     const before = JSON.parse(JSON.stringify(config)) as RuntimeConfig;
@@ -2634,7 +2634,7 @@ export const handlers: HttpHandler[] = [
      * Audited **per section**, with only the sections that changed in before/after.
      *
      * A config row is large, and an entry carrying the whole thing on every save is an
-     * entry nobody reads — which defeats the point of AC-09 for the one record whose edits
+     * entry nobody reads, which defeats the point of AC-09 for the one record whose edits
      * reach across every other module.
      */
     state.configRevisions[config.tenantId] = (state.configRevisions[config.tenantId] ?? 1) + 1;
@@ -2663,8 +2663,8 @@ export const handlers: HttpHandler[] = [
      * Served from **live state**, not from the seed.
      *
      * This is what closes the loop AC-12 is about: M14 edits the `client_config` row, and
-     * every consumer of it — the sidebar's flags, the theme, the collection-point pickers,
-     * M11's content languages, M13's push categories — reads it from here. Serving the
+     * every consumer of it (the sidebar's flags, the theme, the collection-point pickers,
+     * M11's content languages, M13's push categories) reads it from here. Serving the
      * fixture instead would make the configuration screen a form that saves into nothing,
      * which is the most convincing way to appear to satisfy the criterion without doing so.
      *
@@ -2706,7 +2706,7 @@ export const handlers: HttpHandler[] = [
   }),
 
   /**
-   * Refresh — the mock's stand-in for the rotating httpOnly cookie.
+   * Refresh: the mock's stand-in for the rotating httpOnly cookie.
    *
    * It reads `sessionStorage` first, so a **page reload keeps you signed in**,
    * which is what the real API does and what the console's in-memory access
@@ -2729,7 +2729,7 @@ export const handlers: HttpHandler[] = [
      * **The same envelope as login**, because that is what the API answers.
      *
      * It used to reply with the bare token pair, and the console read `.accessToken`
-     * straight off it. Against the real API that is `undefined` — and an `undefined`
+     * straight off it. Against the real API that is `undefined`, and an `undefined`
      * access token fails at no point anybody would look: the store holds it, every
      * request goes out with no `Authorization` header, and the console presents as
      * signed in and forbidden from everything. The fixture answering the fuller shape
@@ -2774,7 +2774,7 @@ export const handlers: HttpHandler[] = [
     const header = request.headers.get('Authorization');
     if (header?.startsWith('Bearer ')) state.sessions.delete(header.slice(7));
     // Signing out must clear the stand-in cookie too, or the next reload would
-    // silently sign the clerk back in — on a shared office machine, the exact
+    // silently sign the clerk back in: on a shared office machine, the exact
     // failure sign-out exists to prevent.
     writeRefreshCookie(null);
     return new HttpResponse(null, { status: 204 });
@@ -2787,7 +2787,7 @@ export const handlers: HttpHandler[] = [
       return fail({ status: 401, code: 'unauthenticated', message: 'Sign in required.' });
     }
     /**
-     * The **thin** identity the API sends — no `email`, no `status`, no `lastLoginAt`
+     * The **thin** identity the API sends: no `email`, no `status`, no `lastLoginAt`
      * (gap **G-03**). Nothing in the console reads this any more: `bootstrap()` takes
      * the whole session off the refresh above, which is one round trip instead of two.
      * The handler stays so the route is exercised rather than silently absent.
@@ -2821,7 +2821,7 @@ export const handlers: HttpHandler[] = [
     const flags = flagsOf(request);
 
     /**
-     * A queue for a disabled facility is not shown as empty — it is not shown.
+     * A queue for a disabled facility is not shown as empty; it is not shown.
      * "Otherwise a clerk is staffing an inbox nothing can reach"
      * (white-label.md → Feature flags are a backend concern too).
      */
@@ -2835,7 +2835,7 @@ export const handlers: HttpHandler[] = [
     });
 
     /**
-     * **The shape the API sends** — and it is `DashboardSummary` now for everything the
+     * **The shape the API sends**, and it is `DashboardSummary` now for everything the
      * console renders. **G-12 and G-12a are both closed**: `queues` carries the age of the
      * oldest item and the §14.4 breach count, `app` reports the adoption figures that had
      * no source at all, `content` is the four silent failures rather than two published
@@ -2863,12 +2863,12 @@ export const handlers: HttpHandler[] = [
         totalKgs: row.totalKgs,
       })),
       /**
-       * `FactorySyncStatus` rides HERE (ADR-005, Q18) — there is no
+       * `FactorySyncStatus` rides HERE (ADR-005, Q18): there is no
        * `GET /admin/factory-sync`, and that is a resolved decision rather than a gap.
        *
        * A **healthy** sync, because this fixture's tenant is one that has a sync
-       * configured: the alternative — `null`, which the real API sends for a factory that
-       * has none — would render no freshness caption anywhere and leave the panel
+       * configured: the alternative (`null`, which the real API sends for a factory that
+       * has none) would render no freshness caption anywhere and leave the panel
        * untested. The live server's `null` path is exercised by `factorySyncRepository`
        * resolving it to "we do not know", which the suite covers separately.
        */
@@ -2905,7 +2905,7 @@ export const handlers: HttpHandler[] = [
 
     if (q) {
       // Tolerates the division suffix: "5708" matches "5708 (MAKADURA)", and so
-      // does "makadura" — the office searches by whichever it remembers. The NIC is
+      // does "makadura": the office searches by whichever it remembers. The NIC is
       // searched on the record, as the API does, though the row does not carry it.
       rows = rows.filter((s) => {
         const nic = state.suppliers.find((one) => one.id === s.id)?.nic ?? '';
@@ -2921,7 +2921,7 @@ export const handlers: HttpHandler[] = [
     if (hasBankDetails !== null) {
       rows = rows.filter((s) => s.hasBankDetails === (hasBankDetails === 'true'));
     }
-    // v2's working filter — the list behind the dashboard's adoption percentage.
+    // v2's working filter: the list behind the dashboard's adoption percentage.
     if (hasApp !== null) {
       rows = rows.filter((s) => s.hasApp === (hasApp === 'true'));
     }
@@ -2934,7 +2934,7 @@ export const handlers: HttpHandler[] = [
   }),
 
   /**
-   * One supplier's months — **the axis M5 never had** (§5.6).
+   * One supplier's months: **the axis M5 never had** (§5.6).
    *
    * Derived from `state.bills` at request time rather than stored, like every other read
    * model here. Two properties the real API must reproduce:
@@ -2989,7 +2989,7 @@ export const handlers: HttpHandler[] = [
    * The interesting part is that every fact here already existed in v1 and none of it was
    * reachable per person: the device registry, the tenant's category list, each device's
    * consent list and the send log. M13's reach panel could say *"reaches 61 devices, 6
-   * opted out"* and could not name one of the six — so the office could never answer
+   * opted out"* and could not name one of the six, so the office could never answer
    * *"why didn't I get it?"*, which is the question it is actually asked.
    */
   http.get('*/admin/suppliers/:id/notifications', async ({ request, params }) => {
@@ -3007,7 +3007,7 @@ export const handlers: HttpHandler[] = [
     /**
      * Every category the **platform** knows, not only the ones this factory sends.
      *
-     * A category the factory does not offer is a real answer to "why didn't I get it" —
+     * A category the factory does not offer is a real answer to "why didn't I get it",
      * and it is a different answer from an opt-out, with a different fix (M14 rather
      * than the supplier's phone). Listing only the offered ones would silently drop the
      * case from the panel.
@@ -3039,7 +3039,7 @@ export const handlers: HttpHandler[] = [
           deliveredToDevices: accepting.length,
           /**
            * Why *this* supplier got nothing from a send that reached hundreds. The two
-           * reasons need different follow-ups — one is a conversation with the supplier
+           * reasons need different follow-ups: one is a conversation with the supplier
            * about their settings, the other is that they never installed the app.
            */
           suppressedReason:
@@ -3082,7 +3082,7 @@ export const handlers: HttpHandler[] = [
 
   http.patch('*/admin/suppliers/:id', async ({ request, params }) => {
     await delay(LATENCY_MS);
-    // `write`, not `read` — this is where a manager is correctly refused: the
+    // `write`, not `read`; this is where a manager is correctly refused: the
     // §12.1 matrix gives them `R` on supplier records, not `W`.
     const auth = authorize(request, 'suppliers', 'write');
     if ('response' in auth) return auth.response;
@@ -3109,7 +3109,7 @@ export const handlers: HttpHandler[] = [
   }),
 
   /**
-   * Suspend, reactivate and close — **one endpoint, because they are one state machine.**
+   * Suspend, reactivate and close: **one endpoint, because they are one state machine.**
    *
    * Replaces the three verbs (`/suspend`, `/reactivate`, `/close`) this fixture used to
    * answer. The API models the transition instead, which is the better shape: exactly one
@@ -3117,7 +3117,7 @@ export const handlers: HttpHandler[] = [
    * to agree.
    *
    * It answers `{ id, status }` and not the updated record (gap **G-11**). The console
-   * invalidates and refetches, so nothing reads the body — and a fixture that returned the
+   * invalidates and refetches, so nothing reads the body, and a fixture that returned the
    * whole supplier would let a screen start depending on a field the wire never carries.
    */
   http.post('*/admin/suppliers/:id/status', async ({ request, params }) => {
@@ -3182,18 +3182,18 @@ export const handlers: HttpHandler[] = [
    *
    *  1. `owesPasswordChange` is set, so the app forces a change at first sign-in and the
    *     credential the office knows dies the moment it is used.
-   *  2. The identity check is **mandatory and audited** — the reason is the office saying
+   *  2. The identity check is **mandatory and audited**: the reason is the office saying
    *     how they knew it was the supplier, which is the whole guard on a telephone request.
    *  3. Any session the supplier had **ends**, because a reset that leaves the previous
    *     holder signed in has not reset anything.
    *
    * The plain password is in this response and nowhere else. It is not stored readably, not
-   * re-fetchable, and not in the audit entry — an audit trail that carried passwords would
+   * re-fetchable, and not in the audit entry: an audit trail that carried passwords would
    * be a list of live credentials.
    */
   http.post('*/admin/suppliers/:id/credentials/reset', async ({ request, params }) => {
     await delay(LATENCY_MS * 2);
-    // `suppliers: write` — issuing somebody a credential is not a read.
+    // `suppliers: write`: issuing somebody a credential is not a read.
     const auth = authorize(request, 'suppliers', 'write');
     if ('response' in auth) return auth.response;
 
@@ -3201,7 +3201,7 @@ export const handlers: HttpHandler[] = [
     if (!supplier) return fail({ status: 404, code: '404', message: 'No such supplier.' });
 
     // A closed supplier has left. Issuing them a login is issuing a way into a factory they
-    // no longer supply — the same reasoning that keeps them out of a notification audience.
+    // no longer supply, the same reasoning that keeps them out of a notification audience.
     if (supplier.status === 'closed') {
       return fail({
         status: 409,
@@ -3212,7 +3212,7 @@ export const handlers: HttpHandler[] = [
 
     // **`identityCheckNote`, not `reason`.** The name is the requirement: this is the one
     // note that records *how the person on the telephone was shown to be the supplier*, and
-    // a field called `reason` invites "supplier asked for a reset" — exactly the note that
+    // a field called `reason` invites "supplier asked for a reset", exactly the note that
     // makes the control worthless.
     const { identityCheckNote } = (await request.json()) as { identityCheckNote?: string };
     if (identityCheckProblem(identityCheckNote ?? '')) {
@@ -3227,7 +3227,7 @@ export const handlers: HttpHandler[] = [
     /**
      * `crypto.getRandomValues`, not `Math.random`.
      *
-     * The rest of this fixture is seeded and deterministic on purpose — a screenshot in a
+     * The rest of this fixture is seeded and deterministic on purpose: a screenshot in a
      * bug report matches what the next developer sees. A credential is the one thing that
      * must not be: a predictable password is not a password.
      */
@@ -3246,8 +3246,8 @@ export const handlers: HttpHandler[] = [
     };
 
     /**
-     * Sessions ended. The mock has no supplier sessions to end — this is the console's auth
-     * realm, and the app's is a different table (§12) — so the count is what the real API
+     * Sessions ended. The mock has no supplier sessions to end: this is the console's auth
+     * realm, and the app's is a different table (§12), so the count is what the real API
      * must report. Sent rather than omitted so the console can say it happened, and so a
      * backend that forgets to implement it fails a test rather than passing silently.
      */
@@ -3259,12 +3259,12 @@ export const handlers: HttpHandler[] = [
       action: 'supplier.credentials.reset',
       entity: 'supplier',
       entityId: supplier.id,
-      // The reason and the fact — never the password. An audit trail carrying credentials
+      // The reason and the fact, never the password. An audit trail carrying credentials
       // would be a list of live logins.
       after: { identityCheckNote: identityCheckNote!.trim(), owesPasswordChange: true, sessionsEnded },
     });
     /**
-     * The whole `SupplierCredentialReset` — **gap G-04 is closed**.
+     * The whole `SupplierCredentialReset`: **gap G-04 is closed**.
      *
      * It briefly answered three fields and omitted `auditId`, `issuedAt` and
      * `issuedByName`, so the dialog had to attribute the act to whoever happened to be
@@ -3360,7 +3360,7 @@ export const handlers: HttpHandler[] = [
     if (to) rows = rows.filter((row) => row.date <= to);
     if (point) rows = rows.filter((row) => row.collectionPoint === point);
     if (supplierId) rows = rows.filter((row) => row.supplierId === supplierId);
-    // A voided row is evidence, not data (§12.1) — it is returned when asked for
+    // A voided row is evidence, not data (§12.1): it is returned when asked for
     // and never by default, so a day's total and its list agree.
     if (!includeVoided) rows = rows.filter((row) => row.voidedAt === null);
 
@@ -3371,7 +3371,7 @@ export const handlers: HttpHandler[] = [
   }),
 
   /**
-   * Commit a weighing session — one request for the whole grid
+   * Commit a weighing session: one request for the whole grid
    * (api-contract.md §9.3).
    *
    * Three refusals, and which kind each is matters:
@@ -3395,7 +3395,7 @@ export const handlers: HttpHandler[] = [
      *
      * The failure this prevents is the worst one in M3: a clerk whose connection
      * dropped mid-commit clicks again and sixty deliveries are recorded twice.
-     * The original result is replayed instead — including its rejections, because
+     * The original result is replayed instead, including its rejections, because
      * a second answer that differed would be a second thing to reconcile.
      */
     const replay = state.batches.get(batch.batchId);
@@ -3461,7 +3461,7 @@ export const handlers: HttpHandler[] = [
         supplierId: supplier.id,
         supplierCode: supplier.supplierCode,
         supplierName: supplier.name,
-        // Where it was **weighed**, which is the session's point — not the
+        // Where it was **weighed**, which is the session's point, not the
         // supplier's registered one. A grower may deliver anywhere.
         collectionPoint: batch.collectionPoint,
         kgs: roundKg(row.kgs),
@@ -3578,7 +3578,7 @@ export const handlers: HttpHandler[] = [
 
   /**
    * The exceptions of one month. Registered before `/months/:monthKey` so the
-   * literal segment wins — first match wins, and the parameterized route would
+   * literal segment wins: first match wins, and the parameterized route would
    * otherwise answer this with a month summary.
    */
   http.get('*/admin/months/:monthKey/exceptions', async ({ request, params }) => {
@@ -3631,7 +3631,7 @@ export const handlers: HttpHandler[] = [
   }),
 
   /**
-   * Generate — or **re-generate** — a month's bills.
+   * Generate (or **re-generate**) a month's bills.
    *
    * A bill is a read model over the leaf and the rate (api.md §16), so this is a
    * recomputation, not a write of a new fact. That is exactly why re-running before
@@ -3661,7 +3661,7 @@ export const handlers: HttpHandler[] = [
       return fail({
         status: 409,
         code: 'month-locked',
-        message: `${monthKey} is published — its bills are the record now.`,
+        message: `${monthKey} is published; its bills are the record now.`,
         details: { monthKey },
       });
     }
@@ -3739,7 +3739,7 @@ export const handlers: HttpHandler[] = [
             (['advance', 'loan', 'manure'] as const)
               .map((facility) => {
                 // The plan is priced off what was **borrowed**, so the instalment is fixed
-                // and the debt actually clears — see `creditInstalment`.
+                // and the debt actually clears; see `creditInstalment`.
                 const approved = state.creditRequests.find(
                   (one) =>
                     one.supplierId === supplier.id &&
@@ -3768,7 +3768,7 @@ export const handlers: HttpHandler[] = [
      * BR-107, as a refusal rather than a warning.
      *
      * The arithmetic in `@tfd/domain` derives `total` from the nine lines, so this
-     * cannot fire against that implementation — and it is here for the one that
+     * cannot fire against that implementation, and it is here for the one that
      * matters: a backend that computes the total separately and lets it drift is a
      * backend that prints a slip whose column does not add up. Better a run that
      * refuses than a supplier holding the evidence.
@@ -3880,7 +3880,7 @@ export const handlers: HttpHandler[] = [
       enteredByName: auth.user.name,
       enteredAt: new Date().toISOString(),
     };
-    // Entering the rate is what moves the month on from `awaitingRate` — the stage
+    // Entering the rate is what moves the month on from `awaitingRate`: the stage
     // is derived from what has happened, never set by the client.
     if (record.stage === 'collecting' || record.stage === 'awaitingRate') {
       record.stage = 'rateEntered';
@@ -4004,7 +4004,7 @@ export const handlers: HttpHandler[] = [
      * The bills have to exist, and they have to match the leaf.
      *
      * Publishing is what turns a generated bill into the document the supplier
-     * holds, so a month published with no run has nothing to hand over — and one
+     * holds, so a month published with no run has nothing to hand over, and one
      * published on a **stale** run hands over figures that disagree with the leaf
      * the month closed on. Both are refused rather than repaired here, because
      * re-generating inside a publish would mean the manager signs off figures they
@@ -4012,7 +4012,7 @@ export const handlers: HttpHandler[] = [
      *
      * Checked **after** the exceptions, which is where it belongs in the office's
      * order rather than merely in this function's: resolving an exception is what
-     * changes a bill — collecting a bank details form, deciding a change request —
+     * changes a bill (collecting a bank details form, deciding a change request),
      * so bills generated before the queue is clear are bills that need generating
      * again. The refusals report the earliest unmet precondition, so the accountant
      * is sent to the first thing to do rather than the last.
@@ -4036,7 +4036,7 @@ export const handlers: HttpHandler[] = [
     }
 
     // BR-501, the four-eyes rule. Reachable because a manager holds `approve`,
-    // which implies `write` — so the same person *could* enter a rate and close the
+    // which implies `write`, so the same person *could* enter a rate and close the
     // month on it, and this is what stops them.
     if (isSelfApproval(auth.user, record.rate.enteredById)) {
       return fail({
@@ -4076,7 +4076,7 @@ export const handlers: HttpHandler[] = [
      * Fired **here**, from the module that owns the event, rather than by something
      * watching the audit log: publishing is the moment a bill becomes something a
      * supplier can open, so it is the moment the notification means anything. It cannot
-     * throw and cannot block — a push that failed must never roll back an irreversible
+     * throw and cannot block: a push that failed must never roll back an irreversible
      * publish, and `fireAutomatic` records the outcome in the send log instead.
      */
     fireAutomatic(request, 'billPublished', {
@@ -4107,7 +4107,7 @@ export const handlers: HttpHandler[] = [
    * What the factory charges, and what is waiting for a second person.
    *
    * `customised: false` means this factory is still running on the figures the console
-   * shipped with — which are the mock's old invented ones. Said out loud rather than
+   * shipped with, which are the mock's old invented ones. Said out loud rather than
    * presented as the factory's own decision, because a transport charge nobody chose is
    * still on every account.
    */
@@ -4128,7 +4128,7 @@ export const handlers: HttpHandler[] = [
   }),
 
   /**
-   * Propose a change. `ratesAndMonthClose: write` — the accountant's.
+   * Propose a change. `ratesAndMonthClose: write`, the accountant's.
    *
    * Nothing takes effect here, which is the answer to §21.10's "does it need a second
    * person?". Transport at LKR 2.50/kg against LKR 4.50/kg is a different sum on every
@@ -4149,7 +4149,7 @@ export const handlers: HttpHandler[] = [
       return fail({
         status: 422,
         code: 'note-required',
-        message: 'A reason is required — the approver has to know what changed and why.',
+        message: 'A reason is required: the approver has to know what changed and why.',
       });
     }
     if (!rates) {
@@ -4200,7 +4200,7 @@ export const handlers: HttpHandler[] = [
     return HttpResponse.json(change, { status: 201 });
   }),
 
-  /** Approve or reject one. `ratesAndMonthClose: approve` — the manager's (§12.1). */
+  /** Approve or reject one. `ratesAndMonthClose: approve`, the manager's (§12.1). */
   http.post('*/admin/deduction-rates/:id/:verb', async ({ request, params }) => {
     await delay(LATENCY_MS);
     const auth = authorize(request, 'ratesAndMonthClose', 'approve');
@@ -4273,7 +4273,7 @@ export const handlers: HttpHandler[] = [
 
   /**
    * The months the money screens can be pointed at. Registered before
-   * the bills list — a distinct path, but the specific-first rule in this file has
+   * the bills list: a distinct path, but the specific-first rule in this file has
    * already caught two bugs.
    *
    * Newest first, because the office works the month it just closed.
@@ -4377,8 +4377,8 @@ export const handlers: HttpHandler[] = [
    *
    * `month-not-published` is the load-bearing refusal and the reason this endpoint
    * cannot simply take a month key. A run against an open month pays against figures
-   * that can still change — a rate correction, a voided delivery, an approved change
-   * request — and money that has already left the factory cannot be re-derived.
+   * that can still change (a rate correction, a voided delivery, an approved change
+   * request), and money that has already left the factory cannot be re-derived.
    */
   http.post('*/admin/payout-runs', async ({ request }) => {
     await delay(LATENCY_MS);
@@ -4482,7 +4482,7 @@ export const handlers: HttpHandler[] = [
    * reason it is not simply the on-screen grid written to a `Blob`:
    *
    *  1. **The account numbers are real.** Every other payload in this API masks them
-   *     (§20.4) — a payment file cannot. So producing one joins to the full numbers, which
+   *     (§20.4); a payment file cannot. So producing one joins to the full numbers, which
    *     is a thing only the server may do.
    *  2. **It is therefore audited**, with the run, the line count and the total. A file of
    *     two hundred account numbers left an office; that is an event, not a page view.
@@ -4505,7 +4505,7 @@ export const handlers: HttpHandler[] = [
      * A draft cannot be downloaded, and this is the refusal that matters here.
      *
      * The four-eyes rule (BR-501) exists so that no one person can move money alone. A file
-     * generated from an unapproved run and uploaded to the bank walks straight around it —
+     * generated from an unapproved run and uploaded to the bank walks straight around it:
      * the approval step would be reduced to a formality performed after the payment.
      */
     if (run.status === 'draft') {
@@ -4612,11 +4612,11 @@ export const handlers: HttpHandler[] = [
   }),
 
   /**
-   * Approve a run — `payouts: approve`, which §12.1 gives the manager and not the
+   * Approve a run: `payouts: approve`, which §12.1 gives the manager and not the
    * accountant who prepared it.
    *
    * Four eyes on money (BR-501): the same person may not prepare a run and release
-   * it, and a manager holds `approve` which implies `write` — so they *could* do
+   * it, and a manager holds `approve` which implies `write`, so they *could* do
    * both, and this is what stops them.
    */
   http.post('*/admin/payout-runs/:id/approve', async ({ request, params }) => {
@@ -4712,7 +4712,7 @@ export const handlers: HttpHandler[] = [
       return fail({
         status: 409,
         code: 'line-not-payable',
-        message: 'This line is held — there is no account to pay into.',
+        message: 'This line is held: there is no account to pay into.',
         details: { supplierCode: before.supplierCode },
       });
     }
@@ -4833,7 +4833,7 @@ export const handlers: HttpHandler[] = [
       contributingSuppliers: month.length,
       // `null`, not `0`, for a month that has contributed nothing (BR-102).
       averagePerKg: kgsThisMonth > 0 ? round2(contributed / kgsThisMonth) : null,
-      // Oldest first — charts read left to right.
+      // Oldest first: charts read left to right.
       trend: contributionMonths.slice(-6).map((key) => ({
         monthKey: key,
         contributed: round2(contributionsIn(key).reduce((sum, entry) => sum + entry.amount, 0)),
@@ -4884,14 +4884,14 @@ export const handlers: HttpHandler[] = [
    * **Nothing moves here.** The balance does not change and no ledger entry is written: the
    * factory's answer to §21.9 is that a withdrawal is paid on the next Green Leaf Account,
    * so this records an intention and M5 turns it into a line. The passbook moves when that
-   * account is published, which keeps one rule — *the ledger is derived from published
-   * bills* — rather than two.
+   * account is published, which keeps one rule (*the ledger is derived from published
+   * bills*) rather than two.
    */
   http.post('*/admin/savings/accounts/:supplierId/withdrawals', async ({ request, params }) => {
     await delay(LATENCY_MS);
     const gated = featureGate(request, 'enableSavings');
     if (gated) return gated;
-    // `billing: write` — §12.1 calls the capability "Bills & savings", and the accountant
+    // `billing: write`: §12.1 calls the capability "Bills & savings", and the accountant
     // holds it. A clerk may read a passbook and not move what is in it.
     const auth = authorize(request, 'billing', 'write');
     if ('response' in auth) return auth.response;
@@ -4905,7 +4905,7 @@ export const handlers: HttpHandler[] = [
      * A reason, like every other movement of somebody else's money in this console.
      *
      * The supplier will ask why their passbook dropped, months later, and "withdrawal" with
-     * no sentence beside it is a conversation nobody in the office can have — the same
+     * no sentence beside it is a conversation nobody in the office can have: the same
      * argument AC-06 makes about a rejection note.
      */
     if (!reason || reason.trim().length < 10) {
@@ -4927,7 +4927,7 @@ export const handlers: HttpHandler[] = [
     });
 
     if (problems.length > 0) {
-      // The first problem names the code, so the screen says *which* rule stopped it —
+      // The first problem names the code, so the screen says *which* rule stopped it:
       // "the window is shut until April" and "that is more than is held" are different
       // conversations and a single `invalid` would flatten them into one.
       const first = problems[0]!;
@@ -4970,7 +4970,7 @@ export const handlers: HttpHandler[] = [
   /**
    * Cancel one that has not been paid yet.
    *
-   * Cancelled rather than deleted — a request the office recorded and then withdrew is a
+   * Cancelled rather than deleted: a request the office recorded and then withdrew is a
    * thing that happened, and a supplier who was told "it is arranged" and then finds no
    * payment will ask. Same rule that voids a delivery rather than removing it.
    */
@@ -5034,7 +5034,7 @@ export const handlers: HttpHandler[] = [
   }),
 
   /**
-   * One supplier's passbook. Registered before `/savings/accounts` — MSW matches
+   * One supplier's passbook. Registered before `/savings/accounts`: MSW matches
    * whole paths, but keeping the more specific route first is the rule that has
    * already caught two bugs in this file.
    */
@@ -5088,7 +5088,7 @@ export const handlers: HttpHandler[] = [
           supplierId: supplier.id,
           supplierCode: supplier.supplierCode,
           supplierName: supplier.name,
-          // The **active** rate (AC-01) — a pending change is flagged, never applied.
+          // The **active** rate (AC-01); a pending change is flagged, never applied.
           savingsPerKg: supplier.savingsPerKg,
           balance: supplier.savingsBalance,
           lastContributionMonth: latest?.monthKey ?? null,
@@ -5115,7 +5115,7 @@ export const handlers: HttpHandler[] = [
 
   /* ── M9 Change requests ────────────────────────────────────────────────── */
   /**
-   * One change request, by id — **G-06 is closed**, so the console no longer sweeps the
+   * One change request, by id: **G-06 is closed**, so the console no longer sweeps the
    * list across every status to find a row a link points at.
    */
   http.get('*/admin/change-requests/:id', async ({ request, params }) => {
@@ -5162,7 +5162,7 @@ export const handlers: HttpHandler[] = [
 
     // Oldest first within an inbox: a queue is worked front to back, and the
     // item that has waited longest is the one at risk of breaching §14.4. A clerk
-    // may sort by another column, but that is a choice they make — never the
+    // may sort by another column, but that is a choice they make, never the
     // order they are given.
     rows = sortRows(rows, url, (a, b) => a.createdAt.localeCompare(b.createdAt));
 
@@ -5243,8 +5243,8 @@ export const handlers: HttpHandler[] = [
             /**
              * **Field by field, not block by block.**
              *
-             * `requestedAddress` carries only what the supplier actually changed —
-             * a change to the estate alone is a normal thing to ask for — so
+             * `requestedAddress` carries only what the supplier actually changed
+             * (a change to the estate alone is a normal thing to ask for), so
              * spreading the whole object would blank the field they left alone.
              * `??` per key is what keeps "I only moved house" from erasing the
              * estate address the leaf is filed against.
@@ -5296,7 +5296,7 @@ export const handlers: HttpHandler[] = [
         { kind: 'supplier', supplierId: before.supplierId },
       );
 
-      // `{ id, status }`, not the record (gap **G-11**) — the console refetches.
+      // `{ id, status }`, not the record (gap **G-11**); the console refetches.
       void after;
       return HttpResponse.json({ id: before.id, status });
     }),
@@ -5325,7 +5325,7 @@ export const handlers: HttpHandler[] = [
     const q = url.searchParams.get('q')?.trim().toLowerCase();
 
     // A facility this factory does not offer has no queue, and its rows are not
-    // hidden in the console — they are absent from the payload (AC-07).
+    // hidden in the console; they are absent from the payload (AC-07).
     const flags = flagsOf(request);
     let rows = state.creditRequests
       .filter((row) => flags[CREDIT_FACILITY_FLAGS[row.facility]])
@@ -5474,7 +5474,7 @@ export const handlers: HttpHandler[] = [
        *
        * §11.3: an advance surfaces as a `deductions.advance` line on the next
        * bill, so the two have to agree. Writing it here is what makes the chain
-       * real rather than decorative — the next eligibility read has less headroom,
+       * real rather than decorative: the next eligibility read has less headroom,
        * and the next bill deducts an instalment against it.
        */
       const supplierIndex = state.suppliers.findIndex((s) => s.id === before.supplierId);
@@ -5640,7 +5640,7 @@ export const handlers: HttpHandler[] = [
       /**
        * The store's own limits, checked on **approval only**.
        *
-       * A rejection is how an over-cap request leaves the queue — refusing that too would
+       * A rejection is how an over-cap request leaves the queue; refusing that too would
        * trap the row for ever, which is the same trap BR-310 avoids by not gating M7's
        * rejections on fresh eligibility.
        */
@@ -5664,7 +5664,7 @@ export const handlers: HttpHandler[] = [
          * Re-priced at the moment of the decision, and then never again.
          *
          * The catalogue can move between a supplier asking and the office answering, and
-         * the price that matters is the one the approver agreed to — which is also the
+         * the price that matters is the one the approver agreed to, which is also the
          * one that will appear on the supplier's account. Reading it back from config at
          * bill time would silently re-price a decision somebody already made.
          */
@@ -5741,7 +5741,7 @@ export const handlers: HttpHandler[] = [
         ...trigger,
         event: NOTIFICATION_EVENTS[trigger.category],
         // `false` when the tenant carries no push config at all, or does not list this
-        // category — so the console says "not configured for this factory" instead of
+        // category, so the console says "not configured for this factory" instead of
         // offering a toggle that would answer `category-disabled`.
         available: Boolean(push?.categories.includes(trigger.category)),
       })),
@@ -5759,7 +5759,7 @@ export const handlers: HttpHandler[] = [
     await delay(LATENCY_MS);
     const gate = featureGate(request, 'enablePushNotifications');
     if (gate) return gate;
-    // `content: approve` — the same boundary M11 draws. Deciding that every supplier's
+    // `content: approve`: the same boundary M11 draws. Deciding that every supplier's
     // phone buzzes when a month closes is a factory-administrator decision, not an
     // editor's.
     const auth = authorize(request, 'content', 'approve');
@@ -5787,12 +5787,12 @@ export const handlers: HttpHandler[] = [
       after: { enabled: after.enabled },
     });
 
-    // `{ id }` (gap **G-11**) — the card refetches the trigger list.
+    // `{ id }` (gap **G-11**); the card refetches the trigger list.
     return HttpResponse.json({ id: after.category });
   }),
 
   /**
-   * How far a send would reach — **before** anybody presses send.
+   * How far a send would reach, **before** anybody presses send.
    *
    * A `POST` despite being a read: the audience is a structured body, and encoding a
    * supplier id into a cacheable URL for a preview is worse than the verb mismatch.
@@ -5825,7 +5825,7 @@ export const handlers: HttpHandler[] = [
     if ('response' in auth) return auth.response;
 
     /**
-     * **Paged and filterable, newest first** — **G-09 is closed for this list.**
+     * **Paged and filterable, newest first**. **G-09 is closed for this list.**
      *
      * It used to answer a bare array capped at 50 with every query parameter ignored, and
      * the cap was silent: a factory that sends daily lost sight of last month with nothing
@@ -5862,7 +5862,7 @@ export const handlers: HttpHandler[] = [
   /**
    * Send one, composed by a person.
    *
-   * `content: approve`, which is the console's answer to §21.24's second half — "who may
+   * `content: approve`, which is the console's answer to §21.24's second half: "who may
    * send free text". A composed push reaches every supplier's lock screen and **cannot be
    * recalled**, which is a different act from writing an article somebody else publishes.
    * Stated on the screen so the factory can contest it.
@@ -5909,7 +5909,7 @@ export const handlers: HttpHandler[] = [
     const reach = resolveReach(request, category, served);
 
     /**
-     * Nobody would receive it — refused rather than logged as sent.
+     * Nobody would receive it: refused rather than logged as sent.
      *
      * Unlike an automatic send, somebody is standing at this screen: telling them the
      * message went nowhere is information they can act on (put it on the noticeboard,
@@ -5964,7 +5964,7 @@ export const handlers: HttpHandler[] = [
     /**
      * The **receipt**: the record's id and state, and how far it reached.
      *
-     * Not the whole `NotificationSend` (gap **G-11**) — the translations it was composed
+     * Not the whole `NotificationSend` (gap **G-11**): the translations it was composed
      * from are not echoed back, and the composer does not need them: it has just typed
      * them. What it shows afterwards is the reach, which is the only thing it could not
      * have known beforehand.
@@ -6027,7 +6027,7 @@ export const handlers: HttpHandler[] = [
   }),
 
   /**
-   * Create. Registered before `/news/:id` — a POST to the collection, so no conflict,
+   * Create. Registered before `/news/:id`: a POST to the collection, so no conflict,
    * but the specific-first habit in this file has already caught two routing bugs.
    */
   http.post('*/admin/news', async ({ request }) => {
@@ -6038,7 +6038,7 @@ export const handlers: HttpHandler[] = [
     if ('response' in auth) return auth.response;
 
     /**
-     * **The fallback language's copy, flat** — `title` / `excerpt` / `body`, not a
+     * **The fallback language's copy, flat**: `title` / `excerpt` / `body`, not a
      * `translations` array.
      *
      * That is what `POST /admin/news` reads. The console's `NewsArticleDraft` carries the
@@ -6100,7 +6100,7 @@ export const handlers: HttpHandler[] = [
       after: { slug, languages: Object.keys(translations) },
     });
 
-    // `{ id, slug, status }` — enough for the dialog to navigate to what it just made.
+    // `{ id, slug, status }`: enough for the dialog to navigate to what it just made.
     return HttpResponse.json({ id: record.id, slug, status: record.status }, { status: 201 });
   }),
 
@@ -6199,7 +6199,7 @@ export const handlers: HttpHandler[] = [
       after: { lang, title: parsed.title },
     });
 
-    // `{ id }` (gap **G-11**) — the editor refetches to see its own gaps recomputed.
+    // `{ id }` (gap **G-11**); the editor refetches to see its own gaps recomputed.
     return HttpResponse.json({ id: after.id });
   }),
 
@@ -6213,7 +6213,7 @@ export const handlers: HttpHandler[] = [
        *
        * §12.1 gives `content: W` to the editor and `A` to the factory admin, so the
        * person who writes a circular is not the person who puts it in front of every
-       * supplier the factory has. There is no four-eyes rule on top of that — the
+       * supplier the factory has. There is no four-eyes rule on top of that: the
        * capability split *is* the control here, and unlike money there is no amount to
        * escalate on.
        */
@@ -6267,7 +6267,7 @@ export const handlers: HttpHandler[] = [
        * Only on `publish`, and only the fallback title.
        *
        * A push carries one string, so it carries the language everything falls back to
-       * (AC-08) — the alternative is choosing a language per device, which the app does
+       * (AC-08); the alternative is choosing a language per device, which the app does
        * itself when it opens the article. Taking a supplier to copy they can read is the
        * app's job; getting them there is this one's.
        */
@@ -6293,8 +6293,8 @@ export const handlers: HttpHandler[] = [
         },
       });
 
-      // `{ id, status }` (gap **G-11**). `gaps` is still computed — the audit entry above
-      // is the whole reason it exists — but it is not what the wire carries.
+      // `{ id, status }` (gap **G-11**). `gaps` is still computed (the audit entry above
+      // is the whole reason it exists), but it is not what the wire carries.
       return HttpResponse.json({ id: after.id, status: after.status });
     }),
   ),
@@ -6332,7 +6332,7 @@ export const handlers: HttpHandler[] = [
    * `window` is computed **here**, against the server's clock, and that is the whole
    * reason the field is on the wire rather than derived in the console: the office asks
    * "what are suppliers seeing right now", and a browser working it out locally would
-   * answer differently on every machine — and differently again from the phone.
+   * answer differently on every machine, and differently again from the phone.
    */
   http.get('*/admin/banners', async ({ request }) => {
     await delay(LATENCY_MS);
@@ -6393,10 +6393,10 @@ export const handlers: HttpHandler[] = [
     if ('response' in auth) return auth.response;
 
     /**
-     * **The fallback language's copy, flat** — `title` / `body` / `buttonLabel`.
+     * **The fallback language's copy, flat**: `title` / `body` / `buttonLabel`.
      *
      * `POST /admin/banners` has no `translations` field, and zod strips what it does not
-     * recognise — so a body carrying only the array created a banner **with no copy at
+     * recognise, so a body carrying only the array created a banner **with no copy at
      * all and answered 201**. That is the worst shape of failure in this integration: it
      * succeeds. `bannerRepository.create` flattens before sending, and this fixture reads
      * what the API reads so that flattening is tested rather than bypassed.
@@ -6441,7 +6441,7 @@ export const handlers: HttpHandler[] = [
      * `bannerTarget()` is what the phone runs, and its answer to an action it cannot
      * resolve is to render the artwork with no button and say nothing. A record saved
      * with one would look published from every screen in this console and be inert on
-     * every phone — so it is refused at the door rather than discovered by a supplier.
+     * every phone, so it is refused at the door rather than discovered by a supplier.
      */
     const actionProblem = bannerActionProblem(body.action);
     if (actionProblem) {
@@ -6473,7 +6473,7 @@ export const handlers: HttpHandler[] = [
       translations[EDITORIAL_FALLBACK_LANGUAGE] = {
         lang: EDITORIAL_FALLBACK_LANGUAGE,
         title,
-        // Empty rather than absent — see `BannerTranslation`. The projection drops it.
+        // Empty rather than absent; see `BannerTranslation`. The projection drops it.
         body: body.body?.trim() ?? '',
         buttonLabel,
         updatedAt: new Date().toISOString(),
@@ -6499,7 +6499,7 @@ export const handlers: HttpHandler[] = [
       startsAt,
       endsAt,
       // Always a draft. Publishing is `content: approve`, which §12.1 withholds from the
-      // editor who writes — the same boundary M11's articles draw.
+      // editor who writes, the same boundary M11's articles draw.
       status: 'draft',
       publishedAt: null,
       publishedByName: null,
@@ -6517,7 +6517,7 @@ export const handlers: HttpHandler[] = [
   }),
 
   /**
-   * What the supplier sees, in one language — the server resolving its own fallback
+   * What the supplier sees, in one language: the server resolving its own fallback
    * (**G-08**). Resolving it in the console would be a second implementation of the rule
    * the app runs, which is the AC-08 failure with the console's fingerprints on it.
    */
@@ -6580,7 +6580,7 @@ export const handlers: HttpHandler[] = [
     const title = body.title?.trim() ?? '';
     const buttonLabel = body.buttonLabel?.trim() ?? '';
     /**
-     * Headline and button label, body optional — `isBannerWritten`, not `isWritten`.
+     * Headline and button label, body optional: `isBannerWritten`, not `isWritten`.
      *
      * The distinction is not pedantry: reusing the article rule would accept a banner
      * with no button label and report the language as **written**, so the gap would
@@ -6621,7 +6621,7 @@ export const handlers: HttpHandler[] = [
   }),
 
   /**
-   * Publish and unpublish only — **there is no `POST /admin/banners/{id}/archive`**
+   * Publish and unpublish only: **there is no `POST /admin/banners/{id}/archive`**
    * (gap **G-08**). News has one; banners do not, which is the asymmetry worth naming:
    * the two content types were built to the same model deliberately, and an editor
    * should not have to learn that one can be filed away and the other cannot.
@@ -6631,7 +6631,7 @@ export const handlers: HttpHandler[] = [
       await delay(LATENCY_MS);
       const gate = featureGate(request, 'enablePromoBanner');
       if (gate) return gate;
-      // `approve`, not `write` — §12.1's split between writing a circular and putting it
+      // `approve`, not `write`: §12.1's split between writing a circular and putting it
       // in front of every supplier the factory has.
       const auth = authorize(request, 'content', 'approve');
       if ('response' in auth) return auth.response;
@@ -6663,7 +6663,7 @@ export const handlers: HttpHandler[] = [
          * The asymmetry is the module's one real judgement, and it follows from what the
          * app does with each: a missing language falls back to English and the supplier
          * reads *something*, which AC-08 explicitly permits. A refused action has nothing
-         * to fall back to — the button is simply not drawn — so publishing it puts
+         * to fall back to (the button is simply not drawn), so publishing it puts
          * artwork in front of every supplier with no way to act on it.
          */
         const actionProblem = bannerActionProblem(before.action);
@@ -6707,7 +6707,7 @@ export const handlers: HttpHandler[] = [
   ),
 
   /**
-   * One banner, **with its translations** — the call the editor could not make while
+   * One banner, **with its translations**: the call the editor could not make while
    * **G-08** was open. The list row carries no copy and none could be synthesised: a
    * banner's Sinhala headline is either sent or it is not.
    */
@@ -6723,7 +6723,7 @@ export const handlers: HttpHandler[] = [
     return HttpResponse.json(serialiseBanner(record, request));
   }),
 
-  /** The window and the artwork — the fields that are not copy (**G-08**). */
+  /** The window and the artwork: the fields that are not copy (**G-08**). */
   http.patch('*/admin/banners/:id', async ({ request, params }) => {
     await delay(LATENCY_MS);
     const gate = featureGate(request, 'enablePromoBanner');
@@ -6739,7 +6739,7 @@ export const handlers: HttpHandler[] = [
     return HttpResponse.json({ id: record.id, status: record.status });
   }),
 
-  /** Filed away, never deleted — the lifecycle news already had (**G-08**). */
+  /** Filed away, never deleted: the lifecycle news already had (**G-08**). */
   http.post('*/admin/banners/:id/archive', async ({ request, params }) => {
     await delay(LATENCY_MS);
     const gate = featureGate(request, 'enablePromoBanner');
@@ -6764,7 +6764,7 @@ export const handlers: HttpHandler[] = [
    * Every page in the closed set, written or not.
    *
    * **No feature flag.** Terms, privacy and the FAQ are not a feature a factory buys or
-   * declines — the app links to them from its own settings screen, and a tenant that
+   * declines: the app links to them from its own settings screen, and a tenant that
    * could turn them off would ship a binary with dead links in it.
    */
   http.get('*/admin/static-pages', async ({ request }) => {
@@ -6917,7 +6917,7 @@ export const handlers: HttpHandler[] = [
       after: { status: 'published', missingLanguages: gaps.missingLanguages },
     });
 
-    // `{ id, status }` (gap **G-11**) — the editor refetches the closed set.
+    // `{ id, status }` (gap **G-11**); the editor refetches the closed set.
     return HttpResponse.json({ id: after.slug, status: after.status });
   }),
 
@@ -6925,7 +6925,7 @@ export const handlers: HttpHandler[] = [
    * **No `GET /admin/static-pages/{slug}`** (gap **G-07**), and none is needed: the set is
    * six pages, `list` returns all of them written or not, and `staticPageRepository.get`
    * picks its page out of that. A per-slug fetch would be a second round trip for a row
-   * the screen is already holding — and would have to invent a representation for a page
+   * the screen is already holding, and would have to invent a representation for a page
    * the factory has never written, which the list already answers.
    */
 
@@ -6992,7 +6992,7 @@ export const handlers: HttpHandler[] = [
    * The answer the supplier reads.
    *
    * `approve` on the capability, not `write`: §12.1 gives inquiries `A` to the
-   * clerk and `R` to the manager, which is unusual and deliberate — answering a
+   * clerk and `R` to the manager, which is unusual and deliberate: answering a
    * supplier is counter work, and a manager reading the queue is oversight rather
    * than a second pair of hands.
    */
@@ -7054,7 +7054,7 @@ export const handlers: HttpHandler[] = [
       });
     }
 
-    // Two clerks, one inbox — the same refusal M9 makes, for the same reason. A
+    // Two clerks, one inbox: the same refusal M9 makes, for the same reason. A
     // second reply would replace the first, and the supplier already read it.
     if (isInquiryClosed(before.status)) {
       return fail({
@@ -7089,7 +7089,7 @@ export const handlers: HttpHandler[] = [
 
     /**
      * Aimed at **one supplier**, which is what makes this the safest of the four
-     * triggers: the audience is the person who asked, and the body carries no answer —
+     * triggers: the audience is the person who asked, and the body carries no answer,
      * only that there is one. A reply can name a bank account or a dispute, and a lock
      * screen is read by whoever is holding the phone.
      */
@@ -7109,7 +7109,7 @@ export const handlers: HttpHandler[] = [
     return HttpResponse.json({ id: before.id, status: 'resolved' });
   }),
 
-  /** Closing unanswered — a duplicate, a test message, something for the weighing point. */
+  /** Closing unanswered: a duplicate, a test message, something for the weighing point. */
   http.post('*/admin/inquiries/:id/close', async ({ request, params }) => {
     await delay(LATENCY_MS);
     const gate = featureGate(request, 'enableInquiry');
@@ -7125,7 +7125,7 @@ export const handlers: HttpHandler[] = [
     /**
      * **`note`, and the schema is `.strict()`.**
      *
-     * `CloseInquiryBody` spells it `note` and the API reads `note` — **G-19 is closed**.
+     * `CloseInquiryBody` spells it `note` and the API reads `note`: **G-19 is closed**.
      * It briefly read `closureNote`, and because zod stripped the unknown key the close
      * succeeded with the reason silently dropped. The schema is `.strict()` now, so
      * sending the wrong field is a `422` rather than a quiet loss; this fixture refuses
@@ -7201,7 +7201,7 @@ export const handlers: HttpHandler[] = [
     if (actorId) rows = rows.filter((e) => e.actorId === actorId);
     /**
      * An entry with no `actorType` is a v1 entry, and every v1 entry was written by
-     * somebody signed into this console — so it matches `consoleUser`. Defaulting the
+     * somebody signed into this console, so it matches `consoleUser`. Defaulting the
      * *filter* rather than backfilling the data is what keeps an old row readable.
      */
     if (actorType) rows = rows.filter((e) => (e.actorType ?? 'consoleUser') === actorType);
@@ -7460,8 +7460,8 @@ export const handlers: HttpHandler[] = [
 ];
 
 /**
- * Reset between tests. Not used by the browser worker — a page reload does this
- * for free — but essential in Vitest, where module state persists across cases.
+ * Reset between tests. Not used by the browser worker (a page reload does this
+ * for free), but essential in Vitest, where module state persists across cases.
  */
 /**
  * Mark a seeded console user as still owing a password change.
@@ -7526,7 +7526,7 @@ export function resetMockState(): void {
    * The content and notification state too, and **`cloneNews` rather than a spread**:
    * a shallow copy shares the `translations` map with the seed, so a test that saves a
    * Sinhala translation mutates the fixture and every later test finds Sinhala already
-   * written — the AC-08 gap it was asserting on quietly gone.
+   * written, the AC-08 gap it was asserting on quietly gone.
    *
    * The triggers matter for the same reason from the other direction: a test that turns
    * `newsArticle` on leaves every subsequent publish firing a notification, and a suite
@@ -7549,7 +7549,7 @@ export function resetMockState(): void {
   state.notificationSends = mockNotificationSends.map((send) => ({ ...send }));
   /**
    * The queues too. A credit request approved in one test leaves the supplier's
-   * `creditBalances` raised, which lowers the headroom the next test asserts on —
+   * `creditBalances` raised, which lowers the headroom the next test asserts on,
    * and the failure reads as a wrong ceiling rather than as leaked state.
    */
   state.creditRequests = mockCreditRequests.map((request) => ({ ...request }));

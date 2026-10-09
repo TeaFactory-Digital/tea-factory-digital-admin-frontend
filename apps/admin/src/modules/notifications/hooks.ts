@@ -3,7 +3,7 @@
  *
  * The unusual one is `useNotificationReach`: a **query keyed on a draft**, refetched as
  * the composer changes the category or the audience. It looks like state that belongs in
- * the dialog and is not — the reach is the server's answer about consent it holds and the
+ * the dialog and is not: the reach is the server's answer about consent it holds and the
  * console does not, and it is the figure the send decision turns on.
  *
  * Everything else invalidates `notifications.all`, including a trigger change that
@@ -34,7 +34,7 @@ export function useNotifications(query: NotificationQuery) {
  *
  * A clerk answering an inquiry holds `inquiries: A` and may hold no `content` grant at
  * all, so this 403s for the person most likely to be on that screen. An unanswerable
- * question is not an error worth surfacing there — the inquiry detail treats it as "no
+ * question is not an error worth surfacing there; the inquiry detail treats it as "no
  * push", which is the safer of the two wrong answers.
  */
 export function useNotificationTriggers() {
@@ -49,7 +49,7 @@ export function useNotificationTriggers() {
 /**
  * How far the send being composed would reach.
  *
- * `enabled` on a complete audience only — a half-filled form ("collection point", none
+ * `enabled` on a complete audience only: a half-filled form ("collection point", none
  * chosen) would otherwise ask the server a question whose honest answer is *everybody*,
  * and the composer would flash the whole-factory figure while somebody is still choosing.
  */

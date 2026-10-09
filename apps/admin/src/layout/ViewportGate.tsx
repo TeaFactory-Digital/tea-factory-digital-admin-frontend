@@ -2,7 +2,7 @@
  * The viewport floor: tablet and above, nothing narrower.
  *
  * The console is an *office* surface. Its screens are twelve-column grids, wide
- * data tables with a sticky action column, and side-by-side approve/reject forms —
+ * data tables with a sticky action column, and side-by-side approve/reject forms,
  * built against the 1366×768 laptops the office actually runs (see
  * `playwright.config.ts`). None of that reflows onto a phone, and the failure mode
  * is not a cramped layout: it is a clerk approving the wrong row because the table
@@ -15,7 +15,7 @@
  * Two properties worth keeping:
  *
  *  1. **It gates, it does not overlay.** The router is not mounted below the floor,
- *     so no screen's chunk downloads and no query fires on a phone — the opposite
+ *     so no screen's chunk downloads and no query fires on a phone: the opposite
  *     of `BootSplash`, which covers a mounted app on purpose.
  *  2. **It is live.** A desktop window dragged narrow crosses the floor and comes
  *     back, and rotating a small tablet to landscape is the fix the copy suggests,
@@ -31,7 +31,7 @@ import { Logo } from '@/brand/Logo';
  * 768 CSS px: Tailwind's `md` breakpoint, and an iPad in portrait.
  *
  * The same number the responsive utilities in the screens already switch on, which
- * is what makes the floor coherent — every `md:` rule in the codebase is now the
+ * is what makes the floor coherent: every `md:` rule in the codebase is now the
  * *narrowest* layout that can be reached, and nothing below it has to be designed
  * for.
  */
@@ -39,7 +39,7 @@ export const MIN_VIEWPORT_WIDTH = 768;
 
 /**
  * A height floor as well, because a width floor alone lets a landscape phone
- * through: 900×400 is wide enough to pass and far too short to work — the topbar,
+ * through: 900×400 is wide enough to pass and far too short to work; the topbar,
  * a page header and a table header leave about one row of data.
  *
  * 480 px is below any laptop or tablet in either orientation and above every phone
@@ -51,8 +51,8 @@ export const MIN_VIEWPORT_HEIGHT = 480;
 /**
  * Measured off `window.inner*` rather than `matchMedia`.
  *
- * The two agree on what matters here — both are CSS pixels, so both react to
- * browser zoom the same way — and the numbers are needed anyway for the caption on
+ * The two agree on what matters here (both are CSS pixels, so both react to
+ * browser zoom the same way) and the numbers are needed anyway for the caption on
  * the blocking screen. It also keeps the gate honest under jsdom, where
  * `matchMedia` exists but never matches anything: a `matchMedia` gate would report
  * every test environment as a phone.
@@ -67,8 +67,8 @@ function viewportFits(): boolean {
  *
  * Deliberately a boolean and not the dimensions: this hook sits above the whole
  * router, and storing the size here would re-render every mounted screen on every
- * pixel of a window drag. The blocking screen — which is small, and the only thing
- * that wants the numbers — reads them itself.
+ * pixel of a window drag. The blocking screen (which is small, and the only thing
+ * that wants the numbers) reads them itself.
  */
 function useViewportFits(): boolean {
   const [fits, setFits] = useState(viewportFits);
@@ -103,7 +103,7 @@ function useViewportFits(): boolean {
  * apart from "this is not my factory's console".
  *
  * The measured size is on it on purpose. It is what turns "it says the screen is
- * too small" into a support answer — the office reads back two numbers — and on a
+ * too small" into a support answer (the office reads back two numbers) and on a
  * desktop window being dragged it counts up towards the minimum, which explains
  * the rule better than the sentence above it does.
  */

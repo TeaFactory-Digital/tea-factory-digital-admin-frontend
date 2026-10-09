@@ -1,13 +1,13 @@
 /**
  * §21.15 and §21.16, as the factory answered them.
  *
- * *Generate a random password and hand it over at the counter.* Right for this factory — but
+ * *Generate a random password and hand it over at the counter.* Right for this factory, but
  * it means **the office learns the password**, and every test here is about one of the three
  * rules that turn that from an account-takeover path into a safe flow: the credential is
  * one-time, the identity check is recorded, and existing sessions end.
  *
  * The one worth reading first is the last: the password is in the response and **nowhere
- * else** — not in the supplier record, not in the audit entry. An audit trail carrying
+ * else**, not in the supplier record, not in the audit entry. An audit trail carrying
  * passwords would be a list of live logins.
  */
 
@@ -31,7 +31,7 @@ const CHECK = 'Came to the counter with supplier book, recognised by the clerk';
 
 describe('the password itself', () => {
   it('is drawn only from characters somebody can read off paper', () => {
-    // No O/0, I/1/l, S/5 or B/8 — this is transcribed by hand and typed on a phone.
+    // No O/0, I/1/l, S/5 or B/8: this is transcribed by hand and typed on a phone.
     for (const confusable of ['O', '0', 'I', '1', 'L', 'S', '5', 'B', '8', '2']) {
       expect(SUPPLIER_PASSWORD_ALPHABET.includes(confusable), confusable).toBe(false);
     }
@@ -72,13 +72,13 @@ describe('issuing one against the mock API', () => {
 
     expect(isWellFormedSupplierPassword(issued.password)).toBe(true);
     expect(issued.password).toHaveLength(SUPPLIER_PASSWORD_LENGTH);
-    // The grouped form the counter reads aloud is the console's own — `formatSupplierPassword`
+    // The grouped form the counter reads aloud is the console's own: `formatSupplierPassword`
     // in the shared package, so both realms hyphenate the same way.
     expect(formatSupplierPassword(issued.password).replace(/-/g, '')).toBe(issued.password);
 
     /**
      * **The rule that makes the whole flow safe.** The office knows this password, so it
-     * has to die the moment the supplier uses it — the app forces a change while this is
+     * has to die the moment the supplier uses it: the app forces a change while this is
      * true.
      *
      * Asserted on the **record**, because the reset response carries the password, its
@@ -128,7 +128,7 @@ describe('issuing one against the mock API', () => {
   /**
    * **The password is in the response and nowhere else.**
    *
-   * Not on the supplier record and not in the audit entry — an audit trail that carried
+   * Not on the supplier record and not in the audit entry: an audit trail that carried
    * credentials would be a list of live logins, readable by everyone who may read the log.
    */
   it('records the identity check and never the password (AC-09)', async () => {
@@ -136,7 +136,7 @@ describe('issuing one against the mock API', () => {
     const supplier = await anySupplier();
     const issued = await supplierRepository.resetCredentials(supplier.id, CHECK);
 
-    // The clerk may issue a credential and not read the log (§12.1) — so the entry is read
+    // The clerk may issue a credential and not read the log (§12.1), so the entry is read
     // by somebody who may, which is also how it would be read in practice.
     signOut();
     await signInAs(MANAGER);
@@ -147,7 +147,7 @@ describe('issuing one against the mock API', () => {
     /**
      * The entry is found by **entity and action**, not by an id from the response.
      *
-     * `auditId` is not on the reset payload (gap **G-04**) — which is why the dialog no
+     * `auditId` is not on the reset payload (gap **G-04**), which is why the dialog no
      * longer prints an audit reference. The entry still exists and still records the
      * identity check, which is what this asserts.
      */
@@ -163,7 +163,7 @@ describe('issuing one against the mock API', () => {
   it('refuses a supplier who has left', async () => {
     await signInAs(CLERK);
     const closed = (await supplierRepository.list({ status: 'closed', pageSize: 5 })).items[0];
-    if (!closed) throw new Error('fixture has no closed supplier — this test would assert nothing');
+    if (!closed) throw new Error('fixture has no closed supplier: this test would assert nothing');
 
     // Issuing a login to somebody who no longer supplies is issuing a way in.
     await expect(supplierRepository.resetCredentials(closed.id, CHECK)).rejects.toMatchObject({
@@ -174,7 +174,7 @@ describe('issuing one against the mock API', () => {
   it('refuses a role that may read the registry but not write it (§12.1)', async () => {
     await signInAs(MANAGER);
     const supplier = await anySupplier();
-    // The manager holds `suppliers: read` — `W` is the clerk's alone, because these are
+    // The manager holds `suppliers: read`; `W` is the clerk's alone, because these are
     // counter acts. Issuing a credential is not a read.
     const refused = await supplierRepository
       .resetCredentials(supplier.id, CHECK)

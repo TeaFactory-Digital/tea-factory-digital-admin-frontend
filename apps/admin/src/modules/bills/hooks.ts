@@ -5,7 +5,7 @@
  * replaces every bill in it, moves §13's stage to `billsGenerated`, and changes what
  * the close checklist and the dashboard badge say. A mutation that only refreshed the
  * run summary would leave the grid showing the previous recomputation beside the new
- * totals — two answers on one screen, which is the failure this console is most
+ * totals: two answers on one screen, which is the failure this console is most
  * careful about.
  */
 

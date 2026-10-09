@@ -1,5 +1,5 @@
 /**
- * An audit entry's fields, as the office reads them — not as the server wrote them.
+ * An audit entry's fields, as the office reads them, not as the server wrote them.
  *
  * The inputs are the four entries a real news article produced, copied from the panel
  * that used to print them as JSON.

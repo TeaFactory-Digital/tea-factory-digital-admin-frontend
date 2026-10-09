@@ -48,7 +48,7 @@ describe('tenantIdFromHost', () => {
   it('ignores preview-hosting domains, where the label is a deployment', () => {
     // The leading label on these is a project or branch name. Reading it as a
     // tenant makes `GET /config` answer 404 and the console boot unbranded behind
-    // a "could not reach the factory configuration" banner — which looks exactly
+    // a "could not reach the factory configuration" banner, which looks exactly
     // like the API being down.
     expect(tenantIdFromHost('teafactorydigital-admin.vercel.app')).toBeNull();
     expect(tenantIdFromHost('tfd-admin-git-main-acme.vercel.app')).toBeNull();
@@ -125,7 +125,7 @@ describe('themeToCssVars', () => {
     expect(vars['--brand-color-table-row-hover']).toBeDefined();
   });
 
-  it('turns dp into px — the one place that translation happens', () => {
+  it('turns dp into px: the one place that translation happens', () => {
     expect(vars['--brand-space-lg']).toBe('16px');
     expect(vars['--brand-radius-md']).toBe('10px');
     expect(vars['--brand-icon-md']).toBe('20px');

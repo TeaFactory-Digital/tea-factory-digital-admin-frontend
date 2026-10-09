@@ -1,13 +1,13 @@
 /**
- * The month grid, on `react-day-picker` — the library shadcn's `<Calendar>` wraps.
+ * The month grid, on `react-day-picker`: the library shadcn's `<Calendar>` wraps.
  *
  * **The library is shadcn's; the styling is not, and that is deliberate.** shadcn's
- * calendar is written against its own CSS variables — `bg-background`,
- * `text-muted-foreground`, `bg-accent` — and none of those exist here. Every colour in
+ * calendar is written against its own CSS variables (`bg-background`,
+ * `text-muted-foreground`, `bg-accent`) and none of those exist here. Every colour in
  * this console resolves to `var(--brand-color-*)`, written at runtime from the tenant's
  * `client_config` (see `styles/theme.css`), which is what lets one deployment rebrand per
  * factory. Pasted verbatim, this would have been the one component in the console that
- * ignored a factory's colours — visible the first time anybody looked at a tenant that
+ * ignored a factory's colours: visible the first time anybody looked at a tenant that
  * was not green.
  *
  * So the class names below are this project's tokens throughout. What comes from shadcn
@@ -47,7 +47,7 @@ export function Calendar({ className, classNames, ...props }: CalendarProps) {
         button_next: cn(DAY_CELL, 'inline-flex items-center justify-center'),
         month_grid: 'w-full border-collapse',
         weekdays: 'flex',
-        // The column headings are labels, not data — the same weight as every other
+        // The column headings are labels, not data: the same weight as every other
         // secondary label in the console rather than the bold shadcn uses.
         weekday: 'size-9 text-caption font-normal text-text-secondary',
         week: 'flex w-full',
@@ -56,7 +56,7 @@ export function Calendar({ className, classNames, ...props }: CalendarProps) {
         /**
          * Selected is filled, today is only ringed.
          *
-         * Both marked the same way — which shadcn's default very nearly does — makes the
+         * Both marked the same way, which shadcn's default very nearly does, makes the
          * pair unreadable in the common case where today *is* the selection.
          */
         selected:

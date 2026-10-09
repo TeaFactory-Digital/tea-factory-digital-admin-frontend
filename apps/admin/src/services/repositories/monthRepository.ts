@@ -1,7 +1,7 @@
 /**
  * M4 gateway.
  *
- * The client-side guards here are not a substitute for the server's — the server
+ * The client-side guards here are not a substitute for the server's: the server
  * refuses all of this too, and it is the authority (§9.3). They exist because the
  * feedback belongs where the accountant is typing: a rate with three decimals
  * should be refused under the field, not after a round trip, and a publish that
@@ -22,7 +22,7 @@ import { monthEndpoints } from '../endpoints/months';
 import { ApiError } from '../api/errors';
 
 export const monthRepository = {
-  /** Newest first — the office works in the month in progress. */
+  /** Newest first: the office works in the month in progress. */
   list: (): Promise<Paged<MonthSummary>> => monthEndpoints.list({ page: 0, pageSize: 24 }),
 
   get: (monthKey: string): Promise<MonthSummary> => monthEndpoints.get(monthKey),

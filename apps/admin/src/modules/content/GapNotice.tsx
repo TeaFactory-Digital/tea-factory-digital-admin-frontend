@@ -2,7 +2,7 @@
  * What a gap actually costs, in words, on the record it is about.
  *
  * The language tabs say *which* languages have a gap. This says **what happens because
- * of it** — that a Sinhala supplier opening the app right now is reading English — and
+ * of it**: that a Sinhala supplier opening the app right now is reading English, and
  * that is the half of AC-08 a coloured dot cannot carry. An editor who does not know the
  * app falls back has no reason to treat a missing translation as urgent.
  *
@@ -30,7 +30,7 @@ export function GapNotice({
     languages.map((lang) => t(`content.language.${lang}`)).join(', ');
 
   /**
-   * The fallback missing is not a gap — it is a record with nothing to show anybody, and
+   * The fallback missing is not a gap; it is a record with nothing to show anybody, and
    * it is refused at the publish. Reported as its own state so the editor is told the
    * one thing they must fix rather than being handed a list of three.
    */

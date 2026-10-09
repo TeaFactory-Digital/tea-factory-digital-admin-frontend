@@ -2,13 +2,13 @@
  * What this factory sends without anybody pressing anything.
  *
  * **This card is the console's answer to §21.24**, and it is deliberately an answer the
- * factory can change rather than one the code assumed. The question — does the office
- * compose every send, or does "your bill is ready" fire off the publish step? — has not
+ * factory can change rather than one the code assumed. The question (does the office
+ * compose every send, or does "your bill is ready" fire off the publish step?) has not
  * been answered, so both paths exist and this is where the choice lives. When the factory
  * decides, somebody flips a switch; nobody opens an editor.
  *
  * Each row names **the event it fires from**, because that is the only thing that makes
- * the toggle comprehensible. "Bill published — on" is a setting; "Bill published — fires
+ * the toggle comprehensible. "Bill published: on" is a setting; "Bill published: fires
  * when a month is published in Rates & month close" is a decision somebody can take.
  *
  * A category the tenant has not configured is shown **disabled with a reason**, not
@@ -35,7 +35,7 @@ import { InfoTip } from '@/components/ui/Tooltip';
 export function TriggersCard() {
   const { t } = useTranslation();
   const toast = useToast();
-  // §12.1's `content: A` — deciding that every supplier's phone buzzes when a month
+  // §12.1's `content: A`: deciding that every supplier's phone buzzes when a month
   // closes is a factory-administrator decision, not an editor's.
   const canChange = useCan('content', 'approve');
 
@@ -95,7 +95,7 @@ export function TriggersCard() {
                   {trigger.updatedAt ? (
                     <span className="text-caption text-text-secondary">
                       {t('notifications.triggerChanged', {
-                        name: trigger.updatedByName ?? '—',
+                        name: trigger.updatedByName ?? '-',
                         when: formatDateTime(trigger.updatedAt),
                       })}
                     </span>

@@ -4,13 +4,13 @@
  *
  * **Every other screen in this console is about the factory.** This is the only one about
  * the reader, and it is now the **only** place the language, the scheme and the text size
- * are changed — a menu is a fine shortcut for a setting somebody already knows about and a
+ * are changed: a menu is a fine shortcut for a setting somebody already knows about and a
  * poor place to discover that text size is adjustable at all, and two homes for one value
  * is two places to look when it is wrong.
  *
  * ## What is deliberately not here
  *
- * No password change. The auth surface is `login`, `refresh`, `logout` and `me` — there is
+ * No password change. The auth surface is `login`, `refresh`, `logout` and `me`; there is
  * no self-service endpoint for one, and the supplier password reset in M2 is the office
  * issuing a *supplier's* app password, not a console user changing their own. A form posting
  * to an endpoint that does not exist would look like the feature until somebody needed it,
@@ -65,7 +65,7 @@ export function ProfileScreen() {
     : 'en';
 
   /**
-   * Drafted rather than applied on press, so all three land behind one confirmation —
+   * Drafted rather than applied on press, so all three land behind one confirmation:
    * the same draft-then-save shape every M14 section uses.
    *
    * The cost is real and worth naming: appearance and text size are judged by **looking**
@@ -76,7 +76,7 @@ export function ProfileScreen() {
   const [draftAppearance, setDraftAppearance] = useState<Appearance>(appearance);
   const [confirming, setConfirming] = useState(false);
 
-  // Re-seeded when the stored values move underneath — a second tab, or the sign-in
+  // Re-seeded when the stored values move underneath: a second tab, or the sign-in
   // screen's switcher on the way in.
   useEffect(() => setDraftLanguage(savedLanguage), [savedLanguage]);
   useEffect(() => setDraftAppearance(appearance), [appearance]);
@@ -104,7 +104,7 @@ export function ProfileScreen() {
 
   /**
    * `RequireAuth` guarantees a user by the time this renders, so the guard is for the
-   * type rather than for a state anybody reaches — and returning `null` beats a spinner
+   * type rather than for a state anybody reaches, and returning `null` beats a spinner
    * that would never resolve.
    */
   if (!user) return null;

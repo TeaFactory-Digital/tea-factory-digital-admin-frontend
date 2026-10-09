@@ -5,7 +5,7 @@
  * staff work in English, while **editorial content is authored in si/en/ta**
  * because a Sinhala supplier reading an English-only FAQ is the app failing.
  *
- * Every label still goes through `t()`. Not ceremony — it is what makes adding
+ * Every label still goes through `t()`. Not ceremony: it is what makes adding
  * Sinhala for the weighing-point clerks in M3 a copy deliverable rather than a
  * refactor of every screen. Flat, dotted keys, matching the mobile app's tables.
  */
@@ -42,7 +42,7 @@ export const en = {
   'common.previous': 'Previous',
   'common.next': 'Next',
   'common.showing': 'Showing {{from}}–{{to}} of {{total}}',
-  // The page controls are icons, so these are the only names they have — they
+  // The page controls are icons, so these are the only names they have; they
   // reach the clerk as a tooltip and a screen reader as the accessible name.
   'common.pagination': 'Pages',
   'common.firstPage': 'First page',
@@ -67,9 +67,9 @@ export const en = {
   'profile.securityTitle': 'Security',
   'profile.securityDescription': 'How this account is protected.',
   'profile.securityHint':
-    'Passwords are reset by a factory administrator from Users & roles — there is no way to change one from here.',
+    'Passwords are reset by a factory administrator from Users & roles; there is no way to change one from here.',
   'profile.save': 'Save preferences',
-  'profile.unsavedHint': 'Not applied yet — save to use them.',
+  'profile.unsavedHint': 'Not applied yet. Save to use them.',
   'profile.nothingToSave': 'Nothing to save.',
   'profile.confirmTitle': 'Apply these preferences?',
   'profile.confirmBody':
@@ -130,9 +130,9 @@ export const en = {
   /* ──────────────────────────────── shell ──────────────────────────────── */
   'shell.skipToContent': 'Skip to content',
   'shell.degradedConfig':
-    'Could not reach the factory configuration — showing bundled defaults. Branding and feature flags may be out of date.',
+    'Could not reach the factory configuration; showing bundled defaults. Branding and feature flags may be out of date.',
   /* The accessible name of the language pill. The options inside it are *not*
-     translated — see i18n/languages.ts for why. */
+     translated; see i18n/languages.ts for why. */
   'shell.language': 'Language',
 
   /* ──────────────────────────────── splash ─────────────────────────────── */
@@ -146,7 +146,7 @@ export const en = {
   // this is holding the wrong one.
   'viewport.tooSmallTitle': 'This screen is too small',
   'viewport.tooSmallBody':
-    'The office console is built for tablets, laptops and desktops — its grids and side-by-side forms do not fit a phone. Open it on a tablet or a computer; a small tablet may need to be turned sideways.',
+    'The office console is built for tablets, laptops and desktops: its grids and side-by-side forms do not fit a phone. Open it on a tablet or a computer; a small tablet may need to be turned sideways.',
   'viewport.tooSmallSize':
     'This window is {{width}} × {{height}}. The console needs at least {{minWidth}} × {{minHeight}}.',
 
@@ -194,7 +194,7 @@ export const en = {
   'dashboard.trendOneMonth': 'Only {{month}} so far. The line appears once there are two months of requests.',
   'dashboard.trendEmpty': 'No requests yet, so there is nothing to chart.',
   /* A queue the server reports that this version of the console has no screen for. Not
-     "planned" — every module of the §18.1 scope is built; this is a newer API naming a
+     "planned": every module of the §18.1 scope is built; this is a newer API naming a
      queue this build has never heard of. */
   'dashboard.noScreenForQueue': 'No screen for this in this version',
   'dashboard.oldestWaiting': 'Oldest {{age}}',
@@ -240,7 +240,7 @@ export const en = {
   'dashboard.queue.inquiries': 'Inquiries',
 
   /* v2's lead cards. Every figure on the content card is a failure with no error
-     attached to it — a fallback translation, an unwritten page, a closed window. */
+     attached to it: a fallback translation, an unwritten page, a closed window. */
   'dashboard.appAdoption': 'App adoption',
   'dashboard.appAdoptionHint': 'How much of the supplier base is actually using it',
   'dashboard.appInstalled': '{{withApp}} of {{total}} suppliers signed in',
@@ -259,7 +259,7 @@ export const en = {
   'dashboard.content.staticPagesUnwritten': '{{count}} fixed pages have never been written',
 
   'dashboard.alert.missingBankDetails':
-    '{{count}} suppliers have deliveries but no bank details — the month cannot be published until each is resolved.',
+    '{{count}} suppliers have deliveries but no bank details; the month cannot be published until each is resolved.',
   'dashboard.alert.slaBreach': '{{count}} change requests have been waiting longer than 3 days.',
   'dashboard.alert.awaitingRate': 'The auction result for {{month}} has not been entered yet.',
 
@@ -445,7 +445,7 @@ export const en = {
   'suppliers.resetPassword.copied': 'Copied',
   'suppliers.resetPassword.copyFailed': 'Could not copy. Select the password and copy it by hand.',
   'suppliers.resetPassword.onceWarning':
-    'This is the only time it is shown. Close this and it is gone — you would have to create another one.',
+    'This is the only time it is shown. Close this and it is gone; you would have to create another one.',
   'suppliers.resetPassword.oneTime':
     'The supplier has to choose their own password the first time they sign in with this, so it stops working once they do. Until then, anyone holding it can sign in as them.',
   'suppliers.resetPassword.recordedBy': 'Recorded against {{name}}, {{when}}.',
@@ -607,7 +607,7 @@ export const en = {
   'credit.eligibility.working': 'How this was worked out',
   'credit.eligibility.monthsOfHistory': 'Closed months of income',
   'credit.eligibility.historyOf': '{{count}} of {{required}} required',
-  'credit.eligibility.historyNotRequired': '{{count}} — not required for an advance',
+  'credit.eligibility.historyNotRequired': '{{count}} (not required for an advance)',
   'credit.eligibility.averageIncome': 'Average monthly account',
   'credit.eligibility.multiplier': 'Loan multiple',
   'credit.eligibility.lastSettledMonth': 'Last settled month',
@@ -678,10 +678,10 @@ export const en = {
     'You raised this request on the supplier’s behalf, so someone else has to decide it. Credit is money, and money takes four eyes.',
   'credit.overCeiling.title': 'More than they may draw',
   'credit.overCeiling.body':
-    'This asks for {{amount}} and only {{available}} is available. It cannot be approved as it stands — reject it, or ask the supplier to raise a smaller one.',
+    'This asks for {{amount}} and only {{available}} is available. It cannot be approved as it stands: reject it, or ask the supplier to raise a smaller one.',
   'credit.stale.title': 'The figures have moved',
   'credit.stale.body':
-    'The ceiling changed while this was open — leaf recorded, or a month published. The fresh figures are loading; read them before deciding.',
+    'The ceiling changed while this was open (leaf recorded, or a month published). The fresh figures are loading; read them before deciding.',
 
   /* ─────────────────────────── M10 Inquiries ─────────────────────────── */
   'inquiries.title': 'Inquiries',
@@ -731,7 +731,7 @@ export const en = {
   'inquiries.detail.pushNotSentShort': 'No phone notification',
   'inquiries.detail.pushWhy': 'About this notification',
   'inquiries.detail.pushSent':
-    'A notification was sent to their phone telling them there is an answer — the reply itself is only in the app, because a lock screen is read by whoever is holding it.',
+    'A notification was sent to their phone telling them there is an answer. The reply itself is only in the app, because a lock screen is read by whoever is holding it.',
   'inquiries.detail.pushNotSent':
     'The supplier sees this the next time they open the app. Automatic notifications for answered messages are switched off for this factory, so nothing has been sent to their phone.',
 
@@ -920,13 +920,13 @@ export const en = {
   'validation.rateTooLarge': 'That rate is larger than the factory can record',
   'validation.moneyScale': 'Money takes at most two decimals',
   'validation.noteRequired': 'A note is required',
-  'validation.noteTooShort': 'Write at least 10 characters — the supplier reads this',
+  'validation.noteTooShort': 'Write at least 10 characters; the supplier reads this',
   'validation.url': 'Enter a valid web address',
-  'validation.fallbackRequired': 'The English copy is required — everything falls back to it',
+  'validation.fallbackRequired': 'The English copy is required: everything falls back to it',
   'validation.reasonRequired': 'A reason is required',
   'validation.replyRequired': 'An answer is required',
   'validation.replyTooShort':
-    'Write at least 20 characters — this is the answer the supplier reads',
+    'Write at least 20 characters; this is the answer the supplier reads',
 
   /* ─────────────────────── M3 Leaf collection ─────────────────────── */
   'deliveries.point': 'Collection point',
@@ -1000,7 +1000,7 @@ export const en = {
   'bills.deduction.stamps': 'Stamps',
   'bills.deduction.previousDebts': 'Previous debts',
   'bills.unbalancedWarning':
-    'The deduction lines on this bill do not add up to its stated total (BR-107). Do not publish this month — tell the factory administrator.',
+    'The deduction lines on this bill do not add up to its stated total (BR-107). Do not publish this month; tell the factory administrator.',
 
   'bills.balance': 'Balance',
   'bills.balanceDescription': 'The factory pays whole rupees. The coins carry to next month.',
@@ -1030,7 +1030,7 @@ export const en = {
   'bills.dailySupplyDetail': 'Leaf on {{days}} days, {{kgs}} in total.',
 
   'bills.correctionsDraft':
-    'Nothing here is sent to the supplier until the month is published. Until then, fix a wrong figure at its source — a delivery in Leaf collection, or the rate in Rates & month close — and re-generate.',
+    'Nothing here is sent to the supplier until the month is published. Until then, fix a wrong figure at its source (a delivery in Leaf collection, or the rate in Rates & month close) and re-generate.',
   'bills.correctionsPublished':
     'This bill is published, so it is the record. Whether a published bill may be corrected at all, or whether an error is always adjusted on the next account, is still an open question with the factory (§21.8).',
 
@@ -1048,8 +1048,8 @@ export const en = {
   'content.language.en': 'English',
   'content.language.ta': 'Tamil',
   'content.fallbackLanguageHint': 'The language everything falls back to. It cannot be left empty.',
-  'content.state.missing': '— not written yet',
-  'content.state.stale': '— older than the English copy',
+  'content.state.missing': '(not written yet)',
+  'content.state.stale': '(older than the English copy)',
 
   'content.copyTitle': 'Copy',
   'content.copyDescription':
@@ -1142,7 +1142,7 @@ export const en = {
   'news.create': 'New article',
   'news.createTitle': 'New article',
   'news.createDescription':
-    'Write the English copy first — it is what every other language falls back to until it is translated.',
+    'Write the English copy first: it is what every other language falls back to until it is translated.',
   'news.createDraftHint':
     'It is created as a draft. Nothing reaches suppliers until it is published.',
   'notifications.confirmSendBody': 'This message will be sent to {{count}} device(s) immediately.',
@@ -1170,7 +1170,7 @@ export const en = {
   'news.schedule.failed': 'Nothing was changed',
   'news.unpublish': 'Take it down',
   'news.archive': 'Archive',
-  'news.published': 'Published — it is in the app’s feed now',
+  'news.published': 'Published. It is in the app’s feed now',
   'news.unpublished': 'Taken down. It is no longer in the feed.',
   'news.archived': 'Archived',
   'news.publishFailed': 'The article was not published',
@@ -1178,12 +1178,12 @@ export const en = {
   'news.archiveFailed': 'The article was not archived',
   'news.publishNeedsAdmin': 'Publishing is the factory administrator’s decision.',
   'news.noDeleteHint':
-    'Articles are archived, never deleted — a supplier may have read one and may ask about it.',
+    'Articles are archived, never deleted: a supplier may have read one and may ask about it.',
   'news.confirm.publishTitle': 'Publish this article?',
   'news.confirm.publishBody': 'It appears in the app’s feed for every supplier immediately.',
   'news.confirm.publishAction': 'Publish it',
   'news.confirm.publishWithGaps':
-    'You can publish with languages missing — the app falls back to English — but those suppliers will read it in English until it is translated.',
+    'You can publish with languages missing (the app falls back to English), but those suppliers will read it in English until it is translated.',
   'news.confirm.unpublishTitle': 'Take this down?',
   'news.confirm.unpublishBody':
     'It leaves the feed. Suppliers who already read it keep what they read; the copy is not deleted.',
@@ -1215,17 +1215,17 @@ export const en = {
   'staticContent.contact.edit': 'Edit in Configuration',
   'staticContent.contact.notSet': 'Not set',
   'staticContent.publishHint':
-    'After this, saving an edit puts it in front of suppliers straight away — there is no second step.',
+    'After this, saving an edit puts it in front of suppliers straight away; there is no second step.',
   'staticContent.publishNeedsCopy': 'Write the {{language}} copy first.',
   'staticContent.publishNeedsAdmin': 'Publishing is the factory administrator’s decision.',
   'staticContent.published': '{{page}} is live',
   'staticContent.publishFailed': 'The page was not published',
   'staticContent.editsAreLive':
-    'This page is live. An edit reaches suppliers as soon as it is saved — every change is recorded in the audit log with the previous wording.',
+    'This page is live. An edit reaches suppliers as soon as it is saved. Every change is recorded in the audit log with the previous wording.',
   'staticContent.savedLive': 'Suppliers see this now.',
 
   /* ───────────────────────── M13 Notifications ───────────────────────── */
-  /* §21.24 is unanswered — whether the office composes every send or whether
+  /* §21.24 is unanswered: whether the office composes every send or whether
      bill-published fires off the publish step. The console does both and makes the
      choice a toggle, so the copy here has to explain a *mechanism* rather than assert
      a policy. */
@@ -1258,7 +1258,7 @@ export const en = {
   'notifications.triggersNeedAdmin':
     'Only the factory administrator can change what is sent automatically.',
   'notifications.openQuestion':
-    'Whether the office writes every message by hand or the system sends them automatically is still an open question with the factory (§21.24). Until it is answered, both work and these switches are the answer — no code change is needed to settle it.',
+    'Whether the office writes every message by hand or the system sends them automatically is still an open question with the factory (§21.24). Until it is answered, both work and these switches are the answer: no code change is needed to settle it.',
 
   'notifications.column.message': 'Message',
   'notifications.column.category': 'Kind',
@@ -1281,7 +1281,7 @@ export const en = {
   'notifications.emptyHint':
     'Automatic notifications appear here as they fire, and anything the office writes appears alongside them.',
   'notifications.noDeliveryReports':
-    'A phone never reports back, so these are the figures at the moment of sending — not proof anybody read it.',
+    'A phone never reports back, so these are the figures at the moment of sending, not proof anybody read it.',
   'notifications.useNewsHint':
     'A notification is a headline, not an article. Anything longer belongs in',
 
@@ -1300,7 +1300,7 @@ export const en = {
   'notifications.audienceKind.allSuppliers': 'Every supplier',
   'notifications.audienceKind.collectionPoint': 'One collection point',
   'notifications.field.title': 'Title',
-  'notifications.field.titleHint': 'At most {{max}} characters — a lock screen cuts the rest.',
+  'notifications.field.titleHint': 'At most {{max}} characters; a lock screen cuts the rest.',
   'notifications.field.body': 'Message',
   'notifications.field.bodyHint': 'At most {{max}} characters. Say the whole thing here.',
   'notifications.reachLoading': 'Working out who this reaches…',
@@ -1332,13 +1332,13 @@ export const en = {
      (`tenant-immutable`). Without this the popover that exists to say so rendered
      its own key. */
   'config.tenantIdHint':
-    'This comes from the factory’s web address and cannot be changed here — every record is filed under it.',
+    'This comes from the factory’s web address and cannot be changed here: every record is filed under it.',
   'config.readOnlyBadge': 'Read only',
   'config.readOnly': 'Only the factory administrator can change the configuration.',
   'config.sections': 'Settings',
   'config.save': 'Save this section',
   'config.saved': 'Configuration saved',
-  'config.savedHint': 'The change is live everywhere in the console — no reload needed.',
+  'config.savedHint': 'The change is live everywhere in the console. No reload needed.',
   'config.saveFailed': 'Nothing was saved',
   'config.revert': 'Undo changes',
   'config.unsavedHint': 'Unsaved changes in this section.',
@@ -1348,7 +1348,7 @@ export const en = {
   'config.inUse': 'used by {{count}}',
   'config.listEmpty': 'Nothing here yet.',
   'config.ac12Note':
-    'This screen is the whole of setting a factory up. A new factory needs a web address and the settings on this page — no new version of the console, and nothing for a developer to do.',
+    'This screen is the whole of setting a factory up. A new factory needs a web address and the settings on this page: no new version of the console, and nothing for a developer to do.',
 
   'config.section.notes': 'Common notes',
   'config.sectionHint.notes': 'Chips under the note boxes',
@@ -1374,12 +1374,12 @@ export const en = {
   'config.section.features': 'Features',
   'config.sectionHint.features': 'What this factory offers',
   'config.sectionDescription.features':
-    'Turning a feature off removes it completely — the menu row, the screens, and the app.',
+    'Turning a feature off removes it completely: the menu row, the screens, and the app.',
   'config.section.operations': 'Collection & savings',
   'config.sectionHint.operations': 'Points, savings, fertilizer',
   'config.sectionDescription.operations':
     'The lists the weighing points, the fertilizer requests and the savings scheme choose from.',
-  /* Split out of Operations once the catalogue became the national list — see
+  /* Split out of Operations once the catalogue became the national list; see
      `BanksSection`. */
   'config.section.banks': 'Banks & branches',
   'config.sectionHint.banks': 'What the app offers for payout details',
@@ -1447,7 +1447,7 @@ export const en = {
   'config.branchesOf': 'Branches of {{bank}}',
   'config.addBranch': 'Add a branch',
   'config.branchesFor': 'Edit branches',
-  'config.branchesForHint': 'One bank at a time — the full list runs to a few thousand branches.',
+  'config.branchesForHint': 'One bank at a time; the full list runs to a few thousand branches.',
   'config.branchesPickBank': 'Choose a bank…',
   'config.withdrawalMonth': 'Savings can be taken out in',
   'config.withdrawalMonthHint':
@@ -1456,17 +1456,17 @@ export const en = {
   'config.interestRateHint':
     'Recorded so the office can quote it. Leave at 0 if the factory pays none.',
   'config.interestNotApplied':
-    'The console does not work interest out by itself. Nobody has said whether it is paid on the closing balance or on the lowest balance of the year, and those pay different amounts — so when the factory decides, the accountant records the figure as an entry in the passbook (§21.9).',
+    'The console does not work interest out by itself. Nobody has said whether it is paid on the closing balance or on the lowest balance of the year, and those pay different amounts, so when the factory decides, the accountant records the figure as an entry in the passbook (§21.9).',
   'config.manureProducts': 'Fertilizer a supplier may ask for',
   'config.manureProductsHint':
-    'Name, kilos in a bag, and what one bag costs. A request is priced from this list — the office never types an amount, so a supplier can check what they were charged against it.',
+    'Name, kilos in a bag, and what one bag costs. A request is priced from this list. The office never types an amount, so a supplier can check what they were charged against it.',
   'config.manure.name': 'Fertilizer name',
   'config.manure.packKg': 'Kg in a bag',
   'config.manure.pricePerPack': 'Price a bag (LKR)',
   'config.manure.remove': 'Remove {{name}}',
   'config.manure.example':
     'One bag is {{pack}} at {{price}}. A supplier asking for {{quantity}} is issued 2 bags and owes {{amount}}.',
-  'config.manure.problem.no-name': 'A fertilizer needs a name — the app shows it in the list.',
+  'config.manure.problem.no-name': 'A fertilizer needs a name: the app shows it in the list.',
   'config.manure.problem.bad-pack': 'A bag has to hold something. Zero kilos cannot be priced.',
   'config.manure.problem.negative-price': 'A price cannot be below zero.',
   'config.manure.problem.duplicate-name':
@@ -1476,11 +1476,11 @@ export const en = {
   'config.addRate': 'Add a rate',
 
   /* §21.10's standing rates. On M4 rather than M14 because they are approved by a second
-     person, not saved — a transport charge re-prices every account in the factory. */
+     person, not saved: a transport charge re-prices every account in the factory. */
   'config.contentLanguages': 'Languages content is written in',
   'config.contentLanguagesHint':
     'News articles and the app’s fixed pages are written in each of these. A language that is not ticked stops being counted as missing.',
-  'config.fallbackRequired': '— required',
+  'config.fallbackRequired': '(required)',
   'config.recordsWritten': '{{count}} records written',
   'config.defaultLanguage': 'Default language in the app',
   'config.defaultLanguageHint': 'What a supplier sees before they choose one.',
@@ -1499,7 +1499,7 @@ export const en = {
   'config.pushFlagOff':
     'Notifications are switched off for this factory, so nothing here has any effect yet. Turn them on under Features first.',
 
-  /* The impact list. Each of these is why a change is refused or worth thinking about —
+  /* The impact list. Each of these is why a change is refused or worth thinking about,
      rendered from the same `configImpact` the API refuses with, so the two can never
      name different things. */
   'config.impact.savingsHeld':
@@ -1523,7 +1523,7 @@ export const en = {
     '{{count}} suppliers are paid through {{bank}}. Their details keep the name; it just stops being offered for new ones.',
   'config.impact.languageDropped': 'No content is written in {{lang}}, so nothing is lost.',
   'config.impact.languageDroppedWithCopy':
-    '{{count}} records are written in {{lang}}. The copy stays, but it stops being counted as missing — so nothing will tell you it is out of date.',
+    '{{count}} records are written in {{lang}}. The copy stays, but it stops being counted as missing, so nothing will tell you it is out of date.',
   'config.section.teaPackets': 'Tea packets',
   'config.sectionHint.teaPackets': 'What a packet is and what it costs',
   'config.sectionDescription.teaPackets':
@@ -1570,7 +1570,7 @@ export const en = {
   'config.section.payoutFile': 'Payout file',
   'config.sectionHint.payoutFile': 'How a payout run is written out',
   'config.sectionDescription.payoutFile':
-    'The layout of the file you upload to the bank — which columns, in what order, with what headings.',
+    'The layout of the file you upload to the bank: which columns, in what order, with what headings.',
 
   /* §21.17 as configuration. The copy has to do one thing above all: stop somebody
      configuring a column template and believing they have produced a SLIPS file. */
@@ -1588,7 +1588,7 @@ export const en = {
   'config.impact.payoutTemplate.missing-label':
     'A column has no heading, and headings are switched on. Either fill it in or turn the heading row off.',
   'config.impact.payoutTemplateBankColumns':
-    '{{count}} columns hold bank details, so they come out empty on cheque and cash runs. That is usually fine — just do not expect them filled on those.',
+    '{{count}} columns hold bank details, so they come out empty on cheque and cash runs. That is usually fine; just do not expect them filled on those.',
 
   'config.impact.fallbackLanguageRequired':
     'English cannot be removed. Every article and page falls back to it when a translation is missing.',
@@ -1642,24 +1642,24 @@ export const en = {
   'users.invite': 'Add a user',
   'users.inviteTitle': 'Add a user',
   'users.inviteBody':
-    'They sign in with this email address. Nothing is sent automatically — tell them their password yourself.',
+    'They sign in with this email address. Nothing is sent automatically; tell them their password yourself.',
   'users.editTitle': 'Edit {{name}}',
   'users.editBody': 'Changing roles changes what they can do the next time they load a screen.',
   'users.field.name': 'Full name',
   'users.field.email': 'Email',
   'users.field.emailHint': 'This is how they sign in, and it cannot be changed afterwards.',
   'users.field.emailLocked':
-    'An email address cannot be changed — it is the name on everything this person has already approved.',
+    'An email address cannot be changed: it is the name on everything this person has already approved.',
   'users.field.roles': 'Roles',
   'users.field.rolesHint':
     'More than one is fine. Where roles disagree, the most permissive one applies.',
   'users.cannotEditOwnRoles':
-    'You cannot change your own roles. Ask another administrator — this is what stops somebody locking themselves out halfway through a job.',
+    'You cannot change your own roles. Ask another administrator. This is what stops somebody locking themselves out halfway through a job.',
   'users.created': '{{name}} can now sign in',
   'users.createdHint': 'Tell them their password. It is all they need to sign in.',
   'users.passwordLabel': 'First password',
   'users.passwordOnce':
-    'This password is shown once. Write it down before closing — it cannot be read again.',
+    'This password is shown once. Write it down before closing; it cannot be read again.',
   'users.passwordHandover':
     'Give it to {{name}}. They sign in with {{email}} and this password, and should change it.',
   'users.passwordDone': 'I have written it down',
@@ -1708,7 +1708,7 @@ export const en = {
   'users.roleSaved': '{{role}} updated',
   'users.roleSaveFailed': 'Nothing was changed',
 
-  'users.level.none': '—',
+  'users.level.none': '-',
   'users.level.read': 'See',
   'users.level.write': 'Change',
   'users.level.approve': 'Approve',
@@ -1797,7 +1797,7 @@ export const en = {
   'reports.empty': 'No rows',
   'reports.emptyHint': 'Nothing in the records matches what you asked for.',
   'reports.shortListNote':
-    'Only these four for now. Each one is built from records the console already keeps — the rest of the reports the factory asked for need a separate reporting database, which does not exist yet.',
+    'Only these four for now. Each one is built from records the console already keeps. The rest of the reports the factory asked for need a separate reporting database, which does not exist yet.',
   'reports.noExportNote':
     'No download yet. You can select the table and paste it into a spreadsheet in the meantime.',
 
@@ -1809,7 +1809,7 @@ export const en = {
     'Where the month’s leaf came from, and how one point compares with another.',
   'reports.name.dormantSuppliers': 'Suppliers who have stopped',
   'reports.description.dormantSuppliers':
-    'Registered suppliers with no leaf for a while — and what the factory still holds for them.',
+    'Registered suppliers with no leaf for a while, and what the factory still holds for them.',
   'reports.name.channelShift': 'App use over time',
   'reports.description.channelShift':
     'How many requests suppliers make themselves in the app, against how many the office keys in for them.',
@@ -1867,21 +1867,21 @@ export const en = {
   'error.billsStale':
     'The leaf has changed since the bills were generated. Re-generate them before publishing.',
   'error.billsUnbalanced':
-    'Some bills have deduction lines that do not add up to their total. Tell the factory administrator — nothing has been generated.',
+    'Some bills have deduction lines that do not add up to their total. Tell the factory administrator. Nothing has been generated.',
   'error.monthNotPublished':
     'That month is not published yet, so its figures can still change. Close it before paying against it.',
   'error.runExists': 'A payout run for that month and payment method already exists.',
   'error.alreadyApproved': 'That run has already been released.',
   'error.runNotApproved': 'That run has not been released yet, so nothing in it has been paid.',
   'error.noPayableLines': 'There is nothing payable in that run.',
-  'error.lineNotPayable': 'That line cannot be paid — it is held, or it has already been paid.',
+  'error.lineNotPayable': 'That line cannot be paid: it is held, or it has already been paid.',
   'error.overCeiling': 'That is more than this supplier may draw on that facility.',
   'error.fallbackTranslationMissing':
     'There is no English copy, so there would be nothing to show a supplier. Write it first.',
   'error.slugTaken': 'An article with that title already exists.',
   'error.contentNotPublished': 'That is not live, so there is nothing to take down.',
   'error.unknownCategory':
-    'The app would throw that away — it only opens notifications of a kind it recognises.',
+    'The app would throw that away: it only opens notifications of a kind it recognises.',
   'error.categoryDisabled': 'This factory does not send that kind of notification.',
   'error.noRecipients':
     'No phone in that audience accepts this kind of notification, so nothing would arrive.',
@@ -1892,7 +1892,7 @@ export const en = {
     'That feature is holding records the factory still has to account for, so it cannot be turned off yet.',
   'error.pointInUse': 'That collection point has weighings filed against it and cannot be removed.',
   'error.fallbackLanguageRequired':
-    'English cannot be removed — every article and page falls back to it.',
+    'English cannot be removed: every article and page falls back to it.',
   'error.lastAdmin':
     'That would leave nobody able to manage users, so nobody could undo it. Give somebody else the role first.',
   'error.selfModification': 'You cannot do that to your own account. Ask another administrator.',
@@ -1909,9 +1909,9 @@ export const en = {
   'config.sectionDescription.creditRules':
     'How each credit ceiling is worked out. The same rule produces the limit the supplier sees in the app and the limit the credit queue checks against.',
   'config.creditRules.scope':
-    'These rules decide the figure a supplier is shown before they ask for anything. One rule, two readers — the app and the office can never disagree about a limit.',
+    'These rules decide the figure a supplier is shown before they ask for anything. One rule, two readers: the app and the office can never disagree about a limit.',
   'config.creditRules.usingDefaults':
-    'This factory has not set its own rules yet, so the bundled defaults are in use. They are shown below — save to make them the factory’s own.',
+    'This factory has not set its own rules yet, so the bundled defaults are in use. They are shown below; save to make them the factory’s own.',
   'config.creditRules.facilityOff':
     'This facility is switched off under Features, so nothing here reaches a supplier yet.',
   'config.creditRules.basis': 'Worked out from',
@@ -1931,7 +1931,7 @@ export const en = {
     'Settled months only. The month in progress is never counted.',
   'config.creditRules.requiredMonths': 'Settled months required',
   'config.creditRules.requiredMonthsHint':
-    '0 offers it to a supplier in their first month — which is right for an advance, and rarely right for a loan.',
+    '0 offers it to a supplier in their first month, which is right for an advance, and rarely right for a loan.',
   'config.creditRules.maxAmount': 'Never more than (LKR)',
   'config.creditRules.maxAmountHint': 'Leave empty for no cap. Applied after the multiplier.',
   'config.creditRules.noCap': 'No cap',
@@ -2020,8 +2020,8 @@ export const en = {
   'teaPackets.noteHelp': 'At least 10 characters. The supplier reads this in the app.',
   'teaPackets.notePlaceholder': 'Ready for collection from the store from Monday.',
   /**
-   * One list, not two. This dialog carries both buttons — the clerk decides the
-   * verb *inside* it — so splitting the sentences by verb would hide half of them
+   * One list, not two. This dialog carries both buttons (the clerk decides the
+   * verb *inside* it), so splitting the sentences by verb would hide half of them
    * behind a choice that has not been made yet.
    */
   'teaPackets.noteSuggest.ready': 'Ready Monday',
@@ -2072,7 +2072,7 @@ export const en = {
   'banners.searchPlaceholder': 'Search headlines',
   'banners.complete': 'All written',
   'banners.missingCount': '{{count}} language missing',
-  'banners.noArtwork': 'No artwork — the app draws a branded panel',
+  'banners.noArtwork': 'No artwork; the app draws a branded panel',
   'banners.noEnd': 'until taken down',
   'banners.lens.all': 'All banners',
   'banners.window.scheduled': 'Scheduled',
@@ -2093,7 +2093,7 @@ export const en = {
   'banners.field.buttonLabel': 'Button label',
   'banners.field.buttonHint': 'What the button says. Where it goes is set below.',
   'banners.field.buttonHintLong':
-    'Up to {{max}} characters — a longer label wraps off a small phone.',
+    'Up to {{max}} characters; a longer label wraps off a small phone.',
   'banners.field.startsAt': 'Starts',
   'banners.field.endsAt': 'Ends',
   'banners.field.endsAtHint': 'Leave empty to run until it is taken down.',
@@ -2126,7 +2126,7 @@ export const en = {
   'banners.screen.terms': 'Terms & Conditions',
   'banners.screen.privacy': 'Privacy policy',
   'banners.screen.support': 'Support',
-  'banners.action.pathHint': 'Lowercase, no scheme and no query string — for example news/news-1.',
+  'banners.action.pathHint': 'Lowercase, no scheme and no query string, for example news/news-1.',
   'banners.action.urlLabel': 'Link',
   'banners.action.urlHint': 'https, tel or mailto only.',
   'banners.action.missing': 'The button needs somewhere to go.',
@@ -2134,7 +2134,7 @@ export const en = {
     'The app cannot open that path. Lowercase letters, digits and hyphens, separated by slashes.',
   'banners.action.badUrl': 'The app opens https, tel and mailto links only.',
   'banners.action.appSchemeRefused':
-    'Use “A screen in the app” for an in-app destination — the app refuses teafactory:// links.',
+    'Use “A screen in the app” for an in-app destination; the app refuses teafactory:// links.',
   'banners.action.resolvedScreen': 'The button opens the {{path}} screen in the app.',
   'banners.action.resolvedUrl': 'The button opens {{url}}.',
   'banners.copyTitle': 'Copy',
@@ -2143,7 +2143,7 @@ export const en = {
   'banners.saveNeedsCopy': 'A headline and a button label are needed before this can be saved.',
   'banners.settingsTitle': 'Button and window',
   'banners.settingsDescription':
-    'Where the button goes, and when the banner is in front of suppliers. Not translated — one destination in every language.',
+    'Where the button goes, and when the banner is in front of suppliers. Not translated: one destination in every language.',
   'banners.saveSettings': 'Save button and window',
   'banners.settingsSaved': 'Button and window saved',
   'banners.settingsSaveFailed': 'Could not save',
@@ -2156,7 +2156,7 @@ export const en = {
   'banners.notLive.expiredBody': 'The live window has closed, so no supplier is seeing it.',
   'banners.lifecycleTitle': 'Publishing',
   'banners.lifecycleDraft': 'A draft is not in front of anybody.',
-  'banners.lifecyclePublished': 'Published — it shows inside its live window.',
+  'banners.lifecyclePublished': 'Published. It shows inside its live window.',
   'banners.publish': 'Publish',
   'banners.unpublish': 'Take down',
   'banners.archive': 'Archive',
@@ -2169,7 +2169,7 @@ export const en = {
   'banners.publishedBy': 'Published by {{name}} on {{when}}',
   'banners.publishNeedsAdmin': 'A factory administrator publishes banners.',
   'banners.publishNeedsAction':
-    'Fix the button before publishing — the app would draw no button at all.',
+    'Fix the button before publishing; the app would draw no button at all.',
   'banners.noDeleteHint': 'Banners are archived, never deleted.',
   'banners.auditTitle': 'Banner history',
   'banners.confirm.publishTitle': 'Publish this banner?',
@@ -2220,15 +2220,15 @@ export const en = {
   'suppliers.push.noApp':
     'This supplier has never signed in on a phone, so no notification can reach them. Nothing else on this panel applies until they install the app.',
   'suppliers.push.reason.noDevice': 'No device registered',
-  'suppliers.push.reason.notOffered': 'This factory does not send this kind — see Configuration',
+  'suppliers.push.reason.notOffered': 'This factory does not send this kind; see Configuration',
   'suppliers.push.reason.optedOut': 'Turned off on every one of their devices',
   'suppliers.push.recent': 'Recently sent to them',
   'suppliers.push.noSends': 'Nothing has been sent to them',
   'suppliers.push.noSendsHint':
     'Their phone can receive notifications; none has gone out to them yet. That is a complete answer to “I was never told”.',
   'suppliers.push.delivered': 'sent to {{count}}',
-  'suppliers.push.notDeliveredNoDevice': 'not received — no device',
-  'suppliers.push.notDeliveredOptedOut': 'not received — turned off',
+  'suppliers.push.notDeliveredNoDevice': 'not received (no device)',
+  'suppliers.push.notDeliveredOptedOut': 'not received (turned off)',
   'suppliers.push.openModule': 'Open Notifications',
 
   /* ──────────── M2 · Every queue this supplier can be in (v2) ──────────── */

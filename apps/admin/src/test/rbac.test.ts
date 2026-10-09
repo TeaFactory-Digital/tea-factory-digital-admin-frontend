@@ -89,7 +89,7 @@ describe('resolveGrants', () => {
   it('honours a role this build has never heard of', () => {
     // v2 dropped `weigher` and `accountant`, but a factory's server may still send
     // grants for roles this console does not ship a matrix row for. Those must be
-    // honoured — otherwise a role change is a console release.
+    // honoured; otherwise a role change is a console release.
     const grants = resolveGrants(['weigher' as never], { deliveries: 'write' });
     expect(can(grants, 'deliveries', 'write')).toBe(true);
   });
@@ -107,7 +107,7 @@ describe('isSelfApproval (BR-501)', () => {
   });
 
   it('is never a violation for a supplier-raised request', () => {
-    // `createdById: null` means the app raised it — the common case, and it must
+    // `createdById: null` means the app raised it: the common case, and it must
     // not lock the whole queue.
     expect(isSelfApproval(user, null)).toBe(false);
   });
@@ -128,7 +128,7 @@ describe('canApproveAmount (§21.6)', () => {
 
   it('requires only the base capability while the factory has set no threshold', () => {
     // The threshold is still an open question, so `null` must not block every
-    // approval — it means "not configured", not "nothing is allowed".
+    // approval: it means "not configured", not "nothing is allowed".
     expect(canApproveAmount(manager, 1_000_000, null)).toBe(true);
   });
 });

@@ -1,7 +1,7 @@
 /**
  * The month control M5 and M6 share.
  *
- * Shared rather than written twice because the interesting part is not the select — it
+ * Shared rather than written twice because the interesting part is not the select; it
  * is `resolveMonthKey` next door, which validates the key in the URL against the
  * months the API actually returned instead of trusting it.
  */
@@ -20,7 +20,7 @@ export function MonthSelect({
   months: BillMonth[] | undefined;
   value: string;
   onChange: (monthKey: string) => void;
-  /** Narrow the options — M6 offers only published months, because only those pay. */
+  /** Narrow the options: M6 offers only published months, because only those pay. */
   filter?: (month: BillMonth) => boolean;
 }) {
   const { t } = useTranslation();

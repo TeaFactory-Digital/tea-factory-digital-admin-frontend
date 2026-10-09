@@ -4,15 +4,15 @@ import { expect, test, type Page } from '@playwright/test';
  * Every grid screen, on a 13-inch laptop.
  *
  * This exists because a bug got past the rest of the suite. The notifications list
- * collapsed to **zero pixels** at 1440×700 — the rows were still in the DOM at their
- * normal size, clipped by a zero-height scroll container — and the browser test asserting
+ * collapsed to **zero pixels** at 1440×700 (the rows were still in the DOM at their
+ * normal size, clipped by a zero-height scroll container) and the browser test asserting
  * `toBeVisible()` on the first row **passed the whole time**. Playwright's visibility
  * check asks whether an element has a box and is not `visibility: hidden`; it does not ask
  * whether the box is anywhere a person could see it.
  *
  * So the assertion here is the stronger one: the first row must be **inside the viewport**,
- * scrolling the page first if it sits below the fold. Both outcomes are acceptable — a
- * grid that fits, or a page that scrolls to reach it — and the one that is not is a list
+ * scrolling the page first if it sits below the fold. Both outcomes are acceptable (a
+ * grid that fits, or a page that scrolls to reach it) and the one that is not is a list
  * that exists only in the DOM.
  *
  * 785 is a MacBook Air 13" with browser chrome; 700 and 640 are the same machine scaled up
@@ -26,7 +26,7 @@ import { expect, test, type Page } from '@playwright/test';
  * which is the check that this suite is worth having.
  *
  * **One sign-in, as the manager.** §12.1 gives them read on all six of these screens, and
- * an earlier version that signed in per screen — six full bootstraps per viewport — was
+ * an earlier version that signed in per screen (six full bootstraps per viewport) was
  * flaky for reasons that had nothing to do with layout.
  */
 
@@ -79,7 +79,7 @@ for (const { width, height } of VIEWPORTS) {
        *
        * The timeout is deliberately long, and it is a **cold-start** budget rather than a
        * correctness one. This suite walks six lazy routes at five viewports, so the run
-       * straight after any edit pays for Vite re-transforming thirty route loads at once —
+       * straight after any edit pays for Vite re-transforming thirty route loads at once,
        * which failed reproducibly at 20 s and passed on every warm run after it. Sizing
        * for the cold case is honest; retrying until it passes would not be.
        */
@@ -96,7 +96,7 @@ for (const { width, height } of VIEWPORTS) {
        * Waiting on the table alone made this flaky: a screen that legitimately has nothing
        * to list renders an `EmptyState` instead, and a 20-second wait for a table that is
        * never coming reads as a layout failure. The distinction matters in the other
-       * direction too — a *collapsed* grid still renders its table, which is the bug this
+       * direction too: a *collapsed* grid still renders its table, which is the bug this
        * suite exists for, so "no table" can only mean empty and never means broken.
        */
       await expect(table.or(emptyState).first()).toBeVisible({ timeout: 20_000 });
@@ -111,7 +111,7 @@ for (const { width, height } of VIEWPORTS) {
       };
 
       if (!(await inView())) {
-        // Below the fold is fine — unreachable is not. Scroll the way a reader would.
+        // Below the fold is fine: unreachable is not. Scroll the way a reader would.
         await page.locator('main#main').evaluate((el) => el.scrollTo(0, el.scrollHeight));
         await page.waitForTimeout(200);
       }

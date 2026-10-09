@@ -4,7 +4,7 @@
  * **A preference, not configuration.** It sits beside the language choice in
  * `localStorage` for the same reasons, and against the same alternative: M14 would have
  * been the obvious home, but §12.1 makes `flagsAndBranding` writable by the factory admin
- * alone — so a clerk on a bright counter, or a weigher who needs larger type, could not
+ * alone, so a clerk on a bright counter, or a weigher who needs larger type, could not
  * change their own screen. Two people sharing one machine at different hours want
  * different answers, and text size is an accessibility need belonging to the reader.
  *
@@ -21,7 +21,7 @@ export type ConsoleScheme = 'light' | 'dark';
  * Three steps, not a slider.
  *
  * A slider offers a hundred answers to a question with three useful ones, and every one of
- * them is a layout nobody has looked at. The steps are small on purpose — 1.25 already
+ * them is a layout nobody has looked at. The steps are small on purpose: 1.25 already
  * pushes the widest table header onto two lines, and anything past it is browser zoom's
  * job rather than a type scale's.
  */
@@ -63,7 +63,7 @@ const isTextSize = (value: unknown): value is TextSize =>
  *
  * Guarded and per-field, because Safari in private mode throws on `localStorage` rather
  * than returning null, and because a payload written by an older or newer build must not
- * cost the reader both settings — an unrecognised `textSize` falls back on its own without
+ * cost the reader both settings: an unrecognised `textSize` falls back on its own without
  * taking a perfectly good `scheme` with it.
  */
 export function readAppearance(): Appearance {
@@ -96,7 +96,7 @@ export function persistAppearance(appearance: Appearance): void {
  * Scales the **type scale** and nothing else.
  *
  * Spacing, radii and icons are left alone deliberately. They are `px` in this theme just
- * as the font sizes are, so scaling them together would be no harder — but it would change
+ * as the font sizes are, so scaling them together would be no harder, but it would change
  * the console's *density* rather than its legibility, and every grid, sticky table header
  * and fixed-width filter on fourteen screens would need looking at again. Larger text in
  * the same frame is what somebody asking for this actually wants, and it is the thing

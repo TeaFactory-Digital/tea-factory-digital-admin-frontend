@@ -1,5 +1,5 @@
 /**
- * The supplier-facing domain model — a verbatim port of the mobile app's
+ * The supplier-facing domain model: a verbatim port of the mobile app's
  * `src/types/index.ts`.
  *
  * **This file is the schema of record** (api.md §17.1). The console, the API and
@@ -11,7 +11,7 @@
  * swap (operations.md → Migrating from the mock layer):
  *
  *  - `null` on a rate-derived field means "the auction result is not in".
- *    Never coerce it to `0` (BR-102) — the console renders a different state.
+ *    Never coerce it to `0` (BR-102): the console renders a different state.
  *  - List ordering is part of the contract: newest-first for request lists,
  *    oldest-first for the savings ledger and income summaries.
  *
@@ -107,7 +107,7 @@ export interface BillSavingsSummary {
 }
 
 /**
- * The monthly "Green Leaf Account" — mirrors the factory's printed slip.
+ * The monthly "Green Leaf Account": mirrors the factory's printed slip.
  *
  * A **read model, not a table** (api.md §16): daily deliveries and a monthly
  * rate are the facts, and this is generated from them at month close.
@@ -146,7 +146,7 @@ export interface GreenLeafBill {
    * earned, and both are added after the nine lines have been taken off. Folding it into
    * `deductions` would break BR-107, which balances those nine against their own total.
    *
-   * `0` when nothing was asked for — a real zero, not a missing value: every account has a
+   * `0` when nothing was asked for, a real zero, not a missing value: every account has a
    * savings position, and most months it is untouched.
    */
   savingsWithdrawal: number;
@@ -221,7 +221,7 @@ export interface LoanRequest {
   /**
    * How many accounts the supplier chose to spread the repayment over (§21.10).
    *
-   * **The supplier's decision, not the office's** — which is most of what §21.10 turned out
+   * **The supplier's decision, not the office's**, which is most of what §21.10 turned out
    * to be about. Optional because it arrives from the app, and every credit approved before
    * the app could ask for it has none: those fall back to the factory's share-of-gross cap
    * alone, which is what the console did before.
@@ -247,7 +247,7 @@ export interface ManureRequest {
 export type CreditFacility = 'advance' | 'loan' | 'manure';
 
 /**
- * How the packets reach the supplier — `factoryCollection` means they call at the
+ * How the packets reach the supplier: `factoryCollection` means they call at the
  * store, `transportVehicle` means it travels back on the vehicle that collects
  * their leaf, which for an outlying division is the difference between a request
  * and a day's journey.
@@ -279,7 +279,7 @@ export interface TeaPacketRequest {
  * Where a supplier lives, and where the leaf comes from.
  *
  * Both fields in one request rather than two, because a supplier who moves house
- * changes both in one sitting — and two approvals for one move is a second decision
+ * changes both in one sitting, and two approvals for one move is a second decision
  * about a fact the office has already accepted. Either field may be absent: changing
  * only the estate is a normal thing to do.
  */
@@ -294,8 +294,8 @@ export interface RequestedAddress {
  * **`address` is the newest, and it corrects an asymmetry rather than adding a
  * feature.** Bank details and the savings rate have always gone through this queue
  * because they decide where money goes; an address decided nothing, so the app wrote
- * it straight to the record. But the estate address is *where the leaf comes from* —
- * it ties a supplier to a collection point and to land — and the home address is where
+ * it straight to the record. But the estate address is *where the leaf comes from*
+ * (it ties a supplier to a collection point and to land), and the home address is where
  * every printed account is sent. A wrong one is a slip delivered nowhere, and until
  * now nothing in the office knew it had changed.
  */

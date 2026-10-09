@@ -10,8 +10,8 @@
  * This does not weaken the white-label rule. It is a **default**, not a source of
  * truth: a factory that uploads its own artwork sets `branding.logoUrl` in M14,
  * `GET /config` serves it, and the served value wins everywhere (see `Logo`).
- * What the default buys is that a console with no artwork configured — every
- * console on its first day — draws a tea mark instead of two grey letters.
+ * What the default buys is that a console with no artwork configured (every
+ * console on its first day) draws a tea mark instead of two grey letters.
  */
 
 /** The mark: two tea leaves over a cup. Sharp from 16 px to a splash screen. */

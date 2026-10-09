@@ -45,7 +45,7 @@ interface DataTableProps<Row> {
   sorting?: SortingState;
   onSortingChange?: (sorting: SortingState) => void;
   emptyState: ReactNode;
-  /** Accessible name for the grid — required, and it is not the page title. */
+  /** Accessible name for the grid: required, and it is not the page title. */
   label: string;
 }
 
@@ -142,7 +142,7 @@ export function DataTable<Row>({
        * vertical because the header, the filters above it and the pagination
        * below it have to stay put: a clerk reading row sixty still needs to know
        * which column is which, and still needs "Next" without scrolling back.
-       * The page body itself never scrolls — see `AppShell`.
+       * The page body itself never scrolls: see `AppShell`.
        */}
       <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-full border-collapse text-data-cell" aria-label={label}>
@@ -150,7 +150,7 @@ export function DataTable<Row>({
            * Sticky against the scroll container above, not the page.
            *
            * The bottom rule is a `shadow` rather than a `border`, because
-           * `border-collapse: collapse` hands table borders to the table itself —
+           * `border-collapse: collapse` hands table borders to the table itself,
            * so a border on a sticky `th` is painted at the row's original
            * position and slides away under the header. A shadow is painted by the
            * cell, so it travels with it.

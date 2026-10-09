@@ -1,5 +1,5 @@
 /**
- * *"These figures are current as of …"* — on the screens a number is read aloud from.
+ * *"These figures are current as of …"*, on the screens a number is read aloud from.
  *
  * The shell already raises a notice when replication has fallen behind, and that is the
  * safety net. This is the everyday case: the sync is **healthy**, and the office still
@@ -7,7 +7,7 @@
  * factory's ledger.
  *
  * The distinction is the whole reason both exist. A banner that only appears when
- * something is wrong teaches the office that no banner means *live* — so on the day the
+ * something is wrong teaches the office that no banner means *live*, so on the day the
  * banner is a few minutes late, a figure gets quoted as though it were.
  *
  * Rendered as one quiet line rather than a badge or a tooltip: a clerk on the telephone

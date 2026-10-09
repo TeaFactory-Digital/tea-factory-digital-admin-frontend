@@ -1,6 +1,6 @@
 /**
  * ⚠ **None of this is implemented by the API** (gap **G-13**), and no v2 route reaches
- * it: the internal-process modules — deliveries, rates, month close, payouts — were cut
+ * it: the internal-process modules (deliveries, rates, month close, payouts) were cut
  * from this console because the factory's own system runs them.
  *
  * It is kept, deliberately, as the **executable statement of what those flows require**
@@ -10,7 +10,7 @@
  */
 
 /**
- * M4 Rates & month close — the irreversible module.
+ * M4 Rates & month close: the irreversible module.
  *
  * Everything here is shaped by one fact: **publishing a month cannot be undone.**
  * A published month is immutable (BR-108), so M3 stops accepting leaf into it, the
@@ -18,7 +18,7 @@
  * That is why the endpoints are split the way they are:
  *
  *  - The rate is a `PUT`, because entering it twice before publishing is a
- *    *correction* — the office does mistype a figure — and a second `POST` would
+ *    *correction* (the office does mistype a figure) and a second `POST` would
  *    read as a second rate.
  *  - Exceptions are **records with ids**, not a count (api-contract.md §10.4). AC-04
  *    requires each one resolved, and a number cannot be worked through.
@@ -58,7 +58,7 @@ export const monthEndpoints = {
       })
       .then((response) => response.data),
 
-  /** `422 note-required` — resolving without a reason is not resolving. */
+  /** `422 note-required`: resolving without a reason is not resolving. */
   resolveException: (monthKey: string, id: string, note: string) =>
     apiClient
       .post<MonthException>(`/admin/months/${monthKey}/exceptions/${id}/resolve`, { note })

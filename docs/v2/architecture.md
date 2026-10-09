@@ -11,9 +11,9 @@ What changed is what sits inside them:
 - **`modules/` lost four directories from the router and kept them on disk.**
   `deliveries/`, `months/`, `payouts/` and `savings/` still build, still typecheck and
   still have mock handlers behind them. Their routes and sidebar rows were removed from
-  `routes/router.tsx` and `layout/navigation.ts` — see git history for what they were.
+  `routes/router.tsx` and `layout/navigation.ts`; see git history for what they were.
 - **Two directories are new**: `modules/tea-packets/` and `modules/banners/`, each
-  following the same four-file shape every other module uses — screen, hooks,
+  following the same four-file shape every other module uses: screen, hooks,
   repository, endpoints.
 - **`packages/domain` gained two files**: `teaPackets.ts` and `banners.ts`. The second
   is a **verbatim port of the app's `src/services/banners`**, which is the same
@@ -36,15 +36,15 @@ the brand machinery is in [white-label.md](./white-label.md).
 ```
 TeaFactoryDigital-Admin/
 ├── packages/
-│   ├── domain/     @tfd/domain — types, constants, RBAC matrix, credit basis, Zod schemas
-│   └── brand/      @tfd/brand  — design tokens, createTheme, the CSS-variable bridge
+│   ├── domain/     @tfd/domain - types, constants, RBAC matrix, credit basis, Zod schemas
+│   └── brand/      @tfd/brand  - design tokens, createTheme, the CSS-variable bridge
 ├── apps/
-│   └── admin/      @tfd/admin  — React 19 + Vite + Tailwind v4 console
+│   └── admin/      @tfd/admin  - React 19 + Vite + Tailwind v4 console
 └── docs/
 ```
 
 npm workspaces. The packages are consumed as **TypeScript source**, aliased in
-`vite.config.ts` and `tsconfig.json` — no build step, and a change to
+`vite.config.ts` and `tsconfig.json`: no build step, and a change to
 `@tfd/domain` shows up in the dev server immediately. That is the point of
 sharing the model rather than publishing it.
 
@@ -60,7 +60,7 @@ argument is worth restating because it is the whole reason for the workspace:
 - **`@tfd/domain`** is a verbatim port of the mobile app's `src/types/index.ts`
   plus the console-only types the API also implements, the §12.1 permission
   matrix, the credit arithmetic, and the Zod schemas. **Framework-free by
-  contract** — no React, no React Native, no axios, enforced by lint. If
+  contract**: no React, no React Native, no axios, enforced by lint. If
   something here cannot be imported by a Node service, it is in the wrong place.
 - **`@tfd/brand`** is the mobile app's `src/theme` with a different sink. Same
   tokens, same `createTheme`, but the values are emitted as CSS custom properties
@@ -72,7 +72,7 @@ The mobile app still lives in its own repository. Two follow-ups, both
 deliberately deferred:
 
 1. **Merging the repos.** Relocating `src/` → `apps/mobile/src/` means editing the
-   Xcode project, Gradle paths, Metro config and every `@/` alias — a real chance
+   Xcode project, Gradle paths, Metro config and every `@/` alias, a real chance
    of breaking a working iOS/Android build for a console change. It belongs in its
    own PR, verified with clean native builds.
 2. **`apps/api`.** When the backend starts, it joins this workspace and imports
@@ -167,18 +167,18 @@ Auth is **not** in the stack, for the reason in the table above.
 
 `main.tsx`, in order, and each step depends on the one before:
 
-1. **`assertEnvUsable()`** — refuse to boot a production bundle wired to the
+1. **`assertEnvUsable()`**: refuse to boot a production bundle wired to the
    placeholder origin or with mocks on. A console that looks fine, serves
    fixtures, and reports every failure as a network problem is the worst
    available outcome.
 2. **Apply the bundled tenant theme, synchronously.** The stylesheet's tokens are
    `var(--brand-*)` with **no fallback values**, so a paint before this line would
    be unstyled. Doing it here rather than in an effect is what makes the first
-   frame branded — and it is why the palette is not duplicated in CSS.
-3. **`connectAuthToTransport()`** — registers the store with the axios
+   frame branded, and it is why the palette is not duplicated in CSS.
+3. **`connectAuthToTransport()`**: registers the store with the axios
    interceptors.
 4. **Start MSW and await it** (dev only). Without the await, the first requests
-   race the worker's registration and fall through to a domain nobody owns —
+   race the worker's registration and fall through to a domain nobody owns,
    which looks exactly like the backend being down.
 5. **Render.** `App` then calls `bootstrap()`: there is no access token on a fresh
    document, so the session is recovered from the refresh cookie before anything
@@ -193,7 +193,7 @@ anyone loads is a sign-in form; without lazy routes it arrives with a charting
 library, a table engine and every screen attached.
 
 **Only built modules have routes.** A route rendering "coming soon" is worse than
-no route — it is a URL a clerk can bookmark, share, and then report as broken. There used
+no route; it is a URL a clerk can bookmark, share, and then report as broken. There used
 to be a *Planned* chip on a disabled sidebar row for the modules that had none; all
 seventeen of §18.1's modules now have routes, so both the chip and the branch that rendered
 it are gone rather than kept warm for a case no row can reach.
@@ -217,13 +217,13 @@ accident:
 | **Inline / dialog** | A refusal the clerk must read and act on | `Notice`, or the dialog stays open |
 | **Boundary** | A render error | `RouteErrorBoundary` |
 
-**A toast may confirm, never inform.** "Approved — the app will show the new value
+**A toast may confirm, never inform.** "Approved: the app will show the new value
 on next refresh" is a toast. A four-eyes refusal is not: a message that disappears
 after five seconds is a message the clerk can miss and then wonder why the queue
 did not change. `isBlockingError()` encodes which is which.
 
 The boundary logs the error rather than displaying it. A stack trace tells an
-office clerk nothing and may carry a supplier's name from a props dump — which
+office clerk nothing and may carry a supplier's name from a props dump, which
 would be a PDPA problem in a screenshot pasted into an email (§20.4).
 
 ---
@@ -239,10 +239,10 @@ Summarised here; the endpoint-level requirements are in
 - **Refresh token in an httpOnly cookie** the JS cannot read. This is what makes
   surviving a reload possible without storing anything readable.
 - **Bank account numbers arrive masked.** The full number is one audited
-  endpoint, and its result is never cached — the dialog holds it and drops it.
+  endpoint, and its result is never cached; the dialog holds it and drops it.
 - **Permissions are enforced server-side.** Everything in
   `auth/guards.tsx` and every hidden button is a courtesy.
-- **Served theme values are validated** before reaching a style declaration —
+- **Served theme values are validated** before reaching a style declaration;
   they are factory-authored content, so they get the same treatment the app gives
   a promo banner's action URL.
 - **`console.error` for diagnostics, never a rendered stack.**

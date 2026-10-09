@@ -1,5 +1,5 @@
 /**
- * The bundled `RuntimeConfig` — what the console renders with before `/config`
+ * The bundled `RuntimeConfig`: what the console renders with before `/config`
  * resolves, and what it falls back to if the call fails.
  *
  * The mobile app's equivalent is `src/config/clients/<id>/index.ts` compiled
@@ -35,7 +35,7 @@ export const bundledConfig: RuntimeConfig = {
   /**
    * Everything on by default.
    *
-   * The alternative — default off — hides queues from a clerk whenever `/config`
+   * The alternative (default off) hides queues from a clerk whenever `/config`
    * is slow, which reads as "the manure requests have disappeared". Defaulting on
    * risks briefly showing a queue the factory does not use, which reads as an
    * empty inbox. The second failure is the cheaper one.

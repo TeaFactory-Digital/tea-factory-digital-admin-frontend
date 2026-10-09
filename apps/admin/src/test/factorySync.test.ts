@@ -3,7 +3,7 @@
  *
  * **The failure this guards against is a sentence, not a crash.** Every money figure in
  * this console is a copy pulled from the factory's system, and the screens say
- * "read-only" — which a clerk reads as "read-only *and current*". On the day the
+ * "read-only", which a clerk reads as "read-only *and current*". On the day the
  * replication job stops, nothing looks wrong: the bills grid renders, the balances add
  * up, and somebody quotes last Tuesday's figure down the telephone.
  *
@@ -23,7 +23,7 @@ import { server } from '@/services/mocks/server';
 import { factorySyncRepository } from '@/services/repositories/factorySyncRepository';
 import { signInAs, signOut } from './render';
 
-const NOW = '2026-08-08T12:00:00.000Z'; // 17:30 Colombo — inside the polling window
+const NOW = '2026-08-08T12:00:00.000Z'; // 17:30 Colombo: inside the polling window
 const hoursBefore = (h: number) => new Date(Date.parse(NOW) - h * 3_600_000).toISOString();
 
 /** Colombo local wall time as an instant. Colombo is UTC+05:30 all year. */
@@ -43,7 +43,7 @@ describe('factorySyncState', () => {
 
   it('separates "never" from "stale", because they need different people', () => {
     /**
-     * A console that has never synced is showing nothing but its own fixtures — a
+     * A console that has never synced is showing nothing but its own fixtures: a
      * deployment that was not finished. Telling the office it is "a bit behind" would be
      * false, and would send them to look at a job that has never run.
      */
@@ -69,7 +69,7 @@ describe('factorySyncState', () => {
   it('does not call the overnight gap a fault, because nobody was going to poll', () => {
     /**
      * **The reason this file grew a polling window.** Pulling around the clock buys
-     * nothing — the factory's data only moves while the factory is open — so the
+     * nothing (the factory's data only moves while the factory is open) so the
      * schedule stops at eight in the evening and resumes at half past five.
      *
      * Measured in wall-clock hours, the first clerk in at six every morning would find a
@@ -90,7 +90,7 @@ describe('factorySyncState', () => {
   it('still reports a genuinely skipped day', () => {
     /**
      * The other half of the bargain. Discounting the night must not discount a failure
-     * that happened *during* the day, or the banner never fires at all — which is a
+     * that happened *during* the day, or the banner never fires at all, which is a
      * worse outcome than firing every morning.
      */
     const twoNightsAgo = colombo('2026-08-06', 20, 0);
@@ -110,7 +110,7 @@ describe('factorySyncState', () => {
   it('keeps the numeric third argument working', () => {
     // `factorySyncState(status, now, 6)` predates the options object and still reads
     // clearly at the call site. Silently ignoring it would loosen the banner, not tighten
-    // it — the failure would be a banner that never appears.
+    // it: the failure would be a banner that never appears.
     expect(factorySyncState({ lastSucceededAt: hoursBefore(4) }, NOW, 6)).toBe('fresh');
     expect(factorySyncState({ lastSucceededAt: hoursBefore(4) }, NOW, 2)).toBe('stale');
   });
@@ -127,14 +127,14 @@ describe('the sync status endpoint', () => {
     if (!status || status === 'unavailable') throw new Error('expected a sync status');
 
     /**
-     * The mock reports healthy because the fixture *is* the data — there is no factory
+     * The mock reports healthy because the fixture *is* the data: there is no factory
      * system to be behind. What it must not do is omit the endpoint: a 404 would render
      * the "never synced" banner over every screen in development, and a permanent banner
      * is one nobody reads by the second morning.
      */
     expect(status.lastSucceededAt).toBeTruthy();
     expect(factorySyncState(status, new Date().toISOString())).toBe('fresh');
-    // The sentence the office can say to a supplier — "we have everything up to the 7th".
+    // The sentence the office can say to a supplier: "we have everything up to the 7th".
     expect(status.coversUpTo).toBeTruthy();
   });
 

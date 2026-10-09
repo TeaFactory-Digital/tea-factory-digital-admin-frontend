@@ -1,10 +1,10 @@
 /**
  * ⚠ **None of this is implemented by the API** (gap **G-13**), and no v2 route reaches
- * it — see `endpoints/months.ts` for why it is kept rather than deleted.
+ * it: see `endpoints/months.ts` for why it is kept rather than deleted.
  */
 
 /**
- * M3 Leaf collection — where the leaf is recorded.
+ * M3 Leaf collection: where the leaf is recorded.
  *
  * Two things here are contract, not convenience:
  *
@@ -63,7 +63,7 @@ export const deliveryEndpoints = {
    *
    * A delivery that was recorded and withdrawn is a kilo figure the office may
    * have to account for, so the row survives with who voided it and why. The
-   * reason is mandatory — `422 note-required` otherwise.
+   * reason is mandatory: `422 note-required` otherwise.
    */
   void: (id: string, reason: string) =>
     apiClient

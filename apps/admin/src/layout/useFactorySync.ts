@@ -39,7 +39,7 @@ export function useFactorySync(): FactorySyncView {
      *
      * Staleness is a property of *elapsed time* rather than of anything the user did, so
      * a value that only refreshed on navigation would go on claiming "fresh" for as long
-     * as somebody stayed on one screen — which is exactly the situation the indicator
+     * as somebody stayed on one screen, which is exactly the situation the indicator
      * exists for: a clerk on the bills grid, on the telephone, for twenty minutes.
      */
     refetchInterval: 5 * 60_000,

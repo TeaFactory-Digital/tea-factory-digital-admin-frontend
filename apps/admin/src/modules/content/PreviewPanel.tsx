@@ -5,7 +5,7 @@
  * component exists rather than the screen rendering the translation it already holds. The
  * fallback is a rule the app applies; a console that applied its own version would show
  * the editor a preview of something that is never rendered, and the editor would sign off
- * copy nobody sees. AC-08 asks for the gap to be visible — a wrong preview makes it
+ * copy nobody sees. AC-08 asks for the gap to be visible; a wrong preview makes it
  * invisible in the most convincing way available.
  *
  * The banner when a fallback is in use is the point of the panel. Without it the preview
@@ -47,7 +47,7 @@ export function PreviewPanel({
         ) : error ? (
           <ErrorState error={error} onRetry={onRetry} compact />
         ) : !preview?.translation ? (
-          // Nothing to show in **any** language — the one state that must never reach a
+          // Nothing to show in **any** language: the one state that must never reach a
           // supplier, and why the fallback copy is required before a publish.
           <EmptyState title={t('content.previewEmpty')} body={t('content.previewEmptyHint')} />
         ) : (
@@ -65,7 +65,7 @@ export function PreviewPanel({
             {/**
              * `lang` on the rendered copy, not on the card.
              *
-             * It is what makes the base stylesheet's Sinhala and Tamil rules apply — and
+             * It is what makes the base stylesheet's Sinhala and Tamil rules apply, and
              * on a fallback it is deliberately the **fallback's** language rather than
              * the requested one, because that is what the text actually is. Declaring
              * Sinhala over English copy would be a lie a screen reader acts on.

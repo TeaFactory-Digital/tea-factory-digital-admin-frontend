@@ -64,14 +64,14 @@ interface AuthState {
 }
 
 /**
- * The rotation in flight, if any — **one at a time, shared by every caller.**
+ * The rotation in flight, if any: **one at a time, shared by every caller.**
  *
  * The refresh token is **single-use**: the API rotates it on every call and treats a
  * second presentation of a spent one as *reuse*, which revokes the whole family. So two
  * concurrent rotations do not merely waste a round trip, they sign the clerk out.
  *
  * There are two ways to get two. `App` calls `bootstrap()` from an effect and React's
- * `StrictMode` invokes effects twice in development — which produced exactly this: two
+ * `StrictMode` invokes effects twice in development, which produced exactly this: two
  * `POST /admin/auth/refresh` on every page load, the second `401`, the family revoked,
  * and the console back on the sign-in screen after every reload. The other way is a
  * burst of screens each hitting a `401` at the same moment.
@@ -126,7 +126,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   /**
    * **One round trip, not two.**
    *
-   * The rotation answers with the whole session — token, user and grants — because the
+   * The rotation answers with the whole session (token, user and grants) because the
    * API re-resolves grants on every refresh. A follow-up `GET /admin/auth/me` would ask
    * for a payload already in hand, and would do it on the critical path of the first
    * paint after every reload.
@@ -146,7 +146,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ owesPasswordChange: rotation.passwordChangeRequired });
       return;
     }
-    // No refresh cookie, or it has expired. Not an error — it is the normal state of a
+    // No refresh cookie, or it has expired. Not an error: it is the normal state of a
     // browser that has never signed in.
     set({ ...anonymous });
   },
@@ -175,7 +175,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
        *
        * The API re-resolves grants on every rotation, so this is the moment a permission
        * change reaches a console that has been open since the morning. Setting the token
-       * alone would leave a clerk holding the grant set they signed in with — which is
+       * alone would leave a clerk holding the grant set they signed in with, which is
        * either a lever that 403s or a screen they should have regained.
        */
       applySession(set, session);

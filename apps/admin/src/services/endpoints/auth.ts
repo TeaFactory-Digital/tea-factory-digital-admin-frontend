@@ -1,5 +1,5 @@
 /**
- * Console authentication — a **separate realm** from suppliers.
+ * Console authentication: a **separate realm** from suppliers.
  *
  * Different table, different token audience, different login screen
  * (admin-console.md → Auth and roles). A supplier token must never open the
@@ -39,13 +39,13 @@ export const authEndpoints = {
       .then((response) => response.data),
 
   /**
-   * Rotating refresh token, read from an httpOnly cookie — never from a body.
+   * Rotating refresh token, read from an httpOnly cookie, never from a body.
    *
    * The console runs on an office machine that other people use; a refresh token
    * in `localStorage` is a token any tab, extension or XSS can read, and it
    * outlives the session by design.
    *
-   * **It answers with the whole session, not a token pair** — the same `LoginResult`
+   * **It answers with the whole session, not a token pair**: the same `LoginResult`
    * envelope `login` returns, because the API re-resolves grants on every rotation and
    * a rotation is the natural moment to notice that somebody's permissions changed.
    * That is why `authStore.bootstrap()` needs no second call to `/me`: one rotation
@@ -71,7 +71,7 @@ export const authEndpoints = {
    * Who am I, and what may I do?
    *
    * `grants` is sent explicitly rather than derived from `roles` on the client,
-   * because "roles are data, not code" (§12.1) — a factory that splits `clerk`
+   * because "roles are data, not code" (§12.1): a factory that splits `clerk`
    * into two roles must not need a console deploy.
    */
   me: () => apiClient.get<MeResponse>('/admin/auth/me').then((response) => response.data),

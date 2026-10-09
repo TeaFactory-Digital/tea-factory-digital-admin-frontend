@@ -1,5 +1,5 @@
 /**
- * M18 against the mock API — **the queue v1 did not have**.
+ * M18 against the mock API: **the queue v1 did not have**.
  *
  * The app has shipped `RequestTeaPacketsScreen` since its first release and this console
  * had no type, no endpoint and no row for it, so a supplier could ask the factory for its
@@ -8,8 +8,8 @@
  *
  * What gets asserted is the set of rules that are *not* obvious from the screen:
  *
- *  - **The refusals M18 shares with M7** — AC-06's note, BR-501's four eyes,
- *    `already-decided` — because they are about deciding a supplier's request and have
+ *  - **The refusals M18 shares with M7** (AC-06's note, BR-501's four eyes,
+ *    `already-decided`) because they are about deciding a supplier's request and have
  *    nothing to do with credit.
  *  - **The refusal M18 does not have.** There is no `stale-eligibility` here, and the
  *    absence is the design: nothing prices a ceiling, so there is no figure the approver
@@ -60,7 +60,7 @@ describe('M18 tea packet requests', () => {
     const rows = await pendingRequests();
 
     for (const row of rows) {
-      // The amount is `packets × unitPrice`, and `unitPrice` is the policy's — a
+      // The amount is `packets × unitPrice`, and `unitPrice` is the policy's: a
       // hand-typed price on a request would be a figure nobody can check against a list.
       expect(row.amount).toBe(teaPacketAmount({ ...DEFAULT_TEA_PACKET_POLICY, pricePerPacket: row.unitPrice }, row.packets));
     }
@@ -75,7 +75,7 @@ describe('M18 tea packet requests', () => {
       .catch((cause: unknown) => cause);
     expect(isApiError(shortApprove) && shortApprove.code).toBe('note-required');
 
-    // Rejecting is the verb the criterion is actually about — the note is what the
+    // Rejecting is the verb the criterion is actually about: the note is what the
     // supplier reads as the reason.
     const shortReject = await teaPacketRepository
       .reject(row!.id, { note: '' })
@@ -100,14 +100,14 @@ describe('M18 tea packet requests', () => {
      *
      * M7's approval carries the figure that was on screen and the server answers
      * `stale-eligibility` if it has moved (BR-310). Nothing here is priced off the
-     * supplier's leaf, so there is no such figure — and a reader arriving from M7 will
+     * supplier's leaf, so there is no such figure, and a reader arriving from M7 will
      * assume there must be. If tea packets ever grow an eligibility rule, this case is
      * what fails first.
      */
     const ack = await teaPacketRepository.approve(row.id, { note: NOTE });
     expect(ack.status).toBe('approved');
 
-    // Read back — `{ id, status }` on the wire (gap **G-11**), and `get` sweeps the list
+    // Read back: `{ id, status }` on the wire (gap **G-11**), and `get` sweeps the list
     // because there is no `GET /admin/tea-packet-requests/{id}` (gap **G-06**).
     const decided = await teaPacketRepository.get(row.id);
 
@@ -139,7 +139,7 @@ describe('M18 tea packet requests', () => {
     await signInAs(MANAGER);
     const rows = await pendingRequests();
     // The fixture's counter-raised row carries `createdById`, which is what four eyes
-    // is checked on — an app request has none and anybody may decide it.
+    // is checked on: an app request has none and anybody may decide it.
     const raisedByOffice = rows.find((one) => one.createdById !== null)!;
     expect(raisedByOffice).toBeDefined();
 
@@ -187,7 +187,7 @@ describe('M18 tea packet requests', () => {
 
     /**
      * This is what makes `enableTeaPackets` refusable in M14. The factory has handed the
-     * tea over and has not been paid for it, so turning the queue off would hide a debt —
+     * tea over and has not been paid for it, so turning the queue off would hide a debt:
      * the same rule that blocks `enableSavings` while balances exist.
      */
     expect(usage.teaPacketsOutstanding).toBeGreaterThan(0);

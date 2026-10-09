@@ -100,7 +100,7 @@ export function RequireFlag({ flag, children }: PropsWithChildren<{ flag: Featur
  *
  * For M7, which is one screen over three independently-sold facilities. A factory
  * that lends against leaf but not against income history must still reach the
- * credit queue — and `RequireFlag` on `enableAdvances` would have shut the door on
+ * credit queue, and `RequireFlag` on `enableAdvances` would have shut the door on
  * the factory that does it the other way round. The rows themselves are filtered
  * per facility by the API (AC-07), so opening the screen never leaks a facility
  * that is off.

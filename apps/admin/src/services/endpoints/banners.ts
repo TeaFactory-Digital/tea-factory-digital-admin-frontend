@@ -1,9 +1,9 @@
 /**
- * M11 Promo banners — the editor v1 never built.
+ * M11 Promo banners: the editor v1 never built.
  *
  * `enablePromoBanner` shipped in the flag set, `PromoBanner` shipped in the domain
  * package, `banners.md` specified the whole feature, and there was no way to author one.
- * A factory could turn the flag on and get nothing — which is worse than the feature not
+ * A factory could turn the flag on and get nothing, which is worse than the feature not
  * existing, because the switch says otherwise.
  *
  * Modelled on `news.ts` deliberately: same per-language save, same three lifecycle verbs,
@@ -11,7 +11,7 @@
  * model to write a banner, and a second fallback implementation is the AC-08 failure.
  *
  * The two endpoints that have no counterpart in M11 are the two things a banner has that
- * an article does not — a live window, and an action the app might refuse.
+ * an article does not: a live window, and an action the app might refuse.
  */
 
 import type {
@@ -31,7 +31,7 @@ import { toParams } from './params';
  * What `GET /admin/banners` actually puts on the wire.
  *
  * A bare array, and the headline is spelled `headline` rather than `title`
- * (gap **G-09** — still a bare array). `staleLanguages` is absent entirely — the API computes
+ * (gap **G-09**: still a bare array). `staleLanguages` is absent entirely: the API computes
  * `missingLanguages` and stops there, so the console cannot tell "never translated" from
  * "translated before the English was corrected", which is half of what AC-08 is about.
  */
@@ -57,7 +57,7 @@ export interface ServedBannerRow {
 
 export const bannerEndpoints = {
   /**
-   * Unpaged and bare — `bannerRepository` maps and wraps it.
+   * Unpaged and bare: `bannerRepository` maps and wraps it.
    *
    * `status` and `window` are the only filters the API honours, and `window` implies
    * `status: published`, which is right: a scheduled draft is not scheduled for anything.
@@ -70,7 +70,7 @@ export const bannerEndpoints = {
       .then((response) => response.data),
 
   /**
-   * One banner, **with its `translations`** — the call the editor is built on.
+   * One banner, **with its `translations`**: the call the editor is built on.
    *
    * It did not exist for a while (gap **G-08**), and nothing could be synthesised from
    * the list row, which carries no copy at all: a banner's Sinhala headline is either
@@ -91,18 +91,18 @@ export const bannerEndpoints = {
   create: (body: BannerDraft) =>
     apiClient.post<StatusAck>('/admin/banners', body).then((response) => response.data),
 
-  /** Artwork, window and action — the fields that are not copy. */
+  /** Artwork, window and action: the fields that are not copy. */
   patch: (id: string, body: BannerPatch) =>
     apiClient.patch<MutationAck>(`/admin/banners/${id}`, body).then((response) => response.data),
 
-  /** Save one language — a `PUT`, for the same reason M11's is. Implemented. */
+  /** Save one language: a `PUT`, for the same reason M11's is. Implemented. */
   saveTranslation: (id: string, lang: LanguageCode, body: BannerTranslationBody) =>
     apiClient
       .put<MutationAck>(`/admin/banners/${id}/translations/${lang}`, body)
       .then((response) => response.data),
 
   /**
-   * What a reader in `lang` gets, resolved by the server rather than by this console —
+   * What a reader in `lang` gets, resolved by the server rather than by this console,
    * and that is the whole point of it. A preview composed here would be a second
    * implementation of the fallback rule, which is the AC-08 failure with the console's
    * fingerprints on it. Banners have it now, as news always did (gap **G-08**, closed).
@@ -118,7 +118,7 @@ export const bannerEndpoints = {
   /**
    * Take it down now, whatever the window says.
    *
-   * The window is a schedule and this is an intervention — a banner announcing a price
+   * The window is a schedule and this is an intervention: a banner announcing a price
    * that turned out to be wrong has to stop being shown this afternoon, not when
    * `endsAt` comes round. Distinct from editing `endsAt` because the office wants the
    * record to say it was withdrawn.

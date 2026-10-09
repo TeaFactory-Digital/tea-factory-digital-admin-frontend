@@ -1,5 +1,5 @@
 /**
- * M13 Notifications — the only thing the console does that it gets no acknowledgement
+ * M13 Notifications: the only thing the console does that it gets no acknowledgement
  * for.
  *
  * Everything about this module's shape follows from that. A push leaves and nothing comes
@@ -10,13 +10,13 @@
  *  - `reach` is its own endpoint, called before the confirmation, because the numbers are
  *    the decision. A circular reaching 40 of 300 suppliers belongs on the noticeboard,
  *    and there is no way to learn that afterwards.
- *  - Every send is a **record** with its counts, not a fire-and-forget — the same reason
+ *  - Every send is a **record** with its counts, not a fire-and-forget: the same reason
  *    a payout run is a record rather than a bank file.
  *  - `unknown-category` is a refusal rather than a warning. The app *drops* a push whose
  *    category it does not recognize, so a send the console called successful would reach
  *    nobody and report nothing.
  *
- * **§21.24 is still unanswered** — whether the office composes every send or whether
+ * **§21.24 is still unanswered**: whether the office composes every send or whether
  * `billPublished` fires off the publish step. Both paths are here, and the triggers are
  * data: `PUT /triggers/{category}` is how a factory answers the question without a
  * deploy. What is *not* guessed is which console event each category hangs off, because
@@ -40,7 +40,7 @@ import { toParams } from './params';
 /**
  * What a send acknowledges with: the record's id and state, and the reach it went out to.
  *
- * Not the whole `NotificationSend` (gap **G-11**) — the translations it was composed from
+ * Not the whole `NotificationSend` (gap **G-11**): the translations it was composed from
  * are not echoed back. The composer does not need them: it has just typed them, and what
  * it shows afterwards is how far the message reached.
  */
@@ -102,7 +102,7 @@ export const notificationEndpoints = {
   /**
    * The send log, newest first. Automatic and composed sends in one list.
    *
-   * **Paged and filterable** — `G-09` is closed for this list. It used to answer a bare
+   * **Paged and filterable**: `G-09` is closed for this list. It used to answer a bare
    * array capped at the newest 50 with the query ignored, and the cap was silent: a
    * factory that sends daily lost sight of last month with nothing on screen saying the
    * list had been cut, and filtering a truncated list to one category and finding three
@@ -135,7 +135,7 @@ export const notificationEndpoints = {
    * How far a send would reach, before anybody presses send.
    *
    * A `POST` despite being a read, because the audience is a structured body rather than
-   * a query string — and because the alternative is encoding a supplier id into a URL
+   * a query string, and because the alternative is encoding a supplier id into a URL
    * that would then be cached.
    */
   reach: (category: NotificationCategory, audience: ServedAudience) =>

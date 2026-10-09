@@ -5,11 +5,11 @@
  * (`galaboda.admin.teafactory.lk` → `api.teafactory.lk`). That split is why
  * `withCredentials` is on, and it is *not* why this header exists: `SameSite` keys on
  * **site**, not origin, so the `Lax` refresh cookie is sent across it anyway. What the
- * header covers is the case `Lax` cannot see — a compromised *sibling* subdomain, which
+ * header covers is the case `Lax` cannot see: a compromised *sibling* subdomain, which
  * is same-site and could otherwise drive an authenticated refresh.
  *
  * The test that matters most is the third one. `POST /admin/auth/refresh` is sent with
- * `withoutAuth()`, and that flag makes the request interceptor return early — so a CSRF
+ * `withoutAuth()`, and that flag makes the request interceptor return early, so a CSRF
  * header attached after the early return would reach every request except the single one
  * it was added for, and nothing else in the suite would notice.
  */
@@ -61,7 +61,7 @@ describe('CSRF header', () => {
   it('sends nothing on a read', async () => {
     /**
      * A `GET` cannot change anything, so there is nothing for a forged one to do. Sending
-     * the token anyway would put it in more places than it needs to be — including the
+     * the token anyway would put it in more places than it needs to be, including the
      * one request most likely to be logged or cached by something in between.
      */
     server.use(...probe('/csrf-probe'));
@@ -76,7 +76,7 @@ describe('CSRF header', () => {
     await authEndpoints.refresh();
 
     expect(seen?.get(env.csrfHeaderName)).toBe('tok-abc123');
-    // Still no bearer token — that is the whole point of `withoutAuth`, and adding CSRF
+    // Still no bearer token: that is the whole point of `withoutAuth`, and adding CSRF
     // must not have quietly undone it.
     expect(seen?.has('Authorization')).toBe(false);
   });

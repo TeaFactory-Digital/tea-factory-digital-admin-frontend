@@ -7,7 +7,7 @@
  * weighing-point staff rather than office staff, is the surface that needed it most.
  *
  * The tables in `./locales` are typed `Record<TranslationKey, string>`, so a key
- * present in `en` and missing from another language is a **compile error** — the
+ * present in `en` and missing from another language is a **compile error**: the
  * `fallbackLng` below is a runtime safety net for a build that somehow ships anyway,
  * not the guard.
  *
@@ -35,7 +35,7 @@ const FALLBACK_LANGUAGE: LanguageCode = 'en';
  * morning.
  *
  * Not the server either. A preference that needed the session would be unreadable on
- * the sign-in screen — the one screen where somebody who cannot read English is most
+ * the sign-in screen: the one screen where somebody who cannot read English is most
  * likely to be stuck.
  */
 const STORAGE_KEY = 'tfd.admin.language';
@@ -69,7 +69,7 @@ function persistLanguage(code: LanguageCode): void {
  *
  * Deliberately not sniffed from `navigator.language`. Office machines report `en-*`
  * near-universally regardless of who is sitting at them, so detection would be a
- * coin toss dressed as a preference — and it would move the chrome under a clerk who
+ * coin toss dressed as a preference, and it would move the chrome under a clerk who
  * never asked for it. The factory's `defaultLanguage` config is not it either: that
  * is the *supplier app's* default, a different audience.
  */
@@ -105,8 +105,8 @@ void i18next.use(initReactI18next).init({
 /**
  * Keeps `<html lang>` on the active language.
  *
- * Not cosmetic. It is what tells a screen reader which voice to use — an English
- * synthesiser reading Sinhala is unintelligible rather than merely accented — and
+ * Not cosmetic. It is what tells a screen reader which voice to use (an English
+ * synthesiser reading Sinhala is unintelligible rather than merely accented) and
  * what lets the browser resolve the Sinhala or Tamil face out of the font stack in
  * `packages/brand` instead of guessing per glyph run.
  */

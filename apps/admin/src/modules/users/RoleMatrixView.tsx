@@ -3,7 +3,7 @@
  *
  * **This view is rbac.md's central promise made true.** That document says the table is
  * *"data, not code: a factory will want to split or merge these roles, and that must not be a
- * deploy"* — and until this screen existed, `packages/domain/src/rbac.ts` was the authority
+ * deploy"*, and until this screen existed, `packages/domain/src/rbac.ts` was the authority
  * while claiming to be a default. Now it is the default it always said it was.
  *
  * Rendered as the matrix rather than as five role forms, because the question an
@@ -11,17 +11,17 @@
  * one column read down, and five separate forms make it five screens.
  *
  * **Twelve rows, not fifteen.** `deliveries`, `ratesAndMonthClose` and `payouts` are the
- * factory's own console's, and this build routes nothing behind them — rendered, they are
+ * factory's own console's, and this build routes nothing behind them; rendered, they are
  * three dropdowns an administrator can set to `approve`, get a success toast for, and
  * change nothing whatsoever by. `FACTORY_CONSOLE_CAPABILITIES` names them, and their
  * stored levels are **preserved rather than dropped**: `change()` spreads the whole
  * `matrix[role]`, so a hidden grant survives an edit to a visible one untouched. Hiding a
- * value the console still sends back is only safe because of that spread — read it before
+ * value the console still sends back is only safe because of that spread; read it before
  * changing how a row saves.
  *
  * The refusal is the lockout nobody thinks of. Every user can keep their roles while the roles
  * stop granting `usersAndRoles`, and the factory is locked out without a single user record
- * changing — so the guard is on the **proposed matrix**, not on any user. It runs against the
+ * changing, so the guard is on the **proposed matrix**, not on any user. It runs against the
  * whole matrix, hidden rows included, because `usersAndRoles` is visible and a guard that
  * only saw what was on screen would be a guard with a blind spot.
  */
@@ -51,7 +51,7 @@ import { formatDateTime } from '@/lib/format';
 import { useRoleMatrix, useSetRoleGrants } from './hooks';
 
 const ROLES = Object.keys(DEFAULT_ROLE_MATRIX) as ConsoleRole[];
-/** The matrix minus the factory's own console's rows — see the note above. */
+/** The matrix minus the factory's own console's rows; see the note above. */
 const CAPABILITIES = (Object.keys(DEFAULT_ROLE_MATRIX.clerk) as Capability[]).filter(
   isRoutedCapability,
 );
@@ -86,7 +86,7 @@ export function RoleMatrixView() {
     /**
      * Checked here as well as in the repository and on the server, because this is the one
      * control in the console that can make the console unreachable. Three layers is not
-     * belt-and-braces — the toast has to be able to explain it before the request goes.
+     * belt-and-braces: the toast has to be able to explain it before the request goes.
      */
     if (!matrixKeepsRecovery(proposed)) {
       toast.error(t('users.matrixLockoutTitle'), t('users.matrixLockoutBody'));
@@ -120,7 +120,7 @@ export function RoleMatrixView() {
             {updatedAt ? (
               <span className="text-caption text-text-secondary">
                 {t('users.matrixChanged', {
-                  name: updatedByName ?? '—',
+                  name: updatedByName ?? '-',
                   when: formatDateTime(updatedAt),
                 })}
               </span>

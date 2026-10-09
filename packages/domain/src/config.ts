@@ -1,16 +1,16 @@
 /**
- * M14 Configuration — the shared half.
+ * M14 Configuration: the shared half.
  *
  * **This module is AC-12**: *"a new factory goes live without a code deploy."*
- * white-label.md puts it plainly — a new factory is a DNS record and a `client_config`
- * row — and M14 is the screen that edits that row. So the test of this module is not
+ * white-label.md puts it plainly: a new factory is a DNS record and a `client_config`
+ * row, and M14 is the screen that edits that row. So the test of this module is not
  * whether it has a form for every field; it is whether the *last* field a factory needs is
  * in it. A single value that still requires a developer makes AC-12 false.
  *
  * The interesting logic is not the editing. It is **what a change costs**, because a
  * config row is the one record in the console whose edits reach across every other module:
  *
- *  - Turning a feature flag off removes a surface end to end (AC-07) — including surfaces
+ *  - Turning a feature flag off removes a surface end to end (AC-07), including surfaces
  *    that are holding money the factory owes suppliers.
  *  - Removing a collection point orphans delivery rows that reference it by name.
  *  - Removing a content language stops M11/M12 counting it as a gap, which silently
@@ -91,7 +91,7 @@ export interface ConfigPatch {
   manureProducts?: ManureProduct[];
   /** What a packet of made tea is and what it costs (`enableTeaPackets`). */
   teaPackets?: TeaPacketPolicy;
-  /** How each credit ceiling is calculated — the factory's own lending policy. */
+  /** How each credit ceiling is calculated: the factory's own lending policy. */
   creditRules?: CreditRules;
   banks?: Array<{ name: string; branches: string[] }>;
   localization?: {
@@ -102,7 +102,7 @@ export interface ConfigPatch {
   branding?: { logoUrl?: string; logoDarkUrl?: string; faviconUrl?: string };
   theme?: { colors?: { light?: Record<string, string>; dark?: Record<string, string> } };
   push?: { topicPrefix?: string; categories?: string[]; defaultCategories?: string[] };
-  /** M6's file layout — §21.17 as configuration. See `payoutExport.ts`. */
+  /** M6's file layout: §21.17 as configuration. See `payoutExport.ts`. */
   payouts?: { export: PayoutExportTemplate };
   collectionPoints?: Array<{ id: string; name: string }>;
 }
@@ -125,7 +125,7 @@ export interface ConfigUsage {
    * LKR of tea packets issued and not yet recovered on a `deductions.tea` line.
    *
    * Its own field rather than a fourth key on `outstandingCredit`, because that record is
-   * `CreditFacility`-shaped and tea packets are deliberately not a facility — see
+   * `CreditFacility`-shaped and tea packets are deliberately not a facility; see
    * `AdminTeaPacketRequest`.
    */
   teaPacketsOutstanding: number;
@@ -161,8 +161,8 @@ export const MONEY_BEARING_FLAGS: Partial<Record<FeatureFlagName, keyof ConfigUs
    */
   enableTeaPackets: 'teaPacketsOutstanding',
 
-  /* v1, kept for reference. `enablePayouts` no longer exists — M6 is the factory's own
-   * console in v2 — so `openPayoutRuns` above guards nothing here any more:
+  /* v1, kept for reference. `enablePayouts` no longer exists (M6 is the factory's own
+   * console in v2), so `openPayoutRuns` above guards nothing here any more:
    *
    *   enablePayouts: 'openPayoutRuns',
    */
@@ -174,7 +174,7 @@ export type ConfigImpactSeverity = 'blocks' | 'warns';
  * One consequence of a proposed change, as a key and its parameters.
  *
  * A key rather than a sentence because the console localizes (BR-110) and this is shared
- * with an API that has no string table — the same shape `describeAudience` uses.
+ * with an API that has no string table, the same shape `describeAudience` uses.
  */
 export interface ConfigImpact {
   severity: ConfigImpactSeverity;
@@ -232,8 +232,8 @@ export function configImpact(
       const count = usage[money] as number;
       if (count > 0) {
         /**
-         * A key per source, not a default. `count` means a different thing in each — 23
-         * suppliers, LKR 41,200 of tea — and one shared sentence would have to be vague
+         * A key per source, not a default. `count` means a different thing in each (23
+         * suppliers, LKR 41,200 of tea), and one shared sentence would have to be vague
          * enough to cover both, which is the opposite of what this message is for.
          */
         const messageKey =
@@ -253,7 +253,7 @@ export function configImpact(
     }
 
     // Everything else: a surface disappears end to end (AC-07). Worth saying, not worth
-    // refusing — a factory that has stopped running a news feed is entitled to.
+    // refusing: a factory that has stopped running a news feed is entitled to.
     out.push({
       severity: 'warns',
       messageKey: 'config.impact.surfaceRemoved',
@@ -272,7 +272,7 @@ export function configImpact(
         /**
          * Refused, because a delivery references its point **by name** and nothing else.
          * Removing the point would leave rows filed against a place the factory no longer
-         * lists — unreadable in a report and unfixable without a migration.
+         * lists: unreadable in a report and unfixable without a migration.
          */
         out.push({
           severity: 'blocks',
@@ -375,7 +375,7 @@ export function configImpact(
     /**
      * All three problems block, and the reason is the same as the payout template's: the
      * output is a figure on a supplier's account. A zero pack size or a negative price
-     * does not fail visibly — it prices every request in the queue at something wrong,
+     * does not fail visibly: it prices every request in the queue at something wrong,
      * and the person who finds out is holding a slip with it deducted.
      */
     for (const problem of teaPacketPolicyProblems(patch.teaPackets)) {
@@ -393,7 +393,7 @@ export function configImpact(
     /**
      * Every problem blocks, for the same reason the payout template's do: the output is
      * a figure a supplier is **told they may borrow**. A multiplier of zero does not
-     * fail visibly — it offers every supplier a ceiling of nothing and reads on screen
+     * fail visibly: it offers every supplier a ceiling of nothing and reads on screen
      * as a policy rather than a mistake, and the person who finds out is at the counter
      * being refused.
      */

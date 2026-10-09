@@ -4,14 +4,14 @@
  *
  * **Why replace a control that worked:** a native date input is drawn by the browser, so
  * it is the one field in the console that cannot be themed. On a white-label product that
- * is not a detail — a factory whose console is otherwise entirely in its own colours gets
+ * is not a detail: a factory whose console is otherwise entirely in its own colours gets
  * a Chrome-blue picker on the leaf-entry screen. It is also rendered differently by every
  * browser, which is a support problem for a screen used at a weighing point on whatever
  * machine is there.
  *
  * **What is kept from the native control:** the text field. It is still a real input that
  * accepts a typed `YYYY-MM-DD`, because a clerk entering a week of back-dated sheets types
- * the date far faster than they can click a grid — and taking that away to gain a calendar
+ * the date far faster than they can click a grid, and taking that away to gain a calendar
  * would make the common path slower. The calendar is the *second* way in, not the only one.
  */
 
@@ -35,7 +35,7 @@ interface BaseProps {
    *
    * `Field` renders the asterisk itself and hands `required` down for the *control* to
    * carry, so dropping it here would leave a field marked required to a sighted reader
-   * and optional to a screen reader — and let the banner form submit without a start.
+   * and optional to a screen reader, and let the banner form submit without a start.
    */
   required?: boolean;
   'aria-describedby'?: string;
@@ -45,8 +45,8 @@ interface BaseProps {
 /**
  * A Colombo-local `YYYY-MM-DD`.
  *
- * The value in and out is the string, never a `Date`. Everything downstream — the query
- * parameter, `colomboDayOf`, the month lock — is already that shape, and handing a `Date`
+ * The value in and out is the string, never a `Date`. Everything downstream (the query
+ * parameter, `colomboDayOf`, the month lock) is already that shape, and handing a `Date`
  * across this boundary is what puts a weighing on the wrong day for a browser in another
  * timezone (BR-104).
  */
@@ -128,7 +128,7 @@ export function DatePicker({
  * A local `YYYY-MM-DDTHH:mm`, for the two banner windows.
  *
  * Split into a calendar and a time field rather than one grid, because a calendar has no
- * opinion about the hour — shadcn's registry has no time component at all, and its own
+ * opinion about the hour: shadcn's registry has no time component at all, and its own
  * date-and-time examples are exactly this pair.
  *
  * Both halves are this console's own controls: see `<TimePicker>` for why the time keeps a
@@ -159,13 +159,13 @@ export function DateTimePicker({
   const [date, valueTime] = splitLocal(value);
 
   /**
-   * The time is held here, not read back out of `value` — because `value` cannot hold it
+   * The time is held here, not read back out of `value`, because `value` cannot hold it
    * while the date is empty.
    *
    * Derived from `value` alone, clearing the date to fix a typo emitted `''`, which threw
    * the time away with it: retyping the date brought the field back at **midnight**, and
    * a clerk correcting the day of a banner window silently lost the hour they had set.
-   * Nothing on screen said so — the time field simply read `00:00` again.
+   * Nothing on screen said so: the time field simply read `00:00` again.
    */
   const [time, setTime] = useState(valueTime);
   useEffect(() => {
@@ -177,8 +177,8 @@ export function DateTimePicker({
   /**
    * A date with no time defaults to midnight rather than to empty.
    *
-   * These two fields are a banner's *window*. Emitting `2026-08-09T` — a date with the
-   * separator and nothing after it — parses as an invalid date, and the banner would
+   * These two fields are a banner's *window*. Emitting `2026-08-09T` (a date with the
+   * separator and nothing after it) parses as an invalid date, and the banner would
    * simply never show with nothing on screen to say why.
    */
   const emit = (nextDate: string, nextTime: string) => {

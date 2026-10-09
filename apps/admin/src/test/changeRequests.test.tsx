@@ -3,14 +3,14 @@
  *
  * These four cases are the acceptance criteria this milestone claims to meet:
  *
- *  - **AC-02** — approving changes the supplier's active value; rejecting leaves it
+ *  - **AC-02**: approving changes the supplier's active value; rejecting leaves it
  *    untouched and shows the note.
- *  - **AC-06** — rejecting without a note is impossible.
- *  - **AC-09** — the decision appears in the audit trail with actor and before/after.
- *  - **AC-10 / BR-501** — nobody approves a record they created.
+ *  - **AC-06**: rejecting without a note is impossible.
+ *  - **AC-09**: the decision appears in the audit trail with actor and before/after.
+ *  - **AC-10 / BR-501**: nobody approves a record they created.
  *
  * They go through the real transport, the real store and the real screens; only
- * the server is a stand-in. That is deliberate — a test that stubbed the
+ * the server is a stand-in. That is deliberate: a test that stubbed the
  * repository would pass while the interceptor flattened every error code.
  */
 
@@ -74,7 +74,7 @@ describe('M9 approve (AC-02, AC-09)', () => {
     expect(ack.status).toBe('approved');
 
     /**
-     * Read back, because the decision response is `{ id, status }` (gap **G-11**) — who
+     * Read back, because the decision response is `{ id, status }` (gap **G-11**), who
      * decided it and on what note lives on the record, and `get` sweeps the list for it
      * since there is no `GET /admin/change-requests/{id}` (gap **G-06**).
      */
@@ -87,7 +87,7 @@ describe('M9 approve (AC-02, AC-09)', () => {
     const supplierAfter = await supplierRepository.get(before.supplierId);
     expect(supplierAfter.savingsPerKg).toBe(requested);
 
-    // AC-09: with actor and before/after — read as the manager, because §12.1
+    // AC-09: with actor and before/after, read as the manager, because §12.1
     // gives the clerk no audit access at all. That the clerk *cannot* read back
     // the entry they just caused is the matrix working, not a gap.
     await signInAs(MANAGER);
@@ -124,7 +124,7 @@ describe('M9 refusals', () => {
     await signInAs(CLERK);
 
     // The repository guard, so a clerk is told in the dialog rather than after a
-    // round trip. The server refuses it too — see the next case.
+    // round trip. The server refuses it too: see the next case.
     await expect(changeRequestRepository.approve('chg-4', { note: 'ok' })).rejects.toMatchObject({
       code: 'note-required',
     });
@@ -143,7 +143,7 @@ describe('M9 refusals', () => {
   it('refuses self-approval (BR-501, AC-10)', async () => {
     await signInAs(CLERK);
 
-    // `chg-6` is the office-raised fixture — the clerk created it themselves.
+    // `chg-6` is the office-raised fixture: the clerk created it themselves.
     const officeRaised = await changeRequestRepository.get('chg-6');
     expect(officeRaised.channel).toBe('office');
     expect(officeRaised.createdById).toBe('usr-clerk-1');
@@ -316,7 +316,7 @@ describe('M9 bank change the API cannot apply yet', () => {
 describe('M2 supplier detail', () => {
   /**
    * The quick actions are shortcuts into the queues, filtered to the supplier on
-   * screen — and they are gated the way the sidebar is, so one cannot offer a clerk
+   * screen, and they are gated the way the sidebar is, so one cannot offer a clerk
    * a screen their session would be refused. §12.1 gives the factory administrator
    * `suppliers: R` with neither queue, which is what these two cases turn on: the
    * record renders for them, and both shortcuts out of it do not.
@@ -335,7 +335,7 @@ describe('M2 supplier detail', () => {
     await signInAs(FACTORY_ADMIN);
     renderSupplierDetail();
 
-    // The record itself still renders — this is the shortcuts being absent, not the screen.
+    // The record itself still renders: this is the shortcuts being absent, not the screen.
     expect(await screen.findByRole('tab', { name: /overview/i })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /messages/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /change requests/i })).not.toBeInTheDocument();
@@ -370,7 +370,7 @@ describe('M2 supplier detail', () => {
     expect(revealed.auditId).toMatch(/^aud-/);
 
     // Again read as the manager: a clerk may reveal a number and may not read the
-    // log of who revealed it. Deliberate — the log is for the people reviewing.
+    // log of who revealed it. Deliberate: the log is for the people reviewing.
     await signInAs(MANAGER);
     const audit = await auditRepository.forEntity('supplier', 'sup-1');
     expect(audit.items.some((item) => item.action === 'supplier.bankDetails.reveal')).toBe(true);
@@ -397,7 +397,7 @@ describe('server-side capability enforcement', () => {
      * The inverse of what this asserted while the console had a second factor: a correct
      * password used to leave the store in `mfaRequired` with no access token, and reading a
      * supplier had to fail. The factory withdrew that step, so the password *is* the
-     * session — and the refusals below prove that dropping it did not widen what a manager
+     * session, and the refusals below prove that dropping it did not widen what a manager
      * may then do.
      */
     await signInAs(MANAGER);
@@ -405,7 +405,7 @@ describe('server-side capability enforcement', () => {
   });
 
   it('refuses a manager editing a supplier record, per §12.1', async () => {
-    // The matrix gives the manager `R` on supplier records, not `W` — easy to get
+    // The matrix gives the manager `R` on supplier records, not `W`: easy to get
     // wrong, because a manager outranks a clerk everywhere else. The console hides
     // the button; this proves the server does not depend on that.
     await signInAs(MANAGER);

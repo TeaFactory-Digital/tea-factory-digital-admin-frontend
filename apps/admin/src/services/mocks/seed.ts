@@ -1,7 +1,7 @@
 /**
  * The mock database.
  *
- * The backend has not started, so this is what the console runs against — and it
+ * The backend has not started, so this is what the console runs against, and it
  * is written to be a **specification by example** for `docs/api-contract.md`
  * rather than a demo. Where it enforces something, the enforcement is a rule the
  * real API must reproduce:
@@ -124,7 +124,7 @@ const intBetween = (min: number, max: number) => Math.floor(between(min, max + 1
 const NOW = new Date();
 const hoursAgo = (hours: number) => new Date(NOW.getTime() - hours * 3_600_000).toISOString();
 const daysAgo = (days: number) => hoursAgo(days * 24);
-/** Forward, for a banner scheduled ahead of its window — a state only the office sees. */
+/** Forward, for a banner scheduled ahead of its window: a state only the office sees. */
 const daysAhead = (days: number) => hoursAgo(-days * 24);
 
 /* ──────────────────────────────── names ──────────────────────────────── */
@@ -151,7 +151,7 @@ const COLLECTION_POINTS = [
 /**
  * The towns this factory's suppliers actually bank in.
  *
- * The served config carries the whole national catalogue — a supplier may bank anywhere,
+ * The served config carries the whole national catalogue: a supplier may bank anywhere,
  * and the app's dropdown has to let them say so. But a *fixture* drawn from all 3,682
  * branches would give a Deniyaya smallholder an account in Jaffna, and the seed is read
  * as a picture of one factory rather than as a random sample of the country.
@@ -159,7 +159,7 @@ const COLLECTION_POINTS = [
 const LOCAL_BRANCHES = ['Akuressa', 'Matara', 'Deniyaya', 'Morawaka', 'Kamburupitiya'];
 
 /**
- * The banks the fixture's suppliers hold accounts at — **filtered from the real
+ * The banks the fixture's suppliers hold accounts at, **filtered from the real
  * catalogue** rather than typed out beside it.
  *
  * Written by hand, this list drifted: it carried `Commercial Bank` and `Hatton National
@@ -185,11 +185,11 @@ const BANKS = SRI_LANKA_BANKS.map((bank) => ({
  *  - **clerk** raises office-side requests, and AC-10 ("no console user can
  *    approve a record they created") needs someone to have created one.
  *  - **manager** approves them.
- *  - **editor** writes content and **factoryAdmin** publishes it — the capability
+ *  - **editor** writes content and **factoryAdmin** publishes it: the capability
  *    boundary that is the whole of M11 and M12's control.
  *
  * The password is the same for all of them and is printed on the sign-in screen
- * while `VITE_USE_MOCK` is on. That is deliberate — a demo credential that has to
+ * while `VITE_USE_MOCK` is on. That is deliberate: a demo credential that has to
  * be looked up in a source file gets pasted into a chat thread instead.
  */
 export const MOCK_PASSWORD = 'demo1234';
@@ -234,7 +234,7 @@ export const mockUsers: MockUser[] = [
      * The editor, and the only identity in the fixture with `content: W`.
      *
      * §12.1 gives writing to the editor and publishing to the factory administrator, so
-     * **M11 and M12's control is the split between these two accounts** — there is no
+     * **M11 and M12's control is the split between these two accounts**: there is no
      * four-eyes rule on content and no amount to escalate on, the capability boundary is
      * the whole of it. Without both, the module would be read-only for everybody in the
      * fixture and the refusal that matters would be unreachable.
@@ -242,7 +242,7 @@ export const mockUsers: MockUser[] = [
      * Note the shape of this role: `content: W` and *nothing else at all*, not even
      * `auditLog: R`. It is the narrowest account the console has, and it is the reason
      * the news screen's audit panel has to tolerate a `403` rather than treat it as an
-     * error — the person most likely to be on that screen cannot read the log.
+     * error: the person most likely to be on that screen cannot read the log.
      */
     id: 'usr-editor-1',
     name: 'Tharindu Silva',
@@ -267,7 +267,7 @@ export const mockUsers: MockUser[] = [
   },
   {
     /**
-     * **The identity whose grants this build cannot derive** — and the reason it is here
+     * **The identity whose grants this build cannot derive**, and the reason it is here
      * is the reason `resolveGrants` is asymmetric.
      *
      * v2 dropped `weigher` and `accountant` from `ConsoleRole`: with deliveries, rates
@@ -277,7 +277,7 @@ export const mockUsers: MockUser[] = [
      * because otherwise a factory splitting or merging a role is a console release.
      *
      * So this account holds no role in `DEFAULT_ROLE_MATRIX` and every capability it has
-     * arrives from the server — the case the merge exists for, as a fixture rather than
+     * arrives from the server: the case the merge exists for, as a fixture rather than
      * as a paragraph. It is also the only account left that can move leaf, which is what
      * keeps M5's staleness and M7's recomputation reachable: both are *relationships*
      * between a stored figure and live weighing, and nothing else can change one side.
@@ -314,7 +314,7 @@ function makeSupplier(index: number): AdminSupplier {
   const point = COLLECTION_POINTS[index % COLLECTION_POINTS.length]!;
   const code = `${5000 + index * 7} (${point.name})`;
   const bank = pick(BANKS);
-  const hasBank = index % 9 !== 0; // one in nine has no bank details — an M4 exception
+  const hasBank = index % 9 !== 0; // one in nine has no bank details: an M4 exception
   const status = index % 17 === 0 ? 'suspended' : index % 41 === 0 ? 'closed' : 'active';
   const dormant = index % 13 === 0;
 
@@ -324,7 +324,7 @@ function makeSupplier(index: number): AdminSupplier {
    * The same `index % 5 === 0` rule, and it has to stay the same rule: the dashboard
    * counts adoption from the device registry and the registry grid reads `hasApp`, so
    * two different predicates would put a percentage on one screen that the list on the
-   * next screen disagrees with — which is the failure the queue-count comment in
+   * next screen disagrees with, which is the failure the queue-count comment in
    * `buildDashboard` is about, in a different module.
    */
   const hasApp = status !== 'closed' && index % 5 !== 0;
@@ -353,7 +353,7 @@ function makeSupplier(index: number): AdminSupplier {
     /**
      * One in eighteen is marked **`bankTransfer` with no account on file**.
      *
-     * Not a fixture quirk — it is the real case AC-04's `missingBankDetails`
+     * Not a fixture quirk; it is the real case AC-04's `missingBankDetails`
      * exception exists for: the office recorded "pay by transfer" when the
      * supplier registered and never received the passbook. It is also the only
      * way M6's `held` line status happens, and a status nothing in the fixture
@@ -386,7 +386,7 @@ function makeSupplier(index: number): AdminSupplier {
 }
 
 /**
- * 84 suppliers — enough that server-side paging is exercised at the 50-row
+ * 84 suppliers: enough that server-side paging is exercised at the 50-row
  * default, and small enough to read through while debugging.
  */
 export const mockSuppliers: AdminSupplier[] = Array.from({ length: 84 }, (_, i) => makeSupplier(i + 1));
@@ -452,7 +452,7 @@ export function toSupplierDetail(supplier: AdminSupplier): SupplierDetail {
  *
  * Structural, not decorative: it makes it impossible for a list handler to
  * accidentally serialise a real account number, because the supplier record does
- * not contain one. The API should be built the same way — mask in the read model,
+ * not contain one. The API should be built the same way: mask in the read model,
  * join to the real value only in the reveal endpoint.
  */
 export const mockFullAccountNumbers = new Map<string, string>(
@@ -470,7 +470,7 @@ function makeChangeRequest(index: number): AdminChangeRequest {
 
   /**
    * `chg-6` is created by the clerk on the supplier's behalf. Approving it while
-   * signed in as that clerk must fail with `four-eyes-violation` — the console's
+   * signed in as that clerk must fail with `four-eyes-violation`: the console's
    * proof of AC-10, and the only reason this fixture exists.
    *
    * The fixture layout is fixed, because the integration tests name these ids:
@@ -573,7 +573,7 @@ mockChangeRequests.push(
 );
 
 /**
- * The address request — **appended rather than folded into `makeChangeRequest`.**
+ * The address request: **appended rather than folded into `makeChangeRequest`.**
  *
  * That factory cycles three types over a fixed id layout (`chg-1` … `chg-6`) that the
  * integration suites name directly, including AC-10's four-eyes fixture. Adding a
@@ -601,7 +601,7 @@ mockChangeRequests.push(
       decision: null,
       attachments: [],
       ageHours: 7,
-      currentSummary: `Home address: ${supplier.homeAddress ?? '—'}`,
+      currentSummary: `Home address: ${supplier.homeAddress ?? '-'}`,
       requestedSummary: 'Home address: No 88, Temple Road, Akuressa',
       requestedAddress: { homeAddress: 'No 88, Temple Road, Akuressa' },
     };
@@ -620,7 +620,7 @@ for (const request of mockChangeRequests) {
 /**
  * The supplier an audit entry is about, read out of the registry the console renders.
  *
- * `sup-7` is `mockSuppliers[6]` — the array is built with `makeSupplier(i + 1)`, so the
+ * `sup-7` is `mockSuppliers[6]`: the array is built with `makeSupplier(i + 1)`, so the
  * id and the index are off by one, which is exactly the sort of thing a hand-written
  * fixture gets wrong once and nobody notices until two screens disagree.
  */
@@ -660,7 +660,7 @@ export const mockAudit: AuditEntry[] = [
     actorId: 'usr-manager-1',
     actorName: 'Ruwan Jayasuriya',
     // The same verb M4 writes today, so the log does not carry two names for one
-    // act — a fixture with its own vocabulary is a fixture that teaches the wrong
+    // act: a fixture with its own vocabulary is a fixture that teaches the wrong
     // thing to whoever reads the audit screen first.
     action: 'month.rate.enter',
     entity: 'monthlyRate',
@@ -674,13 +674,13 @@ export const mockAudit: AuditEntry[] = [
    *
    * v2's addition, and the gap it closes is worth stating: the app lets a supplier
    * change their **name, telephone, email, date of birth and both addresses**
-   * directly through `PATCH /profile` — no approval, no change request
+   * directly through `PATCH /profile`: no approval, no change request
    * (`ChangeRequestType` covers only payout and savings-rate changes). v1 recorded
    * none of it, so the office could be asked *"when did this address change?"* and had
    * no way to answer, and a wrong telephone number had no history at all.
    *
    * These entries are on the **supplier** entity, so they appear on the same timeline
-   * as the office's actions on that record — which is the point. "What did we do to
+   * as the office's actions on that record, which is the point. "What did we do to
    * this account" and "what did they do" are two readings of one history, and a clerk
    * investigating a dispute needs to see them interleaved.
    *
@@ -694,7 +694,7 @@ export const mockAudit: AuditEntry[] = [
      *
      * The names here are generated per supplier by a seeded PRNG, so a hardcoded
      * `actorName` would put one name on the audit row and a different one in the page
-     * header directly above it — on the screen whose entire subject is *who did this*.
+     * header directly above it, on the screen whose entire subject is *who did this*.
      * The fixture has to be coherent with itself or it teaches the wrong thing to
      * whoever reads the audit screen first.
      */
@@ -726,7 +726,7 @@ export const mockAudit: AuditEntry[] = [
      * The one that makes §21.16 auditable end to end.
      *
      * The office issues a one-time password and records the identity check; **this** is
-     * the other half — the supplier replacing it at first sign-in, which is what makes
+     * the other half: the supplier replacing it at first sign-in, which is what makes
      * the credential the office knew stop working. Without this entry the console can
      * show that a password was issued and never that it was consumed.
      */
@@ -747,7 +747,7 @@ export const mockAudit: AuditEntry[] = [
      * A system actor, so the third `AuditActorType` has something behind it.
      *
      * An automatic push fires off an event rather than off a person, and attributing it
-     * to whoever happened to publish the month would be worse than leaving it blank —
+     * to whoever happened to publish the month would be worse than leaving it blank:
      * it reads as though they composed and sent it.
      */
     id: 'aud-7',
@@ -766,7 +766,7 @@ export const mockAudit: AuditEntry[] = [
 
 /* ─────────────────────────── M3 leaf collection ─────────────────────────── */
 
-/** Today, as the factory's own calendar day (BR-104) — not as UTC's. */
+/** Today, as the factory's own calendar day (BR-104), not as UTC's. */
 export const TODAY = colomboDayOf(NOW);
 
 export const currentMonthKey = monthKeyOf(TODAY);
@@ -780,13 +780,13 @@ const COLLECTION_DAYS = 14;
  * Declared here rather than beside the M4 month records below, because **M3's
  * delivery rows have to span the same window.** A bill is a read model over those
  * rows and a monthly rate (api.md §16), so a published month with no leaf in it
- * generates no bills — and M5, M6 and M8 would each render an empty screen that
+ * generates no bills, and M5, M6 and M8 would each render an empty screen that
  * reads as a broken module rather than as a fixture with nothing in it.
  *
  * **Eight, because M7 needs seven settled months to be reachable.** A loan and a
  * manure ceiling are gated on `REQUIRED_MONTHS_OF_HISTORY` closed months of income
  * (§9.1), so at four months every loan in the fixture was ineligible for the one
- * reason that says nothing about the module — and a queue whose every row is
+ * reason that says nothing about the module, and a queue whose every row is
  * refused by the same rule cannot show that any of the others work. Same argument
  * as the `held` payout line and `chg-6`: a state nothing in the fixture can reach
  * is a state nobody notices is broken.
@@ -824,7 +824,7 @@ function fixtureDays(): string[] {
  * the auction result is not in, which is exactly why every rate-derived figure in
  * the app is blank rather than zero.
  *
- * This is what gives `month-locked` a date it can actually happen on — entering
+ * This is what gives `month-locked` a date it can actually happen on: entering
  * or voiding a delivery in last month is refused, and the console has a path for
  * that refusal because the mock produces it.
  */
@@ -865,7 +865,7 @@ function makeDeliveries(): Delivery[] {
 
   fixtureDays().forEach((date, dayIndex) => {
     // Sunday: the factory does not weigh. An empty day in the trend is a real
-    // day off, not a hole in the fixture — and a chart that skipped it would
+    // day off, not a hole in the fixture, and a chart that skipped it would
     // imply the office lost a day's leaf.
     if (weekdayOf(date) === 0) return;
 
@@ -921,13 +921,13 @@ export const mockDeliveries: Delivery[] = makeDeliveries();
 const voidable = mockDeliveries.find(
   // In the **open** month, deliberately. A voided row in a published month is a
   // row nothing in the console could have produced, since BR-108 refuses a void
-  // there — and a fixture that shows an impossible state teaches the wrong rule.
+  // there, and a fixture that shows an impossible state teaches the wrong rule.
   (row) => row.monthKey === currentMonthKey && daysSince(row.recordedAt) > 2,
 );
 if (voidable) {
   voidable.voidedAt = colomboInstant(voidable.date, 17, 30);
   voidable.voidedByName = 'Sunil Rathnayake';
-  voidable.voidedReason = 'Weighed twice by mistake — the same sack was recorded on the next line.';
+  voidable.voidedReason = 'Weighed twice by mistake: the same sack was recorded on the next line.';
 }
 
 // The registry's "last delivery" is the delivery data's, not a separate guess.
@@ -964,7 +964,7 @@ export interface MonthRecord {
  * Closed months carry a rate and a publisher; the month in progress carries
  * neither.
  *
- * The rates drift a little month to month rather than being one repeated figure —
+ * The rates drift a little month to month rather than being one repeated figure:
  * a bill screen showing the same LKR 122.50 for every month reads as a hardcoded
  * placeholder, which is exactly what it would be.
  */
@@ -1007,7 +1007,7 @@ function makeMonths(): Record<string, MonthRecord> {
   return out;
 }
 
-/** Money rounds to two places (§16) — the same rule the rate schema enforces. */
+/** Money rounds to two places (§16), the same rule the rate schema enforces. */
 function roundMoney(value: number): number {
   return Math.round(value * 100) / 100;
 }
@@ -1065,7 +1065,7 @@ function makeMonthExceptions(): MonthException[] {
         'missingBankDetails',
         'supplier',
         supplier.id,
-        `${supplier.paymentMethod === 'cash' ? 'Paid in cash' : 'No account on file'} — cannot be included in a payout run.`,
+        `${supplier.paymentMethod === 'cash' ? 'Paid in cash' : 'No account on file'}: cannot be included in a payout run.`,
         supplier,
       );
     }
@@ -1084,7 +1084,7 @@ function makeMonthExceptions(): MonthException[] {
     }
   }
 
-  // 3. A pending change request whose outcome would change this month's bill —
+  // 3. A pending change request whose outcome would change this month's bill:
   //    a savings rate or a payment method decided after publishing is decided too
   //    late.
   for (const request of mockChangeRequests.filter((r) => r.status === 'pending').slice(0, 3)) {
@@ -1097,8 +1097,8 @@ function makeMonthExceptions(): MonthException[] {
     );
   }
 
-  // 4. A weighing far outside its day's spread. Not a refusal at entry — the grid
-  //    asks and the clerk may confirm — so the month close asks once more, when
+  // 4. A weighing far outside its day's spread. Not a refusal at entry (the grid
+  //    asks and the clerk may confirm), so the month close asks once more, when
   //    there is time to check the slip.
   const month = mockDeliveries.filter((row) => row.monthKey === monthKey && !row.voidedAt);
   const meanKgs = month.length === 0 ? 0 : summariseKgs(month).meanKgs;
@@ -1108,7 +1108,7 @@ function makeMonthExceptions(): MonthException[] {
         'outlierDelivery',
         'delivery',
         row.id,
-        `${row.kgs} kg on ${row.date} — more than three times the month's average.`,
+        `${row.kgs} kg on ${row.date}: more than three times the month's average.`,
         { supplierCode: row.supplierCode, name: row.supplierName },
       );
     }
@@ -1221,7 +1221,7 @@ export function buildDashboard(
    * The four above were already parameters and these follow the same rule for the same
    * reason: this function is called with **live state**, not with the fixtures, so
    * reaching for `mockBanners` here would compute a dashboard from the seed while every
-   * other screen showed the mutated copy — a disagreement visible on one screen.
+   * other screen showed the mutated copy: a disagreement visible on one screen.
    */
   v2: {
     teaPacketRequests: AdminTeaPacketRequest[];
@@ -1237,7 +1237,7 @@ export function buildDashboard(
   const openInquiries = inquiries.filter((i) => i.status === 'open');
   const pendingTeaPackets = v2.teaPacketRequests.filter((r) => r.status === 'pending');
 
-  // Oldest first — charts read left to right (§4 of the contract).
+  // Oldest first: charts read left to right (§4 of the contract).
   const intakeTrend = Array.from({ length: COLLECTION_DAYS }, (_, i) => {
     const date = colomboDayOf(new Date(NOW.getTime() - (COLLECTION_DAYS - 1 - i) * 86_400_000));
     return { date, totalKgs: summariseDay(deliveries, date).totalKgs };
@@ -1278,7 +1278,7 @@ export function buildDashboard(
    * The channel split, over every request the app can raise.
    *
    * All four kinds together rather than per module, because §19.3's KPI is about the
-   * *supplier's* habit — somebody who asks for an advance in the app and walks in about
+   * *supplier's* habit: somebody who asks for an advance in the app and walks in about
    * their bank details has half adopted it. `null` rather than `0` when nothing was
    * raised at all (BR-102).
    */
@@ -1302,7 +1302,7 @@ export function buildDashboard(
    *
    * Only **published** records count. A draft with no Sinhala is unfinished work, not a
    * supplier reading the wrong language, and counting it here would fill the card with
-   * rows nobody needs to act on — which is how an office learns to ignore the card.
+   * rows nobody needs to act on, which is how an office learns to ignore the card.
    */
   const articlesWithGaps = v2.news.filter(
     (record) =>
@@ -1399,15 +1399,15 @@ export function buildDashboard(
 /**
  * What `GET /config` returns per tenant.
  *
- * `highland` deliberately runs a **reduced feature set** — no loans, no manure,
- * no push — mirroring mobile's `clientB`. Switching tenants in the dev switcher
+ * `highland` deliberately runs a **reduced feature set** (no loans, no manure,
+ * no push), mirroring mobile's `clientB`. Switching tenants in the dev switcher
  * should visibly empty those queues out of the sidebar, which is the fastest way
  * to check that no surface is hardcoded.
  */
 /**
  * The fertilizer a factory sells on credit (§21.10).
  *
- * One list, feeding **both** the tenants' catalogues below and M7's request fixtures — so a
+ * One list, feeding **both** the tenants' catalogues below and M7's request fixtures, so a
  * queue can never name a type the configuration screen does not offer.
  */
 const MANURE_PRODUCTS = [
@@ -1457,7 +1457,7 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
     manureProducts: MANURE_PRODUCTS.map((one) => ({ ...one })),
     /**
      * The whole national catalogue, because this is the list the **app** offers a
-     * supplier — and a supplier banks where they bank. The office narrows it in M14 if it
+     * supplier, and a supplier banks where they bank. The office narrows it in M14 if it
      * wants to; a default that shipped only the five banks nearest the factory would send
      * everyone else to the counter to have their details typed in by hand.
      */
@@ -1510,7 +1510,7 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
     },
     savings: { perKgOptions: [0, 10, 20, 30, 40] },
     manureProducts: MANURE_PRODUCTS.map((one) => ({ ...one })),
-    // A second tenant that *has* narrowed the list — the case M14's editor exists for,
+    // A second tenant that *has* narrowed the list: the case M14's editor exists for,
     // and the one that proves the app renders whatever it is served rather than the
     // catalogue it was built with.
     banks: BANKS.slice(0, 3).map((b) => ({ name: b.name, branches: [...b.branches] })),
@@ -1548,7 +1548,7 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
      *
      * **And no payouts**, which is the only tenant in the fixture with a
      * console-side surface turned off. A small estate that counts cash out at the
-     * counter buys no bank-file module — and until one tenant had the flag off, the
+     * counter buys no bank-file module, and until one tenant had the flag off, the
      * API half of AC-07 ("a flag off removes the surface *and* the endpoint
      * refuses") had nothing to be tested against.
      */
@@ -1598,7 +1598,7 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
  * The factory identity printed on a bill.
  *
  * Read from the tenant config rather than restated, because it is the same
- * `FactoryInfo` the app renders on the supplier's own copy of the slip (AC-03) —
+ * `FactoryInfo` the app renders on the supplier's own copy of the slip (AC-03):
  * two sources for a registration number is two documents that disagree.
  */
 export const billFactoryOf = (tenantId: string): FactoryInfo =>
@@ -1615,8 +1615,8 @@ const daysInMonth = (monthKey: string): number => {
  * The nine deduction lines held against one month's account.
  *
  * **The values here stand in for a policy decision that has not been made.**
- * §21.10 — which lines the office may set per supplier per month, and who may set
- * them — is unanswered, so the console offers no editor for these and the mock
+ * §21.10 (which lines the office may set per supplier per month, and who may set
+ * them) is unanswered, so the console offers no editor for these and the mock
  * derives them deterministically from the supplier record. What is *not* a
  * placeholder is the shape: nine lines in the printed slip's order, with the total
  * recomputed from them rather than stated alongside them (BR-107).
@@ -1634,11 +1634,11 @@ const daysInMonth = (monthKey: string): number => {
  *
  * | Line | Decided by |
  * | --- | --- |
- * | `transportCharges`, `stamps` | The factory's rates — manager, second-person approved |
+ * | `transportCharges`, `stamps` | The factory's rates (manager, second-person approved) |
  * | `loansAdvance`, `advance`, `manure` | The supplier's repayment period, under the factory's cap |
  * | `savings` | The supplier, through M9 |
  * | `previousDebts` | Derived from last month |
- * | `tea` | The supplier asks, from the app — **not built here yet** |
+ * | `tea` | The supplier asks, from the app. **Not built here yet** |
  * | `otherCards` | **Still unanswered.** §21.10 remains open for this one line |
  *
  * The last two are still the fixture's invention, and they are the only two left.
@@ -1694,7 +1694,7 @@ interface BillGenerationContext {
   /**
    * Savings asked back and not yet settled, per supplier (§21.9).
    *
-   * Optional because the seed's own historical months predate any withdrawal — a bill
+   * Optional because the seed's own historical months predate any withdrawal: a bill
    * generated for a month nobody asked in simply carries `0`.
    */
   savingsWithdrawals?: Map<string, number>;
@@ -1721,7 +1721,7 @@ interface BillGenerationContext {
  * returns.
  *
  * Ordered by supplier code, which is also the order bill numbers are handed out
- * in — the office reads a run down the same column the paper ledgers were kept in,
+ * in: the office reads a run down the same column the paper ledgers were kept in,
  * and a re-run must not renumber everybody because one supplier stopped plucking.
  */
 export function generateBills(context: BillGenerationContext): AdminBill[] {
@@ -1737,7 +1737,7 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
   }
 
   /**
-   * Everyone with leaf this month — **and everyone owed a savings withdrawal** (§21.9).
+   * Everyone with leaf this month, **and everyone owed a savings withdrawal** (§21.9).
    *
    * That second clause is a direct consequence of the factory's answer that a withdrawal is
    * paid on the next bill: a supplier who asked for their savings and happened to pluck
@@ -1762,7 +1762,7 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
     /**
      * The day grid the slip prints.
      *
-     * Every day of the month is present, with `null` where nothing was weighed —
+     * Every day of the month is present, with `null` where nothing was weighed:
      * `null` rather than `0`, because a day the supplier did not pluck and a day
      * they brought nothing are the same thing on paper and neither is a zero the
      * office would have to explain (BR-102).
@@ -1932,7 +1932,7 @@ export function summariseBillRun(
  * Does this payment method need a bank account to move money?
  *
  * Cheque and cash are handed over at the counter, so a missing account number does
- * not stop them. A transfer without one is a line that cannot be paid — and it is
+ * not stop them. A transfer without one is a line that cannot be paid, and it is
  * **held**, not dropped: a supplier quietly filtered out of a run is a supplier who
  * is not paid and nobody notices until they telephone.
  */
@@ -1942,7 +1942,7 @@ const methodNeedsAccount = (method: PaymentMethod): boolean => method === 'bankT
  * The lines a run would carry.
  *
  * Only **payable** bills become lines. A zero or negative account is not a payment
- * of nothing — it is an account that carries its shortfall forward (`nextMonthDeb`),
+ * of nothing; it is an account that carries its shortfall forward (`nextMonthDeb`),
  * and a bank file cannot express a negative transfer or a cheque be written for it.
  */
 export function buildPayoutLines(
@@ -1970,12 +1970,12 @@ export function buildPayoutLines(
         // supplier holds, and a second derivation is a second answer.
         amount: bill.finalBalance!,
         method,
-        // Masked at the source (§20.4) — the full number is M2's audited reveal.
+        // Masked at the source (§20.4); the full number is M2's audited reveal.
         bankName: supplier?.bankDetails?.bankName ?? null,
         branchName: supplier?.bankDetails?.branchName ?? null,
         accountNumber: supplier?.bankDetails?.accountNumber ?? null,
         status: held ? 'held' : 'pending',
-        reason: held ? 'No account on file — collect the passbook before paying.' : null,
+        reason: held ? 'No account on file. Collect the passbook before paying.' : null,
         paidAt: null,
         markedByName: null,
       } satisfies PayoutLine;
@@ -2087,7 +2087,7 @@ function buildSavingsLedger(
  * month's unpaid balance, this month's `coinsBroughtForward` is last month's
  * remainder, and this month's savings `previous` is the running balance. A fixture
  * that generated each month independently would show three months that do not add
- * up — and "the carried figures do not tie" is precisely the bug M5 exists to make
+ * up, and "the carried figures do not tie" is precisely the bug M5 exists to make
  * impossible.
  */
 function seedMoneyHistory() {
@@ -2103,8 +2103,8 @@ function seedMoneyHistory() {
    *
    * Not decoration: **an account that owes more than it earned is the state a payout
    * run must never turn into a negative bank line**, and nothing else in the fixture
-   * reaches it. The proportional deductions cannot — a credit instalment is capped as
-   * a share of the gross precisely so a facility cannot swallow a whole month — so the
+   * reaches it. The proportional deductions cannot (a credit instalment is capped as
+   * a share of the gross precisely so a facility cannot swallow a whole month), so the
    * only honest route to it is a debt carried in from before this history starts.
    *
    * Sized to take several months of leaf to work off, which is what a large advance
@@ -2113,7 +2113,7 @@ function seedMoneyHistory() {
    *
    * **Sized from the window, not as a fixed figure.** A credit instalment is capped
    * as a share of the gross, so a debt is worked off at roughly a month's leaf per
-   * month — which means a flat figure that survived a four-month fixture is fully
+   * month, which means a flat figure that survived a four-month fixture is fully
    * repaid by a seven-month one, and `carriesDebt` quietly stops being reachable in
    * the newest month. Deriving it from `MONTHS_OF_HISTORY` keeps the *intent*
    * (still owing at the end) true whatever the window becomes.
@@ -2272,7 +2272,7 @@ function seedPayoutRuns() {
           line.markedByName = 'Sunil Rathnayake';
         } else if (index === 4) {
           line.status = 'failed';
-          line.reason = 'Bank returned it — the account name does not match the supplier.';
+          line.reason = 'Bank returned it: the account name does not match the supplier.';
           line.markedByName = 'Sunil Rathnayake';
         }
       });
@@ -2296,22 +2296,22 @@ const payouts = seedPayoutRuns();
 export const mockPayoutRuns: PayoutRun[] = payouts.runs;
 export const mockPayoutLines: PayoutLine[] = payouts.lines;
 
-/** The latest month with published bills — the default the money screens open on. */
+/** The latest month with published bills: the default the money screens open on. */
 
 /* ─────────────────── M7 Credit queues · M10 Inquiries ─────────────────── */
 
 /**
- * The month in progress, as bill rows — **for eligibility only**.
+ * The month in progress, as bill rows, **for eligibility only**.
  *
  * `@tfd/domain`'s credit rules read a supplier's accounts newest first and treat
  * the first as the month in progress: an advance ceiling is the last settled
  * rate × *this* month's kilos, because an advance is cash against leaf already in
- * the shed. Without a row for the open month the rule prices the wrong month — the
+ * the shed. Without a row for the open month the rule prices the wrong month: the
  * ceiling silently becomes last month's kilos at the month-before's rate, which is
  * a plausible number and a wrong one.
  *
  * Deliberately **not** pushed into `mockBills`. M5 holds generated output, and a
- * month whose bills exist is a month that has been through a generation run — so
+ * month whose bills exist is a month that has been through a generation run, so
  * adding these would tell the bills screen a run happened that never did, and would
  * turn `bills-missing` for the open month from a real state into an unreachable one.
  * The rate is `null`, so every derived figure on them is `null` too (BR-102).
@@ -2340,7 +2340,7 @@ const openMonthBills: AdminBill[] = generateBills({
  * `deliveries` defaults to the seed's rows but the handlers pass their **live**
  * array, and that is what makes the module work rather than merely compile. An
  * advance ceiling is priced off this month's leaf, so a history built from the
- * immutable fixture would never move — the ceiling would be frozen at whatever it
+ * immutable fixture would never move: the ceiling would be frozen at whatever it
  * was when the module loaded, `stale-eligibility` could not happen, and the one
  * refusal BR-310 exists for would be unreachable.
  */
@@ -2387,7 +2387,7 @@ export function eligibilityFor(
     /**
      * The tenant's configured rule, when it has set one.
      *
-     * Passed in rather than read from a module, because it is **per tenant** — a
+     * Passed in rather than read from a module, because it is **per tenant**: a
      * function reaching for a global would price `highland`'s loans with
      * `galaboda`'s policy, and a ceiling is the one figure where that is money.
      */
@@ -2429,11 +2429,11 @@ export function eligibilityFor(
   };
 }
 
-/** What the office actually stocks. Free text on the wire — this is the fixture's list. */
+/** What the office actually stocks. Free text on the wire; this is the fixture's list. */
 
 const SEED_AT = NOW.toISOString();
 
-/** Active suppliers with leaf in the open month — the ones an advance can be priced for. */
+/** Active suppliers with leaf in the open month: the ones an advance can be priced for. */
 const creditCandidates = mockSuppliers.filter(
   (supplier) =>
     supplier.status === 'active' && openMonthBills.some((bill) => bill.supplierId === supplier.id),
@@ -2443,7 +2443,7 @@ const creditCandidates = mockSuppliers.filter(
  * An active supplier short of the history rule, so `shortHistory` is reachable.
  *
  * Someone who has not delivered for months asking for a loan is not a contrived
- * case — it is the request the six-month rule exists to refuse, and a fixture
+ * case; it is the request the six-month rule exists to refuse, and a fixture
  * without one cannot show that the refusal is explained rather than merely applied.
  *
  * Selected on **months of history**, which is the property the rule reads. An
@@ -2468,12 +2468,12 @@ const shortHistoryCandidate = mockSuppliers.find(
  * fixture never intended. Only `share > 1` is allowed past the ceiling.
  */
 function askFor(available: number, share: number): number {
-  // Deliberately beyond the ceiling — the `over-ceiling` fixture.
+  // Deliberately beyond the ceiling: the `over-ceiling` fixture.
   if (share > 1) return round2(Math.max(5_000, available * share));
   // A supplier with no headroom still asks. That request is the one the rule
   // exists to refuse, and the queue has to contain it.
   if (available <= 0) return 2_500;
-  // Otherwise a plausible share of the headroom, and **never more than it** — the
+  // Otherwise a plausible share of the headroom, and **never more than it**: the
   // floor is applied first and the clamp second, or a supplier whose advance
   // headroom is LKR 2,000 on the 1st gets seeded asking for the 2,500 minimum and
   // the row is refusable for a reason the fixture never intended.
@@ -2493,13 +2493,13 @@ interface CreditSeedSpec {
    */
   share: number;
   reason: string;
-  /** Raised by the clerk at the counter — the BR-501 four-eyes fixture. */
+  /** Raised by the clerk at the counter: the BR-501 four-eyes fixture. */
   officeRaised?: boolean;
   /**
    * Prefer a supplier who already owes on this facility.
    *
    * So "already drawn" is a figure on at least one row rather than a zero on every
-   * one — the difference between a ceiling and what is left of it is the whole
+   * one: the difference between a ceiling and what is left of it is the whole
    * point of the panel, and a fixture where they are always equal cannot show it.
    */
   wantsOutstanding?: boolean;
@@ -2525,14 +2525,14 @@ const CREDIT_SEED: CreditSeedSpec[] = [
     ageHours: 8,
     // Deliberately beyond the headroom.
     share: 1.4,
-    reason: 'School fees — asked for more than the account can carry.',
+    reason: 'School fees: asked for more than the account can carry.',
   },
   { facility: 'advance', ageHours: 80, share: 0.4, reason: 'Hospital costs.' },
   {
     facility: 'loan',
     ageHours: 20,
     share: 0.45,
-    reason: 'Logged at the counter by the manager — the supplier has no phone.',
+    reason: 'Logged at the counter by the manager; the supplier has no phone.',
     officeRaised: true,
   },
   {
@@ -2564,7 +2564,7 @@ function seedCreditRequests(): AdminCreditRequest[] {
     const wants = (s: AdminSupplier) => {
       const eligibility = eligibilityFor(s, spec.facility, { computedAt: SEED_AT });
       if (spec.wantsOutstanding && eligibility.outstanding <= 0) return false;
-      // An over-ceiling row does not need headroom — it needs a ceiling to exceed.
+      // An over-ceiling row does not need headroom; it needs a ceiling to exceed.
       return spec.share > 1 || eligibility.available > 5_000;
     };
 
@@ -2607,7 +2607,7 @@ function seedCreditRequests(): AdminCreditRequest[] {
       repaymentMonths: index % 3 === 0 ? 6 : null,
       reason: spec.reason,
       manureType: manure ? MANURE_TYPES[index % MANURE_TYPES.length]! : null,
-      // Priced at roughly LKR 210/kg of fertilizer — a figure the office would set
+      // Priced at roughly LKR 210/kg of fertilizer, a figure the office would set
       // per season, and one nobody has been asked for (status.md §21.10).
       quantityKg: manure ? Math.max(5, Math.round(amount / 210)) : null,
       status: 'pending',
@@ -2616,7 +2616,7 @@ function seedCreditRequests(): AdminCreditRequest[] {
       /**
        * The **manager**, not the clerk, and that is the whole point of the row.
        *
-       * §12.1 gives `creditRequests: A` to the manager alone — a clerk may read
+       * §12.1 gives `creditRequests: A` to the manager alone; a clerk may read
        * this queue and not decide it. So a request raised by a clerk could never
        * trip BR-501: the clerk cannot approve anything, and every other role is
        * innocent of raising it. Attributing it to the manager is the only way the
@@ -2635,7 +2635,7 @@ function seedCreditRequests(): AdminCreditRequest[] {
    * Two decided rows, so the approved and rejected filters are not empty.
    *
    * Chosen with headroom rather than by position, because an *approved* request
-   * that sits above its own ceiling is a row that could never have been approved —
+   * that sits above its own ceiling is a row that could never have been approved:
    * it reads as a bug in the module rather than as a fixture, and on the 1st of the
    * month (when an advance ceiling is one day of leaf) it is what an index-based
    * pick produces about half the time.
@@ -2714,7 +2714,7 @@ export const mockCreditRequests: AdminCreditRequest[] = seedCreditRequests();
  * Six rows, chosen so every state the screen renders has something in it: a pending
  * request over the per-request cap (the one the clerk has to reject with a useful
  * sentence), one raised at the counter by a clerk so BR-501 has something to withhold,
- * an approved-and-recovered row and an approved-and-outstanding one — the second is what
+ * an approved-and-recovered row and an approved-and-outstanding one; the second is what
  * `teaPacketsOutstanding` counts and therefore what blocks turning the flag off.
  */
 function seedTeaPacketRequests(): AdminTeaPacketRequest[] {
@@ -2799,7 +2799,7 @@ function seedTeaPacketRequests(): AdminTeaPacketRequest[] {
       ageHours: 20,
     },
     {
-      /** Approved and already off an account — no longer outstanding. */
+      /** Approved and already off an account, no longer outstanding. */
       id: 'tea-5',
       ...supplierAt(4),
       ...priced(5),
@@ -2977,7 +2977,7 @@ export const mockInquiries: AdminInquiry[] = seedInquiries();
  * derived when the record is serialised, and they have to be: the gaps are relative to
  * the *requesting tenant's* `contentLanguages`, so one stored answer would be wrong for
  * everybody but Galaboda. `highland` authors in English and Tamil, and is not missing
- * Sinhala — it never asked for it. The same reasoning kept `stale` off `BillRunRecord`.
+ * Sinhala; it never asked for it. The same reasoning kept `stale` off `BillRunRecord`.
  */
 export interface NewsRecord {
   id: string;
@@ -3004,7 +3004,7 @@ export interface StaticPageRecord {
  *
  * It is here so the language tabs, the `[lang="si"]` / `[lang="ta"]` line-height rules
  * (§20.2) and the fallback machinery are exercised against real script rather than
- * against Latin placeholders — a fixture in English three times over would let a
+ * against Latin placeholders: a fixture in English three times over would let a
  * right-to-length bug ship. Replace it before the console is shown to the factory:
  * approximate Sinhala in front of a Sinhala-speaking office is worse than an obvious
  * gap, because a gap is a question and bad copy is an answer.
@@ -3035,7 +3035,7 @@ const translation = (
  *  - **`nws-3`'s Sinhala is stale.** The English was corrected *after* the Sinhala was
  *    written, so the app renders a Sinhala article that says the old thing. Nothing in
  *    AC-08's wording covers this, and it is the second thing an office hits.
- *  - **`nws-4` is a draft** with only its English written — the normal half-finished
+ *  - **`nws-4` is a draft** with only its English written: the normal half-finished
  *    state, and the one that must not be publishable in Sinhala's name.
  */
 const NEWS_SEED: Array<{
@@ -3099,7 +3099,7 @@ const NEWS_SEED: Array<{
         'en',
         'Savings scheme rates updated',
         'The savings rates you can choose from are now LKR 0, 5, 10, 15, 20, 25, 30, 35, 40, 45 and 50 per kilo. To change your rate, use the app or ask at the office counter. A change takes effect from the next month.',
-        // Corrected 4 hours ago — after both translations were written.
+        // Corrected 4 hours ago, after both translations were written.
         4,
         'More savings rates are now available. Change yours in the app.',
       ),
@@ -3125,7 +3125,7 @@ const NEWS_SEED: Array<{
     translations: [
       translation(
         'en',
-        'Fertilizer distribution — September',
+        'Fertilizer distribution: September',
         'Fertilizer for the September round will be issued at the factory store from the 8th. Bring your supplier card. Quantities are limited to what was requested through the app by the 1st.',
         2,
         'September fertilizer is issued from the 8th at the factory store.',
@@ -3200,7 +3200,7 @@ export interface BannerRecord {
 function bannerCopy(
   lang: LanguageCode,
   title: string,
-  /** `undefined` here means "headline only" and is stored as `''` — see `BannerTranslation`. */
+  /** `undefined` here means "headline only" and is stored as `''`; see `BannerTranslation`. */
   body: string | undefined,
   buttonLabel: string,
   hoursAgoUpdated: number,
@@ -3218,12 +3218,12 @@ function bannerCopy(
 /**
  * Four banners, and the three that are **not** live are the point.
  *
- * The mobile repo's fixture keeps one live and one expired on purpose — "it is what
+ * The mobile repo's fixture keeps one live and one expired on purpose: "it is what
  * proves the live window is honoured rather than every row in the table being shown"
  * (`banners.md`). The console needs two more states that the app never sees, because they
  * are states only the office can be in: a **draft** nobody has published, and a
  * **scheduled** banner published in advance of its window. The second is the one that
- * catches an office out — published, correct, and in front of nobody — and it is why the
+ * catches an office out (published, correct, and in front of nobody), and it is why the
  * editor screen leads with a window notice rather than a status badge.
  *
  * **No `imageUrl` anywhere**, for the same reason the app's fixture has none: there is no
@@ -3236,14 +3236,14 @@ const BANNER_SEED: BannerRecord[] = [
     translations: {
       en: bannerCopy(
         'en',
-        'Fertilizer issue — August',
+        'Fertilizer issue: August',
         'Urea and TSP are in the store. Apply through the app and collect from the office.',
         'Request manure',
         30,
       ),
       si: bannerCopy(
         'si',
-        'පොහොර නිකුත් කිරීම — අගෝස්තු',
+        'පොහොර නිකුත් කිරීම: අගෝස්තු',
         'යූරියා සහ TSP ගබඩාවේ ඇත. යෙදුම හරහා ඉල්ලුම් කර කාර්යාලයෙන් ලබා ගන්න.',
         'පොහොර ඉල්ලන්න',
         28,
@@ -3262,7 +3262,7 @@ const BANNER_SEED: BannerRecord[] = [
   },
   {
     /** Published, and its window closed on Tuesday. Kept, because it is how the next
-     *  one gets written — and because a list that hid it would look like it never ran. */
+     *  one gets written, and because a list that hid it would look like it never ran. */
     id: 'ban-2',
     translations: {
       en: bannerCopy('en', 'July account is ready', undefined, 'View my account', 800),
@@ -3303,7 +3303,7 @@ const BANNER_SEED: BannerRecord[] = [
     createdByName: 'Tharindu Silva',
   },
   {
-    /** A draft with English only — where a banner starts, and what the editor opens. */
+    /** A draft with English only: where a banner starts, and what the editor opens. */
     id: 'ban-4',
     translations: {
       en: bannerCopy(
@@ -3333,7 +3333,7 @@ export const mockBanners: BannerRecord[] = BANNER_SEED;
  * `faq` is complete in all three languages because **AC-11 is about the FAQ** and a
  * criterion whose fixture is half-written cannot be signed off. `savingsScheme` and
  * `about` are English-only, which is the state a factory that has just gone live is
- * actually in. `creditTerms` has **never been written** — its status is `draft` and the
+ * actually in. `creditTerms` has **never been written**: its status is `draft` and the
  * app falls back to the bundled default, which is a state the office has to be able to
  * see rather than mistake for a page it already filled in.
  */
@@ -3351,7 +3351,7 @@ const STATIC_PAGE_SEED: Array<{
         'Frequently asked questions',
         [
           'When is my account ready?',
-          'The account for a month is published once the auction result is in, usually in the first week of the following month. Until then the app shows your kilos but no amount — the rate does not exist yet, so an amount would be a guess.',
+          'The account for a month is published once the auction result is in, usually in the first week of the following month. Until then the app shows your kilos but no amount: the rate does not exist yet, so an amount would be a guess.',
           '',
           'Why is my amount blank?',
           'Because the auction result for that month has not been entered. Your kilos are recorded and nothing is lost.',
@@ -3403,7 +3403,7 @@ const STATIC_PAGE_SEED: Array<{
       translation(
         'en',
         'The savings scheme',
-        'You choose an amount per kilo, and the factory holds it for you out of each monthly account. The money is yours. Your balance is on the app, and it is also printed on every Green Leaf Account under "Savings". To change your rate, ask through the app — the office has to approve it and the change takes effect from the next month. Choosing LKR 0 opts out of the scheme entirely.',
+        'You choose an amount per kilo, and the factory holds it for you out of each monthly account. The money is yours. Your balance is on the app, and it is also printed on every Green Leaf Account under "Savings". To change your rate, ask through the app; the office has to approve it and the change takes effect from the next month. Choosing LKR 0 opts out of the scheme entirely.',
         260,
       ),
     ],
@@ -3475,13 +3475,13 @@ export const mockStaticPages: StaticPageRecord[] = seedStaticPages();
  * Registered devices, and **the opt-outs are the point of them**.
  *
  * The contract's second push rule is that a send must honour each device's opted-in
- * categories, not only its topic subscription — so a fixture where every device accepts
+ * categories, not only its topic subscription, so a fixture where every device accepts
  * everything cannot demonstrate the one behaviour that matters. Here:
  *
  *  - roughly four suppliers in five have a device at all, so "reached 240 of 300" is a
  *    real gap the office should see rather than a rounding artefact;
  *  - every device starts from the tenant's `defaultCategories`, which pointedly
- *    **excludes `newsArticle`** — so news reaches far fewer phones than a bill does, and
+ *    **excludes `newsArticle`**, so news reaches far fewer phones than a bill does, and
  *    that asymmetry is the platform's existing decision rather than one invented here;
  *  - one supplier in seven has turned `newsArticle` back on, and one in eleven has turned
  *    `billPublished` off, because both are things people do and neither should be
@@ -3511,7 +3511,7 @@ function seedDevices(): RegisteredDevice[] {
       categories: opted,
       registeredAt: daysAgo(intBetween(5, 400)),
     });
-    // A few suppliers carry two devices — a phone and a spare — which is why the reach
+    // A few suppliers carry two devices (a phone and a spare), which is why the reach
     // figures count devices and the audience counts suppliers.
     if (index % 23 === 0) {
       sequence += 1;
@@ -3528,7 +3528,7 @@ function seedDevices(): RegisteredDevice[] {
   return devices;
 }
 
-/** Devices by supplier id — the shape every reach calculation needs. */
+/** Devices by supplier id: the shape every reach calculation needs. */
 export const mockDevicesBySupplier: Record<string, RegisteredDevice[]> = (() => {
   const all = seedDevices();
   const out: Record<string, RegisteredDevice[]> = {};
@@ -3561,7 +3561,7 @@ interface NotificationTriggerRecord {
  * §21.24 has not been answered, and this is the closest thing to an answer already in the
  * codebase: `push.defaultCategories` is what a supplier is opted into when they install
  * the app, which is the platform saying which categories are routine. `newsArticle` is
- * excluded there, so it is off here — a factory that wants every circular pushed can turn
+ * excluded there, so it is off here; a factory that wants every circular pushed can turn
  * it on, and that toggle is the answer to §21.24 rather than a code change.
  */
 export const mockNotificationTriggers: NotificationTriggerRecord[] = NOTIFICATION_CATEGORIES.map(
@@ -3629,7 +3629,7 @@ export const mockNotificationSends: NotificationSend[] = [
     entity: null,
     entityId: null,
     targetedSuppliers: 17,
-    // Most of them are opted out of `newsArticle` — which is exactly the figure a factory
+    // Most of them are opted out of `newsArticle`, which is exactly the figure a factory
     // needs before it decides a push is how to announce a closure.
     reachableDevices: 3,
     suppressedDevices: 11,

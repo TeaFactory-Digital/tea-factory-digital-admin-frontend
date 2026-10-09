@@ -2,7 +2,7 @@
  * Issuing a supplier a new app password (§21.15, §21.16).
  *
  * The factory's answer: generate one at random and hand it over at the counter. Right for
- * this factory — a fifth of suppliers have no email, there is no SMS gateway, and the office
+ * this factory: a fifth of suppliers have no email, there is no SMS gateway, and the office
  * knows these people by face. But it has one dangerous property, and this dialog is built
  * around it:
  *
@@ -11,14 +11,14 @@
  *
  * So the dialog does three things a plainer one would not:
  *
- *  1. **Says the credential is one-time**, because that is what makes it safe — the supplier
+ *  1. **Says the credential is one-time**, because that is what makes it safe: the supplier
  *     must replace it at first sign-in, and until the office believes that, they will treat
  *     a password they know as a password they may keep using.
  *  2. **Asks how identity was checked**, not "why". The distinction matters: a clerk typing
  *     *"came to the counter with book 5091"* has done the check; one typing *"reset"* has
  *     not, and the field is the moment they notice.
  *  3. **Shows the password once**, and says so before it is dismissed. Closing means
- *     generating another — which is correct, and infuriating if it is a surprise.
+ *     generating another, which is correct, and infuriating if it is a surprise.
  */
 
 import { useState } from 'react';
@@ -39,7 +39,7 @@ import { useResetSupplierCredentials } from './hooks';
 import { InfoTip } from '@/components/ui/Tooltip';
 
 /**
- * The checks the counter actually performs — **only the ones that are checks.**
+ * The checks the counter actually performs: **only the ones that are checks.**
  *
  * The chips exist for the same reason M9's do: the field's failure mode was never an
  * empty note, which the button already refuses, but a fifteen-character one that says
@@ -52,11 +52,11 @@ import { InfoTip } from '@/components/ui/Tooltip';
  * possible check as though it were policy. A clerk who genuinely did it can still type
  * it; they should not be handed it.
  *
- * Each sentence is a starting point, not the finished check — the book number or the
+ * Each sentence is a starting point, not the finished check: the book number or the
  * name of whoever recognised the supplier is the part that makes the entry worth
  * reading, and it is typed after the chip. `known` ends mid-sentence, on *"recognised
  * at the counter by"*, for exactly that reason: completed it reads properly, and
- * submitted untouched it is visibly a clerk who clicked a chip and stopped — which is
+ * submitted untouched it is visibly a clerk who clicked a chip and stopped, which is
  * the one thing an audit reader needs to be able to see.
  */
 const IDENTITY_SUGGESTIONS: readonly string[] = ['book', 'nic', 'known'];
@@ -159,7 +159,7 @@ export function ResetPasswordDialog({
             </InfoTip>
 
             <p className="text-caption text-text-secondary">
-              {/* The server's own attribution — who issued it, when, and the audit row
+              {/* The server's own attribution: who issued it, when, and the audit row
                   it wrote. The console used to have to guess the first two from the
                   signed-in session and could not know the third at all (G-04). */}
               {t('suppliers.resetPassword.recorded', {

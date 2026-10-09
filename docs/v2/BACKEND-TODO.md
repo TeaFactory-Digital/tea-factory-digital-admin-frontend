@@ -22,6 +22,13 @@ for "Restore default text", read only and never counted as an office edit).
 - **`eligibility: null`:** the console already shows the request without the eligibility
   panel when it is `null`, so nothing to change on our side.
 
+**No em dashes in what the API writes:** the console and the app no longer use the em
+dash anywhere (a value that is not there is shown as `-`). The API still writes `'\u2014'`
+for an empty field into change-request summaries
+(`apps/api/src/modules/supplier-app/requests.controller.ts:545-550`); please write `'-'`
+instead. The console still reads the old character as "empty", so rows already stored keep
+working.
+
 **Factory sync (Phase 10), for when it starts:** the request to the factory team now asks
 for every line of the printed bill. `factory-system-team.md` §3 and
 `factory-updates-sample.json` (bill `2026210869` is a real slip) add `greenLeafAmount`,

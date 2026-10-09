@@ -4,7 +4,7 @@
  * Every decision in the console is gated on a note of at least ten characters,
  * because the supplier reads it as the reason (AC-06). The cost of that rule is
  * paid by a clerk who types the same four sentences forty times a day, in a
- * language that may not be the one the console is set to — and the observable
+ * language that may not be the one the console is set to, and the observable
  * failure mode is not an empty note, which the button already refuses, but
  * "checked ok", which passes the length check and tells the supplier nothing.
  *
@@ -13,7 +13,7 @@
  *  - **The chip is a handle, not the note.** Its label is two or three words; what
  *    lands in the textarea is a whole sentence the supplier can read on its own.
  *    The sentence is on the chip's `title` for a hover, but the real preview is
- *    the textarea itself — the text arrives there instantly and stays editable,
+ *    the textarea itself: the text arrives there instantly and stays editable,
  *    which is the point. A preset that cannot be edited afterwards would be a
  *    worse note than the one the clerk would have typed.
  *  - **Picking appends, and picking again removes.** Nothing the clerk typed is
@@ -26,7 +26,7 @@
  *    for every note.
  *
  * The suggestions themselves live in the string tables, not here, because they are
- * *copy* — a factory that words its rejections differently, or an office working in
+ * *copy*: a factory that words its rejections differently, or an office working in
  * Tamil, changes en.ts/ta.ts and nothing else. They are per verb where the verb is
  * known before the dialog opens (M9, credit) and one list where it is not (tea
  * packets, whose dialog carries both buttons).
@@ -39,7 +39,7 @@ import { Field, Textarea } from '@/components/ui/Field';
 import { toggleNoteSuggestion } from '@/lib/noteSuggestion';
 
 export interface NoteSuggestion {
-  /** The chip's words. Short — it is a handle, not the note. */
+  /** The chip's words. Short: it is a handle, not the note. */
   label: string;
   /** What lands in the note. A whole sentence, because the supplier reads it alone. */
   text: string;
@@ -121,7 +121,7 @@ export function DecisionNoteField({
                     size="sm"
                     aria-pressed={picked}
                     // The whole sentence, for anyone who wants to read it before
-                    // committing it. Not the only way to see it — it is in the
+                    // committing it. Not the only way to see it: it is in the
                     // textarea a moment later, and removable from the same chip.
                     title={suggestion.text}
                     iconLeft={

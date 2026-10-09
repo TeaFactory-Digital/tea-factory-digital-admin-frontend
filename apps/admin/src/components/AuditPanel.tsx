@@ -6,7 +6,7 @@
  * actor and before/after. An approval the office cannot demonstrate was recorded
  * is an approval that will be disputed six months later, when nobody remembers.
  *
- * Renders nothing at all when the user has no `auditLog` access — the §12.1
+ * Renders nothing at all when the user has no `auditLog` access: the §12.1
  * matrix gives it to manager and above, and an empty panel labelled "audit
  * trail" would read as "nothing was recorded".
  */
@@ -57,7 +57,7 @@ export function AuditPanel({
                    * **Who** did it, when that is not the office.
                    *
                    * On a supplier's record the two kinds sit on one timeline
-                   * deliberately — "what we did to this account" and "what they did"
+                   * deliberately: "what we did to this account" and "what they did"
                    * are two readings of one history, and a clerk investigating a
                    * dispute needs them interleaved. Which makes the distinction
                    * essential: an address change by the supplier and one by a clerk
@@ -65,7 +65,7 @@ export function AuditPanel({
                    *
                    * The office's own actions carry **no** badge. They are the norm
                    * here, and badging every row would make the exception invisible
-                   * again — which is the whole failure this closes.
+                   * again, which is the whole failure this closes.
                    */}
                   {entry.actorType === 'supplier' ? (
                     <Badge tone="info">{t('audit.actor.supplier')}</Badge>
@@ -76,7 +76,7 @@ export function AuditPanel({
                 <p className="numeric text-caption text-text-secondary">
                   {entry.actorName} · {formatDateTime(entry.at)}
                   {/* A phone on a mobile network has no address the office can act on,
-                      so a supplier entry carries none — and the column simply omits it
+                      so a supplier entry carries none, and the column simply omits it
                       rather than showing a dash that invites a question. */}
                   {entry.ip ? ` · ${entry.ip}` : ''}
                 </p>

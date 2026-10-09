@@ -3,13 +3,13 @@
  *
  * `BrandProvider` carried `const CONSOLE_SCHEME = 'light'` with a note that the dark
  * palette already existed and turning it on would be "a toggle plus a QA pass, not a
- * refactor". This is that toggle — and what makes it worth testing is *where the setting
+ * refactor". This is that toggle, and what makes it worth testing is *where the setting
  * lives*, not that a palette exists.
  *
  * It is a `localStorage` preference rather than an M14 field because §12.1 makes
  * `flagsAndBranding` writable by the factory admin alone. Put in configuration, a clerk on
  * a bright counter and an editor who needs larger type would both be stuck with whatever
- * somebody else chose — and text size is an accessibility need belonging to the reader.
+ * somebody else chose, and text size is an accessibility need belonging to the reader.
  * That is the decision these guard.
  */
 
@@ -25,7 +25,7 @@ import { installLocalStorage } from './localStorage';
 
 beforeEach(() => {
   // See `localStorage.ts`: this environment's is an empty object, and the guards in
-  // `appearance.ts` swallow that — which is the right production behaviour and makes
+  // `appearance.ts` swallow that, which is the right production behaviour and makes
   // persistence unobservable without a real one.
   installLocalStorage();
 });
@@ -35,7 +35,7 @@ describe('the appearance preference', () => {
     /**
      * Deliberately not `prefers-color-scheme`. The console runs on shared office desktops
      * whose OS setting reflects whoever configured the machine, not whoever is standing at
-     * it — the same reason the language is not sniffed from `navigator.language`.
+     * it: the same reason the language is not sniffed from `navigator.language`.
      */
     expect(readAppearance()).toEqual(DEFAULT_APPEARANCE);
     expect(DEFAULT_APPEARANCE.scheme).toBe('light');
@@ -102,7 +102,7 @@ describe('scaleTypography', () => {
   it('leaves spacing, radii and icons alone', () => {
     /**
      * Legibility, not density. These are `px` too and scaling them would be no harder, but
-     * it would move every grid, sticky header and fixed-width filter on fourteen screens —
+     * it would move every grid, sticky header and fixed-width filter on fourteen screens,
      * and larger text in the same frame is what somebody asking for this wants.
      */
     const larger = scaleTypography(base, 'larger');

@@ -1,9 +1,9 @@
 /**
- * M9 Change requests — the queue.
+ * M9 Change requests: the queue.
  *
  * Ordered **oldest first** within the pending filter, which is the opposite of
  * every other list in the console. A queue is worked front to back, and the item
- * that has waited longest is the one at risk of breaching the §14.4 target — a
+ * that has waited longest is the one at risk of breaching the §14.4 target: a
  * newest-first inbox is one where the oldest item is never seen.
  *
  * "Current vs requested side by side" (§18.1 M9) is in the grid itself rather than
@@ -70,7 +70,7 @@ export function ChangeRequestsScreen() {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
-    // Changing a filter resets to page 0 — page 7 of a new filter is nowhere.
+    // Changing a filter resets to page 0: page 7 of a new filter is nowhere.
     // Changing the *page* obviously must not, which is what this guard is for:
     // without it `setParam('page', '1')` set the page and then deleted it, and
     // the grid could never leave page 1.
@@ -86,7 +86,7 @@ export function ChangeRequestsScreen() {
          *
          * TanStack refuses to sort a column with no accessor (`getCanSort()` ends
          * in `!!column.accessorFn`), so a display column renders a plain header
-         * and the click does nothing — which is how this column looked sortable
+         * and the click does nothing, which is how this column looked sortable
          * and was not. The key doubles as the field name the server sorts on.
          */
         accessorKey: 'supplierCode',
@@ -162,7 +162,7 @@ export function ChangeRequestsScreen() {
     <>
       <PageHeader title={t('changeRequests.title')} description={t('changeRequests.subtitle')} />
 
-      {/* Fixed-height card, scrolling rows — see the note in SuppliersScreen. */}
+      {/* Fixed-height card, scrolling rows. See the note in SuppliersScreen. */}
       <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-center gap-sm border-b border-divider p-md">
           <div className="min-w-64 flex-1">
@@ -197,8 +197,8 @@ export function ChangeRequestsScreen() {
             <option value="bankDetails">{t('changeRequests.type.bankDetails')}</option>
             <option value="paymentMethod">{t('changeRequests.type.paymentMethod')}</option>
             <option value="savingsRate">{t('changeRequests.type.savingsRate')}</option>
-            {/* The address joined this queue last. Everything else on this screen —
-                the grid, the detail, the decision dialog — renders it with no change
+            {/* The address joined this queue last. Everything else on this screen
+                (the grid, the detail, the decision dialog) renders it with no change
                 at all, because they were built against `currentSummary` and
                 `requestedSummary` rather than against the three types that existed
                 at the time. The filter is the one place that names them. */}

@@ -1,12 +1,12 @@
 /**
  * The date controls that replaced the browser's own.
  *
- * A native `type="date"` was doing two jobs correctly for free — parsing what was typed,
+ * A native `type="date"` was doing two jobs correctly for free: parsing what was typed,
  * and keeping the value in the browser's calendar rather than in UTC. Replacing it for
  * theming reasons means taking both jobs on, and the second is the one with teeth: the
  * console carries dates as Colombo-local `YYYY-MM-DD` strings because a delivery belongs
  * to the day the leaf was weighed (BR-104), and `new Date('2026-08-09')` parses as *UTC*
- * midnight — the evening of the 8th for any browser west of Greenwich.
+ * midnight: the evening of the 8th for any browser west of Greenwich.
  *
  * That failure is invisible in Colombo, where this is developed, and shows up as a
  * morning's weighing filed under yesterday on a laptop somebody never changed the
@@ -42,7 +42,7 @@ describe('localDate', () => {
   it('reads a half-typed value as nothing chosen, not as a date nobody entered', () => {
     /**
      * `new Date(2026, 1, 31)` rolls silently forward to 3 March. The field is typeable, so
-     * every prefix of a real date passes through here on the way — and a calendar that
+     * every prefix of a real date passes through here on the way, and a calendar that
      * jumped to March while somebody was still typing February would be unusable.
      */
     expect(toLocalDate('2026-02-31')).toBeUndefined();
@@ -84,7 +84,7 @@ describe('DatePicker', () => {
     await user.click(within(container).getByRole('button', { name: /calendar/i }));
 
     // Portalled by Radix, so this one is asked of the document rather than the container.
-    // Day buttons are labelled in full — "Friday, August 14th, 2026" — so the visible
+    // Day buttons are labelled in full ("Friday, August 14th, 2026") so the visible
     // "14" is not the accessible name.
     const grid = await screen.findByRole('grid');
     await user.click(within(grid).getByRole('button', { name: /August 14th, 2026/ }));
@@ -151,7 +151,7 @@ describe('DateTimePicker', () => {
     await user.type(view.getByLabelText('Starts'), '2026-08-09');
 
     /**
-     * `2026-08-09T` — a date, the separator, and nothing after it — parses as an invalid
+     * `2026-08-09T` (a date, the separator, and nothing after it) parses as an invalid
      * date. A banner saved with that never shows, and there is nothing on the screen to
      * say why: the window looks filled in.
      */
@@ -165,7 +165,7 @@ describe('DateTimePicker', () => {
 
     await user.clear(view.getByLabelText('Starts'));
 
-    // `T14:30` with no date is not a shorter answer, it is a different kind of value —
+    // `T14:30` with no date is not a shorter answer, it is a different kind of value,
     // and `endsAt` is genuinely optional, so empty has to be reachable.
     expect(view.getByTestId('value')).toHaveTextContent('');
   });
@@ -174,7 +174,7 @@ describe('DateTimePicker', () => {
 /**
  * The time half.
  *
- * Written against a component that shadcn does not have — its registry stops at `Calendar`
+ * Written against a component that shadcn does not have: its registry stops at `Calendar`
  * and `Date Picker`, and its own date-and-time examples are a calendar beside a native
  * `<input type="time">`. So the thing worth pinning is the split decision: the input stays
  * native because it already does segment editing and locale display correctly, while the
@@ -191,7 +191,7 @@ describe('TimePicker', () => {
     expect(field).toHaveAttribute('type', 'time');
 
     /**
-     * `fireEvent.change` rather than `user.type`, because a time input is **segmented** —
+     * `fireEvent.change` rather than `user.type`, because a time input is **segmented**:
      * keystrokes land in the hour box, then the minute box, and the browser assembles the
      * value. Typing "09:15" through it yields `00:59`, which says nothing about this
      * component and everything about how the control consumes keys.

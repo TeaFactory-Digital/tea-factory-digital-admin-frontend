@@ -1,5 +1,5 @@
 /**
- * The factory's own lending rules — **configuration, not code.**
+ * The factory's own lending rules: **configuration, not code.**
  *
  * The three ceilings used to be formulas in the build with two constants behind them.
  * A factory wanting *"manure: average the last three months, capped at 20,000"* needed
@@ -10,7 +10,7 @@
  *  1. **The defaults reproduce the old behaviour exactly.** A factory that never opens
  *     the screen must not discover its lending quietly moved the day this shipped.
  *  2. **One rule feeds both readers.** The ceiling the app shows a supplier and the
- *     ceiling the credit queue checks come from the same configured numbers — which is
+ *     ceiling the credit queue checks come from the same configured numbers, which is
  *     AC-05 restated for a rule the factory now owns.
  */
 
@@ -95,7 +95,7 @@ describe('the configured rule drives the ceiling', () => {
   });
 
   it('honours the example this feature was built for: 3 months ÷ 3, capped at 20,000', () => {
-    // "for manure, last 3 months / 3 — 20,000": average the last three settled months,
+    // "for manure, last 3 months / 3: 20,000": average the last three settled months,
     // take it once, and never allow more than twenty thousand.
     const rule: CreditRule = {
       requiredMonths: 3,
@@ -105,7 +105,7 @@ describe('the configured rule drives the ceiling', () => {
       maxAmount: 20000,
     };
 
-    // The average is 30,000 — above the cap, so the cap is what a supplier is offered.
+    // The average is 30,000: above the cap, so the cap is what a supplier is offered.
     expect(creditCeilingFromRule(rule, BILLS)).toBe(20000);
   });
 
@@ -121,7 +121,7 @@ describe('the configured rule drives the ceiling', () => {
 
     /**
      * The order the office states it in: *"three times the average, but never more
-     * than fifty thousand"*. Capping the basis first would give 3 × 50,000 = 150,000 —
+     * than fifty thousand"*. Capping the basis first would give 3 × 50,000 = 150,000:
      * the opposite of what was asked for, and higher rather than lower.
      */
     expect(creditCeilingFromRule({ ...uncapped, maxAmount: 50000 }, BILLS)).toBe(50000);
@@ -141,7 +141,7 @@ describe('the configured rule drives the ceiling', () => {
 
     /**
      * `requiredMonths: 0` is what lets a supplier in their **first** month have an
-     * advance and nothing else — the case the gate exists to permit rather than to
+     * advance and nothing else: the case the gate exists to permit rather than to
      * refuse. Asserted with the advance basis, because that is the facility it is for:
      * an income average over six months is still zero for a supplier who has one, and
      * deliberately so (`averageMonthlyIncome` fails closed rather than averaging a
@@ -156,7 +156,7 @@ describe('the configured rule drives the ceiling', () => {
 
     /**
      * One settled month asked to stand in for six. The average **fails closed** at
-     * zero rather than dividing what it has — a partial average is a bigger number
+     * zero rather than dividing what it has: a partial average is a bigger number
      * than the rule intends, and this is a ceiling.
      */
     const rule: CreditRule = {
@@ -191,7 +191,7 @@ describe('the configured rule drives the ceiling', () => {
 
     /**
      * AC-05 says the console must show the working, not just the answer. Under a
-     * configured rule the working has to be the **rule's** numbers — a ceiling from
+     * configured rule the working has to be the **rule's** numbers: a ceiling from
      * the rule beside a "required months" from the old constant would print a refusal
      * that the ceiling next to it contradicts.
      */
@@ -266,14 +266,14 @@ describe('creditRuleProblems', () => {
     );
 
     // A ceiling is the figure a supplier is told they may borrow, so it blocks the
-    // save rather than warning about it — the same line the payout template draws.
+    // save rather than warning about it: the same line the payout template draws.
     expect(impacts.some((one) => one.severity === 'blocks')).toBe(true);
     expect(impacts.some((one) => one.field === 'creditRules.loan')).toBe(true);
   });
 });
 
 /**
- * Repayment terms — **the last piece of credit policy that lived in two places.**
+ * Repayment terms: **the last piece of credit policy that lived in two places.**
  *
  * The app's instalment picker read a constant compiled into the mobile bundle; the API
  * validated the chosen term against its own list. Two lists that agree right up until one
@@ -300,7 +300,7 @@ describe('installment terms come off the rule', () => {
 
   it('falls back to the platform list when the factory has set none', () => {
     // `undefined` is the ordinary state of a `client_config` row written before this
-    // field existed — reading `rule.installmentOptions` directly is what breaks it.
+    // field existed: reading `rule.installmentOptions` directly is what breaks it.
     const rules = {
       ...DEFAULT_CREDIT_RULES,
       loan: { ...DEFAULT_CREDIT_RULES.loan, installmentOptions: undefined },
@@ -322,7 +322,7 @@ describe('installment terms come off the rule', () => {
       creditRuleProblems({ ...base, installmentOptions });
 
     /**
-     * Empty is the one worth stating. It is not "this facility is off" — the app renders
+     * Empty is the one worth stating. It is not "this facility is off": the app renders
      * a picker with no chip and a form that cannot be submitted, which reads on a phone
      * as a broken screen. Switching the facility off under Features is what off is for.
      */
@@ -335,7 +335,7 @@ describe('installment terms come off the rule', () => {
     expect(problems([3, 3, 6])).toContain('bad-installments');
 
     expect(problems([1, 2, 3])).toEqual([]);
-    // Absent is not a problem — it means the platform's list, which is a real answer.
+    // Absent is not a problem: it means the platform's list, which is a real answer.
     expect(creditRuleProblems({ ...base, installmentOptions: undefined })).toEqual([]);
   });
 
@@ -367,7 +367,7 @@ describe('M7 prices its queue with the tenant’s rule', () => {
     await signInAs('manager@galabodatea.lk');
     const { config } = await adminConfigRepository.get();
 
-    // Absent means the defaults — an existing `client_config` row keeps working.
+    // Absent means the defaults: an existing `client_config` row keeps working.
     const rules = config.creditRules ?? DEFAULT_CREDIT_RULES;
     expect(rules.loan.basis).toBeTruthy();
   });
@@ -401,7 +401,7 @@ describe('M7 prices its queue with the tenant’s rule', () => {
 
     /**
      * The whole point of the feature: the office changes a number in M14 and the
-     * queue's ceilings move on the next read. Recomputed per request, never stored —
+     * queue's ceilings move on the next read. Recomputed per request, never stored:
      * a cached ceiling would keep offering headroom the factory has withdrawn.
      */
     expect(eligibilityOf(same).ceiling).toBeLessThan(ceilingBefore);

@@ -3,18 +3,18 @@
  *
  * The layout answers the three questions an editor arrives with, in order:
  *
- *  1. **Which languages still need work?** — the language strip, where the gap is on the
+ *  1. **Which languages still need work?** The language strip, where the gap is on the
  *     tab for the language that has it (see `LanguageStrip`).
- *  2. **What does a supplier reading in this language get?** — the preview, resolved by
+ *  2. **What does a supplier reading in this language get?** The preview, resolved by
  *     the server so it is the app's answer rather than the console's.
- *  3. **Can this go out?** — the lifecycle card, which states what publishing will mean
+ *  3. **Can this go out?** The lifecycle card, which states what publishing will mean
  *     for the languages that are not finished instead of quietly allowing it.
  *
  * **Publishing with gaps is allowed and loud.** That is the AC-08 policy, not a
  * compromise: `EDITORIAL_FALLBACK_LANGUAGE` is documented as "the fallback, not a
  * default", which only means anything if content can go out incomplete. The one hard
- * refusal is a record with no fallback copy at all — there would be nothing to fall back
- * *to* — and the confirmation names every language that will fall back before anybody
+ * refusal is a record with no fallback copy at all (there would be nothing to fall back
+ * *to*), and the confirmation names every language that will fall back before anybody
  * agrees to it.
  */
 
@@ -100,7 +100,7 @@ export function NewsArticleScreen() {
   /**
    * Keys spelled out rather than built from the verb.
    *
-   * `` `news.${verb}ed` `` reads fine and produces `news.archiveed` — a key that resolves
+   * `` `news.${verb}ed` `` reads fine and produces `news.archiveed`, a key that resolves
    * to itself, so the toast shows a dotted string to the office and nothing fails loudly
    * enough to notice. Interpolated i18n keys are also invisible to a grep for unused
    * copy, which is how the string table rots.
@@ -160,7 +160,7 @@ export function NewsArticleScreen() {
             way round.
 
             `flex flex-col` as well as the scroller, because a bare `Card` in a grid
-            stretches to the row and its body would scroll inside the card instead — the
+            stretches to the row and its body would scroll inside the card instead; the
             scrollbar would sit under the header rather than beside the column. */}
         <Card className={cn('flex flex-col', SPLIT_PANE_SCROLLER)}>
           <CardHeader
@@ -181,7 +181,7 @@ export function NewsArticleScreen() {
              * Keyed by language, so switching tabs **remounts** the form.
              *
              * Without it the fields would carry Sinhala text into the Tamil tab and a
-             * save would file it under the wrong language — a mistake nothing downstream
+             * save would file it under the wrong language, a mistake nothing downstream
              * could detect, because both are valid strings.
              */}
             <TranslationEditor
@@ -252,7 +252,7 @@ export function NewsArticleScreen() {
               {published && data.publishedAt ? (
                 <p className="text-caption text-text-secondary">
                   {t('news.publishedBy', {
-                    name: data.publishedByName ?? '—',
+                    name: data.publishedByName ?? '-',
                     when: formatDateTime(data.publishedAt),
                   })}
                 </p>
@@ -339,7 +339,7 @@ export function NewsArticleScreen() {
         }
       >
         {/**
-         * The gaps, repeated in the confirmation — the part of AC-08 that makes the
+         * The gaps, repeated in the confirmation: the part of AC-08 that makes the
          * decision informed rather than merely recorded.
          *
          * "Publish" over a list of languages that will fall back is a different act from

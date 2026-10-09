@@ -1,13 +1,13 @@
 /**
- * M9's fourth request type — **an address change**, against the mock API.
+ * M9's fourth request type: **an address change**, against the mock API.
  *
  * It corrects an asymmetry rather than adding a feature. Bank details, the payment
  * method and the savings rate have always come through this queue because they decide
  * where money goes; an address decided nothing visible, so the app's `PATCH /profile`
  * wrote it straight to the record and **the office never heard about it**.
  *
- * That is wrong twice over. The estate address is *where the leaf comes from* — it ties
- * a supplier to a collection point and to land — and the home address is where every
+ * That is wrong twice over. The estate address is *where the leaf comes from* (it ties
+ * a supplier to a collection point and to land) and the home address is where every
  * printed Green Leaf Account is posted. A wrong one is a slip delivered nowhere.
  *
  * The case that carries the most here is `leaves the untouched field alone`: a request
@@ -40,7 +40,7 @@ describe('M9 · an address change is a request, not a save', () => {
 
     expect(request.type).toBe('address');
     expect(request.status).toBe('pending');
-    // Raised in the app, which is the whole point — this is a supplier telling the
+    // Raised in the app, which is the whole point: this is a supplier telling the
     // office something rather than the office recording it.
     expect(request.channel).toBe('app');
     expect(request.requestedAddress?.homeAddress).toBeTruthy();
@@ -74,14 +74,14 @@ describe('M9 · an address change is a request, not a save', () => {
     expect(after.homeAddress).toBe(request.requestedAddress!.homeAddress);
   });
 
-  it('leaves the untouched field alone — the case a block-spread would break', async () => {
+  it('leaves the untouched field alone: the case a block-spread would break', async () => {
     await signInAs(MANAGER);
     const request = await changeRequestRepository.get(ADDRESS_REQUEST);
     const before = await supplierRepository.get(request.supplierId);
 
     /**
      * The seeded request changes the **home** address only, which is a normal thing to
-     * ask for — people move house without their land moving. Applying
+     * ask for: people move house without their land moving. Applying
      * `{ ...supplier, ...requestedAddress }` would set `estateAddress` to `undefined`
      * and orphan the leaf filed against it.
      */

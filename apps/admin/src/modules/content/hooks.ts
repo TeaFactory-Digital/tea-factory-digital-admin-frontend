@@ -3,7 +3,7 @@
  *
  * One invalidation rule runs through all of it and is worth stating once: **saving one
  * language invalidates the whole record.** It is tempting to refresh only the language
- * that changed, and it would be wrong — `missingLanguages` and `staleLanguages` are
+ * that changed, and it would be wrong: `missingLanguages` and `staleLanguages` are
  * derived from every translation at once, so writing the English copy can make the
  * Sinhala one *stale without touching it*. A narrower invalidation would leave the tabs
  * showing the state before the edit, which is the exact failure AC-08 is written against.

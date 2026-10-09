@@ -5,8 +5,8 @@
  * still let a blank screen ship: `FactorySection` referenced `emailSchema` without
  * importing it, so the first thing an administrator opened threw on render and the
  * route boundary replaced the whole console with "This screen could not be shown".
- * Nothing in the suite mounted the component, and `npm run typecheck` — which would
- * have named the identifier — dies on an unrelated `tsconfig` error before it gets
+ * Nothing in the suite mounted the component, and `npm run typecheck`, which would
+ * have named the identifier, dies on an unrelated `tsconfig` error before it gets
  * there.
  *
  * So the first case here is deliberately shallow: **it just renders.** The second
@@ -38,7 +38,7 @@ describe('the configuration screen', () => {
 
     renderWithProviders(<ConfigurationScreen />, { route: '/configuration' });
 
-    // The seeded row, in editable fields — which is only reachable if every
+    // The seeded row, in editable fields, which is only reachable if every
     // section component evaluated.
     expect(await screen.findByDisplayValue(SEEDED_SUPPORT_EMAIL)).toBeInTheDocument();
     expect(screen.getByDisplayValue('Galaboda Tea Factory')).toBeInTheDocument();
@@ -81,8 +81,8 @@ describe('the configuration screen', () => {
  * Two things had to change together when `banks` became the 45-institution SLIPS list
  * rather than five hand-typed names, and neither is visible in a type:
  *
- *  - the four other settings that shared that section — collection points, savings rates,
- *    the fertilizer catalogue and the withdrawal month — had been pushed below thousands
+ *  - the four other settings that shared that section (collection points, savings rates,
+ *    the fertilizer catalogue and the withdrawal month) had been pushed below thousands
  *    of branch inputs, which is the same as not being on the screen at all;
  *  - the editor itself rendered **every** bank's branches expanded, so opening the section
  *    mounted about 3,682 text inputs.
@@ -105,7 +105,7 @@ describe('the bank catalogue section', () => {
 
     /**
      * The collection points are the first list in that section and the savings rates the
-     * second. What matters is that **no bank editor is between them** any more — with the
+     * second. What matters is that **no bank editor is between them** any more, with the
      * catalogue still in place, the rates sat below every branch of forty-five banks.
      */
     expect(await screen.findByText(/Collection points/i)).toBeInTheDocument();
@@ -131,7 +131,7 @@ describe('the bank catalogue section', () => {
     const [, firstBank] = await screen.findAllByRole('option');
     await user.click(firstBank!);
 
-    // Exactly one branch editor — the chosen bank's.
+    // Exactly one branch editor: the chosen bank's.
     expect(await screen.findByPlaceholderText('Akuressa')).toBeInTheDocument();
     expect(screen.getAllByPlaceholderText('Akuressa')).toHaveLength(1);
   });

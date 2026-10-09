@@ -1,11 +1,11 @@
 /**
- * Green Leaf Account arithmetic — the shared half of M5.
+ * Green Leaf Account arithmetic: the shared half of M5.
  *
  * Shared for the reason `leafCredit.ts` is shared, only more so: **AC-03 requires
  * the console, the printed slip and the app's Home screen to agree field for
  * field.** A bill is a read model over delivery rows and a monthly rate (api.md
  * §16), so three implementations of the same derivation are three figures the
- * office reconciles by hand — and they reconcile it after the supplier has
+ * office reconciles by hand, and they reconcile it after the supplier has
  * already been handed a slip.
  *
  * Four rules travel with these functions:
@@ -113,15 +113,15 @@ export function computeBillAmounts(facts: BillFacts): BillAmounts {
   /**
    * No rate is a *state*, not a zero (BR-102).
    *
-   * The deductions are still real — the office holds them whatever the auction
-   * did — but nothing is payable, so the coins carry on untouched rather than
+   * The deductions are still real (the office holds them whatever the auction
+   * did), but nothing is payable, so the coins carry on untouched rather than
    * being spent against a balance that does not exist yet.
    */
   if (facts.ratePerKg === null || facts.extraRatePerKg === null) {
     /**
      * A withdrawal waits for a rate too, and that is the honest answer rather than the
-     * kind one. It could be paid now — it is the supplier's own money and owes nothing to
-     * the auction — but paying it on an account with no figures on it would mean a second
+     * kind one. It could be paid now (it is the supplier's own money and owes nothing to
+     * the auction), but paying it on an account with no figures on it would mean a second
      * payment for the same month once the rate lands, and M6 builds one run per month per
      * method. So the request stays pending and lands on the account that can carry it.
      */
@@ -158,7 +158,7 @@ export function computeBillAmounts(facts: BillFacts): BillAmounts {
    * shortfall (`nextMonthDeb`).
    *
    * Stated as its own branch rather than falling out of the arithmetic, because
-   * the alternative reaches a payout run as a negative line — which a bank file
+   * the alternative reaches a payout run as a negative line, which a bank file
    * cannot express and a cheque cannot be written for.
    */
   if (payable <= 0) {
@@ -198,8 +198,8 @@ export function computeBillAmounts(facts: BillFacts): BillAmounts {
 /**
  * `"2026-04"` → `"APRIL 2026"`, the slip's own month heading.
  *
- * Upper case and English because that is what the printed Green Leaf Account says
- * — this is a **document field**, not console chrome, so it does not go through
+ * Upper case and English because that is what the printed Green Leaf Account says.
+ * This is a **document field**, not console chrome, so it does not go through
  * `t()`. The console's own month labels are formatted from `monthKey` (BR-110).
  */
 const SLIP_MONTHS = [

@@ -3,7 +3,7 @@
  *
  * A repository is where a wire response becomes a domain object. Keeping that
  * seam is what absorbs a backend that returns something slightly different from
- * what the UI wants — and it is the layer that gets rewritten when the mock is
+ * what the UI wants, and it is the layer that gets rewritten when the mock is
  * replaced, with no screen or hook touched (operations.md → Migrating from the
  * mock layer).
  */
@@ -82,14 +82,14 @@ export const authRepository = {
     try {
       await authEndpoints.logout();
     } catch {
-      // Intentionally swallowed — see above.
+      // Intentionally swallowed: see above.
     }
   },
 
   /**
    * The session as the API describes it, without rotating anything.
    *
-   * **Not used on bootstrap** — `refresh` above already answers with the user and the
+   * **Not used on bootstrap**: `refresh` above already answers with the user and the
    * grants, so asking again would be a second round trip for a payload the console is
    * already holding. It is kept because it is the only way to re-read grants *without*
    * spending a refresh token, and because `roles` is all it needs from the thin identity

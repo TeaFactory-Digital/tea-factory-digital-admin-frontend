@@ -5,7 +5,7 @@
  *
  *  - **BR-310: the ceiling travels with the decision.** `ceilingSeen` is the figure
  *    on screen when the button was pressed. The server recomputes and refuses with
- *    `stale-eligibility` if it has moved — because the approver agreed to a
+ *    `stale-eligibility` if it has moved, because the approver agreed to a
  *    specific number, and silently substituting a different one is the worst
  *    available outcome: nobody finds out.
  *  - **`over-ceiling` is checked here first.** Not to replace the server's refusal,
@@ -13,7 +13,7 @@
  *    refused. A control that fails after the click teaches the office to click it.
  *
  * Approving is withheld entirely when the request is over the ceiling. The clerk's
- * options are then reject, or send the supplier back to raise a smaller one — and
+ * options are then reject, or send the supplier back to raise a smaller one, and
  * saying so is more useful than a form that cannot succeed. §21.6's manager
  * threshold, when the factory sets one, becomes a third path here rather than a
  * change to any of this: `canApproveAmount` already treats "not configured" as
@@ -63,7 +63,7 @@ export function CreditDecisionActions({ request }: { request: AdminCreditRequest
   /**
    * Checked here, unlike M9's dialog, because on this queue read and decide are
    * **different roles**. §12.1 gives `creditRequests: R` to the clerk and `A` to the
-   * manager alone — so the person most likely to open this screen cannot act on it,
+   * manager alone, so the person most likely to open this screen cannot act on it,
    * and showing them buttons that will 403 is the lever the rbac module exists to
    * hide. Saying who *can* is more use than saying no.
    */

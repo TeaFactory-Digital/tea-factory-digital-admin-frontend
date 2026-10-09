@@ -3,7 +3,7 @@
  *
  * A dotted verb like `changeRequest.approve` is precise and unreadable. This maps
  * the ones the console produces; anything else falls through to the raw verb,
- * because an unlabelled action is far better than a hidden one — a new backend
+ * because an unlabelled action is far better than a hidden one: a new backend
  * action must show up in the log the day it ships, not the day someone adds a
  * string for it.
  */
@@ -105,15 +105,15 @@ const ACTION_KEYS: Record<string, string> = {
   'import.apply': 'audit.action.importApply',
 
   /**
-   * v2 — **what the supplier did, in the app.**
+   * v2: **what the supplier did, in the app.**
    *
    * These are the only verbs in this map whose actor is not staff, and the reason they
    * exist is that `PATCH /profile` lets a supplier change their own name, telephone and
    * addresses with no approval and no change request. v1 recorded none of it, so the
    * office could be asked "when did this address change?" and had no answer.
    *
-   * The copy is written from the supplier's side — *"Changed their own details"* rather
-   * than *"Profile updated"* — because the row sits on the same timeline as the
+   * The copy is written from the supplier's side (*"Changed their own details"* rather
+   * than *"Profile updated"*) because the row sits on the same timeline as the
    * office's actions and the distinction is the whole point of the entry.
    */
   'supplier.profile.update': 'audit.action.supplier.profile.update',

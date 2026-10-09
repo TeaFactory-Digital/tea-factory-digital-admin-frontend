@@ -20,7 +20,7 @@ import { SpinnerMark } from './SpinnerMark';
  * announcing yet.
  *
  * `role="status"` with a label rather than a bare graphic, because this is often
- * the only thing on the screen — a clerk on a screen reader hears "Loading…"
+ * the only thing on the screen: a clerk on a screen reader hears "Loading…"
  * instead of silence. The arc itself is `aria-hidden` inside `SpinnerMark`, so the
  * name comes from here and is announced once.
  *
@@ -29,7 +29,7 @@ import { SpinnerMark } from './SpinnerMark';
  *
  * Size is a variant, not a class the caller appends. `cn` joins without resolving
  * conflicts, on purpose (see `lib/cn`), so a caller passing `size-icon-sm` next to
- * the default `size-icon-lg` gets whichever Tailwind happens to emit last — which
+ * the default `size-icon-lg` gets whichever Tailwind happens to emit last, which
  * is `lg`, silently. The prop is the version that works.
  */
 const SPINNER_SIZES = {
@@ -106,7 +106,7 @@ export function EmptyState({
 /**
  * An error, with the specific reason where one is known.
  *
- * `errorMessageKey` maps the domain code — which only works because the transport
+ * `errorMessageKey` maps the domain code, which only works because the transport
  * preserves it instead of flattening it to the HTTP status (§17.7).
  */
 export function ErrorState({
@@ -140,7 +140,7 @@ export function ErrorState({
 }
 
 /**
- * A banner for something the office should notice but that does not block work —
+ * A banner for something the office should notice but that does not block work:
  * degraded config, mock data, a tenant note.
  */
 export function Notice({

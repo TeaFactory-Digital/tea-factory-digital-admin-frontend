@@ -1,8 +1,8 @@
 /**
  * The chevron has to stay on the control.
  *
- * `<Select>` draws its own arrow — the native one is hidden by `appearance-none` so the
- * field can be themed — and positions it absolutely against the wrapper. That is correct
+ * `<Select>` draws its own arrow (the native one is hidden by `appearance-none` so the
+ * field can be themed) and positions it absolutely against the wrapper. That is correct
  * only while the wrapper is the same width as the `<select>` inside it.
  *
  * It was not. A `div` is block-level, so `w-auto` filled whatever contained it while the
@@ -13,7 +13,7 @@
  * arrow floating in open space to its right.
  *
  * jsdom lays nothing out, so what is asserted is the rule that decides the geometry rather
- * than the geometry — this is a defect a test can pin but not see.
+ * than the geometry: this is a defect a test can pin but not see.
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -48,7 +48,7 @@ describe('Select', () => {
     );
 
     const wrapper = wrapperOf(screen.getByLabelText('Level'));
-    // The common case — a form field that lines up with the inputs above and below it.
+    // The common case: a form field that lines up with the inputs above and below it.
     expect(wrapper).toHaveClass('w-full');
     expect(wrapper).not.toHaveClass('inline-block');
   });

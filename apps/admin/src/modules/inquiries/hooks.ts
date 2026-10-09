@@ -2,7 +2,7 @@
  * M10 hooks.
  *
  * The narrowest invalidation in the console, and deliberately so. Answering a
- * message changes the message, the queue it was in and the dashboard badge — and
+ * message changes the message, the queue it was in and the dashboard badge, and
  * nothing else. An inquiry carries no money, touches no supplier record, and moves
  * no ceiling, so a wider sweep here would just refetch screens that cannot have
  * changed.

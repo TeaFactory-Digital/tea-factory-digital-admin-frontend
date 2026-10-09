@@ -5,7 +5,7 @@
  *
  *  - **AC-06: rejecting without a note is impossible.** The button is disabled
  *    below ten characters, the schema refuses it, and the server answers
- *    `note-required` — three layers, because this note is what the supplier reads
+ *    `note-required`: three layers, because this note is what the supplier reads
  *    as the reason and an empty one guarantees a telephone call.
  *  - **BR-501: four eyes.** Self-approval is checked before the dialog opens, so
  *    a clerk who raised the request is told why rather than shown a form that
@@ -261,7 +261,7 @@ function DecisionDialog({
         </p>
 
         {/* A blocking refusal gets its own explanation inside the dialog, never a
-            toast — the clerk has to understand why nothing happened. */}
+            toast; the clerk has to understand why nothing happened. */}
         {bankNotReady ? (
           <Notice tone="warning">
             <span>

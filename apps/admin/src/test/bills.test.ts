@@ -7,7 +7,7 @@
  *  - **The figures tie.** Gross is kilos × the rate, the nine lines add up to their
  *    own total (BR-107), and the balance follows from both. AC-03 requires the
  *    console, the slip and the app's Home screen to agree field for field, and the
- *    only way that holds is if there is one derivation — `@tfd/domain/bill.ts`.
+ *    only way that holds is if there is one derivation: `@tfd/domain/bill.ts`.
  *  - **Re-generating is normal.** A bill is a read model, so a corrected rate or a
  *    voided delivery has to be pickable up while the month is open.
  *  - **`null` is not `0`** (BR-102). A month with no auction result cannot produce a
@@ -34,7 +34,7 @@ const EDITOR = 'editor@galabodatea.lk';
 
 const TODAY = colomboDayOf(new Date());
 
-/** The month in progress — the only one the fixture leaves open. */
+/** The month in progress: the only one the fixture leaves open. */
 async function openMonth() {
   const page = await monthRepository.list();
   const open = page.items.find((month) => month.open);
@@ -92,7 +92,7 @@ describe('M5 bills', () => {
     // BR-107: the nine itemized lines equal the stated total.
     expect(billIsBalanced(bill)).toBe(true);
     expect(sumDeductionLines(bill.deductions)).toBeCloseTo(bill.deductions.total, 2);
-    // Every line is present, zeros included — the nine are the document's shape.
+    // Every line is present, zeros included: the nine are the document's shape.
     for (const category of DEDUCTION_CATEGORIES) {
       expect(typeof bill.deductions[category]).toBe('number');
     }
@@ -185,7 +185,7 @@ describe('M5 bills', () => {
       pageSize: 200,
     });
 
-    // The run's count and the list agree — a count nobody can work through is the
+    // The run's count and the list agree: a count nobody can work through is the
     // thing AC-04 is written against.
     expect(page.total).toBe(run.missingBankDetails);
     for (const bill of page.items) {
@@ -251,7 +251,7 @@ describe('M5 bills', () => {
     expect((await billRepository.run(month.monthKey)).stale).toBe(false);
 
     signOut();
-    // Leaf moves through the factory's own system now, not through a console role —
+    // Leaf moves through the factory's own system now, not through a console role:
     // `deliveries: write` is a server grant no `ConsoleRole` carries. See `mockUsers`.
     await signInAs(FACTORY_SYSTEM);
     const supplier = (await supplierRepository.list({ status: 'active', pageSize: 1 })).items[0]!;
@@ -272,7 +272,7 @@ describe('M5 bills', () => {
     /**
      * **Two identities, and BR-501 is why.** Whoever enters a month's rate may not be
      * whoever publishes it, so a version of this that did both as the manager fails on
-     * `You entered this month's rate, so you cannot publish it` — the four-eyes rule
+     * `You entered this month's rate, so you cannot publish it`: the four-eyes rule
      * firing correctly and hiding the property under test.
      *
      * The rate is the factory's own system's anyway: `ratesAndMonthClose: write` is a
@@ -344,7 +344,7 @@ describe('M5 bills', () => {
     await signInAs('clerk@galabodatea.lk');
     const month = await publishedMonth();
 
-    // `billing: R` — the bills are visible…
+    // `billing: R`: the bills are visible…
     await expect(
       billRepository.list({ monthKey: month.monthKey, pageSize: 1 }),
     ).resolves.toBeTruthy();
@@ -361,7 +361,7 @@ describe('M5 bills', () => {
   });
 
   it('gives the editor no access to bills at all (§12.1)', async () => {
-    // `content: W` and nothing else — the narrowest account the console has.
+    // `content: W` and nothing else: the narrowest account the console has.
     await signInAs(EDITOR);
     const refused = await billRepository.list().catch((cause: unknown) => cause);
     expect(isApiError(refused) && refused.code).toBe('forbidden');

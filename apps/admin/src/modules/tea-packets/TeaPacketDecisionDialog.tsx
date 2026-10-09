@@ -9,14 +9,14 @@
  *
  * The rules that carry over unchanged, because they are not about credit:
  *
- *  - **AC-06** — a decision without a note is impossible. Disabled under ten
+ *  - **AC-06**: a decision without a note is impossible. Disabled under ten
  *    characters, refused by the schema, refused by the server.
- *  - **BR-501** — the four-eyes check is on the *row*, before this opens, and the
+ *  - **BR-501**: the four-eyes check is on the *row*, before this opens, and the
  *    server refuses regardless because the console can be lied to.
  *
  * What is deliberately absent is BR-310's staleness check. There is no ceiling here to
  * move, so there is nothing for an approver to have agreed to that could quietly change
- * underneath them — see `AdminTeaPacketRequest`.
+ * underneath them; see `AdminTeaPacketRequest`.
  */
 
 import { useState } from 'react';
@@ -67,7 +67,7 @@ export function TeaPacketDecisionDialog({
   const suggestions = useNoteSuggestions('teaPackets', builtIn);
 
   /**
-   * What is wrong with the request as asked — the store's own limits, not the
+   * What is wrong with the request as asked: the store's own limits, not the
    * supplier's creditworthiness.
    *
    * Shown rather than enforced on the approve button, and that asymmetry is the point:
@@ -156,7 +156,7 @@ export function TeaPacketDecisionDialog({
         </div>
 
         {/* The supplier's own words. Short, and often the whole reason the request
-            makes sense — "for my daughter's wedding" is not something to guess at. */}
+            makes sense: "for my daughter's wedding" is not something to guess at. */}
         {request.notes ? (
           <div className="rounded-md border border-divider p-md">
             <p className="text-overline text-text-secondary uppercase">

@@ -1,5 +1,5 @@
 /**
- * M10 Inquiries — the queue gateway.
+ * M10 Inquiries: the queue gateway.
  *
  * Both writes validate before they leave, and both refusals the server answers are
  * `note-required`: a reply too short to be an answer, and a closure with no reason.
@@ -104,13 +104,13 @@ function toAdminInquiry(served: ServedInquiry): AdminInquiry {
 }
 
 export const inquiryRepository = {
-  /** Open first and oldest first — the message that has waited longest is the one to answer. */
+  /** Open first and oldest first: the message that has waited longest is the one to answer. */
   list: async (query: InquiryQuery = {}): Promise<Paged<AdminInquiry>> => {
     const page = await inquiryEndpoints.list({ page: 0, pageSize: 25, status: 'open', ...query });
     return { ...page, items: page.items.map((row) => toAdminInquiry(row as ServedInquiry)) };
   },
 
-  /** One inquiry, by id. The list sweep this used to need is gone — **G-06** is closed. */
+  /** One inquiry, by id. The list sweep this used to need is gone: **G-06** is closed. */
   get: async (id: string): Promise<AdminInquiry> =>
     toAdminInquiry((await inquiryEndpoints.get(id)) as ServedInquiry),
 

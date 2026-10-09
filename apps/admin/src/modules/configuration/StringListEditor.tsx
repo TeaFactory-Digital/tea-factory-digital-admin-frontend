@@ -3,14 +3,14 @@
  * savings rates.
  *
  * Shared because the *behaviour* is the part worth getting right once, and it is not the
- * adding — it is the removing. Every one of these lists is referenced by records elsewhere:
+ * adding; it is the removing. Every one of these lists is referenced by records elsewhere:
  * a delivery names its collection point, a supplier's bank details name their bank. So a
  * row carries the count of what depends on it, and the caller decides whether that count
  * blocks or merely warns (`configImpact`).
  *
  * **Removal is staged, never immediate.** A row is marked for removal and the section is
  * saved as a whole, so the impact list can state the consequence of the complete change
- * before anything is committed — and so a mis-click is undone by not saving rather than by
+ * before anything is committed, and so a mis-click is undone by not saving rather than by
  * remembering what was there.
  */
 
@@ -128,7 +128,7 @@ export function StringListEditor({
  *
  * Every section in M14 is edited locally and saved as a unit, so "I have changed three
  * things and want none of them" needs one control. Without it the only way back is to
- * remember the original values — which for a colour or a list of banks nobody does.
+ * remember the original values, which for a colour or a list of banks nobody does.
  */
 export function RevertButton({ onRevert, disabled }: { onRevert: () => void; disabled: boolean }) {
   const { t } = useTranslation();

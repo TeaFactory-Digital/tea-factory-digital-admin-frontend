@@ -33,7 +33,7 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
   /** Disables every control while a page is in flight. */
   busy?: boolean;
-  /** Rendered at the start of the bar — the "Showing 1–50 of 84" line. */
+  /** Rendered at the start of the bar: the "Showing 1–50 of 84" line. */
   children?: ReactNode;
 }
 
@@ -76,7 +76,7 @@ export function Pagination({
      * `justify-between` with the count in a `min-w-0` box rather than letting the
      * two sit next to each other: the count changes width on the last page
      * ("Showing 51–84 of 84"), and the controls must not shuffle sideways when it
-     * does — a clerk paging through a list clicks the same pixel every time.
+     * does: a clerk paging through a list clicks the same pixel every time.
      */
     <div className="flex shrink-0 items-center justify-between gap-md border-t border-divider px-lg py-sm">
       <div className="min-w-0">{children}</div>
@@ -86,7 +86,7 @@ export function Pagination({
         {step(page - 1, atStart, t('common.previousPage'), <ChevronLeft className="size-icon-sm" aria-hidden />)}
 
         {/**
-         * Where you are — a label, not a control. It was a `<button>` while there
+         * Where you are: a label, not a control. It was a `<button>` while there
          * were several numbers to choose between; on its own it would be a button
          * whose only action is to reload the page you are already on.
          */}
@@ -96,7 +96,7 @@ export function Pagination({
         >
           <span aria-hidden>{page + 1}</span>
           {/* A filled circle says nothing to a screen reader, and a bare "1" says
-              almost as little — so the announced text carries the count. */}
+              almost as little, so the announced text carries the count. */}
           <span className="sr-only">{t('common.pageOf', { page: page + 1, total: last + 1 })}</span>
         </span>
 

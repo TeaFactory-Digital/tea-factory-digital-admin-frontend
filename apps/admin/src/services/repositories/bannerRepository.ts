@@ -1,12 +1,12 @@
 /**
- * M11 banners — the gateway.
+ * M11 banners: the gateway.
  *
  * One guard here is not a courtesy and is the reason this file exists rather than the
  * screen calling the endpoints directly: **the action is validated with the app's own
  * resolver** before it leaves the browser.
  *
  * `bannerTarget()` is the function the phone runs. When it returns `null` the app renders
- * the artwork with no button and reports nothing — by design, because a supplier can
+ * the artwork with no button and reports nothing, by design, because a supplier can
  * always close a banner. That silence is exactly what makes it dangerous to author
  * against: an editor who types `teafactory://manure`, or a path with a stray query
  * string, gets a saved record, a published banner and a dead button, and the only person
@@ -51,7 +51,7 @@ function assertActionUsable(action: BannerAction | undefined): void {
 /**
  * A banner translation needs a title and a button label; the body is optional.
  *
- * Deliberately not `contentTranslationSchema`, which insists on a body — right for an
+ * Deliberately not `contentTranslationSchema`, which insists on a body: right for an
  * article and wrong here, since plenty of banners are a headline and a button. Validated
  * field by field rather than by reaching for the article schema and disabling half of it.
  */
@@ -98,7 +98,7 @@ function assertWindowUsable(startsAt: string | undefined, endsAt: string | null 
  * (gap **G-08**).
  *
  * That last one is the one to keep an eye on. An empty `staleLanguages` renders as *"no
- * translation is out of date"*, which is a claim rather than an absence — and AC-08 is
+ * translation is out of date"*, which is a claim rather than an absence, and AC-08 is
  * precisely about copy that was translated and then left behind by a correction. The
  * console cannot work it out either: it would need each translation's `updatedAt`, and
  * the row carries one timestamp for the whole banner.
@@ -128,7 +128,7 @@ function toBannerListItem(row: ServedBannerRow): BannerListItem {
 
 export const bannerRepository = {
   /**
-   * **Filtered and paged here** — `GET /admin/banners` answers with every banner of this
+   * **Filtered and paged here**: `GET /admin/banners` answers with every banner of this
    * factory in one array (gap **G-09**). `q` is applied locally against the headline,
    * because the API has no search on this resource at all and a banner list is short.
    */
@@ -142,7 +142,7 @@ export const bannerRepository = {
     return paginate(items, { page: query.page ?? 0, pageSize: query.pageSize ?? 25 });
   },
 
-  /** ⚠ 404s until the API implements it — see `bannerEndpoints.get` (gap **G-08**). */
+  /** ⚠ 404s until the API implements it: see `bannerEndpoints.get` (gap **G-08**). */
   get: (id: string): Promise<AdminPromoBanner> => bannerEndpoints.get(id),
 
   create: async (body: BannerDraft): Promise<StatusAck> => {
@@ -166,7 +166,7 @@ export const bannerRepository = {
      *
      * `POST /admin/banners` reads `title`, `body` and `buttonLabel` off the top level and
      * writes them as the English translation; it has no `translations` field, and zod
-     * strips what it does not recognise — so a body carrying the array alone created a
+     * strips what it does not recognise, so a body carrying the array alone created a
      * banner with no copy at all, and the create succeeded. The other languages are saved
      * afterwards through `saveTranslation`, one at a time, as they are for news.
      *

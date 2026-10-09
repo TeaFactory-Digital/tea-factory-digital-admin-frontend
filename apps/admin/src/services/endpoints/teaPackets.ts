@@ -1,5 +1,5 @@
 /**
- * M18 Tea packet requests — the queue the app has been waiting for.
+ * M18 Tea packet requests: the queue the app has been waiting for.
  *
  * The app has shipped `RequestTeaPacketsScreen` since its first release and v1 of this
  * console had no endpoint to decide one. Every other `pending` in a supplier's app is a
@@ -22,7 +22,7 @@ import type { StatusAck } from '../api/adapters';
 import { toQueueParams } from './params';
 
 export const teaPacketEndpoints = {
-  /** One request, decided or not — a bookmarked link must open (**G-06**, now served). */
+  /** One request, decided or not: a bookmarked link must open (**G-06**, now served). */
   get: (id: string) =>
     apiClient
       .get<AdminTeaPacketRequest>(`/admin/tea-packet-requests/${id}`)

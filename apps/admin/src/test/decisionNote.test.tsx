@@ -4,7 +4,7 @@
  * AC-06 makes a note compulsory, which is what makes the *quality* of the note a
  * product problem rather than a nicety: a rule that forces ten characters out of a
  * clerk forty times a day gets ten characters. These cases pin the three behaviours
- * that decide whether the chips help or get in the way —
+ * that decide whether the chips help or get in the way:
  *
  *  - a chip fills the note well past the ten-character floor, so the decision
  *    button it was blocking becomes usable;
@@ -208,7 +208,7 @@ describe('supplier identity-check suggestions', () => {
    *
    * The dialog's own warning is that anyone who knows a supplier code can telephone and
    * ask, so a one-click *"confirmed by telephone"* would be the console offering the
-   * weakest possible check as though it were policy — the opposite of what the field is
+   * weakest possible check as though it were policy: the opposite of what the field is
    * for. M9 offers that chip and should; this dialog must not.
    */
   it('offers no telephone chip, unlike the change-request queue', async () => {

@@ -1,22 +1,22 @@
 /**
- * One supplier's months — **the screen a clerk needs while the supplier is on the
+ * One supplier's months: **the screen a clerk needs while the supplier is on the
  * telephone.**
  *
  * v1 had no way to see this at all. `BillQuery` offered `monthKey` and a text search,
  * which is the accountant's axis: pick a month, then filter within it. That was right
  * when M5 fed the month close, and it is wrong now that M5 survives only as supplier
- * support — because the question support is asked is never about one month. It is
+ * support, because the question support is asked is never about one month. It is
  * *"why is my July less than my June?"*, and answering it needs both at once.
  *
  * **Deliberately the same three views the app gives the supplier**
  * (`IncomeHistoryScreen`), in the same order, because the whole point is that the clerk
  * and the supplier are looking at the same thing:
  *
- *  - **Graph** — a bar per month, switchable between earnings and kilos. The switch
+ *  - **Graph**: a bar per month, switchable between earnings and kilos. The switch
  *    matters: "I delivered more and got less" is a rate question, and seeing the two
  *    series separately is what makes that visible rather than arguable.
- *  - **List** — the rows, newest first, each linking to the slip.
- *  - **Chart** — where one month's money went, as a donut of its deduction lines. This
+ *  - **List**: the rows, newest first, each linking to the slip.
+ *  - **Chart**: where one month's money went, as a donut of its deduction lines. This
  *    is the view that answers the actual complaint most of the time: the gross was fine
  *    and something came off it.
  *
@@ -94,7 +94,7 @@ export function SupplierIncomeHistory({ supplierId }: { supplierId: string }) {
   // reads suppliers but not bills, and the view answered `403`, so it is not offered.
   const canReadBills = useCan('billing', 'read');
   const [metric, setMetric] = useState<Metric>('earnings');
-  /** `undefined` until the reader picks one — the server resolves it to the newest. */
+  /** `undefined` until the reader picks one; the server resolves it to the newest. */
   const [year, setYear] = useState<number | undefined>();
   const [monthKey, setMonthKey] = useState<string>('');
 
@@ -110,7 +110,7 @@ export function SupplierIncomeHistory({ supplierId }: { supplierId: string }) {
     return picked ?? months.filter((one) => one.billId).at(-1) ?? null;
   }, [months, monthKey]);
 
-  // Only fetched in the chart view — a donut nobody is looking at is a bill nobody
+  // Only fetched in the chart view: a donut nobody is looking at is a bill nobody
   // asked for, on a connection the weighing point is sharing.
   const bill = useBill(
     view === 'chart' && canReadBills ? (chartMonth?.billId ?? undefined) : undefined,
@@ -120,7 +120,7 @@ export function SupplierIncomeHistory({ supplierId }: { supplierId: string }) {
     () =>
       months
         // Earnings are unknown until the auction result is in; kilos are not. Omitted
-        // rather than drawn at zero — see the file docblock.
+        // rather than drawn at zero; see the file docblock.
         .filter((one) => metric !== 'earnings' || one.grossAmount != null)
         .map((one) => ({
           monthKey: one.monthKey,
@@ -256,7 +256,7 @@ export function SupplierIncomeHistory({ supplierId }: { supplierId: string }) {
           </>
         ) : view === 'list' ? (
           <ul className="flex flex-col divide-y divide-divider">
-            {/* Newest first — a list is read from the top. The series arrives
+            {/* Newest first: a list is read from the top. The series arrives
                 oldest-first because the graph above needs it that way. */}
             {[...months].reverse().map((month) => (
               <MonthRow key={month.monthKey} month={month} />
@@ -333,7 +333,7 @@ function MonthRow({ month }: { month: SupplierMonthSummary }) {
         {/**
          * The pending badge is the `null` case made legible. It is the same state the
          * app shows the supplier, and the sentence the office has to say on the
-         * telephone — "the auction result is not in yet".
+         * telephone: "the auction result is not in yet".
          */}
         {month.grossAmount == null ? (
           <Badge tone="neutral">{t('suppliers.income.pending')}</Badge>

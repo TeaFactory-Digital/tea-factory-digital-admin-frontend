@@ -20,7 +20,7 @@ export function AppearanceProvider({ children }: PropsWithChildren) {
    * Read once, lazily.
    *
    * Not on every render: `readAppearance` touches `localStorage` and parses JSON, and the
-   * value cannot change underneath this component — every write in the app goes through
+   * value cannot change underneath this component: every write in the app goes through
    * the setters below.
    */
   const [appearance, setAppearance] = useState<Appearance>(readAppearance);

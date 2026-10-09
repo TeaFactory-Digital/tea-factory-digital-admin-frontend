@@ -3,8 +3,8 @@
  *
  * The server's `message` is English-only and a fallback (§17.4); localized copy
  * lives in the string tables. Mapping by `code` is only possible because the
- * transport preserves the domain code instead of flattening it to the HTTP status
- * — which is the whole reason §17.7's first fix matters.
+ * transport preserves the domain code instead of flattening it to the HTTP status,
+ * which is the whole reason §17.7's first fix matters.
  */
 
 import { isApiError } from '@/services/api/errors';
@@ -26,7 +26,7 @@ const BY_CODE: Record<string, string> = {
   'stale-eligibility': 'error.staleEligibility',
   invalid: 'error.invalid',
   /**
-   * The record is gone — deleted, or never existed under that id.
+   * The record is gone: deleted, or never existed under that id.
    *
    * Mapped separately from the `'404'` fallback at the foot of this table and not
    * folded into it: the status is what an unrouted path answers, the code is what a
@@ -48,8 +48,8 @@ const BY_CODE: Record<string, string> = {
   'already-resolved': 'error.alreadyResolved',
   'month-mismatch': 'error.monthMismatch',
   'batch-too-large': 'error.batchTooLarge',
-  // M5. `bills-missing` doubles as a *state* on the bills screen — a month that has
-  // not been generated yet — which is why the run card checks the code itself rather
+  // M5. `bills-missing` doubles as a *state* on the bills screen (a month that has
+  // not been generated yet), which is why the run card checks the code itself rather
   // than rendering this string.
   'bills-missing': 'error.billsMissing',
   'bills-stale': 'error.billsStale',
@@ -64,7 +64,7 @@ const BY_CODE: Record<string, string> = {
   // M7. Both are refusals to lend: the ceiling moved under the approver
   // (BR-310), or the amount was never inside it.
   'over-ceiling': 'error.overCeiling',
-  // M11 / M12. The fallback language is the only hard requirement on content — gaps
+  // M11 / M12. The fallback language is the only hard requirement on content: gaps
   // are publishable because the app falls back (AC-08), and no fallback is not.
   'fallback-translation-missing': 'error.fallbackTranslationMissing',
   'slug-taken': 'error.slugTaken',
@@ -83,7 +83,7 @@ const BY_CODE: Record<string, string> = {
   'point-in-use': 'error.pointInUse',
   'fallback-language-required': 'error.fallbackLanguageRequired',
   // M15. `last-admin` is the refusal that keeps a factory from locking itself out of its
-  // own console — including the version where no *role* grants the capability any more.
+  // own console, including the version where no *role* grants the capability any more.
   'last-admin': 'error.lastAdmin',
   'self-modification': 'error.selfModification',
   'email-taken': 'error.emailTaken',
@@ -125,7 +125,7 @@ export function errorMessageKey(error: unknown): string {
  *
  * The set is "refusals a decision dialog can meet, where retrying the same click
  * cannot help". Each one leaves the submit button disabled: the clerk has to read
- * why and do something different — reload the figures, hand it to a colleague, or
+ * why and do something different: reload the figures, hand it to a colleague, or
  * reject it. A toast that vanishes is the wrong shape for all four.
  */
 export function isBlockingError(error: unknown): boolean {

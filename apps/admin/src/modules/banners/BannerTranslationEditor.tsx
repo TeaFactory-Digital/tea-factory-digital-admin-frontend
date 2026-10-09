@@ -2,7 +2,7 @@
  * One language's banner copy.
  *
  * Deliberately not `TranslationEditor`. That component is shared between M11 and M12
- * because an article and a static page differ in lifecycle and not in copy — three
+ * because an article and a static page differ in lifecycle and not in copy: three
  * fields, the same three, in each language. A banner's copy is a different shape: a
  * headline, an optional supporting line, and a **button label**, which is the field that
  * decides whether the banner has a way out of it at all.

@@ -6,7 +6,7 @@
  * memory by design), so `bootstrap()` has to spend a round trip on the refresh
  * cookie before anything behind `RequireAuth` can render, and `GET /config` has
  * to land before the factory's name and colours are known. On office wifi that is
- * a second or two of a page that is branded but empty — and the first thing a
+ * a second or two of a page that is branded but empty, and the first thing a
  * clerk sees on a shared machine should say which factory this console belongs
  * to, because the answer decides whether they are about to enter today's leaf
  * into the right deployment.
@@ -75,8 +75,8 @@ export function SplashScreen() {
 /**
  * Renders the app, with the splash over it until the console knows itself.
  *
- * Sits inside `RuntimeConfigProvider` — it has to, since the name it shows comes
- * from there — and above the router.
+ * Sits inside `RuntimeConfigProvider` (it has to, since the name it shows comes
+ * from there) and above the router.
  */
 export function BootSplash({ children }: PropsWithChildren) {
   const { loading } = useRuntimeConfig();

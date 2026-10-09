@@ -1,5 +1,5 @@
 /**
- * M11's promo banners against the mock API — **the editor v1 did not have**.
+ * M11's promo banners against the mock API: **the editor v1 did not have**.
  *
  * `enablePromoBanner` shipped in the flag set, `PromoBanner` shipped in the domain
  * package, `banners.md` specified the whole feature, and there was no way to author one.
@@ -10,7 +10,7 @@
  *
  *  - An unresolvable action renders artwork with *no button* and reports nothing, so a
  *    banner saved with one looks published from every screen in this console and is inert
- *    on every phone. It is therefore refused at authoring, at patch and at publish — with
+ *    on every phone. It is therefore refused at authoring, at patch and at publish, with
  *    the app's own resolver, not a second implementation of the allowlist.
  *  - A backwards window makes `isBannerLive` return false for ever, which looks exactly
  *    like a working banner nobody has scrolled to.
@@ -149,7 +149,7 @@ describe('M11 promo banners', () => {
     /**
      * A headline with no button label is the case `isWritten` would have got wrong: the
      * article rule asks for a title and a **body**, so it would have accepted this and
-     * reported the language as written — and a supplier would get artwork with no way out
+     * reported the language as written, and a supplier would get artwork with no way out
      * of it.
      */
     const noButton = await bannerRepository
@@ -182,7 +182,7 @@ describe('M11 promo banners', () => {
     await signInAs(FACTORY_ADMIN);
 
     /**
-     * **Publishing with a gap is allowed and loud** — the AC-08 policy, not a compromise.
+     * **Publishing with a gap is allowed and loud**: the AC-08 policy, not a compromise.
      * The English copy exists, so a Sinhala supplier reads the English and the console
      * names the languages in the confirmation.
      */
@@ -193,7 +193,7 @@ describe('M11 promo banners', () => {
      * The gaps come from the **list**, not from the publish response.
      *
      * Publishing acknowledges with `{ id, status }` (gap **G-11**), and there is no
-     * `GET /admin/banners/{id}` to read the record back from (gap **G-08**) — so the list
+     * `GET /admin/banners/{id}` to read the record back from (gap **G-08**), so the list
      * row is the only place `missingLanguages` is published at all. That is also exactly
      * what the banners grid renders, which is why the gap is still visible to the office
      * even with the editor unavailable.
@@ -274,7 +274,7 @@ describe('the banner action allowlist (shared with the app)', () => {
   it('counts a headline-and-button banner as written, and a label-less one as not', () => {
     const base = { lang: 'en' as const, updatedAt: FUTURE, updatedByName: 'Editor' };
 
-    // A supporting line is optional — plenty of banners are a headline and a button.
+    // A supporting line is optional: plenty of banners are a headline and a button.
     expect(isBannerWritten({ ...base, title: 'Notice', body: '', buttonLabel: 'Open' })).toBe(true);
     expect(isBannerWritten({ ...base, title: 'Notice', body: 'More', buttonLabel: '' })).toBe(false);
     expect(isBannerWritten({ ...base, title: '  ', body: 'More', buttonLabel: 'Open' })).toBe(false);

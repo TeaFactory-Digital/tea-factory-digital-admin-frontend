@@ -2,7 +2,7 @@
  * Toasts, for the confirmation half of an action.
  *
  * A rule worth stating because it is easy to break: **a toast may confirm, never
- * inform.** "Approved — the app will show the new value on next refresh" is a
+ * inform.** "Approved: the app will show the new value on next refresh" is a
  * toast. A four-eyes refusal is not: it is a dialog, because a message that
  * disappears after four seconds is a message the clerk can miss and then wonder
  * why the queue did not change.

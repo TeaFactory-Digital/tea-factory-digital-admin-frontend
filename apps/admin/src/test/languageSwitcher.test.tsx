@@ -1,7 +1,7 @@
 /**
  * The language pill.
  *
- * What is worth testing here is not that a click changes a string — it is the set of
+ * What is worth testing here is not that a click changes a string: it is the set of
  * things that would strand the person the control exists for:
  *
  *  - an option rendered in the *active* language instead of its own script, which
@@ -24,7 +24,7 @@ import { installLocalStorage } from './localStorage';
 const STORAGE_KEY = 'tfd.admin.language';
 
 /**
- * The endonyms are the accessible names, so they are how the segments are found —
+ * The endonyms are the accessible names, so they are how the segments are found,
  * and they are read from `languages.ts` rather than copied into this file.
  *
  * Not fussiness. Sinhala and Tamil share glyph *shapes* across unrelated code

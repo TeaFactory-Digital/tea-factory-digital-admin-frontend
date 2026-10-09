@@ -3,7 +3,7 @@
  *
  * All three close the same class of failure: **a fact the console held and could not
  * show for one person.** The month history was reachable only month-first, the push
- * diagnosis only in aggregate, and the supplier's own writes not at all — so the office
+ * diagnosis only in aggregate, and the supplier's own writes not at all, so the office
  * could hold every number a supplier was asking about and still be unable to answer.
  *
  * What gets asserted is mostly **identities against the records the figures came from**,
@@ -38,7 +38,7 @@ describe('M2 · a supplier’s month history', () => {
     signOut();
   });
 
-  it('answers with one supplier across months — the axis M5 does not have', async () => {
+  it('answers with one supplier across months: the axis M5 does not have', async () => {
     await signInAs(CLERK);
     const { id, history } = await supplierWithBills();
 
@@ -62,7 +62,7 @@ describe('M2 · a supplier’s month history', () => {
     await signInAs(CLERK);
     const { id, history } = await supplierWithBills();
 
-    // `years` is descending, so the newest is first — and that is what an unspecified
+    // `years` is descending, so the newest is first, and that is what an unspecified
     // request must land on. An empty series would read as "this supplier delivered
     // nothing", which is the one wrong answer this endpoint can give.
     expect(history.year).toBe(history.years[0]);
@@ -105,7 +105,7 @@ describe('M2 · a supplier’s month history', () => {
     expect(bill.balanceAmount).toBe(month!.finalBalance);
   });
 
-  it('filters the bills list to one supplier — v2’s new query', async () => {
+  it('filters the bills list to one supplier: v2’s new query', async () => {
     await signInAs(CLERK);
     const { id } = await supplierWithBills();
 
@@ -130,7 +130,7 @@ describe('M2 · why a push does or does not reach this supplier', () => {
 
     for (const reach of status.categories) {
       // `reachable` is a conclusion drawn from the two facts beside it, never an
-      // independent field — the console prints the working, so it has to add up.
+      // independent field: the console prints the working, so it has to add up.
       expect(reach.reachable).toBe(reach.offeredByFactory && reach.acceptedOnSomeDevice);
       expect(reach.acceptedOnSomeDevice).toBe(reach.deviceCount > 0);
     }
@@ -143,7 +143,7 @@ describe('M2 · why a push does or does not reach this supplier', () => {
 
     /**
      * "The factory does not send this kind" is a **real answer** to "why didn't I get
-     * it", and a different one from an opt-out with a different fix — M14 rather than
+     * it", and a different one from an opt-out with a different fix: M14 rather than
      * the supplier's phone. Listing only the offered categories would silently drop the
      * case from the panel.
      */
@@ -168,7 +168,7 @@ describe('M2 · why a push does or does not reach this supplier', () => {
     const page = await supplierRepository.list({ hasApp: true, pageSize: 5 });
     const status = await supplierRepository.notifications(page.items[0]!.id);
 
-    // A credential, and nothing in the office can act on one — §20.4's argument about
+    // A credential, and nothing in the office can act on one: §20.4's argument about
     // account numbers, applied to the thing that identifies a phone.
     for (const device of status.devices) {
       expect(device).not.toHaveProperty('token');
@@ -211,7 +211,7 @@ describe('M17 · what the supplier did themselves', () => {
       expect(entry.ip).toBeNull();
     }
 
-    // The change the app makes with no approval and no change request — the whole
+    // The change the app makes with no approval and no change request: the whole
     // reason this actor type exists.
     expect(page.items.some((one) => one.action === 'supplier.profile.update')).toBe(true);
   });

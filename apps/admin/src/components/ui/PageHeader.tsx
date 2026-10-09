@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 /**
  * The heading every module screen starts with.
  *
- * One `<h1>` per page, here — so the document outline is right and a screen
+ * One `<h1>` per page, here, so the document outline is right and a screen
  * reader's "jump to heading" lands somewhere useful rather than on a card title.
  */
 export function PageHeader({

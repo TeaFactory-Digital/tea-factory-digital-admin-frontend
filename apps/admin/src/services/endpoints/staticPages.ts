@@ -1,11 +1,11 @@
 /**
- * M12 Static content — the app's fixed pages.
+ * M12 Static content: the app's fixed pages.
  *
  * **A closed set, not a collection**, and every difference from M11 follows from it:
  * there is no `create`, no `delete` and no `archive`, because the app links to
  * `STATIC_PAGE_SLUGS` directly and a page that could be removed is a link to nowhere in
  * a shipped binary. The list endpoint returns all of them, including the ones the
- * factory has never written — an unwritten page is a **state to be shown**, not a row
+ * factory has never written: an unwritten page is a **state to be shown**, not a row
  * that is absent.
  *
  * `publish` exists once per page and means "the factory has written this at all". After
@@ -48,7 +48,7 @@ export const staticPageEndpoints = {
    * screen is already holding.
    */
 
-  /** One language at a time, for the same reason as M11 — see `news.ts`. */
+  /** One language at a time, for the same reason as M11: see `news.ts`. */
   saveTranslation: (slug: StaticPageSlug, lang: LanguageCode, body: ContentTranslationBody) =>
     apiClient
       .put<MutationAck>(`/admin/static-pages/${slug}/translations/${lang}`, body)

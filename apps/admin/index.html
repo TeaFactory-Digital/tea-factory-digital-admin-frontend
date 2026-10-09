@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow" />
     <!--
       Deliberately generic. One bundle serves every tenant, so the title and
-      favicon cannot be baked in — `BrandProvider` sets both from the resolved
+      favicon cannot be baked in: `BrandProvider` sets both from the resolved
       config once the tenant is known. A hardcoded factory name here would
       appear in every other factory's browser tab.
 
@@ -34,7 +34,7 @@
       The static half of the splash.
 
       It covers the one stretch no React component can: downloading and evaluating
-      the bundle — and, in development and the demo build, the service-worker
+      the bundle and, in development and the demo build, the service-worker
       registration `main.tsx` deliberately awaits before rendering. That stretch is
       a blank white page today.
 

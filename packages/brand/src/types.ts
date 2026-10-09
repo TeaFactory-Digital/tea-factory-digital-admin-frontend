@@ -13,7 +13,7 @@ export interface Theme {
 }
 
 /**
- * Partial overrides a tenant may provide. Everything optional — anything
+ * Partial overrides a tenant may provide. Everything optional: anything
  * omitted falls back to the base tokens, exactly as `createTheme` does on mobile.
  */
 export interface ThemeOverride {

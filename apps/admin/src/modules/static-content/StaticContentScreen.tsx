@@ -1,10 +1,10 @@
 /**
- * M12 Static content — the app's fixed pages.
+ * M12 Static content: the app's fixed pages.
  *
  * **A closed set, not a collection**, and the screen is shaped by that rather than by
  * reusing M11's grid. There is no create, no delete and no search: there are six pages,
  * the app links to all six by slug, and the only question is which one to work on. So the
- * list is a rail rather than a table — six rows a reader takes in at once, each carrying
+ * list is a rail rather than a table: six rows a reader takes in at once, each carrying
  * the two things that decide whether it needs attention: is it written at all, and which
  * languages are behind.
  *
@@ -18,7 +18,7 @@
  * asymmetry with M11 is deliberate: a *new* article must not appear half-written, while a
  * correction to the FAQ sitting in an unpublished draft leaves the wrong answer in front
  * of suppliers for as long as nobody remembers to press publish. What makes that safe is
- * the audit trail — every save records the previous wording and the new one, by name.
+ * the audit trail: every save records the previous wording and the new one, by name.
  */
 
 import { useState } from 'react';
@@ -166,7 +166,7 @@ export function StaticContentScreen() {
         {/* The rail. Six rows, each stating the two things that decide whether it needs
             work: is it written at all, and which languages are behind.
 
-            Static, and deliberately without an `overflow` of its own — a rail that clips is
+            Static, and deliberately without an `overflow` of its own: a rail that clips is
             a page an editor cannot reach and has no scrollbar to look for. */}
         <Card>
           <CardHeader title={t('staticContent.pagesTitle')} />
@@ -187,7 +187,7 @@ export function StaticContentScreen() {
 
         {/* The one scroller on the screen.
 
-            All three stack here — the gap notice, the editor and the rendered preview —
+            All three stack here (the gap notice, the editor and the rendered preview)
             and together they are several windows tall. Scrolling them as part of the page
             took the rail with them, so switching to another page meant scrolling back up
             to a picker that had left the window. */}
@@ -200,7 +200,7 @@ export function StaticContentScreen() {
               description={
                 published
                   ? t('staticContent.liveDescription', {
-                      name: page.publishedByName ?? '—',
+                      name: page.publishedByName ?? '-',
                       when: formatDateTime(page.publishedAt),
                     })
                   : t('staticContent.draftDescription')
@@ -216,7 +216,7 @@ export function StaticContentScreen() {
               }
             />
             <CardBody className="flex flex-col gap-md">
-              {/* Keyed by language, so switching tabs remounts the form — Sinhala text
+              {/* Keyed by language, so switching tabs remounts the form; Sinhala text
                   can never be saved into the Tamil slot. */}
               <TranslationEditor
                 key={`${slug}-${lang}`}

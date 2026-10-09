@@ -9,7 +9,7 @@ import { defineConfig, devices } from '@playwright/test';
  * starts**, that the **CSS-variable brand bridge actually paints**, and that the
  * sign-in → dashboard path works against the built app.
  *
- * Needs `npx playwright install chromium` once — the browsers are not installed by
+ * Needs `npx playwright install chromium` once: the browsers are not installed by
  * `npm install`, so `npm run e2e` will tell you to do that rather than mysteriously
  * failing.
  */

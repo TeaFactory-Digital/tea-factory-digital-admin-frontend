@@ -1,5 +1,5 @@
 /**
- * Writing a notification by hand — the act §21.24's second half is about.
+ * Writing a notification by hand: the act §21.24's second half is about.
  *
  * **A push cannot be recalled and reports nothing when it fails.** No phone tells the
  * console it discarded the message; no supplier tells it they had the category off. So
@@ -8,13 +8,13 @@
  * "send to everybody" into a number somebody can argue with.
  *
  * The two figures beside each other are the point. *Reaches 61 devices, 6 opted out* is a
- * different decision from *reaches 3, 11 opted out* — the second belongs on the
- * noticeboard — and there is no way to learn which one happened after the fact.
+ * different decision from *reaches 3, 11 opted out* (the second belongs on the
+ * noticeboard), and there is no way to learn which one happened after the fact.
  *
  * The category is a **required choice, not a default**, because the app routes on it: a
  * `newsArticle` push opens the feed and a `requestDecided` one opens the request. Picking
  * for the office would send suppliers to the wrong screen, and picking *wrong* sends them
- * nowhere at all — the app drops a category it does not recognize.
+ * nowhere at all: the app drops a category it does not recognize.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -113,7 +113,7 @@ export function ComposeDialog({
     [kind, point, config.collectionPoints],
   );
 
-  // Asked only once the audience is complete — see `useNotificationReach`.
+  // Asked only once the audience is complete; see `useNotificationReach`.
   const audienceReady = kind === 'allSuppliers' || Boolean(point);
   const reach = useNotificationReach(
     (category || 'billPublished') as NotificationCategory,
@@ -267,7 +267,7 @@ export function ComposeDialog({
           </div>
 
           {/**
-           * The reach panel — the whole reason this dialog is not just a form.
+           * The reach panel: the whole reason this dialog is not just a form.
            *
            * `suppressed` and `no device` are stated separately because they are different
            * problems with different fixes: one is a supplier who turned this category off,

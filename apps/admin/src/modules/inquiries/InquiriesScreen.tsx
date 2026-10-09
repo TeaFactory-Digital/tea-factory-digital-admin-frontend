@@ -1,11 +1,11 @@
 /**
- * M10 Inquiries — the supplier's messages to the office.
+ * M10 Inquiries: the supplier's messages to the office.
  *
  * The module that completes the console's promise: **every `pending` in the app is
  * a queue here**. It is also the only queue whose rows are prose, which changes the
  * grid: the subject is the column a clerk triages on, so it gets the width, and the
  * first line of the message sits under it. Reading "July account is short" is what
- * decides whether this is answered now or after lunch — a row showing only a
+ * decides whether this is answered now or after lunch: a row showing only a
  * supplier code and a date would make every message look the same.
  *
  * Oldest first within a status, like every other inbox. The default filter is
@@ -90,7 +90,7 @@ export function InquiriesScreen() {
           return (
             // Bounded, and the preview clamped to one line: the message is here to
             // be triaged from, not read in full, and an unbounded prose column
-            // pushes the age badge — the other thing this grid is scanned for —
+            // pushes the age badge, the other thing this grid is scanned for,
             // off a laptop screen.
             <span className="flex max-w-card flex-col">
               <span className="font-medium text-text-primary">{row.subject}</span>
@@ -116,7 +116,7 @@ export function InquiriesScreen() {
         enableSorting: false,
         cell: (info) => (
           <span className="text-body-small text-text-secondary">
-            {info.getValue<string | null>() ?? '—'}
+            {info.getValue<string | null>() ?? '-'}
           </span>
         ),
       },

@@ -9,7 +9,7 @@
  * ## Why the native input is kept underneath
  *
  * The same argument that replaced `type="date"` does *not* carry over. A native date input
- * is drawn by the browser end to end — the text, the icon and the panel — so it cannot be
+ * is drawn by the browser end to end (the text, the icon and the panel) so it cannot be
  * themed. A native **time** input renders its `HH:MM` as ordinary inline text that takes
  * this console's font and colour; only the small picker glyph is browser chrome, and that
  * can be hidden. What is left is a field that already does the two hard things well:
@@ -35,7 +35,7 @@ import { cn } from '@/lib/cn';
  * Half-hourly, because these are opening windows rather than appointments: a banner runs
  * from the morning to the end of the month, and a list at five-minute steps is 288 rows to
  * scroll for a value that is nearly always on the hour. Anything in between is still
- * typeable — the list is a shortcut, not the vocabulary.
+ * typeable: the list is a shortcut, not the vocabulary.
  */
 const DEFAULT_STEP_MINUTES = 30;
 
@@ -82,7 +82,7 @@ export function TimePicker({
    * Open on the current value rather than at midnight.
    *
    * A list of 48 rows that always starts at `00:00` puts an 18:00 window three-quarters of
-   * a scroll away, every time it is opened — and gives no sign that anything is selected.
+   * a scroll away, every time it is opened, and gives no sign that anything is selected.
    */
   useEffect(() => {
     if (!open) return;
@@ -95,7 +95,7 @@ export function TimePicker({
         id={id}
         type="time"
         // The browser's own glyph, hidden: it opens a second picker that looks nothing
-        // like the calendar next to it. The field itself stays native — see the note above.
+        // like the calendar next to it. The field itself stays native: see the note above.
         className="numeric w-32 pr-10 [&::-webkit-calendar-picker-indicator]:hidden"
         fullWidth={false}
         disabled={disabled}

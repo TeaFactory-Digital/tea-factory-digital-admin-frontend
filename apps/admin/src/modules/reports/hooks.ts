@@ -1,5 +1,5 @@
 /**
- * M16 queries. There are no mutations, and there never will be — a report is asked for and
+ * M16 queries. There are no mutations, and there never will be: a report is asked for and
  * answered, never stored.
  */
 
@@ -29,7 +29,7 @@ export function useReportCatalogue() {
  * Run one, when it has everything it needs.
  *
  * `enabled` rather than an early return, because a report with a missing parameter must not be
- * *asked* — an empty grid reads as "nothing that month", which is the one wrong answer this
+ * *asked*: an empty grid reads as "nothing that month", which is the one wrong answer this
  * screen can give.
  */
 export function useReportRun(id: ReportId | undefined, params: ReportRunParams, ready: boolean) {

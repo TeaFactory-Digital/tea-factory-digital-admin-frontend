@@ -1,7 +1,7 @@
 /**
  * The last line of defence.
  *
- * A render error in one screen must not take the console down — a clerk halfway
+ * A render error in one screen must not take the console down: a clerk halfway
  * through a queue should be able to navigate away and carry on. The boundary
  * therefore offers a reload and says plainly that the rest still works.
  */
@@ -17,7 +17,7 @@ export function RouteErrorBoundary() {
   const error = useRouteError();
 
   // Logged rather than displayed. A stack trace tells an office clerk nothing and
-  // may carry a supplier's name from a props dump — which would be a PDPA problem
+  // may carry a supplier's name from a props dump, which would be a PDPA problem
   // in a screenshot pasted into an email (§20.4).
   console.error('[route]', error);
 

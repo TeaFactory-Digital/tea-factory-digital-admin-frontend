@@ -2,7 +2,7 @@
  * Which factory is this console showing?
  *
  * Production answers with the subdomain. Development has no subdomain, so it
- * answers with an explicit override. Kept pure — `host` and `search` come in as
+ * answers with an explicit override. Kept pure: `host` and `search` come in as
  * strings, so this is testable without a DOM and cannot accidentally read
  * `window` during SSR or a unit test.
  *
@@ -22,7 +22,7 @@ const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '[::1]']);
  * `tfd-admin-git-main-acme.vercel.app` is one console, not a factory called
  * "tfd-admin-git-main-acme". Without this the label parses as a tenant id, the
  * served config answers `404 tenant-unknown`, and a preview deployment boots
- * unbranded behind a "could not reach the factory configuration" banner —
+ * unbranded behind a "could not reach the factory configuration" banner:
  * indistinguishable from the API being down.
  *
  * A tenant on one of these domains has to come from the configured fallback, so
@@ -57,7 +57,7 @@ export interface ResolveTenantOptions {
 
 export interface TenantResolution {
   tenantId: string;
-  /** How we got it — surfaced in the dev tenant switcher and in support logs. */
+  /** How we got it: surfaced in the dev tenant switcher and in support logs. */
   source: 'subdomain' | 'override' | 'fallback';
 }
 
@@ -81,7 +81,7 @@ export function resolveTenant(options: ResolveTenantOptions): TenantResolution {
  * `galaboda.admin.teafactory.lk` → `galaboda`.
  *
  * Returns `null` for a local host, an IP address, a preview-hosting domain, or a
- * leading label that is infrastructure rather than a factory —
+ * leading label that is infrastructure rather than a factory:
  * `admin.teafactory.lk` is the bare deployment, not a tenant called "admin".
  */
 export function tenantIdFromHost(host: string): string | null {

@@ -3,14 +3,14 @@
  *
  * A push is the only act in this console with **no undo and no delivery report**. Nothing
  * comes back from a phone to say the message was dropped, and no supplier tells the office
- * they had the category switched off — so every safeguard is a pre-check, and every one of
+ * they had the category switched off, so every safeguard is a pre-check, and every one of
  * them is asserted here:
  *
  *  - **`unknown-category`**, the refusal with nothing behind it. The app *drops* a push
  *    whose category it does not recognize rather than opening an arbitrary screen, so a
  *    send the console called successful would reach nobody and report nothing at all.
  *  - **Per-device consent honoured**, not just topic membership (api-contract §17). A
- *    suppressed device is counted, never silently filtered — "sent to 240" when 90 opted
+ *    suppressed device is counted, never silently filtered: "sent to 240" when 90 opted
  *    out is a number the office would act on wrongly.
  *  - **`no-recipients`** refused rather than logged green, because somebody is standing at
  *    the screen and can put it on the noticeboard instead.
@@ -64,7 +64,7 @@ describe('M13 notifications', () => {
 
     /**
      * The defaults are read from `push.defaultCategories`, which is the platform already
-     * saying which categories are routine — `newsArticle` is pointedly not among them.
+     * saying which categories are routine: `newsArticle` is pointedly not among them.
      * That is the closest thing to an answer to §21.24 that exists, and using it is the
      * difference between deferring the question and guessing at it.
      */
@@ -188,7 +188,7 @@ describe('M13 notifications', () => {
     /**
      * `hillcountry` really is in this state: `enablePushNotifications: true` and **no
      * `push` block at all**. The flag is on and nobody has set the module up, which is a
-     * real answer rather than a fixture oversight — and the console must say so rather
+     * real answer rather than a fixture oversight, and the console must say so rather
      * than send into a void.
      */
     const response = await fetch('http://localhost/admin/notifications/triggers', {
@@ -232,13 +232,13 @@ describe('M13 notifications', () => {
   it('lets an editor read and refuses them the send (§12.1)', async () => {
     await signInAs(EDITOR);
 
-    // `content: W` — the log is readable…
+    // `content: W`: the log is readable…
     await expect(notificationRepository.list({ pageSize: 1 })).resolves.toBeTruthy();
     await expect(notificationRepository.triggers()).resolves.toBeTruthy();
 
     /**
-     * …and sending is not. This is the console's answer to §21.24's second half — "who
-     * may send free text" — and it is the same boundary M11 draws: writing a circular is
+     * …and sending is not. This is the console's answer to §21.24's second half ("who
+     * may send free text") and it is the same boundary M11 draws: writing a circular is
      * an editor's job, putting it on every supplier's lock screen is not.
      */
     const refused = await notificationRepository
@@ -279,7 +279,7 @@ describe('M13 notifications', () => {
 });
 
 /**
- * The automatic half — §21.24 deferred rather than guessed.
+ * The automatic half: §21.24 deferred rather than guessed.
  *
  * Each of these fires from the module that owns the event, so the assertions are made by
  * doing the real thing: publishing a month, publishing an article, answering a message.
@@ -298,7 +298,7 @@ describe('M13 automatic triggers', () => {
 
   it('fires billPublished when a month is published, once', async () => {
     // The month is closed by the factory's own system, which holds `ratesAndMonthClose: W`
-    // from the server and no `content` grant at all — so the baseline has to be read by
+    // from the server and no `content` grant at all, so the baseline has to be read by
     // somebody who *can* read it. The person who closes a month is not the person who
     // reads the notification log, and that is the matrix working rather than a gap.
     await signInAs(ADMIN);
@@ -342,7 +342,7 @@ describe('M13 automatic triggers', () => {
 
   it('does not fire a trigger the factory has turned off', async () => {
     await signInAs(ADMIN);
-    // `newsArticle` is off by default here — see `push.defaultCategories`.
+    // `newsArticle` is off by default here: see `push.defaultCategories`.
     const before = await sendsFor('newsArticle');
 
     signOut();
@@ -379,7 +379,7 @@ describe('M13 automatic triggers', () => {
 
     const after = await sendsFor('newsArticle');
     expect(after.length).toBe(before.length + 1);
-    // The headline is the fallback language's copy — a push carries one string.
+    // The headline is the fallback language's copy: a push carries one string.
     expect(after[0]?.title).toBe('Counter open on Saturday');
     expect(after[0]?.entityId).toBe(second.id);
   }, 40_000);

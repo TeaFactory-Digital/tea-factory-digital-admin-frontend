@@ -13,7 +13,7 @@
  *     this" as a policy statement and as something visibly happening.
  *
  * The revealed number is held in this component's mutation result and dropped
- * when the dialog closes — never cached (see `useRevealBankDetails`).
+ * when the dialog closes, never cached (see `useRevealBankDetails`).
  */
 
 import { useState } from 'react';
@@ -31,7 +31,7 @@ const MIN_REASON = 10;
  * The bank and branch come from the **record already on screen**, not from the reveal.
  *
  * `POST .../bank-details/reveal` answers with the account number and the audit id alone
- * (gap **G-05**) — which on reflection is the right payload: the bank and the branch are
+ * (gap **G-05**), which on reflection is the right payload: the bank and the branch are
  * not secret, they are already rendered on the detail page this dialog was opened from,
  * and asking the server to repeat them would put two more fields in a response whose
  * whole design is to carry as little as possible.

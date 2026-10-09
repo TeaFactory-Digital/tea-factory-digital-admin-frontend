@@ -1,8 +1,8 @@
 /**
  * A change request's two summaries, as rows the office can compare.
  *
- * The API sends each side as one string: `"Home: — · Estate: —"` and
- * `"Home: Probe Road · Estate: —"`. Read whole, the office has to spot the one word that
+ * The API sends each side as one string: `"Home: - · Estate: -"` and
+ * `"Home: Probe Road · Estate: -"`. Read whole, the office has to spot the one word that
  * differs. Split into labelled parts and paired by label, the screen can show a table with
  * the changed row marked and an empty value written as "Not set" rather than a dash.
  *
@@ -20,8 +20,11 @@ export interface SummaryRow {
 
 const SEPARATOR = ' · ';
 const LABELLED = /^([A-Za-z][A-Za-z ]{0,29}):\s*(.*)$/;
-/** What the API writes for "nothing on file". */
-const EMPTY_VALUES = new Set(['', '—', '-', 'none on file', 'none', 'null']);
+/**
+ * What the API writes for "nothing on file". `\u2014` (the long dash) is kept as an escape:
+ * summaries the API stored before it switched to `-` still carry it.
+ */
+const EMPTY_VALUES = new Set(['', '\u2014', '-', 'none on file', 'none', 'null']);
 
 function clean(value: string | null | undefined): string | null {
   const trimmed = value?.trim() ?? '';

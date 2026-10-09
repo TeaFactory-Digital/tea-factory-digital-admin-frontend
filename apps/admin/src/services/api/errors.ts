@@ -3,7 +3,7 @@
  *
  * `code` is the machine-readable domain code; `message` is English-only and
  * treated as a fallback for when there is no better local string (§17.4).
- * Localized copy lives in the i18n tables — a server-translated message would
+ * Localized copy lives in the i18n tables: a server-translated message would
  * need an `Accept-Language` round trip and still not match the console's wording.
  */
 

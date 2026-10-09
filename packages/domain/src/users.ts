@@ -1,16 +1,16 @@
 /**
- * M15 Users & roles — the shared half.
+ * M15 Users & roles: the shared half.
  *
  * rbac.md is explicit that §12.1 is **data, not code**: *"a factory will want to split or
  * merge these roles, and that must not be a deploy."* M15 is the screen that edits it, which
- * makes this the one module that can break every other one at once — a role stripped of
+ * makes this the one module that can break every other one at once: a role stripped of
  * `usersAndRoles` is a factory that cannot get back in.
  *
  * So the rules here are all about the same failure: **nobody may leave the console with no
  * way back into it.** Three shapes of it, and they are genuinely different:
  *
  *  1. Suspending or demoting the **last** person who can administer users.
- *  2. Doing it to **yourself**, which is wrong even when somebody else remains — the
+ *  2. Doing it to **yourself**, which is wrong even when somebody else remains: the
  *     office loses the person who was mid-task, and it is never what was meant.
  *  3. Editing the **role matrix** so that no role grants `usersAndRoles` at all, which
  *     locks everybody out at once and is the version nobody thinks of.
@@ -39,7 +39,7 @@ export interface LockoutCandidate {
 /**
  * Can this user administer users, given a role matrix?
  *
- * Takes the matrix rather than reading the shipped default, because M15 can **edit** it —
+ * Takes the matrix rather than reading the shipped default, because M15 can **edit** it,
  * and a check written against the compiled-in table would approve a change that the edited
  * matrix makes catastrophic.
  */
@@ -65,8 +65,8 @@ export function canAdministerUsers(
 /**
  * Would this change leave nobody able to administer users?
  *
- * `next` is the user as they would be **after** the edit — suspended, or with different
- * roles — and `others` is everybody else, unchanged. Returning a boolean rather than
+ * `next` is the user as they would be **after** the edit (suspended, or with different
+ * roles), and `others` is everybody else, unchanged. Returning a boolean rather than
  * throwing so both the console (to withhold a button) and the server (to refuse) can use it
  * without catching.
  */
@@ -101,7 +101,7 @@ export function matrixKeepsRecovery(
  * `MFA_REQUIRED_ROLES`, `requiresMfa` and `owesMfa` marked manager-and-above as owing a
  * TOTP code, and the factory has withdrawn the requirement: the console is used from
  * shared office machines, and a code on one person's phone stops whoever is at the
- * counter. Nothing replaced them — a password is the whole of console sign-in now, and
+ * counter. Nothing replaced them: a password is the whole of console sign-in now, and
  * the protections that remain are the ones that never depended on a second factor: no
  * self-modification, no last-administrator suspension, and every action audited by name.
  */

@@ -9,7 +9,7 @@
  *
  * Every guard is `async`, so a refusal **rejects** rather than throwing synchronously. Every
  * screen handles refusals with `.catch()`, and a synchronous throw from an argument position
- * reaches them as an uncaught exception instead — the defect the content suite caught in
+ * reaches them as an uncaught exception instead: the defect the content suite caught in
  * `contentRepository`.
  */
 
@@ -62,7 +62,7 @@ function requireReason(reason: string): string {
 /**
  * The first password for a new console account.
  *
- * There is **no invitation flow** — no email is sent, and the API requires a password on
+ * There is **no invitation flow**: no email is sent, and the API requires a password on
  * creation. The factory has confirmed the office sets it (gap **G-02**, resolved), which
  * is the only answer this system can actually deliver: an invitation needs a mail sender
  * and there is not one. So one is minted here and handed back to the dialog to read out
@@ -99,7 +99,7 @@ export const userRepository = {
    * **Filtered and paged here, because the API does neither** (gap **G-09**).
    *
    * `GET /admin/users` answers with every console user of the factory in one array. For a
-   * dozen office staff that is the right call — a pager over twelve rows is furniture, and
+   * dozen office staff that is the right call: a pager over twelve rows is furniture, and
    * a round trip per keystroke is worse than a filter over an array already in memory.
    * It stops being the right call at a scale a tea factory's office will not reach.
    */
@@ -120,8 +120,8 @@ export const userRepository = {
   /**
    * Create an account and return the credential **once**.
    *
-   * The response is not the user record — the API acknowledges with `{ id }` and the list
-   * is refetched — but it does carry the password, because this is the only moment it
+   * The response is not the user record (the API acknowledges with `{ id }` and the list
+   * is refetched) but it does carry the password, because this is the only moment it
    * exists anywhere readable.
    *
    * Takes the draft **without** its password: the value is this module's to mint, not a
@@ -138,7 +138,7 @@ export const userRepository = {
   /**
    * Change a name or a set of roles.
    *
-   * `all` and `actingUserId` are passed in because the *decision* needs the whole set — "is
+   * `all` and `actingUserId` are passed in because the *decision* needs the whole set: "is
    * this the last administrator" is not a property of one record. The screen already holds
    * the list it is rendering, so this costs nothing and keeps the check identical to the
    * server's.

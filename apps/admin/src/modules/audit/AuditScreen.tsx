@@ -1,10 +1,10 @@
 /**
- * M17 Audit log — filterable, read-only, exportable.
+ * M17 Audit log: filterable, read-only, exportable.
  *
  * Built in this milestone rather than deferred, for one reason: AC-09 says every
  * decision appears here with actor and before/after, and an acceptance criterion
  * with no screen behind it cannot be signed off. Export is listed in §18.1 and is
- * not built yet — that gap is recorded in docs/status.md rather than implied by a
+ * not built yet; that gap is recorded in docs/status.md rather than implied by a
  * disabled button.
  */
 
@@ -38,7 +38,7 @@ export function AuditScreen() {
   const page = Number(params.get('page') ?? 0);
 
   /**
-   * Newest first, and sortable — an auditor reconstructing a sequence reads the
+   * Newest first, and sortable: an auditor reconstructing a sequence reads the
    * log the other way round, and "who touched this first" is a question the
    * default order answers backwards.
    */
@@ -66,7 +66,7 @@ export function AuditScreen() {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
-    // Changing a filter resets to page 0 — page 7 of a new filter is nowhere.
+    // Changing a filter resets to page 0: page 7 of a new filter is nowhere.
     // Changing the *page* obviously must not, which is what this guard is for:
     // without it `setParam('page', '1')` set the page and then deleted it, and
     // the grid could never leave page 1.
@@ -106,9 +106,9 @@ export function AuditScreen() {
                * The realm the actor belongs to, when it is not the office.
                *
                * `actorId` alone cannot say: a console user id and a supplier id are
-               * different namespaces, and two rows reading "Kamala Wijesinghe" —
+               * different namespaces, and two rows reading "Kamala Wijesinghe",
                * one a clerk acting on the record, one the supplier acting on their
-               * own — are indistinguishable without it.
+               * own, are indistinguishable without it.
                *
                * Office actions carry no label. They are the norm on this screen, and
                * labelling every row would hide the exception again.
@@ -168,7 +168,7 @@ export function AuditScreen() {
         }
       />
 
-      {/* Fixed-height card, scrolling rows — see the note in SuppliersScreen. */}
+      {/* Fixed-height card, scrolling rows. See the note in SuppliersScreen. */}
       <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-center gap-sm border-b border-divider p-md">
           <Select
@@ -186,7 +186,7 @@ export function AuditScreen() {
           </Select>
 
           {/**
-            * *What did we do* versus *what did they do* — two readings of one log, and
+            * *What did we do* versus *what did they do*: two readings of one log, and
             * an investigator is always asking one of them. v1 had no way to separate
             * them because it had no supplier entries to separate.
             */}

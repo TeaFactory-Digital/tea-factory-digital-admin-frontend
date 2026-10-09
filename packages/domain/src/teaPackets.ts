@@ -1,5 +1,5 @@
 /**
- * Tea packets — the factory's own tea, issued to the supplier who grew the leaf.
+ * Tea packets: the factory's own tea, issued to the supplier who grew the leaf.
  *
  * **This file exists because v1 of the console had nothing for it.** The app has shipped
  * `RequestTeaPacketsScreen` from the first release, and the office had no queue, no type
@@ -8,7 +8,7 @@
  * best placed to say yes to.
  *
  * The policy is a **catalogue of one**, deliberately. A packet is the factory's own made
- * tea in a standard pack, so unlike the manure catalogue there is no product to choose —
+ * tea in a standard pack, so unlike the manure catalogue there is no product to choose;
  * there is a pack weight and a price, and both are `client_config` because they are
  * exactly the kind of number that changes without a release (§21.10's shape, applied to a
  * question nobody had to ask).
@@ -90,7 +90,7 @@ export function isTeaPacketPolicyUsable(policy: TeaPacketPolicy): boolean {
  *
  * `floor2` for the same reason every other figure in this package uses it: the factory
  * pays and deducts in whole cents, and a rounded-up rupee is money the supplier did not
- * agree to. Priced against the policy passed in, never a global — see
+ * agree to. Priced against the policy passed in, never a global; see
  * `AdminTeaPacketRequest.unitPrice` for why a decided request keeps the price it was
  * quoted at.
  */
@@ -99,7 +99,7 @@ export function teaPacketAmount(policy: TeaPacketPolicy, packets: number): numbe
   return floor2(packets * policy.pricePerPacket);
 }
 
-/** Total weight leaving the store, in kilos — what the storekeeper is actually issuing. */
+/** Total weight leaving the store, in kilos: what the storekeeper is actually issuing. */
 export function teaPacketWeightKg(policy: TeaPacketPolicy, packets: number): number {
   if (!(packets > 0) || !(policy.packGrams > 0)) return 0;
   return floor2((packets * policy.packGrams) / 1000);
@@ -130,7 +130,7 @@ export function teaPacketRequestProblems(
   const problems: TeaPacketRequestProblem[] = [];
 
   if (!(packets > 0)) problems.push('no-packets');
-  // Half a packet is not something a store issues — the same rule that rounds manure
+  // Half a packet is not something a store issues: the same rule that rounds manure
   // up to whole bags, stated as a refusal because there is nothing to round here.
   else if (!Number.isInteger(packets)) problems.push('not-whole');
   if (packets > policy.maxPacketsPerRequest) problems.push('over-max');

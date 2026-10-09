@@ -1,9 +1,9 @@
 /**
  * Does the screen come up at all.
  *
- * Two screens shipped an identifier that was used and never imported —
- * `emailSchema` in M14's factory section, `Label` and `Checkbox` in M11's credit
- * queue — and both threw on their first render, so the route boundary replaced the
+ * Two screens shipped an identifier that was used and never imported
+ * (`emailSchema` in M14's factory section, `Label` and `Checkbox` in M11's credit
+ * queue) and both threw on their first render, so the route boundary replaced the
  * console with "This screen could not be shown". The suites for both modules were
  * thorough about the repository and the refusals, and neither ever mounted the
  * component.

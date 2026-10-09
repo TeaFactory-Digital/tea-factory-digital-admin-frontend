@@ -3,12 +3,12 @@
  *
  * The invalidation set is deliberately **smaller** than M7's, and the difference is
  * the module's whole argument for existing separately. Deciding a credit request moves
- * `creditBalances`, which changes every other facility's headroom — so it has to sweep
+ * `creditBalances`, which changes every other facility's headroom, so it has to sweep
  * the supplier and all three credit queues. Approving tea packets moves none of that:
  * it adds a line to the next bill and nothing to any ceiling.
  *
- * What it does invalidate is the supplier — the outstanding tea figure on their record
- * has changed — and the dashboard, whose sidebar badge counts this queue.
+ * What it does invalidate is the supplier (the outstanding tea figure on their record
+ * has changed), and the dashboard, whose sidebar badge counts this queue.
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';

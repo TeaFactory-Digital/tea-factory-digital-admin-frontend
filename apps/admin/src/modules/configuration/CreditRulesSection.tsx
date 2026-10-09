@@ -1,5 +1,5 @@
 /**
- * M14 — **how much a supplier may borrow, and how that is worked out.**
+ * M14: **how much a supplier may borrow, and how that is worked out.**
  *
  * The three ceilings used to be formulas in the build with two constants behind them,
  * which meant a factory wanting *"manure: average the last three months, capped at
@@ -9,14 +9,14 @@
  * It matters more than the other configurable values because of **who sees the result**:
  * the ceiling is printed in the supplier's app before they ask for anything. A limit
  * this platform guessed at is a supplier told they may borrow money the office then
- * refuses — a worse conversation than any missing feature.
+ * refuses, a worse conversation than any missing feature.
  *
  * ## The screen's one job: show what the numbers add up to
  *
  * Four fields per facility is enough to express every formula the product has ever
  * used, and four fields is also enough to be got wrong silently. So each facility
- * carries a **plain-language reading of its own rule** underneath — *"3 × the average
- * of the last 6 months, once the supplier has 6 settled months"* — because an
+ * carries a **plain-language reading of its own rule** underneath: *"3 × the average
+ * of the last 6 months, once the supplier has 6 settled months"*, because an
  * administrator setting a multiplier should not have to hold the arithmetic in their
  * head to know what they just typed.
  *
@@ -56,7 +56,7 @@ const BASES: CreditRuleBasis[] = ['thisMonthLeaf', 'lastSettledMonth', 'averageI
 /**
  * How far the term checkboxes run.
  *
- * Twelve because the recovery has to finish inside a plucking year — the reason the loan
+ * Twelve because the recovery has to finish inside a plucking year: the reason the loan
  * default stops there. It bounds the **control**, not the data: a rule that arrives from
  * the server carrying eighteen still renders every one of its terms (see `termChoices`),
  * because a screen that silently dropped a term the factory is actually offering would be
@@ -70,7 +70,7 @@ function termChoices(offered: readonly number[]): number[] {
   return Array.from({ length: highest }, (_, index) => index + 1);
 }
 
-/** Which flag turns each facility off entirely — so a rule for it can say it is inert. */
+/** Which flag turns each facility off entirely, so a rule for it can say it is inert. */
 const FACILITY_FLAGS = {
   advance: 'enableAdvances',
   loan: 'enableLoans',
@@ -99,7 +99,7 @@ export function CreditRulesSection(props: SectionProps) {
       {/**
        * Said once, at the top, because it is the property that makes this screen safe
        * to hand to an office: the same rule produces the ceiling the app shows and the
-       * ceiling the queue checks. One rule, two readers — never two calculations.
+       * ceiling the queue checks. One rule, two readers; never two calculations.
        */}
       <Notice tone="info">{t('config.creditRules.scope')}</Notice>
 
@@ -117,8 +117,8 @@ export function CreditRulesSection(props: SectionProps) {
               {t(`credit.facility.${facility}`)}
             </legend>
 
-            {/* A rule for a facility the factory does not offer is not an error — a
-                factory may set it up before turning it on — but the screen should not
+            {/* A rule for a facility the factory does not offer is not an error (a
+                factory may set it up before turning it on) but the screen should not
                 let somebody believe they have just changed what suppliers can borrow. */}
             {off ? (
               <p className="text-caption text-text-secondary">
@@ -237,7 +237,7 @@ export function CreditRulesSection(props: SectionProps) {
                     onChange={(event) =>
                       /**
                        * Empty means **no cap**, not zero. `0` would offer every supplier
-                       * a ceiling of nothing, which is a policy nobody meant to write —
+                       * a ceiling of nothing, which is a policy nobody meant to write,
                        * and `null` keeps "uncapped" a state rather than a figure the
                        * reader has to recognise.
                        */

@@ -9,7 +9,7 @@ import { expect, test, type Page } from '@playwright/test';
  * than quietly succeeding.
  *
  * Signed in as the factory administrator, because §12.1 gives `content: A` to them and
- * that is the console's answer to §21.24's second half — who may send free text.
+ * that is the console's answer to §21.24's second half: who may send free text.
  */
 
 const ADMIN = 'factoryadmin@galabodatea.lk';
@@ -31,7 +31,7 @@ test('shows what fires automatically, and what fired', async ({ page }) => {
     timeout: 15_000,
   });
 
-  // Each trigger names the event it fires from — a toggle whose trigger is unnamed is a
+  // Each trigger names the event it fires from: a toggle whose trigger is unnamed is a
   // setting nobody can reason about.
   await expect(page.getByText(/fires when a month is published/i)).toBeVisible();
 
@@ -55,14 +55,14 @@ test('works out who a message reaches before it can be sent', async ({ page }) =
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
 
-  // Nothing to send yet — the category is a required choice, not a default, because the
+  // Nothing to send yet: the category is a required choice, not a default, because the
   // app routes on it.
   await expect(dialog.getByRole('button', { name: /^send/i })).toBeDisabled();
 
   await dialog.getByLabel(/^kind$/i).selectOption('newsArticle');
 
   /**
-   * The reach panel — the whole reason this is a dialog and not a form.
+   * The reach panel: the whole reason this is a dialog and not a form.
    *
    * `newsArticle` is not in `defaultCategories`, so most phones have it switched off and
    * the office should see that *before* deciding a push is how to announce something.
@@ -84,7 +84,7 @@ test('works out who a message reaches before it can be sent', async ({ page }) =
  * **The page does not scroll; the columns do.**
  *
  * Only a browser can prove this. jsdom computes no layout, so `splitPane.test.tsx` can
- * only assert that the classes which *make* it true are present on the right elements —
+ * only assert that the classes which *make* it true are present on the right elements,
  * and every one of them fails silently: `overflow-hidden` on a container that never
  * overflows, `min-h-0` on a column that had room anyway.
  *
@@ -94,7 +94,7 @@ test('works out who a message reaches before it can be sent', async ({ page }) =
  *  1. **`main` does not scroll**, which is the property being bought.
  *  2. **The settings column does**, which proves the first one is a layout rule rather
  *     than a short page. The triggers card is a form of eight rows plus a paragraph, and
- *     it overflows at this viewport — before the fix that overflow went to `main` and
+ *     it overflows at this viewport: before the fix that overflow went to `main` and
  *     took the log off screen with it.
  *
  * The log's own overflow is deliberately **not** asserted: the fixture has three sends, so
@@ -111,7 +111,7 @@ test('scrolls each column on its own rather than the whole page', async ({ page 
 
   const main = page.locator('main#main');
 
-  // `main` is the page scroller — see `AppShell`. Nothing on this screen may push it.
+  // `main` is the page scroller: see `AppShell`. Nothing on this screen may push it.
   // One pixel of slack for sub-pixel rounding on a fractional device ratio.
   expect(await main.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1);
 

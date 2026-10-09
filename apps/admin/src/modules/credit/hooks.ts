@@ -12,7 +12,7 @@
  *
  *  - this request (its decision panel and its frozen figures)
  *  - the queue (the row leaves the pending filter)
- *  - **every other credit row for that supplier** — their ceilings just moved
+ *  - **every other credit row for that supplier**: their ceilings just moved
  *  - the supplier (M2's detail, their credit balances)
  *  - the dashboard (the sidebar badge and three queue cards)
  */

@@ -9,14 +9,14 @@
  * Three decisions worth stating, all of them about not losing an editor's work:
  *
  *  - **The form is keyed to the language.** Switching tabs remounts it, so Sinhala text
- *    can never be saved into the Tamil slot — the failure a shared draft state invites,
+ *    can never be saved into the Tamil slot: the failure a shared draft state invites,
  *    and one nothing downstream could detect.
  *  - **Unsaved changes are stated, not guessed at.** The save button says whether there
  *    is anything to save, because an editor who switches tabs mid-sentence has lost the
  *    sentence and should be told before it happens rather than after.
  *  - **`lang` and `dir` are on the textarea.** Sinhala and Tamil run longer than English
  *    and get `overflow-wrap: anywhere` plus a looser line height from the base
- *    stylesheet (§20.2) — which only applies if the element declares its language.
+ *    stylesheet (§20.2), which only applies if the element declares its language.
  */
 
 import { useEffect, useState } from 'react';
@@ -92,7 +92,7 @@ export function TranslationEditor({
    * Follow the record, not the mount.
    *
    * A save returns the whole record, and without this the fields would keep whatever was
-   * typed while the server's version — with its new `updatedAt` — sat underneath. The
+   * typed while the server's version, with its new `updatedAt`, sat underneath. The
    * next save would then re-send text the editor believes is already stored.
    */
   useEffect(() => {

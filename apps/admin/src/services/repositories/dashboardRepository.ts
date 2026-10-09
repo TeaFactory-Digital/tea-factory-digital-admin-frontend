@@ -10,7 +10,7 @@
  *
  * The rule it still follows: **an absence is rendered as an absence.** Where the payload
  * has no answer the view carries `null` and the screen says so, because defaulting to `0`
- * is the failure the dashboard exists to prevent — *"an empty inbox and an inbox that
+ * is the failure the dashboard exists to prevent: *"an empty inbox and an inbox that
  * cannot exist look identical on screen"*.
  */
 
@@ -33,7 +33,7 @@ export interface DashboardView {
   /**
    * How fresh the replicated figures are. Rides on this payload by design (ADR-005, Q18)
    * rather than on an endpoint of its own, and `null` means the factory has no sync
-   * configured — which the console renders as no freshness caption at all, not as "stale".
+   * configured, which the console renders as no freshness caption at all, not as "stale".
    */
   sync: ServedDashboard['sync'];
 }
@@ -71,7 +71,7 @@ function toAdoptionTrend(rows: ServedDashboard['adoptionTrend']) {
  *
  * The API sends `{ key, params }` and the console's `DashboardAlert` wants
  * `{ id, severity, messageKey, params }`. The list is empty today, so this is the shape
- * agreed for when it is not — and `severity` defaults to `info` rather than `warning`,
+ * agreed for when it is not, and `severity` defaults to `info` rather than `warning`,
  * because an alert that shouts by default trains the office to ignore the ones that mean
  * it.
  */

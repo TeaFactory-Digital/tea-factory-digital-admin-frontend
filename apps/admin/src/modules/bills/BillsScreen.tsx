@@ -1,10 +1,10 @@
 /**
- * M5 Bills — a month's Green Leaf Accounts.
+ * M5 Bills: a month's Green Leaf Accounts.
  *
  * The screen the accountant checks a month on **before** it is published, which is
  * the only moment anything can still be fixed. So it is built as a grid to read down
  * rather than a set of documents to open: the question is "is anything wrong here",
- * and the answers that matter are visible in columns —
+ * and the answers that matter are visible in columns:
  *
  *  - a balance of nothing, because the deductions swallowed the account;
  *  - a payable amount with no bank details, which a payout run cannot move;
@@ -126,7 +126,7 @@ export function BillsScreen() {
       {
         accessorKey: 'grossAmount',
         header: t('bills.column.gross'),
-        // `null` renders as an em dash, never `0.00`: the auction result is not in,
+        // `null` renders as a dash (`-`), never `0.00`: the auction result is not in,
         // and a zero would be a figure the office has to explain (BR-102).
         cell: (info) => (
           <span className="numeric">{formatAmount(info.getValue<number | null>())}</span>

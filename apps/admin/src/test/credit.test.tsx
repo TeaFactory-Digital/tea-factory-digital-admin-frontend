@@ -4,21 +4,21 @@
  * The module lends money against leaf, so the suite is mostly about the four ways
  * it must refuse to:
  *
- *  - **`stale-eligibility`** (BR-310) — the ceiling moved while the queue was open.
+ *  - **`stale-eligibility`** (BR-310): the ceiling moved while the queue was open.
  *    The load-bearing one, and the only refusal in the console that can be caused
  *    by somebody else doing their job correctly: the factory's system recording leaf raises an
  *    advance ceiling, and the approver's screen is instantly out of date.
- *  - **`over-ceiling`** — eligibility that never moved, against an amount that was
+ *  - **`over-ceiling`**: eligibility that never moved, against an amount that was
  *    never inside it.
- *  - **`four-eyes-violation`** (BR-501) — credit is money, and money takes two people.
- *  - **`note-required`** (AC-06) — a decision nobody can reconstruct.
- *  - **`feature-disabled`** (AC-07) — a facility this factory does not sell is
+ *  - **`four-eyes-violation`** (BR-501): credit is money, and money takes two people.
+ *  - **`note-required`** (AC-06): a decision nobody can reconstruct.
+ *  - **`feature-disabled`** (AC-07): a facility this factory does not sell is
  *    refused by the **endpoint**, not only hidden from a filter.
  *
  * And the criterion the whole module exists for: **AC-05**, the eligibility figures
  * and their working being the same ones the supplier's app showed them. That is
- * asserted here as an identity — the ceiling equals the arithmetic the panel prints
- * — because a test comparing the console's number to the console's number would
+ * asserted here as an identity (the ceiling equals the arithmetic the panel prints)
+ * because a test comparing the console's number to the console's number would
  * pass however wrong both were.
  */
 
@@ -56,7 +56,7 @@ const NOTE = 'Checked against the leaf already weighed this month at the counter
  */
 const WITHIN_CEILING = 'crd-1'; // advance, comfortably inside
 const OVER_CEILING = 'crd-4'; // advance, asks for more than is available
-const OFFICE_RAISED = 'crd-6'; // loan, raised by the clerk — four-eyes
+const OFFICE_RAISED = 'crd-6'; // loan, raised by the clerk: four-eyes
 const SHORT_HISTORY = 'crd-9'; // loan from a supplier with no settled months
 const ALREADY_APPROVED = 'crd-13';
 
@@ -91,12 +91,12 @@ describe('M7 eligibility (AC-05)', () => {
     expect(eligibility.lastSettledRatePerKg).not.toBeNull();
     expect(eligibility.pricedKgs).not.toBeNull();
     /**
-     * **`floor2`, not `round2`** — and that is the assertion, not an implementation detail.
+     * **`floor2`, not `round2`**, and that is the assertion, not an implementation detail.
      *
      * money.ts: *"Never `round2` a limit: `floor2` makes the displayed maximum exactly the
      * maximum, so the number on screen is a number the validator accepts."* Rounding a
      * ceiling **up** by a cent puts a figure on the eligibility panel that `over-ceiling`
-     * then refuses — the supplier is told they may borrow 11,809.30 and the approval is
+     * then refuses: the supplier is told they may borrow 11,809.30 and the approval is
      * rejected for asking 11,809.30.
      *
      * This test asserted `round2` and passed only while the fixture's rate × kilos happened
@@ -111,7 +111,7 @@ describe('M7 eligibility (AC-05)', () => {
       round2(eligibility.ceiling - eligibility.outstanding),
     );
 
-    // An advance is against leaf in the shed, not a track record — so the history
+    // An advance is against leaf in the shed, not a track record, so the history
     // requirement is `0`, which is "not required" rather than "unset".
     expect(eligibility.requiredMonths).toBe(0);
   });
@@ -145,7 +145,7 @@ describe('M7 eligibility (AC-05)', () => {
     expect(eligibilityOf(request).eligible).toBe(false);
     expect(eligibilityOf(request).ceiling).toBe(0);
     expect(eligibilityOf(request).monthsOfHistory).toBeLessThan(REQUIRED_MONTHS_OF_HISTORY);
-    // A key, not a sentence — the console localizes (BR-110).
+    // A key, not a sentence: the console localizes (BR-110).
     expect(eligibilityOf(request).reasonKey).toBe('credit.reason.shortHistory');
   });
 
@@ -204,7 +204,7 @@ describe('M7 approve', () => {
     const entry = audit.items.find((item) => item.action === 'creditRequest.approve');
     expect(entry).toBeDefined();
     expect(entry?.actorName).toBe('Ruwan Jayasuriya');
-    // The ceiling is part of the record — it is what settles a dispute about a
+    // The ceiling is part of the record: it is what settles a dispute about a
     // limit that has since moved.
     expect(entry?.after).toMatchObject({
       status: 'approved',
@@ -241,7 +241,7 @@ describe('M7 refusals', () => {
     await expect(
       creditRepository.approve(
         WITHIN_CEILING,
-        // A figure that was never on screen — the shape of a queue rendered before
+        // A figure that was never on screen: the shape of a queue rendered before
         // this morning's leaf was recorded.
         { note: NOTE, ceilingSeen: round2(eligibilityOf(request).ceiling + 1) },
         { amount: request.amount, available: eligibilityOf(request).available },
@@ -306,7 +306,7 @@ describe('M7 refusals', () => {
       ),
     ).rejects.toMatchObject({ code: 'over-ceiling' });
 
-    // And the server, bypassing it — the console can be edited.
+    // And the server, bypassing it: the console can be edited.
     const endpoints = await import('@/services/endpoints/credit');
     await expect(
       endpoints.creditEndpoints.approve(OVER_CEILING, {
@@ -318,7 +318,7 @@ describe('M7 refusals', () => {
 
   it('refuses self-approval (BR-501)', async () => {
     // The manager is the only role that may approve credit, so the four-eyes
-    // fixture has to be one they raised themselves — see the seed's note.
+    // fixture has to be one they raised themselves: see the seed's note.
     await signInAs(MANAGER);
     const request = await creditRepository.get(OFFICE_RAISED);
     expect(request.channel).toBe('office');
@@ -408,14 +408,14 @@ describe('M7 refusals', () => {
 
 describe('M7 permissions (§12.1)', () => {
   it('gives the editor no access to credit at all', async () => {
-    // `content: W` and nothing else at all — the narrowest account the console has.
+    // `content: W` and nothing else at all: the narrowest account the console has.
     await signInAs(EDITOR);
     await expect(creditRepository.list()).rejects.toMatchObject({ code: 'forbidden' });
   });
 
   it('lets a clerk read the queue and refuses them the decision', async () => {
     // `creditRequests: R` for the clerk, `A` for the manager alone. Easy to get wrong,
-    // because the clerk *approves* change requests and inquiries outright — credit is
+    // because the clerk *approves* change requests and inquiries outright: credit is
     // the queue they only prepare, because it is the one with money in it (BR-501).
     await signInAs(CLERK);
     await expect(creditRepository.list()).resolves.toBeTruthy();
@@ -451,7 +451,7 @@ describe('AC-07 · a facility the factory does not sell', () => {
     expect(listed.status).toBe(200);
     const page = (await listed.json()) as { items: Array<{ facility: string }> };
     expect(page.items.length).toBeGreaterThan(0);
-    // Not "shown as zero" — absent. An empty queue and one that cannot exist look
+    // Not "shown as zero": absent. An empty queue and one that cannot exist look
     // identical on screen, and one of them wastes a clerk's attention.
     expect(page.items.every((row) => row.facility === 'advance')).toBe(true);
 
@@ -478,7 +478,7 @@ describe('M7 detail screen', () => {
     renderDetail(OVER_CEILING);
 
     expect(await screen.findByText(/More than they may draw/i)).toBeInTheDocument();
-    // Rejecting is still available — the row has to be clearable.
+    // Rejecting is still available: the row has to be clearable.
     expect(screen.getByRole('button', { name: /^reject$/i })).toBeEnabled();
     expect(screen.queryByRole('button', { name: /^approve$/i })).not.toBeInTheDocument();
   });

@@ -1,10 +1,10 @@
 /**
- * M2 Suppliers — one record.
+ * M2 Suppliers: one record.
  *
  * The layout follows what the office actually asks in order: who is this, how are
  * they paid, what do they owe us, and what has happened to the record. AC-01 is
- * the criterion this screen serves — "a supplier's app and their record in M2 show
- * the same active bank details, savings rate and payment method at all times" —
+ * the criterion this screen serves: "a supplier's app and their record in M2 show
+ * the same active bank details, savings rate and payment method at all times",
  * so every value here is the *active* one, and a pending change is shown as
  * pending rather than applied.
  *
@@ -70,7 +70,7 @@ const STATUS_TONES = { active: 'success', suspended: 'warning', closed: 'neutral
  * The sections, in the order the office asks for them.
  *
  * `overview` is first and is the default because it answers *"is this the right
- * person"* — the question every visit to this screen starts with.
+ * person"*, the question every visit to this screen starts with.
  */
 const SECTIONS = ['overview', 'money', 'requests', 'income', 'notifications', 'activity'] as const;
 type Section = (typeof SECTIONS)[number];
@@ -107,8 +107,8 @@ export function SupplierDetailScreen() {
   /**
    * In the URL, so a section is a link.
    *
-   * The office works two people to a record — a clerk on the counter and whoever they
-   * telephone about it — and "open his payout tab" has to be something you can paste
+   * The office works two people to a record (a clerk on the counter and whoever they
+   * telephone about it), and "open his payout tab" has to be something you can paste
    * into a message. `replace: true` for the same reason the queue filters use it:
    * flicking between sections is reading, not navigating, and Back should return to
    * the supplier list rather than walk back through five tabs.
@@ -262,7 +262,7 @@ export function SupplierDetailScreen() {
         </TabsContent>
 
         {/* Payout, savings and credit together: they are one conversation at the
-            counter — what we pay them, what we hold back, what they owe. */}
+            counter: what we pay them, what we hold back, what they owe. */}
         <TabsContent value="money" className="grid gap-lg lg:grid-cols-2">
           <Card>
             <CardHeader
@@ -292,7 +292,7 @@ export function SupplierDetailScreen() {
                     label={t('suppliers.detail.branch')}
                     value={supplier.bankDetails.branchName}
                   />
-                  {/* Masked, and it arrives masked from the server — this is not a
+                  {/* Masked, and it arrives masked from the server; this is not a
                       display choice the console could get wrong (§20.4). */}
                   <DetailRow
                     label={t('suppliers.detail.accountNumber')}
@@ -530,19 +530,19 @@ function SupplierSummary({ supplier }: { supplier: SupplierDetail }) {
  *
  * v1 linked to **one** of the four. The app shows a supplier their whole request
  * history in a single list (`RequestHistoryList`), and the office had to visit four
- * screens and type the supplier code into each — which in practice means checking one
+ * screens and type the supplier code into each, which in practice means checking one
  * and assuming the rest. `supplierId` was already on all four query types; only the
  * links were missing.
  *
  * They are unconditional rather than hidden when a queue is empty: "nothing
  * outstanding" is an answer a clerk needs, and a row that vanishes when the answer is
- * *no* cannot give it. Deliberately **not counts**, for the same reason — a count
+ * *no* cannot give it. Deliberately **not counts**, for the same reason: a count
  * needs four requests to render numbers that are stale the moment a colleague decides
  * something, and the queue itself answers accurately.
  *
  * The rows come from `NAVIGATION` rather than a second list of paths. That is what
- * gives each card the icon its sidebar row already has — the clerk is looking for the
- * shape they click every day, not a word — and it is why a shortcut can no longer
+ * gives each card the icon its sidebar row already has (the clerk is looking for the
+ * shape they click every day, not a word), and it is why a shortcut can no longer
  * outlive the screen it opens, or offer a queue this session may not read.
  */
 const QUEUE_SHORTCUTS = [
@@ -614,13 +614,13 @@ function QuickActions({ supplierId }: { supplierId: string }) {
 }
 
 /**
- * The reasons an account is actually stopped and started, by verb — the words live in
+ * The reasons an account is actually stopped and started, by verb; the words live in
  * the string tables, only the order is here.
  *
  * Split per verb rather than pooled, for the reason M9 splits its own: the two acts
  * share no vocabulary, and a clerk reactivating an account has no use for a chip about
  * why it was suspended. The reactivation sentences are written to answer the question
- * the *supplier* asks — "am I back?" — because this note travels the same way a
+ * the *supplier* asks ("am I back?") because this note travels the same way a
  * suspension note does.
  */
 const STATUS_SUGGESTIONS: Record<'suspend' | 'reactivate', readonly string[]> = {

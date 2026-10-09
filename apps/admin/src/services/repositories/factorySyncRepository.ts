@@ -5,7 +5,7 @@ import { dashboardEndpoints } from '../endpoints/dashboard';
  * How fresh the figures replicated from the factory's own system are.
  *
  * **It rides on `GET /admin/dashboard`.** There is no `GET /admin/factory-sync`, and the
- * API says so deliberately (ADR-005, Q18) — so this is a resolved decision rather than a
+ * API says so deliberately (ADR-005, Q18), so this is a resolved decision rather than a
  * gap, and the endpoint module the console used to carry for it is gone.
  *
  * It keeps its own repository and its own query key all the same, for the reason the
@@ -17,7 +17,7 @@ import { dashboardEndpoints } from '../endpoints/dashboard';
  * screen costs one request, not one per screen.
  *
  * **Never throws.** A console that could not tell you how fresh its figures are must
- * still show you the figures — the alternative is an error page over a working screen
+ * still show you the figures: the alternative is an error page over a working screen
  * because a status call timed out.
  */
 export const factorySyncRepository = {
@@ -25,7 +25,7 @@ export const factorySyncRepository = {
     try {
       const { sync } = await dashboardEndpoints.get();
       /**
-       * `null` from the API means **no sync is configured** — a unified deployment where
+       * `null` from the API means **no sync is configured**: a unified deployment where
        * the console reads the factory's records directly and there is nothing to be
        * behind. Passed through as `null`, **not** turned into the all-null status a
        * failure gets: that status reads as `never`, and it put "this console has never

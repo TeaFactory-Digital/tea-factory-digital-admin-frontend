@@ -1,5 +1,5 @@
 /**
- * M7 Credit — the queue gateway.
+ * M7 Credit: the queue gateway.
  *
  * Carries the two client-side guards worth having, both for the same reason M9's
  * note guard exists (§9.3: the form is a courtesy, the server is the authority):
@@ -37,7 +37,7 @@ function assertDecidable(body: CreditDecisionBody): void {
 }
 
 export const creditRepository = {
-  /** Oldest first within a status — an inbox is worked front to back. */
+  /** Oldest first within a status: an inbox is worked front to back. */
   list: (query: CreditRequestQuery = {}): Promise<Paged<AdminCreditRequest>> =>
     creditEndpoints.list({ page: 0, pageSize: 25, status: 'pending', ...query }),
 
@@ -45,7 +45,7 @@ export const creditRepository = {
 
   /**
    * `async` so a validation failure **rejects** rather than throwing
-   * synchronously — the same reason M9's does. One code path, one error shape.
+   * synchronously: the same reason M9's does. One code path, one error shape.
    *
    * `available` is passed separately from `body.ceilingSeen` because they answer
    * different questions: the ceiling is what the server compares against to detect

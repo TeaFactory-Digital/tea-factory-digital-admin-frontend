@@ -5,13 +5,13 @@
  * and the reason it gets its own file rather than being two inputs on the editor.
  *
  * The app's contract (`banners.md`) is that an action it cannot resolve produces artwork
- * with no button, silently. That is the right behaviour on a phone — a supplier can
+ * with no button, silently. That is the right behaviour on a phone: a supplier can
  * always close a banner, and a console newer than the app will eventually send action
  * types that did not exist when the binary shipped. It is a terrible property to author
  * against: from the office, a banner with a dead button looks exactly like a banner with
  * a working one.
  *
- * So this field runs `bannerTarget()` — **the function the phone runs** — on every
+ * So this field runs `bannerTarget()`, **the function the phone runs**, on every
  * keystroke and says what the app would do with what is currently typed. Not a
  * description of the rules; the rules themselves, executed.
  *
@@ -34,7 +34,7 @@ import { Notice } from '@/components/ui/states';
 /**
  * Paths the app is known to resolve, offered as a datalist.
  *
- * A **suggestion, not a whitelist** — the field still accepts anything matching the path
+ * A **suggestion, not a whitelist**: the field still accepts anything matching the path
  * rule, because the app's linking config gains routes without this console being
  * redeployed and a hard list here would go stale in the direction that blocks work. What
  * it buys is that the common case is a click rather than a guess at spelling.

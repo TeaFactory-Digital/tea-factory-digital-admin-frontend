@@ -8,7 +8,7 @@
  *
  * One rule is this module's own. A publish, an unpublish or a window edit invalidates
  * the **list** as well as the record, because `BannerListItem.window` is computed from
- * the clock server-side — so the row that said `scheduled` a moment ago is the row that
+ * the clock server-side, so the row that said `scheduled` a moment ago is the row that
  * now says `live`, and a screen that refreshed only the record it just saved would leave
  * the office looking at a stale answer to the one question they came here to ask.
  */

@@ -1,5 +1,5 @@
 /**
- * M15 — the one screen in this console that is about the reader rather than the factory.
+ * M15: the one screen in this console that is about the reader rather than the factory.
  *
  * Two things here are decisions rather than markup, and both are the kind that get
  * "tidied" back later by someone who does not know why:
@@ -8,7 +8,7 @@
  *    factory. Gating this one would lock a clerk out of the text-size control, which is an
  *    accessibility need rather than a taste.
  *  - **It offers no password form.** The auth surface is `login`, `refresh`, `logout` and
- *    `me` — there is no self-service endpoint for one. A form posting nowhere would look
+ *    `me`: there is no self-service endpoint for one. A form posting nowhere would look
  *    like the feature until somebody needed it. There is no two-factor control either: the
  *    factory withdrew the requirement, so the console has no second factor to show.
  */
@@ -139,7 +139,7 @@ describe('the profile screen', () => {
     await user.click(within(dialog).getByRole('button', { name: /save preferences/i }));
 
     // Persisted, because the whole reason it is not in M14 is that it belongs to this
-    // person at this machine — including after a reload.
+    // person at this machine, including after a reload.
     await waitFor(() => expect(readAppearance().textSize).toBe('larger'));
   });
 
@@ -155,7 +155,7 @@ describe('the profile screen', () => {
     const language = view.getByRole('radiogroup', { name: /language/i });
     await user.click(within(language).getByRole('radio', { name: 'සිංහල' }));
 
-    // One dialog for all three, not one each — three confirmations to change how a screen
+    // One dialog for all three, not one each: three confirmations to change how a screen
     // reads would be worse than none.
     await user.click(view.getByRole('button', { name: /save preferences/i }));
     const dialog = await screen.findByRole('dialog');
@@ -187,8 +187,8 @@ describe('the profile screen', () => {
     const { container } = renderProfile();
 
     /**
-     * The top bar's copy was removed by decision. The sign-in screen keeps one — somebody
-     * who cannot read the console changes the language before signing in — but once
+     * The top bar's copy was removed by decision. The sign-in screen keeps one (somebody
+     * who cannot read the console changes the language before signing in) but once
      * inside, this screen is it.
      */
     expect(
@@ -204,7 +204,7 @@ describe('the profile screen', () => {
  * scheme and text size. Both were removed by decision: two places to change one value is
  * two places to look when it is wrong.
  *
- * The sign-in screen is the deliberate exception, and these pin both halves — the removal
+ * The sign-in screen is the deliberate exception, and these pin both halves: the removal
  * is easy to undo by habit, and the exception is easy to remove by tidying.
  */
 describe('where these settings live', () => {

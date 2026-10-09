@@ -24,7 +24,7 @@ import type { DashboardView } from '@/services/repositories/dashboardRepository'
 /**
  * The nav row that owns a path, by the longest matching prefix.
  *
- * `/suppliers/S-0042` belongs to `/suppliers`, and `/` only matches itself — otherwise
+ * `/suppliers/S-0042` belongs to `/suppliers`, and `/` only matches itself; otherwise
  * every screen would claim to be the dashboard.
  */
 function sectionLabelKey(pathname: string): string | null {

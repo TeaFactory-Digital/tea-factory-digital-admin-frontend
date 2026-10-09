@@ -4,13 +4,13 @@
  * The layout answers the editor's questions in the same order M11's article screen does,
  * with one inserted at the top that an article does not have:
  *
- *  0. **Is this in front of anybody right now?** — the window card. A banner has a status
+ *  0. **Is this in front of anybody right now?** The window card. A banner has a status
  *     *and* a live window, and the two disagree constantly: a published banner scheduled
  *     for next week is in front of nobody, and one whose `endsAt` passed on Tuesday reads
  *     "published" everywhere while showing to no one.
- *  1. **Which languages still need work?** — the language strip, gap on the tab that has it.
- *  2. **What does a supplier reading in this language get?** — the server-resolved preview.
- *  3. **Can this go out?** — the lifecycle card.
+ *  1. **Which languages still need work?** The language strip, gap on the tab that has it.
+ *  2. **What does a supplier reading in this language get?** The server-resolved preview.
+ *  3. **Can this go out?** The lifecycle card.
  *
  * **The action gets a card of its own**, and that is the decision worth defending. It
  * looks like a field and behaves like one, but it is the only thing on this screen that
@@ -98,8 +98,8 @@ export function BannerEditorScreen() {
   /**
    * The action and window are drafted locally and saved as a unit.
    *
-   * `null` means "showing the server's value". The alternative — seeding state from the
-   * record on mount — would silently discard a colleague's edit that arrived in a
+   * `null` means "showing the server's value". The alternative, seeding state from the
+   * record on mount, would silently discard a colleague's edit that arrived in a
    * refetch, which for a live banner is a change somebody made *because it was wrong*.
    */
   const [draftAction, setDraftAction] = useState<BannerAction | null>(null);
@@ -196,7 +196,7 @@ export function BannerEditorScreen() {
   }
 
   /**
-   * Keys spelled out rather than built from the verb — `` `banners.${verb}ed` `` produces
+   * Keys spelled out rather than built from the verb: `` `banners.${verb}ed` `` produces
    * `banners.archiveed`, a key that resolves to itself and shows a dotted string to the
    * office without failing loudly enough for anybody to notice.
    */
@@ -304,7 +304,7 @@ export function BannerEditorScreen() {
               }
             />
             <CardBody>
-              {/* Keyed by language so switching tabs remounts — see M11's editor for
+              {/* Keyed by language so switching tabs remounts. See M11's editor for
                   why a shared draft state files Sinhala under Tamil. */}
               <BannerTranslationEditor
                 key={lang}
@@ -426,7 +426,7 @@ export function BannerEditorScreen() {
               {published && data.publishedAt ? (
                 <p className="text-caption text-text-secondary">
                   {t('banners.publishedBy', {
-                    name: data.publishedByName ?? '—',
+                    name: data.publishedByName ?? '-',
                     when: formatDateTime(data.publishedAt),
                   })}
                 </p>

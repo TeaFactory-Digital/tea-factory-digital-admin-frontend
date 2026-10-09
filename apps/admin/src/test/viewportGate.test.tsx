@@ -8,7 +8,7 @@
  *  - the office's own 1366×768 laptop being told its screen is too small, which is
  *    the regression that would take the whole console down
  *  - a landscape phone slipping through a width-only check
- *  - the notice outliving the window that caused it — a desktop window dragged
+ *  - the notice outliving the window that caused it: a desktop window dragged
  *    narrow and back has to return the console, not need a reload
  */
 

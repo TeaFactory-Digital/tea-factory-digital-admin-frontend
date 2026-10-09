@@ -8,11 +8,11 @@
 /**
  * The card that holds a data grid on a fill-the-window screen.
  *
- * **`min-h-[22rem]`, not `min-h-0`** — and that swap is the whole point of this constant.
+ * **`min-h-[22rem]`, not `min-h-0`**, and that swap is the whole point of this constant.
  *
  * `AppShell` gives a screen a definite height so a grid can fill it, and a flex item only
  * shrinks below its content if it opts out of `min-height: auto`. Every grid card opted
- * out with `min-h-0`, which says "shrink me as far as you like" — including **to nothing**.
+ * out with `min-h-0`, which says "shrink me as far as you like", including **to nothing**.
  * On a tall window that is invisible. On a 13-inch laptop, with a page header and a card
  * above the grid, the leftover space goes to zero and the list disappears: the rows are
  * still in the DOM at their normal size, clipped by a zero-height scroll container, so
@@ -21,11 +21,11 @@
  *
  * A floor says the honest thing instead: fill the window when there is room, and when
  * there is not, take a usable height and let the page scroll. 22 rem clears the filter
- * bar, the sticky header and the pagination with about four rows left over — enough that
+ * bar, the sticky header and the pagination with about four rows left over: enough that
  * the grid reads as a list rather than as a scrollbar.
  *
  * Do not add `min-h-0` alongside it. Both set the same property, so the winner is
- * whichever Tailwind emits later in the stylesheet rather than whichever is written last —
+ * whichever Tailwind emits later in the stylesheet rather than whichever is written last:
  * the same trap documented on `Field`'s width variant.
  *
  * One screen had already reached for a floor independently and written `min-h-96`, which is
@@ -47,8 +47,8 @@ export const GRID_CARD = 'flex min-h-[22rem] flex-1 flex-col';
  * form scrolling, and both moved to both columns scrolling: their side column (preview,
  * lifecycle, audit) outgrew any reasonable floor and could not be scrolled.
  *
- * Both readings are the same fix and the same three rules — which side gets
- * {@link SPLIT_PANE_SCROLLER} is the only difference — so the **track is not included
+ * Both readings are the same fix and the same three rules (which side gets
+ * {@link SPLIT_PANE_SCROLLER} is the only difference) so the **track is not included
  * here**. A screen states its own proportions, because a 1fr/3fr rail and a 3fr/2fr
  * form-and-preview are different judgements about what the reader is looking at.
  *
@@ -64,14 +64,14 @@ export const GRID_CARD = 'flex min-h-[22rem] flex-1 flex-col';
  *     auto-height parent `flex-grow` has nothing to grow into and the rule is inert.
  *  2. **`min-h-0` on the scrolling child.** A grid item's `min-height: auto` refuses to
  *     shrink below its content, so without it the column grows to fit the editor, pushes
- *     the pane taller, and the page scrolls exactly as before — `overflow-y-auto` on a box
+ *     the pane taller, and the page scrolls exactly as before: `overflow-y-auto` on a box
  *     that is never smaller than its content never shows a scrollbar.
  *  3. **No `overflow` on the fixed side.** A rail that clips is a page an editor cannot
  *     reach, with no scrollbar to look for; a preview that clips is a preview that lies.
  *     If the fixed side outgrows the floor, raise the floor.
  *
  * `lg:` only. On a narrow window an inner scroller nested inside the page scroller is the
- * worse of the two behaviours — two scrollbars, and a wheel that stops working depending
+ * worse of the two behaviours: two scrollbars, and a wheel that stops working depending
  * on where the pointer happens to be.
  *
  * The floor is `GRID_CARD`'s lesson again: a `flex-1` child that opts out of
@@ -109,7 +109,7 @@ export const SPLIT_PANE_EDITOR = 'grid gap-lg lg:min-h-64 lg:flex-1';
  *
  * {@link SPLIT_PANE} pins one column and scrolls the other. This is the other shape: a
  * grid beside a settings column, where each side has its own reading order and neither is
- * a reference for the other. M13 notifications is the case — the log is a list you page
+ * a reference for the other. M13 notifications is the case: the log is a list you page
  * through, the triggers are a form you read down, and a page scroll that moved both at
  * once meant scrolling the list out of view to reach a toggle.
  *
@@ -119,7 +119,7 @@ export const SPLIT_PANE_EDITOR = 'grid gap-lg lg:min-h-64 lg:flex-1';
  *
  * **`lg:` only, and that is the whole safety argument.** Above `lg` the columns sit side
  * by side, each is the full height of the container, and clipping the container is free.
- * Below `lg` they *stack* — so a container that hid its overflow would put the second
+ * Below `lg` they *stack*, so a container that hid its overflow would put the second
  * column below a fold with no scrollbar anywhere to reach it. Under `lg` the page scrolls
  * as it always did, which is also why `GRID_CARD_PANE` keeps its floor down there.
  */
@@ -130,17 +130,17 @@ export const SPLIT_PANE_BOTH = 'grid min-h-0 flex-1 gap-lg lg:overflow-hidden';
  * above it.
  *
  * `GRID_CARD`'s floor exists so a short window scrolls the page instead of collapsing the
- * list to nothing — measured at 28 px on a 13-inch laptop and at zero a little shorter.
+ * list to nothing: measured at 28 px on a 13-inch laptop and at zero a little shorter.
  * That is the right trade **when the page is what scrolls**. In a both-sides-scroll pane
  * it is the opposite: the floor is precisely what makes the page scroll, because a card
  * that refuses to go below 22 rem in a container shorter than that has to overflow
  * something. Above `lg` the card's own `DataTable` already owns a scroller
- * (`min-h-0 flex-1 overflow-auto`), so shrinking costs rows on screen and loses nothing —
+ * (`min-h-0 flex-1 overflow-auto`), so shrinking costs rows on screen and loses nothing:
  * the list scrolls instead of the window.
  *
  * Written as `max-lg:` and `lg:` rather than as a base `min-h-[22rem]` with a `lg:min-h-0`
  * on top of it. Both would set the same property, and which won would come down to the
- * order Tailwind happened to emit them in — the trap `GRID_CARD` warns about. Two
+ * order Tailwind happened to emit them in: the trap `GRID_CARD` warns about. Two
  * mutually-exclusive media queries cannot disagree.
  */
 export const GRID_CARD_PANE = 'flex flex-1 flex-col max-lg:min-h-[22rem] lg:min-h-0';

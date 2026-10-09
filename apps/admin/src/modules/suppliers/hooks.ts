@@ -3,8 +3,8 @@
  * presentational (architecture.md §7).
  *
  * The invalidation is the interesting part. A supplier mutation makes three
- * things stale — the detail, every list that might contain the row, and the audit
- * trail for that record — and the centralized query keys are what make writing
+ * things stale (the detail, every list that might contain the row, and the audit
+ * trail for that record), and the centralized query keys are what make writing
  * that once possible.
  */
 
@@ -35,7 +35,7 @@ export function useSuppliers(query: SupplierQuery, options: { enabled?: boolean 
     queryFn: () => supplierRepository.list(query),
     enabled: options.enabled ?? true,
     // Keeps the previous page on screen while the next loads, so paging does not
-    // flash an empty grid — the single biggest perceived-speed win in a data table.
+    // flash an empty grid: the single biggest perceived-speed win in a data table.
     placeholderData: (previous) => previous,
   });
 }
@@ -103,7 +103,7 @@ export function useSupplierAudit(id: string | undefined) {
     queryKey: qk.audit.forEntity('supplier', id ?? ''),
     queryFn: () => auditRepository.forEntity('supplier', id!),
     enabled: Boolean(id) && canRead,
-    // A clerk without audit access sees no panel rather than an error — the
+    // A clerk without audit access sees no panel rather than an error; the
     // §12.1 matrix gives `auditLog` to accountant and above only.
     throwOnError: false,
     retry: false,
@@ -144,7 +144,7 @@ export function useReactivateSupplier(id: string) {
  * component that guessed the key.
  *
  * The audit trail *is* invalidated, so the entry the reveal produced appears in
- * the panel below — which is the point of auditing it where the clerk can see.
+ * the panel below, which is the point of auditing it where the clerk can see.
  */
 export function useRevealBankDetails(id: string) {
   const client = useQueryClient();
@@ -161,7 +161,7 @@ export function useRevealBankDetails(id: string) {
  * Issue a new app password (§21.16).
  *
  * Invalidates the supplier, because the reset sets `owesPasswordChange` and stamps
- * `lastPasswordResetAt` — a detail page still showing neither would be showing a record
+ * `lastPasswordResetAt`: a detail page still showing neither would be showing a record
  * that is one request out of date, on the one screen where a pattern of resets is visible.
  */
 export function useResetSupplierCredentials(supplierId: string) {

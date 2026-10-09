@@ -2,13 +2,13 @@
  * The seam between what the API answers and what the console's types promise.
  *
  * Everything in this file exists because the backend and `@tfd/domain` disagree in a
- * *shape* rather than in a *fact* — a list that arrives bare where the type says paged,
+ * *shape* rather than in a *fact*: a list that arrives bare where the type says paged,
  * a mutation that acknowledges with an id where the type says "the updated record". The
  * facts are the same; only the envelope differs.
  *
  * It lives here rather than in each repository so that every one of those disagreements
  * is written down in one place. Each is cross-referenced in `docs/BACKEND-API-GAPS.md`,
- * and each becomes deletable the day the API closes it — which is the point of keeping
+ * and each becomes deletable the day the API closes it, which is the point of keeping
  * them together rather than sprinkling `?? 0` through eighteen files.
  *
  * **Nothing here invents a fact.** A count the API does not send arrives as `null`, never
@@ -27,7 +27,7 @@ import {
 /**
  * What every mutating endpoint on this API actually answers with.
  *
- * The backend returns a thin acknowledgement — `{ id }`, sometimes `{ id, status }` —
+ * The backend returns a thin acknowledgement (`{ id }`, sometimes `{ id, status }`)
  * rather than the record it just wrote (see gap **G-11**). That is a legitimate design:
  * the console invalidates and refetches on success, so the round trip the full record
  * would have saved is one it takes anyway for the *list* beside the record.
@@ -48,12 +48,12 @@ export interface StatusAck<S extends string = string> extends MutationAck {
 /**
  * Wrap a bare array in the paging envelope the console's types expect.
  *
- * Several list endpoints answer with a plain array and no total — `GET /admin/users`,
+ * Several list endpoints answer with a plain array and no total: `GET /admin/users`,
  * `GET /admin/banners`, `GET /admin/notifications` (gap **G-09**). The rows are complete
  * and unpaged, so the honest envelope is *one page holding everything*:
  *
  *  - `total` is the array's length, which for an unpaged answer is the true total.
- *  - `nextPage` is `null`, because there is no next page — not `page + 1`, which would
+ *  - `nextPage` is `null`, because there is no next page, not `page + 1`, which would
  *    make a grid offer a pager onto an empty second page.
  *
  * `pageSize` reports the number of rows rather than the size that was *asked for*, so
@@ -76,7 +76,7 @@ export function asSinglePage<T>(rows: readonly T[]): Paged<T> {
  * keeps the grid's pager honest about what it is showing, and the `total` stays the real
  * one so the count in the header is right.
  *
- * Client-side paging over a server-side list is a stopgap and is marked as one — it
+ * Client-side paging over a server-side list is a stopgap and is marked as one: it
  * transfers every row to page through any of them. It is acceptable only for the lists
  * that are small by construction (staff, notification history, banners) and is the
  * reason gap **G-09** asks for real paging rather than shrugging at it.

@@ -1,10 +1,10 @@
 /**
- * M7 — one credit request.
+ * M7: one credit request.
  *
  * The screen is arranged around the only question it exists to answer: **may this
  * supplier have this money, and how do we know?** So the eligibility working takes
- * the main column rather than sitting in a sidebar — it is the evidence, not
- * context — and the decision controls sit directly beneath it, where the reader
+ * the main column rather than sitting in a sidebar (it is the evidence, not
+ * context) and the decision controls sit directly beneath it, where the reader
  * already is when they have finished reading.
  *
  * A decided request shows the figures it was **decided against**, not today's. The

@@ -4,7 +4,7 @@
  * Everything here is **tenant policy that the backend will eventually own**
  * (white-label.md → What is tenant-scoped and what is global). The values below
  * are the offline defaults; once `GET /config` serves them, the console must
- * display the served number rather than this one — the rule banners quote these
+ * display the served number rather than this one: the rule banners quote these
  * figures to a supplier, and a console showing a different ceiling from the app
  * turns every rejection into a dispute.
  */
@@ -25,7 +25,7 @@ export const FACTORY_TIME_ZONE = 'Asia/Colombo';
 /** Money is LKR everywhere, and payloads carry no symbol (BR-110). */
 export const CURRENCY_CODE = 'LKR';
 
-/** Money is NUMERIC(14,2) — two decimal places, never a float (BR-109). */
+/** Money is NUMERIC(14,2): two decimal places, never a float (BR-109). */
 export const MONEY_SCALE = 2;
 
 /** Kilos are NUMERIC(10,2). */
@@ -76,7 +76,7 @@ export const EDITORIAL_FALLBACK_LANGUAGE: LanguageCode = 'en';
  * out of the feed without being deleted.
  *
  * There is no `deleted`. An article a supplier has already read and may refer to on the
- * telephone is a record, so it is archived — the same rule that voids a delivery rather
+ * telephone is a record, so it is archived, the same rule that voids a delivery rather
  * than removing it (§12.1).
  */
 export const CONTENT_STATUSES = ['draft', 'published', 'archived'] as const;
@@ -108,7 +108,7 @@ export type StaticPageSlug = (typeof STATIC_PAGE_SLUGS)[number];
  * How long a news body may be.
  *
  * Generous, because the office pastes a circular in. It is a guard against a paste that
- * ran away rather than an editorial limit — the app scrolls.
+ * ran away rather than an editorial limit: the app scrolls.
  */
 export const MAX_CONTENT_BODY_CHARS = 20_000;
 export const MAX_CONTENT_TITLE_CHARS = 160;
@@ -132,7 +132,7 @@ export type RequestChannel = (typeof REQUEST_CHANNELS)[number];
  *
  * A typo filter rather than a business rule: a smallholder delivers tens of
  * kilos, so a five-figure entry is a misplaced decimal point. It is set far
- * above any real load on purpose — refusing a legitimate estate delivery would
+ * above any real load on purpose: refusing a legitimate estate delivery would
  * send the weighing point back to a paper ledger, and an office that has learned
  * the screen sometimes lies stops reading it.
  */
@@ -156,8 +156,8 @@ export const MAX_DELIVERY_BATCH_ROWS = 200;
  * rows of a session flagging each other.
  *
  * Both are offline defaults. What counts as a plausible delivery is tenant
- * policy — an estate route and a smallholder route disagree by an order of
- * magnitude — and the factory has not been asked yet (docs/status.md).
+ * policy (an estate route and a smallholder route disagree by an order of
+ * magnitude), and the factory has not been asked yet (docs/status.md).
  */
 export const OUTLIER_KG_MULTIPLE = 3;
 export const OUTLIER_KG_FLOOR_KG = 150;
@@ -194,9 +194,9 @@ export const PAYOUT_ROUNDING_UNIT = 1;
 /**
  * Which flag each facility hangs off.
  *
- * As data rather than a `switch`, because three places need the mapping — the
+ * As data rather than a `switch`, because three places need the mapping (the
  * queue's facility filter, the dashboard's queue list and the API's `feature-disabled`
- * gate — and three switches over the same three cases is three places to forget
+ * gate), and three switches over the same three cases is three places to forget
  * a facility when a fourth is added.
  */
 export const CREDIT_FACILITY_FLAGS = {
@@ -212,7 +212,7 @@ export const CREDIT_FACILITY_FLAGS = {
  * Resolved/Closed is the right pair; `open` is not in dispute, so the vocabulary
  * here is the two proposed outcomes plus the state everything starts in. They are
  * genuinely different acts: `resolved` is "the supplier was answered", `closed` is
- * "this needed no answer" — a duplicate, a wrong number, a message meant for the
+ * "this needed no answer": a duplicate, a wrong number, a message meant for the
  * weighing point. Collapsing them would make "how many did we actually answer"
  * unanswerable, which is the one number §19.3's channel-shift KPI needs.
  *
@@ -226,14 +226,14 @@ export type InquiryStatus = (typeof INQUIRY_STATUSES)[number];
 /**
  * The §14.4 service-level target per queue, in hours.
  *
- * Only the change-request figure is specified — three working days — and the other
+ * Only the change-request figure is specified (three working days), and the other
  * three are **this console's guess**, sized by how much a supplier is waiting on:
  * an advance is cash against leaf already in the shed, so a day is already slow; an
  * inquiry is a question, so a working day is the promise; a loan is underwritten
  * against six months of history and nobody expects it the same afternoon.
  *
  * Offline defaults, like every other policy number here. Once `GET /config` serves
- * them the console must display the served figure — a queue colouring red at a
+ * them the console must display the served figure: a queue colouring red at a
  * threshold the factory never agreed to is a console the office learns to ignore.
  */
 export const QUEUE_SLA_HOURS = {

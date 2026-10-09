@@ -2,7 +2,7 @@
  * M15 Users & roles.
  *
  * **Two views, not two cards.** The user list and the §12.1 matrix are both primary and
- * neither fits beside the other — the matrix is fifteen capabilities across seven roles, and a
+ * neither fits beside the other: the matrix is fifteen capabilities across seven roles, and a
  * fill-height grid under it would be the short-screen bug again. So the view is in the URL and
  * only one is on screen at a time.
  *
@@ -12,7 +12,7 @@
  * would be refused.
  *
  * There is no delete. A user who approved a payout or published a month is the actor on an
- * audit entry, and an entry whose actor cannot be resolved is not evidence — the same rule
+ * audit entry, and an entry whose actor cannot be resolved is not evidence; the same rule
  * that voids a delivery rather than removing it (§12.1).
  */
 
@@ -70,7 +70,7 @@ export function UsersScreen() {
   );
   const users = useUsers(query);
 
-  /** The whole set, which every lockout decision needs — not just the row being changed. */
+  /** The whole set, which every lockout decision needs, not just the row being changed. */
   const all = useMemo(
     () =>
       (users.data?.items ?? []).map((one) => ({

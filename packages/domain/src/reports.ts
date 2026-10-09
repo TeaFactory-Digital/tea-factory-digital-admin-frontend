@@ -1,9 +1,9 @@
 /**
- * M16 Reports — the shared half.
+ * M16 Reports: the shared half.
  *
  * **The report list is deliberately short, and this comment is the reason.** modules.md says
  * M16 *"needs the warehouse shape from §19.1 more than the report list"*, and §19.1 lives in
- * the mobile repository — it is not in this one. So rather than inventing a plausible dozen,
+ * the mobile repository; it is not in this one. So rather than inventing a plausible dozen,
  * the four below are the reports whose **definition already exists in this codebase**:
  *
  *  | Report | Where it is defined here |
@@ -49,7 +49,7 @@ export const REPORT_DEFINITIONS: Record<ReportId, ReportDefinition> = {
   channelShift: {
     id: 'channelShift',
     params: ['monthRange'],
-    definedBy: '§19.3 — app adoption and channel shift',
+    definedBy: '§19.3: app adoption and channel shift',
   },
 };
 
@@ -59,7 +59,7 @@ export const REPORT_DEFINITIONS: Record<ReportId, ReportDefinition> = {
  * **The months are here because of a capability, not for convenience.** §12.1 gives the factory
  * administrator `reports: R` and `billing: none`, so a month picker fed from M5's
  * `GET /admin/bill-months` leaves the one role that owns the Administration section unable to
- * run a single month report — the screen renders, the picker is empty, and nothing says why.
+ * run a single month report: the screen renders, the picker is empty, and nothing says why.
  * The list a report is chosen from has to sit behind the same grant as the report.
  *
  * Newest first, because a report is nearly always about the month just closed.
@@ -73,16 +73,16 @@ export interface ReportCatalogue {
  * How a column should be rendered.
  *
  * Carried with the data rather than decided by the screen, because the API is the only thing
- * that knows whether a number is money, kilos or a count — and a report grid that guessed
+ * that knows whether a number is money, kilos or a count, and a report grid that guessed
  * would print `LKR 412.00` over a supplier count. The same reason the wire never carries a
  * formatted string (BR-110): the server says *what* it is, the console decides how it looks.
  *
  * **`text` is literal, never translated.** A supplier code, a collection point name and a
- * person's name are all `text` — running any of them through `t()` is how `reports.metric.5091`
+ * person's name are all `text`; running any of them through `t()` is how `reports.metric.5091`
  * and `reports.metric.MAKADURA` ended up on screen, which is the bug this type split fixes.
  *
- * **`metricKey` is the one column that is not prose.** `monthSummary`'s row label — `stage`,
- * `totalKgs`, `ratePerKg` — is a key under `reports.metric.*`, because a report about *this*
+ * **`metricKey` is the one column that is not prose.** `monthSummary`'s row label (`stage`,
+ * `totalKgs`, `ratePerKg`) is a key under `reports.metric.*`, because a report about *this*
  * month cannot know in advance what language it will be read in. It is the only column in
  * any of the four reports where that is true.
  */
@@ -98,7 +98,7 @@ export type ReportColumnType =
 
 export interface ReportColumn {
   key: string;
-  /** i18n key — never a label (BR-110). */
+  /** i18n key, never a label (BR-110). */
   labelKey: string;
   type: ReportColumnType;
 }
@@ -113,7 +113,7 @@ export interface ReportRunParams {
 export interface ReportResult {
   id: ReportId;
   columns: ReportColumn[];
-  /** `null` is a real value — a supplier who has never delivered has no last delivery. */
+  /** `null` is a real value: a supplier who has never delivered has no last delivery. */
   rows: Array<Record<string, string | number | null>>;
   /**
    * Column totals, only where a total means something.
@@ -137,7 +137,7 @@ export function isReportId(value: string): value is ReportId {
  * Does this run have the parameters its report needs?
  *
  * Shared so the console can disable the button and the server can refuse with the same rule.
- * A report run with a missing month is not an empty result — it is a question nobody asked.
+ * A report run with a missing month is not an empty result; it is a question nobody asked.
  */
 export function missingReportParams(id: ReportId, params: ReportRunParams): ReportParamKind[] {
   return REPORT_DEFINITIONS[id].params.filter((kind) => {

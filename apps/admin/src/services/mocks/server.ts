@@ -1,7 +1,7 @@
 /**
  * The Node-side mock, for Vitest.
  *
- * Same handlers as the browser worker — which is the point. A test that passes
+ * Same handlers as the browser worker, which is the point. A test that passes
  * against different fixtures from the ones the developer clicked through is a
  * test that proves nothing about the console.
  */

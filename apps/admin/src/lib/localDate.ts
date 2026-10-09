@@ -8,7 +8,7 @@
  * where a day gets lost, so it happens here and nowhere else.
  *
  * **The bug being avoided is BR-104's.** `new Date('2026-08-09')` parses as *UTC*
- * midnight, which in Colombo is already half past five in the morning — but for a browser
+ * midnight, which in Colombo is already half past five in the morning, but for a browser
  * anywhere west of Greenwich it is the evening of the **8th**. A clerk on a laptop still
  * set to another timezone would file a morning weighing under the previous day, and the
  * grid would look right to them and wrong to everyone else.

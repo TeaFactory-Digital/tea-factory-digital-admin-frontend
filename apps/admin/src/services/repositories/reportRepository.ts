@@ -3,7 +3,7 @@
  *
  * The one guard is the parameter check, run with the **shared** `missingReportParams` so the
  * console can disable the button and the server can refuse with the same rule. A report run
- * with no month is not an empty result — it is a question nobody asked, and answering it with
+ * with no month is not an empty result: it is a question nobody asked, and answering it with
  * an empty grid would read as "no leaf that month".
  */
 

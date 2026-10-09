@@ -3,8 +3,8 @@
  *
  * One repository for both, which is the exception to this layer's one-per-module rule
  * and worth the exception: an article and a static page differ in their **lifecycle**,
- * not in their copy. The validation that matters — a translation is only saved when it
- * actually says something — is identical, and two copies of it would be two places for
+ * not in their copy. The validation that matters (a translation is only saved when it
+ * actually says something) is identical, and two copies of it would be two places for
  * the AC-08 guard to drift.
  *
  * The guards here are the console's half. The server refuses all of this too and is the
@@ -61,7 +61,7 @@ export const newsRepository = {
    * **`updatedAt` / `updatedByName` are worked out here.**
    *
    * `GET /admin/news/:id` does not send them at the article level, so the heading read
-   * "Last edited by , —". Each translation carries its own, and the article's last edit is
+   * "Last edited by , -". Each translation carries its own, and the article's last edit is
    * simply the newest of those: the same rule `AdminNewsArticle.updatedAt` documents. An
    * article with no translation yet falls back to who created it and when.
    */
@@ -95,7 +95,7 @@ export const newsRepository = {
      * `POST /admin/news` reads `title`, `excerpt`, `body` and the cover image off the top
      * level and writes them as the English translation; it has no `translations` field.
      * Sending the array alone means `title` and `body` never arrive and the API answers
-     * `422 invalid` — which is at least loud, unlike the same mismatch on banners, where
+     * `422 invalid`, which is at least loud, unlike the same mismatch on banners, where
      * zod stripped the array and created a banner with no copy at all.
      *
      * The other languages are saved afterwards through `saveTranslation`, one at a time,
@@ -132,8 +132,8 @@ export const newsRepository = {
    * `async`, so the guard **rejects** rather than throwing synchronously.
    *
    * Not a style choice. A plain arrow calling `parseTranslation(body)` in the argument
-   * position throws before a promise exists, so a caller writing `.catch()` — which is
-   * how every screen in this console handles a refusal — gets an uncaught exception
+   * position throws before a promise exists, so a caller writing `.catch()` (which is
+   * how every screen in this console handles a refusal) gets an uncaught exception
    * instead. Every sibling repository is `async` for the same reason; this one was not,
    * and the content suite is what caught it.
    */
@@ -161,7 +161,7 @@ export const staticPageRepository = {
    *
    * There is no `GET /admin/static-pages/{slug}` (gap **G-07**) and there does not need
    * to be: the closed set is small enough that fetching all of it is cheaper than a
-   * second endpoint, and `list` already answers with the unwritten pages too — which a
+   * second endpoint, and `list` already answers with the unwritten pages too, which a
    * per-slug fetch would have to decide how to represent.
    */
   get: async (slug: StaticPageSlug): Promise<AdminStaticPage> => {
@@ -176,7 +176,7 @@ export const staticPageRepository = {
     return found;
   },
 
-  /** `async` for the reason `newsRepository.saveTranslation` is — the guard must reject. */
+  /** `async` for the reason `newsRepository.saveTranslation` is: the guard must reject. */
   saveTranslation: async (
     slug: StaticPageSlug,
     lang: LanguageCode,

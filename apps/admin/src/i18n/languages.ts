@@ -2,7 +2,7 @@
  * The three languages the console chrome ships in, and the one place they are named.
  *
  * Deliberately **not** in the string tables. A language picker has to show every
- * option in its own script no matter which language is currently active — a Tamil
+ * option in its own script no matter which language is currently active: a Tamil
  * clerk handed a machine left in Sinhala finds their way out by recognising தமிழ்,
  * not by reading a Sinhala word for "Tamil". Routing these through `t()` would
  * translate them all into the active language and break exactly the person the
@@ -22,7 +22,7 @@ interface Language {
   code: LanguageCode;
   /**
    * What the picker shows. Short, because it sits in a 14px-tall chrome control
-   * next to the factory name — `EN`'s two letters are the width budget, and
+   * next to the factory name: `EN`'s two letters are the width budget, and
    * සිංහල spelled out is five glyph clusters.
    */
   label: string;
@@ -37,7 +37,7 @@ interface Language {
 /**
  * Sinhala first, then English, then Tamil.
  *
- * The order is the country's, not this repository's — it is the order on a Sri
+ * The order is the country's, not this repository's: it is the order on a Sri
  * Lankan banknote, an ID card and a government form, and a clerk looking for their
  * own language looks where every other official surface has put it.
  */
@@ -47,7 +47,7 @@ export const LANGUAGES: readonly Language[] = [
   { code: 'ta', label: 'தமிழ்', name: 'தமிழ்' },
 ] as const;
 
-/** Narrows an arbitrary string — a stored preference, a URL — to a supported code. */
+/** Narrows an arbitrary string (a stored preference, a URL) to a supported code. */
 export function isLanguageCode(value: unknown): value is LanguageCode {
   return typeof value === 'string' && (LANGUAGE_CODES as readonly string[]).includes(value);
 }

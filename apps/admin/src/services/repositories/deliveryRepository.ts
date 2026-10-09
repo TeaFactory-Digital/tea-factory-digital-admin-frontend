@@ -1,5 +1,5 @@
 /**
- * M3 Leaf collection — the entry gateway.
+ * M3 Leaf collection: the entry gateway.
  *
  * This repository carries more than most, because a delivery is the fact every
  * money figure downstream is derived from. Three guarantees the UI relies on and
@@ -9,7 +9,7 @@
  *    `12.500000001` would put a figure in the grid that the office cannot
  *    reproduce and that will not match the bill.
  *  - **The batch is validated before it leaves.** The server must refuse a bad
- *    row too, and it does — but a clerk who typed `12.345` should be told in the
+ *    row too, and it does, but a clerk who typed `12.345` should be told in the
  *    grid, on the row, rather than after a round trip that also carried 59 good
  *    rows.
  *  - **A day's rows come back newest first.** A weighing session is worked by
@@ -54,7 +54,7 @@ export const deliveryRepository = {
    * Commit a weighing session.
    *
    * `async` so a validation failure **rejects** rather than throwing
-   * synchronously — the same reason M9's decision methods are: React Query's
+   * synchronously, for the same reason M9's decision methods are: React Query's
    * `mutate` would otherwise surface a client-side refusal as an uncaught
    * exception and the server's identical refusal as `mutation.error`.
    */

@@ -1,5 +1,5 @@
 /**
- * Semantic colour tokens — the same names as the mobile app's
+ * Semantic colour tokens: the same names as the mobile app's
  * `src/theme/colors.ts`, so the console and the app cannot disagree about what
  * `primary` means.
  *
@@ -14,7 +14,7 @@
  *    That is what lets a factory re-map the palette without touching a screen.
  *
  * The console adds a small number of tokens the app has no need for, marked
- * below — a data grid has surfaces a phone screen does not (sticky headers, row
+ * below: a data grid has surfaces a phone screen does not (sticky headers, row
  * hover, zebra striping). They default off the existing palette so a client
  * that overrides nothing still gets a coherent grid.
  */
@@ -66,7 +66,7 @@ export interface ColorTokens {
   /* ── Console-only: the data grid. ─────────────────────────────────────── */
   /** Sticky table header fill. */
   tableHeader: string;
-  /** Row hover — the console is keyboard-driven, so this doubles as focus. */
+  /** Row hover: the console is keyboard-driven, so this doubles as focus. */
   tableRowHover: string;
   /** Zebra striping on dense grids. */
   tableRowAlt: string;

@@ -1,10 +1,10 @@
 /**
- * M7 Credit queues — advances, loans and manure in one inbox.
+ * M7 Credit queues: advances, loans and manure in one inbox.
  *
  * **One queue, filtered, rather than three screens.** The office does not have an
  * advances clerk and a loans clerk; somebody works the credit inbox, and the three
  * facilities differ only in how the ceiling is priced. Three screens would triple
- * the navigation to save nobody a decision — and would hide the case that matters
+ * the navigation to save nobody a decision, and would hide the case that matters
  * most, which is one supplier with two open facilities against one set of leaf.
  *
  * Oldest first, like every other queue here. The columns are chosen so the usual
@@ -136,7 +136,7 @@ export function CreditScreen() {
               <span className="text-text-primary">
                 {t(`credit.facility.${info.getValue<CreditFacility>()}`)}
               </span>
-              {/* Manure is taken as a quantity and settled as money — both matter,
+              {/* Manure is taken as a quantity and settled as money; both matter,
                   so both are on the row rather than only the figure. */}
               {row.manureType ? (
                 <span className="text-caption text-text-secondary">

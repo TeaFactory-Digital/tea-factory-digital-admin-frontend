@@ -1,7 +1,7 @@
 /**
  * The five editable sections of the `client_config` row.
  *
- * **Every section is drafted locally and saved as a unit.** Not for tidiness — it is what
+ * **Every section is drafted locally and saved as a unit.** Not for tidiness; it is what
  * lets the impact list state the cost of the *complete* change before anything is
  * committed. A field that saved on blur would mean "remove Deniyaya and add Kamburupitiya"
  * hits the server as two patches, the first of which is refused for orphaning delivery
@@ -161,7 +161,7 @@ const FLAG_GATES: Record<FeatureFlagName, string> = {
   enableProfileTab: 'app',
   enableAutoLock: 'app',
 
-  /* v1: enablePayouts: 'M6', enableReports: 'M16' — both gone with the modules. */
+  /* v1: enablePayouts: 'M6', enableReports: 'M16'; both gone with the modules. */
 };
 
 /**
@@ -169,8 +169,8 @@ const FLAG_GATES: Record<FeatureFlagName, string> = {
  *
  * This is the section with teeth, and in v2 it is **the point of the whole console**:
  * these are the app's flags, and this screen is the only place they can be changed
- * without a release. v1 held ten of them — six of the app's were missing entirely and two
- * were console-only — so a factory that wanted to turn off biometric sign-in had to ask a
+ * without a release. v1 held ten of them: six of the app's were missing entirely and two
+ * were console-only, so a factory that wanted to turn off biometric sign-in had to ask a
  * developer, which is precisely what AC-12 says must not be true.
  *
  * A flag turns a surface off **end to end** (AC-07): the sidebar row goes where there is
@@ -189,7 +189,7 @@ export function FeaturesSection(props: SectionProps) {
    *
    * `Object.keys(props.config.flags)` rendered whatever the server happened to send, so a
    * flag this build has never heard of arrived as a row with a missing label and a toggle
-   * that gates nothing — and a flag the server *omitted* silently lost its row even though
+   * that gates nothing, and a flag the server *omitted* silently lost its row even though
    * the bundled default was still in force. Iterating the declared set fixes both, and
    * fixes the order: declaration order rather than whatever order the JSON arrived in.
    */
@@ -211,7 +211,7 @@ export function FeaturesSection(props: SectionProps) {
                 <span className="text-body-small font-medium text-text-primary">
                   {t(`config.flag.${name}`)}
                 </span>
-                {/* What it removes, named. "enableManure — off" is a setting; "removes
+                {/* What it removes, named. "enableManure: off" is a setting; "removes
                     the manure credit queue (M7)" is a decision. An app-only flag says so
                     rather than citing a module that does not exist. */}
                 <span className="text-caption text-text-secondary">
@@ -241,7 +241,7 @@ export function FeaturesSection(props: SectionProps) {
  * The lists the operational modules read from.
  *
  * Each one is referenced by records elsewhere and each row therefore shows what depends on
- * it — a collection point by its delivery rows. Removing a point with leaf filed to it is
+ * it: a collection point by its delivery rows. Removing a point with leaf filed to it is
  * **refused**: a delivery names its point and nothing else, so the rows would be orphaned.
  *
  * The bank catalogue used to be here too, and moved to `BanksSection` when it grew from a
@@ -330,7 +330,7 @@ export function OperationsSection(props: SectionProps) {
       />
 
       {/* §21.10: what a supplier may ask for on credit. A catalogue, so it sits with the
-          collection points — the *rates* need two people and live on M4. */}
+          collection points; the *rates* need two people and live on M4. */}
       <ManureCatalogue
         products={manureProducts}
         onChange={setManureProducts}
@@ -341,7 +341,7 @@ export function OperationsSection(props: SectionProps) {
        * The scheme's rules (§21.9), beside the rates they govern.
        *
        * Here rather than in a section of their own because an administrator setting up the
-       * savings scheme is answering one question — *how does this factory's savings work* —
+       * savings scheme is answering one question, *how does this factory's savings work*,
        * and splitting the rates from the month they can be taken out in would make that two
        * screens.
        */}
@@ -415,7 +415,7 @@ export function OperationsSection(props: SectionProps) {
  * `contentLanguages` is the one with a cross-module consequence: it is what M11 and M12
  * count a missing translation against (AC-08), so dropping a language stops copy in it
  * being reported as a gap. Warned about with the number of records affected. **English
- * cannot be dropped** — every content fallback resolves to it, so a record without it
+ * cannot be dropped**: every content fallback resolves to it, so a record without it
  * has nothing to show anybody.
  */
 export function AppearanceSection(props: SectionProps) {
@@ -577,7 +577,7 @@ export function AppearanceSection(props: SectionProps) {
  * Which notification categories this factory sends, and which a new device accepts.
  *
  * The second list is not a duplicate of the first. `categories` is what the factory *may*
- * send — M13 reads it to decide whether a trigger is even available. `defaultCategories` is
+ * send: M13 reads it to decide whether a trigger is even available. `defaultCategories` is
  * what a supplier is opted into when they install the app, and M13 defaults its automatic
  * triggers from it. A category in the second but not the first is a device consenting to
  * something that can never arrive, so the editor keeps the second a subset of the first.

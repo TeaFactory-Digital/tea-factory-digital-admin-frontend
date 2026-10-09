@@ -1,5 +1,5 @@
 /**
- * M18 Tea packet requests — the queue gateway.
+ * M18 Tea packet requests: the queue gateway.
  *
  * Carries the same client-side courtesy as M9's: the note is validated before the
  * request leaves, so a clerk who typed three characters is told in the dialog rather
@@ -30,14 +30,14 @@ function assertDecidable(body: DecisionBody): void {
 }
 
 export const teaPacketRepository = {
-  /** Oldest first within a status — an inbox is worked front to back. */
+  /** Oldest first within a status: an inbox is worked front to back. */
   list: (query: TeaPacketRequestQuery = {}): Promise<Paged<AdminTeaPacketRequest>> =>
     teaPacketEndpoints.list({ page: 0, pageSize: 25, status: 'pending', ...query }),
 
-  /** One request, by id — the list sweep this needed is gone (**G-06** closed). */
+  /** One request, by id: the list sweep this needed is gone (**G-06** closed). */
   get: (id: string): Promise<AdminTeaPacketRequest> => teaPacketEndpoints.get(id),
 
-  /** `async` so a validation failure rejects rather than throwing synchronously — see M9. */
+  /** `async` so a validation failure rejects rather than throwing synchronously: see M9. */
   approve: async (id: string, body: DecisionBody): Promise<StatusAck> => {
     assertDecidable(body);
     return teaPacketEndpoints.approve(id, body);

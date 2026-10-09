@@ -3,7 +3,7 @@
  *
  * **AC-03 is the whole specification of this screen**: the console, the printed slip
  * and the app's Home screen must be the same figures, field for field. So it does not
- * summarise, re-order or omit — it renders `GreenLeafBill` in the order the paper
+ * summarise, re-order or omit; it renders `GreenLeafBill` in the order the paper
  * reads, because the office checks this screen *against* the paper and a rearranged
  * layout makes that comparison line-by-line impossible.
  *
@@ -13,15 +13,15 @@
  *    where "Stamps" should be is a slip the supplier queries. The nine lines are the
  *    document's shape (§18.1), not a list of non-empty values.
  *  - **The total is verified, not trusted** (BR-107). If the lines disagree with the
- *    stated total, that is said loudly here — this is the last screen before the
+ *    stated total, that is said loudly here: this is the last screen before the
  *    figure becomes something a supplier is holding.
- *  - **`null` is an em dash.** A month with no auction result has no gross amount, and
+ *  - **`null` is a dash (`-`).** A month with no auction result has no gross amount, and
  *    `LKR 0.00` would be a number the office has to explain (BR-102).
  *
  * There is no edit control and there will not be one: a wrong bill is a wrong
  * delivery or a wrong rate, and the fix is upstream in M3 or M4 followed by a
  * re-generation. Whether a *published* bill may be corrected at all is §21.8, still
- * unanswered — see the notice at the foot of the page.
+ * unanswered. See the notice at the foot of the page.
  */
 
 import { useState } from 'react';
@@ -441,10 +441,10 @@ function DailySupplyCard({ bill }: { bill: AdminBill }) {
               }
             >
               <span className="numeric text-text-secondary">{day.day}</span>
-              {/* A day with no leaf shows an em dash, not `0.00`: the supplier did
+              {/* A day with no leaf shows a dash (`-`), not `0.00`: the supplier did
                   not come in, which is not the same as bringing nothing. */}
               <span className="numeric font-medium">
-                {day.kgs === null ? '—' : formatAmount(day.kgs)}
+                {day.kgs === null ? '-' : formatAmount(day.kgs)}
               </span>
             </li>
           ))}

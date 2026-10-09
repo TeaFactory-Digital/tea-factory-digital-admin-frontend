@@ -1,5 +1,5 @@
 /**
- * `@tfd/domain` — the shared tea-factory model.
+ * `@tfd/domain`: the shared tea-factory model.
  *
  * Consumed by the console today, and by the API and the mobile app once they
  * move into the same workspace (admin-console.md → Sharing the domain and the

@@ -4,12 +4,12 @@
  * The one guard worth having on the way out is the month key: `generate` recomputes
  * a whole month, and a malformed key would reach the server as a path segment that
  * could match a different month. Everything else about a bill is derived, so there
- * is nothing here for the console to validate — which is the point of a read model.
+ * is nothing here for the console to validate, which is the point of a read model.
  *
  * `verifyBill` is the exception, and it reads the other way: it checks a bill the
  * server **sent**. BR-107 says the itemized lines must equal the stated total, and a
  * console that trusted that rather than checking it would render an unbalanced slip
- * as though it were fine — on the one screen where somebody could still catch it.
+ * as though it were fine, on the one screen where somebody could still catch it.
  */
 
 import {

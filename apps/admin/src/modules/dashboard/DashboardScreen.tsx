@@ -1,22 +1,22 @@
 /**
- * M1 Dashboard — **the app at a glance**, in v2.
+ * M1 Dashboard: **the app at a glance**, in v2.
  *
  * v1 led with today's kilos and the month-cycle stage, which was the right first screen
  * for a console that ran the factory. This console manages the app, and the office has a
  * weighing system for kilos. So the questions, in the order they are now asked:
  *
- *  1. **What is waiting for me?** Queue counts with the age of the oldest item — a queue
+ *  1. **What is waiting for me?** Queue counts with the age of the oldest item: a queue
  *     of three sitting for four days is worse than twenty from this morning. Unchanged,
  *     because every one of these queues is a `pending` in somebody's app.
  *  2. **Is the app being used?** §19.3 calls app adoption and channel shift *"the two
  *     KPIs that justify the project"*, and nothing else in the factory can answer it.
  *  3. **Is the content the app is showing wrong?** Every figure on that card is a
- *     **silent** failure — a Sinhala supplier reading English, an unwritten FAQ, a banner
+ *     **silent** failure: a Sinhala supplier reading English, an unwritten FAQ, a banner
  *     whose window closed a fortnight ago. None of them produce an error anywhere.
  *  4. **What is broken?** Server-composed alerts, because the rule that makes something
  *     an alert is policy, not presentation.
  *
- * The v1 cards are gone, but **their data is still on the payload** — see
+ * The v1 cards are gone, but **their data is still on the payload**; see
  * `DashboardSummary`. That is not an oversight: `cycle.awaitingRate` is *why the app is
  * showing a supplier blanks instead of amounts*, which is a telephone call this office
  * takes whether or not it closes the month.
@@ -330,7 +330,7 @@ function AdoptionTrendCard({ trend, className }: { trend: Trend; className?: str
 /**
  * `connectNulls={false}` is the load-bearing prop. A month with no requests at all carries
  * `null`, and joining across it would draw a straight line through a month that has no
- * answer — reporting a trend the records do not contain (BR-102, as a chart).
+ * answer, reporting a trend the records do not contain (BR-102, as a chart).
  */
 function AdoptionTrend({ data, known }: { data: Trend; known: Trend }) {
   const { t } = useTranslation();
@@ -536,7 +536,7 @@ function QueueSection({ queues, className }: { queues: QueueCount[]; className?:
  * The filter that narrows a shared screen back down to the card that was clicked.
  *
  * M7 answers for three queues behind one link, so `/credit?status=pending` alone would
- * open the *Advances* card onto loans and manure as well — a card reading four and a
+ * open the *Advances* card onto loans and manure as well: a card reading four and a
  * screen listing eleven, which reads as a bug in the count rather than as a wider filter.
  */
 const QUEUE_FACILITY: Partial<Record<QueueCount['queue'], CreditFacility>> = {
@@ -556,8 +556,8 @@ function QueueCard({ queue }: { queue: QueueCount }) {
   //
   // Matched through `queuesOf` rather than against `item.queue` directly, because one row
   // may answer for several queues: M7 carries all three credit facilities behind a single
-  // link. Comparing `item.queue === queue.queue` silently missed that row — an array is
-  // never equal to a string — so the advances, loans and manure cards each reported
+  // link. Comparing `item.queue === queue.queue` silently missed that row (an array is
+  // never equal to a string), so the advances, loans and manure cards each reported
   // "no screen in this version" while their screen was in the sidebar all along.
   const target = NAVIGATION.flatMap((section) => section.items).find((item) =>
     queuesOf(item).includes(queue.queue),
@@ -597,7 +597,7 @@ function QueueCard({ queue }: { queue: QueueCount }) {
    *
    * It used to be the *planned* case, and now it is a forward-compatibility one: the server
    * decides which queues exist, so a newer API can name one this build has never heard of.
-   * The count is still worth showing — it is a real backlog — but a card that linked
+   * The count is still worth showing (it is a real backlog), but a card that linked
    * somewhere would be a dead link.
    */
   if (!target) {
@@ -687,7 +687,7 @@ function FeedRow({
  * expired banner. The only way any of it surfaces is a screen that goes looking, which is
  * AC-08's argument about editor-visible gaps applied one level up.
  *
- * A clean state says so in words rather than showing three zeroes — a row of zeroes reads
+ * A clean state says so in words rather than showing three zeroes: a row of zeroes reads
  * as "not implemented", which is exactly what this card is here to stop being true.
  */
 function ContentHealthCard({ content }: { content: ContentHealth }) {
@@ -774,7 +774,7 @@ function AlertsCard({ alerts }: { alerts: DashboardAlert[] }) {
         ) : (
           <ul className="flex flex-col">
             {alerts.map((alert) => (
-              // The server sends a key and its parameters, never a sentence — so the copy
+              // The server sends a key and its parameters, never a sentence, so the copy
               // stays in the console's string table and can be localized later (BR-110).
               <FeedRow
                 key={alert.id}

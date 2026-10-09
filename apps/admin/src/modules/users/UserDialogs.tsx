@@ -6,7 +6,7 @@
  * with no why is a conversation nobody in the office can have. A colleague is owed that at
  * least as much as a supplier.
  *
- * Roles are checkboxes rather than a single select, because §12.1 is a set — a person can be
+ * Roles are checkboxes rather than a single select, because §12.1 is a set: a person can be
  * the editor and the factory administrator at a small factory, and `grantsFromRoles`
  * takes the highest level any of their roles grants.
  */
@@ -88,7 +88,7 @@ export function UserDialog({
    *
    * There is no invitation email: the API takes a password at creation and the office
    * hands it over, which is what `users.createdHint` has always said. Held here and
-   * dropped when the dialog closes — a credential left in component state is one a
+   * dropped when the dialog closes: a credential left in component state is one a
    * re-opened dialog would show to whoever is at the desk next, the same rule
    * `ResetPasswordDialog` follows.
    */
@@ -281,7 +281,7 @@ export function UserDialog({
 }
 
 /**
- * Suspend or reactivate — both with a mandatory reason.
+ * Suspend or reactivate, both with a mandatory reason.
  *
  * One dialog because the shape is identical and the copy is what differs.
  */

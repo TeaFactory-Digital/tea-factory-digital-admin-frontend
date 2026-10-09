@@ -1,5 +1,5 @@
 /**
- * M9 Change requests — payout and savings-rate approvals.
+ * M9 Change requests: payout and savings-rate approvals.
  *
  * The module that closes the app's loudest open loop: every `pending` in the
  * supplier's app is this queue, and AC-02 requires that approving here changes
@@ -8,7 +8,7 @@
  *
  * Approve and reject share a body because they share a requirement: **rejecting
  * any request without a note is impossible** (AC-06), and approving without one
- * is nearly as bad — the note is what an auditor reads six months later.
+ * is nearly as bad: the note is what an auditor reads six months later.
  */
 
 import type {
@@ -23,7 +23,7 @@ import type { StatusAck } from '../api/adapters';
 import { toQueueParams } from './params';
 
 export const changeRequestEndpoints = {
-  /** One request, decided or not — a bookmarked link must open (**G-06**, now served). */
+  /** One request, decided or not: a bookmarked link must open (**G-06**, now served). */
   get: (id: string) =>
     apiClient
       .get<AdminChangeRequest>(`/admin/change-requests/${id}`)
@@ -36,8 +36,8 @@ export const changeRequestEndpoints = {
 
   /**
    * `409 four-eyes-violation` when the approver created the record (BR-501), and
-   * `409 already-decided` when someone else decided it while this queue was open
-   * — two clerks working the same inbox is the normal case, not the edge case.
+   * `409 already-decided` when someone else decided it while this queue was open:
+   * two clerks working the same inbox is the normal case, not the edge case.
    *
    * Both are **refusals, not warnings**. A warning that can be clicked through
    * is a control that does not exist.

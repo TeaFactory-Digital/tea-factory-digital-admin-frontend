@@ -69,7 +69,7 @@ export function useDecideChangeRequest(id: string, supplierId: string | undefine
     },
 
     onError: (error: unknown) => {
-      // `already-decided` means our copy is stale — someone else worked the same
+      // `already-decided` means our copy is stale: someone else worked the same
       // inbox. Refetch so the UI shows what they actually chose rather than
       // leaving the clerk staring at a row that no longer exists in that state.
       if (

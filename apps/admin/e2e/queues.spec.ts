@@ -5,7 +5,7 @@ import { expect, test, type Page } from '@playwright/test';
  *
  * The integration suite already proves the refusals and the arithmetic against the
  * mock API. What only a browser can confirm is that the two new modules are
- * *reachable* — lazily-loaded routes, a sidebar that links to them, and a badge
+ * *reachable*: lazily-loaded routes, a sidebar that links to them, and a badge
  * summing three queues behind one row. A route that 404s or a chunk that fails to
  * load is invisible to a jsdom test that imports the screen directly.
  */
@@ -28,7 +28,7 @@ test('the Queues section links to all three of its modules', async ({ page }) =>
   await signIn(page, CLERK);
 
   const nav = page.getByRole('navigation').first();
-  // No `Planned` chip on any of them any more — the section is finished.
+  // No `Planned` chip on any of them any more: the section is finished.
   await expect(nav.getByRole('link', { name: /change requests/i })).toBeVisible();
   await expect(nav.getByRole('link', { name: /credit queues/i })).toBeVisible();
   await expect(nav.getByRole('link', { name: /inquiries/i })).toBeVisible();
@@ -113,7 +113,7 @@ test('a factory that does not lend against income sees only the facilities it se
 }) => {
   /**
    * AC-07 from the browser side. `highland` buys advances but not loans or manure,
-   * so the credit queue opens — one facility is enough — and offers no filter for
+   * so the credit queue opens (one facility is enough) and offers no filter for
    * the two it does not sell. The endpoint refuses those rows as well; see
    * `src/test/credit.test.ts`, which is what makes this a policy rather than a
    * hidden option.

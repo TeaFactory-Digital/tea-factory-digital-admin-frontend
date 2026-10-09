@@ -4,7 +4,7 @@ import type { Theme, ThemeOverride } from './types';
 
 /**
  * Resolve a concrete `Theme` by merging base design tokens with a tenant's
- * overrides — the single choke-point that produces every colour, size and
+ * overrides: the single choke-point that produces every colour, size and
  * typographic value the console uses, which is exactly why nothing else may
  * hardcode them.
  *

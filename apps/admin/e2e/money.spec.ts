@@ -9,7 +9,7 @@ import { expect, test, type Page } from '@playwright/test';
  * telephones about the figure on their phone.
  *
  * The unit tests prove the arithmetic and the refusals against the mock API. What only a
- * browser can confirm is that the screens built on them **render** — that the lazy chunks
+ * browser can confirm is that the screens built on them **render**: that the lazy chunks
  * resolve and the month picker validates a key against the API's own list rather than
  * trusting the URL.
  *
@@ -53,7 +53,7 @@ test('reads a month’s bills and opens one supplier’s slip', async ({ page })
     timeout: 15_000,
   });
 
-  // The nine deduction lines are all present, zeros included — the slip's shape.
+  // The nine deduction lines are all present, zeros included: the slip's shape.
   for (const label of [/transport charges/i, /^stamps$/i, /previous debts/i, /^savings$/i]) {
     await expect(page.getByText(label).first()).toBeVisible();
   }

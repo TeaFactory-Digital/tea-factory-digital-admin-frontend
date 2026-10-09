@@ -4,8 +4,8 @@
  * Copied verbatim in spirit from the mobile app's `queryKeys.ts`, which
  * admin-console.md calls "a pattern worth copying verbatim". The reason it earns
  * that: invalidation is the hard part of a queue-driven console. After approving
- * a change request, four things are stale — the queue, that request, the
- * supplier whose value changed, and the dashboard counts — and a key spelled
+ * a change request, four things are stale (the queue, that request, the
+ * supplier whose value changed, and the dashboard counts) and a key spelled
  * inline at the call site is a key someone forgets to invalidate.
  *
  * Hierarchical on purpose: `qk.suppliers.all` invalidates every supplier list
@@ -39,13 +39,13 @@ export const qk = {
    *
    * Two keys for one row on purpose: `config` is the public payload every screen is branded
    * and gated from, and this one carries the same row plus the usage counts M14 judges a
-   * change against. A save invalidates both — the second so the editor sees its own result,
+   * change against. A save invalidates both: the second so the editor sees its own result,
    * the first so the sidebar does.
    */
   adminConfig: ['admin-config'] as const,
 
   /**
-   * §21.10's deduction rates — M4's, not M14's, because they are approved rather than saved.
+   * §21.10's deduction rates: M4's, not M14's, because they are approved rather than saved.
    * An approval changes every bill the next run produces, so it sweeps `bills` too.
    */
   deductionRates: ['deduction-rates'] as const,
@@ -63,7 +63,7 @@ export const qk = {
    *
    * Its own key rather than a slice of `dashboard`, because the shell reads it on every
    * screen and the dashboard is one of them. Folding it in would refetch the whole
-   * dashboard — five queue counts and a twelve-month trend — every time anybody wanted
+   * dashboard (five queue counts and a twelve-month trend) every time anybody wanted
    * to know whether a balance was current.
    */
   factorySync: ['factory-sync'] as const,
@@ -81,7 +81,7 @@ export const qk = {
       ['suppliers', 'income', id, year ?? 'latest'] as const,
     /**
      * Under `suppliers`, not `notifications`, and deliberately: a composed send
-     * invalidates `notifications.all` and must **not** sweep this — the per-supplier
+     * invalidates `notifications.all` and must **not** sweep this: the per-supplier
      * consent state did not change because the office sent something.
      */
     notifications: (id: string) => ['suppliers', 'notifications', id] as const,
@@ -91,7 +91,7 @@ export const qk = {
 
   /**
    * A committed session invalidates three things: the day's rows, the day's
-   * totals, and the dashboard — whose "today's leaf" card is the same figure a
+   * totals, and the dashboard, whose "today's leaf" card is the same figure a
    * clerk just changed. `deliveries.all` covers the first two.
    */
   deliveries: {
@@ -129,7 +129,7 @@ export const qk = {
 
   /**
    * Marking one line changes the run's totals, so `payouts.all` is what a mark
-   * invalidates — the alternative is a run header reading "3 paid" above a grid
+   * invalidates: the alternative is a run header reading "3 paid" above a grid
    * showing four.
    */
   payouts: {
@@ -140,7 +140,7 @@ export const qk = {
   },
 
   /**
-   * Savings is read-only, so nothing in the module invalidates it — but **publishing
+   * Savings is read-only, so nothing in the module invalidates it, but **publishing
    * a month does**, because that is when a bill's savings deduction becomes a
    * passbook entry. M4's invalidation names this key for that reason.
    */
@@ -161,7 +161,7 @@ export const qk = {
   /**
    * Deciding a credit request invalidates more than the queue, and the extra one is
    * easy to miss: **the supplier**. An approval raises `creditBalances`, which is
-   * what the next eligibility read subtracts from the ceiling — so a detail page
+   * what the next eligibility read subtracts from the ceiling, so a detail page
    * left open would keep offering headroom that has already been lent (§11.3).
    */
   credit: {
@@ -213,7 +213,7 @@ export const qk = {
    * would leave the gap warnings AC-08 is about showing the state before the edit.
    *
    * The preview is keyed by language, because that is the one thing that genuinely
-   * differs per language — and it is the server's resolution, so it must be refetched
+   * differs per language, and it is the server's resolution, so it must be refetched
    * rather than recomputed.
    */
   news: {
@@ -234,7 +234,7 @@ export const qk = {
    * A send invalidates the log **and** the triggers, even though a composed send touches
    * no trigger. The two are read side by side on one screen, and a factory that has just
    * turned `newsArticle` on wants to see the next publish appear in the log underneath
-   * it — a stale trigger card over a fresh log reads as the toggle not having worked.
+   * it: a stale trigger card over a fresh log reads as the toggle not having worked.
    */
   notifications: {
     all: ['notifications'] as const,
@@ -246,7 +246,7 @@ export const qk = {
    * A user or role change invalidates the **session** as well as the list.
    *
    * `resolveGrants` merges the server's grants over the shipped matrix, so editing a role
-   * changes what the signed-in user may do — and an administrator who had just narrowed their
+   * changes what the signed-in user may do, and an administrator who had just narrowed their
    * own role while still seeing every button would be looking at a console that disagrees
    * with the server about what they can do.
    */

@@ -1,17 +1,17 @@
 # Integrating with the factory's own console
 
 **The deliverable for whoever builds the bridge.** The factory runs an existing
-system with its own database; this platform — the supplier app, this console and the
-API behind them — is new. Neither can be rewritten into the other, so they have to
+system with its own database; this platform (the supplier app, this console and the
+API behind them) is new. Neither can be rewritten into the other, so they have to
 agree, and this document says about what.
 
 It is written the same way [api-contract.md](./api-contract.md) is: what must happen,
-what must be refused, and why — so a disagreement about a figure has a paragraph to
+what must be refused, and why, so a disagreement about a figure has a paragraph to
 settle it rather than an argument.
 
 > **To hand to the other team, use [factory-system-team.md](./factory-system-team.md)**
-> and the sample JSON beside it. It is self-contained — no module ids, no `AC-`
-> references — and it is the agreed design.
+> and the sample JSON beside it. It is self-contained (no module ids, no `AC-`
+> references) and it is the agreed design.
 > [factory-integration-spec.md](./factory-integration-spec.md) is the shared core it sits
 > on, and routes each audience to its own document. This document is the reasoning behind
 > all of them, for readers of *this* repository.
@@ -32,18 +32,18 @@ external reference stored on their side, no call before the bill run, no
 externally-made decision accepted. Reading data out is not a logic change; everything
 else here was.
 
-**So there is no direction 2 on the wire.** The office is the bridge — it reads the
+**So there is no direction 2 on the wire.** The office is the bridge: it reads the
 app request in this console and enters it into the Factory System exactly as it enters
 a walk-in today. §4's deadline problem disappears with it: an advance entered into the
 Factory System is deducted by the Factory System, because it was never anywhere else.
 
 That also dissolves the duplicate problem rather than solving it. **This platform never
-creates a credit record — only a message.** One system creates the record, so there is
+creates a credit record, only a message.** One system creates the record, so there is
 nothing to reconcile. See the spec's §3.
 
 **What it costs this console:** the request queues record a decision rather than making
 one. No eligibility ceiling is computed here, and the buttons read *"Approved by the
-factory"* rather than *"Approve"*. That is a real reduction and it is the right one —
+factory"* rather than *"Approve"*. That is a real reduction and it is the right one:
 a channel that also decides credit is a second business system by another name.
 
 **Read §4–§6 below as the design that was *not* chosen**, and why. They remain the
@@ -67,7 +67,7 @@ expensive to discover late:
 Data flows **in both directions**, and the direction most people forget is the one
 with a deadline on it. An advance approved in this console must appear as a deduction
 line on a bill the *factory's* system generates. Miss it, and a supplier who was told
-*yes* sees nothing on their account and telephones the office — which is the failure
+*yes* sees nothing on their account and telephones the office, which is the failure
 this whole platform exists to prevent.
 
 Any design that treats this as a nightly one-way file drop will produce a monthly
@@ -89,10 +89,10 @@ overall, and pretending otherwise is what makes these projects fail.
 | The Green Leaf Account (bill), every line | **Factory** | Reads, renders, never edits |
 | Payouts, and whether one was paid | **Factory** | Does not read today |
 | Savings balances and the passbook | **Factory** | Reads the balance |
-| Supplier registry — who exists, their code | **Factory** | Reads |
-| **App account** — has the app, devices, password | **Platform** | Does not need it |
-| **Bank details, payment method, savings rate** | **Contested — see §5** | — |
-| **Home and estate address** | **Contested — see §5** | — |
+| Supplier registry: who exists, their code | **Factory** | Reads |
+| **App account**: has the app, devices, password | **Platform** | Does not need it |
+| **Bank details, payment method, savings rate** | **Contested; see §5** | - |
+| **Home and estate address** | **Contested; see §5** | - |
 | Approved credit, and tea packets | **Platform** | Must deduct them |
 | News, banners, static pages, push | **Platform** | Does not need it |
 | Feature flags, branding, the `client_config` row | **Platform** | Does not need it |
@@ -101,7 +101,7 @@ The three contested rows are the whole difficulty. Everything else is a copy.
 
 ---
 
-## 3. Direction 1 — factory → platform
+## 3. Direction 1: factory → platform
 
 What the app and this console cannot function without.
 
@@ -109,9 +109,9 @@ What the app and this console cannot function without.
 | --- | --- | --- |
 | **A published bill**, every field | Within minutes of the month being published | The supplier is told *"your account is ready"* by a push that fires on the same event. A push whose bill has not landed opens the app on a blank screen |
 | **The month's stage** (§13) | On every change | `awaitingRate` is *why the app shows blanks instead of amounts*. Without it the office cannot answer the telephone |
-| **Supplier registry changes** — new supplier, code, suspension | Same day | A supplier who cannot sign in because the platform has never heard of them is a support call the office cannot resolve |
+| **Supplier registry changes**: new supplier, code, suspension | Same day | A supplier who cannot sign in because the platform has never heard of them is a support call the office cannot resolve |
 | **Savings balance** | On publish | The app shows it; a stale figure is a supplier arguing with their passbook |
-| **Delivery totals** per supplier per month | On publish is enough | Only totals. The app shows a monthly figure and this console shows a month history — **neither needs the individual weighings** |
+| **Delivery totals** per supplier per month | On publish is enough | Only totals. The app shows a monthly figure and this console shows a month history; **neither needs the individual weighings** |
 
 **Send bills whole, not as deltas.** A bill is a read model the factory regenerates
 whenever a delivery is voided or a rate is corrected (v1's `modules.md` → M5, in git
@@ -128,7 +128,7 @@ decision.
 
 ---
 
-## 4. Direction 2 — platform → factory ⚠️ **the hard one**
+## 4. Direction 2: platform → factory ⚠️ **the hard one**
 
 Every one of these is a decision the office made in this console that **changes a bill
 the factory's system has not generated yet**.
@@ -147,7 +147,7 @@ the factory's system has not generated yet**.
 > **An approval that arrives after the bill run has been generated is invisible.**
 
 The supplier was told *yes* in the app and their account does not show it. Nobody
-finds out until they telephone — and by then the month is published and BR-108 locks
+finds out until they telephone, and by then the month is published and BR-108 locks
 it, so the correction is next month's problem.
 
 This is the single most important property of the integration, and it has to be
@@ -165,7 +165,7 @@ webhook is one supplier's money, silently.
 
 ### Idempotency
 
-Every push carries a stable id — the change request's, the credit request's. The
+Every push carries a stable id: the change request's, the credit request's. The
 factory's system must apply the same id twice with no extra effect. This console
 already works this way for delivery batches (`Idempotency-Key`, api-contract §1.3),
 and for the same reason: a retry after a timeout must not deduct an instalment twice.
@@ -183,7 +183,7 @@ both systems have a screen that edits them. That is the real risk in this projec
 - Every change is already an approval with a note, an actor and an audit entry (AC-02,
   AC-06, AC-09, BR-501's four eyes).
 - If the factory's console also edits them, there are **two approval paths for one
-  fact** and no way to say which was later — the classic last-write-wins bug, on a
+  fact** and no way to say which was later: the classic last-write-wins bug, on a
   supplier's bank account.
 
 So: the factory's system treats these as **read-only, replicated from the platform**,
@@ -191,7 +191,7 @@ and its own edit screens for them are disabled. That is a change on their side a
 is the one worth insisting on.
 
 **If they will not**, the fallback is *the factory's system wins and the platform
-mirrors it* — which means the app's change-request flow becomes advisory and AC-01
+mirrors it*, which means the app's change-request flow becomes advisory and AC-01
 (*"the app and the record show the same active values at all times"*) can no longer be
 guaranteed. That is a real product loss and should be a written decision rather than
 something discovered in testing.
@@ -206,7 +206,7 @@ something discovered in testing.
 | **B. Event push, both ways** | Each system calls the other's API when a fact changes, plus the reconciliation pull in §4 | ✅ **Yes** |
 | **C. Scheduled file exchange** | CSV / SFTP, nightly | ❌ Not for direction 2. It cannot meet the bill-run deadline, and §4's failure is silent |
 
-**B, with C as a migration step if their system genuinely cannot call out yet** — a
+**B, with C as a migration step if their system genuinely cannot call out yet**: a
 nightly pull covers direction 1 acceptably (bills change once a month), and direction 2
 gets the reconciliation endpoint from §4 straight away. Direction 2 is the one that
 cannot wait.
@@ -236,7 +236,7 @@ means one of them ends up behind a role check that makes no sense for a machine.
 design is chosen.
 
 If a bill reaches this console by replication, then a figure on M5 or on a supplier's
-month history is **as fresh as the last sync** — and a clerk reading it to a supplier
+month history is **as fresh as the last sync**, and a clerk reading it to a supplier
 over the telephone has no way to know that. Today the screen says *"read-only"* and
 implies *"and current"*.
 
@@ -246,7 +246,7 @@ One line, in the same spirit as the *"showing bundled defaults"* notice the shel
 already renders when `/config` fails ([white-label.md](./white-label.md)).
 
 Not built, because it depends on a design decision that has not been made yet. It is
-recorded in [status.md](./status.md) rather than assumed away — and it is small once
+recorded in [status.md](./status.md) rather than assumed away, and it is small once
 the shape is settled.
 
 ---
@@ -255,7 +255,7 @@ the shape is settled.
 
 **Before any code:**
 
-- [ ] Decide §5 — who owns bank details, payment method, savings rate and address.
+- [ ] Decide §5: who owns bank details, payment method, savings rate and address.
       Write it down. This is the decision that costs the most to change later
 - [ ] Confirm the factory's system can call an outbound HTTP API. If not, §6's
       fallback applies and direction 2 still needs the pull endpoint
@@ -264,15 +264,15 @@ the shape is settled.
 
 **Direction 1:**
 
-- [ ] `POST /integration/bills` — whole bills, idempotent on bill id
-- [ ] `POST /integration/suppliers` — registry changes
+- [ ] `POST /integration/bills`: whole bills, idempotent on bill id
+- [ ] `POST /integration/suppliers`: registry changes
 - [ ] Month stage on every change
 - [ ] A backfill path for the first load
 
 **Direction 2:**
 
 - [ ] Push on approval, idempotent on the request id
-- [ ] `GET /integration/pending-approvals?month=` — **the reconciliation pull the bill
+- [ ] `GET /integration/pending-approvals?month=`: **the reconciliation pull the bill
       run calls before generating.** Without this, one dropped call is one supplier's
       money and nobody is told
 - [ ] The factory's system honours the approvals in the next run
@@ -280,5 +280,5 @@ the shape is settled.
 **Both:**
 
 - [ ] `system` audit entries on both sides for every replicated change (AC-09)
-- [ ] An alert when a sync has not succeeded — silence must not look like agreement
+- [ ] An alert when a sync has not succeeded: silence must not look like agreement
 - [ ] The freshness signal in §7

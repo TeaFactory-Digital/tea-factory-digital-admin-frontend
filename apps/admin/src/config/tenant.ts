@@ -7,7 +7,7 @@
  *
  * Resolved once on purpose. A tenant that could change mid-session would mean
  * every cached query, every open form and the applied theme belong to a factory
- * that is no longer selected — the dev switcher therefore reloads the page
+ * that is no longer selected: the dev switcher therefore reloads the page
  * rather than mutating this value.
  */
 

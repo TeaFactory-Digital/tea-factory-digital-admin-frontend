@@ -5,7 +5,7 @@
  * point of the type: a key that exists in `en` and not here is a **compile error**,
  * not a screen that quietly falls back to English in front of a weighing-point
  * clerk. The fallback in `i18n/index.ts` stays as a runtime safety net for a build
- * that somehow ships anyway — it is not the guard.
+ * that somehow ships anyway; it is not the guard.
  *
  * Keys are in en.ts's order, under the same section dividers, so the two files can
  * be read side by side. The dividers stay in English deliberately: they are for
@@ -15,7 +15,7 @@
  * Two rules for translating this table:
  *
  *  1. **`{{placeholders}}` are code.** The name inside the braces must match en.ts
- *     exactly — the console interpolates by name, so a translated placeholder
+ *     exactly: the console interpolates by name, so a translated placeholder
  *     renders as literal text.
  *  2. **Domain words follow the printed account, not the dictionary.** A supplier
  *     reads දළු ගිණුම on paper every month; a more literal translation of "Green
@@ -56,7 +56,7 @@ export const si: Record<TranslationKey, string> = {
   'common.previous': 'පෙර',
   'common.next': 'ඊළඟ',
   'common.showing': '{{total}}ක් අතරින් {{from}}–{{to}} පෙන්වයි',
-  // The page controls are icons, so these are the only names they have — they
+  // The page controls are icons, so these are the only names they have; they
   // reach the clerk as a tooltip and a screen reader as the accessible name.
   'common.pagination': 'පිටු',
   'common.firstPage': 'මුල් පිටුව',
@@ -81,9 +81,9 @@ export const si: Record<TranslationKey, string> = {
   'profile.securityTitle': 'ආරක්ෂාව',
   'profile.securityDescription': 'මෙම ගිණුම ආරක්ෂා වන ආකාරය.',
   'profile.securityHint':
-    'මුරපද නැවත සකසන්නේ කර්මාන්තශාලා පරිපාලකයෙකු විසින් “පරිශීලකයින් සහ භූමිකා” තිරයෙනි — මෙතැනින් එය වෙනස් කළ නොහැක.',
+    'මුරපද නැවත සකසන්නේ කර්මාන්තශාලා පරිපාලකයෙකු විසින් “පරිශීලකයින් සහ භූමිකා” තිරයෙනි. මෙතැනින් එය වෙනස් කළ නොහැක.',
   'profile.save': 'මනාපයන් සුරකින්න',
-  'profile.unsavedHint': 'තවම යොදා නැත — භාවිතයට සුරකින්න.',
+  'profile.unsavedHint': 'තවම යොදා නැත. භාවිතයට සුරකින්න.',
   'profile.nothingToSave': 'සුරැකීමට කිසිවක් නැත.',
   'profile.confirmTitle': 'මෙම මනාපයන් යොදන්නද?',
   'profile.confirmBody':
@@ -144,9 +144,9 @@ export const si: Record<TranslationKey, string> = {
   /* ──────────────────────────────── shell ──────────────────────────────── */
   'shell.skipToContent': 'අන්තර්ගතයට යන්න',
   'shell.degradedConfig':
-    'කර්මාන්තශාලා වින්‍යාසයට සම්බන්ධ විය නොහැකි විය — ඇතුළත් කර ඇති පෙරනිමි අගයන් පෙන්වයි. සන්නාමය සහ විශේෂාංග යාවත්කාලීන නොවිය හැක.',
+    'කර්මාන්තශාලා වින්‍යාසයට සම්බන්ධ විය නොහැකි විය. ඇතුළත් කර ඇති පෙරනිමි අගයන් පෙන්වයි. සන්නාමය සහ විශේෂාංග යාවත්කාලීන නොවිය හැක.',
   /* The accessible name of the language pill. The options inside it are *not*
-     translated — see i18n/languages.ts for why. */
+     translated; see i18n/languages.ts for why. */
   'shell.language': 'භාෂාව',
 
   /* ──────────────────────────────── splash ─────────────────────────────── */
@@ -160,7 +160,7 @@ export const si: Record<TranslationKey, string> = {
   // this is holding the wrong one.
   'viewport.tooSmallTitle': 'මෙම තිරය ඉතා කුඩාය',
   'viewport.tooSmallBody':
-    'කාර්යාල කොන්සෝලය ටැබ්ලට්, ලැප්ටොප් සහ ඩෙස්ක්ටොප් සඳහා සකසා ඇත — එහි වගු සහ පිටාපිට පෝරම දුරකථනයකට නොගැළපේ. එය ටැබ්ලටයකින් හෝ පරිගණකයකින් විවෘත කරන්න; කුඩා ටැබ්ලටයක් තිරස් අතට හැරවීමට සිදු විය හැක.',
+    'කාර්යාල කොන්සෝලය ටැබ්ලට්, ලැප්ටොප් සහ ඩෙස්ක්ටොප් සඳහා සකසා ඇත. එහි වගු සහ පිටාපිට පෝරම දුරකථනයකට නොගැළපේ. එය ටැබ්ලටයකින් හෝ පරිගණකයකින් විවෘත කරන්න; කුඩා ටැබ්ලටයක් තිරස් අතට හැරවීමට සිදු විය හැක.',
   'viewport.tooSmallSize':
     'මෙම කවුළුව {{width}} × {{height}} වේ. කොන්සෝලයට අවම වශයෙන් {{minWidth}} × {{minHeight}} අවශ්‍ය වේ.',
 
@@ -208,7 +208,7 @@ export const si: Record<TranslationKey, string> = {
   'dashboard.trendOneMonth': 'තවම ඇත්තේ {{month}} පමණයි. ඉල්ලීම් ඇති මාස දෙකක් වූ පසු රේඛාව පෙන්වයි.',
   'dashboard.trendEmpty': 'තවම ඉල්ලීම් නැති නිසා ප්‍රස්ථාරයක් පෙන්වීමට දෙයක් නැත.',
   /* A queue the server reports that this version of the console has no screen for. Not
-     "planned" — every module of the §18.1 scope is built; this is a newer API naming a
+     "planned": every module of the §18.1 scope is built; this is a newer API naming a
      queue this build has never heard of. */
   'dashboard.noScreenForQueue': 'මෙම අනුවාදයේ මේ සඳහා තිරයක් නැත',
   'dashboard.oldestWaiting': 'පැරණිතම {{age}}',
@@ -271,7 +271,7 @@ export const si: Record<TranslationKey, string> = {
   'dashboard.content.staticPagesUnwritten': 'ස්ථාවර පිටු {{count}}ක් කිසිදා ලියා නැත',
 
   'dashboard.alert.missingBankDetails':
-    'සැපයුම්කරුවන් {{count}}කට දළු භාර ඇතත් බැංකු විස්තර නැත — එක් එක් කරුණ විසඳන තුරු මාසය ප්‍රකාශයට පත් කළ නොහැක.',
+    'සැපයුම්කරුවන් {{count}}කට දළු භාර ඇතත් බැංකු විස්තර නැත. එක් එක් කරුණ විසඳන තුරු මාසය ප්‍රකාශයට පත් කළ නොහැක.',
   'dashboard.alert.slaBreach': 'වෙනස් කිරීමේ ඉල්ලීම් {{count}}ක් දින 3කට වඩා බලා සිටී.',
   'dashboard.alert.awaitingRate': '{{month}} සඳහා වෙන්දේසි ප්‍රතිඵලය තවම ඇතුළත් කර නැත.',
 
@@ -457,7 +457,7 @@ export const si: Record<TranslationKey, string> = {
   'suppliers.resetPassword.copied': 'පිටපත් කළා',
   'suppliers.resetPassword.copyFailed': 'පිටපත් කළ නොහැකි විය. මුරපදය තෝරා අතින් පිටපත් කරන්න.',
   'suppliers.resetPassword.onceWarning':
-    'මෙය පෙන්වන එකම අවස්ථාව මෙයයි. මෙය වසා දැමුවහොත් එය නැති වේ — ඔබට තවත් එකක් සෑදීමට සිදු වේ.',
+    'මෙය පෙන්වන එකම අවස්ථාව මෙයයි. මෙය වසා දැමුවහොත් එය නැති වේ. ඔබට තවත් එකක් සෑදීමට සිදු වේ.',
   'suppliers.resetPassword.oneTime':
     'මෙයින් පළමු වරට පිවිසෙන විට සැපයුම්කරු තමන්ගේම මුරපදයක් තෝරාගත යුතුය, එබැවින් ඔවුන් එසේ කළ පසු මෙය ක්‍රියා විරහිත වේ. ඒ දක්වා, එය දරන ඕනෑම කෙනෙකුට ඔවුන් ලෙස පිවිසිය හැක.',
   'suppliers.resetPassword.recordedBy': '{{name}} ට එරෙහිව සටහන් විය, {{when}}.',
@@ -616,7 +616,7 @@ export const si: Record<TranslationKey, string> = {
   'credit.eligibility.working': 'මෙය ගණනය කළ ආකාරය',
   'credit.eligibility.monthsOfHistory': 'ආදායම ලැබූ අවසන් කළ මාස',
   'credit.eligibility.historyOf': 'අවශ්‍ය {{required}}ක් අතරින් {{count}}ක්',
-  'credit.eligibility.historyNotRequired': '{{count}} — අත්තිකාරමක් සඳහා අවශ්‍ය නොවේ',
+  'credit.eligibility.historyNotRequired': '{{count}} (අත්තිකාරමක් සඳහා අවශ්‍ය නොවේ)',
   'credit.eligibility.averageIncome': 'සාමාන්‍ය මාසික ගිණුම',
   'credit.eligibility.multiplier': 'ණය ගුණාකාරය',
   'credit.eligibility.lastSettledMonth': 'අවසන් වශයෙන් සමතුලිත මාසය',
@@ -685,10 +685,10 @@ export const si: Record<TranslationKey, string> = {
     'ඔබ මෙම ඉල්ලීම සැපයුම්කරු වෙනුවෙන් ඉදිරිපත් කළ බැවින්, එය තීරණය කළ යුත්තේ වෙනත් අයෙකි. ණය යනු මුදල් වන අතර මුදල් සඳහා ඇස් හතරක් අවශ්‍යයි.',
   'credit.overCeiling.title': 'ලබා ගත හැකි ප්‍රමාණයට වඩා වැඩි',
   'credit.overCeiling.body':
-    'මෙය {{amount}} ඉල්ලා සිටින නමුත් ලබා ගත හැක්කේ {{available}} පමණි. එය මෙලෙසම අනුමත කළ නොහැක — ප්‍රතික්ෂේප කරන්න, නැතහොත් සැපයුම්කරුට කුඩා ඉල්ලීමක් ඉදිරිපත් කිරීමට කියන්න.',
+    'මෙය {{amount}} ඉල්ලා සිටින නමුත් ලබා ගත හැක්කේ {{available}} පමණි. එය මෙලෙසම අනුමත කළ නොහැක. ප්‍රතික්ෂේප කරන්න, නැතහොත් සැපයුම්කරුට කුඩා ඉල්ලීමක් ඉදිරිපත් කිරීමට කියන්න.',
   'credit.stale.title': 'අගයන් වෙනස් වී ඇත',
   'credit.stale.body':
-    'මෙය විවෘතව තිබූ අතරතුර සීමාව වෙනස් විය — දළු වාර්තා විය, නැතහොත් මාසයක් ප්‍රකාශයට පත් විය. නව අගයන් පූරණය වෙමින්; තීරණය කිරීමට පෙර ඒවා කියවන්න.',
+    'මෙය විවෘතව තිබූ අතරතුර සීමාව වෙනස් විය (දළු වාර්තා විය, නැතහොත් මාසයක් ප්‍රකාශයට පත් විය). නව අගයන් පූරණය වෙමින්; තීරණය කිරීමට පෙර ඒවා කියවන්න.',
 
   /* ─────────────────────────── M10 Inquiries ─────────────────────────── */
   'inquiries.title': 'විමසුම්',
@@ -738,7 +738,7 @@ export const si: Record<TranslationKey, string> = {
   'inquiries.detail.pushNotSentShort': 'දුරකථන දැනුම්දීමක් නැත',
   'inquiries.detail.pushWhy': 'මෙම දැනුම්දීම ගැන',
   'inquiries.detail.pushSent':
-    'පිළිතුරක් ඇති බව දැනුම් දෙන දැනුම්දීමක් ඔවුන්ගේ දුරකථනයට යවා ඇත — පිළිතුර ම යෙදුම තුළ පමණක් ඇත, මන්ද අගුළු තිරය කියවන්නේ එය අතේ ඇති අයෙකි.',
+    'පිළිතුරක් ඇති බව දැනුම් දෙන දැනුම්දීමක් ඔවුන්ගේ දුරකථනයට යවා ඇත. පිළිතුර ම යෙදුම තුළ පමණක් ඇත, මන්ද අගුළු තිරය කියවන්නේ එය අතේ ඇති අයෙකි.',
   'inquiries.detail.pushNotSent':
     'සැපයුම්කරු ඊළඟ වර යෙදුම විවෘත කරන විට මෙය දකියි. පිළිතුරු දුන් පණිවිඩ සඳහා ස්වයංක්‍රීය දැනුම්දීම් මෙම කර්මාන්තශාලාව සඳහා අක්‍රීය කර ඇත, එබැවින් ඔවුන්ගේ දුරකථනයට කිසිවක් යවා නැත.',
 
@@ -926,12 +926,12 @@ export const si: Record<TranslationKey, string> = {
   'validation.rateTooLarge': 'එම මිල කර්මාන්තශාලාවට වාර්තා කළ හැකි ප්‍රමාණයට වඩා විශාලයි',
   'validation.moneyScale': 'මුදල් සඳහා දශම ස්ථාන දෙකක් පමණි',
   'validation.noteRequired': 'සටහනක් අවශ්‍යයි',
-  'validation.noteTooShort': 'අවම අකුරු 10ක් ලියන්න — සැපයුම්කරු මෙය කියවයි',
+  'validation.noteTooShort': 'අවම අකුරු 10ක් ලියන්න, සැපයුම්කරු මෙය කියවයි',
   'validation.url': 'වලංගු වෙබ් ලිපිනයක් ඇතුළත් කරන්න',
-  'validation.fallbackRequired': 'ඉංග්‍රීසි පිටපත අවශ්‍යයි — සියල්ල එය වෙත ආපසු යොමු වේ',
+  'validation.fallbackRequired': 'ඉංග්‍රීසි පිටපත අවශ්‍යයි, සියල්ල එය වෙත ආපසු යොමු වේ',
   'validation.reasonRequired': 'හේතුවක් අවශ්‍යයි',
   'validation.replyRequired': 'පිළිතුරක් අවශ්‍යයි',
-  'validation.replyTooShort': 'අවම අකුරු 20ක් ලියන්න — සැපයුම්කරු කියවන පිළිතුර මෙයයි',
+  'validation.replyTooShort': 'අවම අකුරු 20ක් ලියන්න, සැපයුම්කරු කියවන පිළිතුර මෙයයි',
 
   /* ─────────────────────── M3 Leaf collection ─────────────────────── */
   'deliveries.point': 'එකතු කිරීමේ ස්ථානය',
@@ -1005,7 +1005,7 @@ export const si: Record<TranslationKey, string> = {
   'bills.deduction.stamps': 'මුද්දර',
   'bills.deduction.previousDebts': 'පෙර ණය',
   'bills.unbalancedWarning':
-    'මෙම බිල්පතේ අඩු කිරීමේ පේළි එහි සඳහන් එකතුවට නොගැළපේ (BR-107). මෙම මාසය ප්‍රකාශයට පත් නොකරන්න — කර්මාන්තශාලා පරිපාලකට දන්වන්න.',
+    'මෙම බිල්පතේ අඩු කිරීමේ පේළි එහි සඳහන් එකතුවට නොගැළපේ (BR-107). මෙම මාසය ප්‍රකාශයට පත් නොකරන්න. කර්මාන්තශාලා පරිපාලකට දන්වන්න.',
 
   'bills.balance': 'ශේෂය',
   'bills.balanceDescription': 'කර්මාන්තශාලාව ගෙවන්නේ පූර්ණ රුපියල්. කාසි ඊළඟ මාසයට ගෙන යයි.',
@@ -1035,7 +1035,7 @@ export const si: Record<TranslationKey, string> = {
   'bills.dailySupplyDetail': 'දින {{days}}ක දළු, මුළු {{kgs}}.',
 
   'bills.correctionsDraft':
-    'මාසය ප්‍රකාශයට පත් කරන තුරු මෙහි කිසිවක් සැපයුම්කරුට නොයවයි. එතෙක්, වැරදි අගයක් එහි මූලාශ්‍රයේ නිවැරදි කරන්න — දළු එකතු කිරීමේ දළු භාරයක්, නැතහොත් මිල සහ මාසය අවසන් කිරීමේ මිල — ඉන්පසු නැවත සාදන්න.',
+    'මාසය ප්‍රකාශයට පත් කරන තුරු මෙහි කිසිවක් සැපයුම්කරුට නොයවයි. එතෙක්, වැරදි අගයක් එහි මූලාශ්‍රයේ නිවැරදි කරන්න (දළු එකතු කිරීමේ දළු භාරයක්, නැතහොත් මිල සහ මාසය අවසන් කිරීමේ මිල), ඉන්පසු නැවත සාදන්න.',
   'bills.correctionsPublished':
     'මෙම බිල්පත ප්‍රකාශයට පත් කර ඇති බැවින් එය වාර්තාවයි. ප්‍රකාශයට පත් කළ බිල්පතක් නිවැරදි කළ හැකිද, නැතහොත් වැරැද්දක් සැමවිටම ඊළඟ ගිණුමේ සකස් කරන්නේද යන්න කර්මාන්තශාලාව සමඟ තවම විසඳා නැති ප්‍රශ්නයකි (§21.8).',
 
@@ -1053,8 +1053,8 @@ export const si: Record<TranslationKey, string> = {
   'content.language.en': 'ඉංග්‍රීසි',
   'content.language.ta': 'දෙමළ',
   'content.fallbackLanguageHint': 'සියල්ල ආපසු යොමු වන භාෂාව. එය හිස්ව තැබිය නොහැක.',
-  'content.state.missing': '— තවම ලියා නැත',
-  'content.state.stale': '— ඉංග්‍රීසි පිටපතට වඩා පැරණි',
+  'content.state.missing': '(තවම ලියා නැත)',
+  'content.state.stale': '(ඉංග්‍රීසි පිටපතට වඩා පැරණි)',
 
   'content.copyTitle': 'පිටපත',
   'content.copyDescription': 'එක් වර එක් භාෂාවක්. එක් භාෂාවක් සුරැකීමෙන් අනෙක් ඒවාට බලපෑමක් නැත.',
@@ -1146,7 +1146,7 @@ export const si: Record<TranslationKey, string> = {
   'news.create': 'නව ලිපියක්',
   'news.createTitle': 'නව ලිපියක්',
   'news.createDescription':
-    'පළමුව ඉංග්‍රීසි පිටපත ලියන්න — පරිවර්තනය කරන තුරු අනෙක් සෑම භාෂාවක්ම ආපසු යොමු වන්නේ එය වෙතය.',
+    'පළමුව ඉංග්‍රීසි පිටපත ලියන්න. පරිවර්තනය කරන තුරු අනෙක් සෑම භාෂාවක්ම ආපසු යොමු වන්නේ එය වෙතය.',
   'news.createDraftHint':
     'එය කෙටුම්පතක් ලෙස සාදයි. ප්‍රකාශයට පත් කරන තුරු කිසිවක් සැපයුම්කරුවන්ට නොලැබේ.',
   'notifications.confirmSendBody': 'මෙම පණිවිඩය දුරකථන {{count}}කට වහාම යවනු ලැබේ.',
@@ -1174,7 +1174,7 @@ export const si: Record<TranslationKey, string> = {
   'news.schedule.failed': 'කිසිවක් වෙනස් නොවීය',
   'news.unpublish': 'ඉවත් කරන්න',
   'news.archive': 'සංරක්ෂණය කරන්න',
-  'news.published': 'ප්‍රකාශයට පත් කළා — එය දැන් යෙදුමේ පෝෂණයේ ඇත',
+  'news.published': 'ප්‍රකාශයට පත් කළා. එය දැන් යෙදුමේ පෝෂණයේ ඇත',
   'news.unpublished': 'ඉවත් කළා. එය තවදුරටත් පෝෂණයේ නැත.',
   'news.archived': 'සංරක්ෂණය කළා',
   'news.publishFailed': 'ලිපිය ප්‍රකාශයට පත් වූයේ නැත',
@@ -1182,12 +1182,12 @@ export const si: Record<TranslationKey, string> = {
   'news.archiveFailed': 'ලිපිය සංරක්ෂණය වූයේ නැත',
   'news.publishNeedsAdmin': 'ප්‍රකාශයට පත් කිරීම කර්මාන්තශාලා පරිපාලකගේ තීරණයකි.',
   'news.noDeleteHint':
-    'ලිපි සංරක්ෂණය කරයි, කිසිදා මකා නොදමයි — සැපයුම්කරුවෙක් එකක් කියවා ඇති අතර ඒ ගැන විමසිය හැක.',
+    'ලිපි සංරක්ෂණය කරයි, කිසිදා මකා නොදමයි. සැපයුම්කරුවෙක් එකක් කියවා ඇති අතර ඒ ගැන විමසිය හැක.',
   'news.confirm.publishTitle': 'මෙම ලිපිය ප්‍රකාශයට පත් කරන්නද?',
   'news.confirm.publishBody': 'එය සෑම සැපයුම්කරුවෙකුගේ යෙදුමේ පෝෂණයේ වහාම දිස් වේ.',
   'news.confirm.publishAction': 'ප්‍රකාශයට පත් කරන්න',
   'news.confirm.publishWithGaps':
-    'භාෂා නොමැතිව ප්‍රකාශයට පත් කළ හැක — යෙදුම ඉංග්‍රීසි වෙත ආපසු යොමු වේ — නමුත් පරිවර්තනය කරන තුරු එම සැපයුම්කරුවන් එය ඉංග්‍රීසියෙන් කියවනු ඇත.',
+    'භාෂා නොමැතිව ප්‍රකාශයට පත් කළ හැක (යෙදුම ඉංග්‍රීසි වෙත ආපසු යොමු වේ), නමුත් පරිවර්තනය කරන තුරු එම සැපයුම්කරුවන් එය ඉංග්‍රීසියෙන් කියවනු ඇත.',
   'news.confirm.unpublishTitle': 'මෙය ඉවත් කරන්නද?',
   'news.confirm.unpublishBody':
     'එය පෝෂණයෙන් ඉවත් වේ. දැනටමත් කියවූ සැපයුම්කරුවන්ට කියවූ දේ ඉතිරි වේ; පිටපත මකා නොදමයි.',
@@ -1219,17 +1219,17 @@ export const si: Record<TranslationKey, string> = {
   'staticContent.contact.edit': 'වින්‍යාසයේ සංස්කරණය කරන්න',
   'staticContent.contact.notSet': 'සකසා නැත',
   'staticContent.publishHint':
-    'මෙයින් පසු, සංස්කරණයක් සුරැකීමෙන් එය වහාම සැපයුම්කරුවන් ඉදිරියේ තබයි — දෙවන පියවරක් නැත.',
+    'මෙයින් පසු, සංස්කරණයක් සුරැකීමෙන් එය වහාම සැපයුම්කරුවන් ඉදිරියේ තබයි. දෙවන පියවරක් නැත.',
   'staticContent.publishNeedsCopy': 'පළමුව {{language}} පිටපත ලියන්න.',
   'staticContent.publishNeedsAdmin': 'ප්‍රකාශයට පත් කිරීම කර්මාන්තශාලා පරිපාලකගේ තීරණයකි.',
   'staticContent.published': '{{page}} සක්‍රීයයි',
   'staticContent.publishFailed': 'පිටුව ප්‍රකාශයට පත් වූයේ නැත',
   'staticContent.editsAreLive':
-    'මෙම පිටුව සක්‍රීයයි. සංස්කරණයක් සුරැකූ විගස එය සැපයුම්කරුවන්ට ලැබේ — සෑම වෙනසක්ම පෙර වචන සමඟ විගණන ලොගයේ සටහන් වේ.',
+    'මෙම පිටුව සක්‍රීයයි. සංස්කරණයක් සුරැකූ විගස එය සැපයුම්කරුවන්ට ලැබේ. සෑම වෙනසක්ම පෙර වචන සමඟ විගණන ලොගයේ සටහන් වේ.',
   'staticContent.savedLive': 'සැපයුම්කරුවන් දැන් මෙය දකියි.',
 
   /* ───────────────────────── M13 Notifications ───────────────────────── */
-  /* §21.24 is unanswered — whether the office composes every send or whether
+  /* §21.24 is unanswered: whether the office composes every send or whether
      bill-published fires off the publish step. The console does both and makes the
      choice a toggle, so the copy here has to explain a *mechanism* rather than assert
      a policy. */
@@ -1263,7 +1263,7 @@ export const si: Record<TranslationKey, string> = {
   'notifications.triggersNeedAdmin':
     'ස්වයංක්‍රීයව යවන දේ වෙනස් කළ හැක්කේ කර්මාන්තශාලා පරිපාලකට පමණි.',
   'notifications.openQuestion':
-    'කාර්යාලය සෑම පණිවිඩයක්ම අතින් ලියනවාද, නැතහොත් පද්ධතිය ඒවා ස්වයංක්‍රීයව යවනවාද යන්න කර්මාන්තශාලාව සමඟ තවම විසඳා නැති ප්‍රශ්නයකි (§21.24). එය විසඳන තුරු දෙකම ක්‍රියා කරයි, තවද මෙම ස්විචයන් එයට පිළිතුරයි — එය තීරණය කිරීමට කේත වෙනසක් අවශ්‍ය නොවේ.',
+    'කාර්යාලය සෑම පණිවිඩයක්ම අතින් ලියනවාද, නැතහොත් පද්ධතිය ඒවා ස්වයංක්‍රීයව යවනවාද යන්න කර්මාන්තශාලාව සමඟ තවම විසඳා නැති ප්‍රශ්නයකි (§21.24). එය විසඳන තුරු දෙකම ක්‍රියා කරයි, තවද මෙම ස්විචයන් එයට පිළිතුරයි. එය තීරණය කිරීමට කේත වෙනසක් අවශ්‍ය නොවේ.',
 
   'notifications.column.message': 'පණිවිඩය',
   'notifications.column.category': 'වර්ගය',
@@ -1286,7 +1286,7 @@ export const si: Record<TranslationKey, string> = {
   'notifications.emptyHint':
     'ස්වයංක්‍රීය දැනුම්දීම් ක්‍රියාත්මක වන විට මෙහි දිස් වේ, තවද කාර්යාලය ලියන ඕනෑම දෙයක් ඒවා සමඟම දිස් වේ.',
   'notifications.noDeliveryReports':
-    'දුරකථනයක් කිසිදා ආපසු වාර්තා නොකරයි, එබැවින් මේවා යැවීමේ මොහොතේ අගයන් වේ — කිසිවෙකු එය කියවූ බවට සාක්ෂියක් නොවේ.',
+    'දුරකථනයක් කිසිදා ආපසු වාර්තා නොකරයි, එබැවින් මේවා යැවීමේ මොහොතේ අගයන් වේ, කිසිවෙකු එය කියවූ බවට සාක්ෂියක් නොවේ.',
   'notifications.useNewsHint':
     'දැනුම්දීමක් යනු ශීර්ෂ පාඨයකි, ලිපියක් නොවේ. ඊට වඩා දිගු දෙයක් අයත් වන්නේ',
 
@@ -1305,7 +1305,7 @@ export const si: Record<TranslationKey, string> = {
   'notifications.audienceKind.allSuppliers': 'සෑම සැපයුම්කරුවෙක්ම',
   'notifications.audienceKind.collectionPoint': 'එක් එකතු කිරීමේ ස්ථානයක්',
   'notifications.field.title': 'මාතෘකාව',
-  'notifications.field.titleHint': 'උපරිම අකුරු {{max}}ක් — අගුළු තිරය ඉතිරිය කපා දමයි.',
+  'notifications.field.titleHint': 'උපරිම අකුරු {{max}}ක්, අගුළු තිරය ඉතිරිය කපා දමයි.',
   'notifications.field.body': 'පණිවිඩය',
   'notifications.field.bodyHint': 'උපරිම අකුරු {{max}}ක්. සම්පූර්ණ දේ මෙහි කියන්න.',
   'notifications.reachLoading': 'මෙය කාට ලැබෙනවාද යන්න ගණනය කරමින්…',
@@ -1337,13 +1337,13 @@ export const si: Record<TranslationKey, string> = {
      (`tenant-immutable`). Without this the popover that exists to say so rendered
      its own key. */
   'config.tenantIdHint':
-    'මෙය කර්මාන්තශාලාවේ වෙබ් ලිපිනයෙන් පැමිණේ, එබැවින් මෙතැනින් වෙනස් කළ නොහැක — සෑම වාර්තාවක්ම එය යටතේ ගොනු කර ඇත.',
+    'මෙය කර්මාන්තශාලාවේ වෙබ් ලිපිනයෙන් පැමිණේ, එබැවින් මෙතැනින් වෙනස් කළ නොහැක. සෑම වාර්තාවක්ම එය යටතේ ගොනු කර ඇත.',
   'config.readOnlyBadge': 'කියවීමට පමණි',
   'config.readOnly': 'වින්‍යාසය වෙනස් කළ හැක්කේ කර්මාන්තශාලා පරිපාලකට පමණි.',
   'config.sections': 'සැකසුම්',
   'config.save': 'මෙම කොටස සුරකින්න',
   'config.saved': 'වින්‍යාසය සුරැක්කා',
-  'config.savedHint': 'වෙනස කොන්සෝලය පුරා සක්‍රීයයි — නැවත පූරණය කිරීම අවශ්‍ය නැත.',
+  'config.savedHint': 'වෙනස කොන්සෝලය පුරා සක්‍රීයයි. නැවත පූරණය කිරීම අවශ්‍ය නැත.',
   'config.saveFailed': 'කිසිවක් සුරැකුණේ නැත',
   'config.revert': 'වෙනස්කම් අස් කරන්න',
   'config.unsavedHint': 'මෙම කොටසේ සුරැකී නැති වෙනස්කම් ඇත.',
@@ -1353,7 +1353,7 @@ export const si: Record<TranslationKey, string> = {
   'config.inUse': '{{count}}ක් භාවිත කරයි',
   'config.listEmpty': 'තවම මෙහි කිසිවක් නැත.',
   'config.ac12Note':
-    'කර්මාන්තශාලාවක් සකස් කිරීමේ මුළු කාර්යය මෙම තිරයයි. නව කර්මාන්තශාලාවකට අවශ්‍ය වන්නේ වෙබ් ලිපිනයක් සහ මෙම පිටුවේ සැකසුම් පමණි — කොන්සෝලයේ නව අනුවාදයක් නොවේ, සංවර්ධකයෙකුට කිරීමට කිසිවක් නැත.',
+    'කර්මාන්තශාලාවක් සකස් කිරීමේ මුළු කාර්යය මෙම තිරයයි. නව කර්මාන්තශාලාවකට අවශ්‍ය වන්නේ වෙබ් ලිපිනයක් සහ මෙම පිටුවේ සැකසුම් පමණි, කොන්සෝලයේ නව අනුවාදයක් නොවේ, සංවර්ධකයෙකුට කිරීමට කිසිවක් නැත.',
 
   'config.section.notes': 'පොදු සටහන්',
   'config.sectionHint.notes': 'සටහන් කොටු යටතේ ඇති chips',
@@ -1378,7 +1378,7 @@ export const si: Record<TranslationKey, string> = {
   'config.section.features': 'විශේෂාංග',
   'config.sectionHint.features': 'මෙම කර්මාන්තශාලාව ලබා දෙන දේ',
   'config.sectionDescription.features':
-    'විශේෂාංගයක් අක්‍රීය කිරීමෙන් එය සම්පූර්ණයෙන් ඉවත් වේ — මෙනු පේළිය, තිර, සහ යෙදුම.',
+    'විශේෂාංගයක් අක්‍රීය කිරීමෙන් එය සම්පූර්ණයෙන් ඉවත් වේ: මෙනු පේළිය, තිර, සහ යෙදුම.',
   'config.section.operations': 'එකතු කිරීම සහ ඉතුරුම්',
   'config.sectionHint.operations': 'ස්ථාන, ඉතුරුම්, පොහොර',
   'config.sectionDescription.operations':
@@ -1449,7 +1449,7 @@ export const si: Record<TranslationKey, string> = {
   'config.branchesOf': '{{bank}} හි ශාඛා',
   'config.addBranch': 'ශාඛාවක් එකතු කරන්න',
   'config.branchesFor': 'ශාඛා සංස්කරණය',
-  'config.branchesForHint': 'එක් බැංකුවක් බැගින් — සම්පූර්ණ ලැයිස්තුවේ ශාඛා දහස් ගණනක් ඇත.',
+  'config.branchesForHint': 'එක් බැංකුවක් බැගින්. සම්පූර්ණ ලැයිස්තුවේ ශාඛා දහස් ගණනක් ඇත.',
   'config.branchesPickBank': 'බැංකුවක් තෝරන්න…',
   'config.withdrawalMonth': 'ඉතුරුම් ආපසු ගත හැකි මාසය',
   'config.withdrawalMonthHint': 'සෑම වසරකම මෙම මාසය තුළ සැපයුම්කරුවන්ට තම ඉතුරුම් ඉල්ලා සිටිය හැක.',
@@ -1457,17 +1457,17 @@ export const si: Record<TranslationKey, string> = {
   'config.interestRateHint':
     'කාර්යාලයට කිව හැකි වන පරිදි සටහන් කර ඇත. කිසිවක් නොගෙවන්නේ නම් 0 ලෙස තබන්න.',
   'config.interestNotApplied':
-    'කොන්සෝලය පොලිය තනිවම ගණනය නොකරයි. එය ගෙවෙන්නේ අවසන් ශේෂය මතද, නැතහොත් වසරේ අවම ශේෂය මතද යන්න කිසිවෙකු පවසා නැත, සහ ඒ දෙක වෙනස් මුදල් ගෙවයි — එබැවින් කර්මාන්තශාලාව තීරණය කළ පසු, ගණකාධිකාරී එම මුදල ඉතුරුම් පොතට සටහනක් ලෙස ඇතුළත් කරයි (§21.9).',
+    'කොන්සෝලය පොලිය තනිවම ගණනය නොකරයි. එය ගෙවෙන්නේ අවසන් ශේෂය මතද, නැතහොත් වසරේ අවම ශේෂය මතද යන්න කිසිවෙකු පවසා නැත, සහ ඒ දෙක වෙනස් මුදල් ගෙවයි. එබැවින් කර්මාන්තශාලාව තීරණය කළ පසු, ගණකාධිකාරී එම මුදල ඉතුරුම් පොතට සටහනක් ලෙස ඇතුළත් කරයි (§21.9).',
   'config.manureProducts': 'සැපයුම්කරුවෙකුට ඉල්ලිය හැකි පොහොර',
   'config.manureProductsHint':
-    'නම, මල්ලක කිලෝ ගණන, සහ එක් මල්ලක මිල. ඉල්ලීමක් මෙම ලැයිස්තුවෙන් මිල ගණන් කරයි — කාර්යාලය කිසිදා මුදලක් ටයිප් නොකරයි, එබැවින් සැපයුම්කරුට තමන්ගෙන් අය කළ දේ මෙයට එරෙහිව පරීක්ෂා කළ හැක.',
+    'නම, මල්ලක කිලෝ ගණන, සහ එක් මල්ලක මිල. ඉල්ලීමක් මෙම ලැයිස්තුවෙන් මිල ගණන් කරයි. කාර්යාලය කිසිදා මුදලක් ටයිප් නොකරයි, එබැවින් සැපයුම්කරුට තමන්ගෙන් අය කළ දේ මෙයට එරෙහිව පරීක්ෂා කළ හැක.',
   'config.manure.name': 'පොහොර නම',
   'config.manure.packKg': 'මල්ලක කිලෝ',
   'config.manure.pricePerPack': 'මල්ලක මිල (රු.)',
   'config.manure.remove': '{{name}} ඉවත් කරන්න',
   'config.manure.example':
     'එක් මල්ලක් {{pack}}, මිල {{price}}. {{quantity}} ඉල්ලන සැපයුම්කරුවෙකුට මලු 2ක් ලබා දෙන අතර {{amount}} ගෙවිය යුතුය.',
-  'config.manure.problem.no-name': 'පොහොරකට නමක් අවශ්‍යයි — යෙදුම එය ලැයිස්තුවේ පෙන්වයි.',
+  'config.manure.problem.no-name': 'පොහොරකට නමක් අවශ්‍යයි. යෙදුම එය ලැයිස්තුවේ පෙන්වයි.',
   'config.manure.problem.bad-pack': 'මල්ලක යමක් තිබිය යුතුය. කිලෝ බිංදුවක් මිල ගණන් කළ නොහැක.',
   'config.manure.problem.negative-price': 'මිලක් බිංදුවට වඩා අඩු විය නොහැක.',
   'config.manure.problem.duplicate-name':
@@ -1479,7 +1479,7 @@ export const si: Record<TranslationKey, string> = {
   'config.contentLanguages': 'අන්තර්ගතය ලියන භාෂා',
   'config.contentLanguagesHint':
     'පුවත් ලිපි සහ යෙදුමේ ස්ථිර පිටු මේ සෑම භාෂාවකින්ම ලියනු ලැබේ. සලකුණු නොකළ භාෂාවක් නොමැති ලෙස ගණන් ගැනීම නවතී.',
-  'config.fallbackRequired': '— අවශ්‍යයි',
+  'config.fallbackRequired': '(අවශ්‍යයි)',
   'config.recordsWritten': 'වාර්තා {{count}}ක් ලියා ඇත',
   'config.defaultLanguage': 'යෙදුමේ පෙරනිමි භාෂාව',
   'config.defaultLanguageHint': 'සැපයුම්කරුවෙකු එකක් තෝරා ගැනීමට පෙර දකින දේ.',
@@ -1498,7 +1498,7 @@ export const si: Record<TranslationKey, string> = {
   'config.pushFlagOff':
     'මෙම කර්මාන්තශාලාව සඳහා දැනුම්දීම් අක්‍රීය කර ඇති බැවින්, මෙහි කිසිවකට තවම බලපෑමක් නැත. පළමුව විශේෂාංග යටතේ ඒවා සක්‍රීය කරන්න.',
 
-  /* The impact list. Each of these is why a change is refused or worth thinking about —
+  /* The impact list. Each of these is why a change is refused or worth thinking about,
      rendered from the same `configImpact` the API refuses with, so the two can never
      name different things. */
   'config.impact.savingsHeld':
@@ -1522,7 +1522,7 @@ export const si: Record<TranslationKey, string> = {
   'config.impact.languageDropped':
     '{{lang}} භාෂාවෙන් අන්තර්ගතයක් ලියා නැත, එබැවින් කිසිවක් අහිමි නොවේ.',
   'config.impact.languageDroppedWithCopy':
-    'වාර්තා {{count}}ක් {{lang}} භාෂාවෙන් ලියා ඇත. පිටපත ඉතිරි වේ, නමුත් එය නොමැති ලෙස ගණන් ගැනීම නවතී — එබැවින් එය කල් ඉකුත් වී ඇති බව කිසිවක් ඔබට නොකියයි.',
+    'වාර්තා {{count}}ක් {{lang}} භාෂාවෙන් ලියා ඇත. පිටපත ඉතිරි වේ, නමුත් එය නොමැති ලෙස ගණන් ගැනීම නවතී. එබැවින් එය කල් ඉකුත් වී ඇති බව කිසිවක් ඔබට නොකියයි.',
   'config.section.teaPackets': 'තේ පැකට්',
   'config.sectionHint.teaPackets': 'පැකට්ටුවක් යනු කුමක්ද සහ එහි මිල',
   'config.sectionDescription.teaPackets':
@@ -1569,7 +1569,7 @@ export const si: Record<TranslationKey, string> = {
   'config.section.payoutFile': 'ගෙවීම් ගොනුව',
   'config.sectionHint.payoutFile': 'ගෙවීම් වටයක් ලියා දමන ආකාරය',
   'config.sectionDescription.payoutFile':
-    'ඔබ බැංකුවට උඩුගත කරන ගොනුවේ පිරිසැලසුම — කුමන තීරු, කුමන අනුපිළිවෙළින්, කුමන ශීර්ෂ සමඟද යන්න.',
+    'ඔබ බැංකුවට උඩුගත කරන ගොනුවේ පිරිසැලසුම: කුමන තීරු, කුමන අනුපිළිවෙළින්, කුමන ශීර්ෂ සමඟද යන්න.',
 
   /* §21.17, වින්‍යාසය ලෙස. මෙම පිටපත කළ යුතු ප්‍රධානම දෙය: තීරු අච්චුවක් සකසා
      SLIPS ගොනුවක් සෑදුවා යැයි කිසිවෙකු විශ්වාස කිරීම වැළැක්වීමයි. */
@@ -1586,7 +1586,7 @@ export const si: Record<TranslationKey, string> = {
   'config.impact.payoutTemplate.missing-label':
     'තීරුවකට ශීර්ෂයක් නැත, සහ ශීර්ෂ සක්‍රීයයි. එය පුරවන්න, නැතහොත් ශීර්ෂ පේළිය අක්‍රීය කරන්න.',
   'config.impact.payoutTemplateBankColumns':
-    'තීරු {{count}}ක් බැංකු විස්තර දරයි, එබැවින් චෙක්පත් සහ මුදල් වටවල ඒවා හිස්ව පිටවේ. එය සාමාන්‍යයෙන් කම් නැත — එම වටවල ඒවා පිරී ඇතැයි පමණක් අපේක්ෂා නොකරන්න.',
+    'තීරු {{count}}ක් බැංකු විස්තර දරයි, එබැවින් චෙක්පත් සහ මුදල් වටවල ඒවා හිස්ව පිටවේ. එය සාමාන්‍යයෙන් කම් නැත. එම වටවල ඒවා පිරී ඇතැයි පමණක් අපේක්ෂා නොකරන්න.',
 
   'config.impact.fallbackLanguageRequired':
     'ඉංග්‍රීසි ඉවත් කළ නොහැක. පරිවර්තනයක් නොමැති විට සෑම ලිපියක් සහ පිටුවක් එය වෙත ආපසු යොමු වේ.',
@@ -1640,24 +1640,24 @@ export const si: Record<TranslationKey, string> = {
   'users.invite': 'පරිශීලකයෙකු එකතු කරන්න',
   'users.inviteTitle': 'පරිශීලකයෙකු එකතු කරන්න',
   'users.inviteBody':
-    'ඔවුන් පිවිසෙන්නේ මෙම විද්‍යුත් තැපැල් ලිපිනයෙන්. කිසිවක් ස්වයංක්‍රීයව නොයවයි — ඔවුන්ගේ මුරපදය ඔබම ඔවුන්ට කියන්න.',
+    'ඔවුන් පිවිසෙන්නේ මෙම විද්‍යුත් තැපැල් ලිපිනයෙන්. කිසිවක් ස්වයංක්‍රීයව නොයවයි. ඔවුන්ගේ මුරපදය ඔබම ඔවුන්ට කියන්න.',
   'users.editTitle': '{{name}} සංස්කරණය කරන්න',
   'users.editBody': 'භූමිකා වෙනස් කිරීමෙන් ඔවුන් ඊළඟ වර තිරයක් පූරණය කරන විට කළ හැකි දේ වෙනස් වේ.',
   'users.field.name': 'සම්පූර්ණ නම',
   'users.field.email': 'විද්‍යුත් තැපෑල',
   'users.field.emailHint': 'ඔවුන් පිවිසෙන්නේ මෙයින්, තවද පසුව එය වෙනස් කළ නොහැක.',
   'users.field.emailLocked':
-    'විද්‍යුත් තැපැල් ලිපිනයක් වෙනස් කළ නොහැක — මෙම පුද්ගලයා දැනටමත් අනුමත කර ඇති සෑම දෙයක ම ඇති නම එයයි.',
+    'විද්‍යුත් තැපැල් ලිපිනයක් වෙනස් කළ නොහැක. මෙම පුද්ගලයා දැනටමත් අනුමත කර ඇති සෑම දෙයක ම ඇති නම එයයි.',
   'users.field.roles': 'භූමිකා',
   'users.field.rolesHint':
     'එකකට වඩා තිබීම කිසි ගැටලුවක් නැත. භූමිකා නොගැළපෙන විට, වඩාත් අවසර දෙන එක ක්‍රියාත්මක වේ.',
   'users.cannotEditOwnRoles':
-    'ඔබට ඔබේම භූමිකා වෙනස් කළ නොහැක. වෙනත් පරිපාලකයෙකුගෙන් ඉල්ලන්න — කාර්යයක් අඩකින් නවත්වා යමෙකු තමාවම අවහිර කර ගැනීම නවත්වන්නේ මෙයයි.',
+    'ඔබට ඔබේම භූමිකා වෙනස් කළ නොහැක. වෙනත් පරිපාලකයෙකුගෙන් ඉල්ලන්න. කාර්යයක් අඩකින් නවත්වා යමෙකු තමාවම අවහිර කර ගැනීම නවත්වන්නේ මෙයයි.',
   'users.created': '{{name}} දැන් පිවිසිය හැක',
   'users.createdHint': 'ඔවුන්ගේ මුරපදය ඔවුන්ට කියන්න. පිවිසීමට අවශ්‍ය වන්නේ එය පමණි.',
   'users.passwordLabel': 'පළමු මුරපදය',
   'users.passwordOnce':
-    'මෙම මුරපදය පෙන්වන්නේ එක් වරක් පමණි. වැසීමට පෙර එය ලියාගන්න — නැවත කියවිය නොහැක.',
+    'මෙම මුරපදය පෙන්වන්නේ එක් වරක් පමණි. වැසීමට පෙර එය ලියාගන්න. නැවත කියවිය නොහැක.',
   'users.passwordHandover':
     '{{name}} ට එය දෙන්න. ඔවුන් {{email}} සහ මෙම මුරපදය සමඟ පිවිසෙන අතර එය වෙනස් කළ යුතුය.',
   'users.passwordDone': 'මම එය ලියාගත්තා',
@@ -1706,7 +1706,7 @@ export const si: Record<TranslationKey, string> = {
   'users.roleSaved': '{{role}} යාවත්කාලීන කළා',
   'users.roleSaveFailed': 'කිසිවක් වෙනස් වූයේ නැත',
 
-  'users.level.none': '—',
+  'users.level.none': '-',
   'users.level.read': 'බැලීම',
   'users.level.write': 'වෙනස් කිරීම',
   'users.level.approve': 'අනුමත කිරීම',
@@ -1795,7 +1795,7 @@ export const si: Record<TranslationKey, string> = {
   'reports.empty': 'පේළි නැත',
   'reports.emptyHint': 'ඔබ ඉල්ලූ දෙයට වාර්තාවල කිසිවක් නොගැළපේ.',
   'reports.shortListNote':
-    'දැනට මේ හතර පමණි. සෑම එකක්ම කොන්සෝලය දැනටමත් තබා ගන්නා වාර්තාවලින් සාදා ඇත — කර්මාන්තශාලාව ඉල්ලූ ඉතිරි වාර්තා සඳහා වෙනම වාර්තාකරණ දත්ත ගබඩාවක් අවශ්‍ය වන අතර, එය තවම නොපවතී.',
+    'දැනට මේ හතර පමණි. සෑම එකක්ම කොන්සෝලය දැනටමත් තබා ගන්නා වාර්තාවලින් සාදා ඇත. කර්මාන්තශාලාව ඉල්ලූ ඉතිරි වාර්තා සඳහා වෙනම වාර්තාකරණ දත්ත ගබඩාවක් අවශ්‍ය වන අතර, එය තවම නොපවතී.',
   'reports.noExportNote': 'තවම බාගැනීමක් නැත. එතෙක් ඔබට වගුව තෝරා පැතුරුම්පතකට ඇලවිය හැක.',
 
   'reports.name.monthSummary': 'මාසික සාරාංශය',
@@ -1806,7 +1806,7 @@ export const si: Record<TranslationKey, string> = {
     'මාසයේ දළු පැමිණියේ කොහෙන්ද, සහ එක් ස්ථානයක් තවත් එකක් සමඟ සසඳන ආකාරය.',
   'reports.name.dormantSuppliers': 'නතර වී ඇති සැපයුම්කරුවන්',
   'reports.description.dormantSuppliers':
-    'කලක් තිස්සේ දළු නොමැති ලියාපදිංචි සැපයුම්කරුවන් — සහ කර්මාන්තශාලාව තවමත් ඔවුන් වෙනුවෙන් තබා ගෙන සිටින දේ.',
+    'කලක් තිස්සේ දළු නොමැති ලියාපදිංචි සැපයුම්කරුවන්, සහ කර්මාන්තශාලාව තවමත් ඔවුන් වෙනුවෙන් තබා ගෙන සිටින දේ.',
   'reports.name.channelShift': 'කාලයාගේ ඇවෑමෙන් යෙදුමේ භාවිතය',
   'reports.description.channelShift':
     'සැපයුම්කරුවන් යෙදුමෙන් තමන්ම ඉදිරිපත් කරන ඉල්ලීම් ගණන, කාර්යාලය ඔවුන් වෙනුවෙන් ඇතුළත් කරන ගණනට සාපේක්ෂව.',
@@ -1865,21 +1865,21 @@ export const si: Record<TranslationKey, string> = {
   'error.billsStale':
     'බිල්පත් සාදා ඇති පසු දළු වෙනස් වී ඇත. ප්‍රකාශයට පත් කිරීමට පෙර ඒවා නැවත සාදන්න.',
   'error.billsUnbalanced':
-    'සමහර බිල්පත්වල අඩු කිරීමේ පේළි ඒවායේ එකතුවට නොගැළපේ. කර්මාන්තශාලා පරිපාලකට දන්වන්න — කිසිවක් සාදා නැත.',
+    'සමහර බිල්පත්වල අඩු කිරීමේ පේළි ඒවායේ එකතුවට නොගැළපේ. කර්මාන්තශාලා පරිපාලකට දන්වන්න. කිසිවක් සාදා නැත.',
   'error.monthNotPublished':
     'එම මාසය තවම ප්‍රකාශයට පත් කර නැත, එබැවින් එහි අගයන් තවමත් වෙනස් විය හැක. එයට එරෙහිව ගෙවීමට පෙර එය අවසන් කරන්න.',
   'error.runExists': 'එම මාසය සහ ගෙවීම් ක්‍රමය සඳහා ගෙවීම් වටයක් දැනටමත් පවතී.',
   'error.alreadyApproved': 'එම වටය දැනටමත් නිකුත් කර ඇත.',
   'error.runNotApproved': 'එම වටය තවම නිකුත් කර නැත, එබැවින් එහි කිසිවක් ගෙවා නැත.',
   'error.noPayableLines': 'එම වටයේ ගෙවිය යුතු කිසිවක් නැත.',
-  'error.lineNotPayable': 'එම පේළිය ගෙවිය නොහැක — එය රඳවා ඇත, නැතහොත් එය දැනටමත් ගෙවා ඇත.',
+  'error.lineNotPayable': 'එම පේළිය ගෙවිය නොහැක. එය රඳවා ඇත, නැතහොත් එය දැනටමත් ගෙවා ඇත.',
   'error.overCeiling': 'එය මෙම සැපයුම්කරුට එම පහසුකමෙන් ලබා ගත හැකි ප්‍රමාණයට වඩා වැඩිය.',
   'error.fallbackTranslationMissing':
     'ඉංග්‍රීසි පිටපතක් නැත, එබැවින් සැපයුම්කරුවෙකුට පෙන්වීමට කිසිවක් නොවනු ඇත. පළමුව එය ලියන්න.',
   'error.slugTaken': 'එම මාතෘකාව සහිත ලිපියක් දැනටමත් පවතී.',
   'error.contentNotPublished': 'එය සක්‍රීය නොවේ, එබැවින් ඉවත් කිරීමට කිසිවක් නැත.',
   'error.unknownCategory':
-    'යෙදුම එය ඉවතට දමනු ඇත — එය විවෘත කරන්නේ හඳුනා ගන්නා වර්ගයේ දැනුම්දීම් පමණි.',
+    'යෙදුම එය ඉවතට දමනු ඇත. එය විවෘත කරන්නේ හඳුනා ගන්නා වර්ගයේ දැනුම්දීම් පමණි.',
   'error.categoryDisabled': 'මෙම කර්මාන්තශාලාව එම වර්ගයේ දැනුම්දීම් නොයවයි.',
   'error.noRecipients':
     'එම පිරිසේ කිසිදු දුරකථනයක් මෙම වර්ගයේ දැනුම්දීම් පිළිගන්නේ නැත, එබැවින් කිසිවක් නොලැබෙනු ඇත.',
@@ -1890,7 +1890,7 @@ export const si: Record<TranslationKey, string> = {
     'එම විශේෂාංගය කර්මාන්තශාලාවට තවමත් වගකිව යුතු වාර්තා දරා සිටී, එබැවින් එය තවම අක්‍රීය කළ නොහැක.',
   'error.pointInUse': 'එම එකතු කිරීමේ ස්ථානය යටතේ බර කිරීම් ගොනු කර ඇති බැවින් එය ඉවත් කළ නොහැක.',
   'error.fallbackLanguageRequired':
-    'ඉංග්‍රීසි ඉවත් කළ නොහැක — සෑම ලිපියක් සහ පිටුවක් එය වෙත ආපසු යොමු වේ.',
+    'ඉංග්‍රීසි ඉවත් කළ නොහැක. සෑම ලිපියක් සහ පිටුවක් එය වෙත ආපසු යොමු වේ.',
   'error.lastAdmin':
     'එයින් පරිශීලකයන් කළමනාකරණය කළ හැකි කිසිවෙකු ඉතිරි නොවනු ඇත, එබැවින් කිසිවෙකුට එය අස් කළ නොහැක. පළමුව වෙනත් අයෙකුට එම භූමිකාව දෙන්න.',
   'error.selfModification': 'ඔබට ඔබේම ගිණුමට එය කළ නොහැක. වෙනත් පරිපාලකයෙකුගෙන් ඉල්ලන්න.',
@@ -1908,9 +1908,9 @@ export const si: Record<TranslationKey, string> = {
   'config.sectionDescription.creditRules':
     'එක් එක් ණය සීමාව ගණනය කරන ආකාරය. එකම නීතියෙන් තමයි යෙදුමේ සැපයුම්කරුට පෙනෙන සීමාවත්, ණය පෝලිමේ පරීක්ෂා කරන සීමාවත් හැදෙන්නේ.',
   'config.creditRules.scope':
-    'සැපයුම්කරු කිසිවක් ඉල්ලීමට පෙර ඔහුට පෙන්වන අගය තීරණය කරන්නේ මෙම නීතියි. එක් නීතියක්, කියවන්නන් දෙදෙනෙක් — යෙදුමයි කාර්යාලයයි සීමාවක් ගැන කිසිදා නොගැලපෙන්නේ නැහැ.',
+    'සැපයුම්කරු කිසිවක් ඉල්ලීමට පෙර ඔහුට පෙන්වන අගය තීරණය කරන්නේ මෙම නීතියි. එක් නීතියක්, කියවන්නන් දෙදෙනෙක්. යෙදුමයි කාර්යාලයයි සීමාවක් ගැන කිසිදා නොගැලපෙන්නේ නැහැ.',
   'config.creditRules.usingDefaults':
-    'මෙම කර්මාන්තශාලාව තවම තමන්ගේම නීති නියම කර නැත, එබැවින් පෙරනිමි නීති ක්‍රියාත්මකයි. ඒවා පහත පෙන්වා ඇත — කර්මාන්තශාලාවේම කර ගැනීමට සුරකින්න.',
+    'මෙම කර්මාන්තශාලාව තවම තමන්ගේම නීති නියම කර නැත, එබැවින් පෙරනිමි නීති ක්‍රියාත්මකයි. ඒවා පහත පෙන්වා ඇත. කර්මාන්තශාලාවේම කර ගැනීමට සුරකින්න.',
   'config.creditRules.facilityOff':
     'මෙම පහසුකම "විශේෂාංග" යටතේ අක්‍රියයි, එබැවින් මෙහි කිසිවක් තවම සැපයුම්කරුවෙකුට ළඟා නොවේ.',
   'config.creditRules.basis': 'ගණනය කරන්නේ',
@@ -1929,7 +1929,7 @@ export const si: Record<TranslationKey, string> = {
     'නිරවුල් මාස පමණයි. ක්‍රියාත්මක මාසය කිසිදා ගණන් නොගනී.',
   'config.creditRules.requiredMonths': 'අවශ්‍ය නිරවුල් මාස',
   'config.creditRules.requiredMonthsHint':
-    '0 නම් පළමු මාසයේ සිටම ලබා දේ — advance එකකට එය නිවැරදියි, ණයකට කලාතුරකින්.',
+    '0 නම් පළමු මාසයේ සිටම ලබා දේ, advance එකකට එය නිවැරදියි, ණයකට කලාතුරකින්.',
   'config.creditRules.maxAmount': 'උපරිමය (රු.)',
   'config.creditRules.maxAmountHint': 'සීමාවක් නොමැති නම් හිස්ව තබන්න. ගුණ කිරීමෙන් පසුව යෙදේ.',
   'config.creditRules.noCap': 'සීමාවක් නැත',
@@ -1955,9 +1955,9 @@ export const si: Record<TranslationKey, string> = {
 
   /* ───────── කර්මාන්තශාලා පද්ධතියෙන් අනුකරණය (v2) ───────── */
   'shell.syncStale':
-    'මෙම අගයන් යල් පැන ගොස් තිබිය හැක. කර්මාන්තශාලා පද්ධතිය අවසන් වරට කියවූයේ {{when}} — {{covers}} දක්වා ආවරණය වේ. සැපයුම්කරුවෙකුට ශේෂයක් කීමට පෙර පරීක්ෂා කරන්න.',
+    'මෙම අගයන් යල් පැන ගොස් තිබිය හැක. කර්මාන්තශාලා පද්ධතිය අවසන් වරට කියවූයේ {{when}}, {{covers}} දක්වා ආවරණය වේ. සැපයුම්කරුවෙකුට ශේෂයක් කීමට පෙර පරීක්ෂා කරන්න.',
   'shell.syncNever': 'මෙම කොන්සෝලයට කර්මාන්තශාලා පද්ධතියෙන් තවම කිසිවක් ලැබී නැත, එබැවින් ගිණුම් සහ ශේෂ නැති හෝ අසම්පූර්ණ විය හැක. අගයක් කීමට පෙර කර්මාන්තශාලා පද්ධතිය පරීක්ෂා කරන්න.',
-  'sync.freshAsOf': '{{when}} දී කර්මාන්තශාලා පද්ධතියෙන් කියවන ලදී — {{covers}} දක්වා ආවරණය වේ.',
+  'sync.freshAsOf': '{{when}} දී කර්මාන්තශාලා පද්ධතියෙන් කියවන ලදී, {{covers}} දක්වා ආවරණය වේ.',
   'dataStatus.title': 'දත්ත තත්ත්වය',
   'dataStatus.subtitle': 'මෙම කොන්සෝලයේ අගයන් පැමිණෙන්නේ කොහෙන්ද, සහ ඒවා කෙතරම් යාවත්කාලීනද.',
   'dataStatus.chip.never': 'කිසිදා sync වී නැත',
@@ -2065,7 +2065,7 @@ export const si: Record<TranslationKey, string> = {
   'banners.searchPlaceholder': 'ශීර්ෂ සොයන්න',
   'banners.complete': 'සියල්ල ලියා ඇත',
   'banners.missingCount': 'භාෂා {{count}}ක් නැත',
-  'banners.noArtwork': 'පින්තූරයක් නැත — යෙදුම වෙළඳ නාමයේ පැනලයක් අඳියි',
+  'banners.noArtwork': 'පින්තූරයක් නැත, යෙදුම වෙළඳ නාමයේ පැනලයක් අඳියි',
   'banners.noEnd': 'ඉවත් කරන තෙක්',
   'banners.lens.all': 'සියලු බැනර්',
   'banners.window.scheduled': 'කාලසටහන්ගත',
@@ -2085,7 +2085,7 @@ export const si: Record<TranslationKey, string> = {
   'banners.field.bodyHint': 'අත්‍යවශ්‍ය නොවේ. ශීර්ෂයක් සහ බොත්තමක් ප්‍රමාණවත්.',
   'banners.field.buttonLabel': 'බොත්තමේ නම',
   'banners.field.buttonHint': 'බොත්තමේ ලියැවෙන දේ. එය යන තැන පහතින් නියම කරන්න.',
-  'banners.field.buttonHintLong': 'අකුරු {{max}}ක් දක්වා — දිගු නමක් කුඩා දුරකථනයකින් පිටතට යයි.',
+  'banners.field.buttonHintLong': 'අකුරු {{max}}ක් දක්වා. දිගු නමක් කුඩා දුරකථනයකින් පිටතට යයි.',
   'banners.field.startsAt': 'ආරම්භය',
   'banners.field.endsAt': 'අවසානය',
   'banners.field.endsAtHint': 'ඉවත් කරන තෙක් ක්‍රියාත්මක වීමට හිස්ව තබන්න.',
@@ -2119,7 +2119,7 @@ export const si: Record<TranslationKey, string> = {
   'banners.screen.privacy': 'පෞද්ගලිකත්ව ප්‍රතිපත්තිය',
   'banners.screen.support': 'සහාය',
   'banners.action.pathHint':
-    'කුඩා අකුරින්, යෝජනා ක්‍රමයක් හෝ විමසුම් තන්තුවක් නොමැතිව — උදාහරණයක් ලෙස news/news-1.',
+    'කුඩා අකුරින්, යෝජනා ක්‍රමයක් හෝ විමසුම් තන්තුවක් නොමැතිව, උදාහරණයක් ලෙස news/news-1.',
   'banners.action.urlLabel': 'සබැඳිය',
   'banners.action.urlHint': 'https, tel හෝ mailto පමණි.',
   'banners.action.missing': 'බොත්තමට යාමට තැනක් අවශ්‍යයි.',
@@ -2127,7 +2127,7 @@ export const si: Record<TranslationKey, string> = {
     'යෙදුමට එම මාර්ගය විවෘත කළ නොහැක. කුඩා අකුරු, ඉලක්කම් සහ ඉරි, ස්ලෑෂ් වලින් වෙන් කර.',
   'banners.action.badUrl': 'යෙදුම විවෘත කරන්නේ https, tel සහ mailto සබැඳි පමණි.',
   'banners.action.appSchemeRefused':
-    'යෙදුම තුළම යන තැනකට "යෙදුමේ තිරයක්" භාවිත කරන්න — යෙදුම teafactory:// සබැඳි ප්‍රතික්ෂේප කරයි.',
+    'යෙදුම තුළම යන තැනකට "යෙදුමේ තිරයක්" භාවිත කරන්න. යෙදුම teafactory:// සබැඳි ප්‍රතික්ෂේප කරයි.',
   'banners.action.resolvedScreen': 'බොත්තම යෙදුමේ {{path}} තිරය විවෘත කරයි.',
   'banners.action.resolvedUrl': 'බොත්තම {{url}} විවෘත කරයි.',
   'banners.copyTitle': 'පිටපත',
@@ -2135,7 +2135,7 @@ export const si: Record<TranslationKey, string> = {
   'banners.saveNeedsCopy': 'සුරැකීමට පෙර ශීර්ෂයක් සහ බොත්තමේ නමක් අවශ්‍යයි.',
   'banners.settingsTitle': 'බොත්තම සහ කාලය',
   'banners.settingsDescription':
-    'බොත්තම යන තැන, සහ බැනරය සැපයුම්කරුවන් ඉදිරියේ තිබෙන කාලය. පරිවර්තනය නොවේ — සෑම භාෂාවකටම එකම ගමනාන්තයයි.',
+    'බොත්තම යන තැන, සහ බැනරය සැපයුම්කරුවන් ඉදිරියේ තිබෙන කාලය. පරිවර්තනය නොවේ. සෑම භාෂාවකටම එකම ගමනාන්තයයි.',
   'banners.saveSettings': 'බොත්තම සහ කාලය සුරකින්න',
   'banners.settingsSaved': 'බොත්තම සහ කාලය සුරැකිණි',
   'banners.settingsSaveFailed': 'සුරැකිය නොහැකි විය',
@@ -2149,7 +2149,7 @@ export const si: Record<TranslationKey, string> = {
     'ක්‍රියාත්මක කාලය අවසන් වී ඇති නිසා කිසිදු සැපයුම්කරුවෙකුට නොපෙනේ.',
   'banners.lifecycleTitle': 'ප්‍රකාශනය',
   'banners.lifecycleDraft': 'කෙටුම්පතක් කිසිවෙකු ඉදිරියේ නැත.',
-  'banners.lifecyclePublished': 'ප්‍රකාශිතයි — ක්‍රියාත්මක කාලය තුළ එය පෙනේ.',
+  'banners.lifecyclePublished': 'ප්‍රකාශිතයි. ක්‍රියාත්මක කාලය තුළ එය පෙනේ.',
   'banners.publish': 'ප්‍රකාශ කරන්න',
   'banners.unpublish': 'ඉවත් කරන්න',
   'banners.archive': 'සංරක්ෂණය කරන්න',
@@ -2162,7 +2162,7 @@ export const si: Record<TranslationKey, string> = {
   'banners.publishedBy': '{{when}} දින {{name}} විසින් ප්‍රකාශ කරන ලදී',
   'banners.publishNeedsAdmin': 'බැනර් ප්‍රකාශ කරන්නේ කර්මාන්තශාලා පරිපාලකයෙකි.',
   'banners.publishNeedsAction':
-    'ප්‍රකාශ කිරීමට පෙර බොත්තම නිවැරදි කරන්න — යෙදුම බොත්තමක් කිසිසේත් අඳින්නේ නැත.',
+    'ප්‍රකාශ කිරීමට පෙර බොත්තම නිවැරදි කරන්න. යෙදුම බොත්තමක් කිසිසේත් අඳින්නේ නැත.',
   'banners.noDeleteHint': 'බැනර් සංරක්ෂණය කෙරේ, කිසිවිටෙක මකා නොදමයි.',
   'banners.auditTitle': 'බැනර ඉතිහාසය',
   'banners.confirm.publishTitle': 'මෙම බැනරය ප්‍රකාශ කරන්නද?',
@@ -2213,15 +2213,15 @@ export const si: Record<TranslationKey, string> = {
   'suppliers.push.noApp':
     'මෙම සැපයුම්කරු කිසිදා දුරකථනයකින් පිවිසී නැත, එබැවින් කිසිදු දැනුම්දීමක් ඔවුන් වෙත ළඟා විය නොහැක. යෙදුම ස්ථාපනය කරන තෙක් මෙම පැනලයේ අන් කිසිවක් අදාළ නොවේ.',
   'suppliers.push.reason.noDevice': 'ලියාපදිංචි උපාංගයක් නැත',
-  'suppliers.push.reason.notOffered': 'මෙම කර්මාන්තශාලාව මෙම වර්ගය නොයවයි — "වින්‍යාසය" බලන්න',
+  'suppliers.push.reason.notOffered': 'මෙම කර්මාන්තශාලාව මෙම වර්ගය නොයවයි. "වින්‍යාසය" බලන්න',
   'suppliers.push.reason.optedOut': 'ඔවුන්ගේ සෑම උපාංගයකම එය off කර ඇත',
   'suppliers.push.recent': 'මෑතකදී ඔවුන්ට යවන ලද',
   'suppliers.push.noSends': 'ඔවුන්ට කිසිවක් යවා නැත',
   'suppliers.push.noSendsHint':
     'ඔවුන්ගේ දුරකථනයට දැනුම්දීම් ලැබිය හැක; තවම එකක්වත් ඔවුන් වෙත ගොස් නැත. "මට කිසිදා දැනුම් දුන්නේ නැහැ" යන්නට එය සම්පූර්ණ පිළිතුරකි.',
   'suppliers.push.delivered': '{{count}}කට යවා ඇත',
-  'suppliers.push.notDeliveredNoDevice': 'නොලැබුණි — උපාංගයක් නැත',
-  'suppliers.push.notDeliveredOptedOut': 'නොලැබුණි — off කර ඇත',
+  'suppliers.push.notDeliveredNoDevice': 'නොලැබුණි (උපාංගයක් නැත)',
+  'suppliers.push.notDeliveredOptedOut': 'නොලැබුණි (off කර ඇත)',
   'suppliers.push.openModule': 'දැනුම්දීම් විවෘත කරන්න',
 
   /* ──────────── M2 · මෙම සැපයුම්කරු සිටිය හැකි සෑම පෝලිමක්ම (v2) ──────────── */

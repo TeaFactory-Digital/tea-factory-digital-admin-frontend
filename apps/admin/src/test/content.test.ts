@@ -1,5 +1,5 @@
 /**
- * M11 and M12 against the mock API — and **AC-08 end to end**.
+ * M11 and M12 against the mock API, and **AC-08 end to end**.
  *
  * The criterion is that editorial copy falls back to English when a translation is
  * missing *and* that the gap is visible to the editor. Both halves are testable and both
@@ -7,7 +7,7 @@
  *
  *  - A fallback with no visible gap is a console that silently ships English to Sinhala
  *    suppliers, and nobody finds out until one telephones.
- *  - A gap report with a fallback the app does not actually perform is worse — the editor
+ *  - A gap report with a fallback the app does not actually perform is worse: the editor
  *    signs off a preview of something that is never rendered.
  *
  * So the assertions are mostly identities between the two: what `preview` returns for a
@@ -69,7 +69,7 @@ describe('M11 news', () => {
     for (const row of page.items) {
       const article = await newsRepository.get(row.id);
       const fallback = article.translations[EDITORIAL_FALLBACK_LANGUAGE];
-      expect(row.title).toBe(fallback?.title ?? '—');
+      expect(row.title).toBe(fallback?.title ?? '-');
     }
   }, 20_000);
 
@@ -80,7 +80,7 @@ describe('M11 news', () => {
     for (const row of page.items) {
       const article = await newsRepository.get(row.id);
 
-      // The gap lists are the server's, and they agree with the shared predicate — the
+      // The gap lists are the server's, and they agree with the shared predicate: the
       // console renders warnings from the same function, so the two cannot diverge.
       expect(article.missingLanguages).toEqual(
         missingTranslations(article.translations, ['si', 'en', 'ta']),
@@ -89,7 +89,7 @@ describe('M11 news', () => {
         staleTranslations(article.translations, ['si', 'en', 'ta']),
       );
 
-      // And a language reported missing really has nothing written in it — "present but
+      // And a language reported missing really has nothing written in it: "present but
       // empty" must not count as translated.
       for (const lang of article.missingLanguages) {
         expect(isWritten(article.translations[lang])).toBe(false);
@@ -126,7 +126,7 @@ describe('M11 news', () => {
 
     const preview = await newsRepository.preview(row.id, missing);
 
-    // Falling back, and saying so — a preview that looked like a translation would hide
+    // Falling back, and saying so: a preview that looked like a translation would hide
     // the gap in the most convincing way available.
     expect(preview.usedFallback).toBe(true);
     expect(preview.fallbackLanguage).toBe(EDITORIAL_FALLBACK_LANGUAGE);
@@ -156,7 +156,7 @@ describe('M11 news', () => {
     const source = article.translations[EDITORIAL_FALLBACK_LANGUAGE]!;
     for (const lang of article.staleLanguages) {
       const translation = article.translations[lang]!;
-      // Written — this is not a missing translation — and older than its source.
+      // Written (this is not a missing translation) and older than its source.
       expect(isWritten(translation)).toBe(true);
       expect(translation.updatedAt < source.updatedAt).toBe(true);
     }
@@ -212,7 +212,7 @@ describe('M11 news', () => {
         { lang: 'en', title: 'Weighing hours change from Monday', body: 'Makadura opens at 7.' },
       ],
     });
-    // Created as a draft — nothing reaches a supplier by being written.
+    // Created as a draft: nothing reaches a supplier by being written.
     expect(created.status).toBe('draft');
     expect(created.slug).toBe('weighing-hours-change-from-monday');
 
@@ -290,10 +290,10 @@ describe('M11 news', () => {
     const page = await newsRepository.list({ status: 'draft', pageSize: 5 });
     const id = page.items[0]!.id;
 
-    // `content: W` — writing is theirs…
+    // `content: W`: writing is theirs…
     await expect(
       newsRepository.saveTranslation(id, 'en', {
-        title: 'Fertilizer distribution — September',
+        title: 'Fertilizer distribution: September',
         body: 'Issued from the 8th at the factory store.',
       }),
     ).resolves.toBeTruthy();
@@ -423,7 +423,7 @@ describe('M12 static content', () => {
     /**
      * This entry is what makes "an edit to a live page goes out immediately" defensible
      * rather than a shortcut. A wrong change to the terms of supply is reconstructable
-     * from the log, by name and with the previous wording — which is what a review step
+     * from the log, by name and with the previous wording, which is what a review step
      * would otherwise have been for.
      */
     expect(entry).toBeTruthy();
@@ -434,7 +434,7 @@ describe('M12 static content', () => {
 
   it('is not behind a feature flag, unlike news', async () => {
     /**
-     * Terms, privacy and the FAQ are not a feature a factory buys or declines — the app
+     * Terms, privacy and the FAQ are not a feature a factory buys or declines: the app
      * links to them from its own settings screen, and a tenant that could turn them off
      * would ship a binary with dead links in it. News is genuinely optional and is
      * flag-gated; this is the assertion that keeps the two from being conflated.
@@ -497,7 +497,7 @@ describe('AC-08 · gaps are relative to what the factory publishes in', () => {
       body: JSON.stringify({ title: 'නියම', body: 'සිංහල පිටපත' }),
     });
 
-    // Stored, it would be copy nothing renders — and a gap report nobody can trust.
+    // Stored, it would be copy nothing renders, and a gap report nobody can trust.
     expect(response.status).toBe(422);
     expect(await response.json()).toMatchObject({ code: 'invalid' });
   });
@@ -510,7 +510,7 @@ describe('AC-08 · gaps are relative to what the factory publishes in', () => {
     const newest = Object.values(article.translations)
       .map((one) => one!)
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0]!;
-    // Never blank: "Last edited by , —" was the heading before this was derived.
+    // Never blank: "Last edited by , -" was the heading before this was derived.
     expect(article.updatedByName).toBe(newest.updatedByName);
     expect(article.updatedAt).toBe(newest.updatedAt);
   });

@@ -1,9 +1,9 @@
 /**
- * M10 Inquiries — the supplier's messages to the office.
+ * M10 Inquiries: the supplier's messages to the office.
  *
  * The module that completes the promise the rest of the console makes: every
  * `pending` in the app is a queue here. An inquiry is the one that carries no
- * money, which is why it has no four-eyes rule and no ceiling — and why the whole
+ * money, which is why it has no four-eyes rule and no ceiling, and why the whole
  * module is two verbs.
  *
  * **Reply and close are different acts, not one with a flag.** Replying answers the
@@ -25,7 +25,7 @@ import type { StatusAck } from '../api/adapters';
 import { toQueueParams } from './params';
 
 export const inquiryEndpoints = {
-  /** One inquiry, decided or not — a bookmarked link must open (**G-06**, now served). */
+  /** One inquiry, decided or not: a bookmarked link must open (**G-06**, now served). */
   get: (id: string) =>
     apiClient.get<AdminInquiry>(`/admin/inquiries/${id}`).then((response) => response.data),
 
@@ -37,7 +37,7 @@ export const inquiryEndpoints = {
   /** One inquiry, by id. Absent for a while (gap **G-06**), so the repository swept the list. */
 
   /**
-   * `409 already-decided` when the message has already been answered or closed —
+   * `409 already-decided` when the message has already been answered or closed:
    * two clerks working one inbox is the normal case. `422 note-required` when the
    * reply is too short to be one.
    */
@@ -65,7 +65,7 @@ export const inquiryEndpoints = {
    * `note`, as the shared `CloseInquiryBody` always said (gap **G-19**, now closed).
    *
    * This briefly sent `closureNote`, because the API read that and zod **stripped** the
-   * `{ note }` the console sent — so an inquiry was filed closed with no record of why,
+   * `{ note }` the console sent, so an inquiry was filed closed with no record of why,
    * with no error on either side. The API has since taken the field back to `note` and
    * marked the schema `.strict()`, so the same mistake is now a `422` on the first call
    * rather than a silent loss. Sending `closureNote` today is refused, which is the

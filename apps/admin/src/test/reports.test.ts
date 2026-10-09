@@ -50,7 +50,7 @@ describe('M16 reports', () => {
       expect(definition.params.length).toBeGreaterThan(0);
     }
 
-    // The months come with the list, newest first — a report is nearly always about the
+    // The months come with the list, newest first: a report is nearly always about the
     // month just closed. They were briefly absent (G-15), which left the picker empty.
     expect(served.months.length).toBeGreaterThan(1);
     expect([...served.months].sort().reverse()).toEqual(served.months);
@@ -67,7 +67,7 @@ describe('M16 reports', () => {
   });
 
   it('gives every operational role read access and the editor none (§12.1)', async () => {
-    // `reports: R` for the clerk, the manager and both admins — this is the
+    // `reports: R` for the clerk, the manager and both admins: this is the
     // dashboard's capability, so almost everybody has it.
     await signInAs(MANAGER);
     await expect(reportRepository.list()).resolves.toBeTruthy();

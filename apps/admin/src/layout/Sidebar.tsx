@@ -69,7 +69,7 @@ export function Sidebar({ summary }: { summary?: DashboardView }) {
        * already at the top of the sidebar and being clicked.
        *
        * A plain `Link` rather than a `NavLink`: this is not a nav row and must not take
-       * the active styling when the dashboard is open — two things would then look
+       * the active styling when the dashboard is open: two things would then look
        * selected at once.
        */}
       <Link

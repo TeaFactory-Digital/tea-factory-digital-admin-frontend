@@ -5,7 +5,7 @@
  * offer all three tabs, and it would be the wrong shape: nobody writes a circular in
  * three languages in one sitting, and a form that implied they should is a form abandoned
  * half-filled. What actually happens is that the English goes in now and the translations
- * follow — often by different people, sometimes days later — which is exactly what the
+ * follow, often by different people, sometimes days later, which is exactly what the
  * per-language editor on the next screen is for.
  *
  * So this asks for the one thing a record cannot exist without. The fallback copy is

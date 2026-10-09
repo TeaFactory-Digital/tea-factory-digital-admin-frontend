@@ -1,21 +1,21 @@
-# Tea Factory Digital — admin console
+# Tea Factory Digital: admin console
 
 The office half of every flow the supplier app can only ask for: where the leaf is
 recorded, the rate is entered, the month is closed, and every request is decided.
 
 One React bundle serves every factory. Which factory it shows is resolved at
-**runtime**, from the subdomain — so a new tenant is a DNS record and a config
+**runtime**, from the subdomain, so a new tenant is a DNS record and a config
 row, not a build.
 
 ```bash
 npm install
-npm run dev          # http://localhost:5273 — runs on a mock API, no backend needed
+npm run dev          # http://localhost:5273 - runs on a mock API, no backend needed
 ```
 
 Sign in with the credentials printed on the screen (`clerk@galabodatea.lk` /
 `demo1234`). Which one you pick decides what you can see: the §12.1 matrix gives
 **leaf entry to the weigher**, the **month close to the accountant**, the **publish
-to the manager**, and **content to the editor and the factory admin** — so a
+to the manager**, and **content to the editor and the factory admin**, so a
 walkthrough needs more than the clerk. All six demo accounts are on the sign-in
 screen.
 
@@ -25,20 +25,20 @@ screen.
 
 ```
 packages/
-  domain/     @tfd/domain — types, the RBAC matrix, credit arithmetic, Zod schemas.
+  domain/     @tfd/domain - types, the RBAC matrix, credit arithmetic, Zod schemas.
               Framework-free: shared with the API and, later, the mobile app.
-  brand/      @tfd/brand  — design tokens + the CSS-custom-property bridge that
+  brand/      @tfd/brand  - design tokens + the CSS-custom-property bridge that
               makes Tailwind's build-time classes resolve to runtime brand values.
 apps/
   admin/      React 19 · Vite · Tailwind v4 · TanStack Query/Table · Radix · MSW
 docs/v2/      Current: architecture, the API contract, what is deliberately unfinished
 ```
 
-## v2 — this console manages the mobile app
+## v2: this console manages the mobile app
 
 **It does not run the factory.** The factory already has its own console for its
 internal processes, so v2 hands back the four modules that were building a second
-answer to questions that already had one — leaf collection, rates & month close,
+answer to questions that already had one: leaf collection, rates & month close,
 payouts and savings. Two systems recording the same weighing is not redundancy; it is
 a reconciliation somebody does by hand every month.
 
@@ -62,7 +62,7 @@ could not see:
   all shipped. A factory that turned the switch on got nothing.
 
 **The screens were not deleted.** Every handed-back screen, handler and fixture is still
-in the tree, still builds and still answers — because the mock handlers are the only
+in the tree, still builds and still answers, because the mock handlers are the only
 written statement of what those flows require, and the factory's own console has to
 satisfy every one of them. What is gone is the claim that *this* console is where the
 work happens: the routes, sidebar rows and cards that wired them up are in git history
@@ -74,29 +74,29 @@ be solved.
 M5, M6 and M8 are the chain those two feed, and they are one slice because they are
 one fact: a bill is a read model over the leaf and the rate, a payout line pays a
 bill, and a savings contribution *is* a bill's savings deduction. Nothing is derived
-twice — which is what stops the office reconciling the console against itself.
+twice, which is what stops the office reconciling the console against itself.
 
 M7 and M10 finish the Queues section, so **every `pending` in the supplier's app is a
-queue here** — the promise the whole product rests on. M11 and M12 are the Content
+queue here**, the promise the whole product rests on. M11 and M12 are the Content
 section, and they close AC-08: editorial copy falls back to English when a translation
 is missing, and the console makes that gap visible on the tab for the language that has
 it, in a "live with a gap" working list, and in the audit entry for the publish.
 
-M13 was built while §21.24 — automatic sends or composed ones, and who may send free text —
+M13 was built while §21.24 (automatic sends or composed ones, and who may send free text)
 was still open, so it is answered as **configuration**: which categories fire is a
 per-tenant switch defaulted from the platform's own `push.defaultCategories`, and every
 send is preceded by a reach figure that counts who opted out. A push is the only act here
 with no undo and no delivery report, so every safeguard is a pre-check.
 
 M14, M15 and M16 are the Administration section, and together they are what makes the
-console **handed over** rather than demonstrated. M14 closes AC-12 — a new factory is a
+console **handed over** rather than demonstrated. M14 closes AC-12: a new factory is a
 DNS record and a `client_config` row, and every field of that row now has a control, so
 nothing about onboarding a factory needs a developer. M15 makes §12.1 editable, which is
 what its own specification always claimed it was; its refusals all guard one failure, a
 factory locking itself out of a console with no recovery path outside itself. M16 is
 deliberately the smallest: four reports, each built from records the console already keeps
 and each carrying the citation that justifies it, because the rest need a reporting
-warehouse that lives in another repository — and a report nobody asked for is a query
+warehouse that lives in another repository, and a report nobody asked for is a query
 somebody maintains and nobody reads.
 
 **The backend does not exist yet.** The console runs against an in-browser mock
@@ -114,11 +114,11 @@ switch to it.
 | `npm run dev`        | Dev server against a **local** API on `:3000`                    |
 | `npm run dev:staging`| Dev server against the **deployed staging** API                  |
 | `npm run build`      | Production bundle                                                |
-| `npm run build:demo` | Demo bundle — production build, mock API on, for preview hosting |
+| `npm run build:demo` | Demo bundle: production build, mock API on, for preview hosting |
 | `npm run typecheck`  | `tsc --build`, all three projects                                |
 | `npm run lint`       | Includes the white-label and layering rules                      |
-| `npm run test`       | Vitest — 351 tests                                               |
-| `npm run e2e`        | Playwright — 29 specs (`npx playwright install chromium` once)    |
+| `npm run test`       | Vitest, 351 tests                                               |
+| `npm run e2e`        | Playwright, 29 specs (`npx playwright install chromium` once)    |
 | `npm run e2e:demo`   | The same specs against the built demo bundle                     |
 
 ### Running against staging
@@ -167,7 +167,7 @@ Three are checked by the linter; the rest are conventions the code follows
 consistently. All of them come from the product spec in the mobile repo's `docs/`.
 
 1. **Never hardcode a colour, size or string.** `bg-primary`, `p-lg`, `t('key')`.
-   `bg-[#128C7E]` is a lint error — there is no legal way to write a colour into a
+   `bg-[#128C7E]` is a lint error: there is no legal way to write a colour into a
    component, which is what keeps every surface re-brandable.
 2. **Never branch on the tenant id.** Gate on a feature flag, so a new factory is
    pure configuration.
@@ -175,7 +175,7 @@ consistently. All of them come from the product spec in the mobile repo's `docs/
    enforced by import rules. The repository is the seam that absorbs a backend
    returning something slightly different.
 4. **`null` is not `0`.** A rate-derived field that is `null` means the auction
-   result is not in, and renders as an em dash — never a figure the office would
+   result is not in, and renders as a dash (`-`), never a figure the office would
    have to explain.
 5. **Ceilings truncate, amounts round.** Shared arithmetic in `@tfd/domain`, not
    re-derived per consumer: a ceiling rounded up is a maximum the supplier cannot
@@ -191,7 +191,7 @@ Start at [docs/v2/README.md](./docs/v2/README.md).
 
 |                                                |                                                                                             |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| [api-contract.md](./docs/v2/api-contract.md)   | **For the backend developer** — every endpoint, payload and refusal, with a build checklist |
+| [api-contract.md](./docs/v2/api-contract.md)   | **For the backend developer**: every endpoint, payload and refusal, with a build checklist |
 | [architecture.md](./docs/v2/architecture.md)   | Layers, state, start-up, security posture                                                   |
 | [white-label.md](./docs/v2/white-label.md)     | Runtime branding, the Tailwind ↔ token bridge, **the fourteen flags**, adding a tenant      |
 | [design-system.md](./docs/v2/design-system.md) | Tokens, components, density, accessibility                                                  |
@@ -201,11 +201,11 @@ Start at [docs/v2/README.md](./docs/v2/README.md).
 | [operations.md](./docs/v2/operations.md)       | Environments, deployment, testing, CI                                                       |
 | [status.md](./docs/v2/status.md)               | **Known gaps and the questions blocking specific modules**                                  |
 
-**v1 — the seventeen-module console — is in git history, not in the tree.** It was the
+**v1 (the seventeen-module console) is in git history, not in the tree.** It was the
 specification the factory's own build should be read against, and where the handed-back
 modules' open questions lived. Recover it with `git log -- docs/v1/` and
 `git show <rev>:docs/v1/<file>`.
 
-The product specification — what the console is for and why — lives in the mobile
+The product specification, what the console is for and why, lives in the mobile
 repository's `docs/`, and nothing here restates it. `BR-###`, `AC-##` and `§n`
 references throughout point there.

@@ -3,7 +3,7 @@
  *
  * The shell owns the dashboard query rather than the dashboard screen owning it,
  * because the sidebar's queue badges need the same numbers. One request, two
- * consumers — the alternative is the badge counts disagreeing with the screen
+ * consumers: the alternative is the badge counts disagreeing with the screen
  * they link to, which is exactly the class of inconsistency AC-01 is about.
  */
 
@@ -44,7 +44,7 @@ export function AppShell() {
             stale branding and flags is worse than a permanent banner.
 
             The mock banner that used to sit beside this one is gone with the mock
-            itself — there is no longer a state in which this console serves fixtures,
+            itself: there is no longer a state in which this console serves fixtures,
             so there is nothing to warn about. */}
         {degraded ? (
           <div className="px-gutter pb-sm">
@@ -64,7 +64,7 @@ export function AppShell() {
         </a>
 
         {/* 30 px from the sidebar on the left, 30 px from the window on the right
-            (`--spacing-gutter`). The vertical padding stays on the shared scale —
+            (`--spacing-gutter`). The vertical padding stays on the shared scale;
             only the gutters are fixed geometry. */}
         <main id="main" className="relative min-w-0 flex-1 overflow-y-auto px-gutter pt-xs pb-xxl">
           {/**
@@ -72,22 +72,22 @@ export function AppShell() {
            * growing past it.
            *
            * It gives the wrapper a *definite* height, which a `flex-1` child can
-           * then resolve against — without one, a screen asking for "the height
+           * then resolve against; without one, a screen asking for "the height
            * that is left" gets the height of its own content and the whole page
            * scrolls, header and pagination included.
            *
            * It does not squash the screens that are taller than the window
            * (dashboard, detail pages): their children keep `min-height: auto`, so
            * they refuse to shrink below their content and `main` scrolls as
-           * before. Only a child that explicitly opts out with `min-h-0` — the
-           * grid card — is asked to fit.
+           * before. Only a child that explicitly opts out with `min-h-0` (the
+           * grid card) is asked to fit.
            */}
           {/**
            * `h-full` and **not** `min-h-full`, which was tried and reverted.
            *
            * The height has to be *definite* for a `flex-1` grid card to resolve against
            * it. Under `min-height: 100%` the container is auto-height, `flex-grow` has no
-           * free space to distribute, and every grid sizes to its own content instead —
+           * free space to distribute, and every grid sizes to its own content instead:
            * a fifty-row savings table rendered 2,582 px tall and scrolled the whole page
            * rather than itself. Measured, not reasoned about.
            *
@@ -103,7 +103,7 @@ export function AppShell() {
           <div className="flex h-full flex-col gap-lg">
             {/* Module screens are lazy (see routes/router.tsx). The boundary is
                 here rather than per route so the sidebar and topbar stay
-                interactive while a screen's chunk arrives — a clerk can start
+                interactive while a screen's chunk arrives: a clerk can start
                 navigating somewhere else instead of watching a blank page. */}
             <Suspense
               fallback={

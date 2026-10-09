@@ -8,7 +8,7 @@
  * leaves the browser, and it refuses two things the server also refuses:
  *
  *  - a category the app would drop (`unknown-category`), and
- *  - an audience that widens silently — "collection point" with no point named resolves
+ *  - an audience that widens silently: "collection point" with no point named resolves
  *    to *everybody*, which is the one way this module can do real harm.
  */
 
@@ -99,7 +99,7 @@ async function toServedAudience(audience: NotificationAudience): Promise<ServedA
 }
 
 export const notificationRepository = {
-  /** Server-paged and server-filtered — see the endpoint; **G-09** is closed here. */
+  /** Server-paged and server-filtered: see the endpoint; **G-09** is closed here. */
   list: async (query: NotificationQuery = {}): Promise<Paged<NotificationSend>> => {
     const page = await notificationEndpoints.list({ page: 0, pageSize: 25, ...query });
     return { ...page, items: page.items.map(toNotificationSend) };
@@ -117,7 +117,7 @@ export const notificationRepository = {
     notificationEndpoints.reach(category, await toServedAudience(audience)),
 
   /**
-   * `async`, so the guard **rejects** rather than throwing synchronously — the defect the
+   * `async`, so the guard **rejects** rather than throwing synchronously: the defect the
    * content suite caught in `contentRepository`, not repeated here.
    */
   send: async (body: ComposeNotificationBody): Promise<SendReceipt> => {

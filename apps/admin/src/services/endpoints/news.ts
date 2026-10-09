@@ -1,9 +1,9 @@
 /**
- * M11 News — the factory's feed, authored in every language the tenant sells in.
+ * M11 News: the factory's feed, authored in every language the tenant sells in.
  *
  * The shape of this module is decided by one thing: **copy is saved one language at a
  * time.** `PUT /news/{id}/translations/{lang}` rather than a whole-record `PUT`, and the
- * reason is not tidiness — two editors translating one article is the normal case in an
+ * reason is not tidiness: two editors translating one article is the normal case in an
  * office with a Sinhala speaker and a Tamil speaker, and a whole-record save means
  * whoever presses the button second silently discards the other's work.
  *
@@ -13,7 +13,7 @@
  *
  * The lifecycle is three verbs, not a status field the client sets: `publish`,
  * `unpublish` and `archive`. A `PATCH { status }` would let a console put a record into
- * a state the server never agreed to — and publishing is the one act here with a refusal
+ * a state the server never agreed to, and publishing is the one act here with a refusal
  * behind it (`fallback-translation-missing`).
  */
 
@@ -30,7 +30,7 @@ import { apiClient } from '../api/client';
 import type { MutationAck, ServedContentPreview, StatusAck } from '../api/adapters';
 import { toParams } from './params';
 
-/** What `POST /admin/news` acknowledges with — the id, the slug it minted, the state. */
+/** What `POST /admin/news` acknowledges with: the id, the slug it minted, the state. */
 export interface CreatedArticle extends StatusAck {
   slug: string;
 }
@@ -61,7 +61,7 @@ export const newsEndpoints = {
   /**
    * `422 fallback-translation-missing` when the fallback language's copy is absent.
    *
-   * Answers `{ id, slug, status }` — enough for the dialog to navigate to the article it
+   * Answers `{ id, slug, status }`: enough for the dialog to navigate to the article it
    * just created, which is the only thing it does with the result.
    */
   create: (body: NewsDraftBody) =>
@@ -85,7 +85,7 @@ export const newsEndpoints = {
    * Save one language.
    *
    * A `PUT`, because writing the Sinhala copy twice is a correction and not a second
-   * translation — the same reasoning that made M4's monthly rate a `PUT`.
+   * translation: the same reasoning that made M4's monthly rate a `PUT`.
    */
   saveTranslation: (id: string, lang: LanguageCode, body: ContentTranslationBody) =>
     apiClient
@@ -93,7 +93,7 @@ export const newsEndpoints = {
       .then((response) => response.data),
 
   /**
-   * What a reader in `lang` actually gets — resolved by the **server**.
+   * What a reader in `lang` actually gets: resolved by the **server**.
    *
    * Its own endpoint rather than composed in the console, so the preview is the app's
    * resolution rather than a second implementation of the fallback. An editor signing
@@ -127,7 +127,7 @@ export const newsEndpoints = {
    * Out of the feed, still in the record.
    *
    * There is no delete. An article a supplier has read and may quote on the telephone
-   * is evidence — the same rule that voids a delivery rather than removing it (§12.1).
+   * is evidence: the same rule that voids a delivery rather than removing it (§12.1).
    */
   archive: (id: string) =>
     apiClient.post<StatusAck>(`/admin/news/${id}/archive`, {}).then((response) => response.data),

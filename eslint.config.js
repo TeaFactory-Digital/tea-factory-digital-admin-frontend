@@ -9,7 +9,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
  * The three golden rules from white-label.md, as far as a linter can carry them:
  *
  *  1. Never hardcode a colour, size or string in a component.
- *  2. Never branch on the client/tenant id — gate behaviour with feature flags.
+ *  2. Never branch on the client/tenant id: gate behaviour with feature flags.
  *  3. UI never imports axios. Screens → hooks → repositories → endpoints → apiClient.
  *
  * Rule 1 is partly enforceable (colours and arbitrary sizes in `className`);
@@ -24,7 +24,7 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
 
   /**
-   * Build scripts — Node, not the browser.
+   * Build scripts: Node, not the browser.
    *
    * The block below covers `.ts`/`.tsx` only, so a `.mjs` under `scripts/` reached
    * `js.configs.recommended` with no globals declared at all and `no-undef` fired on
@@ -90,7 +90,7 @@ export default tseslint.config(
            *
            * Tailwind resolves a NAMED sizing value against `--spacing-*` before
            * `--container-*`, so with `--spacing-md` defined, `max-w-md` silently
-           * means 12px instead of 28rem. Nothing errors — the layout just
+           * means 12px instead of 28rem. Nothing errors: the layout just
            * collapses, which is how it reached a screenshot once already.
            *
            * Use a semantic layout token (`max-w-card`, `max-w-dialog`,
@@ -120,7 +120,7 @@ export default tseslint.config(
 
   {
     // Rule 3: the transport boundary. Only the api layer knows axios exists, and
-    // only repositories know endpoints exist — that seam is what absorbs a
+    // only repositories know endpoints exist: that seam is what absorbs a
     // backend returning something slightly different from what the UI wants.
     files: ['apps/admin/src/**/*.{ts,tsx}'],
     ignores: [

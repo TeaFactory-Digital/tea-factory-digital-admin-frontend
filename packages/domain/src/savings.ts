@@ -1,5 +1,5 @@
 /**
- * M8's savings policy — **§21.9, answered by the factory.**
+ * M8's savings policy: **§21.9, answered by the factory.**
  *
  * The answer, in the factory's words: *a supplier may take their savings out, normally in
  * April, but the month must be changeable; interest is changeable too, and starts at 0% a
@@ -10,14 +10,14 @@
  *    start of the school year rather than at Aluth Avurudu changes a row, not a build.
  *  - **The rate is configuration**, defaulting to `0`. It is *stored and shown and never
  *    acted on*: nobody has said whether interest is simple or compound, or whether it is
- *    paid on the closing balance or the year's minimum — and those give materially
+ *    paid on the closing balance or the year's minimum, and those give materially
  *    different money. So the console posts no interest of its own. When the factory decides,
  *    the accountant posts an `interest` entry with the figure they decided, and the ledger
  *    already has that word in its vocabulary.
  *
  * **A withdrawal is paid on the next bill** (the factory's choice), which is why nothing in
- * this file moves money. It records an *intention* — checked against the balance and the
- * window — and M5 turns it into a line on the Green Leaf Account. Two consequences worth
+ * this file moves money. It records an *intention*, checked against the balance and the
+ * window, and M5 turns it into a line on the Green Leaf Account. Two consequences worth
  * knowing, both of which fall out of that decision rather than being invented here:
  *
  *  1. **The balance does not drop when the withdrawal is asked for.** The savings ledger is
@@ -38,13 +38,13 @@ export interface SavingsPolicy {
   /**
    * The calendar month withdrawals may be asked for, `1`–`12`.
    *
-   * April by default — the factory's own answer, and the month a smallholder household
+   * April by default: the factory's own answer, and the month a smallholder household
    * needs money for the new year.
    */
   withdrawalMonth: number;
   /**
-   * Annual interest, as a percentage. `0` by default, and **the console never applies it**
-   * — see the note at the top of this file. It is here so a factory can record what it
+   * Annual interest, as a percentage. `0` by default, and **the console never applies it**;
+   * see the note at the top of this file. It is here so a factory can record what it
    * pays, and so the screen can show a supplier's expectation, not so anything accrues.
    */
   annualInterestRate: number;
@@ -92,7 +92,7 @@ export function isWithdrawalWindowOpen(policy: SavingsPolicy, now: Date): boolea
  * What may still be asked for.
  *
  * The balance **less what is already pending**, because a withdrawal does not reduce the
- * balance until the bill it is paid on is published — so without this, a supplier could ask
+ * balance until the bill it is paid on is published, so without this, a supplier could ask
  * for their whole balance twice in one window and the second request would look fundable.
  */
 export function availableToWithdraw(balance: number, pendingTotal: number): number {
@@ -121,7 +121,7 @@ export interface WithdrawalRequestFacts {
  * server refuses with the same rule.
  *
  * All of them block. This is a supplier's own money and the failure modes are paying out
- * more than is held, or paying out in a month the factory has not budgeted for — neither is
+ * more than is held, or paying out in a month the factory has not budgeted for; neither is
  * something to warn about and proceed with.
  */
 export function withdrawalProblems(facts: WithdrawalRequestFacts): WithdrawalProblem[] {
@@ -158,7 +158,7 @@ export interface SavingsWithdrawal {
   supplierName: string;
   amount: number;
   status: SavingsWithdrawalStatus;
-  /** Colombo-local `YYYY-MM` the request was made in — the window it belongs to. */
+  /** Colombo-local `YYYY-MM` the request was made in: the window it belongs to. */
   requestedMonth: string;
   requestedAt: string;
   requestedByName: string;
@@ -174,7 +174,7 @@ export interface SavingsWithdrawal {
  *
  * In the domain package rather than beside the endpoint, for the reason every wire shape
  * is: **the API implements it too.** A type invented in `apps/admin` is a DTO the backend
- * can drift from — and `windowOpen` in particular has to be the *server's* answer, because
+ * can drift from, and `windowOpen` in particular has to be the *server's* answer, because
  * it depends on the factory's Colombo-local month and not on the reader's clock.
  */
 export interface SavingsWithdrawalState {
@@ -182,7 +182,7 @@ export interface SavingsWithdrawalState {
   windowOpen: boolean;
   balance: number;
   pendingTotal: number;
-  /** Balance less what is already pending — the figure a new request is checked against. */
+  /** Balance less what is already pending: the figure a new request is checked against. */
   available: number;
   items: SavingsWithdrawal[];
 }

@@ -3,7 +3,7 @@
  *
  * The unusual thing here is that most mutations need **the whole user list**, not just the
  * record being changed. "Is this the last administrator" is not a property of one row, so the
- * lockout guard in `userRepository` takes the set — and these hooks thread it through from the
+ * lockout guard in `userRepository` takes the set, and these hooks thread it through from the
  * list the screen is already holding rather than refetching it.
  *
  * Editing a role's grants invalidates the **session**, and that is the one invalidation worth

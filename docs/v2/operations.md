@@ -9,7 +9,7 @@ subdomain, and still runs against MSW until `VITE_USE_MOCK=0` points it at a rea
 Two notes for whoever runs it:
 
 - **The dev tenant switcher is still the fastest scope check.** Switching to `highland`
-  should now empty **five** rows out of the sidebar rather than three — no loans, no
+  should now empty **five** rows out of the sidebar rather than three: no loans, no
   manure, no news, and in v2 no tea packets and no promo banner. A row that survives is
   a row gated on something hardcoded.
 - **The test suite grew and shrank in the same commit.** `teaPackets.test.ts` and
@@ -30,12 +30,12 @@ From the workspace root:
 | `npm install`        | Installs everything. Node ≥ 22.11                                                         |
 | `npm run dev`        | Vite dev server on **http://localhost:5273**, mock API on                                 |
 | `npm run build`      | Production bundle into `apps/admin/dist`                                                  |
-| `npm run build:demo` | Demo bundle into `apps/admin/dist` — real production build, mock API on (see Deployment)  |
+| `npm run build:demo` | Demo bundle into `apps/admin/dist`: real production build, mock API on (see Deployment)  |
 | `npm run preview`    | Serves the built bundle                                                                   |
 | `npm run typecheck`  | `tsc --build` across all three projects                                                   |
 | `npm run lint`       | ESLint, including the white-label and layering rules                                      |
-| `npm run test`       | Vitest — 351 tests                                                                        |
-| `npm run e2e`        | Playwright — 29 specs against the dev server. Needs `npx playwright install chromium` once |
+| `npm run test`       | Vitest, 351 tests                                                                        |
+| `npm run e2e`        | Playwright, 29 specs against the dev server. Needs `npx playwright install chromium` once |
 | `npm run e2e:demo`   | The same specs against the built demo bundle on a static server                           |
 | `npm run format`     | Prettier                                                                                  |
 
@@ -72,7 +72,7 @@ reports every failure as a network problem is the worst available outcome.
 The **demo build is the one exception**, and it is a build mode rather than a
 variable: `env.demoMode` reads `import.meta.env.MODE === 'demo'`, so no environment
 variable set in a hosting dashboard can turn the real console into a fixture
-server — someone has to run a different build command. What a demo build still
+server; someone has to run a different build command. What a demo build still
 cannot do is hide: the permanent mock banner and the printed sign-in credentials
 are both keyed off `VITE_USE_MOCK`, so every screen says what it is.
 
@@ -89,39 +89,39 @@ highland.admin.teafactory.lk    ─┘
 ```
 
 **A new factory is a DNS record and a `client_config` row.** No build, no deploy.
-That asymmetry with mobile — where a new brand still needs a binary — is expected:
+That asymmetry with mobile (where a new brand still needs a binary) is expected:
 app stores demand binaries, browsers do not.
 
 Host requirements:
 
-1. **SPA fallback** — rewrite unknown paths to `/index.html`, or a refresh on
+1. **SPA fallback**: rewrite unknown paths to `/index.html`, or a refresh on
    `/change-requests/chg-2` is a 404.
 2. **Wildcard TLS + DNS** for `*.admin.<domain>`.
 3. **Cache `/assets/*` immutably** (hashed filenames), **never cache
    `index.html`**.
 4. **CORS on the API**: an explicit origin allowlist with
-   `Access-Control-Allow-Credentials: true` — a wildcard origin is illegal with
+   `Access-Control-Allow-Credentials: true`; a wildcard origin is illegal with
    credentials, and the refresh cookie needs them. `Access-Control-Allow-Headers`
    must carry `X-Tenant`, `Idempotency-Key` and `X-CSRF-Token`, or the preflight
    fails and every mutation dies before it is sent.
 5. **The refresh cookie stays host-only.** Set it on `api.<domain>` and do **not**
    widen `Domain` to `.<domain>`. Host-only is sent to exactly the host that issued
    it, which is all a refresh needs; widening it hands the cookie to every tenant's
-   console subdomain and to anything else that ever lives on the parent — which is
+   console subdomain and to anything else that ever lives on the parent, which is
    the sibling-subdomain exposure `X-CSRF-Token` then has to compensate for.
 
    Note what this split does *not* break: `SameSite=Lax` keys on **site**, not
    origin, and the console and the API share one registrable domain. The cookie is
    therefore sent on the cross-origin refresh `POST` as §2.2 specifies, and there is
    no reason to relax it to `SameSite=None`.
-6. **`noindex`** — already in `index.html`.
+6. **`noindex`**: already in `index.html`.
 
-### Vercel — the hosted demo
+### Vercel: the hosted demo
 
 `vercel.json` at the repo root configures it, and it deploys the **demo** bundle:
 
 ```
-installCommand    npm ci                 (workspace root; devDependencies needed — vite is one)
+installCommand    npm ci                 (workspace root; devDependencies needed, vite is one)
 buildCommand      npm run build:demo
 outputDirectory   apps/admin/dist
 rewrites          /(.*) → /index.html    (requirement 1; Vercel checks the filesystem first,
@@ -130,7 +130,7 @@ headers           /assets/* immutable, index.html and the worker no-cache (requi
 ```
 
 Connect the GitHub repo once in the Vercel dashboard, then **set the root directory
-to the repo root, not `apps/admin`** — Vercel offers to "helpfully" detect the app
+to the repo root, not `apps/admin`**: Vercel offers to "helpfully" detect the app
 directory, and taking the offer hides this file. The build is written for the
 workspace root: `npm run build:demo` is a root script, and the Vite aliases reach
 `packages/` above `apps/admin`. **No environment variables need setting**;
@@ -151,13 +151,13 @@ Two things this hosting cannot give you, both by design:
   a UI review, never a data review. Nothing survives a reload.
 
 `npm run build:demo && npm run e2e:demo` is the check that the artefact actually
-boots — it catches the demo-only failures (`assertEnvUsable()` throwing, MSW
+boots; it catches the demo-only failures (`assertEnvUsable()` throwing, MSW
 tree-shaken out, the tenant resolving to a deployment name) that a dev-server test
 run cannot see.
 
 ### Going to production
 
-Point `VITE_API_BASE_URL` at the real origin and build with `npm run build` — the
+Point `VITE_API_BASE_URL` at the real origin and build with `npm run build`; the
 mock is not merely off in that bundle, it is not in it. Then the six host
 requirements above apply in full, plus the API's CORS allowlist.
 
@@ -171,7 +171,7 @@ old binaries are in the field, and feature flags are the release valve.
 
 Layered so each layer tests what only it can.
 
-### Vitest — 284 tests
+### Vitest: 284 tests
 
 | File                           | Covers                                                                    |
 | ------------------------------ | ------------------------------------------------------------------------- |
@@ -179,62 +179,62 @@ Layered so each layer tests what only it can.
 | `changeRequests.test.tsx` (17) | M9 and M2 end to end against the mock API, through the real transport     |
 | `rbac.test.ts` (15)            | The §12.1 matrix, grant merging, four-eyes, the approval threshold        |
 | `money.test.ts` (13)           | `floor2`/`round2`, the credit basis, BR-107, account masking              |
-| `payouts.test.ts` (14)         | M6: every refusal money can hit — an unpublished month, four-eyes on the release, a draft that cannot be paid from, a failure with no reason — plus held lines staying counted and totals derived from lines |
+| `payouts.test.ts` (14)         | M6: every refusal money can hit (an unpublished month, four-eyes on the release, a draft that cannot be paid from, a failure with no reason) plus held lines staying counted and totals derived from lines |
 | `bills.test.ts` (13)           | M5: the slip's arithmetic as identities (AC-03), BR-107 balance, the whole-rupee/coins carry, re-generation, staleness, and the publish lock |
 | `monthClose.test.ts` (12)      | M4: the rate, exception resolution, and all seven publish refusals        |
-| `savings.test.ts` (11)         | M8: the balance tying to the ledger, the ledger tying to published bills, the registry tying to both (AC-01) — and AC-07's endpoint half |
+| `savings.test.ts` (11)         | M8: the balance tying to the ledger, the ledger tying to published bills, the registry tying to both (AC-01), and AC-07's endpoint half |
 | `deliveries.test.ts` (9)       | M3: batch commit and its idempotent replay, per-row rejections, the void, `month-locked`, and the day totals the dashboard reads |
-| `notifications.test.ts` (15)   | M13: the refusals a push has no feedback loop for, consent honoured per device, and each automatic trigger fired by doing the real thing — publishing a month, publishing an article, answering a message |
+| `notifications.test.ts` (15)   | M13: the refusals a push has no feedback loop for, consent honoured per device, and each automatic trigger fired by doing the real thing: publishing a month, publishing an article, answering a message |
 | `content.test.ts` (20)         | M11/M12 and **AC-08 end to end**: the preview resolving as `content.ts` does, gaps derived against the tenant's own languages, stale copy, and the write/publish split |
 | `credit.test.tsx` (23)         | M7: the eligibility working as identities (AC-05), `stale-eligibility`, `over-ceiling` on both sides, and an approval raising the balance the next bill deducts against |
-| `users.test.ts` (20)           | M15: all three lockouts — the last administrator, self-modification, and the **matrix** in which no role grants recovery — plus the mandatory reasons and a suspension taking effect on the next request |
+| `users.test.ts` (20)           | M15: all three lockouts (the last administrator, self-modification, and the **matrix** in which no role grants recovery) plus the mandatory reasons and a suspension taking effect on the next request |
 | `configuration.test.ts` (16)   | M14 and **AC-12**: every block of the row editable, the money-bearing refusals with their figures, a save reaching the public `GET /config`, and a flag turned off here making the endpoint behind it refuse (AC-07) |
 | `inquiries.test.tsx` (15)      | M10: reply and close as different acts, §21.18's status mapping, and the reply screen reading M13's trigger |
 | `reports.test.ts` (12)         | M16: each report tied to the module its figures come from, `null` kept as `null`, totals only where they mean something, and a factory administrator running a month report without a `billing` grant |
 | `payoutExport.test.ts` (21)    | §21.17 as configuration: the serialiser asserted **byte for byte** (a file is read by a parser, not a person), the three amount formats, quoting only where needed, and the endpoint's full account numbers, audit row and draft refusal |
-| `savingsWithdrawal.test.ts` (18) | §21.9 as answered: the Colombo-local window on both of its midnight edges, the arithmetic that keeps a withdrawal out of BR-107's nine lines, and the **round trip** — ask, close the month for real, publish, and only then does the passbook move |
+| `savingsWithdrawal.test.ts` (18) | §21.9 as answered: the Colombo-local window on both of its midnight edges, the arithmetic that keeps a withdrawal out of BR-107's nine lines, and the **round trip**: ask, close the month for real, publish, and only then does the passbook move |
 | `listSorting.test.ts` (5)      | Server-side sort and pagination parameters                                |
-| `languageSwitcher.test.tsx` (9) | The si/en/ta picker: every option staying in **its own script** whatever the active language is (the regression that would strand the reader the control exists for), the choice surviving a reload, `<html lang>` following it, one tab stop rather than three, and the arrow keys wrapping. Installs a working `localStorage` per test — this environment's is an empty object while `sessionStorage` is real, which the guards in `src/i18n` swallow by design |
+| `languageSwitcher.test.tsx` (9) | The si/en/ta picker: every option staying in **its own script** whatever the active language is (the regression that would strand the reader the control exists for), the choice surviving a reload, `<html lang>` following it, one tab stop rather than three, and the arrow keys wrapping. Installs a working `localStorage` per test: this environment's is an empty object while `sessionStorage` is real, which the guards in `src/i18n` swallow by design |
 | `viewportGate.test.tsx` (6)    | The 768×480 floor: a phone getting the notice, the office's own 1366×768 laptop **not** getting it, a landscape phone that clears the width but not the height, and the notice retiring when a dragged window comes back over the floor |
-| `logo.test.tsx` (6)            | The mark's `served → bundled → initials` fallback as each source fails — and the **boot splash** with it: naming the factory, covering the app rather than gating it, and giving up on a boot that never settles |
+| `logo.test.tsx` (6)            | The mark's `served → bundled → initials` fallback as each source fails, and the **boot splash** with it: naming the factory, covering the app rather than gating it, and giving up on a boot that never settles |
 | `spinner.test.tsx` (4)         | `Spinner`/`SpinnerMark`: announced once and not per frame, the arc drawn in the brand colour, size from the variant |
 | `confirmDialog.test.tsx` (2) · `userDialogValidation.test.tsx` (2) · `configurationScreen.test.tsx` (2) · `screenSmoke.test.tsx` (1) | The confirm step standing between a click and a user action, email-format validation surfacing and clearing in the user dialog, M14 opening on its factory section and refusing an office email that is not one, and a render pass over a list screen's filters and rows |
 
 `rbac.test.ts` and `money.test.ts` are the highest-value files. The matrix is what
 a factory will ask to change, and status.md §10 item 10 records that **no tests
-cover the credit rules** in the mobile app — the ceiling arithmetic is the one
+cover the credit rules** in the mobile app: the ceiling arithmetic is the one
 place a bug produces a dispute rather than a crash.
 
 `changeRequests.test.tsx` goes through the real transport, store and screens; only
 the server is a stand-in. A test that stubbed the repository would pass while the
 interceptor flattened every error code.
 
-### Playwright — 29 specs
+### Playwright: 29 specs
 
 `short-screen.spec.ts` is the odd one out and earns its place: it renders every grid at
 five viewports down to 1152×640 and asserts the first row is **inside the viewport**. It
-exists because a list collapsing to zero pixels got past the rest of the suite — the rows
+exists because a list collapsing to zero pixels got past the rest of the suite: the rows
 were in the DOM, so `toBeVisible()` passed while a human saw nothing.
 
-Narrow on purpose: only what jsdom cannot prove — plus, in four module specs
+Narrow on purpose: only what jsdom cannot prove, plus, in four module specs
 (`money`, `content`, `notifications`, `administration`), the handful of behaviours that
 only exist once a screen renders. `administration.spec.ts` earned its keep immediately: it
 found that M16's month picker was fed from a `billing`-gated endpoint, so the factory
-administrator — who holds `reports: R` and no `billing` — could not run a single month
+administrator (who holds `reports: R` and no `billing`) could not run a single month
 report. Every unit test passed, because they called the repository and never rendered the
 picker.
 
-1. **Sign-in → dashboard** — proves the service worker registers and the whole
+1. **Sign-in → dashboard**: proves the service worker registers and the whole
    session flow works in a browser.
-2. **Survives a page reload** — the access token is in memory by design, so a
+2. **Survives a page reload**: the access token is in memory by design, so a
    fresh document must recover the session from the refresh cookie. Covers
    reload, a cold deep link, and that signing out then reloading stays signed
    out. Regression test: this failed once, and a console that logs you out on
    every refresh is unusable.
-3. **The brand bridge paints** — asserts `--brand-color-primary` computes to
+3. **The brand bridge paints**: asserts `--brand-color-primary` computes to
    Galaboda's green, then that `?tenant=hillcountry` repaints without a rebuild.
    The entire white-label mechanism in one assertion.
-4. **A reduced-feature tenant loses its queues** — `highland` must have no loan or
+4. **A reduced-feature tenant loses its queues**: `highland` must have no loan or
    manure rows at all.
 
 Viewport is **1366×768**: testing at 1920 hides every layout problem that actually
@@ -242,11 +242,11 @@ gets reported.
 
 ### Not tested, and known
 
-- **Refresh-token rotation and reuse detection** — the mock is deliberately looser
+- **Refresh-token rotation and reuse detection**: the mock is deliberately looser
   here (see [mocks.md](./mocks.md)); this needs the real backend.
-- **Visual regression** — no snapshots. The brand-bridge assertion covers the case
+- **Visual regression**: no snapshots. The brand-bridge assertion covers the case
   that would otherwise break silently.
-- **Screen-reader behaviour** — semantics are built in (real tables, `aria-sort`,
+- **Screen-reader behaviour**: semantics are built in (real tables, `aria-sort`,
   `role="alert"`, a clean accessible name on every field) but no assistive
   technology has been driven over it.
 
@@ -254,7 +254,7 @@ gets reported.
 
 ## CI
 
-Five steps, in this order — each fails faster than the next:
+Five steps, in this order; each fails faster than the next:
 
 ```yaml
 - npm ci
@@ -273,7 +273,7 @@ in GitHub format.
 ## Performance
 
 The bundle is split by **change rate**, not size, because one bundle serves every
-tenant and the console ships continuously — what matters is how much a returning
+tenant and the console ships continuously; what matters is how much a returning
 clerk re-downloads after a release.
 
 | Chunk                        | gzip    | Loaded           |
@@ -292,14 +292,14 @@ clerk re-downloads after a release.
 move.** Worth knowing which is which: the `i18n` chunk is the i18next *library*; the
 string **tables** are in `index`. Building with only `en` registered puts `index` at
 **116 kB** against the **171 kB** above, so Sinhala and Tamil cost **~54 kB gzip
-between them** — more than two-thirds of what English costs each, because Indic
+between them**, more than two-thirds of what English costs each, because Indic
 script is multi-byte UTF-8 and compresses worse than the Latin it mirrors. Two extra
 languages are not two-thirds of the price; they are roughly the price again.
 
 Every clerk therefore downloads all three languages to use one. Left that way
 deliberately, and for the reason that governs the rest of this section: the console
 is a desktop product on office broadband, and 54 kB once is not what office staff are
-waiting for. The fix, if that stops being true, is small and already shaped — drop
+waiting for. The fix, if that stops being true, is small and already shaped: drop
 si/ta from `resources` at init and `addResourceBundle` the chosen table from a dynamic
 import inside `setLanguage`. Tracked as a gap in [status.md](./status.md) (#14) rather
 than left as a surprise for whoever next reads this table.
@@ -308,11 +308,11 @@ Re-measure with `npx vite build`; the numbers above are its own reported gzip fi
 not `gzip -c` on the files, which disagrees by a few kB.
 
 Module screens are lazy, so a sign-in form does not arrive with a charting library
-attached. MSW is **eliminated** from production, not merely unloaded — the guard is
+attached. MSW is **eliminated** from production, not merely unloaded; the guard is
 `import.meta.env.DEV && env.useMock`, so Vite drops the branch.
 
 The §20.1 payload budget (a bill in one round trip, ≤30 KB) is a **mobile**
-constraint and does not apply here — the console is a desktop product on office
+constraint and does not apply here: the console is a desktop product on office
 broadband. What does apply is that the API is shared: `refetchOnWindowFocus` and
 debounced search exist so the office is not competing with the phones on
 publication day (§20.5).

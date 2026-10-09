@@ -25,7 +25,7 @@ const VARIANTS: Record<ButtonVariant, string> = {
     'bg-surface text-text-primary border border-border shadow-card hover:bg-surface-variant disabled:text-disabled-contrast disabled:shadow-none',
   ghost:
     'bg-transparent text-text-primary hover:bg-surface-variant disabled:text-disabled-contrast',
-  // Destructive actions are the error colour, not a red hex — a factory whose
+  // Destructive actions are the error colour, not a red hex: a factory whose
   // brand clashes with the default red can re-map one token.
   danger:
     'bg-error text-on-status hover:opacity-90 disabled:bg-disabled disabled:text-disabled-contrast',
@@ -77,7 +77,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
  * screen reader the action is running, and the button keeps its own label, so a
  * second "Loading…" here would only interrupt it.
  *
- * No colour class — the mark inherits the button's foreground, which is white on
+ * No colour class: the mark inherits the button's foreground, which is white on
  * primary and danger and the text colour on secondary and ghost.
  */
 function Spinner() {

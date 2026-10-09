@@ -3,7 +3,7 @@
  *
  * The pattern is the app's, one layer deeper: **bundled value is the default,
  * served value overrides it, and the UI never blocks on the fetch.** A console
- * that cannot reach `/config` still signs a clerk in and still works — it is
+ * that cannot reach `/config` still signs a clerk in and still works: it is
  * simply not branded, and says so.
  *
  * ```
@@ -22,10 +22,10 @@ import { bundledConfig } from '@/config/defaults';
  *
  * `flags` is the one part of `/config` that drives whether whole modules render, and it
  * arrives from a server that may be a release ahead. Unknown keys are **stripped rather
- * than refused** so a fifteenth flag does not cost us the other fourteen — that is the
+ * than refused** so a fifteenth flag does not cost us the other fourteen: that is the
  * forward-compatible half, and it is why the schema is not `.strict()` here.
  *
- * A block that fails outright — a flag sent as `"true"` rather than `true`, say — falls
+ * A block that fails outright (a flag sent as `"true"` rather than `true`, say) falls
  * back to the bundled defaults rather than being half-applied. Defaults are all-on, which
  * `config/defaults.ts` argues for at length: briefly showing a queue the factory does not
  * use is a cheaper wrong than hiding one it does.
@@ -60,8 +60,8 @@ function merge(served: Partial<RuntimeConfig>): RuntimeConfig {
 export const configRepository = {
   /**
    * Never throws. A failed fetch resolves to the bundled config with
-   * `degraded: true`, so the shell can show one honest line — "showing bundled
-   * defaults" — instead of an error page where a working console should be.
+   * `degraded: true`, so the shell can show one honest line ("showing bundled
+   * defaults") instead of an error page where a working console should be.
    */
   get: async (): Promise<{ config: RuntimeConfig; degraded: boolean }> => {
     try {

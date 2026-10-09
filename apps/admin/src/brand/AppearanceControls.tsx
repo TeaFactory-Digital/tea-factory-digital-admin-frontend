@@ -2,20 +2,20 @@
  * Light or dark, and how large the text is.
  *
  * A preference and not configuration: §12.1 makes `flagsAndBranding` writable by the
- * factory admin alone, so in M14 a clerk on a bright counter — or a weigher who needs
- * larger type — could not change their own screen. Same reasoning as the language
+ * factory admin alone, so in M14 a clerk on a bright counter, or a weigher who needs
+ * larger type, could not change their own screen. Same reasoning as the language
  * switcher, which is already per-machine for the same reason.
  *
  * **One home: M15.** It rendered in the account menu as well for a while, on the argument
  * that a shortcut is worth having once somebody knows the setting exists. That was dropped
- * deliberately — two places to change one value is two places to look when it is wrong,
+ * deliberately: two places to change one value is two places to look when it is wrong,
  * and the profile screen is where somebody *discovers* text size is adjustable at all.
  *
  * Still takes a `className` so a caller decides its padding, which is what let it sit in a
  * dropdown before and would again.
  *
  * Two rows of segments rather than a submenu, because both settings are things people try,
- * look at, and try again — a submenu that closed on every choice would make comparing
+ * look at, and try again: a submenu that closed on every choice would make comparing
  * light against dark a four-click job.
  */
 
@@ -46,7 +46,7 @@ interface AppearanceControlsProps {
   /**
    * Drive it from a draft instead of from the stored preference.
    *
-   * Omitted, a press applies immediately. Supplied, the caller owns the value — M15 holds
+   * Omitted, a press applies immediately. Supplied, the caller owns the value: M15 holds
    * all three preferences as a draft so they land together behind one confirmation.
    */
   value?: Appearance;

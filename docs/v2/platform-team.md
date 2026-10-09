@@ -4,7 +4,7 @@
 | --- | --- |
 | **Status** | Draft for review |
 | **Audience** | The team building this console, the API behind it and the supplier app |
-| **Read first** | [factory-integration-spec.md](./factory-integration-spec.md) — the design and its constraints |
+| **Read first** | [factory-integration-spec.md](./factory-integration-spec.md): the design and its constraints |
 | **The endpoint being consumed** | [factory-system-team.md](./factory-system-team.md) |
 
 > **Nothing in this document lands on the Factory System team.** It is written down so
@@ -14,14 +14,14 @@
 
 ## 1. Consuming the endpoint
 
-- **Pull hourly, automatically**, 05:30–20:00 Colombo. **No human upload step** — a file
+- **Pull hourly, automatically**, 05:30–20:00 Colombo. **No human upload step**: a file
   somebody has to remember does not get uploaded on a Poya day
 - **Upsert by id. Never insert blind.** The same date range may be re-fetched at any
   time, and nothing may double-apply
 - **Follow `nextCursor` to the end of every window.** A window abandoned half way is a
   day of missing figures that nothing will report
 - **Display balances and accounts as received.** Never recompute a figure the Factory
-  System already calculated — two implementations disagree on the first rounding
+  System already calculated: two implementations disagree on the first rounding
 - **Alert on a failed sync.** Silence must never look like agreement
 
 > ⚠️ **If a collection falls back to a wholesale mode**
@@ -33,7 +33,7 @@
 
 ---
 
-## 2. Credit — compute the ceiling, never the decision
+## 2. Credit: compute the ceiling, never the decision
 
 ```
     available  =  ceiling(configured rule, leaf history)  −  outstanding
@@ -42,11 +42,11 @@
 ```
 
 - **Compute the ceiling** from the factory's configured rule (M14 · *Credit rules*)
-  through the shared `creditCeilingFromRule` in `packages/domain/src/leafCredit.ts` —
+  through the shared `creditCeilingFromRule` in `packages/domain/src/leafCredit.ts`,
   **never a second implementation.** The same function is ported to the mobile repository,
   so the limit a supplier reads and the limit this console draws are one calculation
 - **Subtract the Factory System's `outstanding*`.** Never the second term from our own
-  records — a supplier who borrowed at the counter has a balance this platform has never
+  records: a supplier who borrowed at the counter has a balance this platform has never
   seen
 - **Record the factory's decision. Never make one.** Under this integration the request
   queues carry no `over-ceiling` and no `stale-eligibility`, and the button reads
@@ -74,7 +74,7 @@ The console says so, in two places and for two different reasons:
 Three decisions worth keeping:
 
 - **The everyday line matters more than the warning.** A signal that only appears when
-  something is wrong teaches the office that *no banner means live* — so on the day the
+  something is wrong teaches the office that *no banner means live*, so on the day the
   banner is a few minutes late, a figure gets quoted as though it were.
 - **"Never synced" is separated from "stale"**, because they need different people: one
   is a deployment that was not finished, the other is a job that has stopped running.
@@ -84,13 +84,13 @@ Three decisions worth keeping:
 
 **Staleness is measured in polling hours, not wall-clock hours.** Without that, the first
 clerk in at six every morning would meet a red "figures may be out of date" banner over a
-perfectly healthy console — the last sync genuinely being ten hours old — and would have
+perfectly healthy console (the last sync genuinely being ten hours old) and would have
 learned to ignore it by the end of the first week. A day of polls actually missed still
 raises it.
 
 ### What this asks of the Factory System
 
-**Nothing.** The freshness is this platform's own record of its own pulls — it knows when
+**Nothing.** The freshness is this platform's own record of its own pulls; it knows when
 it last called the endpoint and what date range came back. No extra field, no extra
 endpoint.
 
@@ -101,7 +101,7 @@ endpoint.
 Not a copy of anything, and nothing the Factory System knows about:
 
 - Mobile app accounts, passwords, devices
-- App content — news, banners, FAQ, terms
+- App content: news, banners, FAQ, terms
 - Push notifications
 - Which features the app shows
 - The lending **rule** configuration (M14 · *Credit rules*)
@@ -113,7 +113,7 @@ Not a copy of anything, and nothing the Factory System knows about:
 - [ ] Hourly pull during office hours only, 05:30–20:00 Colombo; upsert by id
 - [ ] Follow `nextCursor` to the end of every window
 - [ ] Handle wholesale-mode collections as replaces, not merges, where any apply
-- [ ] Ceiling from the configured rule through the shared `creditCeilingFromRule` —
+- [ ] Ceiling from the configured rule through the shared `creditCeilingFromRule`,
       never a second implementation, and never a figure presented as a decision
 - [ ] Never re-derive an account figure the Factory System has already calculated
 - [ ] Request screens **record** the factory's decision rather than making one

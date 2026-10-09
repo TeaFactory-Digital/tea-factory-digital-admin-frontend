@@ -3,15 +3,15 @@
  *
  * The whole difficulty of M14 is that its edits reach across every other module, and the
  * person making them cannot see any of those modules from here. So a toggle is not the
- * control — the sentence next to it is: *"9 suppliers hold LKR 412,000 in savings"* is what
+ * control; the sentence next to it is: *"9 suppliers hold LKR 412,000 in savings"* is what
  * makes "turn savings off" a decision rather than a click.
  *
  * Two severities, and the difference is money.
  *
- *  - **Blocks** — the change would hide records the factory still owes suppliers, so the
+ *  - **Blocks**: the change would hide records the factory still owes suppliers, so the
  *    save is refused here and by the API (`flag-has-records`, `point-in-use`). A liability
  *    disappearing from the only screen that reports it is not a preference.
- *  - **Warns** — a surface disappears end to end (AC-07), or a content language stops
+ *  - **Warns**: a surface disappears end to end (AC-07), or a content language stops
  *    being counted as a gap. Real consequences a factory is entitled to choose.
  *
  * Rendered from the **shared** `configImpact`, which is also what the server refuses with,
@@ -29,7 +29,7 @@ export function ImpactList({ impacts }: { impacts: ConfigImpact[] }) {
   if (impacts.length === 0) return null;
 
   return (
-    // `role="alert"` so a blocked save is announced, not only shown — the button next to
+    // `role="alert"` so a blocked save is announced, not only shown; the button next to
     // this list goes disabled at the same moment and the reason has to reach a reader who
     // is not looking at it.
     <ul role="alert" className="flex flex-col gap-xs">
@@ -47,7 +47,7 @@ export function ImpactList({ impacts }: { impacts: ConfigImpact[] }) {
           ) : (
             <TriangleAlert className="mt-xxs size-icon-sm shrink-0" aria-hidden />
           )}
-          {/* The server sends a key and its parameters, never a sentence — the console
+          {/* The server sends a key and its parameters, never a sentence; the console
               localizes (BR-110) and this payload is shared with an API that has no string
               table at all. */}
           <span>{t(impact.messageKey, impact.params)}</span>

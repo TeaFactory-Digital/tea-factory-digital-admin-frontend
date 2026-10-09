@@ -2,7 +2,7 @@
  * Build-time environment, read once and validated once.
  *
  * Every value here is compiled into the bundle and readable by anyone with the
- * URL. That is fine — all of it is configuration. **Nothing secret may be added
+ * URL. That is fine: all of it is configuration. **Nothing secret may be added
  * to this file**, and there is no mechanism to keep one here.
  *
  * Note what is *not* here: the factory's name, colours, flags, bank list or
@@ -33,7 +33,7 @@ export const env = {
    * pointed at it. Development points at the local API (`.env.development`).
    *
    * There is no `useMock` and no `demoMode` beside it any more. The in-browser mock is
-   * gone — the fixtures answer Vitest and nothing else — so there is no longer a switch
+   * gone (the fixtures answer Vitest and nothing else), so there is no longer a switch
    * that makes a running console serve fiction, which is the one failure mode an office
    * cannot see.
    */
@@ -46,7 +46,7 @@ export const env = {
    * Send `X-Tenant` as well as relying on the subdomain.
    *
    * A routing hint only. The backend must validate it against the token and
-   * answer `403` when they disagree — never treat it as a tenant switch.
+   * answer `403` when they disagree; never treat it as a tenant switch.
    */
   sendTenantHeader: bool(raw.VITE_SEND_TENANT_HEADER, true),
 
@@ -56,14 +56,14 @@ export const env = {
    * The console and the API sit on different subdomains of one site
    * (`galaboda.admin.teafactory.lk` → `api.teafactory.lk`, operations.md →
    * Deployment). `SameSite=Lax` keys on **site**, not origin, so the refresh cookie
-   * is still sent on that cross-origin `POST` — refresh is not broken by the split,
+   * is still sent on that cross-origin `POST`: refresh is not broken by the split,
    * and this header is not what makes it work.
    *
    * What it defends is the case Lax cannot see: a *sibling* subdomain. Anything on
    * `*.teafactory.lk` is same-site, so a compromised one could drive an authenticated
    * refresh. Echoing a cookie value the attacker's origin cannot read closes that.
    *
-   * Set `VITE_CSRF_COOKIE=` (empty) to switch it off — for an API that does not issue
+   * Set `VITE_CSRF_COOKIE=` (empty) to switch it off, for an API that does not issue
    * the cookie, where sending a header from an absent cookie would be noise.
    */
   csrfCookieName: String(raw.VITE_CSRF_COOKIE ?? 'tfd_csrf'),

@@ -3,7 +3,7 @@
  *
  * Not a `StringListEditor`, because a name is not enough: a supplier asks for *two bags of
  * urea* and the account has to carry a rupee figure. Three fields per row, and the console
- * derives the amount from them — a hand-typed price on a request is a price nobody can check
+ * derives the amount from them: a hand-typed price on a request is a price nobody can check
  * against a list.
  *
  * The line under each row is the point of the screen: **what one bag costs and what a
@@ -85,14 +85,14 @@ export function ManureCatalogue({
                 <Button
                   size="sm"
                   variant="ghost"
-                  aria-label={t('config.manure.remove', { name: product.name || '—' })}
+                  aria-label={t('config.manure.remove', { name: product.name || '-' })}
                   onClick={() => onChange(products.filter((_, i) => i !== index))}
                   iconLeft={<Trash2 className="size-icon-sm" aria-hidden />}
                 />
               ) : null}
             </div>
 
-            {/* What a supplier would actually owe. Bags round **up** — a store issues whole
+            {/* What a supplier would actually owe. Bags round **up**: a store issues whole
                 sacks, so 60 kg of a 50 kg product is two bags and two bags' worth. */}
             {product.packKg > 0 ? (
               <p className="text-caption text-text-secondary">

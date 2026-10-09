@@ -1,9 +1,9 @@
 /**
- * M11 Promo banners — the list.
+ * M11 Promo banners: the list.
  *
  * **The column that decides this screen's shape is `window`, not `status`.** An article
  * is published or it is not; a banner has a status *and* a live window, and the two
- * disagree constantly — a published banner scheduled for next week is in front of nobody,
+ * disagree constantly: a published banner scheduled for next week is in front of nobody,
  * and a published banner whose `endsAt` passed on Tuesday is equally invisible while
  * still reading "published" everywhere.
  *
@@ -14,7 +14,7 @@
  *
  * The window state is the server's (`BannerListItem.window`), not computed here. A
  * console reading the browser's clock would disagree with the phone on the day a banner
- * starts — and would disagree differently on every machine in the office.
+ * starts, and would disagree differently on every machine in the office.
  */
 
 import { useMemo, useState } from 'react';
@@ -45,7 +45,7 @@ const STATUS_TONES: Record<ContentStatus, BadgeTone> = {
 
 /**
  * `live` is the only one that is good news, `scheduled` is neutral, and `expired` is
- * neutral rather than an error — a banner that finished its run did what it was for.
+ * neutral rather than an error: a banner that finished its run did what it was for.
  */
 const WINDOW_TONES: Record<BannerListItem['window'], BadgeTone> = {
   scheduled: 'info',
@@ -138,7 +138,7 @@ export function BannersScreen() {
         enableSorting: false,
         cell: (info) => {
           const action = info.row.original.action;
-          if (!action) return <span className="text-text-secondary">—</span>;
+          if (!action) return <span className="text-text-secondary">-</span>;
           return action.type === 'url' ? (
             <span className="flex max-w-56 flex-col">
               <span className="text-caption text-text-secondary">{t('banners.action.url')}</span>

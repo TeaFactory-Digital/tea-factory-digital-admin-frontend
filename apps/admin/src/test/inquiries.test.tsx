@@ -8,11 +8,11 @@
  *
  *  - **Answering and closing are different acts.** A reply is what the supplier
  *    reads; a closure is the office filing something that needed no answer. If the
- *    two collapsed into one "resolve", the number §19.3's channel-shift KPI wants —
- *    how many suppliers we actually answered — could not be recovered.
- *  - **`already-decided`** — two clerks working one inbox is the normal case, and a
+ *    two collapsed into one "resolve", the number §19.3's channel-shift KPI wants
+ *    (how many suppliers we actually answered) could not be recovered.
+ *  - **`already-decided`**: two clerks working one inbox is the normal case, and a
  *    second reply would replace an answer the supplier has already read.
- *  - **§12.1's unusual row** — inquiries are `A` for the clerk and `R` for the
+ *  - **§12.1's unusual row**: inquiries are `A` for the clerk and `R` for the
  *    manager. The manager is oversight here, not a second pair of hands, and that
  *    is the opposite of every money module.
  */
@@ -70,8 +70,8 @@ describe('M10 answering', () => {
     /**
      * Read back, because the API acknowledges with `{ id, status }` and nothing else.
      *
-     * `inquiryRepository.get` has no endpoint behind it — there is no
-     * `GET /admin/inquiries/{id}` (gap **G-06**) — so it sweeps the list across every
+     * `inquiryRepository.get` has no endpoint behind it: there is no
+     * `GET /admin/inquiries/{id}` (gap **G-06**), so it sweeps the list across every
      * status. That is what the detail screen does against the real API, so exercising it
      * here is the point rather than an inconvenience.
      */
@@ -80,7 +80,7 @@ describe('M10 answering', () => {
     expect(after.status).toBe('resolved');
     expect(after.reply?.body).toBe(REPLY);
     expect(after.reply?.repliedByName).toBe('Nadeeka Perera');
-    // Answered, not closed — the closure fields stay empty, because the two are
+    // Answered, not closed: the closure fields stay empty, because the two are
     // different outcomes and the record has to be able to tell them apart.
     expect(after.closedAt).toBeNull();
     expect(after.closureNote).toBeNull();
@@ -165,7 +165,7 @@ describe('M10 refusals', () => {
   });
 
   it('refuses answering a message that was closed unanswered', async () => {
-    // The check is "is this finished with", not "has it been replied to" — a check
+    // The check is "is this finished with", not "has it been replied to": a check
     // written as `status === 'resolved'` would let a closed message be answered.
     await signInAs(CLERK);
 
@@ -188,7 +188,7 @@ describe('M10 permissions (§12.1)', () => {
      * The opposite of every money module, and deliberate: answering a supplier is
      * counter work, and a manager reading the queue is oversight. Requiring a
      * manager to release a reply would put a day between a question and its answer
-     * to guard against a risk — money moving — that an inquiry does not carry.
+     * to guard against a risk (money moving) that an inquiry does not carry.
      */
     await signInAs(MANAGER);
     await expect(inquiryRepository.list()).resolves.toBeTruthy();
@@ -207,8 +207,8 @@ describe('M10 status vocabulary (§21.18)', () => {
   it('maps the console’s three states onto the app’s three words in one place', () => {
     /**
      * The console says open/resolved/closed; the app's `Inquiry.status` has only
-     * `pending | approved | rejected`. The mapping is imprecise — a closed message
-     * is not one that was *rejected* — and that imprecision is exactly what §21.18
+     * `pending | approved | rejected`. The mapping is imprecise (a closed message
+     * is not one that was *rejected*) and that imprecision is exactly what §21.18
      * is being asked to resolve. Recording it in one function means the answer
      * changes one line instead of every consumer.
      */
@@ -236,7 +236,7 @@ describe('M10 detail screen', () => {
 
     // The answer, in the thread under the question, as the supplier sees it.
     expect(await screen.findByText(answered.reply!.body)).toBeInTheDocument();
-    // M13 now exists, and `inquiryReplied` is on by default for this tenant — so the
+    // M13 now exists, and `inquiryReplied` is on by default for this tenant, so the
     // screen must say a notification *was* sent. It used to assert the opposite, which
     // was true until M13 landed and is exactly the kind of copy that quietly becomes a
     // lie. A clerk who believes a message was pushed to the

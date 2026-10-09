@@ -2,7 +2,7 @@
  * A panel. The console's only container primitive.
  *
  * Deliberately unopinionated about padding on the body, because a card wrapping a
- * data grid must not pad it — a table needs to reach its own edges so the sticky
+ * data grid must not pad it: a table needs to reach its own edges so the sticky
  * header lines up with the rows.
  */
 
@@ -66,7 +66,7 @@ export function CardBody({
  * A label/value pair, the console's most repeated shape.
  *
  * `value` takes a node rather than a string so a `null` money field can render as
- * an em dash in muted text — never as `LKR 0.00`, which is a number the office
+ * a hyphen in muted text, never as `LKR 0.00`, which is a number the office
  * would have to explain (BR-102).
  */
 export function DetailRow({

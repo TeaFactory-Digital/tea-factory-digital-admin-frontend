@@ -1,6 +1,6 @@
 /**
  * Presentation. The wire carries numbers and keys; the console formats
- * (BR-110) — which is why not one of these functions exists on the server.
+ * (BR-110), which is why not one of these functions exists on the server.
  *
  * Two rules that are easy to get wrong and expensive to get wrong:
  *
@@ -8,14 +8,14 @@
  *    local is that day's delivery, and rendering its UTC timestamp in a grid
  *    moves the row across midnight. Every formatter here pins the time zone.
  *  - **`null` is not `0`** (BR-102). A rate-derived field that is `null` means
- *    the auction result is not in, and it renders as an em dash — never as
+ *    the auction result is not in, and it renders as a hyphen, never as
  *    `LKR 0.00`, which is a number the office would have to explain.
  */
 
 import { CURRENCY_CODE, FACTORY_TIME_ZONE, colomboDayOf } from '@tfd/domain';
 
 /** What a `null` money or rate field renders as. Not a zero. */
-export const NOT_AVAILABLE = '—';
+export const NOT_AVAILABLE = '-';
 
 const currency = new Intl.NumberFormat('en-LK', {
   style: 'currency',
@@ -32,13 +32,13 @@ const decimal = new Intl.NumberFormat('en-LK', {
 
 const integer = new Intl.NumberFormat('en-LK', { maximumFractionDigits: 0 });
 
-/** `LKR 12,450.00`, or `—` when the auction result is not in. */
+/** `LKR 12,450.00`, or `-` when the auction result is not in. */
 export function formatMoney(value: number | null | undefined): string {
   if (value === null || value === undefined) return NOT_AVAILABLE;
   return currency.format(value);
 }
 
-/** Amount without the currency code — for a column whose header already says LKR. */
+/** Amount without the currency code, for a column whose header already says LKR. */
 export function formatAmount(value: number | null | undefined): string {
   if (value === null || value === undefined) return NOT_AVAILABLE;
   return decimal.format(value);
@@ -61,9 +61,9 @@ const percent = new Intl.NumberFormat('en-LK', {
 });
 
 /**
- * A 0–1 ratio as a whole percentage — the app-adoption figures (M1, M16).
+ * A 0–1 ratio as a whole percentage: the app-adoption figures (M1, M16).
  *
- * `null` renders as an em dash and **never as `0%`** (BR-102). The two are different
+ * `null` renders as a dash (`-`) and **never as `0%`** (BR-102). The two are different
  * facts: a month in which no request was raised at all has no adoption share, and a
  * console printing zero would report a collapse that did not happen. That distinction is
  * the reason `appRequestShare` is nullable on the wire in the first place.
@@ -124,7 +124,7 @@ export function formatMonthKey(monthKey: string | null | undefined): string {
 /**
  * `4` → `April`. The month on its own, with no year attached.
  *
- * For a setting that is *"every year, in this month"* rather than a date — M14's savings
+ * For a setting that is *"every year, in this month"* rather than a date: M14's savings
  * withdrawal window (§21.9). Rendering it as `April 2026` there would read as a one-off.
  */
 export function formatMonthName(month: number): string {
@@ -142,7 +142,7 @@ export function colomboToday(now: Date = new Date()): string {
 }
 
 /**
- * `3 h`, `2 d` — how long a queue item has been waiting.
+ * `3 h`, `2 d`: how long a queue item has been waiting.
  *
  * Compact because it lives in a table cell next to a name, and the office reads
  * it as an urgency signal rather than a duration.
@@ -155,7 +155,7 @@ export function formatAge(hours: number | null | undefined): string {
   return `${Math.floor(hours / 24)} d`;
 }
 
-/** Hours between an ISO timestamp and now — the input to `formatAge`. */
+/** Hours between an ISO timestamp and now: the input to `formatAge`. */
 export function hoursSince(iso: string, now: Date = new Date()): number {
   return (now.getTime() - new Date(iso).getTime()) / 3_600_000;
 }

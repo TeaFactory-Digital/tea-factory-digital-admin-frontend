@@ -149,7 +149,7 @@ describe('deductionsBalance (BR-107)', () => {
   });
 
   it('rejects lines that do not', () => {
-    // Finding this after publishing is finding it too late — it is an M4 exception.
+    // Finding this after publishing is finding it too late: it is an M4 exception.
     expect(
       deductionsBalance({ transportCharges: 100, tea: 50, savings: 25, total: 200 }),
     ).toBe(false);

@@ -48,16 +48,16 @@ import type { CreditRules } from '../creditRules';
  *
  * **v2 dropped `weigher` and `accountant`**, and this is the one place the scope cut
  * reached the permission model rather than only the module map. Both roles existed for
- * capabilities the factory's own console now owns — a weigher's entire job was
+ * capabilities the factory's own console now owns: a weigher's entire job was
  * `deliveries: write`, and an accountant's was `ratesAndMonthClose` and `payouts`. With
  * those gone, neither could do anything here but read: a person given the role would
  * sign in, find suppliers and reports, and report the empty console as a bug.
  *
  * The five that remain each decide something the app is waiting on:
  *
- *  - `clerk` runs the queues, `manager` approves them — and they cannot merge, because
+ *  - `clerk` runs the queues, `manager` approves them, and they cannot merge, because
  *    BR-501 requires the creator of an approval not to be its approver.
- *  - `editor` writes what the app displays, `factoryAdmin` approves publishing it —
+ *  - `editor` writes what the app displays, `factoryAdmin` approves publishing it:
  *    the same separation, one level down.
  *  - `platformAdmin` is the only identity that spans tenants.
  *
@@ -85,7 +85,7 @@ export type Capability =
   | 'auditLog'
   | 'tenants';
 
-/** `R` read · `W` create/edit · `A` approve/reject · `—` no access. */
+/** `R` read · `W` create/edit · `A` approve/reject · `-` no access. */
 export type AccessLevel = 'none' | 'read' | 'write' | 'approve';
 
 /** A console user. Roles are **per factory**; only a platform admin spans tenants. */
@@ -104,7 +104,7 @@ export interface ConsoleUser {
  * What the server says this session may do.
  *
  * Sent explicitly rather than derived from `roles` on the client, because
- * "roles are data, not code" (§12.1) — a factory will want to split or merge
+ * "roles are data, not code" (§12.1): a factory will want to split or merge
  * roles, and that must not be a console deploy. The client-side matrix in
  * `rbac.ts` is the offline default for when the server sends nothing.
  */
@@ -112,7 +112,7 @@ export type CapabilityGrants = Partial<Record<Capability, AccessLevel>>;
 
 /** The result of a completed sign-in. */
 export interface AuthSession {
-  /** Short-lived (15 min). Held in memory only — never localStorage. */
+  /** Short-lived (15 min). Held in memory only, never localStorage. */
   accessToken: string;
   /** ISO timestamp the access token expires. */
   expiresAt: string;
@@ -124,7 +124,7 @@ export interface AuthSession {
  * What `POST /admin/auth/login` answers with.
  *
  * **One outcome, because sign-in is one step.** The console carried a second factor for
- * manager and above — a TOTP challenge between the password and the session — and the
+ * manager and above (a TOTP challenge between the password and the session), and the
  * factory has withdrawn it: the console runs on shared office machines where a code on
  * one person's phone stops whoever is at the counter. A correct password is now a
  * session, and the tagged union that used to carry `mfaRequired` beside it is gone with
@@ -186,13 +186,13 @@ export type SupplierStatus = 'active' | 'suspended' | 'closed';
  * facts the supplier's own phone never shows.
  *
  * `bankDetails` is **masked by the server** (§20.4) and the full number is a
- * separate, audited call — see `POST /admin/suppliers/{id}/bank-details/reveal`.
+ * separate, audited call; see `POST /admin/suppliers/{id}/bank-details/reveal`.
  * A payload that carried the real number and expected the console to hide it
  * would not be a security control.
  */
 export interface AdminSupplier extends Supplier {
   status: SupplierStatus;
-  /** NIC — a search key in the office, never shown to other suppliers. */
+  /** NIC: a search key in the office, never shown to other suppliers. */
   nic: string;
   /** Division / weighing point this supplier delivers to. */
   collectionPoint: string;
@@ -207,7 +207,7 @@ export interface AdminSupplier extends Supplier {
   lastDeliveryAt: string | null;
   /** Masked for display, e.g. "•••• 4821". Never the full number. */
   bankDetails?: BankDetails;
-  /** True when the office holds bank details at all — M4 blocks close without them. */
+  /** True when the office holds bank details at all; M4 blocks close without them. */
   hasBankDetails: boolean;
   savingsBalance: number;
   creditBalances: Record<CreditFacility, number>;
@@ -218,7 +218,7 @@ export interface AdminSupplier extends Supplier {
    * The supplier has a password the office issued and has not yet replaced (§21.16).
    *
    * **The app must force a change at first sign-in while this is true.** It is what makes
-   * an office-issued credential one-time rather than one the office knows for ever — see
+   * an office-issued credential one-time rather than one the office knows for ever; see
    * `supplierCredentials.ts`.
    */
   owesPasswordChange?: boolean;
@@ -226,7 +226,7 @@ export interface AdminSupplier extends Supplier {
   lastPasswordResetAt?: string | null;
 
   /**
-   * Whether this supplier has ever signed in on a phone — **v2's first question about a
+   * Whether this supplier has ever signed in on a phone: **v2's first question about a
    * supplier**, and the one v1 had no field for.
    *
    * The registry is the factory's own console's in v2; what is left here is the *app
@@ -254,7 +254,7 @@ export interface AdminSupplier extends Supplier {
   appAccountErasedAt?: string | null;
 }
 
-/** The grid row. Deliberately smaller than the detail — thousands are listed. */
+/** The grid row. Deliberately smaller than the detail: thousands are listed. */
 /**
  * One supplier **as `GET /admin/suppliers/:id` sends it**, which is what the detail
  * screen reads. `AdminSupplier` stays the fixture's full record.
@@ -331,12 +331,12 @@ export interface SupplierQuery extends PageQuery {
    * v2's working filter: who has not installed the app.
    *
    * The dashboard's adoption card links straight into it, which is the whole point of
-   * putting filter state in the URL — a percentage nobody can turn into a list of names
+   * putting filter state in the URL: a percentage nobody can turn into a list of names
    * is a percentage nobody acts on.
    */
   hasApp?: boolean;
   /**
-   * Registered but not supplying — fed the dormant-suppliers report (§19.2).
+   * Registered but not supplying; fed the dormant-suppliers report (§19.2).
    *
    * v2 keeps the field though the report is gone from `REPORT_IDS`: it is the factory's
    * own console's report, and the query parameter is what it was defined by.
@@ -393,7 +393,7 @@ export interface Delivery {
   supplierId: string;
   supplierCode: string;
   supplierName: string;
-  /** Where it was **weighed** — not necessarily the supplier's registered point. */
+  /** Where it was **weighed**, not necessarily the supplier's registered point. */
   collectionPoint: string;
   kgs: number;
   source: DeliverySource;
@@ -505,7 +505,7 @@ export interface Attachment {
   uploadedByName: string;
 }
 
-/** Who decided, when, and why — the note is rendered back to the supplier. */
+/** Who decided, when, and why. The note is rendered back to the supplier. */
 export interface Decision {
   /** Never optional: rejecting without a note is impossible (AC-06). */
   note: string;
@@ -522,14 +522,14 @@ export interface AdminChangeRequest extends ChangeRequest {
   supplierId: string;
   supplierCode: string;
   supplierName: string;
-  /** Where it came from — `office` when a clerk raised it for the supplier. */
+  /** Where it came from: `office` when a clerk raised it for the supplier. */
   channel: RequestChannel;
   /** Set on the creating actor so four-eyes can be enforced (BR-501). */
   createdById: string | null;
   createdByName: string | null;
   decision: Decision | null;
   attachments: Attachment[];
-  /** Hours the request has been waiting — drives queue-age colouring. */
+  /** Hours the request has been waiting; drives queue-age colouring. */
   ageHours: number;
 }
 
@@ -555,7 +555,7 @@ export interface DecisionBody {
  * AC-05: the console must show the same numbers the supplier's app showed them,
  * byte for byte, including how they were reached. A payload carrying only
  * `ceiling: 48200` would let the approver and the applicant look at the same
- * limit and disagree about why — and "the app told me I could have more" is the
+ * limit and disagree about why, and "the app told me I could have more" is the
  * dispute this module exists to prevent.
  *
  * Derived by `buildCreditEligibility` in `leafCredit.ts`, which the API imports
@@ -584,14 +584,14 @@ export interface CreditEligibility {
   lastSettledMonthKey: string | null;
   /** The rate that priced the ceiling. `null` when no month has settled (BR-102). */
   lastSettledRatePerKg: number | null;
-  /** The kilos the rate was multiplied by — this month's for an advance. */
+  /** The kilos the rate was multiplied by: this month's for an advance. */
   pricedKgs: number | null;
 
   /**
    * When the server derived this.
    *
    * Rendered next to the figures so an approver knows how fresh they are, and
-   * carried into the audit entry — "approved against a ceiling computed at 09:12"
+   * carried into the audit entry: "approved against a ceiling computed at 09:12"
    * is the sentence that settles a dispute about a limit that has since moved.
    */
   computedAt: string;
@@ -667,7 +667,7 @@ export type CreditEligibilityWorking = Omit<
  * differ in how the ceiling is priced and in nothing the queue does: the same
  * grid, the same four-eyes rule, the same note. `manureType` and `quantityKg` are
  * the only facility-specific fields, and they are `null` on the other two rather
- * than a discriminated union — a union would fork every consumer to read one
+ * than a discriminated union: a union would fork every consumer to read one
  * field.
  */
 export interface AdminCreditRequest {
@@ -685,7 +685,7 @@ export interface AdminCreditRequest {
   /**
    * Accounts the supplier chose to repay over (§21.10).
    *
-   * **Their decision, not the office's** — which is most of what §21.10 turned out to be.
+   * **Their decision, not the office's**, which is most of what §21.10 turned out to be.
    * `null` for a request raised before the app could ask, and those fall back to the
    * factory's share-of-gross cap alone. The approver sees it because it decides what comes
    * off every account until the balance is clear.
@@ -711,7 +711,7 @@ export interface AdminCreditRequest {
    * crashed on every past request that was not an approval.
    */
   eligibility: CreditEligibility | null;
-  /** Hours waiting — drives queue-age colouring against `QUEUE_SLA_HOURS`. */
+  /** Hours waiting; drives queue-age colouring against `QUEUE_SLA_HOURS`. */
   ageHours: number;
 }
 
@@ -727,8 +727,8 @@ export interface CreditRequestQuery extends PageQuery {
 /**
  * A credit decision. The note, plus the ceiling the approver was looking at.
  *
- * `ceilingSeen` is what makes BR-310 enforceable. Eligibility moves — a delivery
- * recorded this morning raises an advance ceiling, a month published lowers it —
+ * `ceilingSeen` is what makes BR-310 enforceable. Eligibility moves (a delivery
+ * recorded this morning raises an advance ceiling, a month published lowers it),
  * and a queue rendered twenty minutes ago is a screen showing a limit that may no
  * longer exist. The server recomputes on approval and answers `stale-eligibility`
  * rather than lending against the figure it happens to hold now: **the approver
@@ -747,13 +747,13 @@ export interface CreditDecisionBody extends DecisionBody {
  *
  * **A separate queue from M7, not a fourth facility.** The app has asked for these
  * since the first release (`RequestTeaPacketsScreen`) and v1 of this console had no
- * type, no queue and no flag for them — a request a supplier could raise and nobody
+ * type, no queue and no flag for them: a request a supplier could raise and nobody
  * could decide, which is the exact failure M9 and M10 were built to end.
  *
  * They are not credit in the sense M7 means it: nothing prices a ceiling, so there
  * is no `CreditEligibility`, no `ceilingSeen` and no BR-310 staleness. What the
- * approver needs instead is the **store's** question — how many packets, and how do
- * they reach the supplier — plus the one figure that makes it a money decision at
+ * approver needs instead is the **store's** question (how many packets, and how do
+ * they reach the supplier), plus the one figure that makes it a money decision at
  * all: what it will cost on the account.
  *
  * The value is recovered on the `deductions.tea` line of the next Green Leaf
@@ -786,12 +786,12 @@ export interface AdminTeaPacketRequest {
    * while the factory is still owed for it.
    *
    * On the row rather than inferred from dates, because "approved in July" and
-   * "recovered on July's account" are different facts — a request approved after the
+   * "recovered on July's account" are different facts: a request approved after the
    * month closed is recovered on the next one, and the difference is what
    * `teaPacketsOutstanding` counts.
    */
   recoveredOnMonthKey: string | null;
-  /** Hours waiting — drives queue-age colouring against `QUEUE_SLA_HOURS`. */
+  /** Hours waiting; drives queue-age colouring against `QUEUE_SLA_HOURS`. */
   ageHours: number;
 }
 
@@ -817,7 +817,7 @@ export interface InquiryReply {
  *
  * **`status` is deliberately not the app's `RequestStatus`.** The app models an
  * inquiry with `pending | approved | rejected`, which is the vocabulary of a
- * request for something — and an inquiry is a question. "Approved" is not an
+ * request for something, and an inquiry is a question. "Approved" is not an
  * answer to "why was my July account short". `Omit`-ing the field and restating it
  * is the honest version of a mapping that has to exist somewhere; keeping the
  * app's word here would have spread it across every screen instead.
@@ -852,7 +852,7 @@ export interface AdminInquiry extends Omit<Inquiry, 'status' | 'reply'> {
   createdById: string | null;
   createdByName: string | null;
   reply: InquiryReply | null;
-  /** Closed without an answer — a duplicate, or a message for somewhere else. */
+  /** Closed without an answer: a duplicate, or a message for somewhere else. */
   closedAt: string | null;
   closedByName: string | null;
   /** Why it was closed unanswered. Mandatory on close, `null` otherwise. */
@@ -947,13 +947,13 @@ export type AlertSeverity = 'info' | 'warning' | 'error';
 
 /**
  * Something the office should look at. Server-composed, because the rule that
- * makes it an alert is policy — a console that invented its own thresholds
+ * makes it an alert is policy: a console that invented its own thresholds
  * would disagree with the reports.
  */
 export interface DashboardAlert {
   id: string;
   severity: AlertSeverity;
-  /** i18n key, not a sentence — the console localizes (BR-110). */
+  /** i18n key, not a sentence; the console localizes (BR-110). */
   messageKey: string;
   /** Values interpolated into `messageKey`. */
   params?: Record<string, string | number>;
@@ -962,7 +962,7 @@ export interface DashboardAlert {
 }
 
 /**
- * How much of the factory's supplier base is actually on the app — **v2's headline
+ * How much of the factory's supplier base is actually on the app: **v2's headline
  * figure**, and the one this console is answerable for.
  *
  * v1's dashboard led with today's kilos, which is the right first number for a console
@@ -979,7 +979,7 @@ export interface AppAdoption {
   /** Suppliers with at least one signed-in device. */
   suppliersWithApp: number;
   totalSuppliers: number;
-  /** Registered push devices — always ≥ `suppliersWithApp`; some people have two phones. */
+  /** Registered push devices: always ≥ `suppliersWithApp`; some people have two phones. */
   devicesRegistered: number;
   /**
    * Share of this month's requests raised in the app rather than at the counter, 0–1.
@@ -992,7 +992,7 @@ export interface AppAdoption {
 }
 
 /**
- * What is wrong with the content the app is showing — the second question v2's dashboard
+ * What is wrong with the content the app is showing: the second question v2's dashboard
  * exists to answer.
  *
  * Every figure here is a **silent** failure. A supplier reading a Sinhala article in
@@ -1006,7 +1006,7 @@ export interface ContentHealth {
   articlesWithGaps: number;
   /** Published banners inside their live window right now. */
   bannersLive: number;
-  /** Banners published whose window has closed — live in status, invisible in fact. */
+  /** Banners published whose window has closed: live in status, invisible in fact. */
   bannersExpired: number;
   /** Pages in `STATIC_PAGE_SLUGS` nobody has written; the app shows its bundled default. */
   staticPagesUnwritten: number;
@@ -1082,13 +1082,13 @@ export interface MonthlyRateEntry {
  * to the record it is about. A number on a dashboard cannot be worked through.
  */
 export type MonthExceptionType =
-  /** Leaf delivered, nowhere to pay it — blocks the payout run (AC-04). */
+  /** Leaf delivered, nowhere to pay it; blocks the payout run (AC-04). */
   | 'missingBankDetails'
   /** Leaf recorded against a supplier who is suspended or closed. */
   | 'inactiveSupplierWithLeaf'
   /** A change request still open, whose outcome would change this month's bill. */
   | 'pendingChangeRequest'
-  /** A weighing far outside the day's spread — `1250` typed for `125.0`. */
+  /** A weighing far outside the day's spread: `1250` typed for `125.0`. */
   | 'outlierDelivery';
 
 export interface MonthException {
@@ -1133,7 +1133,7 @@ export interface MonthSummary extends MonthCycleStatus {
   deliveryCount: number;
   /** Resolved and unresolved together, so the screen can show "3 of 11 left". */
   totalExceptions: number;
-  /** `false` once published (BR-108) — the same flag M3 reads before offering entry. */
+  /** `false` once published (BR-108), the same flag M3 reads before offering entry. */
   open: boolean;
 }
 
@@ -1154,7 +1154,7 @@ export interface AdminBill extends GreenLeafBill {
   generatedAt: string;
   generatedByName: string;
   /**
-   * `null` until the month is published — which is the moment the supplier can
+   * `null` until the month is published, which is the moment the supplier can
    * see it (BR-108). Before that a bill is the office's working figure.
    */
   publishedAt: string | null;
@@ -1175,7 +1175,7 @@ export interface BillListItem {
   billNo: string;
   monthKey: string;
   totalKgs: number;
-  /** `null` while the auction result is not in (BR-102) — never `0`. */
+  /** `null` while the auction result is not in (BR-102), never `0`. */
   grossAmount: number | null;
   deductionsTotal: number;
   finalBalance: number | null;
@@ -1187,7 +1187,7 @@ export interface BillListItem {
    * BR-107: the itemized lines disagree with the stated total.
    *
    * Carried on the row rather than left for the console to work out, so the flag
-   * means the same thing to every consumer — and so a bill that does not add up is
+   * means the same thing to every consumer, and so a bill that does not add up is
    * visible in the list instead of only on the slip nobody opened.
    */
   unbalanced: boolean;
@@ -1197,7 +1197,7 @@ export interface BillListItem {
  * One generation run over a month.
  *
  * A bill is a read model (api.md §16), so generating is **recomputing**, not
- * writing a new fact — which is why re-running before the publish is normal rather
+ * writing a new fact, which is why re-running before the publish is normal rather
  * than exceptional. The run exists as a record because the accountant needs to
  * know *which* recomputation the figures on screen came from.
  */
@@ -1216,7 +1216,7 @@ export interface BillRun {
   savingsTotal: number;
   /** Bills with nothing to pay this month. */
   carryingDebt: number;
-  /** Payable, with no account to pay into — the AC-04 blocker, seen again. */
+  /** Payable, with no account to pay into: the AC-04 blocker, seen again. */
   missingBankDetails: number;
   /**
    * The leaf has moved since this run.
@@ -1234,7 +1234,7 @@ export interface BillRun {
  *
  * Its own small endpoint rather than `GET /admin/months`, and the reason is the
  * §12.1 matrix: the month list is gated on `ratesAndMonthClose`, which the clerk does
- * not have — while `billing: R` gives them bills to read and therefore a month to
+ * not have, while `billing: R` gives them bills to read and therefore a month to
  * choose. Widening the close endpoint to let a picker work would grant read access to
  * the close itself, which is a permission decision made by accident.
  */
@@ -1252,11 +1252,11 @@ export interface BillQuery extends PageQuery {
   /** Matches supplier code, name or bill number. */
   q?: string;
   /**
-   * One supplier, across months — **the axis v1 did not have**.
+   * One supplier, across months: **the axis v1 did not have**.
    *
    * M5 was built month-first because it fed the month close and the payout run: pick a
    * month, then filter within it. That is the accountant's axis, and in v2 there is no
-   * accountant on this screen — the module survives as supplier support, and supplier
+   * accountant on this screen; the module survives as supplier support, and supplier
    * support is by supplier. A clerk answering *"why is my July less than my June?"*
    * needs both months at once, and `monthKey` + `q` cannot express that.
    *
@@ -1274,7 +1274,7 @@ export interface BillQuery extends PageQuery {
 /* ─────────────────── M2 · A supplier's own month history ─────────────────── */
 
 /**
- * One month of a supplier's account, as the office sees it — **the same shape the app
+ * One month of a supplier's account, as the office sees it: **the same shape the app
  * shows the supplier** (`IncomeSummary` in `types/app.ts`).
  *
  * Deliberately the same type rather than a console-specific one. The whole reason this
@@ -1283,7 +1283,7 @@ export interface BillQuery extends PageQuery {
  * is how the two drift into disagreeing about a figure somebody is reading aloud.
  *
  * `grossAmount` and `finalBalance` are `null` until the month's auction result is in
- * (BR-102) — **never `0`**. The app renders that as a "pending" badge and so does the
+ * (BR-102), **never `0`**. The app renders that as a "pending" badge and so does the
  * console; a zero would tell a supplier they earned nothing.
  */
 export interface SupplierMonthSummary {
@@ -1300,12 +1300,12 @@ export interface SupplierMonthSummary {
  * The history payload: which years have anything in them, and one year's months.
  *
  * `years` travels with the summaries for the same reason M16's month list travels with
- * its report catalogue — a picker fed from a second endpoint behind a different grant is
+ * its report catalogue: a picker fed from a second endpoint behind a different grant is
  * a picker that comes back empty for the one role that needs it.
  */
 export interface SupplierIncomeHistory {
   supplierId: string;
-  /** Descending — newest year first, which is what the picker should open on. */
+  /** Descending: newest year first, which is what the picker should open on. */
   years: number[];
   /** The requested year, **oldest month first**: a chart reads left to right. */
   year: number;
@@ -1328,7 +1328,7 @@ export interface SupplierDevice {
   /** The categories **this device** accepts. Consent, not routing. */
   categories: NotificationCategory[];
   /**
-   * When the device registered — **not when it was last seen**, which the platform does
+   * When the device registered, **not when it was last seen**, which the platform does
    * not track. Named for what it is rather than approximated: "registered in March" and
    * "last opened the app in March" are different facts, and a clerk deciding whether a
    * supplier has abandoned the app would act on the second.
@@ -1337,13 +1337,13 @@ export interface SupplierDevice {
 }
 
 /**
- * Why a category would or would not reach this supplier — **the answer to the most
+ * Why a category would or would not reach this supplier: **the answer to the most
  * common push support call there is.**
  *
  * *"I wasn't told my bill was ready."* There are four possible answers and v1 exposed
  * none of them per person: the console held the device registry, the consent lists, the
  * tenant's category list and the send log, and could only report them in aggregate
- * ("reaches 61 devices, 6 opted out") — which names nobody.
+ * ("reaches 61 devices, 6 opted out"), which names nobody.
  *
  * So this is computed per category and says which of the four it is. `reachable` is the
  * conclusion; the three booleans under it are the working, in the order a clerk would
@@ -1376,7 +1376,7 @@ export interface SupplierNotificationStatus {
   /**
    * Sends whose audience included this supplier, newest first.
    *
-   * `deliveredToDevices` is what the server actually attempted for **this** supplier —
+   * `deliveredToDevices` is what the server actually attempted for **this** supplier:
    * `0` on a send that reached hundreds is the case worth seeing, and an aggregate log
    * can never show it.
    */
@@ -1418,7 +1418,7 @@ export type PayoutLineStatus = 'pending' | 'held' | 'paid' | 'failed';
  *
  * Split by method on purpose. A bank transfer file, a cheque list and a cash sheet
  * are three different physical things the office does, on three different days,
- * reconciled from three different pieces of paper — and one run covering all three
+ * reconciled from three different pieces of paper, and one run covering all three
  * would show a total nobody in the office is responsible for.
  */
 export interface PayoutRun {
@@ -1432,7 +1432,7 @@ export interface PayoutRun {
   heldCount: number;
   paidCount: number;
   failedCount: number;
-  /** The payable total. Held lines are excluded — they are not money going out. */
+  /** The payable total. Held lines are excluded: they are not money going out. */
   totalAmount: number;
   paidAmount: number;
   createdAt: string;
@@ -1496,7 +1496,7 @@ export interface PayoutLineMark {
  *
  * The balance is a **liability**, not factory income: this is the supplier's money,
  * deducted from their bill at their own approved rate and held. Which is why the
- * office is never offered a control that spends it here — see `SavingsSummary`.
+ * office is never offered a control that spends it here; see `SavingsSummary`.
  */
 export interface SavingsAccount {
   supplierId: string;
@@ -1513,7 +1513,7 @@ export interface SavingsAccount {
 
 export interface SavingsAccountQuery extends PageQuery {
   q?: string;
-  /** `true` for the accounts on `savingsPerKg: 0` — opted out, not absent. */
+  /** `true` for the accounts on `savingsPerKg: 0`: opted out, not absent. */
   optedOut?: boolean;
 }
 
@@ -1522,7 +1522,7 @@ export interface SavingsAccountQuery extends PageQuery {
  *
  * `billDeduction` is the only one the console can produce today. `withdrawal` and
  * `interest` are in the vocabulary because the **ledger shape must not change**
- * when §21.9 is answered — whether a supplier may withdraw, on what notice, and
+ * when §21.9 is answered: whether a supplier may withdraw, on what notice, and
  * whether interest is paid is a policy question, and a ledger that has to grow a
  * column to answer it is a migration on money data.
  */
@@ -1553,8 +1553,8 @@ export interface AdminSavingsLedgerEntry extends SavingsLedgerEntry {
 /**
  * The scheme across the factory, for one month.
  *
- * `balanceTotal` leads because it is the question the office is actually asked —
- * "how much are we holding" — and because it is the figure an auditor reconciles
+ * `balanceTotal` leads because it is the question the office is actually asked:
+ * "how much are we holding", and because it is the figure an auditor reconciles
  * against the bank. The trend is oldest-first: charts read left to right.
  */
 export interface SavingsSummary {
@@ -1562,7 +1562,7 @@ export interface SavingsSummary {
   /** What the factory holds on suppliers' behalf. */
   balanceTotal: number;
   accountCount: number;
-  /** On `savingsPerKg: 0` — a real answer, not a missing one. */
+  /** On `savingsPerKg: 0`: a real answer, not a missing one. */
   optedOutCount: number;
   contributedThisMonth: number;
   contributingSuppliers: number;
@@ -1581,7 +1581,7 @@ export interface SavingsSummary {
  * console that worked it out itself would be the only thing that knew. The API renders
  * the same warning into a content report; the app decides a fallback from it.
  *
- * Both lists are **relative to the tenant's `contentLanguages`** — a factory that
+ * Both lists are **relative to the tenant's `contentLanguages`**: a factory that
  * authors in English and Tamil is not missing Sinhala, it never asked for it.
  */
 export interface ContentGaps {
@@ -1594,8 +1594,8 @@ export interface ContentGaps {
 /**
  * A news article as the office authors it: **every language at once**.
  *
- * The app's `NewsArticle` is a single-language projection of this — "localized
- * server-side by `lang`" (types/app.ts) — and that asymmetry is right. A supplier reads
+ * The app's `NewsArticle` is a single-language projection of this, "localized
+ * server-side by `lang`" (types/app.ts), and that asymmetry is right. A supplier reads
  * one language; an editor is responsible for all of them, and cannot see a gap in a
  * shape that only ever holds one.
  */
@@ -1615,7 +1615,7 @@ export interface AdminNewsArticle extends ContentGaps {
   publishedByName: string | null;
   createdAt: string;
   createdByName: string;
-  /** The most recent edit in **any** language — see `ContentTranslation.updatedAt`. */
+  /** The most recent edit in **any** language; see `ContentTranslation.updatedAt`. */
   updatedAt: string;
   updatedByName: string;
 }
@@ -1651,7 +1651,7 @@ export interface NewsListItem extends ContentGaps {
 
 export interface NewsQuery extends PageQuery {
   status?: ContentStatus;
-  /** Matches the title in any language — an editor searches in what they typed. */
+  /** Matches the title in any language: an editor searches in what they typed. */
   q?: string;
   /** `true` for the records AC-08 is about: published with a gap. */
   incomplete?: boolean;
@@ -1707,22 +1707,22 @@ export interface NewsArticlePatch {
 
 /**
  * A promo banner as the office composes it: **every language at once**, plus the one
- * thing that is not copy — where the button goes.
+ * thing that is not copy: where the button goes.
  *
  * v1 had the flag (`enablePromoBanner`), the app type (`PromoBanner`) and no editor,
  * which is the worst of the three states available: a factory could turn the feature on
  * and then find there was no way to author anything for it. `banners.md` had the whole
  * specification and nothing implemented it.
  *
- * Shaped like `AdminNewsArticle` on purpose — same translation record, same gap lists,
- * same fallback rule — because an editor should not have to learn two content models.
+ * Shaped like `AdminNewsArticle` on purpose (same translation record, same gap lists,
+ * same fallback rule) because an editor should not have to learn two content models.
  * The differences are the two things a banner has that an article does not: a **live
  * window**, and an **action** that must survive the app's allowlist (`banners.ts`).
  */
 export interface AdminPromoBanner extends ContentGaps {
   id: string;
   translations: BannerTranslations;
-  /** Full-width artwork. Optional — the app renders a branded panel without it. */
+  /** Full-width artwork. Optional; the app renders a branded panel without it. */
   imageUrl?: string;
   /** Width ÷ height, so the app reserves space before the image arrives. */
   imageAspectRatio?: number;
@@ -1776,7 +1776,7 @@ export interface BannerQuery extends PageQuery {
 /** One language's banner copy, as the editor saves it. `lang` travels in the path. */
 export interface BannerTranslationBody {
   title: string;
-  /** The supporting line. Optional — plenty of banners are a headline and a button. */
+  /** The supporting line. Optional; plenty of banners are a headline and a button. */
   body?: string;
   buttonLabel: string;
 }
@@ -1831,7 +1831,7 @@ export interface BannerPatch {
  *
  * **`draft` here means "never published"**, not "has unpublished edits". A page the
  * factory has not written yet is one the app renders its bundled default for; once
- * published, an edit is live. That asymmetry with M11 is deliberate — a *new* article
+ * published, an edit is live. That asymmetry with M11 is deliberate: a *new* article
  * must not appear half-written, while a correction to the FAQ that sat in a draft would
  * leave the wrong answer live for as long as nobody remembered to publish it. Every
  * edit is audited with before/after, so a bad one is traceable.
@@ -1847,7 +1847,7 @@ export interface AdminStaticPage extends ContentGaps {
 }
 
 /**
- * What a reader in one language actually gets — the console's preview of the app.
+ * What a reader in one language actually gets: the console's preview of the app.
  *
  * Returned by its own endpoint rather than assembled in the console, so the preview is
  * the **server's** resolution. A preview the console composed would be a second
@@ -1856,7 +1856,7 @@ export interface AdminStaticPage extends ContentGaps {
  */
 export interface ContentPreview {
   lang: LanguageCode;
-  /** `null` when even the fallback is unwritten — nothing can be shown at all. */
+  /** `null` when even the fallback is unwritten: nothing can be shown at all. */
   translation: ContentTranslation | null;
   /** True when the reader is being shown the fallback instead of their language. */
   usedFallback: boolean;
@@ -1870,7 +1870,7 @@ export interface ContentPreview {
  *
  * **This record is the answer to §21.24, deferred honestly.** The factory has not said
  * whether the office composes every send or whether "your bill is ready" fires off the
- * publish step — so both paths exist and *which triggers are on* is per-tenant data. When
+ * publish step, so both paths exist and *which triggers are on* is per-tenant data. When
  * the answer comes it is a row, not a rewrite.
  *
  * `event` is a fact rather than a policy: `billPublished` can only mean the moment a
@@ -1896,8 +1896,8 @@ export interface NotificationTrigger {
  * One send, as a **record** rather than a fire-and-forget.
  *
  * The counts are the reason it is a record. A push is the only thing this console does
- * that it gets no acknowledgement for — nothing comes back from a phone to say the
- * message was dropped — so "sent to 240" with no breakdown is a figure the office would
+ * that it gets no acknowledgement for (nothing comes back from a phone to say the
+ * message was dropped), so "sent to 240" with no breakdown is a figure the office would
  * act on wrongly. `suppressedDevices` is the honest half: registered, subscribed, and
  * **opted out of this category** (api-contract.md §17). Counted, never quietly filtered.
  */
@@ -1913,7 +1913,7 @@ export interface NotificationSend {
    * Notifications screen down on the first logged send.
    */
   audience: NotificationAudience | null;
-  /** For an automatic send, the record it fired from — so the log links back. */
+  /** For an automatic send, the record it fired from, so the log links back. */
   entity: string | null;
   entityId: string | null;
   /** Suppliers the audience resolved to. */
@@ -1923,7 +1923,7 @@ export interface NotificationSend {
   /** Devices whose owner turned this category off. */
   suppressedDevices: number;
   status: NotificationSendStatus;
-  /** `null` for an automatic send — nobody pressed anything. */
+  /** `null` for an automatic send: nobody pressed anything. */
   createdById: string | null;
   createdByName: string | null;
   createdAt: string;
@@ -1974,7 +1974,7 @@ export interface AdminConsoleUser extends ConsoleUser {
    * Holds a role granting `usersAndRoles: write` and is active.
    *
    * Carried on the row so the console can withhold "suspend" from the last one without
-   * recomputing the whole set per button — and so the count is the server's, since the
+   * recomputing the whole set per button, and so the count is the server's, since the
    * server is what refuses.
    */
   canAdministerUsers: boolean;
@@ -2029,7 +2029,7 @@ export interface ConsoleUserDraft {
   password: string;
 }
 
-/** What the office may change afterwards. Email is not here — it is the identity. */
+/** What the office may change afterwards. Email is not here; it is the identity. */
 export interface ConsoleUserPatch {
   name?: string;
   roles?: ConsoleRole[];
@@ -2039,7 +2039,7 @@ export interface ConsoleUserPatch {
  * The §12.1 matrix, **as data on the wire**.
  *
  * rbac.md: *"a factory will want to split or merge these roles, and that must not be a
- * deploy."* This is that promise made operable — and `packages/domain/src/rbac.ts` becomes
+ * deploy."* This is that promise made operable, and `packages/domain/src/rbac.ts` becomes
  * what it always said it was, the offline default rather than the authority.
  */
 export interface RoleMatrix {
@@ -2065,7 +2065,7 @@ export interface RoleMatrix {
  * **Who** an audit entry is about.
  *
  * v1 had no such field, because every entry was written by somebody signed into this
- * console — so `actorId` implied `consoleUser` and nothing needed to say so.
+ * console, so `actorId` implied `consoleUser` and nothing needed to say so.
  *
  * That stopped being true the moment the console became the app's management surface.
  * A supplier editing their own address through `PATCH /profile` is a real write to a
@@ -2085,7 +2085,7 @@ export interface AuditEntry {
   at: string;
   /**
    * The actor's id **in their own realm**. A console user id and a supplier id are
-   * different namespaces — see `AuditActorType`, which is what says which one this is.
+   * different namespaces; see `AuditActorType`, which is what says which one this is.
    */
   actorId: string;
   actorName: string;
@@ -2110,8 +2110,8 @@ export interface AuditQuery extends PageQuery {
   /**
    * Filter to office actions or to what the supplier did themselves.
    *
-   * The two answer different questions on the same record — *"what did we do to this
-   * account"* and *"what did they do"* — and a clerk investigating a dispute is always
+   * The two answer different questions on the same record: *"what did we do to this
+   * account"* and *"what did they do"*, and a clerk investigating a dispute is always
    * asking one of them rather than both.
    */
   actorType?: AuditActorType;
@@ -2141,7 +2141,7 @@ export interface RuntimeConfig {
     location: string;
     supportEmail?: string;
     supportHours?: string;
-    /** Legal footer text — per client today (status.md §21.19). */
+    /** Legal footer text, per client today (status.md §21.19). */
     legalFooter?: string;
   };
   /** Same flags the app reads, so turning off manure empties the office queue too. */
@@ -2150,14 +2150,14 @@ export interface RuntimeConfig {
    * The savings scheme's own rules (§21.9), not just the rates a supplier may pick.
    *
    * `withdrawalMonth` and `annualInterestRate` are optional so an existing `client_config`
-   * row keeps working — `DEFAULT_SAVINGS_POLICY` fills them, which is April and 0%.
+   * row keeps working: `DEFAULT_SAVINGS_POLICY` fills them, which is April and 0%.
    */
   savings: { perKgOptions: number[]; withdrawalMonth?: number; annualInterestRate?: number };
   /**
    * The fertilizer a supplier may ask for on credit, with its bag size and price (§21.10).
    *
    * Beside the banks and the collection points because it is a catalogue a supplier chooses
-   * from, not a charge imposed on every account — see `ManureProduct`. The app's
+   * from, not a charge imposed on every account; see `ManureProduct`. The app's
    * `ManureRequest.manureType` names one of these, and its `quantityKg` prices against it.
    */
   manureProducts?: ManureProduct[];
@@ -2182,7 +2182,7 @@ export interface RuntimeConfig {
     defaultCategories: NotificationCategory[];
   };
   /**
-   * **The factory's own lending rules** — how each credit ceiling is calculated.
+   * **The factory's own lending rules**: how each credit ceiling is calculated.
    *
    * Optional so an existing `client_config` row keeps working: absent means
    * `DEFAULT_CREDIT_RULES`, which reproduces the formulas that used to be hard-coded.
@@ -2198,11 +2198,11 @@ export interface RuntimeConfig {
    *
    * Beside the manure catalogue for the same reason: it is a thing a supplier chooses
    * from the app, priced by a number that changes without a release. Optional so an
-   * existing `client_config` row keeps working — `DEFAULT_TEA_PACKET_POLICY` fills it.
+   * existing `client_config` row keeps working: `DEFAULT_TEA_PACKET_POLICY` fills it.
    */
   teaPackets?: TeaPacketPolicy;
   /**
-   * How M6 writes a payout run out as a file — **§21.17 as configuration** rather than as
+   * How M6 writes a payout run out as a file: **§21.17 as configuration** rather than as
    * three guessed serialisers behind a dropdown. See `payoutExport.ts` for why the layout
    * is configured and the format's name is not.
    *
@@ -2250,7 +2250,7 @@ export interface ThemeOverridePayload {
 }
 
 /**
- * Feature flags — **the app's set, and nothing else** (white-label.md → Feature flags).
+ * Feature flags: **the app's set, and nothing else** (white-label.md → Feature flags).
  *
  * The docblock here used to claim the set was "identical to the app's" while the type
  * held ten flags against the app's fourteen: six the app gates surfaces on had no
@@ -2259,11 +2259,11 @@ export interface ThemeOverridePayload {
  * app's `FeatureFlags` (mobile `src/config/types.ts`) and the M14 screen is the only
  * place any of them can be changed.
  *
- * Most of these gate nothing the console renders — `enableBiometricLogin` is a phone
- * capability — and that is expected. **Editing a flag is a console feature; obeying it
+ * Most of these gate nothing the console renders (`enableBiometricLogin` is a phone
+ * capability), and that is expected. **Editing a flag is a console feature; obeying it
  * is the app's job.** The three that also gate a console surface say so on the field.
  *
- * A flag that only hides a screen is a UI preference, not a policy — the API must
+ * A flag that only hides a screen is a UI preference, not a policy: the API must
  * refuse the call too, with `403 feature-disabled` (AC-07).
  */
 export interface FeatureFlagSet {
@@ -2290,7 +2290,7 @@ export interface FeatureFlagSet {
   /* ────────────────────────────────────────────────────────────────────────────
    * v1 console-only flags, kept for reference.
    *
-   * `enablePayouts` and `enableReports` gated M6 and M16 — a payout run and the
+   * `enablePayouts` and `enableReports` gated M6 and M16: a payout run and the
    * factory's four reports. Both are the factory's own internal console's work in
    * v2, and neither flag exists in the app's `FeatureFlags`, so a console that went
    * on serving them would be offering the office a switch the app has never read.
@@ -2358,7 +2358,7 @@ export const ADMIN_ERROR_CODES = [
   /** The leaf moved after the run: publishing would freeze the wrong figures. */
   'bills-stale',
 
-  /* M11 / M12 Content. The fallback language is the only hard requirement — content
+  /* M11 / M12 Content. The fallback language is the only hard requirement: content
      with gaps is publishable because the app falls back (AC-08), and content with no
      fallback is not, because there would be nothing to fall back to. */
   'fallback-translation-missing',
@@ -2397,7 +2397,7 @@ export const ADMIN_ERROR_CODES = [
   'line-not-payable',
 
   /* M7 Credit. `stale-eligibility` is above, with the two refusals that have to
-     exist — it is BR-310 and it predates this module. `over-ceiling` is its
+     exist; it is BR-310 and it predates this module. `over-ceiling` is its
      companion: eligibility that has *not* moved, against an amount that was never
      within it. Approving more than a supplier may draw is not a warning, because
      the money leaves and the next month's bill carries a deduction for it. */

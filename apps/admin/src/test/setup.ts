@@ -12,7 +12,7 @@ import { resetMockState } from '@/services/mocks/handlers';
  *
  * Deliberate: a test that passes against different fixtures from the ones a
  * developer clicks through proves nothing about the console. `onUnhandledRequest:
- * 'error'` is stricter here than in the browser — an unmocked call in a test is a
+ * 'error'` is stricter here than in the browser: an unmocked call in a test is a
  * gap in the contract, not a warning to scroll past.
  */
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));

@@ -1,7 +1,7 @@
 /**
  * The Sri Lankan bank and branch catalogue.
  *
- * Generated data, so the risk is not a typo in one branch name — it is a **regeneration
+ * Generated data, so the risk is not a typo in one branch name: it is a **regeneration
  * that quietly changes shape**. The source is a community-maintained dump of the SLIPS
  * participant list, and it is already inconsistent in ways that broke the first build of
  * this file: 169 branch codes arrive zero-padded as strings and 3,539 as bare integers,
@@ -21,7 +21,7 @@ describe('the bank catalogue', () => {
     /**
      * The whole reason the hand-written five-bank list was replaced. A supplier banking
      * with Seylan in Embilipitiya could not say so, and went to the counter to have it
-     * typed in — which is the errand the payout screen exists to remove.
+     * typed in, which is the errand the payout screen exists to remove.
      */
     expect(SRI_LANKA_BANKS.length).toBeGreaterThanOrEqual(40);
     const branches = SRI_LANKA_BANKS.reduce((total, bank) => total + bank.branches.length, 0);
@@ -39,7 +39,7 @@ describe('the bank catalogue', () => {
   it('offers no two branches under one name within a bank', () => {
     /**
      * Fourteen banks list "Head Office" twice, and DFCC has two Katugastotas. A dropdown
-     * with the same word in it twice cannot be chosen from — whichever is picked, neither
+     * with the same word in it twice cannot be chosen from: whichever is picked, neither
      * the supplier nor the clerk checking the form afterwards can tell whether it was the
      * right one.
      */
@@ -52,7 +52,7 @@ describe('the bank catalogue', () => {
   it('keeps codes as padded strings, because a leading zero is part of one', () => {
     /**
      * The bug that surfaced first, as a TypeScript *octal literal* error. Emitted as
-     * numbers these compile, and the padding is lost silently — a payout file written to
+     * numbers these compile, and the padding is lost silently: a payout file written to
      * a fixed-width column would then carry `1` where the bank expects `001`, which is
      * the sort of error discovered by a bank rejecting a batch.
      */
@@ -68,7 +68,7 @@ describe('the bank catalogue', () => {
     /**
      * `'Hongkong   Shanghai Bank'` in the source: an ampersand dropped, three spaces left
      * behind. HTML collapses those on screen, so two values that look identical to a
-     * reader compare unequal in code — noticed only as "the branch I picked did not save".
+     * reader compare unequal in code: noticed only as "the branch I picked did not save".
      */
     const names = [
       ...SRI_LANKA_BANKS.map((bank) => bank.name),
@@ -107,7 +107,7 @@ describe('the bank catalogue', () => {
      * The seed narrows the catalogue to the towns around Galaboda to keep its fixtures
      * believable, and does so by **filtering on these names**. A regeneration that renamed
      * "Akuressa" would leave that filter matching nothing, and the supplier fixtures would
-     * come out with no bank details at all — a silent, wholesale change to what every
+     * come out with no bank details at all: a silent, wholesale change to what every
      * money screen is demonstrated with.
      */
     const branchesOf = (bank: string) =>

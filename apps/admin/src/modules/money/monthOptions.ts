@@ -1,7 +1,7 @@
 /**
  * The month options M5 and M6 share, and the rule for choosing between them.
  *
- * Separate from `MonthSelect.tsx` so that file exports only a component — a module
+ * Separate from `MonthSelect.tsx` so that file exports only a component: a module
  * mixing components with hooks and helpers breaks fast refresh, and this pair is
  * imported by two modules anyway.
  */
@@ -27,12 +27,12 @@ export function useBillMonths() {
  *
  * The URL is **checked against the months the API returned, not trusted**. A stale
  * bookmark, a typo, or a key pasted from another screen would otherwise be sent to the
- * server as a month — and a screen that renders whatever comes back is a screen that
+ * server as a month, and a screen that renders whatever comes back is a screen that
  * can show a month the factory has no records for. The same rule is written out in
  * `MonthCloseScreen`; this is where the money modules get it from.
  *
  * `prefer` exists because the two modules open on different months. M5 wants the one
- * being worked — the open month, where a run is still possible. M6 wants the latest
+ * being worked: the open month, where a run is still possible. M6 wants the latest
  * **published** one, because a payout run against an open month is refused.
  */
 export function resolveMonthKey(

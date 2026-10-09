@@ -1,31 +1,31 @@
 /**
- * M13 Notifications — what the factory has told suppliers, and what it tells them
+ * M13 Notifications: what the factory has told suppliers, and what it tells them
  * automatically.
  *
  * **The log is the screen and the triggers are context**, and the layout has to say so on
  * a 13-inch laptop as well as on a monitor. A push is the only act in this console with no
- * undo and no delivery report, so the record of what went out is the primary artefact — a
+ * undo and no delivery report, so the record of what went out is the primary artefact: a
  * screen that led with toggles would be a preferences page for a thing nobody could audit.
  *
  * That principle was stated here and then contradicted by the markup. The triggers card
  * sat *above* the grid in a column that fills the window, so on a short viewport the grid
  * absorbed every missing pixel and collapsed: measured at 1440×785 the list was 28 px
  * tall, and at 1440×700 it was zero. The rows were in the DOM the whole time, clipped by a
- * zero-height scroller — which is why nothing errored and why the browser test passed.
+ * zero-height scroller, which is why nothing errored and why the browser test passed.
  *
  * Two changes, and the first is the real one:
  *
  *  - **The log comes first in the DOM and takes the wide column.** Above `lg` the triggers
  *    move beside it rather than in front of it, so the settings can be as tall as they
- *    need without costing the list a row. Below `lg` — where the sidebar has already
- *    collapsed, so the window is a tablet rather than a laptop — they stack
+ *    need without costing the list a row. Below `lg` (where the sidebar has already
+ *    collapsed, so the window is a tablet rather than a laptop) they stack
  *    *underneath*, which keeps reading and tab order the same at every width.
  *  - **The grid card has a floor below `lg`** (`GRID_CARD_PANE`), so when the columns are
  *    stacked and the window genuinely cannot fit everything, the page scrolls instead of
  *    the list vanishing.
  *
  * Above `lg`, where the two columns sit side by side, **neither the page nor the window
- * scrolls — each column does** (`SPLIT_PANE_BOTH`). The floor is dropped there on purpose:
+ * scrolls; each column does** (`SPLIT_PANE_BOTH`). The floor is dropped there on purpose:
  * in a clipped container a card that refuses to go below 22 rem is the one thing forcing
  * the page to scroll, and the log's own `DataTable` already owns a scroller, so a shorter
  * card costs rows on screen and loses nothing.
@@ -36,8 +36,8 @@
  * alone reads as a small audience.
  *
  * Automatic and composed sends are **one list**, filterable rather than separated. They
- * answer different questions — "did the bill notification go out" and "who told everybody
- * the factory is closed" — but a supplier ringing about a message they received does not
+ * answer different questions ("did the bill notification go out" and "who told everybody
+ * the factory is closed"), but a supplier ringing about a message they received does not
  * know which kind it was.
  */
 
@@ -118,7 +118,7 @@ export function NotificationsScreen() {
               <span className="text-caption text-text-secondary">
                 {row.origin === 'automatic'
                   ? t('notifications.firedBy')
-                  : t('notifications.composedBy', { name: row.createdByName ?? '—' })}
+                  : t('notifications.composedBy', { name: row.createdByName ?? '-' })}
               </span>
             </span>
           );
@@ -152,7 +152,7 @@ export function NotificationsScreen() {
                       config.collectionPoints.find(
                         (cp) => cp.id === row.audience?.collectionPointId,
                       )?.name ??
-                      '—',
+                      '-',
                   })
                 : kind === 'supplier'
                   ? t('notifications.audience.supplier')
@@ -224,7 +224,7 @@ export function NotificationsScreen() {
       />
 
       {/**
-       * The log first, the settings beside it — and above `lg`, **each column scrolls and
+       * The log first, the settings beside it, and above `lg`, **each column scrolls and
        * the page does not**.
        *
        * The two halves have nothing to do with each other while you are reading them: the
@@ -232,7 +232,7 @@ export function NotificationsScreen() {
        * one page they moved together, so reaching a toggle meant taking the list off
        * screen and scrolling back to it afterwards.
        *
-       * `min-h-0` on the container is load-bearing for both readings — without it the
+       * `min-h-0` on the container is load-bearing for both readings; without it the
        * container inherits `min-height: auto` from its children and cannot shrink at all,
        * which turns every screen into a scrolling one even when there is room.
        *
@@ -283,7 +283,7 @@ export function NotificationsScreen() {
          * The settings column scrolls on its own above `lg`.
          *
          * Otherwise a tall triggers card would push the page into a scroll even when the
-         * log fits perfectly — the reader would be scrolling the whole screen to reach a
+         * log fits perfectly: the reader would be scrolling the whole screen to reach a
          * paragraph, and losing the list to do it.
          */}
         <div className={`flex min-h-0 flex-col gap-lg ${SPLIT_PANE_SCROLLER}`}>

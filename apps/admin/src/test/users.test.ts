@@ -3,18 +3,18 @@
  *
  * rbac.md says §12.1 is *"data, not code: a factory will want to split or merge these roles,
  * and that must not be a deploy."* This module is that promise, which makes it the one screen
- * that can break every other one at once — so the suite is almost entirely about the refusals
+ * that can break every other one at once, so the suite is almost entirely about the refusals
  * that stop a factory locking itself out of its own console.
  *
  * Three shapes of the same failure, and they are genuinely different:
  *
- *  1. **`last-admin` by suspension or demotion** — reported on the row so the control is
+ *  1. **`last-admin` by suspension or demotion**: reported on the row so the control is
  *     withheld, and *unreachable on the server*: the actor needs the very capability at
- *     stake, so they are always a recovery path themselves. Recorded rather than assumed —
+ *     stake, so they are always a recovery path themselves. Recorded rather than assumed:
  *     see the test.
- *  2. **`self-modification`** — doing it to yourself, refused even when somebody else
+ *  2. **`self-modification`**: doing it to yourself, refused even when somebody else
  *     remains, because it is never what was meant and it strands the person mid-task.
- *  3. **`last-admin` by matrix edit** — the one nobody thinks of. Every user keeps their
+ *  3. **`last-admin` by matrix edit**: the one nobody thinks of. Every user keeps their
  *     roles while the *roles* stop granting the capability, so a check written per user
  *     misses it entirely and the factory is locked out with no record having changed.
  *
@@ -66,7 +66,7 @@ describe('M15 users & roles', () => {
 
     const admin = page.items.find((one) => one.email === ADMIN)!;
     // The fixture's only holder of `usersAndRoles: W`, which is what makes the lockout rules
-    // reachable at all — a "last administrator" needs somebody to be the last one.
+    // reachable at all: a "last administrator" needs somebody to be the last one.
     expect(admin.canAdministerUsers).toBe(true);
     expect(admin.isLastAdministrator).toBe(true);
 
@@ -78,11 +78,11 @@ describe('M15 users & roles', () => {
   /**
    * **`last-admin` cannot fire for a user action, and finding that out was the point.**
    *
-   * Anyone empowered to suspend or demote an administrator needs `usersAndRoles: write` —
+   * Anyone empowered to suspend or demote an administrator needs `usersAndRoles: write`,
    * which is what *being* an administrator means. So the actor is always a recovery path
    * themselves, and removing somebody else can never leave nobody: `wouldLockOut` correctly
-   * returns `false` every time. The case that looks like the danger — doing it to your own
-   * account — is caught by `self-modification` first.
+   * returns `false` every time. The case that looks like the danger (doing it to your own
+   * account) is caught by `self-modification` first.
    *
    * The two rules cover each other, which is why the guard stays: `isLastAdministrator` is
    * still reported so the UI withholds the control, and the rule becomes reachable the moment
@@ -96,7 +96,7 @@ describe('M15 users & roles', () => {
 
     expect(admin.isLastAdministrator).toBe(true);
 
-    // Suspending them means suspending yourself, which is refused as self-modification —
+    // Suspending them means suspending yourself, which is refused as self-modification:
     // the only route to it, given that the actor must hold the very capability at stake.
     await expect(
       userRepository.suspend(admin.id, 'No longer with the factory as of today.', context),
@@ -126,7 +126,7 @@ describe('M15 users & roles', () => {
     expect(second.page.items.find((one) => one.email === ADMIN)!.isLastAdministrator).toBe(false);
 
     /**
-     * And now the suspension is genuinely possible, done by the newly-promoted clerk — who
+     * And now the suspension is genuinely possible, done by the newly-promoted clerk, who
      * holds `usersAndRoles: write` and is therefore the recovery path that makes it safe.
      */
     signOut();
@@ -169,7 +169,7 @@ describe('M15 users & roles', () => {
 
     /**
      * The property that makes every other write in this module mean something. A screen
-     * saying "suspended" over an account that still works is worse than no screen — and the
+     * saying "suspended" over an account that still works is worse than no screen, and the
      * only reason this passes is that `bearer()` and the login handler read live state
      * rather than the fixture.
      */
@@ -190,7 +190,7 @@ describe('M15 users & roles', () => {
      *
      * The API acknowledges a status change with `{ id, status }` and nothing else, so
      * "did they keep the roles they had" is a question only the record can answer. That is
-     * the console's real behaviour too — every mutation hook invalidates and refetches —
+     * the console's real behaviour too (every mutation hook invalidates and refetches)
      * so reading the list back is what the screen actually does.
      */
     const restored = (await listWithContext()).page.items.find((one) => one.email === CLERK)!;
@@ -240,7 +240,7 @@ describe('M15 users & roles', () => {
      * only trace of a requirement nothing ever collected. The factory has withdrawn it, so
      * the account this call produces is complete: the roles asked for, and a password.
      *
-     * The **password is on the response and the record is not** — there is no invitation
+     * The **password is on the response and the record is not**: there is no invitation
      * email, so the office reads the credential out once and the dialog shows it. Anything
      * about the account itself comes from a refetch.
      */
@@ -257,7 +257,7 @@ describe('M15 users & roles', () => {
     await signInAs(ADMIN);
     const served = await userRepository.roles();
 
-    // The default, row for row — `rbac.ts` is what ships and this is what serves it.
+    // The default, row for row: `rbac.ts` is what ships and this is what serves it.
     expect(served.matrix).toEqual(DEFAULT_ROLE_MATRIX);
     expect(served.customised).toBe(false);
     expect(served.updatedAt).toBeNull();
@@ -280,7 +280,7 @@ describe('M15 users & roles', () => {
     expect(after.matrix.manager.suppliers).toBe('write');
     expect(after.customised).toBe(true);
     /**
-     * The name of whoever widened it — **G-10 is closed**. The API stored this and did not
+     * The name of whoever widened it: **G-10 is closed**. The API stored this and did not
      * send it for a while, so the console had to fill `null` into the one caption anybody
      * reads off this table: *"who changed this, and from what"*.
      */
@@ -293,7 +293,7 @@ describe('M15 users & roles', () => {
    * `RoleMatrixView` renders twelve of the fifteen capabilities: `deliveries`,
    * `ratesAndMonthClose` and `payouts` are the factory's own console's, and a dropdown
    * that changes nothing is the same failure as a role that grants nothing. But the
-   * server holds those grants, so hiding them must not *drop* them — and the only thing
+   * server holds those grants, so hiding them must not *drop* them, and the only thing
    * standing between the two is the screen spreading the whole `matrix[role]` when it
    * saves one cell. Asserted here rather than trusted, because the day somebody sends a
    * narrower payload the loss is silent and lands on the other console.
@@ -330,7 +330,7 @@ describe('M15 users & roles', () => {
     );
     expect(holders.length).toBeGreaterThan(0);
 
-    // Strip it from all but the last one — still fine.
+    // Strip it from all but the last one: still fine.
     let matrix = before.matrix;
     for (const role of holders.slice(0, -1)) {
       await userRepository.setRole(role, { ...matrix[role], usersAndRoles: 'none' }, matrix);

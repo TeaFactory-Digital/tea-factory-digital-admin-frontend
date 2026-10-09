@@ -1,10 +1,10 @@
 /**
- * M14 — the bank and branch catalogue the app's payout screen chooses from.
+ * M14: the bank and branch catalogue the app's payout screen chooses from.
  *
  * **Its own section because it outgrew the one it was in.** It used to be a third list
  * under *Collection & payment*, beside the collection points and the savings rates, back
  * when a factory kept five banks with four branches each typed in by hand. The catalogue
- * is now the SLIPS list — 45 institutions and some 3,682 branches — and those five other
+ * is now the SLIPS list (45 institutions and some 3,682 branches) and those five other
  * settings had been pushed so far down the page that nobody would find them.
  *
  * ## One bank's branches at a time
@@ -15,8 +15,8 @@
  * which is slow to render, impossible to scan, and hides the one bank the administrator
  * came here to change.
  *
- * So the bank list stays whole — it is short enough to read, and it is the list a factory
- * actually edits — and branches are shown for the **selected bank only**. The bank being
+ * So the bank list stays whole (it is short enough to read, and it is the list a factory
+ * actually edits) and branches are shown for the **selected bank only**. The bank being
  * edited is the thing an administrator holds in their head; the other forty-four are not.
  */
 
@@ -84,7 +84,7 @@ export function BanksSection(props: SectionProps) {
                  *
                  * Opening on the first bank would put an editable list of 582 Bank of
                  * Ceylon branches in front of someone who came to add one branch to a
-                 * different bank — and make a stray keystroke land in the wrong catalogue.
+                 * different bank, and make a stray keystroke land in the wrong catalogue.
                  */}
                 <option value="">{t('config.branchesPickBank')}</option>
                 {banks.map((bank) => (

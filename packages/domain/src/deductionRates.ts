@@ -1,5 +1,5 @@
 /**
- * The figures behind M5's deduction lines — **§21.10, as the factory answered it.**
+ * The figures behind M5's deduction lines: **§21.10, as the factory answered it.**
  *
  * The question was *"which lines may the office set per supplier, and who may set them?"*,
  * and the answer reshaped it: **almost none of them are typed per supplier at all.**
@@ -7,8 +7,8 @@
  *  - **Transport per kilo and stamps** are factory figures, changed by the manager. They
  *    are in here. Transport may also differ by collection point (`transportByPoint`), and a
  *    supplier may carry their own rate over both (`transportRateFor`).
- *  - **The credit instalments** are the supplier's own choice — they ask to repay, and they
- *    choose over how many months — with a share-of-gross cap the factory sets. The cap is in
+ *  - **The credit instalments** are the supplier's own choice (they ask to repay, and they
+ *    choose over how many months), with a share-of-gross cap the factory sets. The cap is in
  *    here; the choice arrives with the request.
  *  - **Tea, savings and the advance** are all things the supplier asks for. None is a field
  *    on this screen.
@@ -20,7 +20,7 @@
  * **Why these need two people.** The factory's answer to *"does a change need a second
  * person?"* was yes, and it is the right instinct: transport at LKR 2.50/kg against LKR
  * 4.50/kg is a different sum on every account in the factory, and nobody would notice for a
- * month. So the shape here is M4's, not M14's — a rate is *proposed* and a second person
+ * month. So the shape here is M4's, not M14's: a rate is *proposed* and a second person
  * *approves* it, which is exactly how the monthly green-leaf rate already works. That is
  * also why these live under `ratesAndMonthClose` (the accountant proposes, the manager
  * approves) rather than under `flagsAndBranding` with the logo.
@@ -61,7 +61,7 @@ export interface DeductionRates {
 /**
  * What a factory gets before anybody has set anything.
  *
- * These were the mock's invented figures, and moving them here does not make them true —
+ * These were the mock's invented figures, and moving them here does not make them true;
  * it makes them **changeable without a developer**, which is the whole of §21.10's answer.
  * A factory that has not set its own is still running on a guess, and the screen says so.
  */
@@ -83,7 +83,7 @@ export type DeductionRateProblem =
  * What is wrong with a proposed set, shared so the screen refuses before the round trip.
  *
  * A share above 1 would take more than the account earned, which reaches a payout run as a
- * negative line — the thing `computeBillAmounts` has a whole branch to avoid.
+ * negative line, the thing `computeBillAmounts` has a whole branch to avoid.
  */
 export function deductionRateProblems(rates: DeductionRates): DeductionRateProblem[] {
   const problems: DeductionRateProblem[] = [];
@@ -153,24 +153,24 @@ export function transportChargeFor(
  * **Two things bound it, and both matter:**
  *
  *  1. **The supplier's chosen period.** They asked to repay over `months`, so the instalment
- *     is their balance spread across it. That choice is the answer to §21.10's second half —
+ *     is their balance spread across it. That choice is the answer to §21.10's second half:
  *     the office does not decide what a supplier repays, the supplier does.
  *  2. **The factory's cap**, as a share of the month's gross. A supplier who chose six
  *     months and then had a month with almost no leaf would otherwise see their whole
  *     account disappear into a repayment they agreed to when they were plucking well.
  *
  * So it is the **smaller** of the two, and never more than the balance still owed. No plan
- * — every credit approved before the app could ask for a period — falls back to the cap
+ * (every credit approved before the app could ask for a period) falls back to the cap
  * alone, which is what this console did before §21.10 was answered.
  *
  * **The plan is priced off what was borrowed, not off what is left**, and that is not a
  * detail. `balance / months` looks equivalent and decays geometrically: 12,000 over six
- * months takes 2,000, then 1,667 of the remaining 10,000, then 1,389 — an instalment that
+ * months takes 2,000, then 1,667 of the remaining 10,000, then 1,389: an instalment that
  * shrinks for ever and **never clears the debt**. A repayment plan is a fixed instalment,
  * and the last one is whatever is left.
  */
 export interface RepaymentPlan {
-  /** What was borrowed — the figure the instalment was agreed against. */
+  /** What was borrowed: the figure the instalment was agreed against. */
   amount: number;
   /** Accounts the supplier chose to spread it over. */
   months: number;
@@ -224,7 +224,7 @@ export interface DeductionRateChange {
 /**
  * What `GET /admin/deduction-rates` answers.
  *
- * In the domain package because the API implements it too — and `customised` in particular
+ * In the domain package because the API implements it too, and `customised` in particular
  * is the server's answer: only it knows whether this factory has ever set its own.
  */
 export interface DeductionRateState {
@@ -273,12 +273,12 @@ export function deductionRateDiff(
  *
  * **A name is not enough**, which is what a bag makes obvious: a supplier asks for *two bags
  * of urea*, and the account has to carry a rupee figure. So the catalogue holds the pack
- * size and the price of a pack, and the amount is derived — never typed by whoever keys the
+ * size and the price of a pack, and the amount is derived, never typed by whoever keys the
  * request in, because a hand-typed price is a price nobody can check against a list.
  *
  * `packKg` because fertilizer is sold in bags, not by the kilo: 50 kg is the usual sack, and
  * a supplier who asks for "100 kg" means two of them. The app's `ManureRequest.quantityKg`
- * stays in kilos — that is the shared type and it is the honest unit for a weight — and
+ * stays in kilos (that is the shared type and it is the honest unit for a weight), and
  * `manurePacks` converts.
  *
  * **Not under the four-eyes rates**, and the distinction is worth stating: transport and

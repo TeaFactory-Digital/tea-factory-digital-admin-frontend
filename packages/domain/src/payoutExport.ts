@@ -1,15 +1,15 @@
 /**
- * M6's payout file — **§21.17 answered as configuration rather than guessed as code.**
+ * M6's payout file: **§21.17 answered as configuration rather than guessed as code.**
  *
- * The question the factory has not answered is *"what format does your bank accept?"* —
+ * The question the factory has not answered is *"what format does your bank accept?"*:
  * SLIPS, CEFTS, or the bank's own bulk-upload sheet. The tempting answer was three coded
  * serialisers behind a dropdown, and it is the wrong one twice over: two of the three
  * layouts would be invented, and a bank file the bank rejects is two hundred suppliers
  * unpaid until the run is re-sent. A wrong file is worse than no file.
  *
  * So what is configured here is the **layout**, not the format's name. Every "bank's own
- * CSV" is a permutation of the same five or six facts — account number, branch, name,
- * amount, a reference — and a template that says which of them, in what order, with what
+ * CSV" is a permutation of the same five or six facts (account number, branch, name,
+ * amount, a reference), and a template that says which of them, in what order, with what
  * headings and number formats, covers that whole family without inventing any of it.
  * `SLIPS` then becomes a **named preset somebody fills in once their bank confirms the
  * layout**, which is a config row rather than a release. The same shape as M13's answer to
@@ -35,7 +35,7 @@ import { round2 } from './money';
  * Everything a payout line knows that a bank could plausibly want.
  *
  * A closed list, because a template naming a field that does not exist is a column of
- * blanks in a payment file — and blanks in a payment file are rejected batches. The
+ * blanks in a payment file, and blanks in a payment file are rejected batches. The
  * console validates a template against this before it can be saved.
  */
 export const PAYOUT_EXPORT_FIELDS = [
@@ -67,7 +67,7 @@ export const REQUIRED_EXPORT_FIELD: PayoutExportField = 'amount';
 /**
  * Fields that are meaningless on a cheque or cash run.
  *
- * Not a refusal — a factory may well want one template for all three methods — but the
+ * Not a refusal (a factory may well want one template for all three methods), but the
  * column comes out **empty** rather than inventing an account, and the console says so
  * before the run is downloaded.
  */
@@ -93,7 +93,7 @@ export const DELIMITER_CHARS: Record<PayoutExportDelimiter, string> = {
  * How an amount is written.
  *
  * `cents` exists because a good many bulk-upload formats want an integer in the smallest
- * unit rather than a decimal — and a factory that sends `4213.00` where `421300` was
+ * unit rather than a decimal, and a factory that sends `4213.00` where `421300` was
  * expected has under-paid every supplier by a factor of a hundred, which the bank will
  * happily process.
  */
@@ -122,7 +122,7 @@ export interface PayoutExportTemplate {
   amountFormat: PayoutAmountFormat;
   accountFormat: PayoutAccountFormat;
   /**
-   * What goes in the `reference` column — the text the supplier sees on their bank
+   * What goes in the `reference` column: the text the supplier sees on their bank
    * statement. `{code}` and `{month}` are substituted; everything else is literal.
    */
   referenceTemplate: string;
@@ -135,7 +135,7 @@ export interface PayoutExportTemplate {
  *
  * `genericCsv` is what this module can honestly offer today: a readable spreadsheet of a
  * run. The other two are **empty-labelled skeletons deliberately left as a factory's job to
- * complete** — they carry the columns those schemes are known to need in roughly the order
+ * complete**: they carry the columns those schemes are known to need in roughly the order
  * they are usually asked for, so somebody with the bank's specification in front of them is
  * filling in headings rather than starting from nothing. They are named for what they are
  * *for*, not as a claim that the layout below is correct.
@@ -178,8 +178,8 @@ export const PAYOUT_EXPORT_PRESETS = {
     delimiter: 'comma',
     // Headerless like the SLIPS skeleton, and for a reason found by its own test: with
     // headings switched on, every blank label is a `missing-label` refusal, so the preset
-    // could not be saved at all. A starting point you cannot save is not a starting point —
-    // turn headings on once you have the bank's specification and can fill them in.
+    // could not be saved at all. A starting point you cannot save is not a starting point.
+    // Turn headings on once you have the bank's specification and can fill them in.
     headerRow: false,
     columns: [
       { field: 'accountNumber', label: '' },
@@ -204,7 +204,7 @@ export const PAYOUT_EXPORT_PRESET_IDS = Object.keys(
 /**
  * The preset a factory gets before it has configured anything.
  *
- * `genericCsv`, because it is the only one that is complete — a factory that downloads
+ * `genericCsv`, because it is the only one that is complete: a factory that downloads
  * before reading this screen gets a readable spreadsheet rather than a file of unlabelled
  * columns it might mistake for a bank format.
  */
@@ -229,7 +229,7 @@ export type PayoutTemplateProblem =
  * What is wrong with a template, shared so the screen can refuse it and the API can too.
  *
  * Ordered worst first. Each of these produces a file the bank rejects, and the person who
- * finds out is a supplier who was not paid — so all four are refusals, not warnings.
+ * finds out is a supplier who was not paid, so all four are refusals, not warnings.
  */
 export function payoutTemplateProblems(template: PayoutExportTemplate): PayoutTemplateProblem[] {
   const problems: PayoutTemplateProblem[] = [];
@@ -239,7 +239,7 @@ export function payoutTemplateProblems(template: PayoutExportTemplate): PayoutTe
   if (fields.length > 0 && !fields.includes(REQUIRED_EXPORT_FIELD)) problems.push('no-amount');
   if (new Set(fields).size !== fields.length) problems.push('duplicate-field');
   if (fields.some((field) => !isPayoutExportField(field))) problems.push('unknown-field');
-  // Only when the header row is actually written — a headerless format has no use for
+  // Only when the header row is actually written: a headerless format has no use for
   // labels, which is why the skeletons above can ship with empty ones.
   if (template.headerRow && template.columns.some((column) => !column.label.trim())) {
     problems.push('missing-label');
@@ -257,7 +257,7 @@ export function isPayoutTemplateUsable(template: PayoutExportTemplate): boolean 
 /**
  * One line's worth of facts, as the exporter needs them.
  *
- * `accountNumber` is the **full** number, not the masked one the grid carries (§20.4) — a
+ * `accountNumber` is the **full** number, not the masked one the grid carries (§20.4): a
  * payment file with `••••4432` in it is not a payment file. That is why producing one is a
  * server-side, audited act rather than something the console assembles from a list it
  * already has on screen.
@@ -297,7 +297,7 @@ export function payoutReference(template: string, line: PayoutExportLine): strin
  * Escape one value for a delimited file.
  *
  * Quoting is applied only when it is needed, because a portal that parses naively chokes on
- * quotes it did not expect — and a supplier called `Perera, K.` is not a hypothetical, so
+ * quotes it did not expect, and a supplier called `Perera, K.` is not a hypothetical, so
  * *never* quoting is not an option either.
  */
 function escapeValue(value: string, delimiter: string): string {

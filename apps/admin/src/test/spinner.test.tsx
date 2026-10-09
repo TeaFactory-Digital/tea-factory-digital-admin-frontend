@@ -3,7 +3,7 @@
  *
  * Three things worth a test, because each one fails quietly:
  *
- *  - the standalone spinner announcing itself once, not twice and not never — it
+ *  - the standalone spinner announcing itself once, not twice and not never: it
  *    is often the only thing on a loading screen
  *  - the arc taking its colour from the text around it, which is what lets one
  *    piece of artwork sit on a white panel and inside a primary button
@@ -22,7 +22,7 @@ describe('Spinner', () => {
   it('announces itself once', () => {
     const { container } = render(<Spinner />);
 
-    // One live region, named — a screen reader on an otherwise empty screen hears
+    // One live region, named: a screen reader on an otherwise empty screen hears
     // "Loading…" rather than silence.
     expect(screen.getByRole('status')).toHaveAccessibleName('Loading…');
     // …and the arc inside it is not a second announcement.

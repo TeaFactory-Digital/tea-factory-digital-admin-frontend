@@ -1,24 +1,24 @@
 /**
- * Editorial content — the shared half of M11 and M12.
+ * Editorial content: the shared half of M11 and M12.
  *
  * **This file is AC-08.** The criterion is that editorial copy falls back to English
  * when a translation is missing *and that the gap is visible to the editor*, and the
  * only way both halves can be true is if the console and the app resolve a translation
  * with the same function. A console that re-implemented the fallback would show the
  * editor a preview of something the app does not render, which is a worse failure than
- * having no preview at all — the editor would sign off copy they never saw.
+ * having no preview at all: the editor would sign off copy they never saw.
  *
  * So `resolveTranslation` is the app's behaviour, and everything else here exists to
  * describe it back to the office before they publish:
  *
- *  - **missing** — nothing written in that language. The app falls back.
- *  - **stale** — written, but older than the fallback it was translated from. The app
+ *  - **missing**: nothing written in that language. The app falls back.
+ *  - **stale**: written, but older than the fallback it was translated from. The app
  *    renders it happily and the supplier reads last month's date. This is the gap
  *    AC-08's wording does not cover and the office hits second.
  *
  * One asymmetry is deliberate throughout: the **fallback language is required and every
  * other language is optional**. `EDITORIAL_FALLBACK_LANGUAGE` is "the fallback, not a
- * default" (constants.ts) — which only means anything if content can exist without a
+ * default" (constants.ts), which only means anything if content can exist without a
  * full set, and is why publishing with gaps is *loud* rather than refused.
  */
 
@@ -41,7 +41,7 @@ export interface ContentTranslation {
   updatedByName: string;
 }
 
-/** Per-language copy. A missing key is a missing translation — see `isWritten`. */
+/** Per-language copy. A missing key is a missing translation; see `isWritten`. */
 export type ContentTranslations = Partial<Record<LanguageCode, ContentTranslation>>;
 
 /**
@@ -68,8 +68,8 @@ export function missingTranslations(
 /**
  * Languages written *before* the fallback they were translated from was last edited.
  *
- * The failure this catches is quiet and common: the English article is corrected — a
- * date, a figure, a name — and the Sinhala one still says the old thing. The app has no
+ * The failure this catches is quiet and common: the English article is corrected (a
+ * date, a figure, a name), and the Sinhala one still says the old thing. The app has no
  * way to know, renders it, and the supplier reads copy the office believes it fixed.
  *
  * A translation exactly as new as the fallback is **not** stale: saving the fallback and
@@ -100,7 +100,7 @@ export interface ResolvedTranslation {
 }
 
 /**
- * Resolve the copy a reader in `lang` sees — **the app's own behaviour**.
+ * Resolve the copy a reader in `lang` sees: **the app's own behaviour**.
  *
  * Shared rather than described, because the console's preview is only worth having if
  * it is the same resolution. Returns `null` when even the fallback is unwritten, which
@@ -148,7 +148,7 @@ export function publishability(
  * Latin-only by necessity rather than by preference: a Sinhala title transliterates to
  * nothing useful here, so the slug is derived from the **fallback** copy and a title
  * with no Latin characters falls back to a timestamp-free placeholder the caller
- * suffixes. Slugs are a link target, not content — the supplier never reads one.
+ * suffixes. Slugs are a link target, not content: the supplier never reads one.
  */
 export function slugify(title: string): string {
   const slug = title

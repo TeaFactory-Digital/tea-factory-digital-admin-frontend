@@ -3,7 +3,7 @@
  *
  * Its own file because the payout-file section is large enough to live apart from the other
  * five, and two copies of this would eventually be two different answers to *"may this be
- * saved?"* — which is the one question in M14 that must have exactly one answer.
+ * saved?"*, which is the one question in M14 that must have exactly one answer.
  */
 
 import { useMemo } from 'react';

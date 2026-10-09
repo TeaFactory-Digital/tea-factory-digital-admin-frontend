@@ -1,11 +1,11 @@
 /**
- * Leaf collection arithmetic — the shared half of M3.
+ * Leaf collection arithmetic: the shared half of M3.
  *
  * Shared for the same reason `leafCredit.ts` is: **the console, the API and the
  * app must agree on a kilo figure to the cent.** A day's total that the entry
  * grid, the month close and the supplier's phone each derive separately is three
  * figures the office has to reconcile by hand, and the reconciliation happens at
- * the worst possible moment — after a bill has been published.
+ * the worst possible moment: after a bill has been published.
  *
  * Two rules travel with these functions:
  *
@@ -56,7 +56,7 @@ export interface KgRow {
 }
 
 export interface CollectionTotals {
-  /** Deliveries — a supplier may weigh in twice a day. */
+  /** Deliveries: a supplier may weigh in twice a day. */
   rowCount: number;
   /** Distinct suppliers, which is the figure the office quotes on the telephone. */
   supplierCount: number;
@@ -66,7 +66,7 @@ export interface CollectionTotals {
 }
 
 /**
- * Totals for a set of rows — the running figures above the entry grid.
+ * Totals for a set of rows: the running figures above the entry grid.
  *
  * `supplierCount` and `rowCount` are both here because they answer different
  * questions and the office asks both: "how many growers came in" and "how many
@@ -88,7 +88,7 @@ export function summariseKgs(rows: readonly KgRow[]): CollectionTotals {
  *
  * The failure it exists to catch is `1250` typed for `125.0`, which is invisible
  * in a column of numbers and very visible in next month's bill. It is a
- * **question, not a refusal** — a genuinely heavy load must still be enterable,
+ * **question, not a refusal**: a genuinely heavy load must still be enterable,
  * so the grid asks the clerk to confirm rather than rejecting the figure.
  */
 export function isOutlierKg(kgs: number, meanKgs: number): boolean {
@@ -102,7 +102,7 @@ export function isOutlierKg(kgs: number, meanKgs: number): boolean {
  *
  * A string operation on purpose. The input is already a Colombo-local calendar
  * day, so parsing it into a `Date` to read the month back out could only
- * introduce a timezone — and would shift the last day of a month into the
+ * introduce a timezone, and would shift the last day of a month into the
  * previous one for anybody running the API in UTC+0.
  */
 export function monthKeyOf(date: string): string {

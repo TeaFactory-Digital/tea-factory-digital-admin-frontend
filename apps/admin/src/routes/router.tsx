@@ -5,7 +5,7 @@
  * than no route: it is a URL a clerk can bookmark, share and then report as
  * broken.
  *
- * **v2 scope.** The internal-process routes — deliveries, rates, payouts, savings —
+ * **v2 scope.** The internal-process routes (deliveries, rates, payouts, savings)
  * are gone, along with their screens. The factory's own console runs those; this one
  * manages the mobile app. What those flows require is still stated executably by the
  * mock handlers and the repositories, which is the form the other team can read. See
@@ -127,7 +127,7 @@ const AuditScreen = lazy(() =>
   import('@/modules/audit/AuditScreen').then((m) => ({ default: m.AuditScreen })),
 );
 
-/** The three facilities M7 covers. Any one of them opens the queue — see `RequireAnyFlag`. */
+/** The three facilities M7 covers. Any one of them opens the queue: see `RequireAnyFlag`. */
 const CREDIT_FLAGS = ['enableAdvances', 'enableLoans', 'enableManure'] as const;
 
 export const router = createBrowserRouter([
@@ -195,7 +195,7 @@ export const router = createBrowserRouter([
       },
       /**
        * M5, read-only. A supplier telephones about the figure on their phone and the
-       * clerk needs the same account in front of them — that is app support, and it is
+       * clerk needs the same account in front of them: that is app support, and it is
        * why this route survived the v2 scope cut when the four below it did not.
        * Generating and publishing are the factory's own console's; those controls are
        * gone from `BillsScreen` rather than merely hidden here, because a route that
@@ -292,7 +292,7 @@ export const router = createBrowserRouter([
       },
       /**
        * M11 is flag-gated (a factory that does not run a feed has no News row); **M12 is
-       * not**. Terms, privacy and the FAQ are not a feature a factory buys or declines —
+       * not**. Terms, privacy and the FAQ are not a feature a factory buys or declines:
        * the app links to them from its own settings screen, and a tenant that could turn
        * them off would ship a binary with dead links in it.
        */
@@ -364,7 +364,7 @@ export const router = createBrowserRouter([
       },
       /**
        * No flag. A factory's own identity, flags and branding are not a feature it can
-       * decline — this is the screen that turns the others off, and gating it on a flag
+       * decline: this is the screen that turns the others off, and gating it on a flag
        * would make a misconfiguration unrecoverable from the console.
        */
       /**
@@ -394,7 +394,7 @@ export const router = createBrowserRouter([
       },
       /**
        * No flag in v2. `enableReports` was console-only and went with M6's `enablePayouts`
-       * (see `FeatureFlagSet`), and what is left of M16 is `channelShift` — whether the
+       * (see `FeatureFlagSet`), and what is left of M16 is `channelShift`: whether the
        * factory's own app is being used. That is not a feature a factory declines.
        */
       {
@@ -425,8 +425,8 @@ export const router = createBrowserRouter([
           </RequireCapability>
         ),
       },
-      // Anything else inside the shell — including a v1 URL somebody bookmarked before
-      // the scope cut — goes home rather than to a blank screen.
+      // Anything else inside the shell (including a v1 URL somebody bookmarked before
+      // the scope cut) goes home rather than to a blank screen.
       { path: '*', element: <Navigate to="/" replace /> },
     ],
   },

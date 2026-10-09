@@ -3,14 +3,14 @@
  *
  * **The answer to the most common support call there is**, and v1 could not give it.
  * *"Nobody told me my account was ready."* There are four possible reasons and the
- * console held every fact needed for all four — the device registry, the tenant's
- * category list, each device's consent list and the send log — while exposing them only
+ * console held every fact needed for all four (the device registry, the tenant's
+ * category list, each device's consent list and the send log) while exposing them only
  * in aggregate. M13's reach panel can say *"reaches 61 devices, 6 opted out"* and cannot
  * name one of the six.
  *
  * So the panel is built as a **diagnosis, not a dump**. Each category gets one line
  * saying whether it reaches this supplier, and when it does not, which of the reasons it
- * is — because the reasons have different fixes and different conversations:
+ * is, because the reasons have different fixes and different conversations:
  *
  * | Reason | What the office does |
  * | --- | --- |
@@ -40,7 +40,7 @@ import { errorMessageKey } from '@/lib/errorMessage';
 import { useSupplierNotifications } from './hooks';
 
 /**
- * The reason a category does not reach, as a key — or `null` when it does.
+ * The reason a category does not reach, as a key, or `null` when it does.
  *
  * Ordered, and the order is the diagnosis: no device makes every other question moot,
  * and a category the factory does not send is not the supplier's doing. Asking them in
@@ -95,7 +95,7 @@ export function SupplierNotificationsPanel({ supplierId }: { supplierId: string 
           </div>
         ) : !query.data.hasApp ? (
           /**
-           * The commonest answer, and it ends the enquiry — so it is said on its own
+           * The commonest answer, and it ends the enquiry, so it is said on its own
            * rather than as four "not reachable" rows the reader has to interpret.
            */
           <Notice tone="info">
@@ -120,7 +120,7 @@ export function SupplierNotificationsPanel({ supplierId }: { supplierId: string 
                     <span className="text-caption text-text-primary">
                       {t(`suppliers.push.platform.${device.platform}`)}
                     </span>
-                    {/* Registered, not last-seen — the platform does not track the
+                    {/* Registered, not last-seen: the platform does not track the
                         second, and approximating it would invite the office to
                         conclude a supplier had abandoned the app. */}
                     <span className="numeric text-caption text-text-secondary">

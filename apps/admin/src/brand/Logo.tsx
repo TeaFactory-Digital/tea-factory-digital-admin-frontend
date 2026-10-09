@@ -8,8 +8,8 @@
  *
  * The served logo wins, because a factory that uploaded its own artwork in M14
  * expects to see it. The bundled mark is next, so a console with nothing
- * configured still looks like a product. The initials survive as the last resort
- * — that is what lets a new factory be brought live without waiting on artwork,
+ * configured still looks like a product. The initials survive as the last resort:
+ * that is what lets a new factory be brought live without waiting on artwork,
  * and it is also what a 404'd CDN link degrades to instead of a broken-image
  * glyph in the sidebar.
  */
@@ -20,13 +20,13 @@ import { cn } from '@/lib/cn';
 import { BUNDLED_LOGO_URL } from './assets';
 
 /**
- * Three steps, one per place the mark appears at a different job — no spare
+ * Three steps, one per place the mark appears at a different job: no spare
  * variants, so there is nothing to pick wrongly.
  *
  * `md` is an icon token, because in the chrome the mark *is* an icon: it sits on
  * the sidebar's baseline next to the factory name and re-scales with everything
  * else if a tenant adjusts `iconSizes`. `lg` and `xl` are off the icon scale
- * deliberately — on the sign-in screen and the splash the mark is the subject
+ * deliberately: on the sign-in screen and the splash the mark is the subject
  * rather than a label, and the icon scale tops out at 48, which reads as a doodle
  * above a heading.
  */
@@ -69,8 +69,8 @@ export function Logo({
   /**
    * Which sources have failed to load, keyed by URL.
    *
-   * Keyed rather than a boolean so a rebrand mid-session — `/config` refetched
-   * with a new `logoUrl` — gets a fresh attempt without needing an effect to
+   * Keyed rather than a boolean so a rebrand mid-session (`/config` refetched
+   * with a new `logoUrl`) gets a fresh attempt without needing an effect to
    * reset the flag. A URL that failed once stays failed; a URL nobody has tried
    * is simply absent.
    */

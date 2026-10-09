@@ -374,7 +374,7 @@ function MonthsTable({
               <td className="numeric px-md py-sm text-right">{formatCount(m.fromOffice)}</td>
               <td className="numeric px-md py-sm text-right">{formatCount(m.total)}</td>
               <td className="numeric px-md py-sm text-right">
-                {m.appShare === null ? '—' : formatPercent(m.appShare)}
+                {m.appShare === null ? '-' : formatPercent(m.appShare)}
               </td>
             </tr>
           ))}

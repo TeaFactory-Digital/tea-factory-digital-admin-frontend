@@ -1,11 +1,11 @@
 /**
- * M14 — what a packet of tea is and what it costs.
+ * M14: what a packet of tea is and what it costs.
  *
  * Its own section rather than three fields appended to *Operations*, and the reason is
  * the same one that gave banners their own sidebar row: **v1 shipped a flag with nothing
  * behind it.** A tea-packet price buried under a heading about collection points is a
  * price nobody finds, and the module downstream then runs on
- * `DEFAULT_TEA_PACKET_POLICY` — a real number, and not this factory's.
+ * `DEFAULT_TEA_PACKET_POLICY`, a real number, and not this factory's.
  *
  * Three fields, and the third is the one worth reading twice. `maxPacketsPerRequest` is a
  * **stock limit, not a credit limit**: it says how much of the store one supplier may take,
@@ -74,7 +74,7 @@ export function TeaPacketSection(props: SectionProps) {
       )}
 
       {/**
-       * Never configured — so M18 is quoting the bundled default at suppliers.
+       * Never configured, so M18 is quoting the bundled default at suppliers.
        *
        * The same warning the queue shows, repeated on the screen that fixes it. A factory
        * that has not answered this is not in a neutral state: it is in a state where a real

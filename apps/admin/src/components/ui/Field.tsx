@@ -8,7 +8,7 @@
  * A custom listbox is prettier and slower, and admin-console.md is explicit that
  * "speed of the repetitive path beats richness of the rare one".
  *
- * Radix is used where the platform has no equivalent — dialogs, toasts, menus.
+ * Radix is used where the platform has no equivalent: dialogs, toasts, menus.
  */
 
 import {
@@ -34,7 +34,7 @@ const CONTROL_BAD = 'border-error';
  * `w-full` used to be baked into `CONTROL`, and a caller wanting an auto-width
  * filter passed `w-auto` after it. That silently loses: both classes have the
  * same specificity, so the winner is whichever Tailwind emits later in the
- * stylesheet — not whichever appears later in the attribute. The result was a
+ * stylesheet, not whichever appears later in the attribute. The result was a
  * filter bar of full-width selects stacked one per row.
  *
  * This is the reason `lib/cn.ts` is not `tailwind-merge`: a component that needs
@@ -158,7 +158,7 @@ export { Select } from './Select';
 /**
  * A search box that submits as you type.
  *
- * Debouncing is the caller's job, not this component's — the supplier grid wants
+ * Debouncing is the caller's job, not this component's: the supplier grid wants
  * ~250 ms, and a filter over an already-loaded list wants none.
  */
 export const SearchInput = forwardRef<

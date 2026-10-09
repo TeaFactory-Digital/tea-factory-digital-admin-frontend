@@ -1,19 +1,19 @@
 /**
  * Creating a banner.
  *
- * Narrowed the same way `NewArticleDialog` is — **the fallback language only** — because
+ * Narrowed the same way `NewArticleDialog` is, **the fallback language only**, because
  * nobody writes a banner in three languages in one sitting, and a form that implied they
  * should is a form abandoned half-filled. The translations follow on the editor screen,
  * often from a different person on a different day.
  *
  * What this dialog asks for beyond the copy is the two things a banner cannot exist
  * without and an article has no equivalent of: **where the button goes**, and **when it
- * runs**. Neither can be deferred to the editor screen the way artwork can — a banner
+ * runs**. Neither can be deferred to the editor screen the way artwork can: a banner
  * with no action is not a draft of anything, and a banner with no window has no answer to
  * "is this live", which is the question the whole module is organised around.
  *
  * It always creates a **draft**. Publishing needs `content: approve`, which §12.1
- * withholds from the editor who writes — the same boundary M11 draws.
+ * withholds from the editor who writes, the same boundary M11 draws.
  */
 
 import { useEffect, useState } from 'react';
@@ -31,7 +31,7 @@ import { BannerActionField } from './BannerActionField';
 import { useCreateBanner } from './hooks';
 import { InfoTip } from '@/components/ui/Tooltip';
 
-/** Today, as the `datetime-local` inputs want it. Seconds dropped — nobody schedules those. */
+/** Today, as the `datetime-local` inputs want it. Seconds dropped; nobody schedules those. */
 function localNow(): string {
   const now = new Date();
   const offsetMs = now.getTimezoneOffset() * 60_000;
@@ -76,8 +76,8 @@ export function NewBannerDialog({
   const actionProblem = bannerActionProblem(action);
   /**
    * An empty `endsAt` is **"until it is taken down"**, not a validation failure. That is
-   * a real and common intention — a banner about opening hours runs until the hours
-   * change — and forcing a date would make the office invent one.
+   * a real and common intention (a banner about opening hours runs until the hours
+   * change), and forcing a date would make the office invent one.
    */
   const windowBackwards = endsAt !== '' && endsAt < startsAt;
 

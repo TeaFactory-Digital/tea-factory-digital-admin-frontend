@@ -1,9 +1,9 @@
 /**
- * M9 Change requests — the queue gateway.
+ * M9 Change requests: the queue gateway.
  *
  * This repository carries the one client-side rule worth having here: the note
  * is validated before the request leaves. Not because the server will not check
- * — it must, and it answers `note-required` — but because a clerk who typed
+ * (it must, and it answers `note-required`), but because a clerk who typed
  * three characters should be told in the dialog rather than after a round trip
  * (§9.3: the form is a courtesy, the server is the authority).
  */
@@ -66,11 +66,11 @@ function toAdminChangeRequest(served: AdminChangeRequest): AdminChangeRequest {
 }
 
 export const changeRequestRepository = {
-  /** Oldest first within a status — an inbox is worked front to back. */
+  /** Oldest first within a status: an inbox is worked front to back. */
   list: (query: ChangeRequestQuery = {}): Promise<Paged<AdminChangeRequest>> =>
     changeRequestEndpoints.list({ page: 0, pageSize: 25, status: 'pending', ...query }),
 
-  /** One request, by id — the list sweep this needed is gone (**G-06** closed). */
+  /** One request, by id: the list sweep this needed is gone (**G-06** closed). */
   get: async (id: string): Promise<AdminChangeRequest> =>
     toAdminChangeRequest(await changeRequestEndpoints.get(id)),
 
@@ -79,7 +79,7 @@ export const changeRequestRepository = {
    * synchronously.
    *
    * Not a style preference. A method that throws before returning a promise is a
-   * method whose callers need both a `try` and a `.catch` — and React Query's
+   * method whose callers need both a `try` and a `.catch`, and React Query's
    * `mutate` would surface a client-side `note-required` as an uncaught exception
    * while surfacing the server's identical refusal as `mutation.error`. One code
    * path, one shape.

@@ -3,7 +3,7 @@
  *
  * This component **is** AC-05. The criterion is that the figures in a credit queue
  * match `GET /advances|loans|manure/eligibility` for that supplier byte for byte,
- * *including the working* — and the reason it is a criterion at all is that the
+ * *including the working*, and the reason it is a criterion at all is that the
  * supplier is looking at the same numbers on their phone. An approver who sees only
  * "ceiling: LKR 48,200" cannot answer "the app said I could have more", and every
  * rejection where the two disagree becomes a dispute the office loses.
@@ -112,7 +112,7 @@ export function EligibilityPanel({
           </span>
         </div>
 
-        {/* Why not, when not — a key from the server, never a sentence composed here. */}
+        {/* Why not, when not: a key from the server, never a sentence composed here. */}
         {eligibility.reasonKey ? (
           <Notice tone="warning">
             <span>
@@ -130,7 +130,7 @@ export function EligibilityPanel({
               numeric
               value={
                 eligibility.requiredMonths === 0
-                  ? // An advance has no history requirement — saying "3 of 0" would
+                  ? // An advance has no history requirement; saying "3 of 0" would
                     // be arithmetic nobody asked for.
                     t('credit.eligibility.historyNotRequired', {
                       count: eligibility.monthsOfHistory,
@@ -165,7 +165,7 @@ export function EligibilityPanel({
               />
             ) : null}
 
-            {/* `null` renders as an em dash, never as LKR 0.00 — the auction result
+            {/* `null` renders as `NOT_AVAILABLE` (a dash), never as LKR 0.00; the auction result
                 simply is not in yet (BR-102). */}
             <DetailRow
               label={t('credit.eligibility.settledRate')}

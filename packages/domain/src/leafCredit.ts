@@ -29,7 +29,7 @@ export function billsNewestFirst(bills: GreenLeafBill[]): GreenLeafBill[] {
 }
 
 /**
- * The newest closed month — the last one whose auction result is in.
+ * The newest closed month: the last one whose auction result is in.
  *
  * The month in progress is never the answer: its own rate does not exist yet,
  * which is why a ceiling has to be priced off the month before.
@@ -51,7 +51,7 @@ export function monthsOfHistory(bills: GreenLeafBill[]): number {
 }
 
 /**
- * Average monthly income across the most recent closed months — "income" being
+ * Average monthly income across the most recent closed months, "income" being
  * the bill's **gross amount**, i.e. before deductions, the same figure the
  * income-history screen charts.
  *
@@ -70,7 +70,7 @@ export function averageMonthlyIncome(
 /**
  * Advance ceiling: last settled rate/kg × **this** month's kilos.
  *
- * `requiredMonths` does not apply — an advance is against leaf already in the
+ * `requiredMonths` does not apply: an advance is against leaf already in the
  * shed, not against a track record.
  */
 export function advanceCeiling(bills: GreenLeafBill[]): number {
@@ -165,14 +165,14 @@ export interface CreditEligibilityInput {
   bills: GreenLeafBill[];
   /** Already drawn on this facility and not yet repaid. */
   outstanding: number;
-  /** Stamped by the caller — this module never reads the clock (see `bill.ts`). */
+  /** Stamped by the caller; this module never reads the clock (see `bill.ts`). */
   computedAt: string;
   multiplier?: number;
   requiredMonths?: number;
   /**
    * The factory's configured rule for this facility.
    *
-   * When present it **replaces** `multiplier` and `requiredMonths` entirely — those two
+   * When present it **replaces** `multiplier` and `requiredMonths` entirely: those two
    * are the hard-coded formula's parameters, and a rule that used some of one and some
    * of the other would be a ceiling nobody could derive from what the screen shows.
    */
@@ -180,7 +180,7 @@ export interface CreditEligibilityInput {
 }
 
 /**
- * Why the supplier cannot draw, as an i18n key — or `null` when they can.
+ * Why the supplier cannot draw, as an i18n key, or `null` when they can.
  *
  * Ordered so the **first** blocker is the one reported, and the order is the order
  * the office would explain it in: no track record beats no rate beats no leaf. A
@@ -198,7 +198,7 @@ function ineligibilityReasonKey(
     available: number;
   },
 ): string | null {
-  // An advance is against leaf already in the shed, not against a track record —
+  // An advance is against leaf already in the shed, not against a track record,
   // so the history rule does not apply to it, and applying it anyway would refuse
   // every new supplier the one facility that was designed for them.
   if (facility !== 'advance' && input.monthsOfHistory < input.requiredMonths) {
@@ -214,7 +214,7 @@ function ineligibilityReasonKey(
 }
 
 /**
- * The whole eligibility answer for one supplier and one facility — **the ceiling
+ * The whole eligibility answer for one supplier and one facility: **the ceiling
  * and the working that reached it**.
  *
  * This is the function AC-05 is about. The supplier's app renders these figures
@@ -242,8 +242,8 @@ export function buildCreditEligibility({
   /**
    * The configured rule wins over the hard-coded parameters, **wholesale**.
    *
-   * Resolved once, here, so every figure below — the ceiling, the reason it is
-   * refused, the working printed on screen — is derived from the same numbers. A
+   * Resolved once, here, so every figure below (the ceiling, the reason it is
+   * refused, the working printed on screen) is derived from the same numbers. A
    * ceiling computed from a rule and a "required months" taken from the old constant
    * would print a refusal that the ceiling beside it contradicts.
    */
@@ -282,14 +282,14 @@ export function buildCreditEligibility({
      */
     hasRequiredHistory: months >= effectiveRequiredMonths,
     /**
-     * `0` for an advance under the **hard-coded** formula — not "unset", but "no months
+     * `0` for an advance under the **hard-coded** formula, not "unset", but "no months
      * are required". Under a configured rule the number is simply whatever the factory
      * set, including for an advance: a factory that wants one settled month before
      * lending against leaf is entitled to say so.
      */
     requiredMonths: rule ? rule.requiredMonths : facility === 'advance' ? 0 : requiredMonths,
     /**
-     * The working, and it is shown for **any facility whose rule averages income** —
+     * The working, and it is shown for **any facility whose rule averages income**,
      * not only a loan. Under configuration the manure ceiling may be an average too
      * (that is the example this feature was built for), and printing the ceiling
      * without the average it came from is the AC-05 failure in miniature.

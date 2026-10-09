@@ -8,7 +8,7 @@
     "noEmit": false,
     "emitDeclarationOnly": true,
     // Do not reintroduce `ignoreDeprecations` here. It carried "6.0", which the
-    // installed TypeScript (5.9) rejects as an invalid value — and it rejects it
+    // installed TypeScript (5.9) rejects as an invalid value, and it rejects it
     // *before* checking any file, so `npm run typecheck` exited 2 on the config
     // and checked nothing at all. Two screens shipped a missing import and went
     // blank in front of the office while the command "failed" for what looked
