@@ -80,8 +80,8 @@ There is no legal way to write a colour into a component.
 
 ```
 galaboda.admin.teafactory.lk    ─┐
-hillcountry.admin.teafactory.lk  ├─► same static bundle ─► GET /config per subdomain
-highland.admin.teafactory.lk    ─┘
+<factory>.admin.teafactory.lk    ├─► same static bundle ─► GET /config per subdomain
+<factory>.admin.teafactory.lk   ─┘
 ```
 
 `packages/brand/src/tenant.ts` parses it, as a pure function so it is testable
@@ -374,7 +374,7 @@ export const newfactory: BrandConfig = {
   theme: { colors: { light: { primary: '#…', primaryMuted: '#…' } } },
 };
 
-export const brands = { base: baseBrand, galaboda, hillcountry, highland, newfactory };
+export const brands = { base: baseBrand, galaboda, newfactory };
 ```
 
 This is polish, not a requirement: an unknown tenant renders neutral, fetches its

@@ -84,8 +84,8 @@ One build, served for every tenant:
 
 ```
 galaboda.admin.teafactory.lk    ─┐
-hillcountry.admin.teafactory.lk  ├─► same static bundle ─► GET /config per subdomain
-highland.admin.teafactory.lk    ─┘
+<factory>.admin.teafactory.lk    ├─► same static bundle ─► GET /config per subdomain
+<factory>.admin.teafactory.lk   ─┘
 ```
 
 **A new factory is a DNS record and a `client_config` row.** No build, no deploy.

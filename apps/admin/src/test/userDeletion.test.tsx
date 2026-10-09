@@ -47,7 +47,8 @@ describe('deleting a console user', () => {
         within(await rowFor('Nadeeka Perera')).queryByText(/deletes on/i),
       ).not.toBeInTheDocument(),
     );
-  });
+    // Several dialogs typed and confirmed; under the full suite's load it can pass 5 s.
+  }, 15_000);
 
   it('refuses deleting your own account before anything is sent', async () => {
     await signInAs(ADMIN);

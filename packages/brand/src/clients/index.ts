@@ -13,8 +13,8 @@
  *
  * ```
  * galaboda.admin.teafactory.lk    ─┐
- * hillcountry.admin.teafactory.lk  ├─► same static bundle ─► GET /config per subdomain
- * highland.admin.teafactory.lk    ─┘
+ * <factory>.admin.teafactory.lk    ├─► same static bundle ─► GET /config per subdomain
+ * <factory>.admin.teafactory.lk   ─┘
  * ```
  *
  * A new factory is a DNS record and a `client_config` row. Adding it here is
@@ -63,64 +63,9 @@ export const galaboda: BrandConfig = {
   },
 };
 
-/** Mobile's `clientA`. Deep-green + gold, and a softer corner radius. */
-export const hillcountry: BrandConfig = {
-  tenantId: 'hillcountry',
-  displayName: 'Hill Country Tea Factory (Pvt) Ltd',
-  theme: {
-    colors: {
-      light: {
-        primary: '#1B5E20',
-        primaryContrast: '#FFFFFF',
-        primaryMuted: '#D8E8D9',
-        secondary: '#C9A227',
-        secondaryContrast: '#231A00',
-        focusRing: '#14471A',
-      },
-      dark: {
-        primary: '#66BB6A',
-        primaryContrast: '#06210B',
-        primaryMuted: '#12321A',
-        secondary: '#E0C158',
-        secondaryContrast: '#231A00',
-        focusRing: '#93D996',
-      },
-    },
-    radius: { md: 12, lg: 18 },
-  },
-};
-
-/** Mobile's `clientB`: the reference for a reduced feature set. */
-export const highland: BrandConfig = {
-  tenantId: 'highland',
-  displayName: 'Highland Estate Tea',
-  theme: {
-    colors: {
-      light: {
-        primary: '#00695C',
-        primaryContrast: '#FFFFFF',
-        primaryMuted: '#CDE5E1',
-        secondary: '#FFB300',
-        secondaryContrast: '#2A1D00',
-        focusRing: '#004D44',
-      },
-      dark: {
-        primary: '#4DB6AC',
-        primaryContrast: '#04231F',
-        primaryMuted: '#0E2E2B',
-        secondary: '#FFCA45',
-        secondaryContrast: '#2A1D00',
-        focusRing: '#7FD6CD',
-      },
-    },
-  },
-};
-
 export const brands: Record<string, BrandConfig> = {
   base: baseBrand,
   galaboda,
-  hillcountry,
-  highland,
 };
 
 /** Bundled fallback for a tenant, or the neutral base for one we do not know. */

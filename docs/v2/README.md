@@ -110,6 +110,8 @@ of. What is left is five roles, four of them a factory's. See [rbac.md](./rbac.m
 | [platform-team.md](./platform-team.md) | This side's work: consuming the endpoint, the credit ceiling, the freshness indicator |
 | [factory-management.md](./factory-management.md) | **Non-technical.** The decisions only the factory's owner can make, above all **who instructs the existing vendor, and on what commercial terms** |
 | [factory-updates-sample.json](./factory-updates-sample.json) | A complete, valid, arithmetically-consistent sample response for that endpoint. Send it with [factory-system-team.md](./factory-system-team.md) |
+| [new-factory.md](./new-factory.md) | **Adding a new factory**, step by step: the slug, the backend command, DNS, the console configuration the factory administrator does, the factory's records (sync on or off), and the per-factory app build |
+| [factory-records.md](./factory-records.md) | Keeping a factory's records in the console when its own system is not connected (sync off): the switch, entry and Excel/CSV import, and how bills are calculated |
 | [bank-catalogue.md](./bank-catalogue.md) | Where the bank and branch list lives, the three decisions behind it (names not ids, no rename, inside `client_config`), and what comes out of the frontend once the backend holds it |
 | [sri-lanka-banks.seed.json](./sri-lanka-banks.seed.json) | The catalogue as portable JSON: 45 institutions, 3,682 branches, with clearing codes. What the backend seeds `client_config.banks` from |
 | [integration.md](./integration.md) | The same subject from *this* repository's side: what the console assumes, and why replication rather than import |

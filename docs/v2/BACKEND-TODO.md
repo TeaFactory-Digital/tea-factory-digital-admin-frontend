@@ -14,6 +14,7 @@ for "Restore default text", read only and never counted as an office edit).
 |---|------|----------|
 | 45 | Factory records without the factory system: the sync switch, entry and imports | High |
 | 46 | The console's notification bell: a feed of supplier actions, read per user | Medium |
+| 47 | Onboard a new factory with one command | Medium |
 
 **Answers to the last note**
 - **FAQ and `{{factory}}`:** right, the FAQ names no factory in any language, so our check
@@ -103,4 +104,38 @@ Types and the permission per kind are in `packages/domain/src/activity.ts` (`ven
 **Check:** a supplier sends a loan request in the app; the manager's and the clerk's bells
 show it unread; the manager opens and closes the bell; the manager's is read, the clerk's
 is still unread; the editor never sees it.
+
+## 47. Onboard a new factory with one command
+
+Adding a factory is data, not code: one API and one console serve every factory, keyed on the
+slug. `seedTenant()` in `apps/api/prisma/seed/tenant.ts` already does the work (factory row,
+config with every flag written, banks, collection points, the first factory administrator,
+default static pages and triggers), but **only `staging.ts` calls it**: there is no way to
+run it for a new factory without editing a seed file.
+
+**To do:** a command the platform team runs once per factory, e.g.
+
+```
+npm run db:seed:tenant -- --slug hillside --name "Hillside Tea Factory" \
+  --telephone 051-2223344 --reg-no "M.F. 2207" --location Hatton \
+  --admin-name "S. Jayawardena" --admin-email admin@hillsidetea.lk \
+  --points "HATTON:Hatton,DIKOYA:Dikoya"
+```
+
+- **Refuse to run without the real factory details.** Today `seedTenant` fills a missing
+  telephone, reg. no. and location with `011-0000000`, `MF-0000` and `Sri Lanka`. Those
+  print on every supplier's bill and in the app, so for a real factory they must be
+  required, not defaulted. Keep the defaults for tests only.
+- **Slug:** lower-case letters and digits, checked unique; it becomes the subdomain
+  (`hillside.admin.<domain>`) and the `X-Tenant` value, and it never changes.
+- **Admin password:** generated, printed once, and the account marked "must change at first
+  sign-in", as staging does; never taken on the command line.
+- **Idempotent:** running it again for the same slug updates nothing that the factory has
+  since changed in the console (only fills what is missing).
+- Print what is left to do by hand: the DNS record, `CORS_ORIGINS`, and the mobile build
+  (`docs/v2/new-factory.md` in the console repo).
+
+**Check:** run it for a test slug on staging; the new console subdomain signs in as the new
+administrator, `GET /config` with `X-Tenant: <slug>` answers that factory, and galaboda's
+data is not visible from it.
 
