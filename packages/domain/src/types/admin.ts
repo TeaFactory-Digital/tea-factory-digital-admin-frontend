@@ -1149,6 +1149,12 @@ export interface MonthSummary extends MonthCycleStatus {
  */
 export interface AdminBill extends GreenLeafBill {
   supplierId: string;
+  /**
+   * How the bill came to be, while the factory keeps its records here: `calculated` by
+   * this console, or `imported` as the factory's own system printed it. Absent on a synced
+   * bill. An imported bill's figures are the factory's and are not edited here.
+   */
+  source?: 'calculated' | 'imported';
   /** The generation run this bill came out of, so a whole run can be found. */
   runId: string;
   generatedAt: string;
@@ -2232,6 +2238,11 @@ export interface RuntimeConfig {
    * With the sync on, the factory system's bill carries its own interest figure.
    */
   advanceInterest?: AdvanceInterestSetting;
+  /**
+   * Interest on a loan, the same way: simple, per month, on the principal still owed after
+   * the month's instalment. Absent means none (0%), the default.
+   */
+  loanInterest?: AdvanceInterestSetting;
   /** Payment rounding and bill numbering for the bills calculated here. Absent: defaults. */
   billSettings?: BillSettings;
 }
@@ -2402,6 +2413,21 @@ export const ADMIN_ERROR_CODES = [
      within it. Approving more than a supplier may draw is not a warning, because
      the money leaves and the next month's bill carries a deduction for it. */
   'over-ceiling',
+
+  /* Factory records, kept here while the factory-system sync is off (factoryRecords.ts).
+     `factory-sync-on` refuses every record write while the factory's own system is the
+     source; `sync-switch-blocked` refuses switching it while a month has generated but
+     unpublished bills, which would leave that month half calculated by each side. */
+  'factory-sync-on',
+  'sync-switch-blocked',
+  'negative',
+  'unknown-collection-point',
+  'bank-details-required',
+  'opening-balances-locked',
+  'unknown-supplier',
+  'no-bill',
+  'import-invalid',
+  'import-size',
 ] as const;
 
 export type AdminErrorCode = (typeof ADMIN_ERROR_CODES)[number];

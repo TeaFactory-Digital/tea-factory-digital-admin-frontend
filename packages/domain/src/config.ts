@@ -74,6 +74,8 @@ export interface ConfigPatch {
   factorySync?: FactorySyncSetting;
   /** Interest on an advance, for the bills calculated here. Saved whole. */
   advanceInterest?: AdvanceInterestSetting;
+  /** Interest on a loan, per month. Saved whole. Absent means 0%. */
+  loanInterest?: AdvanceInterestSetting;
   /** Payment rounding and bill numbering. Saved whole. */
   billSettings?: BillSettings;
   factory?: {

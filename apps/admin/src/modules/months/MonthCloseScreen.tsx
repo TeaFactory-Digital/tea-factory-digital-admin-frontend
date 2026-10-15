@@ -67,13 +67,13 @@ export function MonthCloseScreen() {
   const month = useMonth(monthKey);
   const billMonths = useBillMonths();
   const run = useBillRun(monthKey);
-  // A file of monthly rates needs the rate permission; a file of "other charges" lines
-  // edits bills.
+  // A file of monthly rates needs the rate permission; a file of "other deductions" lines,
+  // or of the month's finished bills from the factory's own system, edits bills.
   const canRates = useCan('ratesAndMonthClose', 'write');
   const canBills = useCan('billing', 'write');
   const importKinds: ImportKind[] = [
     ...(canRates ? (['monthlyRates'] as const) : []),
-    ...(canBills ? (['billAdjustments'] as const) : []),
+    ...(canBills ? (['bills', 'billAdjustments'] as const) : []),
   ];
 
   if (months.error) return <ErrorState error={months.error} onRetry={() => void months.refetch()} />;

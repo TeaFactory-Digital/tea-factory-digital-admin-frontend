@@ -14,6 +14,7 @@ import {
   advanceInterestProblem,
   transportChargeFor,
   transportRateFor,
+  IMPORT_COLUMNS,
   importRowProblems,
   importTemplateCsv,
   isFactorySyncEnabled,
@@ -73,6 +74,39 @@ describe('the rules the console and the API share', () => {
     ]);
     expect(importRowProblems('walkInCredit', [{ supplierCode: '1', facility: 'gift', amount: '5', note: 'x' }]))
       .toEqual([{ row: 2, column: 'facility', code: 'not-allowed' }]);
+  });
+
+  it('refuses what only looks like a number or a date, rather than rounding it', () => {
+    expect(
+      importRowProblems('deliveries', [
+        { date: '2026-02-31', supplierCode: '5147', kg: '24.555' },
+        { date: '2026-10-08', supplierCode: '5147', kg: '0x1A' },
+        { date: '2026-10-08', supplierCode: '5147', kg: '1e3' },
+        { date: '2024-02-29', supplierCode: '5147', kg: '24.5' },
+      ]),
+    ).toEqual([
+      { row: 2, column: 'date', code: 'not-a-date' },
+      { row: 2, column: 'kg', code: 'too-many-decimals' },
+      { row: 3, column: 'kg', code: 'not-a-number' },
+      { row: 4, column: 'kg', code: 'not-a-number' },
+    ]);
+    // Repayment months are whole accounts.
+    expect(
+      importRowProblems('walkInCredit', [
+        { supplierCode: '5147', facility: 'loan', amount: '50000', repaymentMonths: '6.5', note: 'At the counter' },
+      ]),
+    ).toEqual([{ row: 2, column: 'repaymentMonths', code: 'too-many-decimals' }]);
+  });
+
+  it('takes finished bills as printed, refusing a row that does not add up', () => {
+    // The template's example row is the real galaboda slip: it adds up exactly.
+    const slip = Object.fromEntries(IMPORT_COLUMNS.bills.map((column) => [column.key, column.example]));
+    expect(importRowProblems('bills', [slip])).toEqual([]);
+    // A gross typed one column over: caught, and nothing else is guessed at.
+    expect(importRowProblems('bills', [{ ...slip, grossAmount: '113109' }])).toEqual([
+      { row: 2, column: 'grossAmount', code: 'does-not-add-up' },
+      { row: 2, column: 'balanceAmount', code: 'does-not-add-up' },
+    ]);
   });
 
   it('writes a template whose example row survives a comma', () => {
@@ -237,7 +271,7 @@ describe('with the factory-system sync off', () => {
     expect(saved).toMatchObject({ status: 'pending', channel: 'office', amount: 5000 });
   });
 
-  it('keeps opening balances until a bill exists, then locks them', async () => {
+  it('keeps opening balances until a bill is published, then locks them', async () => {
     await setSync(false);
     await signInAs(CLERK);
     const added = await factoryRecordRepository.createSupplier({
@@ -321,6 +355,56 @@ describe('with the factory-system sync off', () => {
     await billRepository.generate(currentMonthKey);
     const again = await billRepository.get(rows[0]!.id);
     expect(again.billNo).toBe(bill.billNo);
+  });
+
+  it('charges loan interest only when the factory sets a rate', async () => {
+    await setSync(false);
+    await signInAs(ADMIN);
+    let { config, usage } = await adminConfigRepository.get();
+    await adminConfigRepository.patch({ advanceInterest: { monthlyRatePercent: 0 } }, config, usage);
+
+    await signInAs(MANAGER);
+    await monthRepository.setRate(currentMonthKey, { ratePerKg: 118.75, extraRatePerKg: 6 });
+    await billRepository.generate(currentMonthKey);
+    const rows = (await billRepository.list({ monthKey: currentMonthKey, pageSize: 200 })).items;
+    const bills = await Promise.all(rows.map((one) => billRepository.get(one.id)));
+    // The default: no rate, no interest.
+    expect(bills.every((one) => one.carryForward.loanInterest === 0)).toBe(true);
+
+    await signInAs(ADMIN);
+    ({ config, usage } = await adminConfigRepository.get());
+    await adminConfigRepository.patch({ loanInterest: { monthlyRatePercent: 1 } }, config, usage);
+
+    await signInAs(MANAGER);
+    await billRepository.generate(currentMonthKey);
+    const after = await Promise.all(rows.map((one) => billRepository.get(one.id)));
+    // Suppliers with a loan still owed now carry 1% of it; the rest still carry none.
+    expect(after.some((one) => one.carryForward.loanInterest > 0)).toBe(true);
+    expect(after.filter((one) => one.carryForward.loanInterest > 0).length).toBeLessThan(after.length);
+  });
+
+  it('imports a month of finished bills from the factory, keeping every figure as printed', async () => {
+    await setSync(false);
+    await signInAs(MANAGER);
+    const someone = (await billRepository.list({ pageSize: 1 })).items[0]!;
+    const slip = Object.fromEntries(IMPORT_COLUMNS.bills.map((column) => [column.key, column.example]));
+    const result = await factoryRecordRepository.importRows('bills', 'july-bills.xlsx', [
+      { ...slip, month: currentMonthKey, supplierCode: someone.supplierCode },
+    ]);
+    expect(result).toMatchObject({ saved: 1, problems: [] });
+
+    const rows = (await billRepository.list({ monthKey: currentMonthKey, pageSize: 10 })).items;
+    expect(rows).toHaveLength(1);
+    const bill = await billRepository.get(rows[0]!.id);
+    expect(bill).toMatchObject({
+      source: 'imported',
+      billNo: '2026210869',
+      grossAmount: 114644.91,
+      finalBalance: 68220,
+      coinsCarriedForward: 6.91,
+      savingsSummary: { thisMonth: 5095, previous: 21970, toDate: 27065 },
+    });
+    expect(bill.deductions.total).toBe(46418);
   });
 
   it('recalculates a bill when the office types its other charges', async () => {

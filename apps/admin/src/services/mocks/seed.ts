@@ -1702,6 +1702,8 @@ interface BillGenerationContext {
   deductionRates?: DeductionRates;
   /** Interest a month on an advance still owed (Configuration). Absent: none. */
   advanceInterest?: AdvanceInterestSetting;
+  /** Interest a month on a loan still owed (Configuration). Absent: none. */
+  loanInterest?: AdvanceInterestSetting;
   /** Pay in whole units of this many rupees (Configuration). Absent: 1. */
   paymentUnit?: number;
   /** The factory's bill number for a supplier. Absent: `GL/YYYY-MM/NNNN` by position. */
@@ -1879,10 +1881,17 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
         manureBalance: round2(
           Math.max(0, supplier.creditBalances.manure - amounts.deductions.manure),
         ),
-        // The configured monthly interest on the advance still owed (`advanceInterestFor`).
-        loanInterest: advanceInterestFor(
-          round2(Math.max(0, supplier.creditBalances.advance - amounts.deductions.advance)),
-          context.advanceInterest,
+        // The slip's one "Loan Interest" line: the month's interest on the advance and on the
+        // loan still owed after their instalments, each at its own configured rate.
+        loanInterest: round2(
+          advanceInterestFor(
+            round2(Math.max(0, supplier.creditBalances.advance - amounts.deductions.advance)),
+            context.advanceInterest,
+          ) +
+            advanceInterestFor(
+              round2(Math.max(0, supplier.creditBalances.loan - amounts.deductions.loansAdvance)),
+              context.loanInterest,
+            ),
         ),
       },
       savingsSummary: {

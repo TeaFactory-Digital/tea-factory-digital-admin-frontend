@@ -18,6 +18,9 @@
 
 import {
   isFactorySyncEnabled,
+  billNumberFor,
+  slipMonthLabel,
+  type FactoryInfo,
   ACTIVITY_CAPABILITY,
   type ActivityItem,
   factoryBillNumber,
@@ -1688,6 +1691,7 @@ const IMPORT_CAPABILITY: Record<ImportKind, Capability> = {
   walkInCredit: 'creditRequests',
   billAdjustments: 'billing',
   transportRates: 'suppliers',
+  bills: 'billing',
 };
 
 /**
@@ -1713,8 +1717,12 @@ function supplierByCode(code: string): AdminSupplier | undefined {
   });
 }
 
+/**
+ * Opening balances lock on the first **published** bill. A draft can be re-generated, and
+ * locking on it meant a replaced run kept them locked for ever.
+ */
 function hasBill(supplierId: string): boolean {
-  return state.bills.some((bill) => bill.supplierId === supplierId);
+  return state.bills.some((bill) => bill.supplierId === supplierId && bill.publishedAt !== null);
 }
 
 function newSupplierProblem(request: Request, body: NewSupplier): string | null {
@@ -1774,6 +1782,8 @@ function saveOpeningBalances(
     teaPackets: round2(body.teaPackets),
     savings: round2(body.savings),
     previousDebt: round2(body.previousDebt),
+    loanMonthsLeft: body.loanMonthsLeft ?? null,
+    loanInstalmentsPaid: body.loanInstalmentsPaid ?? null,
     note: body.note.trim(),
     editable: true,
     updatedAt: new Date().toISOString(),
@@ -1850,6 +1860,8 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
   const problems: ImportRowProblem[] = [];
   const seen = new Set<string>();
   const points = tenantConfig(request).collectionPoints.map((point) => point.name);
+  // One month has one rate: every imported bill in it must agree on it.
+  const monthRates = new Map<string, string>();
 
   rows.forEach((row, index) => {
     const line = index + 2;
@@ -1917,6 +1929,20 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
         }
         return;
       }
+      case 'bills': {
+        if (!code || !row.month) return;
+        const key = `${row.month}:${code}`;
+        if (seen.has(key)) push('supplierCode', 'duplicate');
+        seen.add(key);
+        if (!supplier) return push('supplierCode', 'unknown-supplier');
+        if (!monthRecord(row.month)) return push('month', 'unknown-month');
+        if (lockedMonth(row.month)) return push('month', 'month-locked');
+        const rate = `${num(row.ratePerKg)}|${num(row.extraRatePerKg)}`;
+        const earlier = monthRates.get(row.month);
+        if (earlier && earlier !== rate) push('ratePerKg', 'rate-differs');
+        else monthRates.set(row.month, rate);
+        return;
+      }
       case 'transportRates': {
         if (!code) return;
         if (seen.has(code)) push('supplierCode', 'duplicate');
@@ -1929,8 +1955,124 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
   return problems;
 }
 
+/**
+ * A month's finished bills from the factory's own system, taken **as printed**: nothing is
+ * recalculated, because the factory's accountant already signed these figures. They replace
+ * the month's unpublished bills (calculated or imported) and are reviewed and published
+ * like any other run. The day grid comes from the leaf entered or imported for the month.
+ */
+function importBills(rows: ImportRow[], user: MockUser, factory: FactoryInfo): void {
+  const byMonth = new Map<string, ImportRow[]>();
+  for (const row of rows) byMonth.set(row.month!, [...(byMonth.get(row.month!) ?? []), row]);
+
+  for (const [monthKey, monthRows] of byMonth) {
+    const now = new Date().toISOString();
+    const runId = `run-${monthKey}-${nextId()}`;
+    const first = monthRows[0]!;
+    const record = monthRecord(monthKey)!;
+    const ratePerKg = num(first.ratePerKg);
+    const extraRatePerKg = num(first.extraRatePerKg);
+    record.rate = {
+      monthKey,
+      ratePerKg,
+      extraRatePerKg,
+      enteredById: user.id,
+      enteredByName: user.name,
+      enteredAt: now,
+    };
+    const [year, month] = monthKey.split('-').map(Number) as [number, number];
+    const dayCount = new Date(Date.UTC(year, month, 0)).getUTCDate();
+
+    const bills: AdminBill[] = monthRows.map((row, index) => {
+      const supplier = supplierByCode(row.supplierCode!)!;
+      const perDay = new Map<number, number>();
+      for (const one of state.deliveries) {
+        if (one.supplierId !== supplier.id || one.monthKey !== monthKey || one.voidedAt) continue;
+        const day = Number(one.date.slice(8, 10));
+        perDay.set(day, round2((perDay.get(day) ?? 0) + one.kgs));
+      }
+      const savings = num(row.savings);
+      const previous = num(row.savingsPrevious);
+      const deductions = {
+        transportCharges: num(row.transportCharges),
+        tea: num(row.tea),
+        savings,
+        loansAdvance: num(row.loansAdvance),
+        advance: num(row.advance),
+        manure: num(row.manure),
+        otherCards: num(row.otherCards),
+        stamps: num(row.stamps),
+        previousDebts: num(row.previousDebts),
+        total: num(row.totalDeductions),
+      };
+      return {
+        id: `bill-${monthKey}-${supplier.id}`,
+        supplierId: supplier.id,
+        runId,
+        generatedAt: now,
+        generatedByName: user.name,
+        publishedAt: null,
+        hasBankDetails: supplier.hasBankDetails,
+        source: 'imported',
+        factory,
+        supplierCode: supplier.supplierCode,
+        supplierName: supplier.name,
+        billNo: row.billNo?.trim() || billNumberFor(monthKey, index + 1),
+        billDateTime: row.billDate ? `${row.billDate}T00:00:00+05:30` : now,
+        month: slipMonthLabel(monthKey),
+        monthKey,
+        year,
+        auctionResultAvailable: true,
+        ratePerKg,
+        extraRatePerKg,
+        totalRatePerKg: round2(ratePerKg + extraRatePerKg),
+        totalKgs: num(row.totalKg),
+        coinsBroughtForward: num(row.coinsBroughtForward),
+        savingsWithdrawal: 0,
+        greenLeafAmount: num(row.greenLeafAmount),
+        extraPayment: num(row.extraPayment),
+        grossAmount: num(row.grossAmount),
+        deductions,
+        loanInstalmentNo: row.loanInstalmentNo ? num(row.loanInstalmentNo) : null,
+        otherCardsNote: row.otherCardsNote?.trim() || null,
+        balanceAmount: num(row.balanceAmount),
+        coinsCarriedForward: num(row.coinsCarriedForward),
+        finalBalance: num(row.finalBalance),
+        carryForward: {
+          nextMonthDeb: num(row.nextMonthDebt),
+          loanBalance: num(row.loanBalance),
+          manureBalance: num(row.manureBalance),
+          loanInterest: num(row.loanInterest),
+        },
+        savingsSummary: {
+          thisMonth: savings,
+          previous,
+          toDate: row.savingsToDate ? num(row.savingsToDate) : round2(previous + savings),
+        },
+        dailySupply: Array.from({ length: dayCount }, (_, i) => ({ day: i + 1, kgs: perDay.get(i + 1) ?? null })),
+        paymentMethod: supplier.paymentMethod,
+      };
+    });
+
+    state.bills = [...state.bills.filter((bill) => bill.monthKey !== monthKey), ...bills];
+    const summary = summariseBillRun(monthKey, runId, bills, {
+      generatedAt: now,
+      generatedById: user.id,
+      generatedByName: user.name,
+    });
+    state.billRuns = [...state.billRuns.filter((run) => run.monthKey !== monthKey), summary];
+    if (record.stage !== 'published') record.stage = 'billsGenerated';
+  }
+}
+
 /** Called only once every row has passed, so each branch can trust its rows. */
-function applyImport(kind: ImportKind, rows: ImportRow[], user: MockUser, paymentUnit?: number): void {
+function applyImport(
+  kind: ImportKind,
+  rows: ImportRow[],
+  user: MockUser,
+  paymentUnit: number | undefined,
+  factory: FactoryInfo,
+): void {
   const now = new Date().toISOString();
   switch (kind) {
     case 'suppliers':
@@ -2002,6 +2144,8 @@ function applyImport(kind: ImportKind, rows: ImportRow[], user: MockUser, paymen
             teaPackets: num(row.teaPackets),
             savings: num(row.savings),
             previousDebt: num(row.previousDebt),
+            loanMonthsLeft: row.loanMonthsLeft ? num(row.loanMonthsLeft) : null,
+            loanInstalmentsPaid: row.loanInstalmentsPaid ? num(row.loanInstalmentsPaid) : null,
             note: 'Imported from a file',
           },
           user.name,
@@ -2031,6 +2175,9 @@ function applyImport(kind: ImportKind, rows: ImportRow[], user: MockUser, paymen
         const bill = state.bills.find((one) => one.supplierId === supplier.id && one.monthKey === row.month)!;
         adjustBill(bill, { otherCards: num(row.otherCards), otherCardsNote: row.otherCardsNote ?? '' }, paymentUnit);
       }
+      return;
+    case 'bills':
+      importBills(rows, user, factory);
       return;
     case 'transportRates':
       // An empty rate puts the supplier back on their collection point's.
@@ -2625,6 +2772,9 @@ export const handlers: HttpHandler[] = [
     if (patch.collectionPoints) config.collectionPoints = patch.collectionPoints.map((p) => ({ ...p }));
     if (patch.factorySync) config.factorySync = { enabled: patch.factorySync.enabled };
     if (patch.billSettings) config.billSettings = { ...patch.billSettings };
+    if (patch.loanInterest) {
+      config.loanInterest = { monthlyRatePercent: patch.loanInterest.monthlyRatePercent };
+    }
     if (patch.advanceInterest) {
       config.advanceInterest = { monthlyRatePercent: patch.advanceInterest.monthlyRatePercent };
     }
@@ -3729,6 +3879,7 @@ export const handlers: HttpHandler[] = [
       // §21.10: the factory's approved rates, and each supplier's chosen repayment period.
       deductionRates: activeDeductionRates(),
       advanceInterest: config.advanceInterest,
+      loanInterest: config.loanInterest,
       paymentUnit: settings?.paymentUnit,
       billNoFor,
       loanInstalmentsBefore,
@@ -7302,7 +7453,7 @@ export const handlers: HttpHandler[] = [
       return fail({
         status: 409,
         code: 'opening-balances-locked',
-        message: 'A bill has been generated for this supplier; the bills carry the balances now.',
+        message: 'A bill has been published for this supplier; the bills carry the balances now.',
       });
     }
     const body = (await request.json()) as OpeningBalances & { note: string };
@@ -7451,7 +7602,13 @@ export const handlers: HttpHandler[] = [
         details: { problems },
       });
     }
-    applyImport(kind, rows, auth.user, tenantConfig(request).billSettings?.paymentUnit);
+    applyImport(
+      kind,
+      rows,
+      auth.user,
+      tenantConfig(request).billSettings?.paymentUnit,
+      billFactoryOf(tenantOf(request)),
+    );
     recordBy(auth, 'import.apply', 'import', `${kind}-${nextId()}`, {
       after: { kind, rows: rows.length, fileName },
     });

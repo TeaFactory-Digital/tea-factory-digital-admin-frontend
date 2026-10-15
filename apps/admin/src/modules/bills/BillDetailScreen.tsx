@@ -61,7 +61,9 @@ export function BillDetailScreen() {
 
   const data = bill.data;
   const balanced = billIsBalanced(data);
-  const canAdjust = keepsRecords && canWriteBills && data.publishedAt === null;
+  // An imported bill is the factory's own figures: corrected in their system and re-imported.
+  const canAdjust =
+    keepsRecords && canWriteBills && data.publishedAt === null && data.source !== 'imported';
 
   return (
     <>
@@ -80,6 +82,9 @@ export function BillDetailScreen() {
         actions={
           <div className="flex flex-wrap items-center gap-md">
             <Figure label={t('bills.column.payable')} value={formatMoney(data.finalBalance)} strong />
+            {data.source === 'imported' ? (
+              <Badge tone="neutral">{t('records.bills.imported')}</Badge>
+            ) : null}
             <Badge tone={data.publishedAt ? 'success' : 'info'}>
               {data.publishedAt ? t('bills.published') : t('bills.draft')}
             </Badge>

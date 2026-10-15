@@ -107,7 +107,7 @@ export function billSettingsProblem(settings: BillSettings): 'payment-unit' | 'b
  *
  * Without it the first bill deducts nothing for a loan taken last year, and the app shows
  * headroom the supplier has already used. Entered once per supplier; locked as soon as a
- * bill has been generated for them, after which the ledgers carry the balances forward.
+ * bill has been published for them, after which the ledgers carry the balances forward.
  */
 export interface OpeningBalances {
   /** The first month this system's bills cover, `YYYY-MM`. Balances are as at its start. */
@@ -119,10 +119,18 @@ export interface OpeningBalances {
   savings: number;
   /** Unpaid balance carried from the factory's last bill. */
   previousDebt: number;
+  /**
+   * A loan already running when this system took over has no plan here, so these say
+   * where it stands: the monthly accounts still to repay over, and the instalments
+   * already recovered (the next bill prints "Loans / Advance <paid + 1>"). Both optional:
+   * without them the loan is recovered under the loan cap alone and numbered from 1.
+   */
+  loanMonthsLeft?: number | null;
+  loanInstalmentsPaid?: number | null;
 }
 
 export interface OpeningBalancesRecord extends OpeningBalances {
-  /** `false` once a bill has been generated for the supplier. */
+  /** `false` once a bill has been published for the supplier. */
   editable: boolean;
   updatedAt: string;
   updatedByName: string;
@@ -198,6 +206,7 @@ export const IMPORT_KINDS = [
   'walkInCredit',
   'billAdjustments',
   'transportRates',
+  'bills',
 ] as const;
 export type ImportKind = (typeof IMPORT_KINDS)[number];
 
@@ -210,6 +219,8 @@ export interface ImportColumn {
   required: boolean;
   /** For `enum`. */
   values?: readonly string[];
+  /** For `number`: the most decimal places accepted. `0` is a whole number. Default 2. */
+  decimals?: number;
   /** One example value, used in the template. */
   example: string;
 }
@@ -258,12 +269,14 @@ export const IMPORT_COLUMNS: Record<ImportKind, readonly ImportColumn[]> = {
     { key: 'teaPackets', type: 'number', required: false, example: '0' },
     { key: 'savings', type: 'number', required: false, example: '12850' },
     { key: 'previousDebt', type: 'number', required: false, example: '0' },
+    { key: 'loanMonthsLeft', type: 'number', required: false, decimals: 0, example: '4' },
+    { key: 'loanInstalmentsPaid', type: 'number', required: false, decimals: 0, example: '2' },
   ],
   walkInCredit: [
     { key: 'supplierCode', type: 'text', required: true, example: '5147' },
     { key: 'facility', type: 'enum', required: true, values: FACILITIES, example: 'advance' },
     { key: 'amount', type: 'number', required: true, example: '10000' },
-    { key: 'repaymentMonths', type: 'number', required: false, example: '' },
+    { key: 'repaymentMonths', type: 'number', required: false, decimals: 0, example: '' },
     { key: 'manureType', type: 'text', required: false, example: '' },
     { key: 'quantityKg', type: 'number', required: false, example: '' },
     { key: 'note', type: 'text', required: true, example: 'Asked at the counter' },
@@ -280,7 +293,92 @@ export const IMPORT_COLUMNS: Record<ImportKind, readonly ImportColumn[]> = {
     { key: 'transportPerKg', type: 'number', required: false, example: '4' },
     { key: 'note', type: 'text', required: false, example: 'Estate beyond the river' },
   ],
+  /**
+   * A month's finished bills, as the factory's own system printed them: the other way to
+   * fill a month, beside calculating it here. Every figure is taken as printed; the checks
+   * below only make sure each row adds up, which catches a shifted column. The example row
+   * is a real galaboda slip (July 2026).
+   */
+  bills: [
+    { key: 'month', type: 'month', required: true, example: '2026-07' },
+    { key: 'supplierCode', type: 'text', required: true, example: '5708' },
+    { key: 'billNo', type: 'text', required: false, example: '2026210869' },
+    { key: 'billDate', type: 'date', required: false, example: '2026-08-10' },
+    { key: 'totalKg', type: 'number', required: true, example: '509.5' },
+    { key: 'ratePerKg', type: 'number', required: true, example: '222' },
+    { key: 'extraRatePerKg', type: 'number', required: false, example: '3' },
+    { key: 'coinsBroughtForward', type: 'number', required: false, example: '7.41' },
+    { key: 'greenLeafAmount', type: 'number', required: true, example: '113109' },
+    { key: 'extraPayment', type: 'number', required: false, example: '1528.5' },
+    { key: 'grossAmount', type: 'number', required: true, example: '114644.91' },
+    { key: 'transportCharges', type: 'number', required: false, example: '0' },
+    { key: 'tea', type: 'number', required: false, example: '1298' },
+    { key: 'savings', type: 'number', required: false, example: '5095' },
+    { key: 'loansAdvance', type: 'number', required: false, example: '0' },
+    { key: 'loanInstalmentNo', type: 'number', required: false, decimals: 0, example: '' },
+    { key: 'advance', type: 'number', required: false, example: '40000' },
+    { key: 'manure', type: 'number', required: false, example: '0' },
+    { key: 'otherCards', type: 'number', required: false, example: '0' },
+    { key: 'otherCardsNote', type: 'text', required: false, example: '' },
+    { key: 'stamps', type: 'number', required: false, example: '25' },
+    { key: 'previousDebts', type: 'number', required: false, example: '0' },
+    { key: 'totalDeductions', type: 'number', required: true, example: '46418' },
+    { key: 'balanceAmount', type: 'number', required: true, example: '68226.91' },
+    { key: 'coinsCarriedForward', type: 'number', required: false, example: '6.91' },
+    { key: 'finalBalance', type: 'number', required: true, example: '68220' },
+    { key: 'nextMonthDebt', type: 'number', required: false, example: '0' },
+    { key: 'loanBalance', type: 'number', required: false, example: '0' },
+    { key: 'manureBalance', type: 'number', required: false, example: '0' },
+    { key: 'loanInterest', type: 'number', required: false, example: '0' },
+    { key: 'savingsPrevious', type: 'number', required: false, example: '21970' },
+    { key: 'savingsToDate', type: 'number', required: false, example: '27065' },
+  ],
 };
+
+/** The nine deduction columns of an imported bill, in the slip's order. */
+export const IMPORTED_BILL_DEDUCTIONS = [
+  'transportCharges',
+  'tea',
+  'savings',
+  'loansAdvance',
+  'advance',
+  'manure',
+  'otherCards',
+  'stamps',
+  'previousDebts',
+] as const;
+
+/**
+ * Does an imported bill row add up? Each check names the column it doubts. Sums are held
+ * to the cent; the two rate products to a rupee, because a factory may round them.
+ */
+function importedBillProblems(row: ImportRow, line: number): ImportRowProblem[] {
+  const n = (key: string) => {
+    const value = (row[key] ?? '').trim();
+    return value === '' ? 0 : Number(value);
+  };
+  const near = (a: number, b: number, within: number) => Math.abs(a - b) <= within + 1e-9;
+  const out: ImportRowProblem[] = [];
+  const doubt = (column: string) => out.push({ row: line, column, code: 'does-not-add-up' });
+
+  const kg = n('totalKg');
+  if (!near(n('greenLeafAmount'), kg * n('ratePerKg'), 1)) doubt('greenLeafAmount');
+  if (!near(n('extraPayment'), kg * n('extraRatePerKg'), 1)) doubt('extraPayment');
+  if (!near(n('grossAmount'), n('greenLeafAmount') + n('extraPayment') + n('coinsBroughtForward'), 0.01)) {
+    doubt('grossAmount');
+  }
+  const lines = IMPORTED_BILL_DEDUCTIONS.reduce((sum, key) => sum + n(key), 0);
+  if (!near(n('totalDeductions'), lines, 0.01)) doubt('totalDeductions');
+  if (!near(n('balanceAmount'), n('grossAmount') - n('totalDeductions'), 0.01)) doubt('balanceAmount');
+  // Paid plus held back is the balance; a balance below zero pays nothing and carries the debt.
+  const balance = n('balanceAmount');
+  const paidAndHeld = n('finalBalance') + n('coinsCarriedForward');
+  if (balance >= 0 ? !near(paidAndHeld, balance, 0.01) : n('finalBalance') !== 0) doubt('finalBalance');
+  if (n('otherCards') > 0 && (row.otherCardsNote ?? '').trim().length < 3) {
+    out.push({ row: line, column: 'otherCardsNote', code: 'required' });
+  }
+  return out;
+}
 
 /** One row as read from a file: every value is still text. */
 export type ImportRow = Record<string, string>;
@@ -289,7 +387,15 @@ export interface ImportRowProblem {
   /** 1-based, counting the header as row 1, so it matches what the spreadsheet shows. */
   row: number;
   column?: string;
-  code: 'required' | 'not-a-number' | 'negative' | 'not-a-date' | 'not-a-month' | 'not-allowed' | string;
+  code:
+    | 'required'
+    | 'not-a-number'
+    | 'negative'
+    | 'too-many-decimals'
+    | 'not-a-date'
+    | 'not-a-month'
+    | 'not-allowed'
+    | string;
 }
 
 /** What the server answers. All or nothing: any problem and no row is saved. */
@@ -299,8 +405,23 @@ export interface ImportResult {
   problems: ImportRowProblem[];
 }
 
-const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
+/**
+ * Plain decimal digits only. `Number()` alone accepts `0x1A`, `1e3`, `Infinity` and a
+ * blank-padded value, and a spreadsheet cell that reads like any of them is a typing slip,
+ * not a weight.
+ */
+const DECIMAL = /^-?\d+(\.(\d+))?$/;
+
+/** A real calendar day: `2026-02-31` has the right shape and is not a date. */
+function isCalendarDate(value: string): boolean {
+  const match = DATE.exec(value);
+  if (!match) return false;
+  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
 
 /**
  * The checks the console makes on each row before sending, so the office fixes the file
@@ -311,6 +432,7 @@ export function importRowProblems(kind: ImportKind, rows: readonly ImportRow[]):
   const problems: ImportRowProblem[] = [];
   rows.forEach((row, index) => {
     const line = index + 2;
+    const before = problems.length;
     for (const column of IMPORT_COLUMNS[kind]) {
       const value = (row[column.key] ?? '').trim();
       if (!value) {
@@ -318,10 +440,15 @@ export function importRowProblems(kind: ImportKind, rows: readonly ImportRow[]):
         continue;
       }
       if (column.type === 'number') {
-        const n = Number(value);
-        if (!Number.isFinite(n)) problems.push({ row: line, column: column.key, code: 'not-a-number' });
-        else if (n < 0) problems.push({ row: line, column: column.key, code: 'negative' });
-      } else if (column.type === 'date' && !DATE.test(value)) {
+        const match = DECIMAL.exec(value);
+        if (!match) problems.push({ row: line, column: column.key, code: 'not-a-number' });
+        else if (value.startsWith('-')) problems.push({ row: line, column: column.key, code: 'negative' });
+        else if ((match[2]?.length ?? 0) > (column.decimals ?? 2)) {
+          // Refused rather than rounded: a scale that printed 24.555 kg, rounded here, is a
+          // figure the supplier's passbook will not show.
+          problems.push({ row: line, column: column.key, code: 'too-many-decimals' });
+        }
+      } else if (column.type === 'date' && !isCalendarDate(value)) {
         problems.push({ row: line, column: column.key, code: 'not-a-date' });
       } else if (column.type === 'month' && !MONTH.test(value)) {
         problems.push({ row: line, column: column.key, code: 'not-a-month' });
@@ -329,6 +456,8 @@ export function importRowProblems(kind: ImportKind, rows: readonly ImportRow[]):
         problems.push({ row: line, column: column.key, code: 'not-allowed' });
       }
     }
+    // A bill row is checked for adding up only once every figure in it is a number.
+    if (kind === 'bills' && problems.length === before) problems.push(...importedBillProblems(row, line));
   });
   return problems;
 }

@@ -3,32 +3,81 @@
 Backend fixes found while testing the admin console and the mobile app against staging.
 Each item says what is wrong, where, and what to change.
 
-## Status (9 October 2026)
+## Status (10 October 2026)
 
-**Done and removed from this file: #1 to #44** (latest: #44 in `b93c64f`, the default text
-for "Restore default text", read only and never counted as an office edit).
+**Done and removed from this file: #1 to #44, #46 and #47** (latest in `b470323`: the
+bell's activity feed, the onboarding command, and `-` instead of the em dash in
+change-request summaries).
 
 **Still open:**
 
 | # | What | Priority |
 |---|------|----------|
-| 45 | Factory records without the factory system: the sync switch, entry and imports | High |
-| 46 | The console's notification bell: a feed of supplier actions, read per user | Medium |
-| 47 | Onboard a new factory with one command | Medium |
+| 45 | Factory records without the factory system: the rest (bill engine, imports, add supplier, opening balances, walk-ins, leaf and months) | High |
 
-**Answers to the last note**
-- **FAQ and `{{factory}}`:** right, the FAQ names no factory in any language, so our check
-  was wrong; `terms/default?lang=si` is the one to check. Leave the FAQ as it is unless we
-  send a new seed file.
-- **`eligibility: null`:** the console already shows the request without the eligibility
-  panel when it is `null`, so nothing to change on our side.
 
-**No em dashes in what the API writes:** the console and the app no longer use the em
-dash anywhere (a value that is not there is shown as `-`). The API still writes `'\u2014'`
-for an empty field into change-request summaries
-(`apps/api/src/modules/supplier-app/requests.controller.ts:545-550`); please write `'-'`
-instead. The console still reads the old character as "empty", so rows already stored keep
-working.
+**Answers to the last note** (numbers follow your questions; "pending" means we are asking
+the factory, with the default to build against until then):
+
+1. **Bill export: both ways, decided by the user.** A factory with the sync off fills each
+   month either by calculating it here or by importing the finished bills its own system
+   printed (`factory-records.md` §5a: import kind `bills`, stored as printed, checked only
+   for adding up, `AdminBill.source`). Console, domain and mock are done; please
+   `vendor:pull`. **Build the bill import before the bill engine**: it is the smaller job and
+   gives galaboda real bills soonest.
+2. **Interest compounding: not intended.** Simple interest: each month's interest is worked
+   on the advance principal still owed, never on unpaid interest. Carry the interest as its
+   own balance (the slip's "Loan Interest") and recover it with the advance; do not fold it
+   into the principal. **Loans: confirmed, 0% by default, set in Configuration** as
+   `config.loanInterest: { monthlyRatePercent }` (same shape and checks as
+   `advanceInterest`; console and mock done). The slip has one "Loan Interest" line: it is
+   the advance's interest plus the loan's, each on its principal still owed after the
+   month's instalment.
+3. **Opening balances lock on the first published bill**, not on a draft. Done in the mock
+   and in `factoryRecords.ts`.
+4. **Switching back on:** yes, leave "the sync's records replace ours" for Phase 10.
+5. **Four-eyes: confirmed by the user.** One person, with a reason and the before and
+   after in the audit, for opening balances, a supplier's transport rate and the sync switch.
+   Opening balances are editable only until the first published bill; the switch is behind
+   a confirmation and blocked mid-month (13).
+6. **Supplier codes:** the bare number is the identity and is unique per factory; the
+   suffix is the division name, for display only (the real slip prints `5708 (URUMUTHTH...)`).
+   A supplier signs in with the bare number. So `5147 (DENIYAYA)` and `5147 (MAKADURA)` are
+   the same code and the second is refused `supplier-code-taken`. **Confirmed: a number is
+   unique across the whole factory.**
+7. **Collection points in imports and Add supplier:** accept the code or the name,
+   case-insensitive, and store the point's id. Unknown: `unknown-collection-point`.
+8. **Bank details on Add supplier:** the account name defaults to the supplier's full name
+   (the form does not ask for it). Validate the bank and branch against the factory's own
+   `config.banks`, which includes banks the factory added, not against the platform catalogue.
+9. **Walk-in refusals:** refuse a facility switched off (`feature-disabled`), a suspended or
+   closed supplier, and a pending request on the same facility (`request-pending`); price
+   manure on the server from the catalogue. **Do not refuse** over the limit or with an
+   advance outstanding when *recording*: the request is recorded as the supplier made it,
+   with the eligibility shown, and approval refuses as it does today (`over-ceiling`).
+   **Yes, the supplier may cancel an office request from the app:** it is their request.
+10. **An opening loan's plan:** `OpeningBalances` now has optional `loanMonthsLeft` and
+    `loanInstalmentsPaid` (form, import columns and mock done). With both, recover
+    `loan / loanMonthsLeft` a month under the cap and number the first bill here
+    `loanInstalmentsPaid + 1`. Without them, the cap alone, numbered from 1.
+11. **The bill serial (being confirmed).** The year at the front changes with the year
+    (`2026…` then `2027…`); we are confirming whether the six-digit part also starts again
+    each January. Until then: it does not, and past 999999 it gets a seventh digit.
+12. **Coins in the gross:** confirmed; the gross a ceiling averages rises by at most one
+    payment unit a month. **Past bills are not restated:** synced bills are stored as
+    received, and only bills calculated here use the new function.
+13. **Import checks: refuse, never round.** `importRowProblems` now refuses a number with more
+    decimals than the column allows (`too-many-decimals`; 2 by default, whole numbers for
+    months and instalments), anything that is not plain digits (`0x1A`, `1e3`), and a date
+    that is not on the calendar (`2026-02-31`). Please `vendor:pull`.
+14. **Changing the sync mid-month:** yes, refuse while any month has generated but
+    unpublished bills: `409 sync-switch-blocked` (in `ADMIN_ERROR_CODES`, with a message).
+15. **The bell for new users:** start the read mark at the user's creation time, and hide
+    kinds whose feature flag is off.
+16. **Shared error codes:** added to `ADMIN_ERROR_CODES`: `factory-sync-on`,
+    `sync-switch-blocked`, `negative`, `unknown-collection-point`, `bank-details-required`,
+    `opening-balances-locked`, `unknown-supplier`, `no-bill`, `import-invalid`, `import-size`.
+    The console now explains each in en/si/ta.
 
 **Factory sync (Phase 10), for when it starts:** the request to the factory team now asks
 for every line of the printed bill. `factory-system-team.md` §3 and
@@ -72,70 +121,10 @@ so a bill and the app agree to the cent.
 
 **Check:** the list in §9 of that file.
 
-## 46. The console's notification bell: a feed of supplier actions
+**Done so far (`b470323`):** re-vendored; `factorySync`, `advanceInterest` and
+`billSettings` in config (the public `GET /config` sends only `paymentUnit`); `409
+factory-sync-on` on every record write under a lock; `transportByPoint` kept and validated;
+deduction rates gated on `ratesAndMonthClose`; `PUT /admin/suppliers/:id/transport-rate`.
 
-The console's top bar now has a bell. Its first half is the waiting queues, from the
-existing `GET /admin/dashboard`; nothing new is needed for that. Its second half is
-**recent activity**: what suppliers did, with a dot on what this console user has not
-seen. The console shows "not available on this server yet" while this 404s.
-
-```
-GET  /admin/activity?limit=20   → ActivityFeed  { items: ActivityItem[], unread, readUpTo }
-POST /admin/activity/read       { upTo: ISO }  → { readUpTo }
-```
-
-Types and the permission per kind are in `packages/domain/src/activity.ts` (`vendor:pull`).
-
-- **Supplier actions only**, newest first: `creditRequest.created` / `.cancelled`,
-  `teaPacket.created` / `.cancelled`, `changeRequest.created`, `inquiry.created`,
-  `inquiry.replied` (a supplier's message after the first), and
-  `supplier.appDeletionRequested`. Only requests from the app (`channel: 'app'`); what the
-  office did stays in the audit log.
-- **Filtered by permission:** each kind needs read on `ACTIVITY_CAPABILITY[kind]`, the
-  capability of the screen it opens. A content editor is never told about a loan request.
-- **Read per user:** one `readUpTo` timestamp per console user and tenant. An item is
-  `unread` when it is later than that mark, or when the user has no mark yet. `unread` counts
-  every unread item, not only those in `items`. A mark never moves backwards.
-- `limit` 1 to 100, default 20. An event table written in the same transaction as the
-  action is the simplest source; deriving it per request from five tables also works at
-  this size.
-- No audit entry for reading the bell.
-
-**Check:** a supplier sends a loan request in the app; the manager's and the clerk's bells
-show it unread; the manager opens and closes the bell; the manager's is read, the clerk's
-is still unread; the editor never sees it.
-
-## 47. Onboard a new factory with one command
-
-Adding a factory is data, not code: one API and one console serve every factory, keyed on the
-slug. `seedTenant()` in `apps/api/prisma/seed/tenant.ts` already does the work (factory row,
-config with every flag written, banks, collection points, the first factory administrator,
-default static pages and triggers), but **only `staging.ts` calls it**: there is no way to
-run it for a new factory without editing a seed file.
-
-**To do:** a command the platform team runs once per factory, e.g.
-
-```
-npm run db:seed:tenant -- --slug hillside --name "Hillside Tea Factory" \
-  --telephone 051-2223344 --reg-no "M.F. 2207" --location Hatton \
-  --admin-name "S. Jayawardena" --admin-email admin@hillsidetea.lk \
-  --points "HATTON:Hatton,DIKOYA:Dikoya"
-```
-
-- **Refuse to run without the real factory details.** Today `seedTenant` fills a missing
-  telephone, reg. no. and location with `011-0000000`, `MF-0000` and `Sri Lanka`. Those
-  print on every supplier's bill and in the app, so for a real factory they must be
-  required, not defaulted. Keep the defaults for tests only.
-- **Slug:** lower-case letters and digits, checked unique; it becomes the subdomain
-  (`hillside.admin.<domain>`) and the `X-Tenant` value, and it never changes.
-- **Admin password:** generated, printed once, and the account marked "must change at first
-  sign-in", as staging does; never taken on the command line.
-- **Idempotent:** running it again for the same slug updates nothing that the factory has
-  since changed in the console (only fills what is missing).
-- Print what is left to do by hand: the DNS record, `CORS_ORIGINS`, and the mobile build
-  (`docs/v2/new-factory.md` in the console repo).
-
-**Check:** run it for a test slug on staging; the new console subdomain signs in as the new
-administrator, `GET /config` with `X-Tenant: <slug>` answers that factory, and galaboda's
-data is not visible from it.
-
+**Next:** imports (the `bills` kind first, answer 1), add supplier, opening balances (3 and
+10), walk-ins (9), then leaf and months, then the bill engine.

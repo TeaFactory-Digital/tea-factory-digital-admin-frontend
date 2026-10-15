@@ -300,7 +300,7 @@ export const si: Record<TranslationKey, string> = {
   'suppliers.filter.appInstalled': 'පිවිස ඇත',
   'suppliers.column.lastDelivery': 'අවසන් භාරය',
   'suppliers.column.pending': 'විසඳා නැති',
-  'suppliers.status.active': 'සක්‍රීය',
+  'suppliers.status.active': 'සක්‍රිය',
   'suppliers.status.suspended': 'අත්හිටුවා ඇත',
   'suppliers.status.closed': 'වසා ඇත',
   'suppliers.payment.cheque': 'චෙක්පත',
@@ -368,7 +368,7 @@ export const si: Record<TranslationKey, string> = {
   'suppliers.savingsLedger.balanceAfter': 'පසු ශේෂය',
   'suppliers.savingsLedger.source.openingBalance': 'ආරම්භක ශේෂය',
   'suppliers.savingsLedger.source.billDeduction': 'බිල්පතෙන්',
-  'suppliers.savingsLedger.source.adjustment': 'ගැලපීම',
+  'suppliers.savingsLedger.source.adjustment': 'ගැළපීම',
   'suppliers.savingsLedger.source.withdrawal': 'ආපසු ගැනීම',
   'suppliers.savingsLedger.source.interest': 'පොලිය',
   'suppliers.detail.creditAdvance': 'අත්තිකාරම් ශේෂය',
@@ -390,7 +390,7 @@ export const si: Record<TranslationKey, string> = {
   'suppliers.detail.tab.activity': 'ක්‍රියාකාරකම්',
 
   'suppliers.action.suspend': 'අත්හිටුවන්න',
-  'suppliers.action.reactivate': 'නැවත සක්‍රීය කරන්න',
+  'suppliers.action.reactivate': 'නැවත සක්‍රිය කරන්න',
   'suppliers.action.reveal': 'සම්පූර්ණ අංකය පෙන්වන්න',
   'suppliers.action.resetPassword': 'යෙදුමේ මුරපදය නැවත සකසන්න',
 
@@ -404,8 +404,8 @@ export const si: Record<TranslationKey, string> = {
 
   'suppliers.suspend.title': '{{name}} අත්හිටුවන්න',
   'suppliers.suspend.body':
-    'අත්හිටුවූ සැපයුම්කරුගේ සෑම වාර්තාවක්ම ඉතිරි වේ. නැවත සක්‍රීය කරන තුරු දළු භාර සහ ඉල්ලීම් නතර වේ.',
-  'suppliers.reactivate.title': '{{name}} නැවත සක්‍රීය කරන්න',
+    'අත්හිටුවූ සැපයුම්කරුගේ සෑම වාර්තාවක්ම ඉතිරි වේ. නැවත සක්‍රිය කරන තුරු දළු භාර සහ ඉල්ලීම් නතර වේ.',
+  'suppliers.reactivate.title': '{{name}} නැවත සක්‍රිය කරන්න',
   'suppliers.reactivate.body': 'දළු භාර සහ ඉල්ලීම් වහාම නැවත ආරම්භ වේ.',
   'suppliers.reasonLabel': 'හේතුව (විගණන ලොගයේ සටහන් වේ)',
   'suppliers.statusSuggest.suspend.inactive': 'දළු භාර නැත',
@@ -446,7 +446,7 @@ export const si: Record<TranslationKey, string> = {
     'කාර්යාල කවුන්ටරයේදී ජා.හැ. පතින් අනන්‍යතාව තහවුරු කර ගත්තා.',
   'suppliers.resetPassword.identitySuggest.known': 'කාර්යාලයට හඳුනයි',
   'suppliers.resetPassword.identitySuggest.known.text':
-    'මුහුණින් කාර්යාලයට හඳුනන අතර කවුන්ටරයේදී හඳුනාගත්තේ',
+    'මුහුණින් කාර්යාලයට හඳුනන අතර කවුන්ටරයේදී හඳුනාගත්තා',
   'suppliers.resetPassword.confirm': 'නව මුරපදයක් සාදන්න',
   'suppliers.resetPassword.failed': 'මුරපදයක් සාදන ලද්දේ නැත',
   'suppliers.resetPassword.issuedBody': 'මෙය දැන් ලියාගෙන සැපයුම්කරුට දෙන්න.',
@@ -491,7 +491,7 @@ export const si: Record<TranslationKey, string> = {
   'changeRequests.emptyHint': 'සෑම වෙනස් කිරීමේ ඉල්ලීමක්ම තීරණය කර ඇත.',
 
   'changeRequests.detail.comparison': 'දැන් ඇති එක සහ ඉල්ලූ එක',
-  'changeRequests.detail.currentHeading': 'දැන් සක්‍රීය',
+  'changeRequests.detail.currentHeading': 'දැන් සක්‍රිය',
   'changeRequests.detail.requestedHeading': 'ඉල්ලූ',
   'changeRequests.detail.submitted': '{{when}} ඉදිරිපත් කළා',
   'changeRequests.detail.waiting': '{{age}} බලා සිටී',
@@ -740,7 +740,7 @@ export const si: Record<TranslationKey, string> = {
   'inquiries.detail.pushSent':
     'පිළිතුරක් ඇති බව දැනුම් දෙන දැනුම්දීමක් ඔවුන්ගේ දුරකථනයට යවා ඇත. පිළිතුර ම යෙදුම තුළ පමණක් ඇත, මන්ද අගුළු තිරය කියවන්නේ එය අතේ ඇති අයෙකි.',
   'inquiries.detail.pushNotSent':
-    'සැපයුම්කරු ඊළඟ වර යෙදුම විවෘත කරන විට මෙය දකියි. පිළිතුරු දුන් පණිවිඩ සඳහා ස්වයංක්‍රීය දැනුම්දීම් මෙම කර්මාන්තශාලාව සඳහා අක්‍රීය කර ඇත, එබැවින් ඔවුන්ගේ දුරකථනයට කිසිවක් යවා නැත.',
+    'සැපයුම්කරු ඊළඟ වර යෙදුම විවෘත කරන විට මෙය දකියි. පිළිතුරු දුන් පණිවිඩ සඳහා ස්වයංක්‍රීය දැනුම්දීම් මෙම කර්මාන්තශාලාව සඳහා අක්‍රිය කර ඇත, එබැවින් ඔවුන්ගේ දුරකථනයට කිසිවක් යවා නැත.',
 
   'inquiries.reply': 'පිළිතුරු දෙන්න',
   'inquiries.sendReply': 'පිළිතුර යවන්න',
@@ -754,7 +754,7 @@ export const si: Record<TranslationKey, string> = {
   'inquiries.replyHelp': 'සැපයුම්කරු මෙය කියවයි. අවම අකුරු 20ක්.',
   'inquiries.replyCount': 'අක්ෂර {{count}}යි, අවම වශයෙන් {{min}}ක් අවශ්‍යයි',
   'inquiries.suggest.received': 'ලැබුණා',
-  'inquiries.suggest.received.text': 'ඔබේ පණිවිඩයට ස්තූතියි. එය අපට ලැබුණා, අපි ඒ ගැන සොයා බලන්නම්.',
+  'inquiries.suggest.received.text': 'ඔබේ පණිවිඩයට ස්තුතියි. එය අපට ලැබුණා, අපි ඒ ගැන සොයා බලන්නම්.',
   'inquiries.suggest.checking': 'පරීක්ෂා කරමින්',
   'inquiries.suggest.checking.text': 'අපි මේ ගැන පරීක්ෂා කරමින් සිටිනවා, ඉක්මනින් ඔබට පිළිතුරු දෙන්නම්.',
   'inquiries.suggest.visitOffice': 'කාර්යාලයට එන්න',
@@ -838,14 +838,14 @@ export const si: Record<TranslationKey, string> = {
   'audit.action.changeRequestReject': 'වෙනස් කිරීමේ ඉල්ලීමක් ප්‍රතික්ෂේප කළා',
   'audit.action.supplierUpdate': 'සැපයුම්කරුවෙකු සංස්කරණය කළා',
   'audit.action.supplierSuspend': 'සැපයුම්කරුවෙකු අත්හිටුවා',
-  'audit.action.supplierReactivate': 'සැපයුම්කරුවෙකු නැවත සක්‍රීය කළා',
+  'audit.action.supplierReactivate': 'සැපයුම්කරුවෙකු නැවත සක්‍රිය කළා',
   'audit.action.supplierReveal': 'සම්පූර්ණ ගිණුම් අංකයක් බැලුවා',
   'audit.action.deliveryBatchCommit': 'බර කිරීමේ සැසියක් වාර්තා කළා',
   'audit.action.deliveryVoid': 'දළු භාරයක් අවලංගු කළා',
   'audit.action.rateSet': 'මාසික මිලක් ඇතුළත් කළා',
   'audit.action.monthExceptionResolve': 'මාසය අවසන් කිරීමේ කරුණක් විසඳුවා',
   'audit.action.monthPublish': 'මාසයක් ප්‍රකාශයට පත් කළා',
-  'audit.action.billsGenerate': 'මාසයක බිල්පත් සාදුවා',
+  'audit.action.billsGenerate': 'මාසයක බිල්පත් සෑදුවා',
   'audit.action.payoutRunCreate': 'ගෙවීම් වටයක් සූදානම් කළා',
   'audit.action.payoutRunApprove': 'ගෙවීම් වටයක් නිකුත් කළා',
   'audit.action.payoutLinePaid': 'ගෙවීමක් වාර්තා කළා',
@@ -857,7 +857,7 @@ export const si: Record<TranslationKey, string> = {
   'audit.action.inquiryReply': 'සැපයුම්කරුවෙකුට පිළිතුරු දුන්නා',
   'audit.action.inquiryClose': 'පණිවිඩයක් පිළිතුරු නොදී වසා දැම්මා',
 
-  'audit.action.newsCreate': 'පුවත් ලිපියක් සාදුවා',
+  'audit.action.newsCreate': 'පුවත් ලිපියක් සෑදුවා',
   'audit.action.newsUpdate': 'පුවත් ලිපියක් සංස්කරණය කළා',
   'audit.action.newsTranslationSave': 'පරිවර්තනයක් සුරැක්කා',
   'audit.action.newsPublish': 'පුවත් ලිපියක් ප්‍රකාශයට පත් කළා',
@@ -873,7 +873,7 @@ export const si: Record<TranslationKey, string> = {
   'audit.action.userCreate': 'කොන්සෝල පරිශීලකයෙකු එකතු කළා',
   'audit.action.userUpdate': 'පරිශීලකයෙකුගේ නම හෝ භූමිකා වෙනස් කළා',
   'audit.action.userSuspend': 'කොන්සෝල පරිශීලකයෙකු අත්හිටුවා',
-  'audit.action.userReactivate': 'කොන්සෝල පරිශීලකයෙකු නැවත සක්‍රීය කළා',
+  'audit.action.userReactivate': 'කොන්සෝල පරිශීලකයෙකු නැවත සක්‍රිය කළා',
   'audit.action.roleUpdate': 'භූමිකාවකට කළ හැකි දේ වෙනස් කළා',
   'audit.action.authSignIn': 'පුරනය වුණා',
   'audit.action.authSignOut': 'ඉවත් වුණා',
@@ -900,12 +900,12 @@ export const si: Record<TranslationKey, string> = {
   'audit.action.attachmentSign': 'ගොනුවක් උඩුගත කිරීම ආරම්භ කළා',
   'audit.action.attachmentConfirm': 'ගොනුවක් උඩුගත කළා',
   'audit.action.attachmentSweep': 'අසම්පූර්ණ උඩුගත කිරීම් ඉවත් කළා',
-  'audit.action.bannerCreate': 'බැනරයක් සාදුවා',
+  'audit.action.bannerCreate': 'බැනරයක් සෑදුවා',
   'audit.action.bannerUpdate': 'බැනරයක් සංස්කරණය කළා',
   'audit.action.bannerPublish': 'බැනරයක් ප්‍රකාශයට පත් කළා',
   'audit.action.bannerUnpublish': 'බැනරයක් ඉවත් කළා',
   'audit.action.bannerDelete': 'බැනරයක් මකා දැම්මා',
-  'audit.action.deviceRegister': 'දුරකථනයක දැනුම්දීම් සක්‍රීය කළා',
+  'audit.action.deviceRegister': 'දුරකථනයක දැනුම්දීම් සක්‍රිය කළා',
   'audit.action.deviceRemove': 'දැනුම්දීම් වලින් දුරකථනයක් ඉවත් කළා',
   'audit.action.userDelete': 'කොන්සෝල පරිශීලකයෙකු මකා දැම්මා',
   'audit.action.platformCrossTenant': 'වේදිකා සහාය මෙම කර්මාන්තශාලාවේ ක්‍රියා කළා',
@@ -980,7 +980,7 @@ export const si: Record<TranslationKey, string> = {
   'bills.billNo': 'බිල්පත් අංකය',
   'bills.month': 'මාසය',
   'bills.supplier': 'සැපයුම්කරු',
-  'bills.issued': 'සාදූ දිනය',
+  'bills.issued': 'සෑදූ දිනය',
   'bills.factoryRegNo': 'කර්මාන්තශාලා ලියාපදිංචි අංකය',
   'bills.earnings': 'දළු සහ මිල',
   'bills.noAuctionResult':
@@ -1101,7 +1101,7 @@ export const si: Record<TranslationKey, string> = {
   'content.gap.fallbackMissing':
     '{{language}} පිටපතක් නැත, එබැවින් කිසිදු භාෂාවකින් සැපයුම්කරුවෙකුට පෙන්වීමට කිසිවක් නැත. එය ලියන තුරු මෙය ප්‍රකාශයට පත් කළ නොහැක.',
   'content.gap.missingLive':
-    '{{languages}} පිටපතක් නොමැතිව සක්‍රීයයි. එම භාෂාවලින් කියවන සැපයුම්කරුවන්ට මේ මොහොතේ පෙන්වන්නේ {{fallback}} අනුවාදයයි.',
+    '{{languages}} පිටපතක් නොමැතිව සක්‍රියයි. එම භාෂාවලින් කියවන සැපයුම්කරුවන්ට මේ මොහොතේ පෙන්වන්නේ {{fallback}} අනුවාදයයි.',
   'content.gap.missingDraft': '{{languages}} වලින් තවම ලියා නැත.',
   'content.gap.stale':
     '{{languages}} පිටපත එය පරිවර්තනය කළ ඉංග්‍රීසියට වඩා පැරණියි. යෙදුම එය දැනට වලංගු මෙන් පෙන්වයි, එබැවින් සැපයුම්කරුට කිසිවක් වැරදි ලෙස නොපෙනේ.',
@@ -1133,13 +1133,13 @@ export const si: Record<TranslationKey, string> = {
   'news.column.created': 'සාදන ලද දිනය',
   'news.notPublished': 'තවම ප්‍රකාශයට පත් කර නැත',
   'news.status.draft': 'කෙටුම්පත',
-  'news.status.published': 'සක්‍රීය',
+  'news.status.published': 'සක්‍රිය',
   'news.status.archived': 'සංරක්ෂිත',
   'news.lens.all': 'සියලුම ලිපි',
-  'news.lens.incomplete': 'හිඩැසක් සමඟ සක්‍රීය',
+  'news.lens.incomplete': 'හිඩැසක් සමඟ සක්‍රිය',
   'news.empty': 'තවම ලිපි නැත',
   'news.emptyHint': 'මෙහි ප්‍රකාශයට පත් කරන ඕනෑම දෙයක් යෙදුමේ පුවත් පෝෂණයේ දිස් වේ.',
-  'news.noIncomplete': 'සක්‍රීය කිසිවකට පරිවර්තනයක් අඩු නැත',
+  'news.noIncomplete': 'සක්‍රිය කිසිවකට පරිවර්තනයක් අඩු නැත',
   'news.noIncompleteHint':
     'ප්‍රකාශයට පත් කළ සෑම ලිපියක්ම මෙම කර්මාන්තශාලාව ප්‍රකාශයට පත් කරන සෑම භාෂාවකින්ම ලියා ඇත.',
 
@@ -1152,15 +1152,15 @@ export const si: Record<TranslationKey, string> = {
   'notifications.confirmSendBody': 'මෙම පණිවිඩය දුරකථන {{count}}කට වහාම යවනු ලැබේ.',
   'notifications.confirmSendHint': 'යැවූ පසු එය නැවත කැඳවිය නොහැක.',
   'staticContent.publishConfirmTitle': '{{page}} ප්‍රකාශයට පත් කරන්නද?',
-  'staticContent.publishConfirmBody': 'මෙයින් පිටුව සැපයුම්කරුවන්ට වහාම සක්‍රීය වේ.',
+  'staticContent.publishConfirmBody': 'මෙයින් පිටුව සැපයුම්කරුවන්ට වහාම සක්‍රිය වේ.',
   'news.createConfirm': 'කෙටුම්පත සාදන්න',
-  'news.created': 'කෙටුම්පත සාදුවා',
+  'news.created': 'කෙටුම්පත සෑදුවා',
   'news.createdHint': 'අනෙක් භාෂා එකතු කර, ඉන්පසු ප්‍රකාශයට පත් කරන්න.',
   'news.createFailed': 'ලිපිය සෑදුණේ නැත',
 
   'news.lifecycleTitle': 'ප්‍රකාශයට පත් කිරීම',
   'news.lifecycleDraft': 'මෙහි කිසිවක් තවම සැපයුම්කරුවෙකුට ලැබී නැත.',
-  'news.lifecyclePublished': 'මෙය යෙදුමේ සක්‍රීයයි.',
+  'news.lifecyclePublished': 'මෙය යෙදුමේ සක්‍රියයි.',
   'news.publishedBy': '{{name}} විසින් {{when}} ප්‍රකාශයට පත් කළා.',
   'news.publish': 'ප්‍රකාශයට පත් කරන්න',
   'news.schedule.open': 'කාලසටහන් කරන්න…',
@@ -1208,11 +1208,11 @@ export const si: Record<TranslationKey, string> = {
   'staticContent.page.terms': 'සැපයුම් කොන්දේසි',
   'staticContent.page.privacy': 'පෞද්ගලිකත්වය',
   'staticContent.status.draft': 'ප්‍රකාශයට පත් කර නැත',
-  'staticContent.status.published': 'සක්‍රීය',
+  'staticContent.status.published': 'සක්‍රිය',
   'staticContent.notWritten': 'කිසිදා ලියා නැත',
   'staticContent.draftDescription':
     'මෙම පිටුව කිසිදා ප්‍රකාශයට පත් කර නැත, එබැවින් යෙදුම එහිම ඇතුළත් අනුවාදය පෙන්වයි.',
-  'staticContent.liveDescription': '{{name}} විසින් ප්‍රකාශයට පත් කර, {{when}} සිට සක්‍රීයයි.',
+  'staticContent.liveDescription': '{{name}} විසින් ප්‍රකාශයට පත් කර, {{when}} සිට සක්‍රියයි.',
   'staticContent.publish': 'මෙම පිටුව ප්‍රකාශයට පත් කරන්න',
   'staticContent.contact.title': 'මෙම නියම ගැන ප්‍රශ්න',
   'staticContent.contact.description': 'යෙදුමේ නියමවලට යටින් පෙන්වයි. මේවා කර්මාන්තශාලාවේම විස්තර වන අතර වින්‍යාසයේ තබා ඇත.',
@@ -1222,10 +1222,10 @@ export const si: Record<TranslationKey, string> = {
     'මෙයින් පසු, සංස්කරණයක් සුරැකීමෙන් එය වහාම සැපයුම්කරුවන් ඉදිරියේ තබයි. දෙවන පියවරක් නැත.',
   'staticContent.publishNeedsCopy': 'පළමුව {{language}} පිටපත ලියන්න.',
   'staticContent.publishNeedsAdmin': 'ප්‍රකාශයට පත් කිරීම කර්මාන්තශාලා පරිපාලකගේ තීරණයකි.',
-  'staticContent.published': '{{page}} සක්‍රීයයි',
+  'staticContent.published': '{{page}} සක්‍රියයි',
   'staticContent.publishFailed': 'පිටුව ප්‍රකාශයට පත් වූයේ නැත',
   'staticContent.editsAreLive':
-    'මෙම පිටුව සක්‍රීයයි. සංස්කරණයක් සුරැකූ විගස එය සැපයුම්කරුවන්ට ලැබේ. සෑම වෙනසක්ම පෙර වචන සමඟ විගණන ලොගයේ සටහන් වේ.',
+    'මෙම පිටුව සක්‍රියයි. සංස්කරණයක් සුරැකූ විගස එය සැපයුම්කරුවන්ට ලැබේ. සෑම වෙනසක්ම පෙර වචන සමඟ විගණන ලොගයේ සටහන් වේ.',
   'staticContent.savedLive': 'සැපයුම්කරුවන් දැන් මෙය දකියි.',
 
   /* ───────────────────────── M13 Notifications ───────────────────────── */
@@ -1254,7 +1254,7 @@ export const si: Record<TranslationKey, string> = {
   'notifications.triggersDescription':
     'යමක් සිදු වූ විට, කිසිවෙකු කිසිවක් ඔබන්නේ නැතිව පද්ධතිය විසින් යවනු ලැබේ.',
   'notifications.on': 'ක්‍රියාත්මක',
-  'notifications.off': 'අක්‍රීය',
+  'notifications.off': 'අක්‍රිය',
   'notifications.notConfigured': 'මෙම කර්මාන්තශාලාව සඳහා සකසා නැත',
   'notifications.triggerChanged': '{{name}} විසින් {{when}} වෙනස් කරන ලදී.',
   'notifications.triggerOn': '{{category}} දැන් ස්වයංක්‍රීයව යවනු ලැබේ',
@@ -1311,7 +1311,7 @@ export const si: Record<TranslationKey, string> = {
   'notifications.reachLoading': 'මෙය කාට ලැබෙනවාද යන්න ගණනය කරමින්…',
   'notifications.reachSummary': 'සැපයුම්කරුවන් {{suppliers}}ක් හරහා දුරකථන {{devices}}කට ලැබේ.',
   'notifications.reachSuppressed':
-    'දුරකථන {{count}}ක “{{category}}” අක්‍රීය කර ඇති බැවින් ඒවාට මෙය නොලැබේ.',
+    'දුරකථන {{count}}ක “{{category}}” අක්‍රිය කර ඇති බැවින් ඒවාට මෙය නොලැබේ.',
   'notifications.reachNoDevice':
     'මෙම පිරිසේ සැපයුම්කරුවන් {{count}}ක් කිසිදා යෙදුම ස්ථාපනය කර නැත.',
   'notifications.reachNobody':
@@ -1322,7 +1322,7 @@ export const si: Record<TranslationKey, string> = {
   'notifications.sendToCount': 'දුරකථන {{count}}කට යවන්න',
   'notifications.sent': 'දුරකථන {{count}}කට යැව්වා',
   'notifications.sentSuppressed':
-    'දුරකථන {{count}}ක මෙම වර්ගය අක්‍රීය කර ඇති බැවින් ඒවාට එය නොලැබුණි.',
+    'දුරකථන {{count}}ක මෙම වර්ගය අක්‍රිය කර ඇති බැවින් ඒවාට එය නොලැබුණි.',
   'notifications.sendFailed': 'කිසිවක් යවා නැත',
 
   /* ───────────────────────── M14 Configuration ───────────────────────── */
@@ -1343,7 +1343,7 @@ export const si: Record<TranslationKey, string> = {
   'config.sections': 'සැකසුම්',
   'config.save': 'මෙම කොටස සුරකින්න',
   'config.saved': 'වින්‍යාසය සුරැක්කා',
-  'config.savedHint': 'වෙනස කොන්සෝලය පුරා සක්‍රීයයි. නැවත පූරණය කිරීම අවශ්‍ය නැත.',
+  'config.savedHint': 'වෙනස කොන්සෝලය පුරා සක්‍රියයි. නැවත පූරණය කිරීම අවශ්‍ය නැත.',
   'config.saveFailed': 'කිසිවක් සුරැකුණේ නැත',
   'config.revert': 'වෙනස්කම් අස් කරන්න',
   'config.unsavedHint': 'මෙම කොටසේ සුරැකී නැති වෙනස්කම් ඇත.',
@@ -1378,7 +1378,7 @@ export const si: Record<TranslationKey, string> = {
   'config.section.features': 'විශේෂාංග',
   'config.sectionHint.features': 'මෙම කර්මාන්තශාලාව ලබා දෙන දේ',
   'config.sectionDescription.features':
-    'විශේෂාංගයක් අක්‍රීය කිරීමෙන් එය සම්පූර්ණයෙන් ඉවත් වේ: මෙනු පේළිය, තිර, සහ යෙදුම.',
+    'විශේෂාංගයක් අක්‍රිය කිරීමෙන් එය සම්පූර්ණයෙන් ඉවත් වේ: මෙනු පේළිය, තිර, සහ යෙදුම.',
   'config.section.operations': 'එකතු කිරීම සහ ඉතුරුම්',
   'config.sectionHint.operations': 'ස්ථාන, ඉතුරුම්, පොහොර',
   'config.sectionDescription.operations':
@@ -1493,18 +1493,18 @@ export const si: Record<TranslationKey, string> = {
   'config.topicPrefixHint': 'තාක්ෂණික. පණිවිඩ සැපයුම්කරු ඉල්ලා සිටියොත් පමණක් මෙය වෙනස් කරන්න.',
   'config.pushCategories': 'මෙම කර්මාන්තශාලාව යවන දැනුම්දීම් වර්ග',
   'config.pushCategoriesHint':
-    'සලකුණු කළ වර්ගයක් පමණක් යැවිය හැක. දෙවන කොටුව යනු සැපයුම්කරු එය සක්‍රීය නොකර දුරකථනයක් එය පිළිගන්නේද යන්නයි.',
+    'සලකුණු කළ වර්ගයක් පමණක් යැවිය හැක. දෙවන කොටුව යනු සැපයුම්කරු එය සක්‍රිය නොකර දුරකථනයක් එය පිළිගන්නේද යන්නයි.',
   'config.optedInByDefault': 'පෙරනිමියෙන් පිළිගනී',
   'config.pushFlagOff':
-    'මෙම කර්මාන්තශාලාව සඳහා දැනුම්දීම් අක්‍රීය කර ඇති බැවින්, මෙහි කිසිවකට තවම බලපෑමක් නැත. පළමුව විශේෂාංග යටතේ ඒවා සක්‍රීය කරන්න.',
+    'මෙම කර්මාන්තශාලාව සඳහා දැනුම්දීම් අක්‍රිය කර ඇති බැවින්, මෙහි කිසිවකට තවම බලපෑමක් නැත. පළමුව විශේෂාංග යටතේ ඒවා සක්‍රිය කරන්න.',
 
   /* The impact list. Each of these is why a change is refused or worth thinking about,
      rendered from the same `configImpact` the API refuses with, so the two can never
      name different things. */
   'config.impact.savingsHeld':
-    'සැපයුම්කරුවන් {{count}}කට ඉතුරුම් යෝජනා ක්‍රමයේ මුදල් ඇත. එය අක්‍රීය කිරීමෙන් කර්මාන්තශාලාව ඔවුන් වෙනුවෙන් තබා ගෙන සිටින ශේෂයන් සැඟවෙනු ඇත, එබැවින් මෙය සුරැකිය නොහැක.',
+    'සැපයුම්කරුවන් {{count}}කට ඉතුරුම් යෝජනා ක්‍රමයේ මුදල් ඇත. එය අක්‍රිය කිරීමෙන් කර්මාන්තශාලාව ඔවුන් වෙනුවෙන් තබා ගෙන සිටින ශේෂයන් සැඟවෙනු ඇත, එබැවින් මෙය සුරැකිය නොහැක.',
   'config.impact.payoutRunsOpen':
-    'ගෙවීම් වට {{count}}ක් අවසන් වී නැත. ගෙවීම් අක්‍රීය කිරීමෙන් තවම ගෙවා නැති මුදල් සැඟවෙනු ඇත, එබැවින් මෙය සුරැකිය නොහැක.',
+    'ගෙවීම් වට {{count}}ක් අවසන් වී නැත. ගෙවීම් අක්‍රිය කිරීමෙන් තවම ගෙවා නැති මුදල් සැඟවෙනු ඇත, එබැවින් මෙය සුරැකිය නොහැක.',
   'config.impact.teaPacketsOutstanding':
     'රු. {{count}}ක තේ පැකට් නිකුත් කර ඇති නමුත් තවම ගිණුමකින් අය කර නැත. එය අක්‍රිය කිරීමෙන් එය සැඟවෙන නිසා, මෙය සුරැකිය නොහැක.',
   'config.impact.teaPacketPolicy.bad-pack':
@@ -1513,7 +1513,7 @@ export const si: Record<TranslationKey, string> = {
   'config.impact.teaPacketPolicy.bad-max':
     'මාසික සීමාව අවම වශයෙන් පැකට් එකක් විය යුතුය. යෝජනා ක්‍රමය වසා දැමීමට, ඒ වෙනුවට විශේෂාංගය අක්‍රිය කරන්න.',
   'config.impact.creditOutstanding':
-    'සැපයුම්කරුවන් තවමත් {{facility}} සඳහා රු. {{amount}} ගෙවිය යුතුව ඇත. එය අක්‍රීය කිරීමෙන් එය සැඟවෙනු ඇත, එබැවින් මෙය සුරැකිය නොහැක.',
+    'සැපයුම්කරුවන් තවමත් {{facility}} සඳහා රු. {{amount}} ගෙවිය යුතුව ඇත. එය අක්‍රිය කිරීමෙන් එය සැඟවෙනු ඇත, එබැවින් මෙය සුරැකිය නොහැක.',
   'config.impact.surfaceRemoved': 'සැමට වහාම මෙය මෙනුවෙන් අස් වේ, තවද යෙදුම එය ලබා දීම නවතී.',
   'config.impact.pointInUse':
     'බර කිරීම් {{count}}ක් {{point}} යටතේ ගොනු කර ඇත. එය ඉවත් කිරීමෙන් ඒවා තවදුරටත් නොපවතින ස්ථානයක් වෙත යොමු වනු ඇත, එබැවින් මෙය සුරැකිය නොහැක.',
@@ -1584,7 +1584,7 @@ export const si: Record<TranslationKey, string> = {
     'එකම අගය තීරු දෙකක දිස් වේ. බොහෝ බැංකු උඩුගත කිරීම් එය ප්‍රතික්ෂේප කරයි.',
   'config.impact.payoutTemplate.unknown-field': 'තීරුවක් ගෙවීම් පේළියක නොමැති දෙයකට යොමු වේ.',
   'config.impact.payoutTemplate.missing-label':
-    'තීරුවකට ශීර්ෂයක් නැත, සහ ශීර්ෂ සක්‍රීයයි. එය පුරවන්න, නැතහොත් ශීර්ෂ පේළිය අක්‍රීය කරන්න.',
+    'තීරුවකට ශීර්ෂයක් නැත, සහ ශීර්ෂ සක්‍රියයි. එය පුරවන්න, නැතහොත් ශීර්ෂ පේළිය අක්‍රිය කරන්න.',
   'config.impact.payoutTemplateBankColumns':
     'තීරු {{count}}ක් බැංකු විස්තර දරයි, එබැවින් චෙක්පත් සහ මුදල් වටවල ඒවා හිස්ව පිටවේ. එය සාමාන්‍යයෙන් කම් නැත. එම වටවල ඒවා පිරී ඇතැයි පමණක් අපේක්ෂා නොකරන්න.',
 
@@ -1606,7 +1606,7 @@ export const si: Record<TranslationKey, string> = {
   'users.column.person': 'පුද්ගලයා',
   'users.column.roles': 'භූමිකා',
   'users.column.lastSignIn': 'අවසන් වර පිවිසුණේ',
-  'users.status.active': 'සක්‍රීය',
+  'users.status.active': 'සක්‍රිය',
   'users.status.suspended': 'අත්හිටුවා ඇත',
   'users.neverSignedIn': 'කිසිදා නැත',
   'users.lastAdministrator': 'ආපසු ඇතුළු වීමට ඇති එකම මාර්ගය',
@@ -1636,7 +1636,7 @@ export const si: Record<TranslationKey, string> = {
   'auth.forgotBody': 'ඔබේ කර්මාන්තශාලා පරිපාලකගෙන් ඉල්ලන්න. ඔවුන්ට Users & roles වෙතින් ඔබට නව එක් වරක මුරපදයක් දිය හැක; ඉන්පසු පුරනය වන විට ඔබම එකක් තෝරා ගන්න.',
   'users.edit': 'සංස්කරණය',
   'users.suspend': 'අත්හිටුවන්න',
-  'users.reactivate': 'නැවත සක්‍රීය කරන්න',
+  'users.reactivate': 'නැවත සක්‍රිය කරන්න',
   'users.invite': 'පරිශීලකයෙකු එකතු කරන්න',
   'users.inviteTitle': 'පරිශීලකයෙකු එකතු කරන්න',
   'users.inviteBody':
@@ -1669,13 +1669,13 @@ export const si: Record<TranslationKey, string> = {
 
   'users.suspendTitle': '{{name}} අත්හිටුවන්නද?',
   'users.suspendBody':
-    'කිසිවෙකු ඔවුන් නැවත සක්‍රීය කරන තුරු ඔවුන්ට පිවිසිය නොහැක. ඔවුන් දැනටමත් කර ඇති සියල්ල හරියටම එලෙසම පවතී.',
+    'කිසිවෙකු ඔවුන් නැවත සක්‍රිය කරන තුරු ඔවුන්ට පිවිසිය නොහැක. ඔවුන් දැනටමත් කර ඇති සියල්ල හරියටම එලෙසම පවතී.',
   'users.suspendConfirm': 'ඔවුන් අත්හිටුවන්න',
   'users.suspendDone': '{{name}}ට තවදුරටත් පිවිසිය නොහැක',
   'users.suspendFailed': 'කිසිවක් වෙනස් වූයේ නැත',
-  'users.reactivateTitle': '{{name}} නැවත සක්‍රීය කරන්නද?',
+  'users.reactivateTitle': '{{name}} නැවත සක්‍රිය කරන්නද?',
   'users.reactivateBody': 'ඔවුන්ට තිබූ භූමිකා සමඟම ඔවුන්ට වහාම නැවත පිවිසිය හැක.',
-  'users.reactivateConfirm': 'ඔවුන් නැවත සක්‍රීය කරන්න',
+  'users.reactivateConfirm': 'ඔවුන් නැවත සක්‍රිය කරන්න',
   'users.reactivateDone': '{{name}}ට නැවත පිවිසිය හැක',
   'users.reactivateFailed': 'කිසිවක් වෙනස් වූයේ නැත',
   'users.reasonHint': 'අවම අකුරු {{min}}ක්. මෙය සිදු වන පුද්ගලයා ඇයි කියා අසනු ඇත.',
@@ -1836,7 +1836,7 @@ export const si: Record<TranslationKey, string> = {
   /* ─────────────────────────────── errors ─────────────────────────────── */
   'error.title': 'යමක් වැරදී ඇත',
   'error.network': 'කර්මාන්තශාලා සේවාදායකයට සම්බන්ධතාවක් නැත. ජාලය පරීක්ෂා කර නැවත උත්සාහ කරන්න.',
-  'error.timeout': 'සේවාදායකය පිළිතුරු දීමට ඉතා දිගු කාලයක් ගත් විය. නැවත උත්සාහ කරන්න.',
+  'error.timeout': 'සේවාදායකය පිළිතුරු දීමට ඉතා දිගු කාලයක් ගත විය. නැවත උත්සාහ කරන්න.',
   'error.forbidden': 'ඔබේ භූමිකාව මෙයට ඉඩ නොදේ.',
   'error.featureDisabled': 'මෙම කර්මාන්තශාලාව එම විශේෂාංගය භාවිත නොකරයි.',
   'error.notFound': 'එම වාර්තාව තවදුරටත් නොපවතී.',
@@ -1853,6 +1853,17 @@ export const si: Record<TranslationKey, string> = {
   'error.alreadyResolved': 'වෙනත් අයෙක් දැනටමත් මෙය විසඳා ඇත.',
   'error.monthMismatch':
     'තිරය පෙන්වන්නේ ප්‍රකාශයට පත් කරන මාසයට වෙනස් මාසයකි. නැවත පූරණය කර පරීක්ෂා කරන්න.',
+  'error.factorySyncOn': 'Sync සක්‍රිය විට මෙම වාර්තා කර්මාන්තශාලා පද්ධතියෙන් ලැබේ. මෙහි ඇතුළත් කිරීමට වින්‍යාසයෙන් එය අක්‍රිය කරන්න.',
+  'error.syncSwitchBlocked': 'එක් මාසයක බිල්පත් සාදා ඇති නමුත් publish කර නැත. කර්මාන්තශාලා පද්ධති sync එක මාරු කිරීමට පෙර එය publish කරන්න හෝ නැවත සාදන්න.',
+  'error.supplierCodeTaken': 'මෙම අංකය දැනටමත් වෙනත් සැපයුම්කරුවෙකුට ඇත.',
+  'error.unknownCollectionPoint': 'එම එකතු කිරීමේ ස්ථානය මෙම කර්මාන්තශාලාවේ ලැයිස්තුවේ නැත.',
+  'error.bankDetailsRequired': 'බැංකු මාරු කිරීමට බැංකුව, ශාඛාව සහ ගිණුම් අංකය අවශ්‍යයි.',
+  'error.openingBalancesLocked': 'මෙම සැපයුම්කරුට බිල්පතක් publish කර ඇති නිසා, දැන් ශේෂ බිල්පත් මගින් ගෙන යයි.',
+  'error.negative': '0 හෝ ඊට වැඩි මුදලක් ඇතුළත් කරන්න.',
+  'error.unknownSupplier': 'මෙම අංකයෙන් සැපයුම්කරුවෙකු නැත.',
+  'error.noBill': 'එම මාසයේ මෙම සැපයුම්කරුට බිල්පතක් නැත.',
+  'error.importSize': 'ගොනුවක පේළි 1 සිට 5,000 දක්වා තිබිය හැක. කුඩා ගොනු කිහිපයකට බෙදන්න.',
+  'error.importInvalid': 'සමහර පේළිවල ගැටලු ඇත. කිසිවක් සුරැකී නැත.',
   'error.monthLocked': 'එම මාසය ප්‍රකාශයට පත් කර ඇති බැවින්, එහි අගයන් තවදුරටත් වෙනස් කළ නොහැක.',
   'error.alreadyVoided': 'මෙම දළු භාරය දැනටමත් අවලංගු කර ඇත.',
   'error.invalidBatch':
@@ -1877,17 +1888,17 @@ export const si: Record<TranslationKey, string> = {
   'error.fallbackTranslationMissing':
     'ඉංග්‍රීසි පිටපතක් නැත, එබැවින් සැපයුම්කරුවෙකුට පෙන්වීමට කිසිවක් නොවනු ඇත. පළමුව එය ලියන්න.',
   'error.slugTaken': 'එම මාතෘකාව සහිත ලිපියක් දැනටමත් පවතී.',
-  'error.contentNotPublished': 'එය සක්‍රීය නොවේ, එබැවින් ඉවත් කිරීමට කිසිවක් නැත.',
+  'error.contentNotPublished': 'එය සක්‍රිය නොවේ, එබැවින් ඉවත් කිරීමට කිසිවක් නැත.',
   'error.unknownCategory':
     'යෙදුම එය ඉවතට දමනු ඇත. එය විවෘත කරන්නේ හඳුනා ගන්නා වර්ගයේ දැනුම්දීම් පමණි.',
   'error.categoryDisabled': 'මෙම කර්මාන්තශාලාව එම වර්ගයේ දැනුම්දීම් නොයවයි.',
   'error.noRecipients':
     'එම පිරිසේ කිසිදු දුරකථනයක් මෙම වර්ගයේ දැනුම්දීම් පිළිගන්නේ නැත, එබැවින් කිසිවක් නොලැබෙනු ඇත.',
   'error.pushNotConfigured':
-    'මෙම කර්මාන්තශාලාව සඳහා දැනුම්දීම් සක්‍රීය කර ඇති නමුත් තවම කිසිදු වර්ගයක් සකසා නැත. එය කරන්නේ වින්‍යාසය තුළය.',
+    'මෙම කර්මාන්තශාලාව සඳහා දැනුම්දීම් සක්‍රිය කර ඇති නමුත් තවම කිසිදු වර්ගයක් සකසා නැත. එය කරන්නේ වින්‍යාසය තුළය.',
   'error.tenantImmutable': 'කර්මාන්තශාලා හැඳුනුම වෙබ් ලිපිනයෙන් පැමිණේ, එබැවින් එය වෙනස් කළ නොහැක.',
   'error.flagHasRecords':
-    'එම විශේෂාංගය කර්මාන්තශාලාවට තවමත් වගකිව යුතු වාර්තා දරා සිටී, එබැවින් එය තවම අක්‍රීය කළ නොහැක.',
+    'එම විශේෂාංගය කර්මාන්තශාලාවට තවමත් වගකිව යුතු වාර්තා දරා සිටී, එබැවින් එය තවම අක්‍රිය කළ නොහැක.',
   'error.pointInUse': 'එම එකතු කිරීමේ ස්ථානය යටතේ බර කිරීම් ගොනු කර ඇති බැවින් එය ඉවත් කළ නොහැක.',
   'error.fallbackLanguageRequired':
     'ඉංග්‍රීසි ඉවත් කළ නොහැක. සෑම ලිපියක් සහ පිටුවක් එය වෙත ආපසු යොමු වේ.',
@@ -1908,7 +1919,7 @@ export const si: Record<TranslationKey, string> = {
   'config.sectionDescription.creditRules':
     'එක් එක් ණය සීමාව ගණනය කරන ආකාරය. එකම නීතියෙන් තමයි යෙදුමේ සැපයුම්කරුට පෙනෙන සීමාවත්, ණය පෝලිමේ පරීක්ෂා කරන සීමාවත් හැදෙන්නේ.',
   'config.creditRules.scope':
-    'සැපයුම්කරු කිසිවක් ඉල්ලීමට පෙර ඔහුට පෙන්වන අගය තීරණය කරන්නේ මෙම නීතියි. එක් නීතියක්, කියවන්නන් දෙදෙනෙක්. යෙදුමයි කාර්යාලයයි සීමාවක් ගැන කිසිදා නොගැලපෙන්නේ නැහැ.',
+    'සැපයුම්කරු කිසිවක් ඉල්ලීමට පෙර ඔහුට පෙන්වන අගය තීරණය කරන්නේ මෙම නීතියි. එක් නීතියක්, කියවන්නන් දෙදෙනෙක්. යෙදුමයි කාර්යාලයයි සීමාවක් ගැන කිසිදා නොගැළපෙන්නේ නැහැ.',
   'config.creditRules.usingDefaults':
     'මෙම කර්මාන්තශාලාව තවම තමන්ගේම නීති නියම කර නැත, එබැවින් පෙරනිමි නීති ක්‍රියාත්මකයි. ඒවා පහත පෙන්වා ඇත. කර්මාන්තශාලාවේම කර ගැනීමට සුරකින්න.',
   'config.creditRules.facilityOff':
@@ -2250,7 +2261,7 @@ export const si: Record<TranslationKey, string> = {
   'bills.generateHint':
     'මේ මාසයේ දළු ඇති සෑම සැපයුම්කරුවෙකු සඳහා එක් දළු ගිණුමක් සාදයි. මාසය ප්‍රකාශයට පත් කරන තුරු සැපයුම්කරුවන්ට කිසිවක් නොයවයි.',
   'bills.generateReadOnly': 'බිල්පත් සාදන්නේ ගණකාධිකාරී පමණි.',
-  'bills.generated': '{{month}} සඳහා බිල්පත් සාදුවා',
+  'bills.generated': '{{month}} සඳහා බිල්පත් සෑදුවා',
   'bills.generatedDetail': 'බිල්පත් {{count}}ක්, {{payable}} ගෙවිය යුතුයි.',
   'bills.missingBankWarning':
     'ලිපිගොනුවේ බැංකු විස්තර නොමැති සැපයුම්කරුවන් {{count}}කට මුදල් ගෙවිය යුතුයි. ගිණුම් පොත ලැබෙන තුරු ගෙවීම් වටයක් එම පේළි රඳවා තබයි.',
@@ -2267,7 +2278,7 @@ export const si: Record<TranslationKey, string> = {
   'bills.runDescription':
     'බිල්පතක් සාදන්නේ මාසයේ දළු සහ එහි මිල මතය. ඒ දෙකෙන් එකක් වෙනස් වන සෑම විටම නැවත සාදන්න.',
   'bills.runDescriptionClosed': 'මෙම බිල්පත් වාර්තාවයි. සැපයුම්කරුවන්ට යෙදුමේ ඒවා දැකිය හැක.',
-  'bills.runGeneratedBy': '{{name}} විසින් {{when}} සාදුවා.',
+  'bills.runGeneratedBy': '{{name}} විසින් {{when}} සෑදුවා.',
   'bills.runGross': 'දළ මුදල',
   'bills.runKgs': 'බිල් කළ දළු',
   'bills.runSavings': 'රඳවාගත් ඉතුරුම්',
@@ -2299,7 +2310,7 @@ export const si: Record<TranslationKey, string> = {
   'deliveries.error.sessionFull':
     'එක් සැසියක උපරිම පේළි {{limit}}ක් ඇත. මේවා වාර්තා කර, ඉන්පසු තවත් සැසියක් ආරම්භ කරන්න.',
   'deliveries.error.stillMatching': 'තවමත් එම අංකය සොයමින්…',
-  'deliveries.error.unknownSupplier': 'එම අංකය සහිත සක්‍රීය සැපයුම්කරුවෙක් නැත.',
+  'deliveries.error.unknownSupplier': 'එම අංකය සහිත සක්‍රිය සැපයුම්කරුවෙක් නැත.',
   'deliveries.kgs': 'කිලෝ',
   'deliveries.monthLocked':
     '{{month}} ප්‍රකාශයට පත් කර ඇති බැවින්, එහි තවත් කිසිවක් වාර්තා කිරීමට හෝ අවලංගු කිරීමට නොහැක. බිල්පත් සහ ගෙවීම් සාදන්නේ දළු දැන් ඇති ආකාරයටය.',
@@ -2349,7 +2360,7 @@ export const si: Record<TranslationKey, string> = {
   'months.error.extraNonNegative': 'අමතර මුදල ඍණ විය නොහැක.',
   'months.error.moneyScale': 'මුදල් සඳහා දශම ස්ථාන දෙකක් පමණි.',
   'months.error.ratePositive': 'මිල 0ට වඩා වැඩි විය යුතුයි.',
-  'months.exception.inactiveSupplierWithLeaf': 'අක්‍රීය සැපයුම්කරුගෙන් දළු',
+  'months.exception.inactiveSupplierWithLeaf': 'අක්‍රිය සැපයුම්කරුගෙන් දළු',
   'months.exception.missingBankDetails': 'බැංකු විස්තර නැත',
   'months.exception.outlierDelivery': 'අසාමාන්‍ය බර කිරීමක්',
   'months.exception.pendingChangeRequest': 'වෙනස් කිරීමේ ඉල්ලීම තවම විවෘතයි',
@@ -2459,16 +2470,16 @@ export const si: Record<TranslationKey, string> = {
   'nav.deliveries': 'දළු ලැබීම',
   'nav.rates': 'මිල සහ මාසය අවසන් කිරීම',
   'config.section.factorySystem': 'කර්මාන්තශාලා පද්ධතිය',
-  'config.sectionHint.factorySystem': 'Sync සක්‍රීයයි, නැතහොත් වාර්තා මෙහි',
+  'config.sectionHint.factorySystem': 'Sync සක්‍රියයි, නැතහොත් වාර්තා මෙහි',
   'config.sectionDescription.factorySystem': 'සැපයුම්කරුවන්, දෛනික දළු, මිල, බිල්පත් සහ ශේෂ ලැබෙන්නේ කොහෙන්ද.',
   'records.syncOnTitle': 'මෙම වාර්තා එන්නේ කර්මාන්තශාලා පද්ධතියෙන්',
-  'records.syncOnBody': 'කර්මාන්තශාලා පද්ධති sync එක සක්‍රීයයි, ඒ නිසා දළු, මිල සහ බිල්පත් කර්මාන්තශාලාවේම පද්ධතියෙන් ලැබේ. ඒ වෙනුවට ඒවා මෙහි තබා ගැනීමට, වින්‍යාසය → කර්මාන්තශාලා පද්ධතිය යටතේ sync එක අක්‍රීය කරන්න.',
-  'records.mode.sync.title': 'කර්මාන්තශාලා පද්ධති sync: සක්‍රීයයි',
+  'records.syncOnBody': 'කර්මාන්තශාලා පද්ධති sync එක සක්‍රියයි, ඒ නිසා දළු, මිල සහ බිල්පත් කර්මාන්තශාලාවේම පද්ධතියෙන් ලැබේ. ඒ වෙනුවට ඒවා මෙහි තබා ගැනීමට, වින්‍යාසය → කර්මාන්තශාලා පද්ධතිය යටතේ sync එක අක්‍රිය කරන්න.',
+  'records.mode.sync.title': 'කර්මාන්තශාලා පද්ධති sync: සක්‍රියයි',
   'records.mode.sync.body': 'වාර්තා පැයකට වරක් කර්මාන්තශාලාවේම පද්ධතියෙන් ලැබේ.',
   'records.mode.sync.p1': 'සැපයුම්කරුවන්, දළු, මිල, බිල්පත් සහ ශේෂ මෙහි කියවීමට පමණයි.',
   'records.mode.sync.p2': 'බිල්පත් කර්මාන්තශාලා පද්ධතියේ ඒවායි, ලැබෙන ලෙසම පෙන්වයි.',
   'records.mode.sync.p3': 'ඇතුළත් කිරීමේ හෝ import තිර නැත.',
-  'records.mode.manual.title': 'කර්මාන්තශාලා පද්ධති sync: අක්‍රීයයි',
+  'records.mode.manual.title': 'කර්මාන්තශාලා පද්ධති sync: අක්‍රියයි',
   'records.mode.manual.body': 'කාර්යාලය මෙම console එකේ වාර්තා තබා ගනී.',
   'records.mode.manual.p1': 'සැපයුම්කරුවන් එකතු කර දෛනික දළු ඇතුළත් කරන්න, එකින් එක හෝ Excel/CSV ගොනුවකින්.',
   'records.mode.manual.p2': 'මාසික මිල ඇතුළත් කරන්න; බිල්පත් මෙහි ගණනය කර publish කිරීමට පෙර පරීක්ෂා කෙරේ.',
@@ -2481,12 +2492,14 @@ export const si: Record<TranslationKey, string> = {
   'records.import.title.monthlyRates': 'මාසික මිල import කරන්න',
   'records.import.title.openingBalances': 'ආරම්භක ශේෂ import කරන්න',
   'records.import.title.walkInCredit': 'කවුන්ටර ණය ඉල්ලීම් import කරන්න',
+  'records.import.title.bills': 'සම්පූර්ණ බිල්පත් import කරන්න',
   'records.import.title.billAdjustments': 'වෙනත් අඩුකිරීම් import කරන්න',
   'records.import.intro.suppliers': 'එක් සැපයුම්කරුවෙකුට එක් පේළියක්. සැපයුම්කරු අංකය කර්මාන්තශාලාවේම අංකය විය යුතුය.',
   'records.import.intro.deliveries': 'එක් කිරුමකට එක් පේළියක්: දිනය, සැපයුම්කරු අංකය සහ කිලෝ.',
   'records.import.intro.monthlyRates': 'එක් මාසයකට එක් පේළියක්: කිලෝවක මිල, සහ අමතර මිලක් ඇත්නම් එය.',
   'records.import.intro.openingBalances': 'එක් සැපයුම්කරුවෙකුට එක් පේළියක්: මෙම console එක භාරගත් විට ඔවුන් ගෙවිය යුතු සහ ඔවුන් සතු මුදල්.',
   'records.import.intro.walkInCredit': 'කවුන්ටරයේ කළ එක් ඉල්ලීමකට එක් පේළියක්. සෑම එකක්ම ණය පෝලිමට පොරොත්තුවෙන් ලෙස එකතු වේ.',
+  'records.import.intro.bills': 'කර්මාන්තශාලාවේම පද්ධතිය මුද්‍රණය කළ මාසයක බිල්පත්, එක් සැපයුම්කරුවෙකුට එක් පේළියක්. සෑම අගයක්ම මුද්‍රණය වූ ලෙසම තබා ගනී; එක් එක් පේළිය එකතු වන්නේද යන්න පමණක් පරීක්ෂා කරයි. ඒවා මාසයේ publish නොකළ බිල්පත් වෙනුවට යන අතර සුපුරුදු පරිදි පරීක්ෂා කර publish කෙරේ.',
   'records.import.intro.billAdjustments': 'එක් බිල්පතකට එක් පේළියක්: වෙනත් අඩුකිරීම් මුදල සහ සැපයුම්කරු කියවන හේතුව.',
   'records.import.choose': 'Excel හෝ CSV ගොනුවක් තෝරන්න, නැතහොත් මෙහි දමන්න',
   'records.import.formats': '.xlsx හෝ .csv, පළමු පේළිය තීරු නම් ලෙස',
@@ -2500,6 +2513,9 @@ export const si: Record<TranslationKey, string> = {
   'records.import.ready': 'පේළි {{count}}ම නිවැරදි ලෙස පෙනේ. Import ඔබන තුරු කිසිවක් සුරැකෙන්නේ නැත.',
   'records.import.problemLine': 'පේළිය {{row}}, {{column}}: {{message}}',
   'records.import.problem.required': 'හිස්, නමුත් අනිවාර්යයි',
+  'records.import.problem.too-many-decimals': 'දශමස්ථාන වැඩියි',
+  'records.import.problem.does-not-add-up': 'පේළියේ අනෙක් අගයන් සමඟ එකතු නොවේ',
+  'records.import.problem.rate-differs': 'මෙම මාසයේ අනෙක් බිල්පත්වලට වඩා වෙනස් මිලක්',
   'records.import.problem.not-a-number': 'සංඛ්‍යාවක් නොවේ',
   'records.import.problem.negative': 'සෘණ විය නොහැක',
   'records.import.problem.not-a-date': 'දිනයක් නොවේ (YYYY-MM-DD භාවිත කරන්න)',
@@ -2525,7 +2541,7 @@ export const si: Record<TranslationKey, string> = {
   'records.import.done': 'අවසන්',
   'records.supplier.add': 'සැපයුම්කරු එකතු කරන්න',
   'records.supplier.addTitle': 'සැපයුම්කරුවෙකු එකතු කරන්න',
-  'records.supplier.addBody': 'කර්මාන්තශාලා පද්ධති sync අක්‍රීය නිසා මෙහි ලියාපදිංචි කෙරේ. කාර්යාලය මුරපදයක් දුන් පසු සැපයුම්කරු මෙම අංකයෙන් app එකට පුරනය වේ.',
+  'records.supplier.addBody': 'කර්මාන්තශාලා පද්ධති sync අක්‍රිය නිසා මෙහි ලියාපදිංචි කෙරේ. කාර්යාලය මුරපදයක් දුන් පසු සැපයුම්කරු මෙම අංකයෙන් app එකට පුරනය වේ.',
   'records.supplier.code': 'සැපයුම්කරු අංකය',
   'records.supplier.codeHint': 'පාස්පොතේ ඇති කර්මාන්තශාලාවේම අංකය. සැපයුම්කරු පුරනය වන්නේ මෙම අංකයෙනි.',
   'records.supplier.name': 'සම්පූර්ණ නම',
@@ -2552,6 +2568,11 @@ export const si: Record<TranslationKey, string> = {
   'records.opening.edit': 'සංස්කරණය',
   'records.opening.asOfMonth': 'ආරම්භය',
   'records.opening.asOfMonthHint': 'මෙම console එක බිල්පතක් ගණනය කරන පළමු මාසය.',
+  'records.opening.loanMonthsLeft': 'ණය: ඉතිරි මාසික ගිණුම්',
+  'records.opening.loanMonthsLeftHint': 'ණය සීමාව යටතේ පමණක් අය කිරීමට හිස්ව තබන්න.',
+  'records.opening.loanInstalmentsPaid': 'ණය: දැනටමත් ගෙවූ වාරික',
+  'records.opening.loanInstalmentsPaidHint': 'ඊළඟ බිල්පතේ මෙයට පසු වාරිකය මුද්‍රණය වේ. හිස් නම් 1 සිට.',
+  'records.opening.wholeNumber': 'පූර්ණ සංඛ්‍යාවක් ඇතුළත් කරන්න, නැතහොත් හිස්ව තබන්න.',
   'records.opening.field.advance': 'ගෙවිය යුතු අත්තිකාරම',
   'records.opening.field.loan': 'ගෙවිය යුතු ණය',
   'records.opening.field.manure': 'ගෙවිය යුතු පොහොර',
@@ -2583,6 +2604,7 @@ export const si: Record<TranslationKey, string> = {
   'records.walkIn.saved': '{{code}} සඳහා ඉල්ලීම සටහන් කළා',
   'records.walkIn.savedHint': 'එය අනුමැතිය සඳහා පෝලිමේ පොරොත්තුවෙන් ඇත.',
   'records.walkIn.failed': 'ඉල්ලීම සටහන් කළ නොහැකි විය',
+  'records.bills.imported': 'Import කළ',
   'records.otherCharges.edit': 'සංස්කරණය',
   'records.otherCharges.title': 'වෙනත් අඩුකිරීම්',
   'records.otherCharges.body': 'කාර්යාලය type කරන එකම බිල්පත් පේළිය. සැපයුම්කරු app එකේ පේළිය යටින් හේතුව දකී.',
@@ -2640,7 +2662,7 @@ export const si: Record<TranslationKey, string> = {
   'config.section.billCalculation': 'බිල්පත් ගණනය',
   'config.sectionHint.billCalculation': 'Round කිරීම, බිල් අංක, අත්තිකාරම් පොලිය',
   'config.sectionDescription.billCalculation': 'මෙහි ගණනය කරන බිල්පත් ගෙවන සහ අංක කරන ආකාරය සහ අත්තිකාරම් පොලිය, කර්මාන්තශාලාවේ මුද්‍රිත slip එකට සමාන වන ලෙස.',
-  'config.bill.syncOn': 'කර්මාන්තශාලා පද්ධති sync එක සක්‍රීයයි, එබැවින් කර්මාන්තශාලා පද්ධතියේ බිල්පත් තමන්ගේම අගයන් දරයි, මේවා භාවිත නොවේ. Sync එක අක්‍රිය කළ පසු මේවා අදාළ වේ.',
+  'config.bill.syncOn': 'කර්මාන්තශාලා පද්ධති sync එක සක්‍රියයි, එබැවින් කර්මාන්තශාලා පද්ධතියේ බිල්පත් තමන්ගේම අගයන් දරයි, මේවා භාවිත නොවේ. Sync එක අක්‍රිය කළ පසු මේවා අදාළ වේ.',
   'config.bill.paymentUnit': 'ශේෂය ගෙවන්නේ',
   'config.bill.paymentUnitHint': 'ඉතිරිය Coins C/F ලෙස පෙන්වා ඊළඟ බිල්පතේ ගෙවයි.',
   'config.bill.unit': 'රු. {{unit}} ඒකක',
@@ -2650,14 +2672,16 @@ export const si: Record<TranslationKey, string> = {
   'config.bill.serialInvalid': '1 සිට 999999 දක්වා පූර්ණ සංඛ්‍යාවක් ඇතුළත් කරන්න.',
   'config.bill.serialExample': 'ඊළඟ නව බිල්පතේ අංකය {{billNo}}.',
   'config.bill.serialNone': 'බිල්පත් අංක GL/YYYY-MM/NNNN ලෙස.',
+  'config.interest.loanRate': 'ණයට පොලිය (මාසයකට %)',
+  'config.interest.loanRateHint': '0 (default) නම් පොලියක් අය නොකරයි.',
   'config.interest.monthlyRate': 'අත්තිකාරමට පොලිය (මාසයකට %)',
   'config.interest.monthlyRateHint': '0 නම් පොලියක් අය නොකරයි.',
   'config.interest.outOfRange': '0 සිට {{max}} දක්වා ප්‍රතිශතයක් ඇතුළත් කරන්න.',
   'config.interest.example': 'මාසයේ වාරිකයෙන් පසු තවම ගෙවිය යුතු රු. {{balance}} අත්තිකාරමකට, එම බිල්පතේ රු. {{interest}} පොලියක් එකතු වේ.',
   'config.interest.none': 'අත්තිකාරමකට පොලියක් එකතු නොවේ.',
-  'config.interest.how': 'සරල පොලිය. එක් එක් බිල්පතේදී, එම මාසයේ වාරිකයෙන් පසු තවම ගෙවිය යුතු අත්තිකාරමෙන් ගණනය කරයි. එය බිල්පතේ පෙන්වා, ඊළඟ බිල්පතෙන් අය කරන මුදලට එකතු කරයි. වෙනසක් ඊළඟට සාදන බිල්පතේ සිට අදාළ වේ, ප්‍රකාශයට පත් කළ මාසයකට කිසිදා නොවේ.',
+  'config.interest.how': 'සරල පොලිය. එක් එක් බිල්පතේදී, එම මාසයේ වාරිකවලින් පසු තවම ගෙවිය යුතු අත්තිකාරමෙන් සහ ණයෙන්, එක එකක් තමන්ගේම අනුපාතයෙන් ගණනය කරයි. එය බිල්පතේ Loan Interest ලෙස පෙන්වා ඊළඟ වාරිකවලින් අය කරයි; පොලියට පොලියක් නැත. වෙනසක් ඊළඟට සාදන බිල්පතේ සිට අදාළ වේ, ප්‍රකාශයට පත් කළ මාසයකට කිසිදා නොවේ.',
   'records.picker.placeholder': 'සැපයුම්කරු අංකය හෝ නම',
-  'records.picker.none': 'ගැළපෙන සක්‍රීය සැපයුම්කරුවෙකු නැත.',
+  'records.picker.none': 'ගැළපෙන සක්‍රිය සැපයුම්කරුවෙකු නැත.',
   'records.picker.clear': 'වෙනත් සැපයුම්කරුවෙකු තෝරන්න',
   'records.reviewBills': 'මෙම මාසයේ බිල්පත් පරීක්ෂා කරන්න',
   'audit.action.supplierOpeningBalances': 'ආරම්භක ශේෂ ඇතුළත් කළා',

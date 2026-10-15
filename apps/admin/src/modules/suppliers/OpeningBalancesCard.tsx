@@ -117,21 +117,30 @@ function OpeningBalancesDialog({
   const [amounts, setAmounts] = useState<Record<Amount, string>>(() =>
     Object.fromEntries(AMOUNTS.map((key) => [key, initial ? String(initial[key]) : '0'])) as Record<Amount, string>,
   );
+  // A running loan's position, optional: empty means "recover under the loan cap, number from 1".
+  const [monthsLeft, setMonthsLeft] = useState(initial?.loanMonthsLeft?.toString() ?? '');
+  const [instalmentsPaid, setInstalmentsPaid] = useState(initial?.loanInstalmentsPaid?.toString() ?? '');
   const [note, setNote] = useState('');
   useEffect(() => setNote(''), [initial]);
+
+  const wholeOrEmpty = (value: string) => value.trim() === '' || /^\d+$/.test(value.trim());
+  const loanInvalid = !wholeOrEmpty(monthsLeft) || !wholeOrEmpty(instalmentsPaid);
+  const optionalNumber = (value: string) => (value.trim() === '' ? null : Number(value));
 
   const invalid = AMOUNTS.filter((key) => {
     const n = Number(amounts[key]);
     return amounts[key].trim() === '' || !Number.isFinite(n) || n < 0;
   });
   const monthOk = /^\d{4}-(0[1-9]|1[0-2])$/.test(asOfMonth);
-  const ready = invalid.length === 0 && monthOk && note.trim().length >= 10;
+  const ready = invalid.length === 0 && !loanInvalid && monthOk && note.trim().length >= 10;
 
   async function submit() {
     try {
       await save.mutateAsync({
         asOfMonth,
         ...(Object.fromEntries(AMOUNTS.map((key) => [key, Number(amounts[key])])) as Record<Amount, number>),
+        loanMonthsLeft: optionalNumber(monthsLeft),
+        loanInstalmentsPaid: optionalNumber(instalmentsPaid),
         note: note.trim(),
       });
       toast.success(t('records.opening.saved'));
@@ -186,6 +195,29 @@ function OpeningBalancesDialog({
             )}
           </Field>
         ))}
+        {/* Only meaningful for a loan already running. */}
+        {Number(amounts.loan) > 0 ? (
+          <>
+            <Field
+              label={t('records.opening.loanMonthsLeft')}
+              hint={t('records.opening.loanMonthsLeftHint')}
+              error={!wholeOrEmpty(monthsLeft) ? t('records.opening.wholeNumber') : undefined}
+            >
+              {({ id, describedBy, invalid: isInvalid }) => (
+                <Input id={id} aria-describedby={describedBy} invalid={isInvalid} inputMode="numeric" className="numeric" value={monthsLeft} onChange={(event) => setMonthsLeft(event.target.value)} />
+              )}
+            </Field>
+            <Field
+              label={t('records.opening.loanInstalmentsPaid')}
+              hint={t('records.opening.loanInstalmentsPaidHint')}
+              error={!wholeOrEmpty(instalmentsPaid) ? t('records.opening.wholeNumber') : undefined}
+            >
+              {({ id, describedBy, invalid: isInvalid }) => (
+                <Input id={id} aria-describedby={describedBy} invalid={isInvalid} inputMode="numeric" className="numeric" value={instalmentsPaid} onChange={(event) => setInstalmentsPaid(event.target.value)} />
+              )}
+            </Field>
+          </>
+        ) : null}
         <Field label={t('common.reason')} required hint={t('records.opening.noteHint')} className="sm:col-span-2">
           {({ id, describedBy }) => (
             <Textarea id={id} aria-describedby={describedBy} rows={2} value={note} onChange={(event) => setNote(event.target.value)} />

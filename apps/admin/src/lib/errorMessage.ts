@@ -88,6 +88,18 @@ const BY_CODE: Record<string, string> = {
   'self-modification': 'error.selfModification',
   'email-taken': 'error.emailTaken',
   'unknown-role': 'error.unknownRole',
+  // Factory records, kept here while the factory-system sync is off (factory-records.md).
+  'factory-sync-on': 'error.factorySyncOn',
+  'sync-switch-blocked': 'error.syncSwitchBlocked',
+  'supplier-code-taken': 'error.supplierCodeTaken',
+  'unknown-collection-point': 'error.unknownCollectionPoint',
+  'bank-details-required': 'error.bankDetailsRequired',
+  'opening-balances-locked': 'error.openingBalancesLocked',
+  'negative': 'error.negative',
+  'unknown-supplier': 'error.unknownSupplier',
+  'no-bill': 'error.noBill',
+  'import-size': 'error.importSize',
+  'import-invalid': 'error.importInvalid',
   '403': 'error.forbidden',
   '404': 'error.notFound',
 };

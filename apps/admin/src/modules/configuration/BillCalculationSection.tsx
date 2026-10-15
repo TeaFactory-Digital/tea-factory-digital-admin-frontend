@@ -37,26 +37,33 @@ export function BillCalculationSection(props: SectionProps) {
   const { t } = useTranslation();
   const savedSettings = props.config.billSettings ?? DEFAULT_BILL_SETTINGS;
   const savedRate = (props.config.advanceInterest ?? DEFAULT_ADVANCE_INTEREST).monthlyRatePercent;
+  // A loan bears no interest unless the factory sets a rate here.
+  const savedLoanRate = (props.config.loanInterest ?? DEFAULT_ADVANCE_INTEREST).monthlyRatePercent;
 
   const [unit, setUnit] = useState(savedSettings.paymentUnit);
   const [serial, setSerial] = useState(savedSettings.nextBillSerial?.toString() ?? '');
   const [rate, setRate] = useState(String(savedRate));
+  const [loanRate, setLoanRate] = useState(String(savedLoanRate));
   useEffect(() => {
     setUnit(savedSettings.paymentUnit);
     setSerial(savedSettings.nextBillSerial?.toString() ?? '');
     setRate(String(savedRate));
-  }, [savedSettings.paymentUnit, savedSettings.nextBillSerial, savedRate]);
+    setLoanRate(String(savedLoanRate));
+  }, [savedSettings.paymentUnit, savedSettings.nextBillSerial, savedRate, savedLoanRate]);
 
   const nextBillSerial = serial.trim() === '' ? undefined : Number(serial);
   const settings = { paymentUnit: unit, ...(nextBillSerial === undefined ? {} : { nextBillSerial }) };
   const monthlyRatePercent = rate.trim() === '' ? Number.NaN : Number(rate);
+  const loanRatePercent = loanRate.trim() === '' ? Number.NaN : Number(loanRate);
 
   const settingsProblem = billSettingsProblem(settings);
   const rateProblem = advanceInterestProblem({ monthlyRatePercent });
+  const loanRateProblem = advanceInterestProblem({ monthlyRatePercent: loanRatePercent });
   const dirty =
     unit !== savedSettings.paymentUnit ||
     nextBillSerial !== savedSettings.nextBillSerial ||
-    monthlyRatePercent !== savedRate;
+    monthlyRatePercent !== savedRate ||
+    loanRatePercent !== savedLoanRate;
 
   const paid = Math.floor(EXAMPLE_PAYABLE / unit) * unit;
   const year = new Date().getFullYear();
@@ -140,6 +147,28 @@ export function BillCalculationSection(props: SectionProps) {
             />
           )}
         </Field>
+
+        <Field
+          label={t('config.interest.loanRate')}
+          hint={t('config.interest.loanRateHint')}
+          error={loanRateProblem ? t('config.interest.outOfRange', { max: MAX_ADVANCE_INTEREST_PERCENT }) : undefined}
+        >
+          {({ id, describedBy, invalid }) => (
+            <Input
+              id={id}
+              aria-describedby={describedBy}
+              invalid={invalid}
+              className="numeric"
+              type="number"
+              min={0}
+              max={MAX_ADVANCE_INTEREST_PERCENT}
+              step={0.25}
+              disabled={props.readOnly}
+              value={loanRate}
+              onChange={(event) => setLoanRate(event.target.value)}
+            />
+          )}
+        </Field>
       </div>
 
       {rateProblem ? null : (
@@ -156,12 +185,17 @@ export function BillCalculationSection(props: SectionProps) {
 
       <SectionFooter
         {...props}
-        patch={{ billSettings: settings, advanceInterest: { monthlyRatePercent } }}
-        dirty={dirty && settingsProblem === null && rateProblem === null}
+        patch={{
+          billSettings: settings,
+          advanceInterest: { monthlyRatePercent },
+          loanInterest: { monthlyRatePercent: loanRatePercent },
+        }}
+        dirty={dirty && settingsProblem === null && rateProblem === null && loanRateProblem === null}
         onRevert={() => {
           setUnit(savedSettings.paymentUnit);
           setSerial(savedSettings.nextBillSerial?.toString() ?? '');
           setRate(String(savedRate));
+          setLoanRate(String(savedLoanRate));
         }}
       />
     </CardBody>

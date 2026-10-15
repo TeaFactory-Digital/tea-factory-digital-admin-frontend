@@ -66,7 +66,7 @@ factory's colours as soon as `GET /config` answers.
       suppliers ask for packets.
 - [ ] **Credit rules:** how each ceiling is worked out (basis, multiplier, months, cap).
 - [ ] **Bill calculation:** pay in Rs. 1, 5 or 10; the next bill number after the factory's
-      last paper bill; advance interest per month.
+      last paper bill; advance and loan interest per month (loan 0% unless set).
 - [ ] **Common notes:** the office's ready-made sentences.
 - [ ] **Static content:** read the default terms, privacy, FAQ, savings scheme, credit terms
       and about pages in all three languages, and edit them for this factory.
