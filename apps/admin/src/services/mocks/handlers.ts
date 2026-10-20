@@ -2028,7 +2028,7 @@ function importBills(rows: ImportRow[], user: MockUser, factory: FactoryInfo): v
         totalRatePerKg: round2(ratePerKg + extraRatePerKg),
         totalKgs: num(row.totalKg),
         coinsBroughtForward: num(row.coinsBroughtForward),
-        savingsWithdrawal: 0,
+        savingsWithdrawal: num(row.savingsWithdrawal),
         greenLeafAmount: num(row.greenLeafAmount),
         extraPayment: num(row.extraPayment),
         grossAmount: num(row.grossAmount),
@@ -2054,12 +2054,19 @@ function importBills(rows: ImportRow[], user: MockUser, factory: FactoryInfo): v
       };
     });
 
-    state.bills = [...state.bills.filter((bill) => bill.monthKey !== monthKey), ...bills];
-    const summary = summariseBillRun(monthKey, runId, bills, {
-      generatedAt: now,
-      generatedById: user.id,
-      generatedByName: user.name,
-    });
+    // Only the suppliers in the file are replaced, so a factory may send one file per
+    // division; the month's run is everything it now holds.
+    const replaced = new Set(bills.map((bill) => bill.supplierId));
+    state.bills = [
+      ...state.bills.filter((bill) => !(bill.monthKey === monthKey && replaced.has(bill.supplierId))),
+      ...bills,
+    ];
+    const summary = summariseBillRun(
+      monthKey,
+      runId,
+      state.bills.filter((bill) => bill.monthKey === monthKey),
+      { generatedAt: now, generatedById: user.id, generatedByName: user.name },
+    );
     state.billRuns = [...state.billRuns.filter((run) => run.monthKey !== monthKey), summary];
     if (record.stage !== 'published') record.stage = 'billsGenerated';
   }

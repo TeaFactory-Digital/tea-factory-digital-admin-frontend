@@ -12,7 +12,7 @@
  */
 
 import type { ChangeRequestType, CreditFacility } from './types/app';
-import type { Capability } from './types/admin';
+import type { Capability, FeatureFlagName } from './types/admin';
 
 export const ACTIVITY_KINDS = [
   'creditRequest.created',
@@ -73,4 +73,26 @@ export const ACTIVITY_CAPABILITY: Record<ActivityKind, Capability> = {
   'inquiry.created': 'inquiries',
   'inquiry.replied': 'inquiries',
   'supplier.appDeletionRequested': 'suppliers',
+};
+
+const FACILITY_FLAG: Record<CreditFacility, FeatureFlagName> = {
+  advance: 'enableAdvances',
+  loan: 'enableLoans',
+  manure: 'enableManure',
+};
+
+/**
+ * The feature flag an item needs to be shown: while it is off the kind is hidden, so a
+ * factory that stopped offering loans is not told about loan requests. A credit item uses
+ * its own request's facility. `null`: always shown.
+ */
+export const ACTIVITY_FLAG: Record<ActivityKind, (item: Pick<ActivityItem, 'facility'>) => FeatureFlagName | null> = {
+  'creditRequest.created': (item) => (item.facility ? FACILITY_FLAG[item.facility] : null),
+  'creditRequest.cancelled': (item) => (item.facility ? FACILITY_FLAG[item.facility] : null),
+  'teaPacket.created': () => 'enableTeaPackets',
+  'teaPacket.cancelled': () => 'enableTeaPackets',
+  'changeRequest.created': () => null,
+  'inquiry.created': () => 'enableInquiry',
+  'inquiry.replied': () => 'enableInquiry',
+  'supplier.appDeletionRequested': () => null,
 };

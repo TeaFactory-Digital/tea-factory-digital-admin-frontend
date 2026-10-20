@@ -48,6 +48,7 @@ import { ErrorState, Notice, Skeleton } from '@/components/ui/states';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
 import { OpeningBalancesCard } from './OpeningBalancesCard';
+import { OPENING_BALANCES_ON_SERVER } from '@/lib/serverReady';
 import { TransportRateCard } from './TransportRateCard';
 import { InfoTip } from '@/components/ui/Tooltip';
 import { useToast } from '@/components/ui/Toast';
@@ -370,7 +371,7 @@ export function SupplierDetailScreen() {
           <SupplierSavingsLedger supplierId={supplier.id} />
           {/* Only while the office keeps the factory's records here: the balances this
               console's first bill starts from. */}
-          {keepsRecords ? <OpeningBalancesCard supplierId={supplier.id} /> : null}
+          {keepsRecords && OPENING_BALANCES_ON_SERVER ? <OpeningBalancesCard supplierId={supplier.id} /> : null}
           {/* The transport rate this console's bill charges them, and where it comes from. */}
           {keepsRecords ? (
             <TransportRateCard

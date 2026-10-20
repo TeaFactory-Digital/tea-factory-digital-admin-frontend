@@ -2428,6 +2428,16 @@ export const ADMIN_ERROR_CODES = [
   'no-bill',
   'import-invalid',
   'import-size',
+
+  /* Credit refusals a walk-in or an approval can meet (BR-303 and the facility rules). */
+  'request-pending',
+  'supplier-suspended',
+  'supplier-closed',
+  'advance-outstanding',
+  'loan-installments-invalid',
+  'manure-installments-invalid',
+  /** A loan is still owed: no second loan until it is repaid (the factory's answer). */
+  'loan-outstanding',
 ] as const;
 
 export type AdminErrorCode = (typeof ADMIN_ERROR_CODES)[number];

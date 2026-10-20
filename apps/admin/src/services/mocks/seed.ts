@@ -1873,10 +1873,9 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
 
       carryForward: {
         nextMonthDeb: amounts.nextMonthDeb,
-        // Slip wording: this line is the **advance** balance (§9.4), which is why
-        // it is not simply `creditBalances.loan`.
+        // The slip's "Loan Balance": the loan still owed after this month's instalment.
         loanBalance: round2(
-          Math.max(0, supplier.creditBalances.advance - amounts.deductions.advance),
+          Math.max(0, supplier.creditBalances.loan - amounts.deductions.loansAdvance),
         ),
         manureBalance: round2(
           Math.max(0, supplier.creditBalances.manure - amounts.deductions.manure),

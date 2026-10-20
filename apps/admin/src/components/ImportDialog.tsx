@@ -21,6 +21,7 @@ import {
   importRowProblems,
   importTemplateCsv,
   type ImportKind,
+  type ImportRow,
   type ImportRowProblem,
 } from '@tfd/domain';
 import { Button } from '@/components/ui/Button';
@@ -53,6 +54,8 @@ export function ImportDialog({
   const [file, setFile] = useState<{ name: string; data: ImportFile } | null>(null);
   const [readError, setReadError] = useState<string | null>(null);
   const [serverProblems, setServerProblems] = useState<ImportRowProblem[] | null>(null);
+  // The server sends at most 500 problems back; this is how many it found in all.
+  const [serverTotal, setServerTotal] = useState(0);
   const [saved, setSaved] = useState<number | null>(null);
 
   const columns = IMPORT_COLUMNS[kind];
@@ -90,7 +93,8 @@ export function ImportDialog({
     if (!chosen) return;
     reset();
     try {
-      setFile({ name: chosen.name, data: await readImportFile(chosen) });
+      const data = await readImportFile(chosen);
+      setFile({ name: chosen.name, data: { ...data, rows: data.rows.map((row) => cleanExcelNumbers(kind, row)) } });
     } catch (error) {
       const code = error instanceof ImportFileError ? error.code : 'unreadable';
       setReadError(t(`records.import.fileError.${code}`));
@@ -103,6 +107,7 @@ export function ImportDialog({
       const result = await importRows.mutateAsync({ fileName: file.name, rows: file.data.rows });
       if (result.problems.length > 0) {
         setServerProblems(result.problems);
+        setServerTotal(result.problemTotal ?? result.problems.length);
         return;
       }
       setSaved(result.saved);
@@ -247,7 +252,7 @@ export function ImportDialog({
                 <span className="flex flex-col gap-xs">
                   <strong className="font-semibold">
                     {serverProblems
-                      ? t('records.import.serverProblems', { count: problems.length })
+                      ? t('records.import.serverProblems', { count: serverTotal })
                       : t('records.import.problems', { count: problems.length })}
                   </strong>
                   <ul className="max-h-40 list-disc overflow-y-auto pl-lg">
@@ -311,3 +316,22 @@ export function ImportDialog({
     </Dialog>
   );
 }
+
+/**
+ * Excel stores `79.53` as `79.53000000000002`, which the decimals check would refuse. A
+ * value that is a whole number of the column's decimals once floating-point noise is
+ * removed is written back that way; a real extra decimal (`24.555`) is left to be refused.
+ */
+function cleanExcelNumbers(kind: ImportKind, row: ImportRow): ImportRow {
+  const out = { ...row };
+  for (const column of IMPORT_COLUMNS[kind]) {
+    if (column.type !== 'number') continue;
+    const raw = (out[column.key] ?? '').trim();
+    if (!/^-?\d+\.\d{6,}$/.test(raw)) continue;
+    const value = Number(raw);
+    const rounded = Number(value.toFixed(column.decimals ?? 2));
+    if (Math.abs(rounded - value) < 1e-6) out[column.key] = String(rounded);
+  }
+  return out;
+}
+

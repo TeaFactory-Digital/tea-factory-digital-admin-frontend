@@ -11,7 +11,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  findManureProduct,
   installmentOptionsFor,
+  manureAmount,
   type CreditFacility,
   type SupplierListItem,
   type WalkInCreditRequest,
@@ -23,6 +25,7 @@ import { Dialog } from '@/components/ui/Dialog';
 import { Field, Input, Select, Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
+import { formatAmount } from '@/lib/format';
 import { useCreateWalkInCredit } from '@/modules/records/hooks';
 
 const FACILITY_FLAGS = {
@@ -44,15 +47,25 @@ export function WalkInCreditDialog({ onClose }: { onClose: () => void }) {
   const [supplier, setSupplier] = useState<SupplierListItem | null>(null);
   const [facility, setFacility] = useState<CreditFacility>(facilities[0] ?? 'advance');
   const [amount, setAmount] = useState('');
-  const months = installmentOptionsFor(config.creditRules, 'loan');
-  const [repaymentMonths, setRepaymentMonths] = useState(String(months[0] ?? 1));
+  // Loans and manure are both repaid over a period the factory offers; an advance is not.
+  const months = facility === 'advance' ? [] : installmentOptionsFor(config.creditRules, facility);
+  const [repaymentMonths, setRepaymentMonths] = useState('');
+  const chosenMonths = repaymentMonths || String(months[0] ?? '');
   const products = config.manureProducts ?? [];
   const [manureType, setManureType] = useState(products[0]?.name ?? '');
   const [quantityKg, setQuantityKg] = useState('');
   const [note, setNote] = useState('');
 
-  const amountNumber = Number(amount);
-  const amountOk = amount.trim() !== '' && Number.isFinite(amountNumber) && amountNumber > 0;
+  /**
+   * Manure is priced by the server from the catalogue, whatever amount is sent: the screen
+   * shows that price instead of asking for one a clerk could mistype.
+   */
+  const product = findManureProduct(products, manureType);
+  const manurePrice =
+    facility === 'manure' && product && Number(quantityKg) > 0 ? manureAmount(product, Number(quantityKg)) : null;
+  const amountNumber = facility === 'manure' ? (manurePrice ?? 0) : Number(amount);
+  const amountOk =
+    facility === 'manure' || (amount.trim() !== '' && Number.isFinite(amountNumber) && amountNumber > 0);
   const quantityOk = facility !== 'manure' || (Number(quantityKg) > 0 && manureType !== '');
   const ready = supplier !== null && amountOk && quantityOk && note.trim().length >= 10;
 
@@ -63,7 +76,7 @@ export function WalkInCreditDialog({ onClose }: { onClose: () => void }) {
       facility,
       amount: amountNumber,
       note: note.trim(),
-      ...(facility === 'loan' ? { repaymentMonths: Number(repaymentMonths) } : {}),
+      ...(facility !== 'advance' && chosenMonths ? { repaymentMonths: Number(chosenMonths) } : {}),
       ...(facility === 'manure' ? { manureType, quantityKg: Number(quantityKg) } : {}),
     };
     try {
@@ -102,7 +115,10 @@ export function WalkInCreditDialog({ onClose }: { onClose: () => void }) {
         </div>
         <Field label={t('records.walkIn.facility')} required>
           {({ id }) => (
-            <Select id={id} value={facility} onChange={(event) => setFacility(event.target.value as CreditFacility)}>
+            <Select id={id} value={facility} onChange={(event) => {
+                setFacility(event.target.value as CreditFacility);
+                setRepaymentMonths('');
+              }}>
               {facilities.map((one) => (
                 <option key={one} value={one}>
                   {t(`credit.facility.${one}`)}
@@ -111,16 +127,26 @@ export function WalkInCreditDialog({ onClose }: { onClose: () => void }) {
             </Select>
           )}
         </Field>
-        <Field label={t('records.walkIn.amount')} required error={amount && !amountOk ? t('records.walkIn.amountInvalid') : undefined}>
-          {({ id, invalid }) => (
-            <Input id={id} invalid={invalid} inputMode="decimal" className="numeric" value={amount} onChange={(event) => setAmount(event.target.value)} />
-          )}
-        </Field>
+        {facility === 'manure' ? (
+          <div className="flex flex-col gap-xxs">
+            <span className="text-label text-text-primary">{t('records.walkIn.amount')}</span>
+            <span className="numeric text-body text-text-primary">
+              {manurePrice === null ? '-' : formatAmount(manurePrice)}
+            </span>
+            <span className="text-caption text-text-secondary">{t('records.walkIn.manurePriced')}</span>
+          </div>
+        ) : (
+          <Field label={t('records.walkIn.amount')} required error={amount && !amountOk ? t('records.walkIn.amountInvalid') : undefined}>
+            {({ id, invalid }) => (
+              <Input id={id} invalid={invalid} inputMode="decimal" className="numeric" value={amount} onChange={(event) => setAmount(event.target.value)} />
+            )}
+          </Field>
+        )}
 
-        {facility === 'loan' ? (
+        {facility !== 'advance' && months.length > 0 ? (
           <Field label={t('records.walkIn.repaymentMonths')} required className="sm:col-span-2">
             {({ id }) => (
-              <Select id={id} value={repaymentMonths} onChange={(event) => setRepaymentMonths(event.target.value)}>
+              <Select id={id} value={chosenMonths} onChange={(event) => setRepaymentMonths(event.target.value)}>
                 {months.map((one) => (
                   <option key={one} value={String(one)}>
                     {t('records.walkIn.months', { count: one })}

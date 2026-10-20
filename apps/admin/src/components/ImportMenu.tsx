@@ -17,17 +17,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu';
+import { IMPORT_KINDS_NOT_ON_SERVER } from '@/lib/serverReady';
 import { ImportDialog } from './ImportDialog';
 
-export function ImportMenu({ kinds }: { kinds: readonly [ImportKind, ...ImportKind[]] }) {
+export function ImportMenu({ kinds: asked }: { kinds: readonly [ImportKind, ...ImportKind[]] }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState<ImportKind | null>(null);
   const icon = <FileUp className="size-icon-sm" aria-hidden />;
+  // Only what the API can take today: a kind it has not built answers 404.
+  const kinds = asked.filter((kind) => !IMPORT_KINDS_NOT_ON_SERVER.has(kind));
+  if (kinds.length === 0) return null;
 
   return (
     <>
       {kinds.length === 1 ? (
-        <Button variant="secondary" iconLeft={icon} onClick={() => setOpen(kinds[0])}>
+        <Button variant="secondary" iconLeft={icon} onClick={() => setOpen(kinds[0]!)}>
           {t('records.import.button')}
         </Button>
       ) : (

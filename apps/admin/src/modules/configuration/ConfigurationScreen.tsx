@@ -53,7 +53,7 @@ import { ErrorState, Spinner } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { SPLIT_PANE } from '@/components/ui/layout';
 import { cn } from '@/lib/cn';
-import { errorMessageKey } from '@/lib/errorMessage';
+import { errorMessageKey, errorMessageValues } from '@/lib/errorMessage';
 import {
   AppearanceSection,
   FactorySection,
@@ -163,7 +163,7 @@ export function ConfigurationScreen() {
        */
       toast.success(t('config.saved'), t('config.savedHint'));
     } catch (cause) {
-      toast.error(t('config.saveFailed'), t(errorMessageKey(cause)));
+      toast.error(t('config.saveFailed'), t(errorMessageKey(cause), errorMessageValues(cause)));
     }
   }
 

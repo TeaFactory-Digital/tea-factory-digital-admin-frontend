@@ -227,7 +227,7 @@ Its inputs, per supplier and month:
 | Previous debts | Last bill's unpaid balance, or `previousDebt` from opening balances for the first |
 | Coins brought forward | Last bill's coins carried forward |
 | Other deductions | The office's typed line (§4.2) |
-| Advance interest (`carryForward.loanInterest`) | `advanceInterestFor(advance still owed after this month's instalment, config.advanceInterest)`: simple interest, per month, on the advance **principal** still owed. It is carried as its own balance (the slip's "Loan Interest") and recovered with the advance; it never earns interest itself. A loan is charged the same way at `config.loanInterest` (0% unless the factory sets it), and the slip's "Loan Interest" is the sum of the two |
+| Advance interest (`carryForward.loanInterest`) | `advanceInterestFor(advance still owed after this month's instalment, config.advanceInterest)`: simple interest, per month, on the advance **principal** still owed. It is carried as its own balance (the slip's "Loan Interest") and recovered with the advance; it never earns interest itself. A loan is charged the same way at `config.loanInterest` (0% unless the factory sets it), and the slip's "Loan Interest" is this month's charge, the sum of the two. An advance is settled within its month, so advance interest arises only when an account could not cover it; the slip's "Loan Balance" is the **loan** still owed |
 
 **Bill number.** With `billSettings.nextBillSerial` set, a new bill is numbered
 `factoryBillNumber(year, serial)` = the year and a six-digit running serial
@@ -254,7 +254,10 @@ A factory with the sync off fills a month's bills **either way**, month by month
    rupee). The month's rate is taken from the rows.
 
 Either way the bills are reviewed and published the same way, and either replaces the other
-for a month not yet published. An imported bill is marked `AdminBill.source: 'imported'`
+for a month not yet published. An import replaces **only the suppliers in the file**, so a
+factory may send one file per division. A month the supplier owes is imported with its
+negative `balanceAmount`, `finalBalance` 0 and the shortfall as `nextMonthDebt`; savings paid
+back on the bill go in `savingsWithdrawal`. An imported bill is marked `AdminBill.source: 'imported'`
 (the console shows "Imported") and its "Other deductions" line is not edited here: a
 correction is made in the factory's system and the month re-imported. The day grid comes
 from the leaf entered or imported for that month, if any.
@@ -299,5 +302,6 @@ PDF, and the loan line carries its instalment number ("Loan (instalment 3)", PDF
   their own rate pays it on every kilo; clearing it puts them back on the point's rate.
 - The slip in §5 comes out to the cent with `paymentUnit: 10`.
 - With `nextBillSerial: 210870`, the first new bill is `<year>210870`; re-generating keeps it.
-- Advance interest at 2% a month: a bill with Rs. 10,000 of advance still owed shows
-  Rs. 200 `loanInterest`, and the next bill's advance balance includes it.
+- Loan interest at 2% a month: a bill with Rs. 10,000 of loan still owed after its
+  instalment shows `loanBalance` 10,000 and Rs. 200 `loanInterest`; the next bill recovers the
+  interest, and the principal it is worked on never includes unpaid interest.

@@ -31,9 +31,16 @@ export const factoryRecordRepository = {
     try {
       return await factoryRecordEndpoints.importRows(kind, fileName, rows);
     } catch (error) {
-      const problems = (error as ApiError).details as { problems?: ImportRowProblem[] } | undefined;
+      const problems = (error as ApiError).details as
+        | { problems?: ImportRowProblem[]; total?: number }
+        | undefined;
       if (error instanceof ApiError && error.status === 422 && problems?.problems) {
-        return { kind, saved: 0, problems: problems.problems };
+        return {
+          kind,
+          saved: 0,
+          problems: problems.problems,
+          problemTotal: problems.total ?? problems.problems.length,
+        };
       }
       throw error;
     }

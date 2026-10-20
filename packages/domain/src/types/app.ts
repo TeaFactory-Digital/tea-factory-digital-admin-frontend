@@ -93,7 +93,11 @@ export interface BillDeductions {
 /** Balances carried into the next month. */
 export interface BillCarryForward {
   nextMonthDeb: number;
-  /** Slip wording: this is the **advance** balance (§9.4). */
+  /**
+   * The **loan** still owed after this month's instalment, as the slip's "Loan Balance".
+   * An advance never carries: it is taken back in full on the month's bill (the factory's
+   * answer, 20 October 2026), so it has no balance line.
+   */
   loanBalance: number;
   manureBalance: number;
   loanInterest: number;

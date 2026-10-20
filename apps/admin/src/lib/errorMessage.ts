@@ -100,6 +100,14 @@ const BY_CODE: Record<string, string> = {
   'no-bill': 'error.noBill',
   'import-size': 'error.importSize',
   'import-invalid': 'error.importInvalid',
+  // Credit refusals a walk-in or an approval can meet.
+  'request-pending': 'error.requestPending',
+  'supplier-suspended': 'error.supplierSuspended',
+  'supplier-closed': 'error.supplierClosed',
+  'advance-outstanding': 'error.advanceOutstanding',
+  'loan-installments-invalid': 'error.loanInstallmentsInvalid',
+  'manure-installments-invalid': 'error.manureInstallmentsInvalid',
+  'loan-outstanding': 'error.loanOutstanding',
   '403': 'error.forbidden',
   '404': 'error.notFound',
 };
@@ -133,6 +141,17 @@ export function errorMessageKey(error: unknown): string {
 }
 
 /**
+ * The values an error's message names, from its `details`: today the months behind
+ * `sync-switch-blocked`, printed as "2026-09, 2026-10".
+ */
+export function errorMessageValues(error: unknown): Record<string, string> {
+  if (!isApiError(error)) return {};
+  const details = error.details as { months?: unknown } | undefined;
+  const months = Array.isArray(details?.months) ? details.months.map(String).join(', ') : '';
+  return months ? { months } : {};
+}
+
+/**
  * Does this error deserve its own explanation rather than a toast?
  *
  * The set is "refusals a decision dialog can meet, where retrying the same click
@@ -146,6 +165,11 @@ export function isBlockingError(error: unknown): boolean {
     error.code === 'four-eyes-violation' ||
     error.code === 'already-decided' ||
     error.code === 'stale-eligibility' ||
-    error.code === 'over-ceiling'
+    error.code === 'over-ceiling' ||
+    // The supplier's state, not the click: approving again cannot help (BR-303).
+    error.code === 'supplier-suspended' ||
+    error.code === 'supplier-closed' ||
+    error.code === 'advance-outstanding' ||
+    error.code === 'loan-outstanding'
   );
 }

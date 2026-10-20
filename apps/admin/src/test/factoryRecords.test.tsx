@@ -14,7 +14,10 @@ import {
   advanceInterestProblem,
   transportChargeFor,
   transportRateFor,
+  ACTIVITY_FLAG,
   IMPORT_COLUMNS,
+  billSettingsProblem,
+  supplierCodeSchema,
   importRowProblems,
   importTemplateCsv,
   isFactorySyncEnabled,
@@ -72,7 +75,7 @@ describe('the rules the console and the API share', () => {
       { row: 3, column: 'supplierCode', code: 'required' },
       { row: 3, column: 'kg', code: 'not-a-number' },
     ]);
-    expect(importRowProblems('walkInCredit', [{ supplierCode: '1', facility: 'gift', amount: '5', note: 'x' }]))
+    expect(importRowProblems('walkInCredit', [{ supplierCode: '1', facility: 'gift', amount: '5', note: 'Asked at the counter' }]))
       .toEqual([{ row: 2, column: 'facility', code: 'not-allowed' }]);
   });
 
@@ -102,11 +105,37 @@ describe('the rules the console and the API share', () => {
     // The template's example row is the real galaboda slip: it adds up exactly.
     const slip = Object.fromEntries(IMPORT_COLUMNS.bills.map((column) => [column.key, column.example]));
     expect(importRowProblems('bills', [slip])).toEqual([]);
+    // A month the supplier owes: a negative balance, nothing paid, the shortfall carried.
+    const owed = {
+      ...slip,
+      advance: '110000',
+      totalDeductions: '116418',
+      balanceAmount: '-1773.09',
+      finalBalance: '0',
+      coinsCarriedForward: '0',
+      nextMonthDebt: '1773.09',
+    };
+    expect(importRowProblems('bills', [owed])).toEqual([]);
+    // A savings withdrawal paid on the bill is part of what was paid.
+    expect(
+      importRowProblems('bills', [{ ...slip, savingsWithdrawal: '1000', finalBalance: '69220' }]),
+    ).toEqual([]);
     // A gross typed one column over: caught, and nothing else is guessed at.
     expect(importRowProblems('bills', [{ ...slip, grossAmount: '113109' }])).toEqual([
       { row: 2, column: 'grossAmount', code: 'does-not-add-up' },
       { row: 2, column: 'balanceAmount', code: 'does-not-add-up' },
     ]);
+  });
+
+  it('follows what the backend asked for: note length, slip codes, long serials, bell flags', () => {
+    expect(
+      importRowProblems('walkInCredit', [{ supplierCode: '5147', facility: 'advance', amount: '5000', note: 'counter' }]),
+    ).toEqual([{ row: 2, column: 'note', code: 'too-short' }]);
+    expect(supplierCodeSchema.safeParse('5708 (URUMUTHTH...)').success).toBe(true);
+    expect(supplierCodeSchema.safeParse('A12').success).toBe(true);
+    expect(billSettingsProblem({ paymentUnit: 10, nextBillSerial: 1_000_000 })).toBeNull();
+    expect(ACTIVITY_FLAG['creditRequest.created']({ facility: 'loan' })).toBe('enableLoans');
+    expect(ACTIVITY_FLAG['changeRequest.created']({})).toBeNull();
   });
 
   it('writes a template whose example row survives a comma', () => {
@@ -331,9 +360,13 @@ describe('with the factory-system sync off', () => {
 
     const withAdvance = (await billRepository.list({ monthKey: currentMonthKey, pageSize: 100 })).items;
     const bills = await Promise.all(withAdvance.map((one) => billRepository.get(one.id)));
-    const owing = bills.find((one) => one.carryForward.loanBalance > 0);
-    expect(owing).toBeDefined();
-    expect(owing!.carryForward.loanInterest).toBeCloseTo(owing!.carryForward.loanBalance * 0.02, 2);
+    // An advance is taken back in full on its month's bill, so on an account that covered
+    // its deductions nothing of it is left to bear interest. "Loan Balance" is the loan's,
+    // and with no loan rate set, a covered account carries no interest at all.
+    const covered = bills.filter((one) => one.carryForward.nextMonthDeb === 0);
+    expect(covered.length).toBeGreaterThan(0);
+    expect(covered.every((one) => one.carryForward.loanInterest === 0)).toBe(true);
+    expect(bills.some((one) => one.carryForward.loanBalance > 0)).toBe(true);
   });
 
   it('numbers new bills from the factory’s serial and pays in its unit', async () => {
@@ -393,9 +426,7 @@ describe('with the factory-system sync off', () => {
     ]);
     expect(result).toMatchObject({ saved: 1, problems: [] });
 
-    const rows = (await billRepository.list({ monthKey: currentMonthKey, pageSize: 10 })).items;
-    expect(rows).toHaveLength(1);
-    const bill = await billRepository.get(rows[0]!.id);
+    const bill = await billRepository.get(`bill-${currentMonthKey}-${someone.supplierId}`);
     expect(bill).toMatchObject({
       source: 'imported',
       billNo: '2026210869',

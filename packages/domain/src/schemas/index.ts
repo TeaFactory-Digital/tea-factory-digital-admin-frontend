@@ -160,7 +160,9 @@ export const supplierEditableSchema = z.object({
 export type SupplierEditableInput = z.infer<typeof supplierEditableSchema>;
 
 /**
- * A supplier code carries its division suffix, e.g. `5708 (MAKADURA)`.
+ * A supplier code as the factory writes it: the number (digits, possibly with letters), and
+ * optionally the division after it, as the real slip prints it: `5708 (URUMUTHTH...)`. The
+ * bare number is the identity; the suffix is shown and stored apart.
  *
  * Uniqueness is **per factory** (§16.2) so this cannot be checked client-side:
  * the server answers `supplier-code-taken`. Shape is all that is validated here.
@@ -169,7 +171,7 @@ export const supplierCodeSchema = z
   .string()
   .trim()
   .toUpperCase()
-  .refine((v) => /^\d{1,8}(\s*\([A-Z\s]{2,30}\))?$/.test(v), 'validation.supplierCode');
+  .refine((v) => /^[0-9A-Z][0-9A-Z/-]{0,11}(\s*\([^()]{1,40}\))?$/.test(v), 'validation.supplierCode');
 
 export const supplierRegistrationSchema = supplierEditableSchema.extend({
   supplierCode: supplierCodeSchema,

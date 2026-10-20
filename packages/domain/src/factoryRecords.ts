@@ -82,7 +82,7 @@ export interface BillSettings {
   paymentUnit: number;
   /**
    * The serial the next new bill takes (`factoryBillNumber`): the number after the factory's
-   * last paper bill. Absent: the console's own `GL/YYYY-MM/NNNN` numbers.
+   * last paper bill. Six digits, growing to seven past 999999. Absent: the console's own `GL/YYYY-MM/NNNN` numbers.
    */
   nextBillSerial?: number;
 }
@@ -94,7 +94,7 @@ export const DEFAULT_BILL_SETTINGS: BillSettings = { paymentUnit: 1 };
 export function billSettingsProblem(settings: BillSettings): 'payment-unit' | 'bill-serial' | null {
   if (!(PAYMENT_UNITS as readonly number[]).includes(settings.paymentUnit)) return 'payment-unit';
   const serial = settings.nextBillSerial;
-  if (serial !== undefined && !(Number.isInteger(serial) && serial >= 1 && serial <= 999999)) {
+  if (serial !== undefined && !(Number.isInteger(serial) && serial >= 1 && serial <= 9_999_999)) {
     return 'bill-serial';
   }
   return null;
@@ -221,6 +221,10 @@ export interface ImportColumn {
   values?: readonly string[];
   /** For `number`: the most decimal places accepted. `0` is a whole number. Default 2. */
   decimals?: number;
+  /** For `text`: the fewest characters accepted (the server's own floor). */
+  minLength?: number;
+  /** For `number`: a value below zero is real (a bill's balance in a month owed). */
+  allowNegative?: boolean;
   /** One example value, used in the template. */
   example: string;
 }
@@ -279,7 +283,7 @@ export const IMPORT_COLUMNS: Record<ImportKind, readonly ImportColumn[]> = {
     { key: 'repaymentMonths', type: 'number', required: false, decimals: 0, example: '' },
     { key: 'manureType', type: 'text', required: false, example: '' },
     { key: 'quantityKg', type: 'number', required: false, example: '' },
-    { key: 'note', type: 'text', required: true, example: 'Asked at the counter' },
+    { key: 'note', type: 'text', required: true, minLength: 10, example: 'Asked at the counter' },
   ],
   billAdjustments: [
     { key: 'month', type: 'month', required: true, example: '2026-09' },
@@ -323,7 +327,8 @@ export const IMPORT_COLUMNS: Record<ImportKind, readonly ImportColumn[]> = {
     { key: 'stamps', type: 'number', required: false, example: '25' },
     { key: 'previousDebts', type: 'number', required: false, example: '0' },
     { key: 'totalDeductions', type: 'number', required: true, example: '46418' },
-    { key: 'balanceAmount', type: 'number', required: true, example: '68226.91' },
+    { key: 'balanceAmount', type: 'number', required: true, allowNegative: true, example: '68226.91' },
+    { key: 'savingsWithdrawal', type: 'number', required: false, example: '0' },
     { key: 'coinsCarriedForward', type: 'number', required: false, example: '6.91' },
     { key: 'finalBalance', type: 'number', required: true, example: '68220' },
     { key: 'nextMonthDebt', type: 'number', required: false, example: '0' },
@@ -370,10 +375,16 @@ function importedBillProblems(row: ImportRow, line: number): ImportRowProblem[] 
   const lines = IMPORTED_BILL_DEDUCTIONS.reduce((sum, key) => sum + n(key), 0);
   if (!near(n('totalDeductions'), lines, 0.01)) doubt('totalDeductions');
   if (!near(n('balanceAmount'), n('grossAmount') - n('totalDeductions'), 0.01)) doubt('balanceAmount');
-  // Paid plus held back is the balance; a balance below zero pays nothing and carries the debt.
-  const balance = n('balanceAmount');
+  // Paid plus held back is the balance plus any savings paid back on this bill. Below zero,
+  // nothing is paid and the shortfall is next month's debt.
+  const payable = n('balanceAmount') + n('savingsWithdrawal');
   const paidAndHeld = n('finalBalance') + n('coinsCarriedForward');
-  if (balance >= 0 ? !near(paidAndHeld, balance, 0.01) : n('finalBalance') !== 0) doubt('finalBalance');
+  if (payable >= 0) {
+    if (!near(paidAndHeld, payable, 0.01)) doubt('finalBalance');
+  } else {
+    if (n('finalBalance') !== 0) doubt('finalBalance');
+    if (!near(n('nextMonthDebt'), -payable, 0.01)) doubt('nextMonthDebt');
+  }
   if (n('otherCards') > 0 && (row.otherCardsNote ?? '').trim().length < 3) {
     out.push({ row: line, column: 'otherCardsNote', code: 'required' });
   }
@@ -402,7 +413,9 @@ export interface ImportRowProblem {
 export interface ImportResult {
   kind: ImportKind;
   saved: number;
+  /** At most 500 are sent back; `problemTotal` is how many there were in all. */
   problems: ImportRowProblem[];
+  problemTotal?: number;
 }
 
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -442,12 +455,16 @@ export function importRowProblems(kind: ImportKind, rows: readonly ImportRow[]):
       if (column.type === 'number') {
         const match = DECIMAL.exec(value);
         if (!match) problems.push({ row: line, column: column.key, code: 'not-a-number' });
-        else if (value.startsWith('-')) problems.push({ row: line, column: column.key, code: 'negative' });
+        else if (value.startsWith('-') && !column.allowNegative) {
+          problems.push({ row: line, column: column.key, code: 'negative' });
+        }
         else if ((match[2]?.length ?? 0) > (column.decimals ?? 2)) {
           // Refused rather than rounded: a scale that printed 24.555 kg, rounded here, is a
           // figure the supplier's passbook will not show.
           problems.push({ row: line, column: column.key, code: 'too-many-decimals' });
         }
+      } else if (column.type === 'text' && column.minLength && value.length < column.minLength) {
+        problems.push({ row: line, column: column.key, code: 'too-short' });
       } else if (column.type === 'date' && !isCalendarDate(value)) {
         problems.push({ row: line, column: column.key, code: 'not-a-date' });
       } else if (column.type === 'month' && !MONTH.test(value)) {

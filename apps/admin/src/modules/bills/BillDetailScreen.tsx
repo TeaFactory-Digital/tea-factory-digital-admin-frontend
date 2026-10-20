@@ -39,6 +39,7 @@ import { useBill } from './hooks';
 import { useCan } from '@/auth/authStore';
 import { useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
 import { OtherChargesDialog } from './OtherChargesDialog';
+import { OTHER_DEDUCTIONS_ON_SERVER } from '@/lib/serverReady';
 
 export function BillDetailScreen() {
   const { t } = useTranslation();
@@ -63,7 +64,11 @@ export function BillDetailScreen() {
   const balanced = billIsBalanced(data);
   // An imported bill is the factory's own figures: corrected in their system and re-imported.
   const canAdjust =
-    keepsRecords && canWriteBills && data.publishedAt === null && data.source !== 'imported';
+    OTHER_DEDUCTIONS_ON_SERVER &&
+    keepsRecords &&
+    canWriteBills &&
+    data.publishedAt === null &&
+    data.source !== 'imported';
 
   return (
     <>
@@ -318,11 +323,10 @@ export function BillDetailScreen() {
                 value={formatAmount(data.carryForward.nextMonthDeb)}
                 numeric
               />
-              {/* Slip wording: this line is the **advance** balance (§9.4). Renamed
-                  in the label rather than in the payload, because the payload is the
-                  app's and the app prints the slip's word. */}
+              {/* The slip's "Loan Balance": the loan still owed. An advance is settled
+                  within its month, so it never carries. */}
               <DetailRow
-                label={t('bills.advanceBalance')}
+                label={t('bills.loanBalance')}
                 value={formatAmount(data.carryForward.loanBalance)}
                 numeric
               />
