@@ -165,6 +165,12 @@ export interface CreditEligibilityInput {
   bills: GreenLeafBill[];
   /** Already drawn on this facility and not yet repaid. */
   outstanding: number;
+  /**
+   * The supplier's loan still owed, whatever the facility. While a loan is open the
+   * supplier may take **no new loan and no advance** until it is repaid (the factory's
+   * answer, 21 October 2026). For `loan` this is `outstanding` itself.
+   */
+  loanOutstanding?: number;
   /** Stamped by the caller; this module never reads the clock (see `bill.ts`). */
   computedAt: string;
   multiplier?: number;
@@ -196,8 +202,13 @@ function ineligibilityReasonKey(
     currentKgs: number;
     ceiling: number;
     available: number;
+    loanOutstanding: number;
   },
 ): string | null {
+  // An open loan closes both doors until it is repaid. Manure is not part of the rule.
+  if ((facility === 'loan' || facility === 'advance') && input.loanOutstanding > 0) {
+    return 'credit.reason.loanOutstanding';
+  }
   // An advance is against leaf already in the shed, not against a track record,
   // so the history rule does not apply to it, and applying it anyway would refuse
   // every new supplier the one facility that was designed for them.
@@ -230,6 +241,7 @@ export function buildCreditEligibility({
   facility,
   bills,
   outstanding,
+  loanOutstanding,
   computedAt,
   multiplier = LIMIT_MULTIPLIER,
   requiredMonths = REQUIRED_MONTHS_OF_HISTORY,
@@ -255,16 +267,19 @@ export function buildCreditEligibility({
     : creditCeiling(facility, bills, multiplier, requiredMonths);
   // `floor2`, not `round2`: this is a maximum, and rounding one up prints a limit
   // the validator on the other side rejects (money.ts → "ceilings truncate").
-  const available = Math.max(0, floor2(ceiling - outstanding));
-
+  const openLoan = facility === 'loan' ? outstanding : (loanOutstanding ?? 0);
   const reasonKey = ineligibilityReasonKey(facility, {
+    loanOutstanding: openLoan,
     monthsOfHistory: months,
     requiredMonths: effectiveRequiredMonths,
     settledRate: settled?.totalRatePerKg ?? null,
     currentKgs: current?.totalKgs ?? 0,
     ceiling,
-    available,
+    available: Math.max(0, floor2(ceiling - outstanding)),
   });
+  // Nothing may be drawn while a loan is open, so the figure the app reads says so too.
+  const available =
+    reasonKey === 'credit.reason.loanOutstanding' ? 0 : Math.max(0, floor2(ceiling - outstanding));
 
   return {
     facility,

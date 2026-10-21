@@ -63,7 +63,8 @@ CSV file**.
 | Configuration → **Bill calculation** | Pay in Rs. 1 / 5 / 10, next bill serial, advance and loan interest (% a month; loan 0% by default) | | `flagsAndBranding: W` |
 
 **Role change (shared matrix, `packages/domain/src/rbac.ts`):** the clerk is now
-`deliveries: W` (was R) and `creditRequests: W` (was R). Recording a counter request is not
+`deliveries: W` (was R), `creditRequests: W` (was R) and `billing: W` (was R: import,
+generate, other deductions; publishing stays the manager's). Recording a counter request is not
 deciding it; `A` stays with the manager, and BR-501 refuses the recorder as approver.
 
 ## 4. API
@@ -227,7 +228,7 @@ Its inputs, per supplier and month:
 | Previous debts | Last bill's unpaid balance, or `previousDebt` from opening balances for the first |
 | Coins brought forward | Last bill's coins carried forward |
 | Other deductions | The office's typed line (§4.2) |
-| Advance interest (`carryForward.loanInterest`) | `advanceInterestFor(advance still owed after this month's instalment, config.advanceInterest)`: simple interest, per month, on the advance **principal** still owed. It is carried as its own balance (the slip's "Loan Interest") and recovered with the advance; it never earns interest itself. A loan is charged the same way at `config.loanInterest` (0% unless the factory sets it), and the slip's "Loan Interest" is this month's charge, the sum of the two. An advance is settled within its month, so advance interest arises only when an account could not cover it; the slip's "Loan Balance" is the **loan** still owed |
+| Advance interest (`carryForward.loanInterest`) | `advanceInterestFor(advance still owed after this month's instalment, config.advanceInterest)`: simple interest, per month, on the advance **principal** still owed. It is carried as its own balance (the slip's "Loan Interest") and recovered with the advance; it never earns interest itself. A loan is charged at `config.loanInterest` (0% unless the factory sets it) on the loan **owed at the start of the month**, and taken on top of the instalment or inside it as `config.loanInterest.recovery` says (`loanRecovery`); the slip's "Loan Interest" is this month's charge, the sum of the two. An advance is settled within its month, so advance interest arises only when an account could not cover it; the slip's "Loan Balance" is the **loan** still owed |
 
 **Bill number.** With `billSettings.nextBillSerial` set, a new bill is numbered
 `factoryBillNumber(year, serial)` = the year and a six-digit running serial
@@ -241,7 +242,8 @@ bills visible in the app and fires `billPublished`.
 
 ## 5a. Two ways to fill a month
 
-A factory with the sync off fills a month's bills **either way**, month by month:
+A factory with the sync off fills its bills **one way, chosen in Configuration → Bill
+calculation** (`BillSettings.source`; the wrong one is `409 wrong-bill-source`):
 
 1. **Calculated here** (§5): enter or import the leaf and the rate, then **Generate bills**.
 2. **Imported**: when the factory's own system still prints the bills, export them to Excel
@@ -253,8 +255,7 @@ A factory with the sync off fills a month's bills **either way**, month by month
    balance = gross − total, paid + coins carried = balance; the two rate products to a
    rupee). The month's rate is taken from the rows.
 
-Either way the bills are reviewed and published the same way, and either replaces the other
-for a month not yet published. An import replaces **only the suppliers in the file**, so a
+Either way the bills are reviewed and published the same way. An import replaces **only the suppliers in the file**, so a
 factory may send one file per division. A month the supplier owes is imported with its
 negative `balanceAmount`, `finalBalance` 0 and the shortfall as `nextMonthDebt`; savings paid
 back on the bill go in `savingsWithdrawal`. An imported bill is marked `AdminBill.source: 'imported'`

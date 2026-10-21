@@ -617,6 +617,7 @@ export const en = {
   'credit.eligibility.pricedKgs.manure': 'Last settled month’s leaf',
 
   /* The server names the blocker with a key; the copy lives here (BR-110). */
+  'credit.reason.loanOutstanding': 'A loan is still owed. No new loan or advance until it is repaid.',
   'credit.reason.shortHistory':
     'The supplier does not yet have enough closed months of income for this facility.',
   'credit.reason.noSettledRate':
@@ -1874,6 +1875,7 @@ export const en = {
   'error.manureInstallmentsInvalid': 'Choose one of the repayment periods the factory offers for manure.',
   'error.syncSwitchBlocked': 'Bills are generated but not published for: {{months}}. Publish them first, then switch the factory-system sync.',
   'error.loanOutstanding': 'A loan is still owed. A new loan can be given only once it is repaid.',
+  'error.wrongBillSource': 'This factory’s bills come the other way. Change “Where the bills come from” in Configuration → Bill calculation.',
   'error.monthLocked': 'That month is published, so its figures can no longer be changed.',
   'error.alreadyVoided': 'This delivery was already voided.',
   'error.invalidBatch':
@@ -2686,6 +2688,11 @@ export const en = {
   'config.sectionHint.billCalculation': 'Rounding, bill numbers, advance interest',
   'config.sectionDescription.billCalculation': 'How the bills calculated here are paid and numbered, and the interest on an advance, so they read like the factory’s printed slip.',
   'config.bill.syncOn': 'The factory-system sync is on, so the factory system’s bills carry their own figures and these are not used. They apply once the sync is switched off.',
+  'config.bill.source': 'Where the bills come from',
+  'config.bill.sourceImported': 'Imported from the factory’s own system',
+  'config.bill.sourceCalculated': 'Calculated in this console',
+  'config.bill.sourceHint.imported': 'Each month, import the finished bills the factory’s system printed. They are kept exactly as printed.',
+  'config.bill.sourceHint.calculated': 'Each month, generate the bills here from the leaf, the rate and the deduction rates.',
   'config.bill.paymentUnit': 'Pay the balance in',
   'config.bill.paymentUnitHint': 'The rest is shown as Coins C/F and paid on the next bill.',
   'config.bill.unit': 'Rs. {{unit}} units',
@@ -2695,6 +2702,11 @@ export const en = {
   'config.bill.serialInvalid': 'Enter a whole number from 1 to 999999.',
   'config.bill.serialExample': 'The next new bill is numbered {{billNo}}.',
   'config.bill.serialNone': 'Bills are numbered GL/YYYY-MM/NNNN.',
+  'config.interest.recovery': 'How the loan interest is taken',
+  'config.interest.recovery.onTop': 'On top of the instalment',
+  'config.interest.recovery.onTopTip': 'The bill deducts the instalment plus the interest. A Rs. 50,000 loan over 10 months with Rs. 500 interest deducts Rs. 5,500, and the loan falls by Rs. 5,000.',
+  'config.interest.recovery.withinInstalment': 'Inside the instalment',
+  'config.interest.recovery.withinInstalmentTip': 'The bill deducts the instalment only, and the interest is taken out of it. The same loan deducts Rs. 5,000, and the loan falls by Rs. 4,500.',
   'config.interest.loanRate': 'Interest on a loan (% a month)',
   'config.interest.loanRateHint': '0, the default, charges no interest.',
   'config.interest.monthlyRate': 'Interest on an advance (% a month)',

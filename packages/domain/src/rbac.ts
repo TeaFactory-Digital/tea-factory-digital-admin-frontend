@@ -91,7 +91,12 @@ export const DEFAULT_ROLE_MATRIX: Record<ConsoleRole, Record<Capability, AccessL
      */
     deliveries: W,
     ratesAndMonthClose: NONE,
-    billing: R,
+    /*
+     * `W` so the clerk can import the month's finished bills, generate them, and type an
+     * other deduction. Publishing stays with the manager (`ratesAndMonthClose: A`, BR-501),
+     * who reviews every bill first.
+     */
+    billing: W,
     payouts: R,
     creditRequests: W,
     creditAboveThreshold: NONE,

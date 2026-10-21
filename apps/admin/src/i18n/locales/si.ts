@@ -626,6 +626,7 @@ export const si: Record<TranslationKey, string> = {
   'credit.eligibility.pricedKgs.manure': 'අවසන් වශයෙන් සමතුලිත මාසයේ දළු',
 
   /* The server names the blocker with a key; the copy lives here (BR-110). */
+  'credit.reason.loanOutstanding': 'ණයක් තවම ගෙවිය යුතුය. එය ගෙවා අවසන් වන තුරු නව ණයක් හෝ අත්තිකාරමක් නැත.',
   'credit.reason.shortHistory':
     'මෙම පහසුකම සඳහා අවශ්‍ය තරම් ආදායම ලැබූ අවසන් කළ මාස ගණන සැපයුම්කරුට තවම නැත.',
   'credit.reason.noSettledRate':
@@ -1871,6 +1872,7 @@ export const si: Record<TranslationKey, string> = {
   'error.manureInstallmentsInvalid': 'පොහොර සඳහා කර්මාන්තශාලාව දෙන ආපසු ගෙවීමේ කාල වලින් එකක් තෝරන්න.',
   'error.syncSwitchBlocked': 'මෙම මාසවල බිල්පත් සාදා ඇති නමුත් publish කර නැත: {{months}}. මුලින් ඒවා publish කර, පසුව කර්මාන්තශාලා පද්ධති sync එක මාරු කරන්න.',
   'error.loanOutstanding': 'ණයක් තවම ගෙවිය යුතුය. නව ණයක් දිය හැක්කේ එය ගෙවා අවසන් වූ පසු පමණි.',
+  'error.wrongBillSource': 'මෙම කර්මාන්තශාලාවේ බිල්පත් ලැබෙන්නේ අනෙක් ක්‍රමයටයි. වින්‍යාසය → බිල්පත් ගණනය තුළ “බිල්පත් ලැබෙන්නේ කොහෙන්ද” වෙනස් කරන්න.',
   'error.monthLocked': 'එම මාසය ප්‍රකාශයට පත් කර ඇති බැවින්, එහි අගයන් තවදුරටත් වෙනස් කළ නොහැක.',
   'error.alreadyVoided': 'මෙම දළු භාරය දැනටමත් අවලංගු කර ඇත.',
   'error.invalidBatch':
@@ -2682,6 +2684,11 @@ export const si: Record<TranslationKey, string> = {
   'config.sectionHint.billCalculation': 'Round කිරීම, බිල් අංක, අත්තිකාරම් පොලිය',
   'config.sectionDescription.billCalculation': 'මෙහි ගණනය කරන බිල්පත් ගෙවන සහ අංක කරන ආකාරය සහ අත්තිකාරම් පොලිය, කර්මාන්තශාලාවේ මුද්‍රිත slip එකට සමාන වන ලෙස.',
   'config.bill.syncOn': 'කර්මාන්තශාලා පද්ධති sync එක සක්‍රියයි, එබැවින් කර්මාන්තශාලා පද්ධතියේ බිල්පත් තමන්ගේම අගයන් දරයි, මේවා භාවිත නොවේ. Sync එක අක්‍රිය කළ පසු මේවා අදාළ වේ.',
+  'config.bill.source': 'බිල්පත් ලැබෙන්නේ කොහෙන්ද',
+  'config.bill.sourceImported': 'කර්මාන්තශාලාවේම පද්ධතියෙන් import කරයි',
+  'config.bill.sourceCalculated': 'මෙම console එකේ ගණනය කරයි',
+  'config.bill.sourceHint.imported': 'සෑම මාසයකම, කර්මාන්තශාලා පද්ධතිය මුද්‍රණය කළ සම්පූර්ණ බිල්පත් import කරන්න. ඒවා මුද්‍රණය වූ ලෙසම තබා ගනී.',
+  'config.bill.sourceHint.calculated': 'සෑම මාසයකම, දළු, මිල සහ අඩුකිරීම් අනුපාත වලින් මෙහි බිල්පත් සාදන්න.',
   'config.bill.paymentUnit': 'ශේෂය ගෙවන්නේ',
   'config.bill.paymentUnitHint': 'ඉතිරිය Coins C/F ලෙස පෙන්වා ඊළඟ බිල්පතේ ගෙවයි.',
   'config.bill.unit': 'රු. {{unit}} ඒකක',
@@ -2691,6 +2698,11 @@ export const si: Record<TranslationKey, string> = {
   'config.bill.serialInvalid': '1 සිට 999999 දක්වා පූර්ණ සංඛ්‍යාවක් ඇතුළත් කරන්න.',
   'config.bill.serialExample': 'ඊළඟ නව බිල්පතේ අංකය {{billNo}}.',
   'config.bill.serialNone': 'බිල්පත් අංක GL/YYYY-MM/NNNN ලෙස.',
+  'config.interest.recovery': 'ණය පොලිය අය කරන ආකාරය',
+  'config.interest.recovery.onTop': 'වාරිකයට අමතරව',
+  'config.interest.recovery.onTopTip': 'බිල්පතෙන් වාරිකය සහ පොලිය දෙකම අඩු කරයි. මාස 10කින් ගෙවන රු. 50,000 ණයකට රු. 500 පොලිය නම්, රු. 5,500ක් අඩු කරන අතර ණය රු. 5,000කින් අඩු වේ.',
+  'config.interest.recovery.withinInstalment': 'වාරිකය ඇතුළෙන්ම',
+  'config.interest.recovery.withinInstalmentTip': 'බිල්පතෙන් අඩු කරන්නේ වාරිකය පමණයි, පොලිය එයින්ම ගනී. එම ණයට රු. 5,000ක් අඩු කරන අතර ණය අඩු වන්නේ රු. 4,500කින් පමණි.',
   'config.interest.loanRate': 'ණයට පොලිය (මාසයකට %)',
   'config.interest.loanRateHint': '0 (default) නම් පොලියක් අය නොකරයි.',
   'config.interest.monthlyRate': 'අත්තිකාරමට පොලිය (මාසයකට %)',

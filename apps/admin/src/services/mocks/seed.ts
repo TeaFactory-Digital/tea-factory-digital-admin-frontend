@@ -68,6 +68,8 @@ import type {
 import {
   DEFAULT_DEDUCTION_RATES,
   advanceInterestFor,
+  loanRecovery,
+  type LoanInterestSetting,
   transportChargeFor,
   type AdvanceInterestSetting,
   DEFAULT_TEA_PACKET_POLICY,
@@ -1702,8 +1704,8 @@ interface BillGenerationContext {
   deductionRates?: DeductionRates;
   /** Interest a month on an advance still owed (Configuration). Absent: none. */
   advanceInterest?: AdvanceInterestSetting;
-  /** Interest a month on a loan still owed (Configuration). Absent: none. */
-  loanInterest?: AdvanceInterestSetting;
+  /** Interest a month on a loan, and how it is recovered (Configuration). Absent: none. */
+  loanInterest?: LoanInterestSetting;
   /** Pay in whole units of this many rupees (Configuration). Absent: 1. */
   paymentUnit?: number;
   /** The factory's bill number for a supplier. Absent: `GL/YYYY-MM/NNNN` by position. */
@@ -1790,7 +1792,7 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
 
     const coinsBroughtForward = round2(context.coinsBroughtForward.get(supplier.id) ?? 0);
     const rates = context.deductionRates ?? DEFAULT_DEDUCTION_RATES;
-    const deductions = {
+    const lines = {
       ...deductionLinesFor(
         supplier,
         totalKgs,
@@ -1809,6 +1811,10 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
         supplier.transportPerKg,
       ),
     };
+    // The loan line: the planned instalment, with the month's interest on top of it or
+    // inside it, as the factory configured (`loanRecovery`).
+    const loan = loanRecovery(supplier.creditBalances.loan, lines.loansAdvance, context.loanInterest);
+    const deductions = { ...lines, loansAdvance: loan.deducted };
 
     /**
      * Savings asked back and not yet paid (§21.9).
@@ -1873,24 +1879,18 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
 
       carryForward: {
         nextMonthDeb: amounts.nextMonthDeb,
-        // The slip's "Loan Balance": the loan still owed after this month's instalment.
-        loanBalance: round2(
-          Math.max(0, supplier.creditBalances.loan - amounts.deductions.loansAdvance),
-        ),
+        // The slip's "Loan Balance": the loan still owed after this month's principal.
+        loanBalance: round2(Math.max(0, supplier.creditBalances.loan - loan.principalRepaid)),
         manureBalance: round2(
           Math.max(0, supplier.creditBalances.manure - amounts.deductions.manure),
         ),
-        // The slip's one "Loan Interest" line: the month's interest on the advance and on the
-        // loan still owed after their instalments, each at its own configured rate.
+        // The slip's one "Loan Interest" line, this month's charge: the loan's, plus an
+        // advance's only when the account could not cover the advance.
         loanInterest: round2(
           advanceInterestFor(
             round2(Math.max(0, supplier.creditBalances.advance - amounts.deductions.advance)),
             context.advanceInterest,
-          ) +
-            advanceInterestFor(
-              round2(Math.max(0, supplier.creditBalances.loan - amounts.deductions.loansAdvance)),
-              context.loanInterest,
-            ),
+          ) + loan.interest,
         ),
       },
       savingsSummary: {
@@ -2417,6 +2417,7 @@ export function eligibilityFor(
       facility,
       bills: creditHistoryFor(supplier.id, options.deliveries),
       outstanding: supplier.creditBalances[facility],
+      loanOutstanding: supplier.creditBalances.loan,
       computedAt: options.computedAt ?? new Date().toISOString(),
       rule: options.rules?.[facility],
     }),

@@ -171,7 +171,7 @@ export const supplierCodeSchema = z
   .string()
   .trim()
   .toUpperCase()
-  .refine((v) => /^[0-9A-Z][0-9A-Z/-]{0,11}(\s*\([^()]{1,40}\))?$/.test(v), 'validation.supplierCode');
+  .refine((v) => /^[0-9A-Z]{1,12}(\s*\([^()]{1,40}\))?$/.test(v), 'validation.supplierCode');
 
 export const supplierRegistrationSchema = supplierEditableSchema.extend({
   supplierCode: supplierCodeSchema,

@@ -36,6 +36,8 @@ import type { ImportKind } from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
 import { ImportMenu } from '@/components/ImportMenu';
 import { BillRunCard } from '@/modules/bills/BillRunCard';
+import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
+import { billSourceOf } from '@tfd/domain';
 import { useBillRun } from '@/modules/bills/hooks';
 import { useBillMonths } from '@/modules/money/monthOptions';
 
@@ -71,9 +73,12 @@ export function MonthCloseScreen() {
   // or of the month's finished bills from the factory's own system, edits bills.
   const canRates = useCan('ratesAndMonthClose', 'write');
   const canBills = useCan('billing', 'write');
+  // One way per factory: its own system's finished bills, or bills calculated here.
+  const billSource = billSourceOf(useRuntimeConfig().config.billSettings);
   const importKinds: ImportKind[] = [
     ...(canRates ? (['monthlyRates'] as const) : []),
-    ...(canBills ? (['bills', 'billAdjustments'] as const) : []),
+    ...(canBills && billSource === 'imported' ? (['bills'] as const) : []),
+    ...(canBills && billSource === 'calculated' ? (['billAdjustments'] as const) : []),
   ];
 
   if (months.error) return <ErrorState error={months.error} onRetry={() => void months.refetch()} />;
@@ -135,12 +140,14 @@ export function MonthCloseScreen() {
 
       {/* Rate in, then bills: calculated here from the leaf, the rate and the deduction
           rates, then checked on the bills screen before the month is published. */}
-      <BillRunCard
-        monthKey={monthKey}
-        month={billMonths.data?.find((one) => one.monthKey === monthKey)}
-        run={run.data ?? undefined}
-        runError={run.error}
-      />
+      {billSource === 'calculated' ? (
+        <BillRunCard
+          monthKey={monthKey}
+          month={billMonths.data?.find((one) => one.monthKey === monthKey)}
+          run={run.data ?? undefined}
+          runError={run.error}
+        />
+      ) : null}
       <div className="-mt-md flex justify-end">
         <Link
           to={`/bills?month=${monthKey}`}

@@ -30,7 +30,12 @@ import type {
   StaticPageSlug,
 } from '../constants';
 import type { NoteSuggestionsBlock } from '../config';
-import type { AdvanceInterestSetting, BillSettings, FactorySyncSetting } from '../factoryRecords';
+import type {
+  AdvanceInterestSetting,
+  BillSettings,
+  FactorySyncSetting,
+  LoanInterestSetting,
+} from '../factoryRecords';
 import type { ContentTranslation, ContentTranslations } from '../content';
 import type { BannerTranslations } from '../banners';
 import type { NotificationAudience } from '../notifications';
@@ -2242,7 +2247,7 @@ export interface RuntimeConfig {
    * Interest on a loan, the same way: simple, per month, on the principal still owed after
    * the month's instalment. Absent means none (0%), the default.
    */
-  loanInterest?: AdvanceInterestSetting;
+  loanInterest?: LoanInterestSetting;
   /** Payment rounding and bill numbering for the bills calculated here. Absent: defaults. */
   billSettings?: BillSettings;
 }
@@ -2438,6 +2443,11 @@ export const ADMIN_ERROR_CODES = [
   'manure-installments-invalid',
   /** A loan is still owed: no second loan until it is repaid (the factory's answer). */
   'loan-outstanding',
+  /**
+   * Generating bills in a factory whose bills are imported, or importing them in one that
+   * calculates them (`BillSettings.source`).
+   */
+  'wrong-bill-source',
 ] as const;
 
 export type AdminErrorCode = (typeof ADMIN_ERROR_CODES)[number];

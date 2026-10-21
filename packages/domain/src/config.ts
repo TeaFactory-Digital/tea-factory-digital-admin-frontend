@@ -21,7 +21,12 @@
  * than no warning: the office learns the screen is guessing.
  */
 
-import type { AdvanceInterestSetting, BillSettings, FactorySyncSetting } from './factoryRecords';
+import type {
+  AdvanceInterestSetting,
+  BillSettings,
+  FactorySyncSetting,
+  LoanInterestSetting,
+} from './factoryRecords';
 import type { FeatureFlagName, FeatureFlagSet } from './types/admin';
 import type { LanguageCode } from './constants';
 import type { ManureProduct } from './deductionRates';
@@ -75,7 +80,7 @@ export interface ConfigPatch {
   /** Interest on an advance, for the bills calculated here. Saved whole. */
   advanceInterest?: AdvanceInterestSetting;
   /** Interest on a loan, per month. Saved whole. Absent means 0%. */
-  loanInterest?: AdvanceInterestSetting;
+  loanInterest?: LoanInterestSetting;
   /** Payment rounding and bill numbering. Saved whole. */
   billSettings?: BillSettings;
   factory?: {

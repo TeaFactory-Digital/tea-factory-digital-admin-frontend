@@ -202,9 +202,10 @@ describe('the configured rule drives the ceiling', () => {
   });
 
   it('subtracts what is already drawn, and floors at zero', () => {
-    const rule = DEFAULT_CREDIT_RULES.loan;
+    // Manure: an open loan would refuse a loan or an advance first (the next case).
+    const rule = DEFAULT_CREDIT_RULES.manure;
     const eligibility = buildCreditEligibility({
-      facility: 'loan',
+      facility: 'manure',
       bills: BILLS,
       outstanding: 999999,
       computedAt: AT,
@@ -214,6 +215,17 @@ describe('the configured rule drives the ceiling', () => {
     expect(eligibility.available).toBe(0);
     expect(eligibility.eligible).toBe(false);
     expect(eligibility.reasonKey).toBe('credit.reason.fullyDrawn');
+  });
+
+  it('refuses a new loan or an advance while a loan is still owed, but not manure', () => {
+    const open = { bills: BILLS, computedAt: AT, loanOutstanding: 25000 };
+    const advance = buildCreditEligibility({ ...open, facility: 'advance', outstanding: 0 });
+    const loan = buildCreditEligibility({ ...open, facility: 'loan', outstanding: 25000 });
+    const manure = buildCreditEligibility({ ...open, facility: 'manure', outstanding: 0 });
+
+    expect(advance).toMatchObject({ eligible: false, available: 0, reasonKey: 'credit.reason.loanOutstanding' });
+    expect(loan).toMatchObject({ eligible: false, available: 0, reasonKey: 'credit.reason.loanOutstanding' });
+    expect(manure.reasonKey).not.toBe('credit.reason.loanOutstanding');
   });
 });
 

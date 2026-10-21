@@ -17,6 +17,7 @@ import {
   ACTIVITY_FLAG,
   IMPORT_COLUMNS,
   billSettingsProblem,
+  loanRecovery,
   supplierCodeSchema,
   importRowProblems,
   importTemplateCsv,
@@ -136,6 +137,22 @@ describe('the rules the console and the API share', () => {
     expect(billSettingsProblem({ paymentUnit: 10, nextBillSerial: 1_000_000 })).toBeNull();
     expect(ACTIVITY_FLAG['creditRequest.created']({ facility: 'loan' })).toBe('enableLoans');
     expect(ACTIVITY_FLAG['changeRequest.created']({})).toBeNull();
+  });
+
+  it('takes a loan’s interest on top of the instalment or inside it, as configured', () => {
+    // The factory's own example: Rs. 50,000 over 10 months, Rs. 500 interest at 1%.
+    expect(loanRecovery(50000, 5000, { monthlyRatePercent: 1, recovery: 'onTop' })).toEqual({
+      interest: 500,
+      deducted: 5500,
+      principalRepaid: 5000,
+    });
+    expect(loanRecovery(50000, 5000, { monthlyRatePercent: 1, recovery: 'withinInstalment' })).toEqual({
+      interest: 500,
+      deducted: 5000,
+      principalRepaid: 4500,
+    });
+    // No rate: the instalment, nothing more.
+    expect(loanRecovery(50000, 5000, undefined)).toEqual({ interest: 0, deducted: 5000, principalRepaid: 5000 });
   });
 
   it('writes a template whose example row survives a comma', () => {
@@ -418,7 +435,21 @@ describe('with the factory-system sync off', () => {
 
   it('imports a month of finished bills from the factory, keeping every figure as printed', async () => {
     await setSync(false);
+    // A factory that calculates its bills refuses an import, and the other way round.
     await signInAs(MANAGER);
+    const slipRow = Object.fromEntries(IMPORT_COLUMNS.bills.map((column) => [column.key, column.example]));
+    await expect(
+      factoryRecordRepository.importRows('bills', 'early.xlsx', [{ ...slipRow, month: currentMonthKey }]),
+    ).rejects.toMatchObject({ code: 'wrong-bill-source' });
+    await signInAs(ADMIN);
+    const { config, usage } = await adminConfigRepository.get();
+    await adminConfigRepository.patch(
+      { billSettings: { paymentUnit: 10, source: 'imported' } },
+      config,
+      usage,
+    );
+    await signInAs(MANAGER);
+    await expect(billRepository.generate(currentMonthKey)).rejects.toMatchObject({ code: 'wrong-bill-source' });
     const someone = (await billRepository.list({ pageSize: 1 })).items[0]!;
     const slip = Object.fromEntries(IMPORT_COLUMNS.bills.map((column) => [column.key, column.example]));
     const result = await factoryRecordRepository.importRows('bills', 'july-bills.xlsx', [

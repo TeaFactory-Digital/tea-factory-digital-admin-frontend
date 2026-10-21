@@ -18,6 +18,7 @@
 
 import {
   isFactorySyncEnabled,
+  billSourceOf,
   billNumberFor,
   slipMonthLabel,
   type FactoryInfo,
@@ -2780,7 +2781,10 @@ export const handlers: HttpHandler[] = [
     if (patch.factorySync) config.factorySync = { enabled: patch.factorySync.enabled };
     if (patch.billSettings) config.billSettings = { ...patch.billSettings };
     if (patch.loanInterest) {
-      config.loanInterest = { monthlyRatePercent: patch.loanInterest.monthlyRatePercent };
+      config.loanInterest = {
+        monthlyRatePercent: patch.loanInterest.monthlyRatePercent,
+        recovery: patch.loanInterest.recovery,
+      };
     }
     if (patch.advanceInterest) {
       config.advanceInterest = { monthlyRatePercent: patch.advanceInterest.monthlyRatePercent };
@@ -3801,6 +3805,13 @@ export const handlers: HttpHandler[] = [
     const auth = authorize(request, 'billing', 'write');
     if ('response' in auth) return auth.response;
 
+    if (billSourceOf(tenantConfig(request).billSettings) === 'imported') {
+      return fail({
+        status: 409,
+        code: 'wrong-bill-source',
+        message: "This factory's bills are imported from its own system, not calculated here.",
+      });
+    }
     const monthKey = String(params.monthKey);
     const body = (await request.json().catch(() => ({}))) as { monthKey?: string };
     if (body.monthKey && body.monthKey !== monthKey) {
@@ -7593,6 +7604,13 @@ export const handlers: HttpHandler[] = [
     if (syncOn) return syncOn;
 
     const { rows, fileName } = (await request.json()) as { fileName: string; rows: ImportRow[] };
+    if (kind === 'bills' && billSourceOf(tenantConfig(request).billSettings) !== 'imported') {
+      return fail({
+        status: 409,
+        code: 'wrong-bill-source',
+        message: "This factory's bills are calculated here; switch Bill calculation to imported first.",
+      });
+    }
     if (!Array.isArray(rows) || rows.length === 0 || rows.length > MAX_IMPORT_ROWS) {
       return fail({
         status: 422,

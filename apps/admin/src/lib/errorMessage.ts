@@ -108,6 +108,7 @@ const BY_CODE: Record<string, string> = {
   'loan-installments-invalid': 'error.loanInstallmentsInvalid',
   'manure-installments-invalid': 'error.manureInstallmentsInvalid',
   'loan-outstanding': 'error.loanOutstanding',
+  'wrong-bill-source': 'error.wrongBillSource',
   '403': 'error.forbidden',
   '404': 'error.notFound',
 };

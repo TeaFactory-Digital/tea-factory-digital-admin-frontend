@@ -71,6 +71,38 @@ export function advanceInterestFor(
   return round2((balance * rate) / 100);
 }
 
+/**
+ * How a loan's interest is recovered on the bill, set by the factory in Configuration:
+ *
+ * - `onTop`: the planned instalment **plus** the interest. Rs. 50,000 over 10 months at
+ *   Rs. 500 interest deducts Rs. 5,500, and the loan falls by Rs. 5,000.
+ * - `withinInstalment`: the planned instalment only, the interest taken out of it. The same
+ *   loan deducts Rs. 5,000, and the loan falls by Rs. 4,500.
+ */
+export type LoanInterestRecovery = 'onTop' | 'withinInstalment';
+
+export interface LoanInterestSetting extends AdvanceInterestSetting {
+  /** Absent: `onTop`. */
+  recovery?: LoanInterestRecovery;
+}
+
+/**
+ * One month of a loan on the bill. The interest is worked on the loan **owed at the start
+ * of the month** (Rs. 50,000 at 1% is Rs. 500), never on unpaid interest.
+ */
+export function loanRecovery(
+  owedAtStart: number,
+  plannedInstalment: number,
+  setting: LoanInterestSetting | undefined,
+): { interest: number; deducted: number; principalRepaid: number } {
+  const interest = advanceInterestFor(owedAtStart, setting);
+  const instalment = round2(Math.max(0, Math.min(plannedInstalment, owedAtStart)));
+  if ((setting?.recovery ?? 'onTop') === 'withinInstalment') {
+    return { interest, deducted: instalment, principalRepaid: round2(Math.max(0, instalment - interest)) };
+  }
+  return { interest, deducted: round2(instalment + interest), principalRepaid: instalment };
+}
+
 /* ─────────────────────────── the bill's own rules ─────────────────────────── */
 
 /**
@@ -85,6 +117,20 @@ export interface BillSettings {
    * last paper bill. Six digits, growing to seven past 999999. Absent: the console's own `GL/YYYY-MM/NNNN` numbers.
    */
   nextBillSerial?: number;
+  /**
+   * Where this factory's bills come from while it keeps its records here: `imported`, the
+   * finished bills its own system printed (galaboda), or `calculated` here from the leaf
+   * and the rate. One per factory, so a calculated month can never be published and then
+   * stand in the way of the real slips. Absent: `calculated`.
+   */
+  source?: BillSource;
+}
+
+export type BillSource = 'imported' | 'calculated';
+
+/** The one reading of `BillSettings.source`. */
+export function billSourceOf(settings: Pick<BillSettings, 'source'> | undefined): BillSource {
+  return settings?.source ?? 'calculated';
 }
 
 export const PAYMENT_UNITS = [1, 5, 10] as const;

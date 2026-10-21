@@ -340,23 +340,20 @@ describe('M5 bills', () => {
     });
   });
 
-  it('lets a clerk read bills and refuses them the generation (§12.1)', async () => {
+  it('lets a clerk prepare bills and leaves publishing to the manager (§12.1)', async () => {
     await signInAs('clerk@galabodatea.lk');
     const month = await publishedMonth();
 
-    // `billing: R`: the bills are visible…
+    // `billing: W`: the bills are visible, and the clerk may prepare them…
     await expect(
       billRepository.list({ monthKey: month.monthKey, pageSize: 1 }),
     ).resolves.toBeTruthy();
     await expect(billRepository.run(month.monthKey)).resolves.toBeTruthy();
 
-    // …and generating is refused by the **server**, not only hidden by the UI.
-    signOut();
-    await signInAs('clerk@galabodatea.lk');
-    const refused = await billRepository
-      .generate(month.monthKey)
+    // …but publishing is the manager's, refused by the **server**, not only hidden.
+    const refused = await monthRepository
+      .publish(month.monthKey)
       .catch((cause: unknown) => cause);
-    expect(isApiError(refused) && refused.code).toBe('forbidden');
     expect(isApiError(refused) && refused.status).toBe(403);
   });
 

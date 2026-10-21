@@ -16,6 +16,46 @@ change-request summaries).
 | 45 | Factory records without the factory system: the rest (bill engine, imports, add supplier, opening balances, walk-ins, leaf and months) | High |
 
 
+**Answers to your note of 21 October** (please `vendor:pull`):
+
+1. **Approvals reach their bill through the office: yes, refuse the import.** As everywhere
+   in this integration, the office is the bridge: an advance, loan, manure, tea-packet or
+   savings-withdrawal approved in our console is typed into galaboda's system, which prints
+   it on the slip. If an imported slip does not deduct something we approved for that month
+   (B5: approved on or before the month's last day), **refuse the file**, naming the supplier
+   and the item, so the office adds it in their system and exports again. Nothing we
+   approved is ever silently erased.
+2. **A per-factory setting: done.** `BillSettings.source: 'imported' | 'calculated'`
+   (`billSourceOf`, absent = `calculated`), in Configuration → Bill calculation. Imported:
+   the console hides Generate and offers Import → Finished bills; calculated: the other way
+   round. Refuse the wrong one with **`409 wrong-bill-source`** (in `ADMIN_ERROR_CODES`,
+   explained in en/si/ta; the mock refuses both). Galaboda is `imported`, so **defer the
+   bill engine**: build the import first. The engine is still wanted, later, for a factory
+   whose system cannot print bills.
+3. **The clerk is now `billing: W`** (`rbac.ts`): import bills, generate them, type an
+   other deduction. Publishing stays `ratesAndMonthClose: A` with the manager, four-eyes.
+4. **Leading zeros:** yes, exactly as you say.
+5. **`/` and `-` are not part of the number.** `supplierCodeSchema` now accepts letters and
+   digits only before the optional `(division)`, so your bare-number rule stands.
+6. **B2 (answered, 21 October): an open loan blocks both a new loan and an advance.** An
+   advance never runs short (it is closed within its month), so it has no debt to count.
+   While a supplier still owes on a loan, they may take **no new loan and no advance** until
+   it is repaid; manure is not part of this rule. Done in the shared function:
+   `buildCreditEligibility` takes `loanOutstanding`, and for `loan` and `advance` with a loan
+   open it answers `available: 0`, `reasonKey: 'credit.reason.loanOutstanding'` (console and
+   app explain it). Please pass `loanOutstanding` for every facility, and refuse a walk-in
+   or an approval of a loan or advance with `409 loan-outstanding`.
+   **B3 (answered): a Configuration choice per factory.** The slip's "Loan Interest" is a
+   rupee amount, this month's charge. Configuration → Bill calculation now asks how it is
+   taken, with an explanation on each option: `config.loanInterest.recovery`, `onTop`
+   (default) or `withinInstalment`. Use `loanRecovery(owedAtStart, plannedInstalment,
+   setting)` in `factoryRecords.ts`: Rs. 50,000 over 10 months with Rs. 500 interest deducts
+   Rs. 5,500 and repays Rs. 5,000 (`onTop`), or deducts Rs. 5,000 and repays Rs. 4,500
+   (`withinInstalment`). **The interest is now worked on the loan owed at the start of the
+   month** (Rs. 50,000 at 1% is Rs. 500), not after the instalment. Bill engine only.
+7. **A7 `rate-differs`:** yes.
+8. **C1:** yes, refuse a different opening month; no setting.
+
 **Done on the console for your last note** (please `vendor:pull`):
 - Unbuilt pieces are hidden: the import kinds `openingBalances`, `deliveries`,
   `monthlyRates`, `billAdjustments` and `bills`, the opening balances card and the "Other
@@ -77,9 +117,9 @@ change-request summaries).
 - **B6.** Nothing goes unpaid line by line: every line is deducted and a shortfall is next
   month's debt, as the slip's "Next Month Deb".
 - **C1.** One cut-over month for the whole factory.
-- **C4 (answered): no new loan while one is outstanding.** Refuse with `409 loan-outstanding`
-  (added to `ADMIN_ERROR_CODES`, explained in en/si/ta, and blocking in the approval
-  dialog), in the app's request, a walk-in, and approval.
+- **C4 (answered): no new loan, and no advance, while a loan is outstanding** (see B2).
+  Refuse with `409 loan-outstanding` (in `ADMIN_ERROR_CODES`, explained in en/si/ta, and
+  blocking in the approval dialog), in the app's request, a walk-in, and approval.
 - **C5.** Later: a manager posts a correction entry with a note, audited, applied on the next
   bill.
 - **D4.** Not needed: the factory pays from its own system. Keep the name; a code is optional.

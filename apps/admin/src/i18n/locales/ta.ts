@@ -631,6 +631,7 @@ export const ta: Record<TranslationKey, string> = {
   'credit.eligibility.pricedKgs.manure': 'இறுதியாகத் தீர்க்கப்பட்ட மாதத்தின் கொழுந்து',
 
   /* The server names the blocker with a key; the copy lives here (BR-110). */
+  'credit.reason.loanOutstanding': 'ஒரு கடன் இன்னும் செலுத்தப்பட வேண்டும். அது முடியும் வரை புதிய கடனோ முன்பணமோ இல்லை.',
   'credit.reason.shortHistory':
     'இந்த வசதிக்குத் தேவையான அளவு வருமானம் பெற்ற நிறைவு மாதங்கள் வழங்குநருக்கு இன்னும் இல்லை.',
   'credit.reason.noSettledRate':
@@ -1910,6 +1911,7 @@ export const ta: Record<TranslationKey, string> = {
   'error.manureInstallmentsInvalid': 'உரத்துக்கு தொழிற்சாலை வழங்கும் திருப்பிச் செலுத்தும் காலங்களில் ஒன்றைத் தேர்ந்தெடுக்கவும்.',
   'error.syncSwitchBlocked': 'இந்த மாதங்களுக்கு பில்கள் உருவாக்கப்பட்டு வெளியிடப்படவில்லை: {{months}}. முதலில் அவற்றை வெளியிட்டு, பின்னர் தொழிற்சாலை அமைப்பு ஒத்திசைவை மாற்றவும்.',
   'error.loanOutstanding': 'ஒரு கடன் இன்னும் செலுத்தப்பட வேண்டும். அது முடிந்த பின்னரே புதிய கடன் வழங்க முடியும்.',
+  'error.wrongBillSource': 'இந்தத் தொழிற்சாலையின் பில்கள் மற்ற வழியில் வருகின்றன. கட்டமைப்பு → பில் கணக்கீட்டில் “பில்கள் எங்கிருந்து வருகின்றன” என்பதை மாற்றவும்.',
   'error.monthLocked': 'அந்த மாதம் வெளியிடப்பட்டுவிட்டதால், அதன் மதிப்புகளை இனி மாற்ற முடியாது.',
   'error.alreadyVoided': 'இந்த ஒப்படைப்பு ஏற்கெனவே இரத்துச் செய்யப்பட்டுவிட்டது.',
   'error.invalidBatch':
@@ -2743,6 +2745,11 @@ export const ta: Record<TranslationKey, string> = {
   'config.sectionHint.billCalculation': 'முழுமையாக்கல், பில் எண்கள், முன்பண வட்டி',
   'config.sectionDescription.billCalculation': 'இங்கு கணக்கிடப்படும் பில்கள் செலுத்தப்படும், எண்ணிடப்படும் முறையும் முன்பண வட்டியும், தொழிற்சாலையின் அச்சிட்ட சீட்டைப் போலவே.',
   'config.bill.syncOn': 'தொழிற்சாலை அமைப்பு ஒத்திசைவு இயக்கத்தில் உள்ளது, எனவே தொழிற்சாலை அமைப்பின் பில்கள் அவற்றின் சொந்த எண்களைக் கொண்டுள்ளன, இவை பயன்படுத்தப்படாது. ஒத்திசைவு நிறுத்தப்பட்ட பின் இவை பொருந்தும்.',
+  'config.bill.source': 'பில்கள் எங்கிருந்து வருகின்றன',
+  'config.bill.sourceImported': 'தொழிற்சாலையின் சொந்த அமைப்பிலிருந்து இறக்குமதி',
+  'config.bill.sourceCalculated': 'இந்த கன்சோலில் கணக்கிடப்படும்',
+  'config.bill.sourceHint.imported': 'ஒவ்வொரு மாதமும், தொழிற்சாலை அமைப்பு அச்சிட்ட முடிந்த பில்களை இறக்குமதி செய்யவும். அவை அச்சிட்டபடியே வைக்கப்படும்.',
+  'config.bill.sourceHint.calculated': 'ஒவ்வொரு மாதமும், இலை, விலை மற்றும் கழிவு விகிதங்களிலிருந்து இங்கே பில்களை உருவாக்கவும்.',
   'config.bill.paymentUnit': 'மீதியைச் செலுத்துவது',
   'config.bill.paymentUnitHint': 'மீதி Coins C/F ஆகக் காட்டப்பட்டு அடுத்த பில்லில் செலுத்தப்படும்.',
   'config.bill.unit': 'ரூ. {{unit}} அலகுகள்',
@@ -2752,6 +2759,11 @@ export const ta: Record<TranslationKey, string> = {
   'config.bill.serialInvalid': '1 முதல் 999999 வரை ஒரு முழு எண்ணை உள்ளிடவும்.',
   'config.bill.serialExample': 'அடுத்த புதிய பில்லின் எண் {{billNo}}.',
   'config.bill.serialNone': 'பில்கள் GL/YYYY-MM/NNNN என எண்ணிடப்படும்.',
+  'config.interest.recovery': 'கடன் வட்டி எவ்வாறு வசூலிக்கப்படுகிறது',
+  'config.interest.recovery.onTop': 'தவணைக்கு மேல்',
+  'config.interest.recovery.onTopTip': 'பில் தவணையையும் வட்டியையும் கழிக்கிறது. 10 மாதங்களில் செலுத்தும் ரூ. 50,000 கடனுக்கு ரூ. 500 வட்டி எனில் ரூ. 5,500 கழிக்கப்பட்டு கடன் ரூ. 5,000 குறையும்.',
+  'config.interest.recovery.withinInstalment': 'தவணைக்குள்ளேயே',
+  'config.interest.recovery.withinInstalmentTip': 'பில் தவணையை மட்டுமே கழிக்கிறது, வட்டி அதிலிருந்தே எடுக்கப்படும். அதே கடனுக்கு ரூ. 5,000 கழிக்கப்பட்டு கடன் ரூ. 4,500 மட்டுமே குறையும்.',
   'config.interest.loanRate': 'கடனுக்கு வட்டி (மாதத்துக்கு %)',
   'config.interest.loanRateHint': '0 (இயல்புநிலை) எனில் வட்டி வசூலிக்கப்படாது.',
   'config.interest.monthlyRate': 'முன்பணத்துக்கு வட்டி (மாதத்துக்கு %)',
