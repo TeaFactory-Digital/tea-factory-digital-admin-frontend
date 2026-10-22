@@ -19,6 +19,30 @@ since your last re-vendor: `factoryRecords.ts` (bills import, `billSourceOf`, `l
 `activity.ts` (`ACTIVITY_FLAG`), `rbac.ts` (clerk `billing: W`), `types/admin.ts` (new error
 codes, `AdminBill.source`), `schemas/index.ts` (`supplierCodeSchema`).
 
+### Docs removed from the console repo: update your links
+
+Three files in `tea-factory-digital-admin-frontend/docs/v2/` were removed (22 October 2026)
+because they were out of date or repeated another document:
+
+| Removed | Use instead |
+|---|---|
+| `integration.md` | `factory-integration-spec.md` (the same design), and `factory-records.md` for a factory whose system is not connected |
+| `BACKEND-API-GAPS.md` | Every gap is closed. The shapes still agreed are in `api-contract.md`, section "Agreed shapes"; open work is in this file |
+| `business-analyst.md` | `factory-integration-spec.md` §7 ("Before build: three conversations") and `factory-management.md` |
+
+Two places in the backend repo point at them:
+
+1. **`.claude/agents/senior-backend-engineer.md`, line 19**, lists `integration.md` among the
+   admin docs to read. Remove it, and add `factory-records.md`, `BACKEND-TODO.md` and
+   `new-factory.md`, which now hold the factory-records contract, the open work and the
+   onboarding steps.
+2. **`packages/domain/src/types/admin.ts`, line ~2033**, says "Tracked in
+   `BACKEND-API-GAPS.md`". This is the vendored domain: `vendor:pull` brings the corrected
+   comment (it now points to `api-contract.md`, "Agreed shapes"). Nothing to edit by hand.
+
+(`docs/README.md` line 54 also names an `integration.md`, but that is your own planned
+backend file, not ours; it is unaffected.)
+
 ---
 
 ## 45. Factory records without the factory system
