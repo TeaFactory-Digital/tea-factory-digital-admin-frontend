@@ -119,6 +119,10 @@ Confirmed by the factory where marked; the rest decided on the console side.
 
 **Bills: where they come from**
 
+- **Every factory runs its own system, which prints its bills (factory).** Sync off means we
+  cannot read from it, not that it is absent. A `calculated` factory's system cannot export
+  its bills but still prints them, so the bill engine must reproduce the printed slip
+  exactly (factory-records §5), and every approval is also entered there by the office.
 - **One way per factory** (`BillSettings.source`, `billSourceOf`; absent = `calculated`):
   `imported` from the factory's own system, or `calculated` here. Galaboda is `imported`.
   The wrong one is `409 wrong-bill-source`.

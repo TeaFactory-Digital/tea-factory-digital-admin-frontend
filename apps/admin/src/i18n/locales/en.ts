@@ -1877,6 +1877,12 @@ export const en = {
   'error.loanOutstanding': 'A loan is still owed. A new loan can be given only once it is repaid.',
   'error.wrongBillSource': 'This factory’s bills come the other way. Change “Where the bills come from” in Configuration → Bill calculation.',
   'error.billSourceBlocked': 'Bills are generated but not published for: {{months}}. Publish them first, then change where the bills come from.',
+  'factoryReminder.title': 'Enter this in the factory system too.',
+  'factoryReminder.advance': 'After approving, record this advance of Rs. {{amount}} for supplier {{code}} in the factory’s own system. That system prints the bill, so it will not deduct the advance unless it is entered there.',
+  'factoryReminder.loan': 'After approving, record this loan of Rs. {{amount}} for supplier {{code}} in the factory’s own system, repaid over {{months}} months. That system prints the bill, so it will not deduct the instalments unless the loan and its period are entered there.',
+  'factoryReminder.manure': 'After approving, record this manure of Rs. {{amount}} ({{product}}, {{kg}} kg) for supplier {{code}} in the factory’s own system, repaid over {{months}} months. That system prints the bill, so it will not deduct it unless it is entered there.',
+  'factoryReminder.teaPackets': 'If you approve, record these {{packets}} tea packets (Rs. {{amount}}) for supplier {{code}} in the factory’s own system too, so the bill deducts them.',
+  'factoryReminder.change': 'After approving, update supplier {{code}}’s {{type}} in the factory’s own system too, so payments and the next bill use the new details.',
   'error.monthLocked': 'That month is published, so its figures can no longer be changed.',
   'error.alreadyVoided': 'This delivery was already voided.',
   'error.invalidBatch':

@@ -30,6 +30,7 @@ import { useNoteSuggestions } from '@/components/useNoteSuggestions';
 import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { FactorySystemReminder } from '@/components/FactorySystemReminder';
 import { Notice } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey, isBlockingError } from '@/lib/errorMessage';
@@ -249,6 +250,20 @@ function CreditDecisionDialog({
             </dd>
           </div>
         </dl>
+
+        {approving ? (
+          <FactorySystemReminder>
+            {/* Each facility needs its own details entered there: a loan its repayment
+                period (or that system works a different instalment), manure its product. */}
+            {t(`factoryReminder.${request.facility}`, {
+              amount: formatAmount(request.amount),
+              code: request.supplierCode,
+              months: request.repaymentMonths ?? '-',
+              product: request.manureType ?? '-',
+              kg: request.quantityKg ?? '-',
+            })}
+          </FactorySystemReminder>
+        ) : null}
 
         <DecisionNoteField
           label={t('credit.noteLabel')}

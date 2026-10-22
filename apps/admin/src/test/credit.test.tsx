@@ -26,6 +26,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { Route, Routes } from 'react-router-dom';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import i18next from 'i18next';
 import {
   REQUIRED_MONTHS_OF_HISTORY,
   buildCreditEligibility,
@@ -39,6 +40,7 @@ import { deliveryRepository } from '@/services/repositories/deliveryRepository';
 import { mockSupplierRecord } from '@/services/mocks/handlers';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { useAuthStore } from '@/auth/authStore';
+import { bundledConfig } from '@/config/defaults';
 import { renderWithProviders, signInAs, signOut } from './render';
 import { eligibilityOf } from './credit';
 
@@ -504,6 +506,40 @@ describe('M7 detail screen', () => {
 
     await user.type(within(dialog).getByRole('textbox'), 'Within the ceiling for this month.');
     await waitFor(() => expect(submit).toBeEnabled());
+  });
+
+  it('names what each facility needs entered in the factory system', () => {
+    const t = i18next.getFixedT('en');
+    const values = { amount: '50,000.00', code: '5708', months: 10, product: 'Urea 50 kg', kg: 50 };
+    // A loan: the factory's system works the instalment from the period, so it is named.
+    expect(t('factoryReminder.loan', values)).toContain('repaid over 10 months');
+    expect(t('factoryReminder.manure', values)).toContain('Urea 50 kg, 50 kg');
+    expect(t('factoryReminder.advance', values)).toContain('advance of Rs. 50,000.00');
+    // Every language has its own sentence for each facility, not the English fallback.
+    for (const lng of ['si', 'ta']) {
+      for (const facility of ['advance', 'loan', 'manure']) {
+        expect(i18next.exists(`factoryReminder.${facility}`, { lng, fallbackLng: false })).toBe(true);
+      }
+    }
+  });
+
+  it('reminds the approver to enter it in the factory system, in every mode', async () => {
+    const user = userEvent.setup();
+    await signInAs(MANAGER);
+    // Every factory runs its own system: sync on, and sync off with bills calculated here.
+    for (const sync of [true, false]) {
+      bundledConfig.factorySync = { enabled: sync };
+      try {
+        const view = renderDetail(WITHIN_CEILING);
+        await user.click(await screen.findByRole('button', { name: /^approve$/i }));
+        expect(
+          within(await screen.findByRole('dialog')).getByText(/Enter this in the factory system too/),
+        ).toBeInTheDocument();
+        view.unmount();
+      } finally {
+        delete bundledConfig.factorySync;
+      }
+    }
   });
 });
 

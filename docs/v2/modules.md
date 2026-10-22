@@ -54,7 +54,7 @@ clerk can see the account a supplier is telephoning about. The Factory records s
 not in the sidebar, `/deliveries` and `/rates` say the records come from the factory
 system, and the API refuses every record write with `409 factory-sync-on`.
 
-**Sync off.** For a factory whose system cannot be reached, the office keeps the records the
+**Sync off.** For a factory whose system cannot be connected (it still runs, and every approval is also entered there by the office), the office keeps the records the
 app needs **here**: suppliers, opening balances, transport rate per supplier, daily leaf,
 the monthly rate and month close, bills, walk-in credit requests and other deductions.
 Every record can be entered one at a time or imported from an Excel (`.xlsx`) or CSV file

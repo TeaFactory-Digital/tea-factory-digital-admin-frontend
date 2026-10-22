@@ -9,8 +9,15 @@ and what the console hides until it lands).
 
 The platform's product is the **supplier app**. Normally its figures (suppliers, the day's
 leaf, the month's rate, bills, balances) arrive from the factory's own system by the hourly
-sync (`factory-system-team.md`). Some factories have no system we can reach. For them the
-office keeps those records **in the console**, so the app still has something to show.
+sync (`factory-system-team.md`). Some factories' systems cannot be connected: no sync, and
+for some not even an export. For them the office keeps those records **in the console**, so
+the app still has something to show.
+
+**Every factory still runs its own system.** Sync off does not mean "no factory system"; it
+means we cannot read from it. Nothing in this platform ever writes to it either, so **every
+request approved in the console must also be entered in the factory's own system by the
+office**, in every mode. The approval dialogs say so each time
+(`components/FactorySystemReminder.tsx`).
 
 This is not a replacement for a factory's system. It is the smallest set of records the app
 needs: suppliers, daily leaf, monthly rate, bills, opening balances, and counter requests.
@@ -207,8 +214,14 @@ the console in all three languages. Any other code still shows, as "refused (cod
 
 ## 5. Bills calculated here
 
-For a factory whose `billSettings.source` is `calculated`. **No factory needs this yet**
-(galaboda imports), so it is built last.
+For a factory whose `billSettings.source` is `calculated`: its own system runs and **still
+prints its own bills**, but cannot export them. So a supplier holds two bills for the
+month, the paper slip and the app's, and **they must agree to the rupee**. The office
+enters every approval in that system (§1), and our calculation follows the printed slip
+(below); the factory's accountant compares one month of our bills with theirs before going
+live, and any difference is a defect in one of the two inputs (a leaf weighing, a rate, an
+approval not entered in one of the systems). **No
+factory needs this yet** (galaboda imports), so it is built last.
 
 `computeBillAmounts` (`packages/domain/src/bill.ts`) is the calculation; do not write a
 second one. **It reads exactly like the factory's printed slip** (galaboda, July 2026,
@@ -289,7 +302,8 @@ the month's is `rate-differs`. Then review and publish as usual.
 2. **Everything we approved reached their slip, or the file is refused**, naming the
    supplier and the item. Requests approved in our console are typed into the factory's
    system by the office, which prints them on the slip; a slip without one means it was not
-   typed. "For the month" means approved on or before its last day.
+   typed. The console's approval dialogs (credit, tea packets, change requests) remind the
+   approver to do this, in every mode (§1). "For the month" means approved on or before its last day.
    - Advances, tea packets, savings withdrawals: the slip's line is **at least** what we
      approved (more is the factory's own counter).
    - Loans and manure, through the balance:
@@ -340,7 +354,9 @@ From 9 to 22 October 2026:
    factory's unit (galaboda pays in tens), "Loans / Advance 3" is the loan and its
    instalment number.
 4. **Galaboda's own system keeps printing the bills**; we import them and must match them
-   exactly. A factory without one can have them calculated here.
+   exactly. A factory whose system cannot export its bills has them calculated here; that
+   system **still prints its own bills**, so ours must agree with them, and it holds every
+   request the office enters there (§1).
 5. **An advance is closed within its month**, deducted in full; any shortfall is Next Month
    Deb.
 6. **"Loan Balance" is the loan's**; **"Loan Interest" is this month's charge** in rupees.

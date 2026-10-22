@@ -104,7 +104,7 @@ open.
 | 1 | **Transport** can differ by collection point and by supplier |
 | 2 | The bill's `otherCards` line is **"Other deductions"**: small deductions the office types, each with a reason |
 | 3 | **The bill follows the printed slip**: the coins brought forward are part of the gross, the payment is rounded to the factory's unit (Galaboda pays in tens), and "Loans / Advance 3" is the loan and its instalment number |
-| 4 | **Galaboda's own system keeps printing the bills**; the office imports them and the console must match them exactly. A factory without such a system can have them calculated in the console |
+| 4 | **Galaboda's own system keeps printing the bills**; the office imports them and the console must match them exactly. A factory whose system cannot export its bills has them calculated in the console. In both cases the office also enters every approval in the factory's own system |
 | 5 | **An advance is closed within its month**: deducted in full on that month's bill; anything the account cannot cover becomes Next Month Deb |
 | 6 | **"Loan Balance" is the loan's** balance; **"Loan Interest" is this month's charge** in rupees |
 | 7 | **Loan interest** is 0% unless set in Configuration, and the factory chooses whether it is taken on top of the instalment or inside it |

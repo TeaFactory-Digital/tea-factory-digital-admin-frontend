@@ -27,6 +27,7 @@ import { useNoteSuggestions } from '@/components/useNoteSuggestions';
 import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { FactorySystemReminder } from '@/components/FactorySystemReminder';
 import { Notice } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey, isBlockingError } from '@/lib/errorMessage';
@@ -154,6 +155,14 @@ export function TeaPacketDecisionDialog({
             </p>
           </div>
         </div>
+
+        <FactorySystemReminder>
+          {t('factoryReminder.teaPackets', {
+            packets: request.packets,
+            amount: formatAmount(request.amount),
+            code: request.supplierCode,
+          })}
+        </FactorySystemReminder>
 
         {/* The supplier's own words. Short, and often the whole reason the request
             makes sense: "for my daughter's wedding" is not something to guess at. */}

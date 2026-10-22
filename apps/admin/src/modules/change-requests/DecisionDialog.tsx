@@ -31,6 +31,7 @@ import { cn } from '@/lib/cn';
 import { errorMessageKey, errorReason, isBlockingError } from '@/lib/errorMessage';
 import { isApiError } from '@/services/api/errors';
 import { ChangeComparison } from './ChangeComparison';
+import { FactorySystemReminder } from '@/components/FactorySystemReminder';
 import { useDecideChangeRequest, type DecisionVerb } from './hooks';
 
 const MIN_NOTE = 10;
@@ -232,6 +233,15 @@ function DecisionDialog({
             {approving ? t('changeRequests.approveBody') : t('changeRequests.rejectBody')}
           </span>
         </div>
+
+        {approving ? (
+          <FactorySystemReminder>
+            {t('factoryReminder.change', {
+              type: t(`changeRequests.type.${request.type as ChangeRequestType}`).toLowerCase(),
+              code: request.supplierCode,
+            })}
+          </FactorySystemReminder>
+        ) : null}
 
         <DecisionNoteField
           label={t('changeRequests.noteLabel')}
