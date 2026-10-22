@@ -2979,8 +2979,7 @@ The console hides each of these until it lands, in one place:
       in the app's request, a walk-in and approval; savings withdrawals on `billing: A`;
       `carryForward.loanBalance` filled from the loan, never the advance
 
-Point `VITE_API_BASE_URL` at it and set `VITE_USE_MOCK=0`; the console needs no
-other change. If a shape differs from this document, the seam that absorbs it is
+Point `VITE_API_BASE_URL` at it; the console needs no other change. If a shape differs from this document, the seam that absorbs it is
 `apps/admin/src/services/repositories/` (and `services/api/adapters.ts` for envelopes);
 tell the front end rather than reshaping the console's types.
 

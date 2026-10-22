@@ -190,9 +190,8 @@ const BANKS = SRI_LANKA_BANKS.map((bank) => ({
  *  - **editor** writes content and **factoryAdmin** publishes it: the capability
  *    boundary that is the whole of M11 and M12's control.
  *
- * The password is the same for all of them and is printed on the sign-in screen
- * while `VITE_USE_MOCK` is on. That is deliberate: a demo credential that has to
- * be looked up in a source file gets pasted into a chat thread instead.
+ * The password is the same for all of them. These accounts exist only in the mock the
+ * Vitest suite runs against; the real API has its own seeded users.
  */
 export const MOCK_PASSWORD = 'demo1234';
 
@@ -1402,9 +1401,8 @@ export function buildDashboard(
  * What `GET /config` returns per tenant.
  *
  * `highland` deliberately runs a **reduced feature set** (no loans, no manure,
- * no push), mirroring mobile's `clientB`. Switching tenants in the dev switcher
- * should visibly empty those queues out of the sidebar, which is the fastest way
- * to check that no surface is hardcoded.
+ * no push), so the tests can check that a flag removes a surface end to end and that
+ * no surface is hardcoded. `hillcountry` and `highland` are test data only.
  */
 /**
  * The fertilizer a factory sells on credit (§21.10).
@@ -1560,7 +1558,7 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
       enableLoans: false,
       enableManure: false,
       // The reduced-feature reference gains a fifth empty row in v2: no tea packets, so
-      // switching to `highland` in the dev switcher should visibly drop M18 out of the
+      // a test signed in to `highland` sees M18 drop out of the
       // sidebar. That is still the fastest way to check nothing is hardcoded.
       enableTeaPackets: false,
       enableInquiry: true,
