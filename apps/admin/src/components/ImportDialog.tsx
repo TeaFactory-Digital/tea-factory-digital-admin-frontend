@@ -9,21 +9,32 @@
  *  3. **Import**. The server checks again (an unknown supplier code, a published month)
  *     and saves **all rows or none**, so a file is never half in.
  *
+ * A file can be imported again without doubling anything (`IMPORT_SKIP_KINDS`): leaf
+ * already recorded and suppliers already on the roll are **skipped**, not refused. Before
+ * the Import button, the server is asked what it would do (`dryRun`), so the office sees
+ * which rows are already there; for leaf it may still choose to import them, for the rare
+ * second weighing of the same kilos on the same day.
+ *
  * Column names are English and fixed whatever the console's language, so one template
  * works for every clerk and the API reads the same names (`IMPORT_COLUMNS`).
  */
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Download, FileSpreadsheet, RotateCcw, Upload } from 'lucide-react';
 import {
   IMPORT_COLUMNS,
+  IMPORT_SKIP_KINDS,
   importRowProblems,
   importTemplateCsv,
   type ImportKind,
   type ImportRow,
+  type ImportResult,
   type ImportRowProblem,
 } from '@tfd/domain';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { Label } from '@/components/ui/Label';
+import { IMPORT_SKIP_ON_SERVER } from '@/lib/serverReady';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Notice } from '@/components/ui/states';
@@ -32,7 +43,7 @@ import { cn } from '@/lib/cn';
 import { downloadText } from '@/lib/csv';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { ImportFileError, readImportFile, type ImportFile } from '@/lib/importFile';
-import { useImportRows } from '@/modules/records/hooks';
+import { useImportRows, usePreviewImport } from '@/modules/records/hooks';
 
 /** Rows shown in the preview. The count and every problem cover the whole file. */
 const PREVIEW_ROWS = 50;
@@ -50,6 +61,9 @@ export function ImportDialog({
   const toast = useToast();
   const input = useRef<HTMLInputElement>(null);
   const importRows = useImportRows(kind);
+  const previewImport = usePreviewImport(kind);
+  // Ask the server first only where rows can be skipped, and only once it takes `dryRun`.
+  const previews = IMPORT_SKIP_ON_SERVER && IMPORT_SKIP_KINDS.has(kind);
 
   const [file, setFile] = useState<{ name: string; data: ImportFile } | null>(null);
   const [readError, setReadError] = useState<string | null>(null);
@@ -57,6 +71,11 @@ export function ImportDialog({
   // The server sends at most 500 problems back; this is how many it found in all.
   const [serverTotal, setServerTotal] = useState(0);
   const [saved, setSaved] = useState<number | null>(null);
+  // What the server would do with this file, and the skipped rows of the actual import.
+  const [preview, setPreview] = useState<ImportResult | null>(null);
+  const [savedSkipped, setSavedSkipped] = useState(0);
+  // Leaf only: import the rows already recorded anyway.
+  const [keepDuplicates, setKeepDuplicates] = useState(false);
 
   const columns = IMPORT_COLUMNS[kind];
   const missing = useMemo(
@@ -75,12 +94,46 @@ export function ImportDialog({
     [problems],
   );
   const badRows = useMemo(() => new Set(problems.map((p) => p.row)), [problems]);
+  const skippedRows = useMemo(
+    () => (keepDuplicates ? new Set<number>() : new Set((preview?.skipped ?? []).map((one) => one.row))),
+    [preview, keepDuplicates],
+  );
+  const skippedTotal = preview?.skippedTotal ?? preview?.skipped?.length ?? 0;
+  const clientReady = file !== null && missing.length === 0 && serverProblems === null && problems.length === 0;
+
+  /** The preview, once the file passes the console's own checks. */
+  useEffect(() => {
+    if (!previews || !clientReady || !file || preview) return;
+    let current = true;
+    previewImport
+      .mutateAsync({ fileName: file.name, rows: file.data.rows })
+      .then((result) => {
+        if (!current) return;
+        if (result.problems.length > 0) {
+          setServerProblems(result.problems);
+          setServerTotal(result.problemTotal ?? result.problems.length);
+        } else {
+          setPreview(result);
+        }
+      })
+      .catch((error: unknown) => {
+        if (current) toast.error(t('records.import.failed'), t(errorMessageKey(error)));
+      });
+    return () => {
+      current = false;
+    };
+    // The preview is asked once per file; `previewImport` and `toast` are stable enough.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previews, clientReady, file, preview]);
 
   function reset() {
     setFile(null);
     setReadError(null);
     setServerProblems(null);
     setSaved(null);
+    setPreview(null);
+    setSavedSkipped(0);
+    setKeepDuplicates(false);
     if (input.current) input.current.value = '';
   }
 
@@ -104,13 +157,18 @@ export function ImportDialog({
   async function submit() {
     if (!file) return;
     try {
-      const result = await importRows.mutateAsync({ fileName: file.name, rows: file.data.rows });
+      const result = await importRows.mutateAsync({
+        fileName: file.name,
+        rows: file.data.rows,
+        ...(kind === 'deliveries' && keepDuplicates ? { duplicates: 'import' as const } : {}),
+      });
       if (result.problems.length > 0) {
         setServerProblems(result.problems);
         setServerTotal(result.problemTotal ?? result.problems.length);
         return;
       }
       setSaved(result.saved);
+      setSavedSkipped(result.skippedTotal ?? result.skipped?.length ?? 0);
       toast.success(t('records.import.saved', { count: result.saved }));
     } catch (error) {
       toast.error(t('records.import.failed'), t(errorMessageKey(error)));
@@ -127,7 +185,11 @@ export function ImportDialog({
     });
 
   const shownColumns = file ? columns.filter((c) => file.data.headers.includes(c.key)) : [];
-  const canImport = file !== null && missing.length === 0 && problems.length === 0 && saved === null;
+  // With a preview: what it said would be saved, or every row when the office keeps the
+  // duplicates. Without one: the whole file, as before.
+  const toImport = !file ? 0 : preview && !keepDuplicates ? preview.saved : file.data.rows.length;
+  const canImport =
+    clientReady && saved === null && (!previews || preview !== null) && toImport > 0;
 
   return (
     <Dialog
@@ -157,12 +219,10 @@ export function ImportDialog({
               variant="primary"
               iconLeft={<Upload className="size-icon-sm" aria-hidden />}
               disabled={!canImport}
-              loading={importRows.isPending}
+              loading={importRows.isPending || previewImport.isPending}
               onClick={() => void submit()}
             >
-              {file
-                ? t('records.import.submit', { count: file.data.rows.length })
-                : t('records.import.submitEmpty')}
+              {file ? t('records.import.submit', { count: toImport }) : t('records.import.submitEmpty')}
             </Button>
           </>
         )
@@ -175,6 +235,13 @@ export function ImportDialog({
             <p className="text-subtitle font-semibold text-text-primary">
               {t('records.import.saved', { count: saved })}
             </p>
+            {savedSkipped > 0 ? (
+              <p className="text-body-small text-text-secondary">
+                {t(`records.import.skip.done.${kind === 'suppliers' ? 'suppliers' : 'deliveries'}`, {
+                  count: savedSkipped,
+                })}
+              </p>
+            ) : null}
           </div>
         ) : !file ? (
           <>
@@ -262,6 +329,16 @@ export function ImportDialog({
                   </ul>
                 </span>
               </Notice>
+            ) : preview && skippedTotal > 0 ? (
+              <SkippedNotice
+                kind={kind}
+                preview={preview}
+                total={skippedTotal}
+                keepDuplicates={keepDuplicates}
+                onKeepDuplicates={setKeepDuplicates}
+              />
+            ) : previews && !preview ? (
+              <Notice tone="info">{t('records.import.skip.checking')}</Notice>
             ) : (
               <Notice tone="info">{t('records.import.ready', { count: file.data.rows.length })}</Notice>
             )}
@@ -283,7 +360,15 @@ export function ImportDialog({
                     {file.data.rows.slice(0, PREVIEW_ROWS).map((row, index) => {
                       const line = index + 2;
                       return (
-                        <tr key={line} className={cn('border-t border-divider', badRows.has(line) && 'bg-error-muted')}>
+                        <tr
+                          key={line}
+                          className={cn(
+                            'border-t border-divider',
+                            badRows.has(line) && 'bg-error-muted',
+                            skippedRows.has(line) && 'text-text-secondary opacity-60',
+                          )}
+                          title={skippedRows.has(line) ? t('records.import.skip.rowTitle') : undefined}
+                        >
                           <td className="numeric px-sm py-xs text-text-secondary">{line}</td>
                           {shownColumns.map((column) => (
                             <td
@@ -314,6 +399,56 @@ export function ImportDialog({
         )}
       </div>
     </Dialog>
+  );
+}
+
+/**
+ * What the preview found already there: how many, which rows, and for leaf the choice to
+ * import them anyway. Skipping is the default and needs no click.
+ */
+function SkippedNotice({
+  kind,
+  preview,
+  total,
+  keepDuplicates,
+  onKeepDuplicates,
+}: {
+  kind: ImportKind;
+  preview: ImportResult;
+  total: number;
+  keepDuplicates: boolean;
+  onKeepDuplicates: (keep: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const which = kind === 'suppliers' ? 'suppliers' : 'deliveries';
+  const rows = (preview.skipped ?? []).map((one) => one.row);
+  return (
+    <Notice tone="warning">
+      <span className="flex flex-col gap-xs">
+        <strong className="font-semibold">
+          {keepDuplicates
+            ? t('records.import.skip.keeping', { count: total })
+            : preview.saved === 0
+              ? t(`records.import.skip.nothingNew.${which}`)
+              : t(`records.import.skip.found.${which}`, { count: total, saving: preview.saved })}
+        </strong>
+        <span>
+          {t('records.import.skip.rows', {
+            rows: rows.slice(0, 40).join(', ') + (total > 40 ? ', …' : ''),
+          })}
+        </span>
+        {kind === 'deliveries' ? (
+          <Label className="flex items-start gap-sm text-text-primary">
+            <Checkbox
+              className="mt-xxs shrink-0"
+              checked={keepDuplicates}
+              onCheckedChange={(checked) => onKeepDuplicates(checked === true)}
+            />
+            <span>{t('records.import.skip.keepDuplicates')}</span>
+          </Label>
+        ) : null}
+      </span>
+    </Notice>
   );
 }
 

@@ -133,6 +133,13 @@ Alongside:
 - **Loan balance:** the slip's "Loan Balance" is the **loan's**. Fix the comment in
   `bill.mapper.ts` ("the ADVANCE balance") and anything that fills `cfLoanBalance` from the
   advance.
+- **Importing a file again (factory):** skip, do not refuse, rows already there:
+  `dryRun` and `duplicates` on `POST /admin/imports/:kind`, `skipped` in the answer
+  (factory-records §4.2, "A file can be imported again"). The `suppliers` import is live,
+  so this changes it: an existing code is skipped (`supplier-exists`), no longer
+  `supplier-code-taken` for the whole file. For `deliveries`, match on date, supplier, kilos
+  and collection point **by count** (`leafRecordKey`, `matchRecorded`; galaboda's scale
+  file has no weighing number).
 - **Leading zeros:** match an all-digit code ignoring leading zeros (`708` finds `0708`)
   only when exactly one supplier fits; otherwise refuse as ambiguous. Sign-in stays exact.
 
@@ -154,6 +161,7 @@ remove it in the same PR:
 | Bill calculation: "Where the bills come from" and "How the loan interest is taken" | `PATCH /admin/config` accepting `billSettings.source` and `loanInterest.recovery` | `BILL_SOURCE_AND_RECOVERY_ON_SERVER = false` |
 | Rates & month close: "Compare with printed slips" card, the checklist step, held badges | `GET .../slip-comparison`, `PUT /admin/bills/:id/printed`, `POST /admin/bills/:id/hold`, `/release` | `SLIP_COMPARISON_ON_SERVER = false` |
 | Import → Printed slip balances | `POST /admin/imports/printedBalances` | `IMPORT_KINDS_NOT_ON_SERVER`: `'printedBalances'` |
+| Import dialog: the preview of rows already there, and "import them anyway" for leaf | `dryRun`, `duplicates`, `skipped` on `POST /admin/imports/:kind` | `IMPORT_SKIP_ON_SERVER = false` (**until then nothing is sent**: an API that ignored `dryRun` would save the file on the preview) |
 
 The leaf intake grid and Rates & month close also call the v1 leaf and month endpoints; they
 stay visible because the rest of those screens works, and start working as those land.
@@ -252,6 +260,9 @@ Confirmed by the factory where marked; the rest decided on the console side.
   `bill-not-held`, `bill-still-mismatched`. The credit refusals block the approval dialog.
   `sync-switch-blocked` and `bill-source-blocked` name `details.months`; `bills-mismatch`
   names `details.count`.
+- Importing again (`factoryRecords.ts`): `ImportRequest`, `ImportSkippedRow`,
+  `ImportSkipCode`, `IMPORT_SKIP_KINDS`, `ImportDuplicates`, `leafRecordKey`,
+  `matchRecorded`; `ImportResult.skipped`, `skippedTotal`, `dryRun`.
 - Printed-slip check (`factoryRecords.ts`): `compareWithSlip`, `slipComparisonBlocks`,
   `HOLD_REASON_MIN`, the types `SlipCheck` (on `AdminBill`), `SlipComparisonRow`,
   `MonthSlipComparison`, `IMPORT_COLUMNS.printedBalances`; `BillListItem.held`.

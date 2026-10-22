@@ -533,13 +533,89 @@ export interface ImportRowProblem {
     | string;
 }
 
+/**
+ * A row left out because it is already there, which is **not** a problem: the rest of the
+ * file still saves. Only the kinds in `IMPORT_SKIP_KINDS` skip rows.
+ *
+ * - `already-recorded` (`deliveries`): the same date, supplier, kilos and collection point
+ *   is already recorded and not voided (`leafRecordKey`, `matchRecorded`).
+ * - `supplier-exists` (`suppliers`): a supplier with this code is already on the roll. It
+ *   is left as it is, not updated from the file.
+ */
+export type ImportSkipCode = 'already-recorded' | 'supplier-exists';
+
+export interface ImportSkippedRow {
+  /** The spreadsheet row, as in `ImportRowProblem`. */
+  row: number;
+  code: ImportSkipCode;
+}
+
+/** The kinds a file may be imported again without doubling anything. */
+export const IMPORT_SKIP_KINDS: ReadonlySet<ImportKind> = new Set<ImportKind>(['deliveries', 'suppliers']);
+
+/**
+ * What to do with leaf rows already recorded. `skip` is the default. `import` is for the
+ * rare file that really holds a second weighing of the same kilos on the same day.
+ */
+export type ImportDuplicates = 'skip' | 'import';
+
+/** `POST /admin/imports/:kind`. */
+export interface ImportRequest {
+  fileName: string;
+  rows: ImportRow[];
+  /**
+   * Check the file and say what **would** happen (`saved`, `skipped`, `problems`) without
+   * saving anything. The import dialog asks this first, so the office sees which rows are
+   * already there before it presses Import.
+   */
+  dryRun?: boolean;
+  /** `deliveries` only. Default `skip`. */
+  duplicates?: ImportDuplicates;
+}
+
 /** What the server answers. All or nothing: any problem and no row is saved. */
 export interface ImportResult {
   kind: ImportKind;
+  /** Rows saved; on a dry run, rows that would be saved. */
   saved: number;
   /** At most 500 are sent back; `problemTotal` is how many there were in all. */
   problems: ImportRowProblem[];
   problemTotal?: number;
+  /** Rows left out because they are already there. At most 500; `skippedTotal` counts all. */
+  skipped?: ImportSkippedRow[];
+  skippedTotal?: number;
+  /** Echoed: nothing was saved. */
+  dryRun?: boolean;
+}
+
+/**
+ * One weighing, as the import matches it: no weighing number exists on the factory's
+ * scale file, so the date, the supplier, the kilos (to the gram) and the collection point
+ * together are the identity. The point is the row's, or the supplier's own when the row
+ * leaves it empty, exactly as the import saves it.
+ */
+export function leafRecordKey(date: string, supplierId: string, kgs: number, collectionPoint: string): string {
+  return `${date}|${supplierId}|${kgs.toFixed(3)}|${collectionPoint.trim().toUpperCase()}`;
+}
+
+/**
+ * Which incoming weighings are already recorded, **by count**: two identical weighings in
+ * the file against one already recorded leaves one to save. So importing the same file
+ * twice adds nothing, while a supplier who really brought 20 kg twice that day keeps both.
+ * Answers the indexes of `incoming` to skip.
+ */
+export function matchRecorded(recorded: readonly string[], incoming: readonly string[]): number[] {
+  const left = new Map<string, number>();
+  for (const key of recorded) left.set(key, (left.get(key) ?? 0) + 1);
+  const skip: number[] = [];
+  incoming.forEach((key, index) => {
+    const count = left.get(key) ?? 0;
+    if (count > 0) {
+      skip.push(index);
+      left.set(key, count - 1);
+    }
+  });
+  return skip;
 }
 
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/;

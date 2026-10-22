@@ -8,6 +8,7 @@
 import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import type {
   BillAdjustment,
+  ImportDuplicates,
   ImportKind,
   ImportRow,
   NewSupplier,
@@ -43,11 +44,26 @@ function useRefresh() {
 export function useImportRows(kind: ImportKind) {
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: ({ fileName, rows }: { fileName: string; rows: ImportRow[] }) =>
-      factoryRecordRepository.importRows(kind, fileName, rows),
+    mutationFn: ({
+      fileName,
+      rows,
+      duplicates,
+    }: {
+      fileName: string;
+      rows: ImportRow[];
+      duplicates?: ImportDuplicates;
+    }) => factoryRecordRepository.importRows(kind, fileName, rows, duplicates ? { duplicates } : {}),
     onSuccess: (result) => {
       if (result.saved > 0) refresh(IMPORT_REFRESHES[kind]);
     },
+  });
+}
+
+/** What an import would do, saving nothing: which rows are already there, which are wrong. */
+export function usePreviewImport(kind: ImportKind) {
+  return useMutation({
+    mutationFn: ({ fileName, rows }: { fileName: string; rows: ImportRow[] }) =>
+      factoryRecordRepository.importRows(kind, fileName, rows, { dryRun: true, duplicates: 'skip' }),
   });
 }
 

@@ -8,6 +8,7 @@
 import type {
   BillAdjustment,
   ImportKind,
+  ImportRequest,
   ImportResult,
   ImportRow,
   NewSupplier,
@@ -21,9 +22,14 @@ import type { MutationAck } from '../api/adapters';
 
 export const factoryRecordEndpoints = {
   /** `422 import-invalid` with `details.problems` when any row is wrong; nothing is saved. */
-  importRows: (kind: ImportKind, fileName: string, rows: ImportRow[]) =>
+  importRows: (
+    kind: ImportKind,
+    fileName: string,
+    rows: ImportRow[],
+    options: Pick<ImportRequest, 'dryRun' | 'duplicates'> = {},
+  ) =>
     apiClient
-      .post<ImportResult>(`/admin/imports/${kind}`, { fileName, rows })
+      .post<ImportResult>(`/admin/imports/${kind}`, { fileName, rows, ...options } satisfies ImportRequest)
       .then((response) => response.data),
 
   /** `409 supplier-code-taken` · `422 bank-details-required`. */

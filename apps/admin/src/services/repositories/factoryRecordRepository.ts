@@ -10,6 +10,7 @@
 import type {
   BillAdjustment,
   ImportKind,
+  ImportRequest,
   ImportResult,
   ImportRow,
   ImportRowProblem,
@@ -22,14 +23,28 @@ import type {
 import { ApiError } from '../api/errors';
 import type { MutationAck } from '../api/adapters';
 import { factoryRecordEndpoints } from '../endpoints/factoryRecords';
+import { IMPORT_SKIP_ON_SERVER } from '@/lib/serverReady';
 
 const isNotFound = (error: unknown) =>
   error instanceof ApiError && (error.code === 'not-found' || error.status === 404);
 
 export const factoryRecordRepository = {
-  importRows: async (kind: ImportKind, fileName: string, rows: ImportRow[]): Promise<ImportResult> => {
+  /**
+   * `dryRun` checks without saving; `duplicates` says what to do with leaf already
+   * recorded. Neither is sent until the API takes them (`IMPORT_SKIP_ON_SERVER`): an API
+   * that ignored `dryRun` would save the file on the preview.
+   */
+  importRows: async (
+    kind: ImportKind,
+    fileName: string,
+    rows: ImportRow[],
+    options: Pick<ImportRequest, 'dryRun' | 'duplicates'> = {},
+  ): Promise<ImportResult> => {
+    if (options.dryRun && !IMPORT_SKIP_ON_SERVER) {
+      throw new Error('A dry run is not sent to an API that would save the file.');
+    }
     try {
-      return await factoryRecordEndpoints.importRows(kind, fileName, rows);
+      return await factoryRecordEndpoints.importRows(kind, fileName, rows, IMPORT_SKIP_ON_SERVER ? options : {});
     } catch (error) {
       const problems = (error as ApiError).details as
         | { problems?: ImportRowProblem[]; total?: number }

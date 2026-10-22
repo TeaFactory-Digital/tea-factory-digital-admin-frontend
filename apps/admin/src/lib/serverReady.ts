@@ -42,3 +42,11 @@ export const SLIP_COMPARISON_ON_SERVER = false;
  * behind it. Until then Configuration → Features neither shows nor sends the flag.
  */
 export const MONTH_TO_DATE_ON_SERVER = false;
+
+/**
+ * Imports that leave out rows already there (`IMPORT_SKIP_KINDS`): `dryRun` and
+ * `duplicates` on `POST /admin/imports/:kind`, and `skipped` in the answer. Until then the
+ * import dialog asks for no preview (an API that ignored `dryRun` would save the file) and
+ * a supplier code already on the roll still refuses the whole file.
+ */
+export const IMPORT_SKIP_ON_SERVER = false;

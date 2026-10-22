@@ -113,7 +113,7 @@ BACKEND-TODO #45 says which of these are built.
 | `POST /admin/credit-requests` | `WalkInCreditRequest` → `{ id }` (201) | `404` supplier, `422 invalid`, `feature-disabled`, `supplier-suspended`, `supplier-closed`, `request-pending`, `loan-outstanding`, the instalment codes |
 | `PUT /admin/suppliers/:id/transport-rate` | `SupplierTransportRate` → `{ id }` | `422 negative`, `422 note-required` |
 | `PUT /admin/bills/:id/adjustment` | `BillAdjustment` → `{ id }` | `409 month-locked` (published; a held bill is not), `422 negative`, `422 note-required` |
-| `POST /admin/imports/:kind` | `{ fileName, rows }` → `ImportResult` | `422 import-invalid` with `details.problems` (at most 500) and `details.total`, `422 import-size`, `409 wrong-bill-source` (`bills`, `printedBalances`) |
+| `POST /admin/imports/:kind` | `ImportRequest` (`{ fileName, rows, dryRun?, duplicates? }`) → `ImportResult` (with `skipped`, `skippedTotal`, `dryRun`) | `422 import-invalid` with `details.problems` (at most 500) and `details.total`, `422 import-size`, `409 wrong-bill-source` (`bills`, `printedBalances`) |
 
 Already on the backend and used as they are: `GET /admin/bill-months`, `GET /admin/bills`,
 `GET /admin/bills/:id`, `GET /admin/months/:monthKey/bill-run`, the four
@@ -204,12 +204,31 @@ edited here. Audit `bill.adjust`.
   column allows (`too-many-decimals`; 2 by default, whole numbers where `decimals: 0`), and
   no minus sign unless the column has `allowNegative`; `0x1A` or `1e3` is `not-a-number`;
   `2026-02-31` is `not-a-date`; a text shorter than its `minLength` is `too-short`.
-- Audit one `import.apply` entry per file (`{ kind, rows, fileName }`), not one per row.
+- Audit one `import.apply` entry per file (`{ kind, rows, skipped, fileName }`), not one
+  per row. A dry run is not audited.
+- **A file can be imported again without doubling anything** (`IMPORT_SKIP_KINDS`:
+  `deliveries`, `suppliers`). A row already there is **skipped**, not refused: it is listed
+  in `skipped` (`ImportSkippedRow`: `row`, `code`) and the rest of the file saves. Work out
+  the skipped rows **first**, and drop the server problems of skipped rows, so a re-imported
+  file is not refused for a row it would not save (a weighing in a month since published).
+  - `deliveries`, `already-recorded`: the same date, supplier, kilos and collection point
+    (the row's, or the supplier's own when empty) is recorded and not voided. The factory's
+    scale file has no weighing number, so these four are the identity (`leafRecordKey`).
+    Match **by count** (`matchRecorded`): importing the same file twice adds nothing, while
+    two real 20 kg weighings in a file against one recorded saves the second.
+    `duplicates: 'import'` skips nothing, for a file that really holds a second weighing of
+    the same kilos on the same day.
+  - `suppliers`, `supplier-exists`: the code (by its bare number) is already on the roll.
+    The supplier is left as they are, not updated from the file. A code twice in the same
+    file is still `duplicate`.
+- **`dryRun: true`** checks everything and answers what **would** happen (`saved`,
+  `skipped`, `problems`) without saving or auditing. The import dialog asks this first, so
+  the office sees which rows are already there before pressing Import.
 
 | Kind | Server-only checks (problem `code`) | What it saves |
 |---|---|---|
-| `suppliers` | `duplicate` in file, `supplier-code-taken`, `unknown-collection-point`, `bank-details-required`, `unknown-bank`, `bank-not-in-catalogue` | Suppliers, as Add supplier |
-| `deliveries` | `unknown-supplier`, `month-locked`, `unknown-collection-point` | Deliveries, `source: 'scaleFile'`; point defaults to the supplier's |
+| `suppliers` | `duplicate` in file, an existing code **skipped** (`supplier-exists`, not refused), `unknown-collection-point`, `bank-details-required`, `unknown-bank`, `bank-not-in-catalogue` | Suppliers, as Add supplier |
+| `deliveries` | `unknown-supplier`, `month-locked`, `unknown-collection-point`; a weighing already recorded **skipped** (`already-recorded`) | Deliveries, `source: 'scaleFile'`; point defaults to the supplier's |
 | `monthlyRates` | `duplicate`, `unknown-month`, `month-locked` | The month's rate, moving the stage to `rateEntered` |
 | `openingBalances` | `duplicate`, `unknown-supplier`, `opening-balances-locked`, a different cut-over month | Opening balances |
 | `walkInCredit` | `unknown-supplier`, manure without type or quantity (`required`), and the walk-in refusals above | Pending office requests |
@@ -417,6 +436,10 @@ From 9 to 22 October 2026:
 11. **The office enters daily leaf** while the sync is off.
 12. **A calculated bill that does not match the printed slip is held**: the rest of the
     month publishes, the held bill is fixed, compared again and released on its own.
+13. **Importing a file again skips what is already there.** Galaboda's scale file has no
+    weighing number, so leaf is matched on date, supplier, kilos and collection point; the
+    office may still import a real second weighing. A supplier already on the roll is
+    skipped, not updated, and the rest of the file is added.
 
 ## 9. Checks
 
@@ -424,6 +447,11 @@ From 9 to 22 October 2026:
   screens. Switching the sync, or the bill source, with a generated but unpublished month is
   refused and names the month.
 - A file with one bad row saves nothing and lists the row; the corrected file saves all.
+- **Importing again:** import a day's leaf file twice: the second saves 0 and skips every
+  row (`already-recorded`). Add one row and import again: saves 1. Send it with
+  `duplicates: 'import'`: saves all. A suppliers file with one existing code and one new
+  saves the new one and skips the other (`supplier-exists`), leaving the existing supplier
+  unchanged. `dryRun: true` answers the same counts and saves nothing.
 - **Imported bills (galaboda):** import the template's example row: the bill matches the
   slip to the cent (gross 114,644.91, paid 68,220, coins 6.91). Approve a Rs. 40,000 advance
   for July, then import a July slip with Advance 0: refused, naming the supplier and the

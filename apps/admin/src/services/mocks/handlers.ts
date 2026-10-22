@@ -20,6 +20,10 @@ import {
   isFactorySyncEnabled,
   billSourceOf,
   compareWithSlip,
+  leafRecordKey,
+  matchRecorded,
+  type ImportRequest,
+  type ImportSkippedRow,
   HOLD_REASON_MIN,
   slipComparisonBlocks,
   type MonthSlipComparison,
@@ -1957,6 +1961,8 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
         if (!code) return;
         if (seen.has(code)) push('supplierCode', 'duplicate');
         seen.add(code);
+        // An existing code is skipped, not refused (`importSkips`); this is for a caller
+        // that has not filtered the skipped rows out.
         if (supplier) push('supplierCode', 'supplier-code-taken');
         if (row.collectionPoint && !points.includes(row.collectionPoint)) {
           push('collectionPoint', 'unknown-collection-point');
@@ -2047,6 +2053,36 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
     }
   });
   return problems;
+}
+
+/**
+ * Rows already there, left out rather than refused, so a file can be imported again
+ * without doubling anything (`IMPORT_SKIP_KINDS`).
+ *
+ * Leaf is matched on date, supplier, kilos and collection point against the non-voided
+ * weighings, by count (`matchRecorded`). `duplicates: 'import'` keeps them all, for a file
+ * that really holds a second weighing of the same kilos. A supplier whose code is already
+ * on the roll is left as it is.
+ */
+function importSkips(kind: ImportKind, rows: ImportRow[], duplicates: ImportRequest['duplicates']): ImportSkippedRow[] {
+  if (kind === 'suppliers') {
+    return rows.flatMap((row, index) => {
+      const code = (row.supplierCode ?? '').trim();
+      return code && supplierByCode(code) ? [{ row: index + 2, code: 'supplier-exists' as const }] : [];
+    });
+  }
+  if (kind !== 'deliveries' || duplicates === 'import') return [];
+  const recorded = state.deliveries
+    .filter((one) => !one.voidedAt)
+    .map((one) => leafRecordKey(one.date, one.supplierId, one.kgs, one.collectionPoint));
+  // A row the checks will refuse anyway cannot match; it keeps a key nothing equals.
+  const incoming = rows.map((row, index) => {
+    const supplier = row.supplierCode ? supplierByCode(row.supplierCode) : undefined;
+    const kg = Number(row.kg);
+    if (!supplier || !row.date || !Number.isFinite(kg)) return `unmatched-${index}`;
+    return leafRecordKey(row.date, supplier.id, roundKg(kg), row.collectionPoint || supplier.collectionPoint);
+  });
+  return matchRecorded(recorded, incoming).map((index) => ({ row: index + 2, code: 'already-recorded' as const }));
 }
 
 /**
@@ -7916,7 +7952,7 @@ export const handlers: HttpHandler[] = [
     const syncOn = refuseWhileSyncOn(request);
     if (syncOn) return syncOn;
 
-    const { rows, fileName } = (await request.json()) as { fileName: string; rows: ImportRow[] };
+    const { rows, fileName, dryRun, duplicates } = (await request.json()) as ImportRequest;
     if (kind === 'printedBalances' && !comparesWithSlips(request)) {
       return fail({
         status: 409,
@@ -7938,7 +7974,15 @@ export const handlers: HttpHandler[] = [
         message: `A file carries 1 to ${MAX_IMPORT_ROWS} rows.`,
       });
     }
-    const problems = [...importRowProblems(kind, rows), ...importServerProblems(request, kind, rows)];
+    // Rows already there are left out first, so a re-imported file is not refused for a
+    // row it would not have saved (a weighing in a month since published, a supplier who
+    // already exists).
+    const skipped = importSkips(kind, rows, duplicates);
+    const skippedRows = new Set(skipped.map((one) => one.row));
+    const problems = [
+      ...importRowProblems(kind, rows),
+      ...importServerProblems(request, kind, rows).filter((problem) => !skippedRows.has(problem.row)),
+    ];
     if (problems.length > 0) {
       return fail({
         status: 422,
@@ -7947,17 +7991,29 @@ export const handlers: HttpHandler[] = [
         details: { problems },
       });
     }
-    applyImport(
+    const toSave = rows.filter((_, index) => !skippedRows.has(index + 2));
+    const answer = {
       kind,
-      rows,
-      auth.user,
-      tenantConfig(request).billSettings?.paymentUnit,
-      billFactoryOf(tenantOf(request)),
-    );
+      saved: toSave.length,
+      problems: [],
+      skipped: skipped.slice(0, 500),
+      skippedTotal: skipped.length,
+    } satisfies ImportResult;
+    if (dryRun) return HttpResponse.json({ ...answer, dryRun: true } satisfies ImportResult);
+
+    if (toSave.length > 0) {
+      applyImport(
+        kind,
+        toSave,
+        auth.user,
+        tenantConfig(request).billSettings?.paymentUnit,
+        billFactoryOf(tenantOf(request)),
+      );
+    }
     recordBy(auth, 'import.apply', 'import', `${kind}-${nextId()}`, {
-      after: { kind, rows: rows.length, fileName },
+      after: { kind, rows: toSave.length, skipped: skipped.length, fileName },
     });
-    return HttpResponse.json({ kind, saved: rows.length, problems: [] } satisfies ImportResult);
+    return HttpResponse.json(answer);
   }),
 ];
 
