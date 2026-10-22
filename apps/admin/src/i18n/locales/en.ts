@@ -1876,6 +1876,7 @@ export const en = {
   'error.syncSwitchBlocked': 'Bills are generated but not published for: {{months}}. Publish them first, then switch the factory-system sync.',
   'error.loanOutstanding': 'A loan is still owed. A new loan can be given only once it is repaid.',
   'error.wrongBillSource': 'This factory’s bills come the other way. Change “Where the bills come from” in Configuration → Bill calculation.',
+  'error.billSourceBlocked': 'Bills are generated but not published for: {{months}}. Publish them first, then change where the bills come from.',
   'error.monthLocked': 'That month is published, so its figures can no longer be changed.',
   'error.alreadyVoided': 'This delivery was already voided.',
   'error.invalidBatch':

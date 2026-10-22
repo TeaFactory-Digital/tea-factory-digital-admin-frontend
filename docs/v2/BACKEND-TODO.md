@@ -1,142 +1,23 @@
 # Backend to-do
 
-Backend fixes found while testing the admin console and the mobile app against staging.
-Each item says what is wrong, where, and what to change.
+Backend work found while building and testing the admin console and the mobile app.
+Each item says what is wrong or missing, where, and what to change.
 
-## Status (10 October 2026)
+## Status (22 October 2026)
 
-**Done and removed from this file: #1 to #44, #46 and #47** (latest in `b470323`: the
-bell's activity feed, the onboarding command, and `-` instead of the em dash in
-change-request summaries).
+**Done and removed from this file: #1 to #44, #46 and #47.**
 
 **Still open:**
 
 | # | What | Priority |
 |---|------|----------|
-| 45 | Factory records without the factory system: the rest (bill engine, imports, add supplier, opening balances, walk-ins, leaf and months) | High |
+| 45 | Factory records without the factory system: the bills import, opening balances, leaf and months, then the bill engine | High |
 
-
-**Answers to your note of 21 October** (please `vendor:pull`):
-
-1. **Approvals reach their bill through the office: yes, refuse the import.** As everywhere
-   in this integration, the office is the bridge: an advance, loan, manure, tea-packet or
-   savings-withdrawal approved in our console is typed into galaboda's system, which prints
-   it on the slip. If an imported slip does not deduct something we approved for that month
-   (B5: approved on or before the month's last day), **refuse the file**, naming the supplier
-   and the item, so the office adds it in their system and exports again. Nothing we
-   approved is ever silently erased.
-2. **A per-factory setting: done.** `BillSettings.source: 'imported' | 'calculated'`
-   (`billSourceOf`, absent = `calculated`), in Configuration → Bill calculation. Imported:
-   the console hides Generate and offers Import → Finished bills; calculated: the other way
-   round. Refuse the wrong one with **`409 wrong-bill-source`** (in `ADMIN_ERROR_CODES`,
-   explained in en/si/ta; the mock refuses both). Galaboda is `imported`, so **defer the
-   bill engine**: build the import first. The engine is still wanted, later, for a factory
-   whose system cannot print bills.
-3. **The clerk is now `billing: W`** (`rbac.ts`): import bills, generate them, type an
-   other deduction. Publishing stays `ratesAndMonthClose: A` with the manager, four-eyes.
-4. **Leading zeros:** yes, exactly as you say.
-5. **`/` and `-` are not part of the number.** `supplierCodeSchema` now accepts letters and
-   digits only before the optional `(division)`, so your bare-number rule stands.
-6. **B2 (answered, 21 October): an open loan blocks both a new loan and an advance.** An
-   advance never runs short (it is closed within its month), so it has no debt to count.
-   While a supplier still owes on a loan, they may take **no new loan and no advance** until
-   it is repaid; manure is not part of this rule. Done in the shared function:
-   `buildCreditEligibility` takes `loanOutstanding`, and for `loan` and `advance` with a loan
-   open it answers `available: 0`, `reasonKey: 'credit.reason.loanOutstanding'` (console and
-   app explain it). Please pass `loanOutstanding` for every facility, and refuse a walk-in
-   or an approval of a loan or advance with `409 loan-outstanding`.
-   **B3 (answered): a Configuration choice per factory.** The slip's "Loan Interest" is a
-   rupee amount, this month's charge. Configuration → Bill calculation now asks how it is
-   taken, with an explanation on each option: `config.loanInterest.recovery`, `onTop`
-   (default) or `withinInstalment`. Use `loanRecovery(owedAtStart, plannedInstalment,
-   setting)` in `factoryRecords.ts`: Rs. 50,000 over 10 months with Rs. 500 interest deducts
-   Rs. 5,500 and repays Rs. 5,000 (`onTop`), or deducts Rs. 5,000 and repays Rs. 4,500
-   (`withinInstalment`). **The interest is now worked on the loan owed at the start of the
-   month** (Rs. 50,000 at 1% is Rs. 500), not after the instalment. Bill engine only.
-7. **A7 `rate-differs`:** yes.
-8. **C1:** yes, refuse a different opening month; no setting.
-
-**Done on the console for your last note** (please `vendor:pull`):
-- Unbuilt pieces are hidden: the import kinds `openingBalances`, `deliveries`,
-  `monthlyRates`, `billAdjustments` and `bills`, the opening balances card and the "Other
-  deductions" edit. All in one place, `apps/admin/src/lib/serverReady.ts`: tell me as each
-  ships and I remove its line.
-- `request-pending`, `supplier-suspended`, `supplier-closed`, `advance-outstanding`,
-  `loan-installments-invalid` and `manure-installments-invalid` are in `ADMIN_ERROR_CODES`,
-  explained in en/si/ta; the last three of the first four block the approval dialog.
-- Import problem text for `unknown-bank`, `bank-not-in-catalogue`, `too-large`,
-  `feature-disabled`, `supplier-suspended`, `supplier-closed`, `request-pending`, both
-  instalment codes, and a new `too-short` (`IMPORT_COLUMNS.walkInCredit.note` has
-  `minLength: 10`).
-- The dialog shows `details.total` ("The server found N problems").
-- Manure walk-ins: no amount field; the catalogue price is shown. Loans and manure both
-  offer the factory's repayment periods.
-- `supplierCodeSchema` accepts `5708 (URUMUTHTH...)` and letters.
-- `sync-switch-blocked` names `details.months` and says to publish them first.
-- The app's interest label is now "Interest (advance and loan)".
-- `ACTIVITY_FLAG` in `activity.ts`; `billSettingsProblem` allows a seven-digit serial.
-- Excel: a float like `79.53000000000002` is cleaned to the column's decimals on reading; a
-  real extra decimal is still refused. A code typed as a number (`0708` → `708`) cannot be
-  recovered from the file: please match an all-digit code ignoring leading zeros.
-- Bills import: `balanceAmount` may be negative (a month the supplier owes, with `finalBalance`
-  0 and `nextMonthDebt`), a `savingsWithdrawal` column, and a file replaces only the
-  suppliers in it.
-
-**Answers** ("pending" = asking the factory; build the default meanwhile):
-
-- **A1.** The slip is the record for an imported month: set savings, loan and manure
-  balances to its figures. Where ours differ, accept the slip and put both in the audit.
-- **A2 (answered).** Galaboda's own system **keeps printing the bills every month, now and
-  later**, and our records must equal its **final figures exactly**. So for that factory the
-  imported bill is the record: when a month has both, the imported one wins, and a
-  calculated bill is a preview to compare against it, never published over it.
-- **A3.** Done (above).
-- **A4.** Done (above).
-- **A5 (answered): "Loan Balance" is the loan's** balance after this month's instalment.
-  An advance is always settled within its month, so it never carries and has no line. The
-  mapper's comment (`bill.mapper.ts`, "the ADVANCE balance") and our `BillCarryForward`
-  comment were wrong; ours and the mock are fixed. Please fix the mapper's comment and
-  anything that fills `cfLoanBalance` from the advance.
-- **A6 (answered).** "Loan Interest" is **this month's charge**: the percentage applied to
-  the balance, not the total unpaid.
-- **A7.** Any number of files per month; each replaces only the suppliers in it.
-- **A8.** Accept the slip's kilos; it is the record. Show the count that differs.
-- **A9.** Yes, later: past months as published history, no balance change, no notification.
-- **A10 (answered): yes.** With the sync off the office enters each supplier's leaf on the
-  day it is weighed (one at a time or by file); with the sync on it arrives from the
-  factory's system. An advance ceiling is this month's kilos so far × last month's settled
-  rate (the `thisMonthLeaf` basis), so it is 0 until leaf is recorded.
-- **A11.** Importing bills needs `billing: W` (setting the rate is part of it). Publishing
-  stays `ratesAndMonthClose: A` by someone other than the importer: in a one-manager factory
-  the clerk imports and the manager publishes.
-- **A12.** The factory pays, from its own system; our payout run is not used.
-- **B1.** Interest first, then principal, both on the advance line, under the advance cap.
-- **B4.** Kept apart (answer 2). The §9 check in `factory-records.md` said otherwise and is
-  fixed.
-- **B5.** Advances approved on or before the month's last day.
-- **B6.** Nothing goes unpaid line by line: every line is deducted and a shortfall is next
-  month's debt, as the slip's "Next Month Deb".
-- **C1.** One cut-over month for the whole factory.
-- **C4 (answered): no new loan, and no advance, while a loan is outstanding** (see B2).
-  Refuse with `409 loan-outstanding` (in `ADMIN_ERROR_CODES`, explained in en/si/ta, and
-  blocking in the approval dialog), in the app's request, a walk-in, and approval.
-- **C5.** Later: a manager posts a correction entry with a note, audited, applied on the next
-  bill.
-- **D4.** Not needed: the factory pays from its own system. Keep the name; a code is optional.
-- **G1 (answered).** The year of the **bill's month**: December 2026's bills made in January
-  are `2026…`. **The serial does not reset:** after `2026210869` the next bill is
-  `2027210870` (the year changes, the serial runs on). That is what `factoryBillNumber` and
-  `billSettings.nextBillSerial` already do; nothing to change.
-- **G3, H3, I1.** Done (above).
-
-**Factory sync (Phase 10), for when it starts:** the request to the factory team now asks
-for every line of the printed bill. `factory-system-team.md` §3 and
-`factory-updates-sample.json` (bill `2026210869` is a real slip) add `greenLeafAmount`,
-`extraPayment`, `totalRatePerKg`, `loanInstalmentNo`, `savingsWithdrawal`, `savings`
-(This month / Previous / Todate), `billDateTime` and the bill's own `paymentMethod`, and
-say `grossAmount` includes the coins brought forward. Map them onto `BillRow`
-(`savingsThisMonth`, `savingsPrevious`, `savingsToDate` already exist; `loanInstalmentNo`
-is new) and store them as received.
+**Before you start:** pull the console repo and `vendor:pull`. `@tfd/domain` has changed
+since your last re-vendor: `factoryRecords.ts` (bills import, `billSourceOf`, `loanRecovery`,
+`LoanInterestSetting`, `too-short`, `allowNegative`), `leafCredit.ts` (`loanOutstanding`),
+`activity.ts` (`ACTIVITY_FLAG`), `rbac.ts` (clerk `billing: W`), `types/admin.ts` (new error
+codes, `AdminBill.source`), `schemas/index.ts` (`supplierCodeSchema`).
 
 ---
 
@@ -144,48 +25,55 @@ is new) and store them as received.
 
 A factory whose own system cannot be reached switches the factory-system sync **off**, and
 the office keeps suppliers, daily leaf, monthly rates, bills, opening balances and counter
-credit requests in the console: one at a time, or from an Excel/CSV file. The console side is
-built and tested against the mock.
+credit requests in the console: one at a time, or from an Excel/CSV file.
 
-**The full contract is in [`factory-records.md`](./factory-records.md):** the switch
-(`config.factorySync`), the endpoints (the v1 leaf and month endpoints, plus six new ones),
-the import format and its all-or-nothing rule, the bill calculation, the role change for the
-clerk, and the three new audit actions.
+**The full contract is [`factory-records.md`](./factory-records.md).** This section is the
+work list, what is decided, and what the console is holding back for you.
 
-**To do:** build §4 of that file, refuse every record write with `409 factory-sync-on` while
-the sync is on, and `vendor:pull` (new `factoryRecords.ts`, `GreenLeafBill.otherCardsNote`,
-`RuntimeConfig.factorySync`, clerk `deliveries: W` and `creditRequests: W`).
+### Done on the backend
 
-**Added after the factory's answers (§8 of that file):** transport per collection point
-(`DeductionRates.transportByPoint`) and per supplier (`AdminSupplier.transportPerKg`,
-`PUT /admin/suppliers/:id/transport-rate`, import kind `transportRates`), and advance
-interest in Configuration (`config.advanceInterest`, used for `carryForward.loanInterest`).
-`otherCards` is now labelled "Other deductions"; the field name does not change.
+- `b470323`: `factorySync`, `advanceInterest` and `billSettings` in config (the public
+  `GET /config` sends only `paymentUnit`); `409 factory-sync-on` on every record write, under
+  a lock; `transportByPoint`; deduction rates gated on `ratesAndMonthClose`;
+  `PUT /admin/suppliers/:id/transport-rate`.
+- `ebb9793`: loan interest; `409 sync-switch-blocked`; the bell's start mark and flags;
+  supplier identity (bare number); `POST /admin/suppliers`; walk-ins
+  (`POST /admin/credit-requests`); the `suppliers`, `transportRates` and `walkInCredit`
+  imports; approval refuses `supplier-suspended`, `supplier-closed`, `advance-outstanding`.
 
-**And to match the factory's printed slip (§5):** `computeBillAmounts` now puts the coins
-brought forward in `grossAmount` and rounds the payment to `config.billSettings.paymentUnit`
-(galaboda pays in tens); the advance is taken back in full by default; bills carry
-`loanInstalmentNo`; and `billSettings.nextBillSerial` gives the factory's own bill numbers
-(`2026210869`). Check that the API uses the vendored function for every bill it calculates,
-so a bill and the app agree to the cent.
+### To do, in this order
 
-**Check:** the list in §9 of that file.
+1. **Accept two config fields:** `billSettings.source` and `loanInterest.recovery`
+   (factory-records §4.1). Refuse changing `source` while a month has generated but
+   unpublished bills: `409 bill-source-blocked` with `details.months`.
+2. **The bills import** (`POST /admin/imports/bills`, factory-records §5a), with the
+   approvals check (§5a "What the import checks").
+3. **Opening balances** (`GET` / `PUT /admin/suppliers/:id/opening-balances`, and the
+   `openingBalances` import).
+4. **Leaf and months:** the v1 endpoints in factory-records §4.1, and the `deliveries` and
+   `monthlyRates` imports.
+5. **Other deductions** (`PUT /admin/bills/:id/adjustment`, the `billAdjustments` import).
+6. **The bill engine** (factory-records §5), last: galaboda imports its bills, so no factory
+   needs it yet.
 
-**Done so far (`b470323`):** re-vendored; `factorySync`, `advanceInterest` and
-`billSettings` in config (the public `GET /config` sends only `paymentUnit`); `409
-factory-sync-on` on every record write under a lock; `transportByPoint` kept and validated;
-deduction rates gated on `ratesAndMonthClose`; `PUT /admin/suppliers/:id/transport-rate`.
+Alongside:
 
-**Done since (`ebb9793`):** loan interest, `sync-switch-blocked`, the bell's start and flags,
-supplier identity, `POST /admin/suppliers`, walk-ins, and the `suppliers`, `transportRates`
-and `walkInCredit` imports.
+- **Open loan rule (B2):** pass `loanOutstanding` to `buildCreditEligibility` for every
+  facility, and refuse a loan or an advance while a loan is owed with
+  `409 loan-outstanding`: in the app's own request, a walk-in, and approval.
+- **Savings withdrawals:** creating or cancelling one needs `billing: A` (the manager), not
+  `W`, on `POST /admin/savings/withdrawals` and `.../:id/cancel`.
+- **Loan balance:** the slip's "Loan Balance" is the **loan's**. Fix the comment in
+  `bill.mapper.ts` ("the ADVANCE balance") and anything that fills `cfLoanBalance` from the
+  advance.
+- **Leading zeros:** match an all-digit code ignoring leading zeros (`708` finds `0708`)
+  only when exactly one supplier fits; otherwise refuse as ambiguous. Sign-in stays exact.
 
-**Next:** the `bills` import (A1 to A12), opening balances, leaf and months, then the bill
-engine.
+### Hidden in the console until you build them
 
-**Hidden in the console until you build them.** Each answers `404` today, so the console
-hides it (`apps/admin/src/lib/serverReady.ts`). When one ships, **tell me and I remove its
-line**, or remove it yourself in the same PR:
+Each answers `404` (or `422`) today, so the console hides it in one place,
+`apps/admin/src/lib/serverReady.ts`. When one ships, **tell me and I remove its line**, or
+remove it in the same PR:
 
 | Console feature | Endpoint | Line in `serverReady.ts` |
 |---|---|---|
@@ -196,7 +84,122 @@ line**, or remove it yourself in the same PR:
 | Import → Finished bills | `POST /admin/imports/bills` | `'bills'` |
 | Opening balances card (supplier → Money) | `GET` / `PUT /admin/suppliers/:id/opening-balances` | `OPENING_BALANCES_ON_SERVER = false` |
 | "Other deductions" → Edit on a bill | `PUT /admin/bills/:id/adjustment` | `OTHER_DEDUCTIONS_ON_SERVER = false` |
+| Bill calculation: "Where the bills come from" and "How the loan interest is taken" | `PATCH /admin/config` accepting `billSettings.source` and `loanInterest.recovery` | `BILL_SOURCE_AND_RECOVERY_ON_SERVER = false` |
 
-The leaf intake grid and Rates & month close also call the v1 leaf and month endpoints
-(§4.1 of `factory-records.md`); they stay visible because the rest of the screen works, and
-they start working as those land.
+The leaf intake grid and Rates & month close also call the v1 leaf and month endpoints; they
+stay visible because the rest of those screens works, and start working as those land.
+
+### Decided (your questions, answered)
+
+Confirmed by the factory where marked; the rest decided on the console side.
+
+**Bills: where they come from**
+
+- **One way per factory** (`BillSettings.source`, `billSourceOf`; absent = `calculated`):
+  `imported` from the factory's own system, or `calculated` here. Galaboda is `imported`.
+  The wrong one is `409 wrong-bill-source`.
+- **Galaboda's own system keeps printing every bill, now and later (factory)**, and our
+  records must equal its final figures exactly. For an importing factory the imported bill
+  is the record; a calculated bill is never published over it.
+- **The slip is the record (A1):** an imported month sets the supplier's savings, loan and
+  manure balances to the slip's figures. Where ours differ, accept the slip and keep both in
+  the audit.
+- **Kilos (A8):** accept the slip's; show how many differ from the leaf entered here.
+- **Files (A7):** any number per month; each replaces only the suppliers in it. A second file
+  with a different rate for the month is `rate-differs`.
+- **Past months (A9):** later, as published history with no balance change and no
+  notification.
+- **Who (A11):** the clerk holds `billing: W` to import, generate and type other deductions;
+  publishing stays `ratesAndMonthClose: A` with someone other than the importer
+  (four-eyes).
+- **Payment (A12, D4):** the factory pays from its own system; our payout run is not used,
+  so a bank code for a factory-added bank is optional.
+
+**Bills: what the import checks** (details in factory-records §5a)
+
+- Each row adds up (`importRowProblems`, in the domain).
+- **Everything we approved reaches their slip, or the file is refused**, naming the supplier
+  and the item. The office types each approval made in our console into the factory's system
+  (the office is the bridge), so a slip that lacks one means it was not typed.
+  - Advances, tea packets, savings withdrawals: the slip's line is at least what we approved
+    for the month. More is fine (the factory's own counter).
+  - Loans and manure: through the balance,
+    `loanBalance(this month) + loansAdvance(this month) ≥ loanBalance(last month) + approved
+    this month`, and the same with `manureBalance` and `manure`.
+  - "For the month" (B5): approved on or before the month's last day.
+
+**Advances, loans and interest (factory)**
+
+- **An advance is closed within its month:** always deducted in full, even past the gross.
+  What the account cannot cover becomes that month's "Next Month Deb"; there is never an
+  advance balance. The factory does not cap it, so "at least what we approved" will not
+  refuse a correct file.
+- **An open loan blocks a new loan and an advance (B2, C4; factory, confirmed twice):** a
+  supplier repaying a 10-month loan gets no advance and no new loan for those 10 months.
+  Manure is not part of the rule.
+- **"Loan Balance" is the loan's** balance after this month's instalment (A5).
+- **"Loan Interest" is this month's charge**, a rupee amount (A6).
+- **Loan interest** is `config.loanInterest.monthlyRatePercent` (0% by default), worked on
+  the loan **owed at the start of the month**, and taken **on top of the instalment or
+  inside it** as `config.loanInterest.recovery` says (`onTop` by default, or
+  `withinInstalment`), a Configuration choice the factory makes (B3). Use `loanRecovery`:
+  Rs. 50,000 over 10 months at 1% deducts Rs. 5,500 and repays Rs. 5,000 (`onTop`), or
+  deducts Rs. 5,000 and repays Rs. 4,500 (`withinInstalment`). Never interest on interest
+  (B4: interest is carried apart from the principal).
+- **Advance interest** arises only when an account could not cover its advance.
+- **Shortfall (B6):** every line is deducted; what the account cannot cover is next month's
+  debt.
+- **An opening loan** carries optional `loanMonthsLeft` and `loanInstalmentsPaid`.
+
+**Bill numbers (factory)**
+
+- The year is the **bill's month**: December 2026's bills, made in January, are `2026…`.
+- The serial **does not reset**: after `2026210869` comes `2027210870`. A seventh digit after
+  999999 is allowed. `factoryBillNumber` and `billSettings.nextBillSerial` already do this.
+
+**Suppliers**
+
+- Identity is the bare number, unique across the factory (factory); the `(division)` is
+  shown and stored apart. `/` and `-` are not part of the number: `supplierCodeSchema`
+  accepts letters and digits only before the optional `(division)`.
+- Collection point by code or name, any case; a tie is `unknown-collection-point`.
+- One cut-over month for the whole factory (C1): refuse an opening-balances month
+  different from the one already used.
+- A balance found wrong after the first published bill (C5): later, a manager posts a
+  correction entry with a note, applied on the next bill.
+
+### Done on the console (please `vendor:pull`)
+
+- Error codes in `ADMIN_ERROR_CODES`, each explained in en/si/ta: `factory-sync-on`,
+  `sync-switch-blocked`, `bill-source-blocked`, `wrong-bill-source`, `negative`,
+  `unknown-collection-point`, `bank-details-required`, `opening-balances-locked`,
+  `unknown-supplier`, `no-bill`, `import-invalid`, `import-size`, `request-pending`,
+  `supplier-suspended`, `supplier-closed`, `advance-outstanding`, `loan-outstanding`,
+  `loan-installments-invalid`, `manure-installments-invalid`. The credit refusals block the
+  approval dialog. `sync-switch-blocked` and `bill-source-blocked` name `details.months`.
+- Import problem text, en/si/ta, for every code above and `unknown-bank`,
+  `bank-not-in-catalogue`, `too-large`, `feature-disabled`, `too-short`, `too-many-decimals`,
+  `does-not-add-up`, `rate-differs`. The dialog shows `details.total` ("The server found N
+  problems").
+- Imports: `IMPORT_COLUMNS.walkInCredit.note` has `minLength: 10`; Excel float noise
+  (`79.53000000000002`) is cleaned to the column's decimals on reading, while a real extra
+  decimal is still refused; bills allow a negative `balanceAmount` and a
+  `savingsWithdrawal` column.
+- Walk-ins: manure shows the catalogue price instead of an amount field; loans and manure
+  both offer the factory's repayment periods.
+- The app: "Interest (advance and loan)", and `loan-outstanding` explained on the advance and
+  loan screens.
+- `ACTIVITY_FLAG` in `activity.ts`.
+
+### Factory sync (Phase 10), for when it starts
+
+The request to the factory team now asks for every line of the printed bill.
+`factory-system-team.md` §3 and `factory-updates-sample.json` (bill `2026210869` is a real
+slip) add `greenLeafAmount`, `extraPayment`, `totalRatePerKg`, `loanInstalmentNo`,
+`savingsWithdrawal`, `savings` (This month / Previous / Todate), `billDateTime` and the
+bill's own `paymentMethod`, and say `grossAmount` includes the coins brought forward. Map
+them onto `BillRow` (`savingsThisMonth`, `savingsPrevious`, `savingsToDate` already exist;
+`loanInstalmentNo` is new) and store them as received. Switching a factory from records kept
+here back to the sync ("the sync's records replace ours") also waits for Phase 10.
+
+**Check:** the list in §9 of `factory-records.md`.

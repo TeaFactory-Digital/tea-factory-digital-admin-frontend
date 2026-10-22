@@ -1873,6 +1873,7 @@ export const si: Record<TranslationKey, string> = {
   'error.syncSwitchBlocked': 'මෙම මාසවල බිල්පත් සාදා ඇති නමුත් publish කර නැත: {{months}}. මුලින් ඒවා publish කර, පසුව කර්මාන්තශාලා පද්ධති sync එක මාරු කරන්න.',
   'error.loanOutstanding': 'ණයක් තවම ගෙවිය යුතුය. නව ණයක් දිය හැක්කේ එය ගෙවා අවසන් වූ පසු පමණි.',
   'error.wrongBillSource': 'මෙම කර්මාන්තශාලාවේ බිල්පත් ලැබෙන්නේ අනෙක් ක්‍රමයටයි. වින්‍යාසය → බිල්පත් ගණනය තුළ “බිල්පත් ලැබෙන්නේ කොහෙන්ද” වෙනස් කරන්න.',
+  'error.billSourceBlocked': 'මෙම මාසවල බිල්පත් සාදා ඇති නමුත් publish කර නැත: {{months}}. මුලින් ඒවා publish කර, පසුව බිල්පත් ලැබෙන තැන වෙනස් කරන්න.',
   'error.monthLocked': 'එම මාසය ප්‍රකාශයට පත් කර ඇති බැවින්, එහි අගයන් තවදුරටත් වෙනස් කළ නොහැක.',
   'error.alreadyVoided': 'මෙම දළු භාරය දැනටමත් අවලංගු කර ඇත.',
   'error.invalidBatch':

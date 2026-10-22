@@ -1,8 +1,9 @@
 # Factory records without the factory system
 
-**Status:** console built against the mock (October 2026); backend to build.
-**For:** the backend developer. The console side is done and tested; this file is the
-contract it was built against.
+**Status (22 October 2026):** the console is built against the mock and tested; the backend
+is partly built (see [BACKEND-TODO.md](./BACKEND-TODO.md) #45 for what is done, what is next,
+and what the console hides until it lands).
+**For:** the backend developer. This file is the contract the console was built against.
 
 ## 1. Why
 
@@ -23,7 +24,7 @@ sources writing the same weighing is how a bill comes to disagree with itself.
 |---|---|---|
 | Where records come from | The hourly sync | The office, in the console |
 | Entry and import screens | Hidden; routes show "comes from the factory system" | Shown |
-| Bills | The factory system's, shown as they arrive | Calculated here, reviewed, published |
+| Bills | The factory system's, shown as they arrive | Imported from the factory's own system, or calculated here (§5a), then reviewed and published |
 | Hourly sync job | Runs | Does not run for this factory |
 | Record writes listed in §4 | **`409 factory-sync-on`** | Allowed |
 
@@ -38,10 +39,12 @@ isFactorySyncEnabled(config)                // the one reading of it
 - `PATCH /admin/config` accepts `{ factorySync: { enabled } }`, saved whole, audited as
   `config.update` like any section. `GET /config` and `GET /admin/config` return it.
 - Who may change it: `flagsAndBranding: W` (factory administrator), as for every config section.
-- **Switching on again:** suppliers entered here are matched to the factory system's by
-  `supplierCode` (bare number, before any division suffix). Records entered here stay; the
-  sync's records replace them for the same supplier, day or month. No second supplier is
-  ever created for a code that exists.
+- Refused while any month has generated but unpublished bills: `409 sync-switch-blocked`
+  with `details.months`.
+- **Switching on again** (Phase 10): suppliers entered here are matched to the factory
+  system's by the bare supplier number. Records entered here stay; the sync's records
+  replace them for the same supplier, day or month. No second supplier is ever created for a
+  code that exists.
 
 ## 3. Console screens (built)
 
@@ -55,26 +58,29 @@ CSV file**.
 | Supplier → Money tab | **Transport rate** card: the supplier's own rate, or back to the point's | **Import → Transport rates** (Suppliers screen) | `suppliers: W` |
 | Factory records → **Leaf intake** (`/deliveries`) | Session grid (v1, restored) | **Import from file** | `deliveries: W` |
 | Factory records → **Rates & month close** (`/rates`) | Rate card (v1, restored) | **Import → Monthly rates** | `ratesAndMonthClose: W` |
-| Same screen | **Generate bills** card, then **Review this month's bills**, then Publish (v1, restored) | **Import → Finished bills** (the factory system's own bills) | `billing: W` / `ratesAndMonthClose: A` |
-| Same screen | Deduction rates card: transport per kg (factory-wide **and per collection point**), stamps, instalment caps (v1, restored) | | `ratesAndMonthClose: W` propose, `A` approve |
-| Bill detail | **Other deductions → Edit** (before publishing) | **Import → Other deductions** | `billing: W` |
+| Same screen, bills **calculated** | **Generate bills**, then **Review this month's bills**, then Publish | | `billing: W` / `ratesAndMonthClose: A` |
+| Same screen, bills **imported** | **Review this month's bills**, then Publish | **Import → Finished bills** | `billing: W` / `ratesAndMonthClose: A` |
+| Same screen | Deduction rates card: transport per kg (factory-wide **and per collection point**), stamps, instalment caps | | `ratesAndMonthClose: W` propose, `A` approve |
+| Bill detail (calculated bills only) | **Other deductions → Edit** (before publishing) | **Import → Other deductions** | `billing: W` |
 | Credit | **Record walk-in request** | **Import from file** | `creditRequests: W` |
 | Configuration → **Factory system** | The switch | | `flagsAndBranding: W` |
-| Configuration → **Bill calculation** | Pay in Rs. 1 / 5 / 10, next bill serial, advance and loan interest (% a month; loan 0% by default) | | `flagsAndBranding: W` |
+| Configuration → **Bill calculation** | Where the bills come from; pay in Rs. 1 / 5 / 10 and the next bill serial (calculated bills); advance and loan interest (% a month, loan 0% by default) and how the loan interest is taken | | `flagsAndBranding: W` |
 
-**Role change (shared matrix, `packages/domain/src/rbac.ts`):** the clerk is now
-`deliveries: W` (was R), `creditRequests: W` (was R) and `billing: W` (was R: import,
-generate, other deductions; publishing stays the manager's). Recording a counter request is not
-deciding it; `A` stays with the manager, and BR-501 refuses the recorder as approver.
+**Role changes (shared matrix, `packages/domain/src/rbac.ts`):** the clerk is now
+`deliveries: W`, `creditRequests: W` and `billing: W` (all were R): weigh in leaf, record a
+counter request, and import, generate or adjust bills. Deciding a request and publishing a
+month stay with the manager (`A`, BR-501 refuses the recorder or importer as approver).
+**Savings withdrawals need `billing: A`**: the clerk's `W` must not let them pay out a
+supplier's savings.
 
 ## 4. API
 
-### 4.1 Endpoints the console calls that the backend does not have yet
+### 4.1 Endpoints and fields
 
-All of these refuse with **`409 factory-sync-on`** while the sync is on, and `403` without
-the permission in the table above. The request and response shapes are the domain types
-named, and the console's mock (`apps/admin/src/services/mocks/handlers.ts`) implements each
-one; copy its rules.
+All record writes refuse with **`409 factory-sync-on`** while the sync is on, and `403`
+without the permission in §3. The shapes are the domain types named, and the console's mock
+(`apps/admin/src/services/mocks/handlers.ts`) implements each one; copy its rules.
+BACKEND-TODO #45 says which of these are built.
 
 | Method and path | Body / answer | Refusals |
 |---|---|---|
@@ -85,117 +91,127 @@ one; copy its rules.
 | `GET /admin/months`, `GET /admin/months/:monthKey` | `Paged<MonthSummary>`, `MonthSummary` | `404` unknown month |
 | `PUT /admin/months/:monthKey/rate` | `MonthlyRateEntry` → `MonthSummary` | `409 month-locked`, `422 invalid-rate` |
 | `GET /admin/months/:monthKey/exceptions`, `POST .../exceptions/:id/resolve` | `Paged<MonthException>`, `{ note }` | `422 note-required` |
-| `POST /admin/months/:monthKey/bills/generate` | `{ monthKey }` → `BillRun` | `409 rate-missing`, `409 month-locked` |
+| `POST /admin/months/:monthKey/bills/generate` | `{ monthKey }` → `BillRun` | `409 wrong-bill-source` (first), `409 rate-missing`, `409 month-locked` |
 | `POST /admin/months/:monthKey/publish` | `{ monthKey, note? }` → `MonthSummary` | `rate-missing`, `exceptions-open`, `bills-stale`, `already-published`, `four-eyes-violation` |
-| **`POST /admin/suppliers`** | `NewSupplier` → `{ id }` (201) | `409 supplier-code-taken`, `422 unknown-collection-point`, `422 bank-details-required` |
-| **`GET /admin/suppliers/:id/opening-balances`** | `OpeningBalancesRecord` | `404` none yet |
-| **`PUT /admin/suppliers/:id/opening-balances`** | `OpeningBalances & { note }` → `OpeningBalancesRecord` | `409 opening-balances-locked`, `422 note-required` |
-| **`POST /admin/credit-requests`** | `WalkInCreditRequest` → `{ id }` (201) | `404` supplier, `422 invalid` |
-| **`PUT /admin/suppliers/:id/transport-rate`** | `SupplierTransportRate` → `{ id }` | `422 negative`, `422 note-required` |
-| **`PUT /admin/bills/:id/adjustment`** | `BillAdjustment` → `{ id }` | `409 month-locked`, `422 negative`, `422 note-required` |
-| **`POST /admin/imports/:kind`** | `{ fileName, rows }` → `ImportResult` | `422 import-invalid` with `details.problems`, `422 import-size` |
+| `POST /admin/suppliers` | `NewSupplier` → `{ id }` (201) | `409 supplier-code-taken`, `422 unknown-collection-point`, `422 bank-details-required` |
+| `GET /admin/suppliers/:id/opening-balances` | `OpeningBalancesRecord` | `404` none yet |
+| `PUT /admin/suppliers/:id/opening-balances` | `OpeningBalances & { note }` → `OpeningBalancesRecord` | `409 opening-balances-locked`, `422 note-required` |
+| `POST /admin/credit-requests` | `WalkInCreditRequest` → `{ id }` (201) | `404` supplier, `422 invalid`, `feature-disabled`, `supplier-suspended`, `supplier-closed`, `request-pending`, `loan-outstanding`, the instalment codes |
+| `PUT /admin/suppliers/:id/transport-rate` | `SupplierTransportRate` → `{ id }` | `422 negative`, `422 note-required` |
+| `PUT /admin/bills/:id/adjustment` | `BillAdjustment` → `{ id }` | `409 month-locked`, `422 negative`, `422 note-required` |
+| `POST /admin/imports/:kind` | `{ fileName, rows }` → `ImportResult` | `422 import-invalid` with `details.problems` (at most 500) and `details.total`, `422 import-size`, `409 wrong-bill-source` (`bills`) |
 
 Already on the backend and used as they are: `GET /admin/bill-months`, `GET /admin/bills`,
 `GET /admin/bills/:id`, `GET /admin/months/:monthKey/bill-run`, the four
 `/admin/deduction-rates` routes, credit approve/reject.
 
-Changed shapes on existing routes:
+Config and shapes on existing routes (`GET /config`, `GET /admin/config`,
+`PATCH /admin/config`; each block saved whole):
 
-- **`DeductionRates.transportByPoint?: Record<pointId, number>`** on the four
-  `/admin/deduction-rates` routes. Proposed and approved with the other rates (four-eyes as
-  today); `deductionRateProblems` refuses a negative one; `deductionRateDiff` lists each
-  point's change as `transportByPoint.<pointId>`.
-- **`AdminSupplier.transportPerKg?: number | null`** (and so `SupplierDetail`) on
-  `GET /admin/suppliers/:id`. `null` or absent: the supplier is on their point's rate.
-- **`config.advanceInterest?: { monthlyRatePercent }`** on `GET /config`,
-  `GET /admin/config` and `PATCH /admin/config`. Absent means 0. Refuse with
+- **`config.advanceInterest?: { monthlyRatePercent }`**: absent means 0; refuse with
   `advanceInterestProblem` (0 to 10).
-- **`config.billSettings?: { paymentUnit: 1 | 5 | 10, nextBillSerial? }`**, same routes.
-  Absent means `{ paymentUnit: 1 }` and the `GL/YYYY-MM/NNNN` numbers. Refuse with
-  `billSettingsProblem`.
-- **`GreenLeafBill.loanInstalmentNo?: number | null`**: which loan instalment
-  `deductions.loansAdvance` is.
+- **`config.loanInterest?: { monthlyRatePercent, recovery? }`** (`LoanInterestSetting`):
+  absent means 0%; `recovery` is `onTop` (default) or `withinInstalment` (§5).
+- **`config.billSettings?: { paymentUnit: 1 | 5 | 10, nextBillSerial?, source? }`**: absent
+  means `{ paymentUnit: 1 }`, the `GL/YYYY-MM/NNNN` numbers, and `source: 'calculated'`
+  (`billSourceOf`). Refuse with `billSettingsProblem`. Refuse changing `source` while a
+  month has generated but unpublished bills: `409 bill-source-blocked` with
+  `details.months`.
+- **`DeductionRates.transportByPoint?: Record<pointId, number>`** on the four
+  `/admin/deduction-rates` routes, proposed and approved with the other rates.
+- **`AdminSupplier.transportPerKg?: number | null`** (and `SupplierDetail`): `null` or
+  absent means the point's rate.
+- **`AdminBill.source?: 'calculated' | 'imported'`**, absent on a synced bill.
+- **`GreenLeafBill.loanInstalmentNo?: number | null`** and **`otherCardsNote?`**.
 
-### 4.2 Rules for the new endpoints
+### 4.2 Rules
 
-**Add supplier.** `supplierCode` is the factory's own code (it is the app's sign-in id,
-Q16): unique per factory, compared on the bare number, so `5147` clashes with
-`5147 (DENIYAYA)`. `paymentMethod: bankTransfer` needs `bankDetails`; the account number is
-stored in full and masked on every read, as today; the account name defaults to the
-supplier's full name, and the bank and branch are checked against the factory's own
-`config.banks`. The collection point may be given by its code or its name
-(case-insensitive). The suffix after the code is the division name, for display only, and a
-supplier signs in with the bare number. New suppliers have no app account; the office issues
-one with the existing `POST /admin/suppliers/:id/credentials/reset`. Audit `supplier.create`.
+**Add supplier.** `supplierCode` is the factory's own code and the app's sign-in id. The
+**bare number is the identity**, unique across the whole factory: letters and digits only;
+the `(division)` after it is shown and stored apart, so `5147` clashes with
+`5147 (DENIYAYA)`. A supplier signs in with the bare number. An all-digit code given without
+its leading zeros (`708`) finds `0708` only when exactly one supplier fits. `bankTransfer`
+needs `bankDetails`; the account number is stored in full and masked on every read; the
+account name defaults to the supplier's full name; the bank and branch are checked against
+the factory's own `config.banks`. The collection point may be given by code or name, any
+case. New suppliers have no app account; the office issues one with
+`POST /admin/suppliers/:id/credentials/reset`. Audit `supplier.create`.
 
 **Opening balances.** One record per supplier: `asOfMonth` (`YYYY-MM`), `advance`, `loan`,
 `manure`, `teaPackets`, `savings`, `previousDebt` (all ≥ 0), optional `loanMonthsLeft` and
 `loanInstalmentsPaid` for a loan already running (whole numbers), and a `note` of 10+
-characters. They seed the ledgers the first bill reads: credit balances, savings balance, and
-the debt brought forward. With `loanMonthsLeft`, the loan is recovered at
-`loan / loanMonthsLeft` a month under the cap, and the first bill here is instalment
-`loanInstalmentsPaid + 1`; without it, under the cap alone, numbered from 1. **Locked**
-(`409 opening-balances-locked`, and `editable: false` on read) once a bill has been
-**published** for the supplier; a draft does not lock them. Audit `supplier.openingBalances`.
+characters. **One cut-over month for the whole factory**: refuse a different `asOfMonth`
+from the one already used. They seed the ledgers the first bill reads. With
+`loanMonthsLeft`, the loan is recovered at `loan / loanMonthsLeft` a month under the cap and
+the first bill here is instalment `loanInstalmentsPaid + 1`; without it, under the cap
+alone, numbered from 1. **Locked** (`409 opening-balances-locked`, `editable: false` on read)
+once a bill has been **published** for the supplier; a draft does not lock them. Audit
+`supplier.openingBalances`.
 
 **Walk-in credit request.** Creates an `AdminCreditRequest` exactly like an app request,
 with `channel: 'office'`, `status: 'pending'`, `createdById`/`createdByName` = the actor (so
-BR-501 refuses them as approver), `reason` = the note, and the eligibility computed as for
-an app request. Refused for a facility switched off (`feature-disabled`), a suspended or
-closed supplier, and a pending request on the same facility (`request-pending`); manure is
-priced on the server from the catalogue. **Not** refused for being over the limit or with an
-advance outstanding: it is recorded as asked, with the eligibility shown, and approval
-refuses as for an app request (`over-ceiling`). The supplier may cancel it from the app.
-Approval is the existing route. Audit `creditRequest.create`.
+BR-501 refuses them as approver), `reason` = the note (10+ characters), and the eligibility
+computed as for an app request. Refused for: a facility switched off (`feature-disabled`), a
+suspended or closed supplier, a pending request on the same facility (`request-pending`), a
+**loan or advance while a loan is owed** (`loan-outstanding`, §5b), and a repayment period
+the factory does not offer (`loan-installments-invalid`, `manure-installments-invalid`).
+Manure is priced on the server from the catalogue, whatever amount is sent. **Not** refused
+for being over the limit: it is recorded as asked, with the eligibility shown, and approval
+refuses it (`over-ceiling`). Approval also refuses `supplier-suspended`, `supplier-closed`,
+`advance-outstanding` and `loan-outstanding`. The supplier may cancel it from the app. Audit
+`creditRequest.create`.
 
 **Transport rate per supplier.** `transportPerKg` is a number ≥ 0 or `null` (back on the
-point's rate), with a `note` of 10+ characters. One person, like the supplier's other
-records; the before and after go in the audit. Applies from the next bill generated, never
-to a published month. Audit `supplier.transportRate`.
+point's rate), with a `note` of 10+ characters. One person; the before and after go in the
+audit. Applies from the next bill generated, never to a published month. Audit
+`supplier.transportRate`.
 
-**Other deductions (`otherCards`).** The one bill line typed by hand, labelled "Other
-deductions" in the console and the app. `otherCards ≥ 0`;
+**Other deductions (`otherCards`).** The one bill line typed by hand on a **calculated**
+bill, labelled "Other deductions" in the console and the app. `otherCards ≥ 0`;
 `otherCardsNote` required (3+ characters) when the amount is above 0. Recalculate the bill
-with `computeBillAmounts` (total, balance, coins, final balance, next-month debt); never
-patch the totals. Only before the month is published. **A re-generation keeps each
-supplier's `otherCards` and note.** The bill carries the note to the app as
-`GreenLeafBill.otherCardsNote` (new, optional). Audit `bill.adjust`.
+with `computeBillAmounts`; never patch the totals. Only before the month is published. **A
+re-generation keeps each supplier's `otherCards` and note.** The bill carries the note to the
+app as `GreenLeafBill.otherCardsNote`. An imported bill's line is the factory's and is not
+edited here. Audit `bill.adjust`.
 
 **Imports.** One endpoint, `POST /admin/imports/:kind`, `kind` one of `IMPORT_KINDS`.
 
 - **All rows or none.** Check every row first; any problem refuses the whole file with
-  `422 import-invalid` and `details.problems: ImportRowProblem[]`, saving nothing.
+  `422 import-invalid`, `details.problems: ImportRowProblem[]` (at most 500) and
+  `details.total`, saving nothing.
 - Rows are objects of text, keyed by the column names in `IMPORT_COLUMNS[kind]`
   (`packages/domain/src/factoryRecords.ts`). Run `importRowProblems(kind, rows)` first (the
   console runs the same function), then the server-only checks below.
 - `row` in a problem is the spreadsheet row: the first data row is **2**.
 - 1 to 5,000 rows (`422 import-size`). Same permission as the one-at-a-time route.
 - **Refuse, never round.** A number must be plain digits with no more decimals than its
-  column allows (`too-many-decimals`; 2 by default, whole numbers for months and
-  instalments); `0x1A` or `1e3` is `not-a-number`, and `2026-02-31` is `not-a-date`.
-- **The sync switch** is refused (`409 sync-switch-blocked`) while any month has generated
-  but unpublished bills.
+  column allows (`too-many-decimals`; 2 by default, whole numbers where `decimals: 0`), and
+  no minus sign unless the column has `allowNegative`; `0x1A` or `1e3` is `not-a-number`;
+  `2026-02-31` is `not-a-date`; a text shorter than its `minLength` is `too-short`.
 - Audit one `import.apply` entry per file (`{ kind, rows, fileName }`), not one per row.
 
 | Kind | Server-only checks (problem `code`) | What it saves |
 |---|---|---|
-| `suppliers` | `duplicate` in file, `supplier-code-taken`, `unknown-collection-point`, `bank-details-required` | Suppliers, as Add supplier |
+| `suppliers` | `duplicate` in file, `supplier-code-taken`, `unknown-collection-point`, `bank-details-required`, `unknown-bank`, `bank-not-in-catalogue` | Suppliers, as Add supplier |
 | `deliveries` | `unknown-supplier`, `month-locked`, `unknown-collection-point` | Deliveries, `source: 'scaleFile'`; point defaults to the supplier's |
 | `monthlyRates` | `duplicate`, `unknown-month`, `month-locked` | The month's rate, moving the stage to `rateEntered` |
-| `openingBalances` | `duplicate`, `unknown-supplier`, `opening-balances-locked` | Opening balances |
-| `walkInCredit` | `unknown-supplier`, manure without type or quantity (`required`) | Pending office requests |
+| `openingBalances` | `duplicate`, `unknown-supplier`, `opening-balances-locked`, a different cut-over month | Opening balances |
+| `walkInCredit` | `unknown-supplier`, manure without type or quantity (`required`), and the walk-in refusals above | Pending office requests |
 | `billAdjustments` | `duplicate` (month + code), `unknown-supplier`, `month-locked`, `no-bill`, note missing (`required`) | Other deductions, as above |
 | `transportRates` | `duplicate`, `unknown-supplier` | Each supplier's own rate; an empty `transportPerKg` sets `null` |
-| `bills` | `duplicate` (month + code), `unknown-supplier`, `unknown-month`, `month-locked`, `rate-differs` (rows of one month disagree on the rate) | The month's bills **as printed** (§5a), replacing its unpublished bills |
+| `bills` | `duplicate` (month + code), `unknown-supplier`, `unknown-month`, `month-locked`, `rate-differs`, and **the approvals check (§5a)** | The month's bills **as printed** (§5a) for the suppliers in the file |
 
-Problem codes the console already explains in all three languages: `required`,
-`not-a-number`, `negative`, `too-many-decimals`, `not-a-date`, `not-a-month`, `not-allowed`, and every code in
-the table. Any other code still shows, as "refused (code)".
+Every problem code above, and `required`, `not-a-number`, `negative`, `too-many-decimals`,
+`too-short`, `not-a-date`, `not-a-month`, `not-allowed`, `does-not-add-up`, is explained by
+the console in all three languages. Any other code still shows, as "refused (code)".
 
 ## 5. Bills calculated here
 
+For a factory whose `billSettings.source` is `calculated`. **No factory needs this yet**
+(galaboda imports), so it is built last.
+
 `computeBillAmounts` (`packages/domain/src/bill.ts`) is the calculation; do not write a
-second one. **It now reads exactly like the factory's printed slip** (galaboda, July 2026,
+second one. **It reads exactly like the factory's printed slip** (galaboda, July 2026,
 supplier 5708; the console test `reproduces the factory's printed slip` checks every
 figure):
 
@@ -205,12 +221,10 @@ Gross 114,644.91 - deductions 46,418.00                  = Balance Amount 68,226
 Balance 68,226.91 + savings withdrawal 0, paid in tens   = Balance 68,220.00, Coins C/F 6.91
 ```
 
-Two changes from the earlier shared function, and the backend picks both up by vendoring:
-
-- **The coins brought forward are part of `grossAmount`**, so `balanceAmount` is the
-  slip's "Balance Amount". Before, both left the coins out and added them afterwards.
-- **`paymentUnit`** (`config.billSettings.paymentUnit`, 1, 5 or 10): the payment is
-  rounded down to it and the rest is `coinsCarriedForward`. Absent means 1.
+- **The coins brought forward are part of `grossAmount`**, so `balanceAmount` is the slip's
+  "Balance Amount".
+- **`paymentUnit`** (`config.billSettings.paymentUnit`, 1, 5 or 10): the payment is rounded
+  down to it and the rest is `coinsCarriedForward`.
 
 Its inputs, per supplier and month:
 
@@ -218,91 +232,145 @@ Its inputs, per supplier and month:
 |---|---|
 | Kilos | Non-voided deliveries in the month |
 | Gross | kilos × (rate + extra rate) + coins brought forward |
-| Transport | Per weighing: `transportChargeFor(rates, kgsByPoint, supplier.transportPerKg)`. The supplier's own rate, else the weighing's collection point rate, else the factory rate (`transportRateFor`) |
+| Transport | Per weighing: `transportChargeFor(rates, kgsByPoint, supplier.transportPerKg)`: the supplier's own rate, else the weighing's collection point rate, else the factory rate |
 | Stamps | Approved deduction rates (`/admin/deduction-rates`) |
 | Savings | kilos × the supplier's savings per kg |
 | Tea packets | Approved tea-packet requests |
-| Advance | Taken back **in full** on the month's bill: an advance is cash given during the month. The default cap is now 100% of the gross (`DEFAULT_DEDUCTION_RATES.instalmentShares.advance = 1`); more than the account earned becomes next month's debt |
-| Loan (`loansAdvance`, the slip's "Loans / Advance") | The supplier's chosen instalments, under the loan cap. `loanInstalmentNo` = 1 + the loan instalments on the bills just before this month (counting back until a bill without one) |
+| Advance | Taken back **in full** on its month's bill, even past the gross (`DEFAULT_DEDUCTION_RATES.instalmentShares.advance = 1`). An advance never carries a balance |
+| Loan (`loansAdvance`, the slip's "Loans / Advance") | `loanRecovery(loan owed at the start of the month, planned instalment, config.loanInterest)`: the planned instalment, with the month's interest **on top** (`onTop`) or **inside** it (`withinInstalment`). `loanInstalmentNo` = 1 + the loan instalments on the bills just before this month |
 | Manure | Instalments under the manure cap |
 | Previous debts | Last bill's unpaid balance, or `previousDebt` from opening balances for the first |
 | Coins brought forward | Last bill's coins carried forward |
 | Other deductions | The office's typed line (§4.2) |
-| Advance interest (`carryForward.loanInterest`) | `advanceInterestFor(advance still owed after this month's instalment, config.advanceInterest)`: simple interest, per month, on the advance **principal** still owed. It is carried as its own balance (the slip's "Loan Interest") and recovered with the advance; it never earns interest itself. A loan is charged at `config.loanInterest` (0% unless the factory sets it) on the loan **owed at the start of the month**, and taken on top of the instalment or inside it as `config.loanInterest.recovery` says (`loanRecovery`); the slip's "Loan Interest" is this month's charge, the sum of the two. An advance is settled within its month, so advance interest arises only when an account could not cover it; the slip's "Loan Balance" is the **loan** still owed |
+
+Carried forward:
+
+| Slip line | Field | From |
+|---|---|---|
+| Next Month Deb | `carryForward.nextMonthDeb` | What the account could not cover |
+| Loan Balance | `carryForward.loanBalance` | The **loan** still owed: owed at the start − principal repaid (`loanRecovery`) |
+| Manure Balance | `carryForward.manureBalance` | Manure still owed |
+| Loan Interest | `carryForward.loanInterest` | **This month's charge**, in rupees: the loan's interest (`loanRecovery`), plus advance interest (`advanceInterestFor`, `config.advanceInterest`) only when the account could not cover the advance. Interest is never worked on unpaid interest |
+
+Example, 1% a month: a Rs. 50,000 loan over 10 months has Rs. 500 interest. `onTop` deducts
+Rs. 5,500 and leaves `loanBalance` 45,000; `withinInstalment` deducts Rs. 5,000 and leaves
+45,500.
 
 **Bill number.** With `billSettings.nextBillSerial` set, a new bill is numbered
-`factoryBillNumber(year, serial)` = the year and a six-digit running serial
-(`2026210869`), and the serial moves on by one; the office sets it to the number after the
-factory's last paper bill. A re-generated month keeps each supplier's number. Without it,
-`GL/YYYY-MM/NNNN` as today. Hand out serials inside the same transaction as the bills, so
-two runs cannot take the same number.
+`factoryBillNumber(year, serial)`: the year of the **bill's month** and a running serial,
+six digits growing to seven (`2026210869`). The serial **never resets**: after
+`2026210869` comes `2027210870`. A re-generated month keeps each supplier's number. Without
+it, `GL/YYYY-MM/NNNN`. Hand out serials in the same transaction as the bills, so two runs
+cannot take the same number.
 
-Generate → review on the bills screen → publish (four-eyes as today). Publishing makes the
-bills visible in the app and fires `billPublished`.
+Generate → review on the bills screen → publish (four-eyes). Publishing makes the bills
+visible in the app and fires `billPublished`.
 
-## 5a. Two ways to fill a month
+## 5a. Bills imported from the factory's own system
 
-A factory with the sync off fills its bills **one way, chosen in Configuration → Bill
-calculation** (`BillSettings.source`; the wrong one is `409 wrong-bill-source`):
+For a factory whose `billSettings.source` is `imported` (**galaboda**). Its own system keeps
+printing every bill, now and later, and our records must equal its **final figures
+exactly**.
 
-1. **Calculated here** (§5): enter or import the leaf and the rate, then **Generate bills**.
-2. **Imported**: when the factory's own system still prints the bills, export them to Excel
-   and **Import → Finished bills** (kind `bills`, columns in `IMPORT_COLUMNS.bills`; the
-   template's example row is the real galaboda July 2026 slip). Every figure is stored as
-   printed and **never recalculated**: the factory's accountant has already signed them.
-   `importRowProblems` only checks that each row adds up (`does-not-add-up` names the
-   column: gross = green leaf + extra + coins brought forward, the nine lines = their total,
-   balance = gross − total, paid + coins carried = balance; the two rate products to a
-   rupee). The month's rate is taken from the rows.
+**How.** Each month the office exports the finished bills to Excel and uses **Import →
+Finished bills** (kind `bills`, columns in `IMPORT_COLUMNS.bills`; the template's example row
+is the real galaboda July 2026 slip). Any number of files per month; each replaces only the
+suppliers in it, so one file per division works. Every figure is stored **as printed** and
+never recalculated. The month's rate is taken from the rows; a file whose rate differs from
+the month's is `rate-differs`. Then review and publish as usual.
 
-Either way the bills are reviewed and published the same way. An import replaces **only the suppliers in the file**, so a
-factory may send one file per division. A month the supplier owes is imported with its
-negative `balanceAmount`, `finalBalance` 0 and the shortfall as `nextMonthDebt`; savings paid
-back on the bill go in `savingsWithdrawal`. An imported bill is marked `AdminBill.source: 'imported'`
-(the console shows "Imported") and its "Other deductions" line is not edited here: a
-correction is made in the factory's system and the month re-imported. The day grid comes
-from the leaf entered or imported for that month, if any.
+**What the import checks.**
+
+1. **Each row adds up** (`importRowProblems`; `does-not-add-up` names the column):
+   gross = green leaf + extra + coins brought forward; the nine lines = their total;
+   balance = gross − total; paid + coins carried = balance + savings withdrawal. A month the
+   supplier owes has a negative `balanceAmount`, `finalBalance` 0 and the shortfall as
+   `nextMonthDebt`. The two rate products are held to a rupee, the sums to the cent.
+2. **Everything we approved reached their slip, or the file is refused**, naming the
+   supplier and the item. Requests approved in our console are typed into the factory's
+   system by the office, which prints them on the slip; a slip without one means it was not
+   typed. "For the month" means approved on or before its last day.
+   - Advances, tea packets, savings withdrawals: the slip's line is **at least** what we
+     approved (more is the factory's own counter).
+   - Loans and manure, through the balance:
+     `loanBalance(this month) + loansAdvance(this month) ≥ loanBalance(last month) +
+     approved this month`, and the same with `manureBalance` and `manure`. Last month is the
+     previous imported slip, or the opening balance for the first.
+
+**What it sets.** The slip is the record: the supplier's savings, loan and manure balances
+become the slip's figures; where ours differ, both go in the audit. The slip's kilos are
+accepted; the console is told how many differ from the leaf entered here. An imported bill is
+`AdminBill.source: 'imported'` (shown as "Imported") and is never edited here: a correction
+is made in the factory's system and the month re-imported. The day grid comes from the leaf
+entered or imported for that month. Past months may later be imported as published history,
+with no balance change and no notification.
+
+## 5b. Credit while records are kept here
+
+- **Advance ceiling:** this month's kilos so far × last month's settled rate (the
+  `thisMonthLeaf` basis), so it is 0 until leaf is recorded. The office enters each
+  supplier's leaf on the day it is weighed.
+- **An open loan blocks a new loan and an advance** until it is repaid (manure is not part of
+  the rule): a supplier repaying a 10-month loan gets neither for those months.
+  `buildCreditEligibility` takes `loanOutstanding` and answers `available: 0`,
+  `reasonKey: 'credit.reason.loanOutstanding'`; the request, a walk-in and approval are
+  refused with `409 loan-outstanding`.
 
 ## 6. Audit actions to add to `ACTION_REGISTRY`
 
 `supplier.openingBalances`, `supplier.transportRate`, `bill.adjust`, `import.apply`.
-(`supplier.create` and `creditRequest.create` exist.) The console already labels all four in
-en/si/ta.
+(`supplier.create` and `creditRequest.create` exist.) The console labels all four in en/si/ta.
 
-## 7. Mobile app
+## 7. Mobile app (done)
 
-Done in the app: the `otherCards` line is labelled **"Other deductions"** (si "වෙනත්
-අඩුකිරීම්", ta "பிற கழிவுகள்"), `otherCardsNote` shows under it on the bill and in the
-PDF, and the loan line carries its instalment number ("Loan (instalment 3)", PDF
-"Loans / Advance 3"). The app reads `grossAmount` and the coins as the API sends them.
+The `otherCards` line is labelled **"Other deductions"** (si "වෙනත් අඩුකිරීම්", ta "பிற
+கழிவுகள்"), with `otherCardsNote` under it on the bill and in the PDF; the loan line carries
+its instalment number ("Loan (instalment 3)", PDF "Loans / Advance 3"); the interest line is
+"Interest (advance and loan)"; and the advance and loan screens explain `loan-outstanding`.
+The app reads `grossAmount` and the coins as the API sends them.
 
-## 8. Decided by the factory (9 October 2026)
+## 8. Decided by the factory
 
-1. **Transport** can differ by **collection point** and by **supplier**: a rate per point,
-   and a supplier's own rate over it (§4.2, §5).
+From 9 to 22 October 2026:
+
+1. **Transport** can differ by **collection point** and by **supplier**.
 2. **`otherCards`** is **"Other deductions"**: small deductions the office types, with a
    reason.
-3. **Advance interest** is set in **Configuration**, as a percent a month (§5). The
-   factory's accountant should still check one month's bills calculated here against their
-   own before going live.
-4. **The bill follows the factory's printed slip** (§5): coins in the gross, the payment
-   rounded to the factory's unit (galaboda pays in tens), the advance taken back in full,
-   "Loans / Advance 3" is the loan and its instalment number, and the factory's own bill
-   numbers.
+3. **The bill follows the printed slip**: coins in the gross, the payment rounded to the
+   factory's unit (galaboda pays in tens), "Loans / Advance 3" is the loan and its
+   instalment number.
+4. **Galaboda's own system keeps printing the bills**; we import them and must match them
+   exactly. A factory without one can have them calculated here.
+5. **An advance is closed within its month**, deducted in full; any shortfall is Next Month
+   Deb.
+6. **"Loan Balance" is the loan's**; **"Loan Interest" is this month's charge** in rupees.
+7. **Loan interest** is 0% unless set in Configuration, and the factory chooses whether it is
+   taken on top of the instalment or inside it.
+8. **No new loan and no advance while a loan is owed.**
+9. **A supplier number is unique across the factory.**
+10. **Bill numbers:** the year of the bill's month, and a serial that never resets.
+11. **The office enters daily leaf** while the sync is off.
 
 ## 9. Checks
 
 - Sync on: every write in §4.1 answers `409 factory-sync-on`; the console shows no entry
-  screens.
-- Sync off: add a supplier, import 200 weighings, enter a rate, generate, type one other
-  charge, regenerate (the charge stays), publish; the app shows the bill with the note.
+  screens. Switching the sync, or the bill source, with a generated but unpublished month is
+  refused and names the month.
 - A file with one bad row saves nothing and lists the row; the corrected file saves all.
-- Opening balances lock once a bill exists for the supplier.
-- A clerk records a walk-in advance; the clerk cannot approve it; a manager can.
+- **Imported bills (galaboda):** import the template's example row: the bill matches the
+  slip to the cent (gross 114,644.91, paid 68,220, coins 6.91). Approve a Rs. 40,000 advance
+  for July, then import a July slip with Advance 0: refused, naming the supplier and the
+  advance. Generating bills in this factory is `409 wrong-bill-source`.
+- **Calculated bills:** add a supplier, import 200 weighings, enter a rate, generate, type
+  one other deduction, regenerate (it stays), publish; the app shows the bill with the note.
+  The slip in §5 comes out to the cent with `paymentUnit: 10`. With `nextBillSerial: 210870`
+  the first new bill is `<year>210870`; re-generating keeps it.
+- Loan interest at 1%, Rs. 50,000 over 10 months: `onTop` deducts 5,500 and leaves 45,000;
+  `withinInstalment` deducts 5,000 and leaves 45,500; `loanInterest` is 500 either way.
+- Opening balances lock once a bill is **published** for the supplier, not on a draft.
+- A supplier with a loan owed: the app shows no advance or loan limit and explains why; a
+  walk-in advance for them is `409 loan-outstanding`.
+- A clerk records a walk-in advance and cannot approve it; a manager can. A clerk cannot
+  create a savings withdrawal; a manager can.
 - A point with its own transport rate charges it on that point's weighings; a supplier with
   their own rate pays it on every kilo; clearing it puts them back on the point's rate.
-- The slip in §5 comes out to the cent with `paymentUnit: 10`.
-- With `nextBillSerial: 210870`, the first new bill is `<year>210870`; re-generating keeps it.
-- Loan interest at 2% a month: a bill with Rs. 10,000 of loan still owed after its
-  instalment shows `loanBalance` 10,000 and Rs. 200 `loanInterest`; the next bill recovers the
-  interest, and the principal it is worked on never includes unpaid interest.

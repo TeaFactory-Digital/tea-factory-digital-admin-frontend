@@ -5060,9 +5060,9 @@ export const handlers: HttpHandler[] = [
     await delay(LATENCY_MS);
     const gated = featureGate(request, 'enableSavings');
     if (gated) return gated;
-    // `billing: write`: §12.1 calls the capability "Bills & savings", and the accountant
-    // holds it. A clerk may read a passbook and not move what is in it.
-    const auth = authorize(request, 'billing', 'write');
+    // `billing: approve`: paying a supplier's savings back is the manager's. A clerk holds
+    // `billing: W` to prepare bills, and that must not let them move what is in a passbook.
+    const auth = authorize(request, 'billing', 'approve');
     if ('response' in auth) return auth.response;
 
     const supplier = state.suppliers.find((candidate) => candidate.id === params.supplierId);
@@ -5147,7 +5147,7 @@ export const handlers: HttpHandler[] = [
     await delay(LATENCY_MS);
     const gated = featureGate(request, 'enableSavings');
     if (gated) return gated;
-    const auth = authorize(request, 'billing', 'write');
+    const auth = authorize(request, 'billing', 'approve');
     if ('response' in auth) return auth.response;
 
     const index = state.savingsWithdrawals.findIndex((one) => one.id === params.id);

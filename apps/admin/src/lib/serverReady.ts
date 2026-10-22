@@ -21,3 +21,10 @@ export const OPENING_BALANCES_ON_SERVER = false;
 
 /** Typing other deductions on a bill (`PUT /admin/bills/:id/adjustment`). */
 export const OTHER_DEDUCTIONS_ON_SERVER = false;
+
+/**
+ * `billSettings.source` and `loanInterest.recovery` in `PATCH /admin/config`. Until the API
+ * accepts them it refuses the whole save with `422`, so the Bill calculation section neither
+ * shows nor sends them.
+ */
+export const BILL_SOURCE_AND_RECOVERY_ON_SERVER = false;

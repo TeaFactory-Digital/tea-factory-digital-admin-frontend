@@ -2448,6 +2448,8 @@ export const ADMIN_ERROR_CODES = [
    * calculates them (`BillSettings.source`).
    */
   'wrong-bill-source',
+  /** Changing where the bills come from while a month has generated but unpublished bills. */
+  'bill-source-blocked',
 ] as const;
 
 export type AdminErrorCode = (typeof ADMIN_ERROR_CODES)[number];
