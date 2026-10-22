@@ -33,7 +33,7 @@
       "savingsBalance": 48200.0,
       "outstandingAdvance": 10000.0,
       "outstandingLoan": 0.0,
-      "outstandingManure": 8500.0,
+      "outstandingManure": 15300.0,
       "registeredAt": "2019-04-02",
       "updatedAt": "2026-08-07T14:22:00+05:30"
     },
@@ -182,7 +182,7 @@
       "finalBalance": 41080.0,
       "carryForward": {
         "nextMonthDeb": 0.0,
-        "loanBalance": 8000.0,
+        "loanBalance": 0.0,
         "manureBalance": 6800.0,
         "loanInterest": 0.0
       },

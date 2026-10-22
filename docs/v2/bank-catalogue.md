@@ -4,9 +4,10 @@
 
 | | |
 | --- | --- |
-| **Today** | Generated into the console's own source, served to the app in `client_config` |
-| **After the backend exists** | A database table, seeded once from this repo, edited in M14 |
-| **What the app does** | Unchanged either way: it reads `banks` from `GET /config` |
+| **The national catalogue** | A global table on the backend (`banks`, `bank_branches`), seeded from this repo's JSON (`npm run db:seed` in the backend) |
+| **A factory's own list** | `client_config.banks`, projected per tenant from the catalogue and edited in M14 |
+| **What the app does** | Reads `banks` from `GET /config` |
+| **The console's own copy** | Still compiled into `@tfd/domain`, used only by the mock fixtures and `banks.test.ts` (§5) |
 
 ---
 
@@ -17,24 +18,30 @@ scripts/generate-banks.mjs
    │  reads github.com/samma89/Sri-Lanka-Bank-and-Branch-List
    │  45 institutions · 3,682 branches · SLIPS codes
    ├──────────────────────────────► packages/domain/src/data/sriLankaBanks.ts   (161 KB)
-   │                                   └─ seeds the mock client_config
+   │                                   └─ seeds the mock client_config (tests only)
    └──────────────────────────────► docs/v2/sri-lanka-banks.seed.json           (283 KB)
-                                       └─ for the backend, when it exists
+                                       └─ vendored by the backend as
+                                          apps/api/prisma/seed/sri-lanka-banks.seed.json
 ```
+
+The backend keeps its own copy of the JSON so it builds and seeds on its own;
+`npm run vendor:drift` there reports when the two differ.
 
 The app **already fetches** the list rather than bundling it: `src/config/banks.ts` in the
 mobile repo is an empty array, and `mergeServedConfig` replaces it with whatever
 `GET /config` serves. That part of the plan is done.
 
-What is still a stopgap is the console: the catalogue is compiled into `@tfd/domain`
-because there is nowhere else to put it yet.
+The console reads the factory's list from `GET /admin/config` too. The copy compiled
+into `@tfd/domain` is left over from before the backend existed and now serves only the
+test fixtures (§5).
 
 ---
 
-## 2. What the backend takes over
+## 2. What the backend holds
 
-**One table, seeded once from
-[`sri-lanka-banks.seed.json`](./sri-lanka-banks.seed.json).**
+**One global catalogue, seeded from
+[`sri-lanka-banks.seed.json`](./sri-lanka-banks.seed.json)** (`banks` and
+`bank_branches`, not tenant-scoped), projected into each factory's `client_config.banks`.
 
 That file is emitted by the same generator, so it is the same list the console was built
 against rather than a fresh pull that may have moved. It carries the clearing codes even
@@ -133,7 +140,8 @@ They cost nothing while unused: they sit in a JSON file the backend seeds from o
 
 ## 5. Removing the console's copy
 
-Once the backend serves `banks`, this is what comes out of the frontend.
+The backend serves `banks` now, so this can come out of the frontend whenever someone
+has the hour.
 
 - [ ] Delete `packages/domain/src/data/sriLankaBanks.ts`
 - [ ] Drop `export * from './data/sriLankaBanks'` from `packages/domain/src/index.ts`
@@ -160,4 +168,5 @@ Worth stating, because the plan reads as more remaining work than there is.
 | Add a bank / add a branch | ✅ `BanksSection` |
 | Delete, with an in-use warning | ✅ `StringListEditor` + `configImpact` |
 | Branches editable one bank at a time | ✅ 3,682 inputs at once was unusable |
-| Catalogue held by the backend | ⏳ §5 |
+| Catalogue held by the backend | ✅ global table, seeded from the JSON |
+| Console's compiled copy removed | ⏳ §5 |

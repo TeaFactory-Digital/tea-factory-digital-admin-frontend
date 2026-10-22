@@ -20,9 +20,10 @@ between copies.
 | You are | Hand you | Which holds |
 | --- | --- | --- |
 | **The existing Factory System team** | [factory-system-team.md](./factory-system-team.md) **+ [`factory-updates-sample.json`](./factory-updates-sample.json)** | The endpoint, field by field. The only document that asks them to build anything |
-| **The business analyst** | [business-analyst.md](./business-analyst.md) | The three conversations to run, and what each must produce in writing |
-| **The platform team** | [platform-team.md](./platform-team.md) | Consuming the endpoint, the credit ceiling, the freshness indicator |
-| **The factory's owner / management** | [factory-management.md](./factory-management.md) | The commercial and workflow decisions nobody else can make, **including who instructs the existing vendor** |
+| **Whoever runs the first meetings** (the business analyst, if there is one) | This document, [§7](#7-before-build-three-conversations) | The three conversations to run, and what each must produce in writing |
+| **The platform team** | [platform-team.md](./platform-team.md) | Consuming the endpoint, the credit ceiling, the freshness indicator, and the records kept in the console when the sync is off |
+| **The backend developer, for a factory with the sync off** | [factory-records.md](./factory-records.md) | The console screens, endpoints and imports for records kept in the console ([§1.2](#12-when-the-factory-system-cannot-be-connected)) |
+| **The factory's owner / management** | [factory-management.md](./factory-management.md) | The commercial and workflow decisions nobody else can make, **including who instructs the existing vendor**, and the decisions already taken |
 
 > **Sending this to the factory's vendor?** Send
 > [factory-system-team.md](./factory-system-team.md) and the sample JSON, not this file.
@@ -77,9 +78,37 @@ office does the same work, in the same system, as before.**
 | Which features the app shows | None | ✅ Owns |
 | The lending **rule** configuration | None | ✅ Owns (§3.4) |
 
-> **One sentence for the BA:** the Factory System remains the single source of truth
+> **In one sentence:** the Factory System remains the single source of truth
 > for everything about money. The App Platform is a window onto it, plus a letterbox
 > for requests.
+
+### 1.2 When the Factory System cannot be connected
+
+Everything below assumes the platform can read the Factory System (**"Factory system
+sync: on"**, the default). Some factories have no system that can be reached, or not yet.
+For them the factory administrator switches the sync **off** (Configuration → Factory
+system), and the office keeps, in the new console, the smallest set of records the app
+needs: suppliers, opening balances, daily leaf, the monthly rate, bills, walk-in credit
+requests and other deductions, one at a time or from an Excel/CSV file. A factory uses
+one source at a time, never both. The contract is
+[factory-records.md](./factory-records.md).
+
+With the sync off the console also decides credit requests (four-eyes: the person who
+records a request cannot approve it), and the office types each approval into the
+factory's own system, so the office is still the bridge.
+
+**Bills, with the sync off, come one way per factory** (Configuration → Bill
+calculation → "Where the bills come from"):
+
+- **Imported.** The factory's own system keeps printing every bill. Each month the office
+  exports the finished bills to Excel and imports them; they are stored exactly as
+  printed, and the import refuses a file that lacks something approved in the console.
+  **Galaboda works this way** ([factory-records.md §5a](./factory-records.md#5a-bills-imported-from-the-factorys-own-system)).
+- **Calculated** in the console from the leaf, the rate and the deduction rates, for a
+  factory with no system printing bills (factory-records.md §5).
+
+The rest of this document describes the sync. Nothing in it is asked of a factory that
+keeps its records in the console.
 
 ---
 
@@ -191,7 +220,7 @@ That leaves one question: what does the app show a supplier **before** they ask?
 #### The ceiling the app shows is this platform's, and the factory admin owns it
 
 **The lending rule is configuration in the new console, not a formula in anybody's
-build.** The factory administrator sets it under *Settings → Credit rules*: a basis, a
+build.** The factory administrator sets it under *Configuration → Credit rules*: a basis, a
 multiplier, how many months to average, how many settled months are required, and an
 optional cap, per facility. See `modules.md` **M14 · Credit rules**.
 
@@ -200,11 +229,17 @@ There is exactly **one implementation** of the arithmetic, `creditCeilingFromRul
 The supplier reads the factory's own configured policy, computed once, not a second
 formula that agrees with the console's until the first policy change.
 
-**The console's request queue does not check against it.** Under this integration the
-queue *records* the factory's decision and nothing more: no `over-ceiling`, no
-`stale-eligibility`, and the button reads *"Approved by the factory"* (see
-[integration.md](./integration.md)). The ceiling's job here is to tell the supplier
+**Under the sync, the console's request queue does not check against it.** It *records*
+the factory's decision and nothing more: no `over-ceiling`, no `stale-eligibility`, and
+the button says the factory approved it. The ceiling's job here is to tell the supplier
 **what to ask for**, never to gate **what the office may approve**.
+
+> **Not built yet.** The sync starts with Phase 10 (BACKEND-TODO.md). Today's queue
+> serves the factories that keep their records in the console
+> ([§1.2](#12-when-the-factory-system-cannot-be-connected)), where the console is the
+> place the decision is made: it approves and refuses itself (`over-ceiling`,
+> `loan-outstanding`, four-eyes). The record-only queue described here is still to be built,
+> before the first factory switches its sync on.
 
 ```
     available  =  ceiling(configured rule, leaf history)  −  outstanding
@@ -323,3 +358,27 @@ manual step in §3.3. None is needed for the first release, and none should dela
 
 **Do not design the first release around these.** Deliver the endpoint, prove it, and
 revisit.
+
+---
+
+## 7. Before build: three conversations
+
+The design is narrow on purpose (one read-only endpoint, no change to the Factory System's
+business logic, the office as the bridge), and it works only if some assumptions about the
+factory are true. **Nobody on either development team can check them.** They are three
+conversations with three different parties, and each must end with an answer **in
+writing**.
+
+| With | About | Must produce, in writing |
+| --- | --- | --- |
+| **Factory management** | Who instructs the existing vendor, and on what terms | A named person at the factory; whether the work is inside the maintenance contract or a quoted change (price, approver, delivery date); a named engineer at the vendor. Or the decision to run with the sync off ([§1.2](#12-when-the-factory-system-cannot-be-connected)). See [factory-management.md §2](./factory-management.md#2-the-decision-the-project-actually-depends-on) |
+| **The Factory System team** | What their data actually holds | Answers to [factory-system-team.md §10](./factory-system-team.md#10-questions-for-the-first-meeting): a modified timestamp on every table and HTTPS (both decide the shape of everything; [§7 there](./factory-system-team.md#7-if-either-assumption-is-false) has the fallbacks); a stable supplier id; whether `outstanding*` includes credit raised at the counter; whether voided weighings are kept; whether balances are stored or derived; and **the Green Leaf Account layout, field by field**, so the app's slip matches the paper one |
+| **The factory office** | The one new step in their day ([§3.3](#33-what-the-office-does)) | The **Handled** step agreed, and whose named job it is; the hours the factory actually weighs (the 05:30 to 20:00 polling window is a guess); who is called when a sync fails, at the factory and at the vendor; and the factory administrator who owns the *Credit rules* screen, with confirmation that the rule matches what the counter approves ([§3.4](#34-who-decides-and-what-each-side-calculates)) |
+
+> ⚠️ **The management conversation blocks the other two and is the easiest to postpone.**
+> A perfect specification obliges nobody to build it.
+
+**The one that loses money if it is wrong:** whether the Factory System's `outstanding*`
+balances are complete (counter-raised and app-raised together). If they are not, say so
+**before build starts**: the app then shows no available figure at all, which is a
+product decision rather than an implementation detail.

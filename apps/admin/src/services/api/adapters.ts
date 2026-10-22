@@ -7,7 +7,7 @@
  * facts are the same; only the envelope differs.
  *
  * It lives here rather than in each repository so that every one of those disagreements
- * is written down in one place. Each is cross-referenced in `docs/BACKEND-API-GAPS.md`,
+ * is written down in one place. Each is cross-referenced in `docs/v2/api-contract.md` ("Agreed shapes"),
  * and each becomes deletable the day the API closes it, which is the point of keeping
  * them together rather than sprinkling `?? 0` through eighteen files.
  *

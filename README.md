@@ -1,23 +1,23 @@
 # Tea Factory Digital: admin console
 
-The office half of every flow the supplier app can only ask for: where the leaf is
-recorded, the rate is entered, the month is closed, and every request is decided.
+The office's side of the supplier app. Every request a supplier makes in the app is a
+queue here, every flag the app reads is a control here, and, for a factory whose own
+system is not connected, the office keeps the factory's records here so the app has
+figures to show.
 
 One React bundle serves every factory. Which factory it shows is resolved at
-**runtime**, from the subdomain, so a new tenant is a DNS record and a config
-row, not a build.
+**runtime**, from the subdomain, so a new factory is data and configuration, not a build
+([docs/v2/new-factory.md](./docs/v2/new-factory.md)).
 
 ```bash
 npm install
-npm run dev          # http://localhost:5273 - runs on a mock API, no backend needed
+npm run dev          # http://localhost:5273, talking to the API on http://localhost:3000/v1
 ```
 
-Sign in with the credentials printed on the screen (`clerk@galabodatea.lk` /
-`demo1234`). Which one you pick decides what you can see: the §12.1 matrix gives
-**leaf entry to the weigher**, the **month close to the accountant**, the **publish
-to the manager**, and **content to the editor and the factory admin**, so a
-walkthrough needs more than the clerk. All six demo accounts are on the sign-in
-screen.
+The console has no in-browser mock: it needs the API. Start the backend
+(`tea-factory-digital-backend`: `npm run setup`, then `npm run dev`); its development
+seed creates the `galaboda` factory and one administrator, `admin@galaboda.test` /
+`development-only-password`. Or run against staging (below).
 
 ---
 
@@ -25,85 +25,40 @@ screen.
 
 ```
 packages/
-  domain/     @tfd/domain - types, the RBAC matrix, credit arithmetic, Zod schemas.
-              Framework-free: shared with the API and, later, the mobile app.
+  domain/     @tfd/domain - types, the RBAC matrix, credit and bill arithmetic, import
+              columns and checks, Zod schemas. Framework-free: the backend vendors it.
   brand/      @tfd/brand  - design tokens + the CSS-custom-property bridge that
               makes Tailwind's build-time classes resolve to runtime brand values.
 apps/
-  admin/      React 19 · Vite · Tailwind v4 · TanStack Query/Table · Radix · MSW
-docs/v2/      Current: architecture, the API contract, what is deliberately unfinished
+  admin/      React 19 · Vite · Tailwind v4 · TanStack Query/Table · Radix
+              (MSW in the Vitest suite only)
+docs/v2/      Current: the module map, the API contract, the backend's to-do, status
 ```
 
-## v2: this console manages the mobile app
+## Two modes: the factory-system sync
 
-**It does not run the factory.** The factory already has its own console for its
-internal processes, so v2 hands back the four modules that were building a second
-answer to questions that already had one: leaf collection, rates & month close,
-payouts and savings. Two systems recording the same weighing is not redundancy; it is
-a reconciliation somebody does by hand every month.
+**Sync on (the default).** The factory's own system feeds suppliers, leaf, rates and bills
+to the platform every hour. The console manages the app: M1 Dashboard, M2 Suppliers, M5
+Bills (read-only, for support), M7 Credit queues, M18 Tea packets, M9 Change requests, M10
+Inquiries, M11 News and promo banners, M12 Static content, M13 Notifications, M14
+Configuration, M15 Users & roles, M16 Reports, M17 Audit log, plus the notification bell.
 
-**Built:** M1 Dashboard (app adoption and content health) · M2 Suppliers (the app
-account) · M5 Bills (read-only, for support) · M7 Credit queues · **M18 Tea packets** ·
-M9 Change requests · M10 Inquiries · M11 News **and promo banners** · M12 Static
-content · M13 Notifications · M14 Configuration · M15 Users & roles · M16 Reports
-(app adoption) · M17 Audit log.
+**Sync off** (Configuration → Factory system). The office also keeps the factory's records
+in the console: **Add supplier**, opening balances, transport rate per supplier, daily leaf
+(**Leaf intake**), the monthly rate and month close (**Rates & month close**, with the
+deduction rates and the bill run), bills, **walk-in credit requests** and other
+deductions. Every record one at a time or from an Excel/CSV file (all rows or none). These
+screens, and the sidebar section "Factory records", appear **only with the sync off**.
 
-Narrowing the scope is the smaller half of what v2 did. Reading the app against the
-console turned up three drifts, each one a supplier looking at something the office
-could not see:
+With the sync off the bills come one way per factory (Configuration → Bill calculation):
+**imported** from the factory's own system exactly as printed (galaboda), or
+**calculated** here from the leaf, the rate and the deduction rates.
 
-- **The app has fourteen feature flags; the console had ten.** Six the app gates real
-  screens on had no control anywhere, which made AC-12 false on the very screen that
-  *is* AC-12. Two were console-only.
-- **Tea packets did not exist here.** The app has shipped `RequestTeaPacketsScreen`
-  since its first release; this console had no type, no endpoint, no queue and no flag.
-  A supplier could ask, and nothing could answer. That is now M18.
-- **There was no banner editor**, though the flag, the type and the full specification
-  all shipped. A factory that turned the switch on got nothing.
-
-**The screens were not deleted.** Every handed-back screen, handler and fixture is still
-in the tree, still builds and still answers, because the mock handlers are the only
-written statement of what those flows require, and the factory's own console has to
-satisfy every one of them. What is gone is the claim that *this* console is where the
-work happens: the routes, sidebar rows and cards that wired them up are in git history
-rather than commented out in the files.
-
-[docs/v2/status.md](./docs/v2/status.md) is the gap list; nothing is quietly assumed to
-be solved.
-
-M5, M6 and M8 are the chain those two feed, and they are one slice because they are
-one fact: a bill is a read model over the leaf and the rate, a payout line pays a
-bill, and a savings contribution *is* a bill's savings deduction. Nothing is derived
-twice, which is what stops the office reconciling the console against itself.
-
-M7 and M10 finish the Queues section, so **every `pending` in the supplier's app is a
-queue here**, the promise the whole product rests on. M11 and M12 are the Content
-section, and they close AC-08: editorial copy falls back to English when a translation
-is missing, and the console makes that gap visible on the tab for the language that has
-it, in a "live with a gap" working list, and in the audit entry for the publish.
-
-M13 was built while §21.24 (automatic sends or composed ones, and who may send free text)
-was still open, so it is answered as **configuration**: which categories fire is a
-per-tenant switch defaulted from the platform's own `push.defaultCategories`, and every
-send is preceded by a reach figure that counts who opted out. A push is the only act here
-with no undo and no delivery report, so every safeguard is a pre-check.
-
-M14, M15 and M16 are the Administration section, and together they are what makes the
-console **handed over** rather than demonstrated. M14 closes AC-12: a new factory is a
-DNS record and a `client_config` row, and every field of that row now has a control, so
-nothing about onboarding a factory needs a developer. M15 makes §12.1 editable, which is
-what its own specification always claimed it was; its refusals all guard one failure, a
-factory locking itself out of a console with no recovery path outside itself. M16 is
-deliberately the smallest: four reports, each built from records the console already keeps
-and each carrying the citation that justifies it, because the rest need a reporting
-warehouse that lives in another repository, and a report nobody asked for is a query
-somebody maintains and nobody reads.
-
-**The backend does not exist yet.** The console runs against an in-browser mock
-that enforces every rule the real API must, and
-[docs/v2/api-contract.md](./docs/v2/api-contract.md) specifies each endpoint. Hand that
-document to the backend developer; when the API lands, two environment variables
-switch to it.
+Details: [docs/v2/modules.md](./docs/v2/modules.md) and
+[docs/v2/factory-records.md](./docs/v2/factory-records.md).
+[docs/v2/status.md](./docs/v2/status.md) is the gap list, including what the console hides
+until the backend ships it (`apps/admin/src/lib/serverReady.ts`); nothing is quietly
+assumed to be solved.
 
 ---
 
@@ -114,12 +69,11 @@ switch to it.
 | `npm run dev`        | Dev server against a **local** API on `:3000`                    |
 | `npm run dev:staging`| Dev server against the **deployed staging** API                  |
 | `npm run build`      | Production bundle                                                |
-| `npm run build:demo` | Demo bundle: production build, mock API on, for preview hosting |
+| `npm run build:staging` | Production bundle pointed at staging                          |
 | `npm run typecheck`  | `tsc --build`, all three projects                                |
 | `npm run lint`       | Includes the white-label and layering rules                      |
-| `npm run test`       | Vitest, 351 tests                                               |
-| `npm run e2e`        | Playwright, 29 specs (`npx playwright install chromium` once)    |
-| `npm run e2e:demo`   | The same specs against the built demo bundle                     |
+| `npm run test`       | Vitest against the MSW mock, 544 tests in 74 files               |
+| `npm run e2e`        | Playwright, 24 tests in 7 specs, against the dev server (`npx playwright install chromium` once) |
 
 ### Running against staging
 
@@ -157,7 +111,8 @@ Render instance and it sleeps when idle, so `.env.staging` sets a 45s timeout wh
 uses 20s. If the first page load seems to hang, it is the box waking up. Accepted while
 we are pre-users; it goes away on a paid instance.
 
-See `docs/v2/BACKEND-API-GAPS.md` for the integration record.
+What the backend still has to build is [docs/v2/BACKEND-TODO.md](./docs/v2/BACKEND-TODO.md);
+every endpoint, payload and refusal is [docs/v2/api-contract.md](./docs/v2/api-contract.md).
 
 ---
 
@@ -191,20 +146,21 @@ Start at [docs/v2/README.md](./docs/v2/README.md).
 
 |                                                |                                                                                             |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| [api-contract.md](./docs/v2/api-contract.md)   | **For the backend developer**: every endpoint, payload and refusal, with a build checklist |
+| [BACKEND-TODO.md](./docs/v2/BACKEND-TODO.md)   | **For the backend developer**: what is still open, in order, and what the console hides until then |
+| [api-contract.md](./docs/v2/api-contract.md)   | Every endpoint, payload and refusal, and the agreed shapes                                  |
+| [factory-records.md](./docs/v2/factory-records.md) | Sync off: the factory's records kept in the console, imports, bills imported or calculated |
+| [new-factory.md](./docs/v2/new-factory.md)     | Adding a new factory, step by step                                                          |
 | [architecture.md](./docs/v2/architecture.md)   | Layers, state, start-up, security posture                                                   |
-| [white-label.md](./docs/v2/white-label.md)     | Runtime branding, the Tailwind ↔ token bridge, **the fourteen flags**, adding a tenant      |
+| [white-label.md](./docs/v2/white-label.md)     | Runtime branding, the Tailwind and token bridge, the feature flags                          |
 | [design-system.md](./docs/v2/design-system.md) | Tokens, components, density, accessibility                                                  |
 | [rbac.md](./docs/v2/rbac.md)                   | The permission matrix and where it is really enforced                                       |
-| [modules.md](./docs/v2/modules.md)             | What each module decides, and what moved to the factory's own console                       |
-| [mocks.md](./docs/v2/mocks.md)                 | The mock API and how to leave it behind                                                     |
+| [modules.md](./docs/v2/modules.md)             | What each module decides, and which screens appear only with the sync off                   |
+| [mocks.md](./docs/v2/mocks.md)                 | The mock API the Vitest suite runs against                                                  |
 | [operations.md](./docs/v2/operations.md)       | Environments, deployment, testing, CI                                                       |
-| [status.md](./docs/v2/status.md)               | **Known gaps and the questions blocking specific modules**                                  |
+| [status.md](./docs/v2/status.md)               | **What is built, what the backend has, known gaps, open questions**                         |
 
-**v1 (the seventeen-module console) is in git history, not in the tree.** It was the
-specification the factory's own build should be read against, and where the handed-back
-modules' open questions lived. Recover it with `git log -- docs/v1/` and
-`git show <rev>:docs/v1/<file>`.
+**v1 (the seventeen-module console) is in git history, not in the tree.** Recover it with
+`git log -- docs/v1/` and `git show <rev>:docs/v1/<file>`.
 
 The product specification, what the console is for and why, lives in the mobile
 repository's `docs/`, and nothing here restates it. `BR-###`, `AC-##` and `§n`

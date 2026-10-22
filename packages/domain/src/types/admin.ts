@@ -2035,7 +2035,7 @@ export interface ConsoleUserDraft {
    * the rule a supplier already lives under (BR-008). It does not yet. A first credential
    * chosen by somebody else, for somebody else, is the one password the holder did not
    * pick and may never change, and staff should not be held to a weaker rule than the
-   * farmers are. Tracked in `BACKEND-API-GAPS.md`.
+   * farmers are. Tracked in `docs/v2/api-contract.md` ("Agreed shapes").
    */
   password: string;
 }

@@ -6,25 +6,32 @@
 decision, and it is worth stating why the scope cut reached one and not the other.
 
 `weigher` and `accountant` are **gone from `ConsoleRole`**. Both existed for
-capabilities the factory's own console now owns: a weigher's entire job was
-`deliveries: write`, an accountant's was `ratesAndMonthClose` and `payouts`. Strip
-those and neither could do anything here but read: a person given the role would sign
-in, find suppliers and reports, and report the empty console as a bug. A role is
-something somebody is *assigned*; one that grants nothing is a support call waiting to
-happen.
+capabilities that, at a factory whose own system feeds the platform, belong to that
+system: a weigher's entire job was `deliveries: write`, an accountant's was
+`ratesAndMonthClose` and `payouts`. A role is something somebody is *assigned*; one
+that grants nothing at most factories is a support call waiting to happen. The work
+they did, where this console does it at all, sits with the clerk and the manager.
 
 The capabilities they were built around (`deliveries`, `ratesAndMonthClose`,
-`payouts`) **stay**, granting access to nothing this build routes. A capability key is
-a column in a matrix the server also holds, §12.1 is the product's permission model
-rather than this repository's, and dropping three keys would be a migration of every
-role record for no gain. `billing` is the one of the four that still gates something
-here: M5's read-only slip.
+`payouts`) **stay**. A capability key is a column in a matrix the server also holds,
+§12.1 is the product's permission model rather than this repository's, and dropping
+keys would be a migration of every role record for no gain. Two of them gate screens
+again: with the factory-system sync **off** ([factory-records.md](./factory-records.md)),
+`deliveries` gates **Factory records → Leaf intake** and `ratesAndMonthClose` gates
+**Factory records → Rates & month close**. Neither screen exists with the sync on, so at
+a synced factory the grants reach nothing. `payouts` gates nothing this build routes.
 
-Two capabilities gained a surface: `creditRequests` now also gates **M18** (tea
-packets), and `content` now also gates the **banner editor**, with `content: approve`
-on its lifecycle verbs exactly as it is on an article's. Neither is a new capability,
-and that is deliberate: inventing one would be a permission the matrix has never
-granted anybody.
+`billing` gates the bills: reading them always, and with the sync off importing,
+generating and typing an "other deductions" line (`W`), and creating or cancelling a
+savings withdrawal (`A`).
+
+Other capabilities gained a surface without becoming new ones: `creditRequests` also
+gates **M18** (tea packets) and, at `W`, recording a **walk-in credit request** made at
+the counter; `suppliers: W` also gates **Add supplier**, opening balances, a supplier's
+own transport rate and the supplier imports (sync off); `content` also gates the
+**banner editor**, with `content: approve` on its lifecycle verbs exactly as it is on an
+article's. Inventing a capability for any of these would be a permission the matrix has
+never granted anybody.
 
 **Nothing was lost by dropping the two roles**, because the server is still the
 authority: a factory whose own console assigns `weigher` sends grants for it, and
@@ -63,11 +70,11 @@ rather than assumed.
 | Capability | Clerk | Manager | Editor | Fac. admin | Plat. admin |
 | --- | --- | --- | --- | --- | --- |
 | `suppliers` | W | R | - | R | R |
-| `deliveries` | R | R | - | - | - |
+| `deliveries` | W | R | - | - | - |
 | `ratesAndMonthClose` | - | A | - | - | - |
-| `billing` | R | A | - | - | - |
+| `billing` | W | A | - | - | - |
 | `payouts` | R | A | - | - | - |
-| `creditRequests` | R | A | - | - | - |
+| `creditRequests` | W | A | - | - | - |
 | `creditAboveThreshold` | - | A | - | - | - |
 | `changeRequests` | A | A | - | - | - |
 | `inquiries` | A | R | - | - | - |
@@ -78,14 +85,27 @@ rather than assumed.
 | `auditLog` | - | R | - | R | R |
 | `tenants` | - | - | - | - | W |
 
-The three rows in the middle (`deliveries`, `ratesAndMonthClose`, `payouts`) grant
-access to nothing this build routes. They are the factory's own console's, kept as
-columns because the server holds the same matrix. `FACTORY_CONSOLE_CAPABILITIES` names
-them, and **M15 does not render them**: kept in the data is not the same as shown in the
-UI, and a dropdown an administrator can set to `approve` with no effect is the same
-failure as a role that grants nothing. Their stored levels are preserved untouched:
-`RoleMatrixView` saves the whole `matrix[role]`, and `users.test.ts` asserts it, because
-that spread is the only thing standing between hiding a value and dropping it.
+**The clerk's three `W`s are the sync-off counter work**: `deliveries: W` to weigh in
+the day's leaf, `creditRequests: W` to record a request made at the counter, and
+`billing: W` to import, generate or adjust the month's bills. None of them decides
+anything. Approving a credit request stays `creditRequests: A`, publishing a month stays
+`ratesAndMonthClose: A`, both with the manager, and BR-501 refuses the person who
+recorded or imported the record as its approver.
+
+**Savings withdrawals need `billing: A`**, not `W`. A withdrawal pays a supplier's own
+savings out on their next bill; the clerk's `W` exists for the bill work above and must
+not let them pay that money out. So the manager creates and cancels withdrawals
+(`POST /admin/savings/accounts/:supplierId/withdrawals` and
+`POST /admin/savings/withdrawals/:id/cancel`).
+
+`deliveries`, `ratesAndMonthClose` and `payouts` are listed in
+`FACTORY_CONSOLE_CAPABILITIES`, and **M15 does not render those three rows**: it shows
+twelve. That list was written when all three gated nothing here; `deliveries` and
+`ratesAndMonthClose` now gate the sync-off screens, so a factory that wants to change who
+may enter leaf or publish a month cannot do it from `/users?view=roles` today. Their stored
+levels are preserved untouched: `RoleMatrixView` saves the whole `matrix[role]`, and
+`users.test.ts` asserts it, because that spread is the only thing standing between hiding a
+value and dropping it.
 
 Levels are ordered `none < read < write < approve`, and **the stronger implies
 the weaker**: an approver who could not read the record could not approve
@@ -96,9 +116,11 @@ responsibly.
 A factory that wants fewer roles can merge them in M15 without a deploy, but two of the
 splits are load-bearing and merging them breaks something:
 
-- **Clerk and manager.** BR-501 requires the creator of a credit approval not to be its
-  approver. Collapse the two and every approval in M7 and M18 becomes a self-approval
-  the server refuses with `409 four-eyes-violation`.
+- **Clerk and manager.** BR-501 requires the creator of a record not to be its
+  approver. Collapse the two and every walk-in request the clerk records, and every month
+  whose rate or bills they entered or imported, becomes a self-approval the server refuses with
+  `409 four-eyes-violation`. It would also hand the clerk `billing: A`, and with it
+  savings withdrawals.
 - **Editor and factory admin.** `content: W` writes what suppliers' phones display;
   `content: A` publishes it. Merging them removes the review step before something
   reaches every supplier at once. Legitimate at a small factory, but a choice, not a
@@ -112,6 +134,9 @@ than between two roles: above the threshold, approval **escalates rather than wi
 - **A manager cannot edit a supplier record.** §12.1 gives them `R`, not `W`.
   Easy to get wrong because a manager outranks a clerk almost everywhere else.
   Both a unit test and an integration test assert it.
+- **A clerk holds `billing: W` and still cannot pay out savings.** Withdrawals are
+  `billing: A`. A clerk who can import a month's bills reasonably expects the savings
+  screen to work the same way; it does not, on purpose.
 - **A clerk has no audit access at all.** Deliberate: the log is for the people
   reviewing the work, not the people doing it. So a clerk can reveal a bank
   account number and cannot read the log of who revealed it, which is the control
@@ -142,8 +167,10 @@ in the screen, the repository and the server. Three layers is not belt-and-brace
 console has no recovery path outside itself, so the toast has to be able to explain the
 refusal before the request goes.
 
-The authority is the `grants` object the server sends on `GET /admin/auth/me`, and
-`resolveGrants` merges them asymmetrically:
+The authority is the `grants` object the server sends with the session (on
+`POST /admin/auth/login` and on every `POST /admin/auth/refresh`, which is how the console
+bootstraps; `GET /admin/auth/me` carries the same grants), and `resolveGrants` merges them
+asymmetrically:
 
 ```ts
 resolveGrants(roles, serverGrants)   // server wins per capability; matrix fills gaps
@@ -158,13 +185,11 @@ The asymmetry is on purpose:
   nothing, and the shipped default applies. This is what lets the console work
   against a backend that has not implemented per-endpoint grants yet.
 
-**v2 made the first bullet concrete rather than hypothetical.** `weigher` and
-`accountant` still exist in the factory's own console against the same user table, so
-the server still sends grants for them; this build simply has no matrix row to derive
-them from, and the merge fills them in from the server unchanged. The fixture identity
-`factory-system@galabodatea.lk` is that path end to end (`roles: []`, every capability
-from the server) and it is the only account in the mock that can move leaf, which is
-what keeps M5's staleness and M7's recomputation reachable at all.
+**v2 made the first bullet concrete rather than hypothetical.** A server may still send
+grants for roles this build has no matrix row for (`weigher`, `accountant`, or a factory's
+own split of `clerk`), and the merge takes them from the server unchanged. The fixture
+identity `factory-system@galabodatea.lk` is that path end to end: `roles: []`, every
+capability from the server.
 
 ---
 
@@ -191,6 +216,11 @@ Three layers, and all three are needed:
 `createdById: null` means the supplier raised it from the app, the common case
 for a change request, and never a violation. Getting that backwards would lock the
 whole queue.
+
+**A walk-in request is the clerk's record.** `POST /admin/credit-requests` stores it with
+`channel: 'office'` and `createdById` set to whoever typed it, so the same check stops them
+deciding it. Publishing a month (sync off) refuses whoever entered its rate; an imported
+month takes its rate from the finished-bills file, so that is the person who imported it.
 
 ### The approval threshold is still unanswered
 

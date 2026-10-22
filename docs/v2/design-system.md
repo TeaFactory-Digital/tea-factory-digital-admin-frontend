@@ -9,8 +9,9 @@ the useful signal about the kit rather than about the modules.
 
 One new formatter: `formatPercent` in `lib/format.ts`, for M1's and M16's adoption
 figures. It follows the same rule every other formatter here follows and the rule is
-worth restating because it is the one most easily got wrong: **`null` renders as an em
-dash and never as `0%`** (BR-102). A month in which no request was raised has no
+worth restating because it is the one most easily got wrong: **`null` renders as `-`
+(`NOT_AVAILABLE`) and never as `0%`** (BR-102). The console uses no em dash character
+anywhere, in the UI or in its copy. A month in which no request was raised has no
 adoption share, and a console printing zero would report a collapse that did not
 happen.
 
@@ -140,16 +141,26 @@ native elements everywhere else.
 | `AuditPanel` | Renders nothing without `auditLog` access |
 | `Logo` | The factory's mark, `served → bundled → initials`. Three sizes: `md` for the chrome (an icon token, so it re-scales with `iconSizes`), `lg` for sign-in and `xl` for the splash, where the mark is the subject rather than a label |
 | `LanguageSwitcher` (`src/i18n/`) | The si/en/ta pill, in the topbar **and** on sign-in. Lives beside the tables rather than in `components/ui/` because it is not a reusable primitive; it is the one control that renders `LANGUAGES`. A three-segment `radiogroup` with a sliding knob: one tab stop, arrow keys wrap, and each segment carries its own `lang` so the label resolves out of the right face. **Its options are the only user-facing strings in the console that do not go through `t()`**; see [white-label.md](./white-label.md) → Localization for why that is deliberate. 14px where the surrounding chrome captions are 12px, because Indic script needs the height |
+| `Select` / `FilterSelect` | A native `<select>`'s props (`value`, `onChange`, `<option>` children) over a Radix popup, so it can be themed; see below |
+| `DatePicker` / `DateTimePicker` / `TimePicker` / `Calendar` | Themed replacements for the browser's date inputs. The text field stays a real input that accepts a typed `YYYY-MM-DD`; the calendar is the second way in |
+| `ConfirmDialog`, `Checkbox`, `Tooltip`, `Popover`, `DropdownMenu`, `Pagination`, `ImageField` | The smaller pieces. `Checkbox`, `Tooltip`, `Popover` and `DropdownMenu` are Radix, where the platform has no equivalent |
+| `ImportDialog` / `ImportMenu` (`src/components/`) | Excel/CSV import for the factory records: a template per kind, every row checked before anything is sent, all rows or none, problems listed by spreadsheet row |
+| `NotificationBell`, `SyncStatusChip`, `CommandMenu` (`src/layout/`) | The top bar: what is waiting and recent supplier activity; a chip only while the figures are not current; search from anywhere (Ctrl+K) |
 | `SplashScreen` / `BootSplash` | The mark and the factory's name while `/config` and the session settle. An **overlay, not a gate** (the router mounts behind it) with a 700 ms floor so a fast boot is not a flicker and a 2.5 s cap so a slow `/config` can never hold the console back. `index.html` carries a static twin that covers the stretch before the bundle has evaluated, which `BootSplash` removes after React paints |
 
-### Forms use native controls
+### Forms: native inputs, themed pickers
 
-`<input>`, `<textarea>` and `<select>`, not Radix equivalents. One reason
-outweighs the styling gain: **this is a keyboard product.** A native select opens
-on first keystroke, filters by typing, and works with the OS's own accessibility
-tools. A custom listbox is prettier and slower.
+`<input>` and `<textarea>` are native: **this is a keyboard product**, and a typed value
+is the fast path.
 
-Radix is used for dialogs, toasts and menus, where the platform has nothing
+The dropdown and the date controls are not, because a browser draws those itself, and on a
+white-label product they were the one part of a screen that could not take the factory's
+colours. `Select` keeps a native `<select>`'s API, so callers still write `<option>`
+children and read `e.target.value`, but renders a Radix popup. `DatePicker` keeps the text
+field (a clerk entering a week of back-dated sheets types the date faster than they click
+a grid) and adds a calendar beside it.
+
+Radix is also used for dialogs, toasts, popovers and menus, where the platform has nothing
 equivalent.
 
 `Field` uses a render prop so the ids connect: `aria-describedby` has to name both
@@ -237,8 +248,8 @@ asked for less of it meant.
   is tiring for eight hours.
 - **Row height ~34px** at `text-data-cell` with `py-sm`, roughly 18 rows visible
   without scrolling.
-- **Max content width `max-w-7xl`**, centred. Full-bleed 24-inch monitors put the
-  action buttons a head-turn away from the data.
+- **Content fills the window** inside the shell's `px-gutter` margin. `max-w-page`
+  (80rem) exists as a token for a screen that wants a cap; the shell itself sets none.
 - **Zebra striping** on alternate rows (`bg-table-row-alt`), plus hover: a
   12-column row needs help staying on one line.
 - **The page body never scrolls horizontally**, in any language.
@@ -288,7 +299,7 @@ Following the app's bar (§20.3), adapted for the web:
   component has to remember it and none can opt out by forgetting.
 - **Touch targets: the chrome is 34–41px, not the 44px this section used to claim.**
   Measured, because the claim was inherited from the app's bar (§20.3) and never held
-  here: the sign-in button is 41px, inputs and the tenant select 37.5px, the language
+  here: the sign-in button is 41px, inputs 37.5px, the language
   pill 37px, a sidebar row 36px, the account menu trigger 34px. Nothing reaches 44.
   That is defensible for a mouse-and-keyboard product on office desktops (44px is a
   *finger* bar) but the same office does use a touchscreen all-in-one, and
@@ -314,10 +325,12 @@ Following the app's bar (§20.3), adapted for the web:
 
 ## Two decisions recorded, not omitted
 
-**No dark mode.** The dark palette exists in `@tfd/brand` and the CSS bridge emits
-whichever scheme it is given, so enabling it later is a toggle plus a QA pass, not
-a refactor. It is off because the console runs on office desktops in daylight and
-doubling the theming QA buys nothing in the field.
+**Dark mode and text size are each person's choice, not the factory's.** The dark palette
+is in `@tfd/brand` and the CSS bridge emits whichever scheme it is given. Light or dark,
+and the text size (normal, large, larger), are set on the profile screen (M15,
+`AppearanceControls`) and kept in the browser beside the language, because
+`flagsAndBranding` is the factory administrator's alone and a clerk who needs larger type
+must be able to change their own screen. Light is the default.
 
 **No `tailwind-merge`.** Class-conflict resolution by last-wins is a convenience
 that hides a design problem: if a caller needs to override a component's

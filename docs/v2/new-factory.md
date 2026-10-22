@@ -27,11 +27,21 @@ factory publishes its own app with its own name and icon.
 
 ## 1. Backend: create the factory (platform team)
 
-- [ ] Run the onboarding command with the details above
-      ([BACKEND-TODO #47](./BACKEND-TODO.md); until it exists, call `seedTenant()` from
-      `apps/api/prisma/seed/tenant.ts` the way `staging.ts` does).
-      It creates the factory, its configuration with every feature flag written, the bank
-      list, the collection points, the first `factoryAdmin` account, and the default static
+- [ ] Run the onboarding command in `tea-factory-digital-backend` with the details above:
+
+      ```bash
+      npm run db:seed:tenant -- \
+        --slug hillside --name "Hillside Tea Factory" \
+        --telephone 051-2223344 --reg-no "M.F. 2207" --location Hatton \
+        --admin-name "S. Jayawardena" --admin-email admin@hillsidetea.lk \
+        --points "HATTON:Hatton,DIKOYA:Dikoya" --sync off
+      ```
+
+      It names the database it is about to write to and waits for you to type the slug
+      back (`--yes --expect-host <host>` in a script), and prints the administrator's
+      password only to a terminal or to `--password-out <file>`. It creates the factory,
+      its configuration with every feature flag written, the bank list, the collection
+      points, the first `factoryAdmin` account, and the default static
       pages and notification triggers in Sinhala, Tamil and English with the factory's name.
 - [ ] Hand the administrator their one-time password in person. They change it at first
       sign-in.
@@ -65,8 +75,12 @@ factory's colours as soon as `GET /config` answers.
 - [ ] **Tea packets:** packet size, price and monthly limit. Until set, the app does not let
       suppliers ask for packets.
 - [ ] **Credit rules:** how each ceiling is worked out (basis, multiplier, months, cap).
-- [ ] **Bill calculation:** pay in Rs. 1, 5 or 10; the next bill number after the factory's
-      last paper bill; advance and loan interest per month (loan 0% unless set).
+- [ ] **Bill calculation** (sync off): where the bills come from (**imported** from the
+      factory's own system, or **calculated** here); for calculated bills, pay in Rs. 1, 5
+      or 10 and the next bill number after the factory's last paper bill; advance and loan
+      interest per month (loan 0% unless set) and whether the loan interest is taken on
+      top of the instalment or inside it. (The bill source and how the loan interest is
+      taken appear once the API accepts them: BACKEND-TODO #45.)
 - [ ] **Common notes:** the office's ready-made sentences.
 - [ ] **Static content:** read the default terms, privacy, FAQ, savings scheme, credit terms
       and about pages in all three languages, and edit them for this factory.
@@ -86,8 +100,11 @@ factory's colours as soon as `GET /config` answers.
       (**Suppliers → Import**; each screen offers a template).
 - [ ] Enter or import the month's leaf (**Factory records → Leaf intake**), the rate, and the
       deduction rates (transport per collection point, stamps, caps).
-- [ ] Generate one month's bills and have the factory's accountant check them against their
-      own before publishing.
+- [ ] **Bills imported** (the factory's own system prints them, as at Galaboda): import one
+      month's finished bills (**Rates & month close → Import → Finished bills**), check a
+      few against the printed slips, then publish.
+- [ ] **Bills calculated here:** generate one month's bills and have the factory's
+      accountant check them against their own before publishing.
 
 ## 5. Supplier app: one build for this factory (mobile developer)
 

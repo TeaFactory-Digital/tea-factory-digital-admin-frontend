@@ -3,18 +3,30 @@
 **This is the document to hand to the backend developer.** It specifies every
 endpoint the console calls, the exact payloads, the error envelope, and the
 refusals the server must produce. The console is written against it already and
-runs on a mock that implements it (see [mocks.md](./mocks.md)), so anything here
-is testable the day it lands.
+runs on a mock that implements it (`apps/admin/src/services/mocks/handlers.ts`, see
+[mocks.md](./mocks.md)), so anything here is testable the day it lands.
+
+The factory-records endpoints (the console keeping a factory's records while its
+factory-system sync is off) are summarised in §5.8 and §25 here and specified in full,
+with every rule, in [factory-records.md](./factory-records.md). Where the two overlap,
+factory-records.md is the detailed statement and this document must not contradict it.
 
 ## What v2 changed
 
-**The console's scope narrowed; the API's did not.** §9 (leaf collection), §10
-(rates & month close), §12 (payouts) and §13 (savings) describe endpoints this
-console no longer calls; the factory's own console does that work. They are kept
-here **in full and unmarked in the section bodies**, for three reasons: the app
-still reads the bills and balances those endpoints produce, the factory's console
-has to satisfy the same refusals, and a contract that deleted them would leave
-BR-108's lock and BR-501's publish rule with no written statement anywhere.
+**Two kinds of factory, one API.** At a factory whose own system feeds the platform
+(the hourly sync, `config.factorySync` on, the default), the console manages the
+supplier app and reads the records the sync brings: it does not enter leaf, rates or
+bills. At a factory with the sync **off**, the office keeps those records in the
+console ([factory-records.md](./factory-records.md)), and §9 (leaf collection), §10
+(rates & month close) and §11.5 (bill generation) are called by this console again,
+from the **Factory records** screens that exist only then. Every record write answers
+`409 factory-sync-on` while the sync is on.
+
+§12 (payouts) and most of §13 (savings) are still not called by this console: the
+factory pays from its own system. They are kept **in full**, because the app reads the
+balances they produce, and a contract that deleted them would leave BR-108's lock and
+BR-501's publish rule with no written statement anywhere. The console reads one savings
+endpoint, a supplier's passbook (§5.9).
 
 Sections that changed:
 
@@ -30,6 +42,15 @@ Sections that changed:
 | §16 M11 Content | **§16a is new**: `/admin/banners` |
 | §18 M14 Configuration | The `teaPackets` block; `payouts.export` still served, no longer patched by this console |
 | §20 M16 Reports | One report id, not four |
+| §1.5 Errors | Every code in `ADMIN_ERROR_CODES`, including the factory-records and credit refusals |
+| §2 Auth | Refresh answers the whole session; first-password endpoints (BR-008) |
+| §3 / §18 Configuration | `factorySync`, `advanceInterest`, `loanInterest` (with `recovery`), `billSettings` (`paymentUnit`, `nextBillSerial`, `source`), `noteSuggestions` |
+| §5.8 Factory records | Add supplier, opening balances, a supplier's own transport rate (sync off) |
+| §11 M5 Bills | `AdminBill.source`, `loanInstalmentNo`, `otherCardsNote`; `loanBalance` is the loan's, `loanInterest` is this month's charge; `PUT /admin/bills/{id}/adjustment` |
+| §14 M7 Credit | Walk-in requests (`POST /admin/credit-requests`); an open loan blocks a loan and an advance (`loan-outstanding`) |
+| §23 Activity | The notification bell: `GET /admin/activity`, `POST /admin/activity/read` |
+| §24 Agreed shapes | Where the API and the shared types differ by agreement, with the gap ids the code cites |
+| §25 Imports | `POST /admin/imports/{kind}`, all rows or none, including finished `bills` |
 
 It extends `docs/api.md` §17.6 in the mobile repo, which lists the admin surface
 by area. Where the two disagree, this document is more specific and §17.6 is the
@@ -140,7 +161,11 @@ copy interpolates.
 | Code | Status | Meaning |
 | --- | --- | --- |
 | `unauthenticated` | 401 | No or expired access token |
-| `invalid` | 401 | Bad credentials. **Same code and message for unknown user and wrong password**; distinguishing them is an account-enumeration oracle |
+| `invalid` | 401 | Bad credentials at sign-in. **Same code and message for unknown user and wrong password**; distinguishing them is an account-enumeration oracle |
+| `invalid` | 422 | Any other request whose shape is wrong. `details` names the field (`{ field, problem }`, or `{ field: 'password', minLength: 12 }`) |
+| `password-change-required` | 403 | BR-008: the user still holds the password the office issued. Answered by every route except the ones that clear it (§2.5) |
+| `password-unchanged` | 422 | The new password is the one already on the account (§2.5) |
+| `tenant-unknown` | 404 | No factory behind this subdomain (§3) |
 | `forbidden` | 403 | The role does not grant this capability. `details: { capability, required, granted }` |
 | `feature-disabled` | 403 | The tenant has this feature flag off (AC-07) |
 | `not-found` | 404 | The record does not exist, or no longer does. Answer it for a record **this factory** does not hold, never a `403`; a status that distinguished "not yours" from "not there" would confirm the existence of another tenant's records |
@@ -148,7 +173,7 @@ copy interpolates.
 | `already-decided` | 409 | Someone else decided it first. `details: { decidedByName }` |
 | `note-required` | 422 | A decision, suspension or reveal arrived without a reason (AC-06) |
 | `stale-eligibility` | 409 | Credit eligibility moved since the queue rendered (BR-310). **Refuse, do not warn** |
-| `supplier-code-taken` | 409 | The code exists **for this factory** (§16.2) |
+| `supplier-code-taken` | 409 | The bare supplier number exists **for this factory** (§5.8) |
 | `month-locked` | 409 | The month is published, so nothing in it may change: a delivery, a void, a rate (BR-108). `details: { monthKey }` |
 | `batch-too-large` | 422 | More than 200 rows in one weighing session (§9.3) |
 | `already-voided` | 409 | The delivery has already been withdrawn (§9.4) |
@@ -158,9 +183,38 @@ copy interpolates.
 | `already-resolved` | 409 | Two accountants worked the same exception list (§10.4) |
 | `already-published` | 409 | The month was closed while this screen was open. `details: { publishedAt, publishedByName }` |
 | `month-mismatch` | 409 | The month in the body disagrees with the month in the path (§10.5) |
+| `factory-sync-on` | 409 | A record write while the factory-system sync is on (§5.8, §25) |
+| `loan-outstanding` | 409 | A loan or an advance asked for while a loan is still owed (§14.4) |
 
-Anything else the console renders as a generic failure, so an unknown code is
-safe but unhelpful.
+#### Every code the console explains
+
+`ADMIN_ERROR_CODES` in `packages/domain/src/types/admin.ts` is the list, and the console
+has copy for each in en/si/ta. Anything else it renders as a generic failure, so an
+unknown code is safe but unhelpful.
+
+| Area | Code (status) |
+| --- | --- |
+| General | `feature-disabled` (403), `forbidden` (403), `four-eyes-violation` (409), `stale-eligibility` (409), `note-required` (422), `month-locked` (409), `supplier-code-taken` (409), `already-decided` (409) |
+| M3 Leaf collection | `batch-too-large` (422), `already-voided` (409), `invalid-batch` (the console's own, below) |
+| M4 Rates & month close | `invalid-rate` (422), `rate-missing` (409), `exceptions-open` (409), `already-resolved` (409), `already-published` (409), `month-mismatch` (409) |
+| M5 Bills | `bills-missing` (409; 404 on `GET .../bill-run`), `bills-unbalanced` (422), `bills-stale` (409) |
+| M11 / M12 Content | `fallback-translation-missing` (422), `slug-taken` (409), `content-not-published` (409) |
+| M14 Configuration | `tenant-immutable` (409), `flag-has-records` (409), `point-in-use` (409), `fallback-language-required` (422) |
+| M15 Users & roles | `last-admin` (409), `self-modification` (409), `email-taken` (409), `unknown-role` (422) |
+| M13 Notifications | `unknown-category` (422), `category-disabled` (409), `no-recipients` (409), `push-not-configured` (409) |
+| M6 Payouts | `month-not-published`, `run-exists`, `already-approved`, `run-not-approved`, `no-payable-lines`, `line-not-payable` (all 409) |
+| M7 Credit | `over-ceiling` (409) |
+| Factory records (sync off) | `factory-sync-on` (409), `sync-switch-blocked` (409, `details.months`), `negative` (422), `unknown-collection-point` (422), `bank-details-required` (422), `opening-balances-locked` (409), `unknown-supplier` (422), `no-bill` (422), `import-invalid` (422, `details.problems`, `details.total`), `import-size` (422) |
+| Credit refusals a walk-in or an approval can meet | `request-pending` (409), `supplier-suspended` (409), `supplier-closed` (409), `advance-outstanding` (409), `loan-installments-invalid` (422), `manure-installments-invalid` (422), `loan-outstanding` (409) |
+| Where the bills come from | `wrong-bill-source` (409), `bill-source-blocked` (409, `details.months`) |
+
+Codes outside the list that the API also answers, specified in the sections below: `invalid`,
+`password-change-required`, `password-unchanged`, `tenant-unknown`, `not-found`,
+`unauthenticated`, `tea-packets-refused`, `banner-action-refused`,
+`banner-window-invalid`, `change-pending`, `invalid-rates`, `export-template-invalid`,
+`tea-packet-policy`, `credit-rule`, and the savings codes in §13.5. The import problem
+codes (`duplicate`, `too-short`, `does-not-add-up`, `rate-differs` and the rest) travel
+inside `details.problems` of an `import-invalid`, not as the envelope's `code`; see §25.
 
 One code is the console's own and never comes from the server: `invalid-batch`,
 which the repository raises when a weighing session fails validation before it
@@ -189,10 +243,14 @@ the discriminator every consumer already reads, and a response that changed shap
 break clients over a step that was removed.
 
 ```json
-200 { "status": "authenticated", "session": { … } }        // see §2.4
+200 { "status": "authenticated", "session": { … }, "passwordChangeRequired": false }
 401 { "code": "invalid",   "message": "Email or password is incorrect." }
 403 { "code": "forbidden", "message": "This account is suspended." }
 ```
+
+`session` is `{ accessToken, expiresAt, user, grants }` (§2.4). `passwordChangeRequired`
+is BR-008: the user still holds the password the office issued, and the console sends
+them to §2.5 before anything else.
 
 `POST /admin/auth/mfa` is **withdrawn**. Nothing calls it, and an implementation that keeps
 answering it is offering a way in the console cannot see.
@@ -207,9 +265,14 @@ No body. Reads a **rotating refresh token from an httpOnly, Secure, SameSite=Lax
 cookie**.
 
 ```json
-200 { "accessToken": "…", "expiresAt": "2026-07-30T09:15:00.000Z" }
+200 { "status": "authenticated", "session": { … }, "passwordChangeRequired": false }
 401 { "code": "invalid" }
 ```
+
+**The same envelope as login**, not a token pair. The API re-resolves the user and the
+grants on every rotation, and the console bootstraps from it: one rotation on page load
+restores the token, the user, the grants and the BR-008 flag together, so nothing on the
+first paint waits for a second call (this is why §2.4 is not called; G-33, G-03 in §24).
 
 - Access token: **15 minutes**, returned in the body, held **in memory** by the
   console.
@@ -247,10 +310,13 @@ Revoke the refresh token server-side. The console clears its session regardless
 of the response: a clerk who clicks *Sign out* on a shared machine and walks away
 must not remain signed in because the request timed out.
 
-### 2.4 `GET /admin/auth/me`
+### 2.4 The session, and `GET /admin/auth/me`
+
+The `session` inside login and refresh:
 
 ```json
-200 {
+{
+  "accessToken": "…", "expiresAt": "2026-07-30T09:15:00.000Z",
   "user": {
     "id": "usr-clerk-1",
     "name": "Nadeeka Perera",
@@ -266,6 +332,10 @@ must not remain signed in because the request timed out.
 
 `grants` maps capability → `"none" | "read" | "write" | "approve"`.
 
+`GET /admin/auth/me` answers a thinner identity, `{ user: { id, name, factoryId, roles },
+grants }`, with no `email`, `status` or `lastLoginAt`. The console does not call it (it
+bootstraps from §2.2), so that is agreed rather than open (G-03, §24).
+
 **Send it explicitly rather than expecting the console to derive it from
 `roles`.** §12.1 is emphatic that the matrix is "data, not code: a factory will
 want to split or merge these roles, and that must not be a deploy". The console
@@ -275,11 +345,18 @@ matrix and capability list are in [rbac.md](./rbac.md).
 
 `mfaEnrolled` is **gone from this record**, with the second factor it described (§2.1).
 
-The same `AuthSession` shape is returned inside `login`:
+### 2.5 The first password (BR-008): `/admin/auth/initial-password`
 
-```ts
-{ accessToken, expiresAt, user, grants }
-```
+A console user created by the office (§19.2), or given a new one-time password
+(`POST /admin/users/{id}/password/reset`), signs in with `passwordChangeRequired: true`.
+Until they act, every other route answers `403 password-change-required`.
+
+| Call | Body | Answer |
+| --- | --- | --- |
+| `POST /admin/auth/initial-password` | `{ next }` | `204`. `422 invalid` with `{ field: 'password', minLength: 12 }` (or `maxLength: 200`); `422 password-unchanged` when `next` is the current password |
+| `POST /admin/auth/initial-password/keep` | none | `204`. Keeping a strong issued password is a decision, recorded once |
+
+The length refusals stay `422 invalid` by agreement; see §24.
 
 ---
 
@@ -335,8 +412,12 @@ public identity, its feature flags, its bank list and its collection points.
     "radius": { "md": 12 }
   },
   "branding": { "logoUrl": "https://…", "logoDarkUrl": "https://…", "faviconUrl": "https://…" },
-  "push": { "topicPrefix": "galaboda", "categories": [], "defaultCategories": [] },
-  "collectionPoints": [{ "id": "cp-makadura", "name": "MAKADURA" }]
+  "push": { "categories": [], "defaultCategories": [] },
+  "collectionPoints": [{ "id": "cp-makadura", "name": "MAKADURA" }],
+  "factorySync": { "enabled": false },
+  "advanceInterest": { "monthlyRatePercent": 0 },
+  "loanInterest": { "monthlyRatePercent": 1, "recovery": "onTop" },
+  "billSettings": { "paymentUnit": 10 }
 }
 ```
 
@@ -410,6 +491,24 @@ Notes for the implementer:
 - **`theme` colour values are validated by the console** against a known token
   list and a colour-shape check, and anything unrecognised is dropped. Send only
   the semantic token names in [design-system.md](./design-system.md).
+- **The factory-records blocks** (all optional; each saved whole through §18.2):
+
+  | Block | Absent means | Shape |
+  | --- | --- | --- |
+  | `factorySync` | **On** (`isFactorySyncEnabled`) | `{ enabled }`. Off: the office keeps the records in the console |
+  | `advanceInterest` | 0% | `{ monthlyRatePercent }`, 0 to 10 (`advanceInterestProblem`). Charged only when an account could not cover its advance |
+  | `loanInterest` | 0% | `LoanInterestSetting`: `{ monthlyRatePercent, recovery? }`, the same range; `recovery` is `onTop` (default) or `withinInstalment` |
+  | `billSettings` | `{ paymentUnit: 1 }`, `GL/YYYY-MM/NNNN` numbers, `source: 'calculated'` | `{ paymentUnit: 1 \| 5 \| 10, nextBillSerial?, source? }`, `source` read through `billSourceOf` |
+
+  What each one does to a bill is in [factory-records.md](./factory-records.md) §5 and §5a.
+  **The public payload carries `billSettings.paymentUnit` only**: it explains the coins
+  on a supplier's bill, while `nextBillSerial` (the factory's running bill count) and
+  `source` stay on `GET /admin/config`.
+- **Not on the public payload:** `noteSuggestions`, `payouts.export`, the deduction rates,
+  `push.topicPrefix`, and the parts of `billSettings` above. They are on
+  `GET /admin/config` (§18.1).
+- The API also sends `slug` and `factoryId` where `RuntimeConfig` says `tenantId`, and a
+  `syncMode`; the console resolves the tenant from the subdomain (G-18, §24).
 - `404 { "code": "tenant-unknown" }` for a subdomain with no factory behind it.
 
 ---
@@ -429,15 +528,6 @@ with the phones. Serve this from indexes.
     { "queue": "changeRequests", "pending": 12,
       "oldestPendingAt": "2026-07-26T04:00:00.000Z", "breachingSla": 3 }
   ],
-  "cycle": {
-    "monthKey": "2026-07", "stage": "awaitingRate", "openExceptions": 9,
-    "ratePerKg": null, "extraRatePerKg": null,
-    "publishedAt": null, "publishedByName": null
-  },
-  "today": {
-    "date": "2026-07-30", "totalKgs": 5218.5,
-    "supplierCount": 61, "deliveryCount": 74, "previousDayKgs": 4903.25
-  },
   "app": {
     "suppliersWithApp": 64, "totalSuppliers": 82,
     "devicesRegistered": 67, "appRequestShare": 0.71
@@ -447,15 +537,16 @@ with the phones. Serve this from indexes.
     "bannersExpired": 1, "staticPagesUnwritten": 1
   },
   "adoptionTrend": [
-    { "monthKey": "2025-09", "appShare": 0.32 },
+    { "monthKey": "2025-09", "appShare": 32 },
     { "monthKey": "2025-10", "appShare": null }
   ],
+  "intakeTrend": [{ "monthKey": "2026-07", "totalKgs": 96421.25 }],
+  "sync": { "lastSucceededAt": "2026-07-30T08:00:00.000Z",
+            "lastAttemptedAt": "2026-07-30T08:00:00.000Z",
+            "coversUpTo": "2026-07-30T07:55:00.000Z" },
   "alerts": [
-    { "id": "alert-missing-bank", "severity": "warning",
-      "messageKey": "dashboard.alert.missingBankDetails",
-      "params": { "count": 9 }, "href": "/suppliers?hasBankDetails=false" }
-  ],
-  "intakeTrend": [{ "date": "2026-07-17", "totalKgs": 4211.0 }]
+    { "key": "dashboard.alert.missingBankDetails", "params": { "count": 9 } }
+  ]
 }
 ```
 
@@ -466,13 +557,18 @@ with the phones. Serve this from indexes.
 
 ### v2's blocks
 
+The dashboard greets the signed-in user by their full name, from the session (§2.4); the
+payload carries no name.
+
 - **`app` is the console's headline**, and §19.3 is why: app adoption and channel
   shift are *"the two KPIs that justify the project"*, and nothing else in the
   factory can answer them. `suppliersWithApp` counts suppliers with at least one
   signed-in device; `devicesRegistered` is always ≥ it, because people have two
   phones.
 - **`appRequestShare` and every `adoptionTrend.appShare` are nullable, and `null`
-  is not `0`** (BR-102). A month in which no request was raised at all has no
+  is not `0`** (BR-102). Note the units: `app.appRequestShare` is a **fraction** (0 to 1)
+  and `adoptionTrend[].appShare` a **percentage** (0 to 100); the console divides the
+  second by 100. A month in which no request was raised at all has no
   adoption share; sending `0` reports a collapse that did not happen, and the
   console draws a **break in the line** rather than a drop to the floor. Compute it
   over every request kind the app can raise (change requests, credit, tea packets,
@@ -485,28 +581,24 @@ with the phones. Serve this from indexes.
   when the office hands out passwords at the counter: a campaign, not a day's
   weather.
 
-### v1's blocks, still served
+### The other blocks
 
-`cycle`, `today` and `intakeTrend` stay on the payload though no v2 card renders
-them. `cycle.stage` in particular is *why the app shows a supplier blanks instead
-of amounts*, which is a telephone call the office takes whether or not it closes
-the month, and the card that reads it is a small change away. Serve them if
-you have them; a console that gets them and ignores them costs nothing, and a
-console that wants them back and cannot get them costs a release.
-- `stage` ∈ `collecting | awaitingRate | rateEntered | billsGenerated |
-  published`, per the §13 cycle.
-- **Alerts carry an i18n key and params, never a sentence**: the copy belongs in
-  the console's string table (BR-110). Keys the console currently renders:
+- **`sync` is the factory-system sync's freshness**: `lastSucceededAt`,
+  `lastAttemptedAt`, `coversUpTo`, or `null` for a factory with no sync configured,
+  which the console renders as no freshness caption at all. It rides here rather than on
+  an endpoint of its own (there is no `GET /admin/factory-sync`, ADR-005). When the
+  dashboard call fails, the console says "Sync status unknown", never sample figures.
+- **Alerts carry an i18n key and params, never a sentence** (BR-110): the API sends
+  `{ key, params }`, optionally `id` and `severity`, and the console maps them to its
+  `DashboardAlert` (`severity` defaults to `info`). Keys the console renders:
   `dashboard.alert.missingBankDetails`, `dashboard.alert.slaBreach`,
-  `dashboard.alert.awaitingRate`. An unknown key renders as the key, so add
-  console copy in the same PR as a new alert.
-- `intakeTrend` is **oldest first**: charts read left to right. 14 days.
-- **`today`, `intakeTrend` and `cycle` are the same facts §9 and §10 serve, and
-  must be derived from the same rows**, not from a nightly rollup or a cached
-  total. A clerk who commits a weighing session and then opens the dashboard is
-  looking at leaf they entered thirty seconds ago; a figure that lags is a figure
-  they will report as a bug, and then stop trusting. Voided rows count for
-  nothing here, exactly as in §9.2.
+  `dashboard.alert.awaitingRate`. An unknown key renders as the key, so add console copy
+  in the same PR as a new alert.
+- `intakeTrend` is monthly, **oldest first**, and no v2 card renders it. It must be
+  derived from the same delivery rows §9 serves (voided rows count for nothing), not
+  from a nightly rollup.
+- `DashboardSummary`'s `cycle` and `today` blocks are **not sent** and the v2 screen
+  does not render them.
 - All dates are Colombo-local days (BR-104).
 
 ---
@@ -520,12 +612,12 @@ elsewhere.
 
 ### 5.1 `GET /admin/suppliers`
 
-Query: `q`, `status`, `collectionPoint`, `hasBankDetails` (`true`|`false`),
-**`hasApp` (`true`|`false`)**, `dormantMonths`, plus the §1.4 paging parameters.
-Default `pageSize` 50, default sort `supplierCode` ascending.
+Query: `q`, `status`, `collectionPointId`, **`hasApp` (`true`|`false`)**,
+`dormantMonths`, plus the §1.4 paging parameters. Default `pageSize` 50, default sort
+`supplierCode` ascending.
 
 **v2 adds three fields to the record and the row**, and they are the module's
-subject now that the registry belongs to the factory's own console:
+subject at a synced factory, where the register comes from the factory's own system:
 
 | Field | Meaning |
 | --- | --- |
@@ -540,21 +632,32 @@ nobody can turn into names is a figure nobody acts on.
 name and NIC. The office searches by whichever they remember: `5708`,
 `5708 (MAKADURA)` and `makadura` all have to work.
 
+**The bare number is the supplier's identity**, unique across the factory: letters and
+digits only (`supplierCodeSchema`), with the optional `(division)` shown and stored apart,
+so `5147` and `5147 (DENIYAYA)` are one supplier. An all-digit code given without its
+leading zeros (`708`) finds `0708` only when exactly one supplier fits. Sign-in stays exact.
+
 ```json
 200 { "items": [{
   "id": "sup-1",
-  "supplierCode": "5007 (MAKADURA)",
+  "supplierCode": "5007",
+  "division": "MAKADURA",
   "name": "Kamal Perera",
-  "nic": "196000007919V",
-  "collectionPoint": "MAKADURA",
+  "collectionPoint": { "id": "cp-makadura", "name": "MAKADURA" },
   "status": "active",
+  "hasBankDetails": true,
+  "hasApp": true,
+  "appDeletionRequestedAt": null,
+  "nic": "196000007919V",
   "paymentMethod": "bankTransfer",
   "savingsPerKg": 20,
-  "hasBankDetails": true,
   "lastDeliveryAt": "2026-07-29T02:00:00.000Z",
-  "pendingRequests": 1
+  "pendingRequests": 1,
+  "lastAppSignInAt": "2026-07-28T16:10:00.000Z"
 }], "page": 0, "pageSize": 50, "total": 84, "nextPage": 1 }
 ```
+
+The fields after `appDeletionRequestedAt` are optional on the row (`SupplierListItem`).
 
 `hasBankDetails: false` is not cosmetic; those suppliers are M4 exceptions that
 will block publishing the month (AC-04), so the console flags them weeks earlier.
@@ -577,21 +680,24 @@ The list row plus the registry facts. **`bankDetails.accountNumber` is masked**
                    "accountNumber": "••••0137" },
   "savingsBalance": 84210.50,
   "creditBalances": { "advance": 12400.00, "loan": 0, "manure": 3150.75 },
+  "transportPerKg": null,
   "suspendedReason": null
 }
 ```
 
+`transportPerKg` is the supplier's own transport rate (§5.8); `null` or absent means the
+collection point's rate.
+
 ### 5.3 Mutations
 
-| Method & path | Body | Notes |
+| Method & path | Body → answer | Notes |
 | --- | --- | --- |
-| `POST /admin/suppliers` | `SupplierRegistration` | `409 supplier-code-taken`; uniqueness is **per factory** |
-| `PATCH /admin/suppliers/{id}` | `Partial<SupplierEditable>` | Never accepts `bankDetails`, `paymentMethod` or `savingsPerKg`: those move through M9 |
-| `POST /admin/suppliers/{id}/suspend` | `{ reason }` | ≥10 chars, `422 note-required` otherwise |
-| `POST /admin/suppliers/{id}/reactivate` | `{ reason }` | Same |
-| `POST /admin/suppliers/{id}/close` | `{ reason }` | **Closing is not deleting.** Keep every bill, ledger entry and credit transaction (§12.1) |
+| `POST /admin/suppliers` | `NewSupplier` → `201 { id }` | **Sync off only** (§5.8); `409 factory-sync-on` otherwise |
+| `PATCH /admin/suppliers/{id}` | `Partial<SupplierEditable>` → `{ id }` | Never accepts `bankDetails`, `paymentMethod` or `savingsPerKg`: those move through M9 |
+| `POST /admin/suppliers/{id}/status` | `{ status, reason }` → `{ id, status }` | `status` ∈ `active \| suspended \| closed`; one state machine, one place that decides which transitions are legal. `reason` ≥10 chars, `422 note-required` otherwise. **Closing is not deleting**: keep every bill, ledger entry and credit transaction (§12.1) |
 
-All five return the updated `AdminSupplier` and write an audit entry.
+Each writes an audit entry. The answers are acknowledgements, not records (G-11, §24):
+the console refetches.
 
 The reason is mandatory for the same reason a rejection note is: a supplier who
 finds their account suspended will telephone the office, and "suspended on the
@@ -603,8 +709,7 @@ The **only** endpoint that returns a full account number.
 
 ```json
 → { "reason": "Verifying a bank rejection for the July payout run." }
-200 { "bankName": "Bank of Ceylon", "branchName": "Akuressa",
-      "accountNumber": "70000137", "auditId": "aud-1041" }
+200 { "accountNumber": "70000137", "auditId": "aud-1041" }
 422 { "code": "note-required" }
 ```
 
@@ -622,18 +727,23 @@ Three requirements:
 Consider restricting this capability further than `suppliers: read` once the
 factory says which roles need it (§20.4 says "except to roles that need them").
 
-### 5.5 `POST /admin/suppliers/{id}/password-reset`: **shape provisional**
+### 5.5 `POST /admin/suppliers/{id}/credentials/reset`
+
+A new app password for a supplier, issued at the counter (§21.16).
 
 ```json
-→ { "reason": "…" }
-200 { "issued": true, "deliveredTo": "sms" }
+→ { "identityCheckNote": "NIC checked at the counter against the passbook." }
+200 { "supplierId": "sup-3", "supplierCode": "5021", "password": "…",
+      "owesPasswordChange": true, "issuedAt": "…", "issuedByName": "Nadeeka Perera",
+      "sessionsEnded": 1, "auditId": "aud-2210" }
 ```
 
-**Blocked on a business answer** (status.md §21.16): the app tells a supplier to
-"contact the factory", and what the office then does (who checks the supplier's
-identity, and what the supplier receives) is undecided. The console has the
-button disabled and says so. Do not build this until the factory answers; the
-wrong flow here is an account-takeover path.
+- **The field is `identityCheckNote`, not `reason`**: it records *how the person was
+  shown to be the supplier*, and its floor is 15 characters (`422 note-required`).
+- The password is answered **once**: not stored readably, not re-fetchable. The app
+  forces a change at first sign-in (`owesPasswordChange`).
+- `409 supplier-closed` for a closed account. This is also how a supplier added in the
+  console (§5.8) gets an app account: a new supplier has none until the office issues one.
 
 ---
 
@@ -678,6 +788,12 @@ query parameter.
 
 Capability: `suppliers` (read).
 
+> **As served,** the shape differs from `SupplierNotificationStatus` below: sends travel
+> as `sends` (`sendId`, no `title`), a category carries `optedIn` and `reachable` rather
+> than the offered/accepted/count working, and devices carry no `id`.
+> `supplierRepository` converts it (`ServedSupplierNotifications` in
+> `endpoints/suppliers.ts`).
+
 **Why a push does or does not reach this supplier**, per category. §17's reach endpoint
 answers *"how many will this reach"*; this answers *"why did **he** not get it"*, which
 is the question the office is actually asked and which no count can answer.
@@ -721,6 +837,44 @@ is the question the office is actually asked and which no count can answer.
   show it, which is why the figure is per-supplier here.
 - **A clean diagnosis with an empty `recentSends` is a complete answer**: everything
   works and nobody told them.
+
+### 5.8 Factory records on a supplier (sync off)
+
+For a factory whose `config.factorySync.enabled` is `false`. **Every write here answers
+`409 factory-sync-on` while the sync is on**, and `403` without `suppliers: write`. The
+rules are in [factory-records.md](./factory-records.md) §4.2; the shapes are the domain
+types named (`packages/domain/src/factoryRecords.ts`).
+
+| Method and path | Body → answer | Refusals |
+| --- | --- | --- |
+| `POST /admin/suppliers` | `NewSupplier` → `201 { id }` | `409 supplier-code-taken`, `422 unknown-collection-point`, `422 bank-details-required` |
+| `GET /admin/suppliers/{id}/opening-balances` | → `OpeningBalancesRecord` | `404 not-found` until entered |
+| `PUT /admin/suppliers/{id}/opening-balances` | `OpeningBalances & { note }` → `OpeningBalancesRecord` | `409 opening-balances-locked`, `422 note-required` |
+| `PUT /admin/suppliers/{id}/transport-rate` | `SupplierTransportRate` → `{ id }` | `422 negative`, `422 note-required` |
+
+- **`NewSupplier`** is `SupplierRegistration` plus `bankDetails?` (required for
+  `bankTransfer`; stored in full, masked on every read; the bank and branch checked
+  against `config.banks`). The collection point may be given by code or name, any case.
+  New suppliers have no app account (§5.5). Audit `supplier.create`.
+- **`OpeningBalances`**: `asOfMonth`, `advance`, `loan`, `manure`, `teaPackets`,
+  `savings`, `previousDebt` (all ≥ 0), optional `loanMonthsLeft` and
+  `loanInstalmentsPaid`, and a `note` of 10+ characters. **One cut-over month for the
+  whole factory.** Locked (`editable: false` on read) once a bill has been **published**
+  for the supplier; a draft does not lock them. Audit `supplier.openingBalances`.
+- **`SupplierTransportRate`**: `{ transportPerKg: number ≥ 0 | null, note }`, the note
+  10+ characters. `null` puts the supplier back on their collection point's rate. Applies
+  from the next bill generated. Audit `supplier.transportRate`, before and after.
+
+The same records arrive many at a time through §25 (`suppliers`, `openingBalances`,
+`transportRates`).
+
+### 5.9 `GET /admin/savings/{supplierId}/ledger`
+
+The supplier's savings passbook on the Money tab. Capability `suppliers: read`; gated on
+`enableSavings`. A bare array, **oldest first**, each line
+`{ monthKey, month?, amount, balance, source }`, `amount` signed (positive in, negative
+out) and `balance` after the line. Read only: the passbook is written by publishing bills
+(§10.5), never by the console. The full M8 surface is §13.
 
 ---
 
@@ -801,8 +955,10 @@ inbox is one where the oldest item is never seen.
 ```json
 → { "note": "Passbook checked against the NIC at the counter.",
     "attachmentIds": ["att-1041"] }
-200 → the updated AdminChangeRequest, with `decision` populated
+200 { "id": "chg-1", "status": "approved" }
 ```
+
+An acknowledgement, not the record (G-11, §24); the console refetches the queue.
 
 Both verbs take the same body and both **require the note**, not just reject.
 
@@ -861,20 +1017,32 @@ Two-step and presigned. The file never passes through the API: a photo of a
 passbook is megabytes and the API is sized for JSON on a rural connection.
 
 ```json
-→ { "filename": "passbook.jpg", "contentType": "image/jpeg",
-    "sizeBytes": 402113, "entity": "changeRequest", "entityId": "chg-1" }
+→ { "filename": "cover.jpg", "contentType": "image/jpeg",
+    "sizeBytes": 402113, "entity": "newsArticle" }
 200 {
+  "attachmentId": "att-1041",
   "uploadUrl": "https://storage…/att-1041?X-Amz-Signature=…",
   "headers": { "Content-Type": "image/jpeg" },
-  "attachment": { "id": "att-1041", "filename": "passbook.jpg",
-                  "contentType": "image/jpeg", "sizeBytes": 402113,
-                  "url": "https://storage…/att-1041",
-                  "uploadedAt": "…", "uploadedByName": "Nadeeka Perera" }
+  "expiresAt": "2026-07-30T09:10:00.000Z"
 }
 ```
 
-The console then `PUT`s the bytes to `uploadUrl` with exactly `headers` and
-nothing else; any extra header breaks the signature.
+`entity` ∈ `newsArticle | banner | changeRequest | creditRequest`; `entityId` is absent
+when the record does not exist yet (a cover image chosen in a create dialog), and the
+server links the attachment when the record that names it is written.
+
+Three steps:
+
+1. `POST /admin/uploads/sign` reserves the attachment row and answers the URL above.
+2. The console `PUT`s the bytes to `uploadUrl` with exactly `headers` and nothing else
+   (no `Authorization`); any extra header breaks the signature.
+3. `POST /admin/uploads/{attachmentId}/confirm` → `{ id, url, contentType, sizeBytes }`.
+   The server checks the object arrived before marking the row usable; a row never
+   confirmed is an upload whose connection dropped, and the sweeper removes it.
+
+**What a draft carries is the `attachmentId`**, never the URL: `url` is a short-lived
+signed GET minted per read (`coverImageUrl`, `imageUrl`), so a stored URL would expire.
+Refusals: `422 upload-too-large`, `422 upload-type`, `503 upload-not-configured`.
 
 **The signature encodes the policy**: content type allowlist (JPEG, PNG, WebP,
 PDF) and a size ceiling (8 MB). The console pre-checks both, but that is a
@@ -951,12 +1119,17 @@ shape and completely different facts.
   that caused them.
 - `action` is a dotted verb. The console maps known ones to copy and falls
   through to the raw string, so a new action shows up in the log the day it ships.
-  Current set: `changeRequest.approve`, `changeRequest.reject`,
-  `supplier.update`, `supplier.suspend`, `supplier.reactivate`,
-  `supplier.bankDetails.reveal`, `delivery.batch.commit`, `delivery.void`,
-  `month.rate.enter`, `month.exception.resolve`, `month.publish`, and v2's
+  The labelled set is `apps/admin/src/lib/auditLabels.ts`; among them
+  `changeRequest.approve`, `changeRequest.reject`, `supplier.update`,
+  `supplier.suspend`, `supplier.reactivate`, `supplier.close`,
+  `supplier.bankDetails.reveal`, `supplier.credentialsReset`,
+  `delivery.batch.commit`, `delivery.void`, `month.rate.enter`,
+  `month.exception.resolve`, `month.bills.generate`, `month.publish`,
   `supplier.profile.update`, `supplier.password.change`, `teaPacketRequest.approve`,
-  `teaPacketRequest.reject`, `banner.create`, `banner.publish`.
+  `teaPacketRequest.reject`, `banner.create`, `banner.publish`, `config.update`, and the
+  factory-records actions: `supplier.create`, `supplier.openingBalances`,
+  `supplier.transportRate`, `creditRequest.create` (a walk-in), `bill.adjust`,
+  `import.apply` (one per file).
 - **A weighing session is one entry, not one per row** (§9.3). Two hundred lines
   for one commit would bury every other action in the log on a busy day.
 - The log **outlives everything it describes** (§20.4). Do not cascade-delete it.
@@ -966,9 +1139,13 @@ shape and completely different facts.
 ## 9. M3 Leaf collection: `/admin/deliveries`
 
 Capability: `deliveries`. `read` for the day and its rows, **`write`** to record
-or void. Note who that is in §12.1: **no v2 `ConsoleRole` holds `W`**: the clerk and the
-manager hold `R`, and the write belongs to the factory's own console, whose roles the
-server grants directly. Entry happens at the weighing shed, not at the office desk.
+or void: the **clerk** holds `W` and the manager `R` (§12.1, [rbac.md](./rbac.md)).
+
+**Called by this console only while the factory-system sync is off**, from **Factory
+records → Leaf intake** (`/deliveries`). With the sync on, the leaf comes from the
+factory's own system and every write here answers `409 factory-sync-on`. Daily leaf can
+also arrive from a file: the `deliveries` import (§25) saves rows with
+`source: 'scaleFile'`.
 
 A delivery is the **fact every money figure downstream is derived from**: a bill
 is a read model over these rows and a monthly rate (api.md §16). Three
@@ -1132,6 +1309,12 @@ exceptions, **`approve`** to publish (the manager alone). That split is
 BR-501 made structural: the person who types the auction rate is not the person
 who closes the month on it.
 
+**Called by this console only while the factory-system sync is off**, from **Factory
+records → Rates & month close** (`/rates`); with the sync on the writes answer
+`409 factory-sync-on`. Rates can also arrive from a file (the `monthlyRates` import, §25),
+and an imported month of finished bills sets the month's rate from the file, entered by
+the importer, so the four-eyes check below refuses the importer as publisher.
+
 **The stage is stored state, not a calendar calculation.** This is the
 load-bearing decision of the module. Publishing is irreversible, so a stage
 recomputed per request would revert on the next call, and M3 would go on
@@ -1287,10 +1470,19 @@ note in `after`.
 
 ## 11. M5 Bills
 
-A bill is a **read model over §9's delivery rows and §10's rate** (api.md §16), not a
-table the office writes. Everything below follows from that, and `packages/domain/src/bill.ts`
-is the shared implementation; import it rather than re-deriving, because AC-03 requires
-the console, this API and the app's Home screen to agree field for field.
+Where a bill comes from depends on the factory:
+
+| Factory | The bill |
+| --- | --- |
+| Sync on | The factory system's, as the sync delivers it. Read only here; `source` absent |
+| Sync off, `billSettings.source: 'imported'` (galaboda) | The factory's own printed bill, imported as printed (§25, kind `bills`) and never recalculated; `source: 'imported'` |
+| Sync off, `billSettings.source: 'calculated'` | A **read model over §9's delivery rows and §10's rate**, generated here (§11.5); `source: 'calculated'` |
+
+For a calculated bill, `computeBillAmounts` in `packages/domain/src/bill.ts` is the shared
+implementation; import it rather than re-deriving, because AC-03 requires the console,
+this API and the app's Home screen to agree field for field. It reads exactly like the
+factory's printed slip; the worked example and every input line are in
+[factory-records.md](./factory-records.md) §5, and the import's checks in §5a.
 
 ### 11.1 `GET /admin/bill-months` → `BillMonth[]`
 
@@ -1300,7 +1492,7 @@ the console, this API and the app's Home screen to agree field for field.
 
 Newest first. Its own endpoint rather than reusing §10.1, and the reason is the §12.1
 matrix: the month list is gated on `ratesAndMonthClose`, which the clerk does not have
-while still holding `billing: R`. **Authorize on `billing` OR `payouts`.** Widening the
+while holding `billing: W`. **Authorize on `billing` OR `payouts`.** Widening the
 close endpoint so a month picker works would grant read access to the close itself,
 which is a permission decision made by accident.
 
@@ -1316,18 +1508,34 @@ so the flag means the same thing to every consumer.
 
 ### 11.3 `GET /admin/bills/{id}` → `AdminBill`
 
-The full slip: the app's `GreenLeafBill` plus `supplierId`, `runId`, `generatedAt`,
-`generatedByName`, `publishedAt` and `hasBankDetails`.
+The full slip: the app's `GreenLeafBill` plus `supplierId`, `source`, `runId`,
+`generatedAt`, `generatedByName`, `publishedAt` and `hasBankDetails`.
+
+| Field | Meaning |
+| --- | --- |
+| `AdminBill.source?` | `'calculated'` or `'imported'`; **absent on a synced bill**. An imported bill's figures are the factory's and are never edited here |
+| `GreenLeafBill.loanInstalmentNo?` | Which instalment of the loan `deductions.loansAdvance` is (the slip's "Loans / Advance 3"); `null` or absent when no loan was recovered |
+| `GreenLeafBill.otherCardsNote?` | Why `deductions.otherCards` was charged, in the office's words, shown under the line. The line is labelled **"Other deductions"** in the console and the app |
+| `grossAmount` | Green leaf + extra payment + **coins brought forward**, so `balanceAmount` is the slip's "Balance Amount" |
+| `carryForward.loanBalance` | The **loan** still owed after this month's instalment (the slip's "Loan Balance"). An advance never carries a balance: it is taken back in full on its month's bill, and any shortfall is `nextMonthDeb` |
+| `carryForward.loanInterest` | **This month's interest charge, in rupees**: the loan's (`config.loanInterest`), plus advance interest (`config.advanceInterest`) only when the account could not cover its advance. Applied, not just displayed |
 
 Three invariants the console renders and therefore depends on:
 
 - **`null` is not `0`** (BR-102). Without a rate every rate-derived field is `null`.
 - **All nine deduction lines are present, zeros included.** They are the document's
   shape, and a missing line is a line the supplier asks about.
-- **Whole rupees out, cents carried.** `finalBalance` is an integer; the remainder is
+- **Paid in whole units, coins carried.** `finalBalance` is rounded down to
+  `billSettings.paymentUnit` (1, 5 or 10 rupees; galaboda pays in tens); the remainder is
   `coinsCarriedForward` and becomes next month's `coinsBroughtForward`. An account whose
   deductions exceed it pays `0` and carries `carryForward.nextMonthDeb`, never a
-  negative `finalBalance`, which a payout run cannot express.
+  negative `finalBalance`, which a payout run cannot express. (An imported bill may carry
+  a negative `balanceAmount` for such a month, as the factory printed it.)
+
+**Bill number.** With `billSettings.nextBillSerial` set, a new calculated bill is
+`factoryBillNumber(year, serial)`: the year of the **bill's month** and a running serial
+that never resets (`2026210869`, then `2027210870`), growing to seven digits after
+999999. A re-generated month keeps each supplier's number. Without it, `GL/YYYY-MM/NNNN`.
 
 ### 11.4 `GET /admin/months/{monthKey}/bill-run` → `BillRun`
 
@@ -1346,17 +1554,23 @@ is never stale.
 → { "monthKey": "2026-07" }
 ```
 
-`billing: write`. **This may be repeated**, because it recomputes rather than writes a
-new fact: the auction result gets mistyped, a delivery gets voided, a change request is
+`billing: write` (the clerk). **Sync off and `billSettings.source: 'calculated'` only**:
+a factory that imports its bills answers `409 wrong-bill-source`, checked first, and a
+synced factory `409 factory-sync-on`. **This may be repeated**, because it recomputes
+rather than writes a new fact: the auction result gets mistyped, a delivery gets voided, a change request is
 approved. A re-run **replaces** the month's bills rather than accumulating beside them;
 two runs for one open month is two sets of figures nobody can choose between.
 
 ```
+409 wrong-bill-source this factory imports its bills
 409 month-locked      the month is published (BR-108)
 409 rate-missing      no auction result to build from
 409 month-mismatch    body.monthKey ≠ the path
 422 bills-unbalanced  a slip's lines disagree with its total  + details.billNos
 ```
+
+A re-generation **keeps each supplier's `otherCards` and `otherCardsNote`** (§11.5a) and
+bill number.
 
 `bills-unbalanced` refuses the **whole run**, and it is aimed squarely at an
 implementation that computes `total` separately from the lines. Better a run that
@@ -1368,9 +1582,29 @@ has happened; never let the client set it.**
 Audit: `month.bills.generate` on entity `billRun`, with the bill count, the payable
 total and the missing-bank-details count in `after`.
 
-There is deliberately **no `PATCH`**. A wrong bill is a wrong delivery or a wrong rate,
-and the fix is upstream followed by a re-generation. An editor would let the office
-correct the symptom and leave the cause to reappear on the next run.
+There is deliberately **no `PATCH`** on a bill. A wrong bill is a wrong delivery or a
+wrong rate, and the fix is upstream followed by a re-generation; an imported bill is
+corrected in the factory's own system and the month re-imported. The one line typed by
+hand is §11.5a.
+
+### 11.5a `PUT /admin/bills/{id}/adjustment` → `{ id }`
+
+The **"Other deductions"** line (`otherCards` on the wire) of a **calculated** bill, before
+the month is published. `billing: write`; `409 factory-sync-on` while the sync is on.
+
+```json
+→ { "otherCards": 150, "otherCardsNote": "Replacement leaf bag" }
+```
+
+```
+409 month-locked    the month is published
+422 negative        otherCards below 0
+422 note-required   otherCardsNote under 3 characters while otherCards is above 0
+```
+
+Recalculate the bill with `computeBillAmounts`; never patch the totals. The note reaches
+the app as `GreenLeafBill.otherCardsNote`. Audit `bill.adjust`, before and after. Many at
+once: the `billAdjustments` import (§25).
 
 ---
 
@@ -1381,10 +1615,17 @@ correct the symptom and leave the cause to reappear on the next run.
 not M14's.
 
 ```json
-{ "rates": { "transportPerKg": 2.5, "stamps": 25,
-             "instalmentShares": { "advance": 0.3, "loan": 0.2, "manure": 0.15 } },
+{ "rates": { "transportPerKg": 2.5, "transportByPoint": { "cp-deniyaya": 3.5 },
+             "stamps": 25,
+             "instalmentShares": { "advance": 1, "loan": 0.2, "manure": 0.15 } },
   "customised": false, "pending": null, "history": [] }
 ```
+
+`transportByPoint` (optional, keyed by collection point **id**) is a rate per point; a
+point missing from it uses `transportPerKg`, and a supplier's own `transportPerKg` (§5.8)
+wins over both (`transportRateFor`). It is proposed and approved with the other rates.
+`instalmentShares.advance` is `1` by default: **an advance is taken back in full on its
+month's bill**, even past the gross, and never carries a balance.
 
 `customised: false` means the factory is running on the figures the console shipped with.
 Send it: an invented transport charge presented as a decision is one that gets quoted at a
@@ -1409,9 +1650,10 @@ and never clears the debt.
 
 ## 12. M6 Payouts
 
-Gate every endpoint on `enablePayouts` and answer `403 feature-disabled` (AC-07); the
-console hides the surface, and this is the half that cannot be bypassed by a replayed
-request.
+**Not called by this console.** A factory pays from its own system, including a factory
+whose records are kept here (factory-records.md, decision A12). The endpoints stay specified
+because the payout run is the shape a payment would take. There is no `enablePayouts` flag
+any more (it was console-only and went with M6); authorize on `payouts` alone.
 
 ### 12.1 `GET /admin/payout-runs` → `Paged<PayoutRun>`
 
@@ -1453,7 +1695,7 @@ Line construction, which the console depends on and does not itself compute:
   not paid and nobody notices until they telephone. Cheque and cash need no account, so
   nothing is held on those runs.
 - Account numbers are **masked** (§20.4). A run is a list of payments, not a place full
-  numbers are handed out; revealing one is §8.4's audited call.
+  numbers are handed out; revealing one is §5.4's audited call.
 
 Audit: `payout.run.create`.
 
@@ -1562,6 +1804,10 @@ published bill, credited by §10.5's publish. There must be no second write path
 to move the same money is two balances to reconcile, and the two that disagree are the
 supplier's passbook and their slip.
 
+For a factory that **imports** its finished bills (§25, kind `bills`), the slip is the
+record: an imported month sets the supplier's savings, loan and manure balances to the
+slip's figures, and where ours differed both go in the audit (factory-records.md §5a).
+
 ### 13.1 `GET /admin/savings/summary` → `SavingsSummary`
 
 `?monthKey=` optional; default to the latest month with contributions.
@@ -1589,7 +1835,7 @@ read forward, and the running `balance` column is meaningless in any other order
 Each `billDeduction` entry carries the `billId` it came from, and its `amount` must equal
 that bill's `deductions.savings` to the cent.
 
-`AdminSupplier.savingsBalance` (§8.2) must equal the ledger's closing balance. Two
+`AdminSupplier.savingsBalance` (§5.2) must equal the ledger's closing balance. Two
 figures for one balance is exactly the inconsistency AC-01 is about.
 
 `SavingsEntrySource` already includes `withdrawal` and `interest`, which nothing produces
@@ -1614,7 +1860,9 @@ the balance, so without it the same savings could be asked for twice in one wind
 
 ### 13.5 `POST /admin/savings/accounts/{supplierId}/withdrawals` → 201 `SavingsWithdrawal`
 
-`billing: write`. Body `{ amount, reason }`.
+**`billing: approve`** (the manager), not `write`: the clerk holds `billing: W` to import,
+generate and adjust bills, and that must not let them pay out a supplier's savings. Body
+`{ amount, reason }`.
 
 ```
 422 note-required       under 10 characters
@@ -1637,8 +1885,8 @@ Two consequences to implement rather than discover:
 - **`savingsWithdrawal` is an addition after `balanceAmount`, with the coins**, never a
   tenth deduction line, which would break BR-107.
 
-`POST /admin/savings/withdrawals/{id}/cancel` reverses one that has not been paid, with a
-mandatory reason, and answers `409 already-settled` once it has. Cancelled, never deleted:
+`POST /admin/savings/withdrawals/{id}/cancel` (also `billing: approve`) reverses one that
+has not been paid, with a mandatory reason, and answers `409 already-settled` once it has. Cancelled, never deleted:
 the supplier was told it was arranged.
 
 **Interest is still not computed anywhere.** `annualInterestRate` is recorded so the office
@@ -1649,9 +1897,10 @@ unanswered, and those pay different money on the same rate.
 
 ## 14. M7 Credit queues
 
-Authorize on `creditRequests`, and read the level carefully: §12.1 gives `R` to the
-clerk and **`A` to the manager alone**. Every list and detail is
-`R`; both decisions are `A`. That is the opposite of M9, where the clerk decides.
+Authorize on `creditRequests`, and read the level carefully: §12.1 gives `W` to the
+clerk and **`A` to the manager alone**. Every list and detail is `R`; recording a
+walk-in request (§14.4) is `W`; both decisions are `A`. That is the opposite of M9,
+where the clerk decides.
 
 Gate each row on the facility's own flag: `enableAdvances`, `enableLoans`,
 `enableManure`. A facility the factory does not sell is **absent from the list**, not
@@ -1683,6 +1932,17 @@ Send the working, not just the answer: `monthsOfHistory` / `requiredMonths`,
 `averageMonthlyIncome`, `limitMultiplier`, `lastSettledMonthKey`,
 `lastSettledRatePerKg`, `pricedKgs`, then `ceiling`, `outstanding`, `available`.
 `reasonKey` is an **i18n key**, never a sentence (BR-110); the console owns the copy.
+The app prints the same working from these figures (the multiplier, the basis, the cap)
+rather than from constants of its own.
+
+**An open loan blocks a new loan and an advance** until it is repaid (manure is not part
+of the rule). Pass `loanOutstanding` to `buildCreditEligibility` for every facility: for a
+loan or an advance it answers `available: 0` with
+`reasonKey: 'credit.reason.loanOutstanding'`. This extends BR-303 (no advance while an
+advance is outstanding).
+
+**The advance ceiling** (basis `thisMonthLeaf`) is this month's kilos so far × last
+month's settled rate, so it is `0` until leaf is recorded.
 
 `requiredMonths` is `0` for an advance. That means "no months are required", not
 "unset": an advance is priced off leaf already in the shed, not off a track record.
@@ -1702,6 +1962,8 @@ Refusals, **in this order**. The order is part of the contract:
 | `409 already-decided` | already approved or rejected | Two people on one inbox is the normal case |
 | `409 four-eyes-violation` | the approver raised it (BR-501) | **Before** the figures: who may decide does not depend on what the ceiling says, and answering `stale-eligibility` here would tell the wrong person to reload rather than to hand it over |
 | `409 stale-eligibility` | **approve only**: `ceilingSeen` ≠ the freshly computed ceiling (BR-310) | The approver agreed to a specific number. Substituting a different one silently is the worst outcome available, because nobody finds out |
+| `409 supplier-closed` · `409 supplier-suspended` | **approve only**: the supplier's status | After who-may-decide, before the figures |
+| `409 advance-outstanding` · `409 loan-outstanding` | **approve only**: BR-303, and the open-loan rule above | Same place |
 | `409 over-ceiling` | **approve only**: `amount > available` | Eligibility that never moved, against an amount that was never inside it. A different fix from the one above: this request must be rejected or re-raised, not reloaded |
 
 **`stale-eligibility` and `over-ceiling` are approve-only, deliberately.** A rejection
@@ -1713,9 +1975,42 @@ approved advance a `deductions.advance` line on the next bill, and the two have 
 agree. Without this write the module is a queue that decides things and changes
 nothing.
 
+Both verbs answer the updated `AdminCreditRequest`.
+
 Audit `creditRequest.approve` / `creditRequest.reject` with the ceiling and its
 `computedAt` in `after`; "approved against a ceiling of X worked out at Y" is the
 sentence that settles a dispute about a limit that has since moved.
+
+### 14.4 `POST /admin/credit-requests`: a walk-in request → `201 { id }`
+
+A request the supplier made at the office counter, recorded by the office. `creditRequests:
+write` (the clerk); **sync off only** (`409 factory-sync-on` otherwise).
+
+```json
+→ { "supplierId": "sup-3", "facility": "loan", "amount": 50000,
+    "repaymentMonths": 10, "note": "Asked at the counter; passbook seen." }
+```
+
+`WalkInCreditRequest`: `repaymentMonths` for a loan, `manureType` and `quantityKg` for
+manure (priced on the server from the catalogue, whatever amount is sent), `note` 10+
+characters. It becomes an `AdminCreditRequest` exactly like an app request: `pending`,
+`channel: 'office'`, `createdById` / `createdByName` the recorder (so four-eyes refuses
+them as approver), `reason` the note, eligibility computed as for the app.
+
+```
+404 not-found                    no such supplier
+422 invalid                      amount not above 0, or the note missing
+403 feature-disabled             the facility is switched off
+409 supplier-suspended · supplier-closed
+409 request-pending              a pending request on the same facility
+409 loan-outstanding             a loan or an advance while a loan is owed
+422 loan-installments-invalid · manure-installments-invalid   a period the factory does not offer
+```
+
+**Not** refused for being over the limit: it is recorded as asked, with the eligibility
+shown, and approval refuses it (`over-ceiling`). The supplier may cancel it from the app.
+Audit `creditRequest.create`. Many at once: the `walkInCredit` import (§25). The full rule
+is factory-records.md §4.2.
 
 ---
 
@@ -1777,7 +2072,7 @@ Query: `status`, `supplierId`, `deliveryMethod`, `q`, plus §1.4 paging. Default
 
 Body: `{ "note": string }`, **the same body as M9, and no `ceilingSeen`.** There is
 no ceiling here to go stale, so BR-310 does not apply and the request must not grow a
-field implying it does.
+field implying it does. Both verbs answer `{ id, status }` (G-11, §24).
 
 Refusals, in the order the server must check them:
 
@@ -1824,7 +2119,10 @@ so one record answers both, and do not invent a second mapping; status.md §21.1
 the open question about whether this pair is right at all, and it should change in
 one place.
 
-### 15.2 `POST /admin/inquiries/{id}/reply` → `AdminInquiry`
+`GET /admin/inquiries/{id}` answers one inquiry, decided or not, so a bookmarked link
+opens (G-06, closed).
+
+### 15.2 `POST /admin/inquiries/{id}/reply` → `{ id, status }`
 
 Body `{ body }`, minimum 20 characters. Longer than a decision note on purpose: this
 is not a justification filed beside a record, it **is** the answer the supplier reads,
@@ -1834,9 +2132,9 @@ Sets `status: 'resolved'` and fills `reply`. Refuse `409 already-decided` if the
 inquiry is not `open`, checked against **both** terminal states, so a closed message
 cannot be replied to either.
 
-### 15.3 `POST /admin/inquiries/{id}/close` → `AdminInquiry`
+### 15.3 `POST /admin/inquiries/{id}/close` → `{ id, status }`
 
-Body `{ note }`, minimum 10 characters. For a duplicate, a test message, or something
+Body `{ note }` (not `closureNote`; the schema is strict, G-19), minimum 10 characters. For a duplicate, a test message, or something
 meant for the weighing point.
 
 **Closing is not replying**, and the record has to keep them apart: `closureNote` is
@@ -1845,6 +2143,13 @@ one "resolve" makes *how many suppliers we actually answered* unrecoverable, whi
 the number §19.3's channel-shift KPI is about.
 
 Audit `inquiry.reply` and `inquiry.close`.
+
+### 15.4 Assignment and office notes
+
+| Call | Body → answer | Notes |
+| --- | --- | --- |
+| `POST /admin/inquiries/{id}/assignment` | `{ assignToMe }` → `{ id, assignedToId, assignedToName }` | Take it on (`true`) or let it go (`false`). Only ever oneself, so no user list is needed. Audit `inquiry.assign` |
+| `POST /admin/inquiries/{id}/notes` | `{ body }` → `{ id }` | An office-only note, never shown to the supplier. Audit `inquiry.note` |
 
 When M13 exists, a reply should fire the `inquiryReplied` notification category. It
 does not yet, and the console says so on the screen rather than implying a message
@@ -1907,7 +2212,7 @@ can enumerate is satisfied on paper only.
 `title` on the row is always the **fallback** language's. A list whose titles changed with
 the selected tab would be unreadable while translating.
 
-### 16.3 `PUT /admin/news/{id}/translations/{lang}` → `AdminNewsArticle`
+### 16.3 `PUT /admin/news/{id}/translations/{lang}` → `{ id }`
 
 ```json
 → { "title": "…", "excerpt": "…", "body": "…" }
@@ -1927,9 +2232,15 @@ also what makes staleness detectable at all; stamp `updatedAt` on **this transla
 Refusing an unrequested language matters: stored, it is copy nothing renders and a gap
 report nobody can trust.
 
-### 16.4 `POST /admin/news` → 201 `AdminNewsArticle`
+### 16.4 `POST /admin/news` → 201 `{ id, slug, status }`
 
-Created as a **draft**. The fallback language's copy is required *at creation*, not only
+```json
+→ { "title": "…", "excerpt": "…", "body": "…", "coverImageAttachmentId": "att-1041" }
+```
+
+**The body is flat**: the fallback language's copy, not the `translations` array
+`NewsArticleDraft` carries; the repository flattens it (G-07, §24). Created as a
+**draft**. The fallback language's copy is required *at creation*, not only
 at publish (`422 fallback-translation-missing`): a record with nothing to fall back to
 cannot be shown to anybody, so allowing it only defers the error to somebody else's screen.
 
@@ -1938,15 +2249,27 @@ useful, and a slug is a link target the supplier never reads. Suffix a collision
 than refusing it: two articles called "August rate" in consecutive years is normal, and an
 editor should not have to invent a title to satisfy a validator.
 
+### 16.4a `PATCH /admin/news/{id}` · scheduling
+
+- `PATCH /admin/news/{id}` with `NewsPatch` (`{ coverImageAttachmentId?: string | null }`)
+  → `{ id }`: the cover image after creation. Omit to leave it; `null` removes it. Copy
+  moves only through §16.3.
+- `POST /admin/news/{id}/schedule` with `{ publishAt }` (ISO) → `{ id, scheduledPublishAt }`:
+  publish a draft later. `DELETE /admin/news/{id}/schedule` → `{ id }` drops the schedule;
+  the article stays a draft.
+
 ### 16.5 `GET /admin/news/{id}/preview?lang=` → `ContentPreview`
 
 ```json
-{ "lang": "si", "translation": { … }, "usedFallback": true, "fallbackLanguage": "en" }
+{ "lang": "si", "resolved": { … }, "usedFallback": true }
 ```
+
+As served, the copy travels as **`resolved`** and there is no `fallbackLanguage`; the
+console maps it onto `ContentPreview` (`toContentPreview`).
 
 **Its own endpoint, and the console must not compose it.** The preview is only worth
 showing if it is the resolution the app performs; a console that applied its own fallback
-would show the editor copy that is never rendered, and they would sign it off. `translation`
+would show the editor copy that is never rendered, and they would sign it off. `resolved`
 is `null` when even the fallback is unwritten, the one state that must never reach a
 supplier.
 
@@ -1985,9 +2308,16 @@ and one invented here is copy nothing renders. An unwritten page comes back with
 translations and `status: "draft"`, a **state to be shown**, because the app is rendering
 its own bundled default and an office that cannot see the page listed assumes otherwise.
 
-`PUT /admin/static-pages/{slug}/translations/{lang}` and
-`POST /admin/static-pages/{slug}/publish` behave as §16.3 and §16.6 do, with two
-differences:
+`PUT /admin/static-pages/{slug}/translations/{lang}`,
+`GET /admin/static-pages/{slug}/preview?lang=` and
+`POST /admin/static-pages/{slug}/publish` behave as §16.3, §16.5 and §16.6 do. There is
+no `GET /admin/static-pages/{slug}` and none is needed: the list holds all six (G-07).
+
+`GET /admin/static-pages/{slug}/default?lang=` → `{ slug, lang, title, body }` is the text
+the platform starts every factory with, the factory's name filled in. Read only; it changes
+nothing until the editor saves it. `404` when there is none.
+
+Two differences from news:
 
 - **No feature flag.** Terms, privacy and the FAQ are not a feature a factory buys or
   declines. A tenant that could turn them off would ship a binary with dead links.
@@ -2015,7 +2345,9 @@ a **live window** and an **action**.
 
 ### 16a.1 `GET /admin/banners`
 
-Query: `status`, `window` (`scheduled|live|expired`), `q`, plus §1.4 paging.
+Query: `status`, `window` (`scheduled|live|expired`). **A bare array, unpaged** (G-09,
+§24): a factory has a handful of banners, and the console pages and searches locally.
+The example below is the envelope the console builds from it.
 
 ```json
 200 {
@@ -2105,6 +2437,11 @@ console renders the specific rule from `details.problemKey`.
 | `GET /admin/banners/{id}/preview?lang=` | `read`. **Resolved by the server**, so the preview is the app's answer rather than a second implementation of the fallback |
 | `POST …/publish` · `/unpublish` · `/archive` | **`approve`**, not `write`; §12.1's split between writing a circular and putting it in front of every supplier |
 
+Creates answer `{ id, status }` and the other writes `{ id }` (G-11). The create body is
+flat, like news (G-07). Artwork is an uploaded attachment (§7, entity `banner`): the draft
+and patch carry `imageAttachmentId` and `imageAspectRatio`, and reads answer a freshly
+signed `imageUrl`.
+
 Refusals:
 
 | Code | Status | When |
@@ -2181,9 +2518,14 @@ are routine) rather than from an opinion.
 ### 17.3 `POST /admin/notifications/reach` → `NotificationReach`
 
 ```json
-→ { "category": "newsArticle", "audience": { "kind": "collectionPoint", "collectionPoint": "MAKADURA" } }
+→ { "category": "newsArticle", "audience": { "kind": "collectionPoint", "collectionPointId": "cp-makadura" } }
 ← { "targetedSuppliers": 17, "reachableDevices": 3, "suppressedDevices": 11, "suppliersWithoutDevice": 4 }
 ```
+
+**The audience as the API takes it**: `{ kind: 'all' }`, `{ kind: 'suppliers',
+supplierIds }` or `{ kind: 'collectionPoint', collectionPointId }`. The console's own
+`NotificationAudience` (`allSuppliers`, `collectionPoint` by name, `supplier`) is turned
+into this by `notificationRepository`.
 
 A `POST` despite being a read: the audience is a structured body, and encoding a supplier
 id into a cacheable URL for a preview is worse than the verb mismatch.
@@ -2197,12 +2539,23 @@ app; the difference between `targeted` and `reachable` is both together. A singl
 and a factory circular on their phone is how an app gets uninstalled. A *suspended* one
 stays in: they are mid-dispute, which is exactly when they need to hear from the office.
 
-### 17.4 `POST /admin/notifications` → 201 `NotificationSend`
+### 17.4 `POST /admin/notifications` → 201 send receipt
 
 ```json
-→ { "category": "billPublished", "title": "…", "body": "…",
-    "audience": { "kind": "allSuppliers" } }
+→ { "category": "billPublished",
+    "audience": { "kind": "all" },
+    "translations": [ { "lang": "en", "title": "…", "body": "…" },
+                      { "lang": "si", "title": "…", "body": "…" } ] }
+← { "id": "snd-15", "status": "sent", "targetedSuppliers": 240,
+    "reachableDevices": 150, "suppressedDevices": 90, "suppliersWithoutDevice": 12 }
 ```
+
+The copy is **per language**, and the answer is the id, the state and the reach, not the
+whole `NotificationSend` (G-11).
+
+`GET /admin/notifications` is the send log, newest first, automatic and composed sends in
+one list, **paged and filterable** (§1.4; G-09 is closed for this list). Each row carries
+its copy in `translations` rather than a flat title and body.
 
 ```
 422 unknown-category      the app would drop it        + details.recognized
@@ -2262,13 +2615,17 @@ deploy"*) is exactly what it would fail.
 console shows the consequences of a draft *before* it is saved, and a server that refused
 for different reasons than the screen predicted would make that panel worse than nothing.
 
-### 18.1 `GET /admin/config` → `{ config: RuntimeConfig; usage: ConfigUsage }`
+### 18.1 `GET /admin/config` → `{ config: RuntimeConfig; usage: ConfigUsage; version? }`
+
+The **whole** `RuntimeConfig`, including what the public `GET /config` leaves out (§3):
+`noteSuggestions`, all of `billSettings` (`nextBillSerial`, `source`), `payouts.export`
+and `push.topicPrefix`.
 
 `usage` is the counts a change is judged against, **computed live, never stored**:
 
 ```json
 { "savingsBalances": 61, "openPayoutRuns": 2,
-  "creditOutstanding": { "advance": 412000, "loan": 0, "manure": 38500 },
+  "outstandingCredit": { "advance": 412000, "loan": 0, "manure": 38500 },
   "teaPacketsOutstanding": 12000,
   "deliveriesByPoint": { "MAKADURA": 1840, "DENIYAYA": 970 },
   "suppliersByBank": { "Bank of Ceylon": 43 },
@@ -2279,7 +2636,7 @@ Every figure is the answer to *"would this change hide something?"*. A stored co
 let a factory turn off a facility that acquired a balance after the count was taken.
 
 **v2 adds `teaPacketsOutstanding`**: LKR of tea issued and not yet recovered on a
-`deductions.tea` line. Its own field rather than a fourth key on `creditOutstanding`,
+`deductions.tea` line. Its own field rather than a fourth key on `outstandingCredit`,
 because that record is `CreditFacility`-shaped and tea packets are deliberately not a
 facility (§14a). It blocks `enableTeaPackets` for the same reason a savings balance blocks
 `enableSavings`: the factory has handed the tea over and has not been paid for it.
@@ -2294,25 +2651,46 @@ A **partial** patch of whole blocks, not a `PUT`. Two administrators editing dif
 of the row is normal, and a save should carry only what its author touched.
 
 ```
-422 tenant-immutable   the body contains tenantId           + details.tenantId
-409 flag-has-records   turning a flag off would hide money  + details.flag, count/amount
-409 point-in-use       leaf is filed against that point     + details.point, deliveries
-409 language-required  the fallback language was removed    + details.language
-409 tea-packet-policy  a pack size, price or cap is unusable + details.problems
-409 credit-rule        a multiplier, cap or month count is unusable + details
+409 tenant-immutable            the body contains tenantId           + details.tenantId
+409 flag-has-records            turning a flag off would hide money  + details.impacts
+409 point-in-use                leaf is filed against that point     + details.impacts
+422 fallback-language-required  the fallback language was removed    + details.impacts
+409 tea-packet-policy           a pack size, price or cap is unusable + details.problems
+409 credit-rule                 a multiplier, cap or month count is unusable + details
+409 sync-switch-blocked         factorySync changed while a month has generated but
+                                unpublished bills                    + details.months
+409 bill-source-blocked         billSettings.source changed, the same condition
+                                                                     + details.months
+422 invalid                     advanceInterest / loanInterest outside 0 to 10, or
+                                billSettings unusable                + details.field, problem
 ```
 
-**v2's patchable blocks are the app's**: `factory`, `flags` (all fourteen), `savings`,
+The `invalid` problems come from the shared checks: `advanceInterestProblem`
+(`out-of-range`, for both interest blocks) and `billSettingsProblem` (`payment-unit`: not
+1, 5 or 10; `bill-serial`: not a whole number from 1 to 9,999,999).
+
+**The patchable blocks**: `factory`, `flags` (all fourteen), `savings`,
 `manureProducts`, **`teaPackets`**, **`creditRules`**, `banks`, `localization`,
-`branding`, `theme`, `push`, `collectionPoints`.
+`branding`, `theme`, `push`, `collectionPoints`, `noteSuggestions`, and the
+factory-records blocks **`factorySync`**, **`advanceInterest`**, **`loanInterest`** and
+**`billSettings`** (shapes in §3). Who may change any of them: `flagsAndBranding: W`.
 
-`teaPackets` and `creditRules` are **replaced wholesale rather than merged**: each is a
-small record whose fields are read together, and a half-applied lending rule is a
-ceiling nobody chose.
+`teaPackets`, `creditRules`, `noteSuggestions` and the four factory-records blocks are
+**replaced wholesale rather than merged**: each is a small record whose fields are read
+together, and a half-applied lending rule is a ceiling nobody chose.
 
-`payouts.export` is **still served on `GET /config`** and this console no longer patches
-it: M6 belongs to the factory's own console in v2. Keep accepting the patch; something
-has to write it, and `payoutExport.ts` remains the shared serialiser so the file the bank
+- **`factorySync`** decides which screens exist and who keeps the records. Switching it
+  either way is refused while any month has generated but unpublished bills, which would
+  leave that month half calculated by each side.
+- **`billSettings.source`** is one per factory (`billSourceOf`, absent = `calculated`):
+  `imported` makes `POST .../bills/generate` answer `409 wrong-bill-source`, and
+  `calculated` does the same to the `bills` import.
+- **`noteSuggestions`** is the office's own chip sentences under the decision and reply
+  boxes, keyed by `NoteSuggestionKey`; a list never saved uses the built-in sentences.
+
+`payouts.export` is **served on `GET /admin/config` only** (never on the public
+`GET /config`: it is the layout of a payment file) and this console no longer patches it,
+because it does not run payouts (§12). Keep accepting the patch; something has to write it, and `payoutExport.ts` remains the shared serialiser so the file the bank
 receives and the preview whoever builds that screen renders cannot drift.
 
 The refusals draw one line, and it is money: **a flag whose module holds a liability cannot
@@ -2364,22 +2742,30 @@ this module is one failure (**a factory locking itself out of its own console**)
 is no recovery path outside it. The console withholds the control and the server refuses,
 and they have to agree about which user is the last way in.
 
-### 19.1 `GET /admin/users` → `Paged<AdminConsoleUser>`
+### 19.1 `GET /admin/users` → `AdminConsoleUser[]`
 
-Two fields are **derived per read**, never stored:
+**A bare array, unpaged and unfiltered** (G-09, §24): an office has a dozen staff, and
+`userRepository` filters and pages locally. Two fields are **derived per read**, never
+stored:
 
 | Field | Rule |
 | --- | --- |
 | `canAdministerUsers` | Active, and holding `usersAndRoles: write` through some role. A suspended administrator is not a way back in |
 | `isLastAdministrator` | Would suspending *this* user leave nobody who can administer users? It stops being true the moment somebody else is given the role, and a stored flag would go on withholding the suspend button afterwards |
 
-Never send `password` or `grants` on a user record. The signed-in user's own grants come from
-`GET /admin/auth/me`; another user's are a property of their roles.
+Never send `password` or `grants` on a user record. The signed-in user's own grants come with
+the session (§2.4); another user's are a property of their roles.
 
-### 19.2 `POST /admin/users` → 201 · `PATCH /admin/users/{id}`
+### 19.2 `POST /admin/users` → 201 `{ id }` · `PATCH /admin/users/{id}` → `{ id }`
+
+`ConsoleUserDraft` is `{ name, email, roles, password }`: **the office sets the first
+password** (G-02, resolved), at least 12 characters, and the user is asked to replace it at
+first sign-in (`passwordChangeRequired`, §2.5). The office cannot read it back.
 
 ```
+422 invalid              no name or email, no role, or a password under 12   + details.field
 409 email-taken          the identity a session is issued against
+422 unknown-role         a role outside §12.1                                + details.unknown
 409 self-modification    changing your own roles mid-session
 409 last-admin           the change would leave nobody able to administer users
 ```
@@ -2387,20 +2773,22 @@ Never send `password` or `grants` on a user record. The signed-in user's own gra
 `email` is **immutable** after creation. Changing it is creating a different person while
 keeping their audit trail.
 
-**There is no `DELETE`.** A user who approved a payout or published a month is the actor on
-an audit entry, and an entry whose actor cannot be resolved is not evidence. Suspend instead,
-the same rule that voids a delivery rather than removing it.
+**Deleting is scheduled, never immediate.** `POST /admin/users/{id}/deletion` with
+`{ reason }` → `{ id, deletesAt }` stops access now (the user is suspended) and deletes in
+three days; `DELETE /admin/users/{id}/deletion` with `{ reason }` → `{ id }` undoes it while
+it waits (`409 invalid` when none is waiting). `422 note-required` without a reason,
+`409 self-modification` on your own account. The audit entries the user is the actor on are
+kept: an entry whose actor cannot be resolved is not evidence.
 
-The console cannot issue a credential, and this contract does not say how you do: an
-invitation with a one-time password, or an enrolment link. What it does say is that the
-office must not be able to read the password back, and that the credential should be
-changed at first sign-in. Neither exists in the mock; see status.md, where this is now the
-whole of the console's credential story: with the second factor withdrawn, a password is
-the only thing an account has.
+`POST /admin/users/{id}/password/reset` with `{ reason }` → `{ password, issuedAt }` issues a
+new one-time password for a user who forgot theirs. Shown once; they choose their own at
+the next sign-in (§2.5). With the second factor withdrawn, a password is the only thing an
+account has.
 
-### 19.3 `POST /admin/users/{id}/suspend` · `/reactivate`
+### 19.3 `POST /admin/users/{id}/status` → `{ id, status }`
 
-Both take a **mandatory reason** (≥10 chars, `422 note-required`). The person it happens to
+`{ status: 'active' | 'suspended', reason }`: one endpoint for one state machine, as for
+suppliers. The reason is **mandatory** (≥10 chars, `422 note-required`). The person it happens to
 will ask why, and "suspended on the 14th" with no reason is a conversation nobody in the
 office can have, the same argument AC-06 makes about a rejection note.
 
@@ -2410,14 +2798,14 @@ office can have, the same argument AC-06 makes about a rejection note.
 A suspension must take effect on the **next request**, not at the next login. A token issued
 before it stops working.
 
-### 19.4 `GET /admin/roles` → `RoleMatrix` · `PUT /admin/roles/{role}`
+### 19.4 `GET /admin/roles` → `RoleMatrix` · `PUT /admin/roles/{role}` with `{ grants }` → `{ id }`
 
 ```json
 { "matrix": { "clerk": { "suppliers": "read", … }, … },
   "customised": false, "updatedAt": null, "updatedByName": null }
 ```
 
-**§12.1 is data, not code** (see [rbac.md](./rbac.md)). A factory will want to split or merge
+`updatedByName` is carried (G-10, closed). **§12.1 is data, not code** (see [rbac.md](./rbac.md)). A factory will want to split or merge
 these roles and that must not be a deploy. `customised` is whether this factory has diverged
 from the shipped table at all; without it, a reader has to compare fifteen rows against a
 document.
@@ -2514,89 +2902,245 @@ with a clerk entering leaf.
 
 ---
 
-## 21. Not yet called by the console
+## 21. Still open
 
-These are in §17.6's scope and the console has no code for them yet, so the
-shapes are open. Requests from the front end when you get there:
+Things in §17.6's scope that are not finished on either side. Requests from the front
+end when you get there:
 
 | Area | Ask |
 | --- | --- |
-| **Banner artwork** | §16a's `imageUrl` and `imageAspectRatio` are on the record and there is no upload. It needs an image store and a size policy, not a form, and the ratio must be **declared**, because a remote image with no reserved space resolves to zero height and makes the app's card jump when it loads |
-| **The notification trigger, called from elsewhere** | §17's `billPublished` fires off a month publish and `requestDecided` off a payout, both of which now happen in the factory's own console. The endpoint is unchanged; what is new is that a **second client** has to call it. A publish that does not is a supplier who is never told their account is ready, and nothing in this repository can detect that |
-| **M3 scale file** | ⛔ *The factory's own console's in v2.* Whatever the format, it should land as the **same batch** in §9.3 with `source: "scaleFile"`; a second write path for the same fact is a second set of refusals to keep in step |
-| **The bill PDF** | AC-03 names the PDF alongside the app's Home screen. §11.3 is the same data, so this is a renderer over an existing read model rather than a new shape, and it must be generated from the *published* bill, not re-derived at print time. **Which console produces it is now an open question**: this one renders the slip for support, the factory's one produces the bill |
-| **The payout file** | ⛔ *The factory's own console's in v2.* `payoutExport.ts` is the shared serialiser and §21.17's answer (layout as configuration) still stands |
-| **The push transport** | §17 specifies the record and the reach; **nothing here sends anything.** FCM/APNs brings a failure mode the console has no shape for yet: a per-device delivery result arriving asynchronously, minutes later. `NotificationSend.status` already carries `queued` and `failed` for it |
-| **M16's read replica** | §20 is built and its four queries are live scans over the same store a clerk is writing to. §19.5 asks for a read replica or a nightly snapshot; a month-close query must not compete with leaf entry. The four reports are written as single-pass scans so this is a connection string rather than a rewrite |
-| **The reports beyond one** | §20.1's list is served, so it grows without a console release, but the reports themselves need §19.1's warehouse shape, which is in the mobile repository. `channelShift` is the one this console owes; the other three v1 defined are the factory's own console's |
-| **Credentials for a new console user** | §19.2 creates the record and cannot issue a password. An invitation with a one-time credential the office cannot read back, and a forced change at first sign-in. With no second factor behind it (§2.1), this is the whole of an account's protection |
+| **The push transport** | §17 specifies the record and the reach, and everything up to the send is built on both sides. Delivery to a phone waits on FCM and APNs credentials (the backend's O2). It brings a failure mode the console has no shape for yet: a per-device delivery result arriving asynchronously, minutes later. `NotificationSend.status` already carries `queued` and `failed` for it |
+| **`billPublished` at a synced factory** | §17.5 fires it from §10.5's publish. At a synced factory the month is closed in the factory's own system and the bills arrive by sync, so the send has to fire when the sync brings a newly published month; a sync that does not is a supplier who is never told their account is ready, and nothing in this repository can detect that |
+| **M16's read replica** | §20's queries are live scans over the same store a clerk is writing to. §19.5 asks for a read replica or a nightly snapshot; a month-close query must not compete with leaf entry |
+| **The reports beyond one** | §20.1's list is served, so it grows without a console release, but the reports themselves need §19.1's warehouse shape. `channelShift` is the one this console owes |
+| **The payout file** | Not called (§12). `payoutExport.ts` is the shared serialiser and §21.17's answer (layout as configuration) still stands for whoever builds payouts |
+| **Switching the sync back on** | Phase 10 (factory-records.md §2): suppliers entered here matched to the factory system's by the bare number, the sync's records replacing ours for the same supplier, day or month |
+| **A correction after the first published bill** | Later: a manager posts a correction entry with a note, applied on the next bill (BACKEND-TODO, decision C5) |
+
+The bill PDF is rendered by the app from the published `GreenLeafBill`, so it needs no
+endpoint; it shows `otherCardsNote` and the loan's instalment number like the screen does.
 
 ---
 
-## 22. A checklist for the first PR
+## 22. A checklist
 
-Ordered so each step is independently useful to the console.
+Ordered so each step is independently useful to the console. Most of the first list is
+built and checked on staging; it stays here as the definition of done for a new
+deployment. The second list is what BACKEND-TODO #45 still has open, in its order.
 
-**Two lists, because there are two consoles now.** The first is what *this* console
-needs to run against a real API; the second is what the factory's own console needs and
-this one no longer calls. Neither list is optional (the app reads the output of both),
-but only the first blocks this repository.
-
-### For the app-management console
+### The app-management console (every factory)
 
 - [ ] `GET /config` for one tenant, unauthenticated, with `ETag`, **all fourteen
-      flags**, and the `teaPackets` block once the factory has set one
+      flags**, the `teaPackets` block once the factory has set one, and the public part of
+      the factory-records blocks (§3)
 - [ ] The error envelope with domain `code`, **before anything else**, because
       every later endpoint's failures are unreadable without it
-- [ ] `POST /admin/auth/login` + `POST /admin/auth/refresh` + `GET /admin/auth/me`
-      with real `grants`
+- [ ] `POST /admin/auth/login` and `POST /admin/auth/refresh` answering the whole session
+      with real `grants` and `passwordChangeRequired`, and §2.5
 - [ ] `GET /admin/suppliers` with `q`, paging and **masked** bank details
-- [ ] `GET /admin/suppliers/{id}` and the audited reveal
+- [ ] `GET /admin/suppliers/{id}`, the audited reveal, and the credentials reset
 - [ ] `GET /admin/change-requests` (oldest first) and the two decision endpoints
       with all three refusals
 - [ ] Audit rows written by every mutation above, and `GET /admin/audit`
 - [ ] `GET /admin/dashboard`, including v2's `app`, `content` and `adoptionTrend`
-      blocks, with `null` shares kept as `null`
+      blocks and `sync`, with `null` shares kept as `null`
 - [ ] `/admin/credit-requests/*` and **`/admin/tea-packet-requests/*`**: the queues,
-      the decisions, and every refusal in §14 and §14a. Note that M18 has **no**
-      `ceilingSeen` and no `stale-eligibility`
-- [ ] `/admin/bills/*` **read only**; this console renders the slip for support; the
-      generate and publish endpoints belong to the second list
-- [ ] `/admin/news/*`, **`/admin/banners/*`** and `/admin/static-pages/*`: per-language saves, gaps derived
-      against the tenant's `contentLanguages`, and a preview endpoint that resolves the
-      fallback the way `content.ts` does
+      the decisions, and every refusal in §14 and §14a, including `loan-outstanding`.
+      Note that M18 has **no** `ceilingSeen` and no `stale-eligibility`
+- [ ] `/admin/bills/*` read, with `source`, `loanInstalmentNo` and `otherCardsNote`
+- [ ] `/admin/news/*`, **`/admin/banners/*`** and `/admin/static-pages/*`: per-language
+      saves, gaps derived against the tenant's `contentLanguages`, and a preview endpoint
+      that resolves the fallback the way `content.ts` does; uploads (§7)
 - [ ] `/admin/notifications/*`: triggers as data, a reach endpoint that splits consent
       from "never installed the app", and automatic sends fired from the endpoints in
       §17.5 rather than from a job
 - [ ] `/admin/config`: the `PATCH` visible on the next public `GET /config` with a new
-      `ETag`, `usage` computed live including `teaPacketsOutstanding`, and the
-      money-bearing refusals from §18.2
-- [ ] `/admin/users/*` and `/admin/roles/*`: the three derived fields, the mandatory
-      reasons, and **both** `last-admin` refusals, including the matrix one
+      `ETag`, `usage` computed live including `teaPacketsOutstanding`, and every refusal
+      in §18.2
+- [ ] `/admin/users/*` and `/admin/roles/*`: the derived fields, the mandatory reasons,
+      **both** `last-admin` refusals, the first password, scheduled deletion
 - [ ] `/admin/reports/channelShift`: the catalogue with its months behind the `reports`
       grant, columns carrying their types, and `null` never coerced to `0`
+- [ ] `/admin/activity` (§23)
 
-### For the factory's own console
+### Factory records (sync off), in BACKEND-TODO #45's order
 
-Not called from this repository, fully specified in §9, §10, §11.4, §12 and §13, and
-implemented in this repository's mock, which is the closest thing to a reference
-implementation any of it has.
+The console hides each of these until it lands, in one place:
+`apps/admin/src/lib/serverReady.ts`. Remove the line when the endpoint ships.
 
-- [ ] `POST /admin/deliveries`: the **batch**, keyed on `batchId` for idempotency, with
-      per-row rejections inside the `200`, plus the day summary and the void
-- [ ] `/admin/months/*`: the summary with totals derived from the delivery rows, the rate
-      `PUT`, the exception list, and `publish` with all seven refusals
-- [ ] `/admin/bills/generate`: the read model, re-runnable while the month is open, with
-      `stale` derived at read time
-- [ ] `/admin/payout-runs/*`: prepare, approve with four-eyes, mark, and the file export
-      through the tenant's configured layout
-- [ ] `/admin/savings/*`: the ledger posted by the publish in §10.5 and nothing else,
-      plus the withdrawal request/cancel pair that deliberately posts nothing itself
-- [ ] **Call `POST /admin/notifications/trigger` on publish.** The endpoint is §17's and
-      unchanged; what is new is that this client has to call it. A publish that does not
-      is a supplier who is never told their account is ready
+- [ ] `PATCH /admin/config` accepting `billSettings.source` and `loanInterest.recovery`,
+      with `409 bill-source-blocked`
+- [ ] The `bills` import (§25), with the approvals check
+- [ ] Opening balances (§5.8) and the `openingBalances` import
+- [ ] Leaf and months: §9, §10, and the `deliveries` and `monthlyRates` imports
+- [ ] Other deductions: `PUT /admin/bills/{id}/adjustment` and the `billAdjustments` import
+- [ ] The bill engine (§11.5, factory-records.md §5), last: galaboda imports its bills
+- [ ] Alongside: `loanOutstanding` in `buildCreditEligibility` and `409 loan-outstanding`
+      in the app's request, a walk-in and approval; savings withdrawals on `billing: A`;
+      `carryForward.loanBalance` filled from the loan, never the advance
 
 Point `VITE_API_BASE_URL` at it and set `VITE_USE_MOCK=0`; the console needs no
 other change. If a shape differs from this document, the seam that absorbs it is
-`apps/admin/src/services/repositories/`; tell the front end rather than
-reshaping the console's types.
+`apps/admin/src/services/repositories/` (and `services/api/adapters.ts` for envelopes);
+tell the front end rather than reshaping the console's types.
+
+---
+
+## 23. The notification bell: `/admin/activity`
+
+**What suppliers did that this console user has not seen yet**: a new or cancelled credit
+or tea-packet request, a change request, an inquiry or a reply to one, a request to
+delete their app account. The queues answer "what is waiting"; this answers "what just
+happened". Shapes in `packages/domain/src/activity.ts`.
+
+### 23.1 `GET /admin/activity?limit=` → `ActivityFeed`
+
+Any signed-in console user. `limit` defaults to 20, at most 100. Newest first.
+
+```json
+200 {
+  "items": [{
+    "id": "act-88", "kind": "creditRequest.created", "at": "2026-10-22T05:10:00.000Z",
+    "supplierId": "sup-3", "supplierCode": "5021", "supplierName": "…",
+    "entityId": "crd-41", "facility": "loan", "amount": 50000, "unread": true
+  }],
+  "unread": 4,
+  "readUpTo": "2026-10-21T11:00:00.000Z"
+}
+```
+
+- `kind` ∈ `ACTIVITY_KINDS`: `creditRequest.created`, `creditRequest.cancelled`,
+  `teaPacket.created`, `teaPacket.cancelled`, `changeRequest.created`,
+  `inquiry.created`, `inquiry.replied`, `supplier.appDeletionRequested`. Only what the
+  sentence needs rides on the item (`facility`, `amount`, `changeType`, `subject`).
+- **Supplier actions only.** What the office did is the audit log's (§8).
+- **Per user.** Show an item only to a user who may read the screen it opens
+  (`ACTIVITY_CAPABILITY`: credit and tea packets on `creditRequests`, change requests on
+  `changeRequests`, inquiries on `inquiries`, account events on `suppliers`), and **hide a
+  kind while its feature flag is off** (`ACTIVITY_FLAG`: a credit item by its own
+  facility's flag, tea packets on `enableTeaPackets`, inquiries on `enableInquiry`).
+- `unread` counts every unread item for this user, not only those in `items`;
+  `readUpTo` is this user's mark, `null` before they first opened the bell.
+
+### 23.2 `POST /admin/activity/read` → `{ readUpTo }`
+
+Body `{ upTo }`, an ISO timestamp: everything at or before it is read, **for this user
+only** (a manager opening the bell does not mark it read for the clerk). The mark never
+moves backwards. `422 invalid` when `upTo` is not a timestamp.
+
+The bell also shows the waiting queues, from `GET /admin/dashboard`'s `queues` (§4); it
+needs nothing else.
+
+---
+
+## 24. Agreed shapes
+
+Where the API's answer differs from what `@tfd/domain`'s types would suggest, **by
+agreement**: recorded so the shared types can be reconciled one day, not as work. The
+code cites these ids in comments, and the seam that absorbs each is
+`apps/admin/src/services/api/adapters.ts` or the repository named.
+
+### Open, and no change requested
+
+- **G-05.** Bank reveal answers `{ accountNumber, auditId }` and stays minimal (§5.4). The
+  right call for the one endpoint that hands over an account number; the bank and branch
+  are already on the record the dialog was opened from.
+- **G-11.** Mutations acknowledge with `{ id }` or `{ id, status }`, not the record. The
+  console invalidates and refetches.
+- **G-09** *(partly)*. `/admin/users` and `/admin/banners` are bare arrays. Fine at office
+  scale, where both lists are small by construction. (`/admin/notifications` is paged.)
+- **G-18.** `GET /config` sends `slug` and `factoryId` where `RuntimeConfig` says
+  `tenantId`. The console resolves the tenant from the subdomain.
+
+### Deferred by decision, and agreed
+
+- **G-03.** `GET /admin/auth/me` returns a thin identity (§2.4). The console bootstraps from
+  refresh and does not call it, so there is no reader to serve. Putting the BR-008 flag on
+  `refresh` (G-33) is what keeps this true.
+- **G-07.** News and banner create read a **flat** body where the shared drafts carry
+  `translations`; the repositories flatten. There is also no `GET /admin/static-pages/{slug}`
+  and none is needed. To be decided once for both resources.
+
+### The length refusals, settled
+
+`422 invalid` with `{ field: 'password', minLength: 12 }` (or `maxLength: 200`) is the
+right answer to a password that is too short or too long: length is a shape question, the
+ladder is shape then policy, and the console's own check gives a user a usable sentence
+before the round trip. There is no `weak-password` code and no copy for one. Re-entering the
+current password is policy, and has its own code: `422 password-unchanged` (G-34).
+
+### Closed, cited in the code
+
+So a comment's gap id still leads somewhere:
+
+| Id | Was | Now |
+| --- | --- | --- |
+| G-01 | No `POST /admin/suppliers` | Built, for factories with the sync off (§5.8) |
+| G-02 | No place for a console user's first password | `ConsoleUserDraft.password`; the office sets it (§19.2) |
+| G-04 | The credentials reset answered too little | The whole `SupplierCredentialReset` (§5.5) |
+| G-06 | No single-record `GET` for requests and inquiries | Served for change requests, tea packets and inquiries |
+| G-08 | Banners lacked `GET /{id}`, preview, archive | All served (§16a) |
+| G-10 | The role matrix lacked `updatedByName` | Carried (§19.4) |
+| G-12, G-12a | The dashboard's queues, ages and trends | `QueueCount[]` with ages; camel-cased trends; the `bigint` `500` gone (§4) |
+| G-13 | Deliveries, months and bill generation unimplemented | Specified and being built for factories with the sync off (§9, §10, §11.5; BACKEND-TODO #45) |
+| G-15 | Reports answered a bare array | `{ reports, months }` (§20.1) |
+| G-16 | `GET /admin/config` omitted `tenantId`, `factory`, `collectionPoints` | The whole `RuntimeConfig` (§18.1) |
+| G-19 | Inquiry close read `closureNote` | `note`, schema strict (§15.3) |
+| G-33 | `passwordChangeRequired` only on login | Also on refresh (§2.2) |
+| G-34 | No refusal for re-entering the current password | `422 password-unchanged` (§2.5) |
+
+---
+
+## 25. Imports: `POST /admin/imports/{kind}`
+
+Many records at once from an Excel (.xlsx) or CSV file, for a factory with the sync off.
+The console reads the file in the browser and sends the rows; the full rules, and what
+each kind saves, are [factory-records.md](./factory-records.md) §4.2 and §5a.
+
+```json
+→ { "fileName": "suppliers-october.xlsx",
+    "rows": [ { "supplierCode": "5147", "name": "Kamal Perera", "nic": "883210456V",
+                "collectionPoint": "DENIYAYA", "paymentMethod": "cash" } ] }
+200 { "kind": "suppliers", "saved": 1, "problems": [] }
+```
+
+`kind` ∈ `IMPORT_KINDS`: `suppliers`, `deliveries`, `monthlyRates`, `openingBalances`,
+`walkInCredit`, `billAdjustments`, `transportRates`, **`bills`** (the month's finished bills
+as the factory's own system printed them). Rows are objects of text keyed by the column
+names in `IMPORT_COLUMNS[kind]`.
+
+| Kind | Permission | Server-only problem codes, beyond the shared row checks |
+| --- | --- | --- |
+| `suppliers` | `suppliers: W` | `duplicate`, `supplier-code-taken`, `unknown-collection-point`, `bank-details-required`, `unknown-bank`, `bank-not-in-catalogue` |
+| `openingBalances` | `suppliers: W` | `duplicate`, `unknown-supplier`, `opening-balances-locked`, a different cut-over month |
+| `transportRates` | `suppliers: W` | `duplicate`, `unknown-supplier` |
+| `deliveries` | `deliveries: W` | `unknown-supplier`, `month-locked`, `unknown-collection-point` |
+| `monthlyRates` | `ratesAndMonthClose: W` | `duplicate`, `unknown-month`, `month-locked` |
+| `walkInCredit` | `creditRequests: W` | `unknown-supplier`, `required` (manure without type or quantity), and §14.4's refusals |
+| `billAdjustments` | `billing: W` | `duplicate` (month + code), `unknown-supplier`, `month-locked`, `no-bill`, `required` |
+| `bills` | `billing: W` | `duplicate` (month + code), `unknown-supplier`, `unknown-month`, `month-locked`, `rate-differs`, and the approvals check (factory-records.md §5a) |
+
+**All rows or none.** Run the shared `importRowProblems(kind, rows)` first (the console runs
+the same function), then the server-only checks; any problem refuses the whole file and
+saves nothing:
+
+```
+409 factory-sync-on    the sync is on
+409 wrong-bill-source  kind `bills` in a factory whose bills are calculated (checked first)
+422 import-size        no rows, or more than 5,000
+422 import-invalid     details.problems: ImportRowProblem[] (at most 500), details.total
+```
+
+- An `ImportRowProblem` is `{ row, column?, code }`, `row` being the spreadsheet row (the
+  first data row is **2**). Shared codes: `required`, `not-a-number`, `negative`,
+  `too-many-decimals`, `too-short`, `not-a-date`, `not-a-month`, `not-allowed`,
+  `does-not-add-up`. The console explains every code named here in en/si/ta and shows any
+  other as "refused (code)".
+- **Refuse, never round.** A number with more decimals than its column allows, a minus sign
+  where the column has no `allowNegative`, `0x1A`, `1e3` or `2026-02-31` is refused.
+- An imported **finished bill** is stored as printed, never recalculated, as
+  `AdminBill.source: 'imported'`; any number of files per month, each replacing only the
+  suppliers in it. Each row must add up, and **everything approved in the console for the
+  month must have reached the slip**, or the file is refused naming the supplier and the
+  item (factory-records.md §5a).
+- Audit one `import.apply` entry per file, `{ kind, rows, fileName }`, not one per row.

@@ -1,30 +1,45 @@
 # Architecture
 
-## v2's scope, and what it did not change
+## What sits where, and what changed
 
-**The layers, the seams and the provider stack are untouched.** A scope change that
-had required moving a boundary would have been a sign the boundaries were wrong; this
-one did not.
+**The layers, the seams and the provider stack have not moved** through v2's scope cut or
+the factory-records work. What changed is what sits inside them:
 
-What changed is what sits inside them:
-
-- **`modules/` lost four directories from the router and kept them on disk.**
-  `deliveries/`, `months/`, `payouts/` and `savings/` still build, still typecheck and
-  still have mock handlers behind them. Their routes and sidebar rows were removed from
-  `routes/router.tsx` and `layout/navigation.ts`; see git history for what they were.
-- **Two directories are new**: `modules/tea-packets/` and `modules/banners/`, each
-  following the same four-file shape every other module uses: screen, hooks,
-  repository, endpoints.
-- **`packages/domain` gained two files**: `teaPackets.ts` and `banners.ts`. The second
-  is a **verbatim port of the app's `src/services/banners`**, which is the same
-  argument `content.ts` makes about `resolveTranslation`: the console's job is to run
-  the app's rule, not a second implementation of it.
-
-The one thing worth noticing about the unrouted modules is that **nothing in the
-layer boundaries had to be relaxed to keep them.** A screen that is not routed is a
-module nobody imports; the repository under it is a file nobody calls. The tree carries
-them at no structural cost, which is most of why keeping them was cheap enough to be
-obviously right.
+- **`modules/deliveries/` and `modules/months/` are routed only with the factory-system
+  sync off.** Leaf intake (`/deliveries`) and Rates & month close (`/rates`) sit behind
+  `RequireFactoryRecords` in `routes/router.tsx` and are rows marked `factoryRecords: true`
+  in `layout/navigation.ts`, so with the sync on they are neither in the sidebar nor
+  reachable (the route says the records come from the factory system). `payouts/` and
+  `savings/` are gone; git history has them.
+- **`modules/records/`** holds only `hooks.ts`: the mutations for the factory's records
+  (Add supplier, opening balances, transport rate, walk-ins, other deductions, every
+  import), each refreshing what it changes. The screens that call them live in their own
+  modules (suppliers, credit, bills, deliveries, months).
+- **Other modules added since v1**: `tea-packets/`, `banners/`, `data-status/` (where the
+  figures come from), `profile/` (the reader's own account and appearance) and `money/`
+  (the shared month picker).
+- **`lib/serverReady.ts`** is the one place that hides a feature the backend has not built
+  yet (BACKEND-TODO #45): `IMPORT_KINDS_NOT_ON_SERVER`, `OPENING_BALANCES_ON_SERVER`,
+  `OTHER_DEDUCTIONS_ON_SERVER`, `BILL_SOURCE_AND_RECOVERY_ON_SERVER`. Remove a line the day
+  its endpoint ships; the mock implements all of them, so tests reach them regardless.
+- **`lib/importFile.ts`** reads an Excel (`.xlsx`) or CSV file into rows of text keyed by
+  the header row (`lib/csv.ts` for CSV). **`components/ImportDialog.tsx`** shows every row
+  with its problems (`importRowProblems` from `@tfd/domain`, the same function the server
+  runs) before anything is sent, and **`components/ImportMenu.tsx`** is the "Import from
+  file" button on each factory-record screen.
+- **`layout/NotificationBell.tsx`** and **`layout/useActivity.ts`**: the top bar's bell,
+  over the dashboard summary (what is waiting) and the supplier activity feed
+  (`GET /admin/activity`, `POST /admin/activity/read`; kinds and flags in
+  `packages/domain/src/activity.ts`).
+- **`layout/useFactorySync.ts`** and **`layout/SyncStatusChip.tsx`**: how fresh the
+  replicated figures are, `unknown` when the status call fails, nothing shown with the
+  sync off.
+- **`packages/domain`** gained, among others, `factoryRecords.ts` (the sync switch,
+  `IMPORT_COLUMNS`, `importRowProblems`, `billSourceOf`, `loanRecovery`,
+  `factoryBillNumber`), `deductionRates.ts`, `creditRules.ts`, `activity.ts`,
+  `factorySync.ts`, `teaPackets.ts` and `banners.ts` (a **verbatim port of the app's
+  `src/services/banners`**: the console runs the app's rule, not a second implementation
+  of it).
 
 How the console is built. Screens and scope are in [modules.md](./modules.md);
 the brand machinery is in [white-label.md](./white-label.md).
@@ -34,7 +49,7 @@ the brand machinery is in [white-label.md](./white-label.md).
 ## The workspace
 
 ```
-TeaFactoryDigital-Admin/
+tea-factory-digital-admin-frontend/
 ├── packages/
 │   ├── domain/     @tfd/domain - types, constants, RBAC matrix, credit basis, Zod schemas
 │   └── brand/      @tfd/brand  - design tokens, createTheme, the CSS-variable bridge
@@ -66,21 +81,18 @@ argument is worth restating because it is the whole reason for the workspace:
   tokens, same `createTheme`, but the values are emitted as CSS custom properties
   instead of handed to React context.
 
-### What has *not* happened yet
+### Who else reads `@tfd/domain`
 
-The mobile app still lives in its own repository. Two follow-ups, both
-deliberately deferred:
-
-1. **Merging the repos.** Relocating `src/` → `apps/mobile/src/` means editing the
-   Xcode project, Gradle paths, Metro config and every `@/` alias, a real chance
-   of breaking a working iOS/Android build for a console change. It belongs in its
-   own PR, verified with clean native builds.
-2. **`apps/api`.** When the backend starts, it joins this workspace and imports
-   `@tfd/domain` rather than hand-writing DTOs. [api-contract.md](./api-contract.md)
-   is written on that assumption.
-
-Until then `@tfd/domain` is a **copy** of the mobile types, and keeping them in
-step is manual. That is a known gap, recorded in [status.md](./status.md).
+- **The backend** (`tea-factory-digital-backend`, its own repository) **vendors** the
+  package with `npm run vendor:pull` and checks it with `vendor:check`, so the API runs the
+  same arithmetic and import checks as the console rather than hand-written copies. After a
+  change here, the backend re-vendors (BACKEND-TODO lists what changed).
+- **The mobile app** lives in its own repository and keeps its own types, with ports of the
+  shared rules it runs (`creditCeilingFromRule`, `bannerTarget()`). Merging the repos
+  (`src/` to `apps/mobile/src/`) means editing the Xcode project, Gradle paths, Metro
+  config and every `@/` alias, so it belongs in its own PR verified with clean native
+  builds. Until then keeping the app's types in step is manual, a known gap recorded in
+  [status.md](./status.md).
 
 ---
 
@@ -102,11 +114,11 @@ are enforced by `no-restricted-imports` in `eslint.config.js`.
 | **Hook** (`modules/*/hooks.ts`) | Query keys, cache invalidation, mutation wiring | Knowing about HTTP |
 | **Repository** (`services/repositories/`) | Domain mapping, ordering guarantees, client-side pre-checks | Knowing about React |
 | **Endpoint** (`services/endpoints/`) | Paths, query strings, response typing | Business rules |
-| **`apiClient`** (`services/api/`) | Auth header, tenant header, idempotency key, refresh-on-401, error normalisation | Anything domain-specific |
+| **`apiClient`** (`services/api/`) | Auth header, tenant header, CSRF header, idempotency key, refresh-on-401, error normalisation | Anything domain-specific |
 
 The repository seam is the one that earns its keep: it is what absorbs a backend
 that returns something slightly different from what the console wants, without a
-screen changing. When the mock is replaced, **repository internals change and
+screen changing. When the API's shape moves, **repository internals change and
 nothing above them does.**
 
 ### Two fixes built in from the start
@@ -132,7 +144,7 @@ Four kinds, deliberately in four places.
 | --- | --- | --- |
 | **Server state** | TanStack Query | It is a cache, not state. Keys are centralized in `query/queryKeys.ts` |
 | **Session** | Zustand (`auth/authStore.ts`) | The transport's 401 interceptor must reach it, and an interceptor cannot call a hook |
-| **Tenant config** | React context (`RuntimeConfigProvider`) | Read by almost every component, written once per session |
+| **Tenant config** | React context (`RuntimeConfigProvider`) | Read by almost every component, written once per session. `RuntimeConfig` carries, beside the flags and brand, `factorySync`, `billSettings`, `loanInterest`, `advanceInterest`, `creditRules` and `noteSuggestions`; `useKeepsFactoryRecords()` is the one reading of the sync switch (`!isFactorySyncEnabled(config)`) |
 | **Filters, paging, search** | **The URL** | So the dashboard can link to a filtered grid, and a clerk can send a colleague exactly what they are looking at |
 
 ### The provider stack
@@ -140,11 +152,14 @@ Four kinds, deliberately in four places.
 Order is load-bearing (`app/App.tsx`):
 
 ```
-QueryClientProvider          everything below fetches
-└─ RuntimeConfigProvider     fetches config; provides flags
-   └─ BrandProvider          reads config → theme, title, favicon
-      └─ ToastProvider       needs tokens applied before it paints
-         └─ RouterProvider   the screens
+QueryClientProvider                everything below fetches
+└─ RuntimeConfigProvider           fetches config; provides flags and the sync switch
+   └─ AppearanceProvider           the reader's scheme (light or dark) and text size
+      └─ BrandProvider             reads config and appearance: theme, title, favicon
+         └─ ToastProvider          needs tokens applied before it paints
+            └─ BootSplash          the factory's mark while the session and config load
+               └─ ViewportGate     tablet width and above; a phone gets a plain notice
+                  └─ RouterProvider   the screens
 ```
 
 Auth is **not** in the stack, for the reason in the table above.
@@ -165,10 +180,12 @@ Auth is **not** in the stack, for the reason in the table above.
 
 ## Start-up sequence
 
-`main.tsx`, in order, and each step depends on the one before:
+`main.tsx`, in order, and each step depends on the one before. **Nothing is intercepted**:
+every request reaches the API at `VITE_API_BASE_URL`. The MSW handlers in
+`services/mocks/` are for Vitest only.
 
 1. **`assertEnvUsable()`**: refuse to boot a production bundle wired to the
-   placeholder origin or with mocks on. A console that looks fine, serves
+   placeholder origin. A console that looks fine, serves
    fixtures, and reports every failure as a network problem is the worst
    available outcome.
 2. **Apply the bundled tenant theme, synchronously.** The stylesheet's tokens are
@@ -177,10 +194,7 @@ Auth is **not** in the stack, for the reason in the table above.
    frame branded, and it is why the palette is not duplicated in CSS.
 3. **`connectAuthToTransport()`**: registers the store with the axios
    interceptors.
-4. **Start MSW and await it** (dev only). Without the await, the first requests
-   race the worker's registration and fall through to a domain nobody owns,
-   which looks exactly like the backend being down.
-5. **Render.** `App` then calls `bootstrap()`: there is no access token on a fresh
+4. **Render.** `App` then calls `bootstrap()`: there is no access token on a fresh
    document, so the session is recovered from the refresh cookie before anything
    renders behind `RequireAuth`.
 
@@ -193,13 +207,18 @@ anyone loads is a sign-in form; without lazy routes it arrives with a charting
 library, a table engine and every screen attached.
 
 **Only built modules have routes.** A route rendering "coming soon" is worse than
-no route; it is a URL a clerk can bookmark, share, and then report as broken. There used
-to be a *Planned* chip on a disabled sidebar row for the modules that had none; all
-seventeen of §18.1's modules now have routes, so both the chip and the branch that rendered
-it are gone rather than kept warm for a case no row can reach.
+no route; it is a URL a clerk can bookmark, share, and then report as broken.
 
-Every route is wrapped in `RequireCapability`, so a bookmarked or emailed URL is
-refused the same way the sidebar would have hidden it. Guards render an
+The route guards (`auth/guards.tsx`) apply the same gates as the sidebar
+(`isNavItemVisible` in `navigation.ts`), in the same order, so a bookmarked or emailed URL
+is refused the way the sidebar would have hidden it:
+
+| Guard | Gate |
+| --- | --- |
+| `RequireAuth` | Signed in |
+| `RequireFlag` / `RequireAnyFlag` | The factory buys the feature (M7 opens on any of its three facilities) |
+| `RequireFactoryRecords` | The factory-system sync is off (Leaf intake, Rates & month close) |
+| `RequireCapability` | This user may read it. `/profile` and `/data-status` have none | Guards render an
 explanation rather than redirecting: a clerk who followed a link should be told
 their role does not allow it, not silently returned to the dashboard wondering
 whether the link was broken.

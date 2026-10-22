@@ -147,7 +147,7 @@ Abbreviated here; the sample file has the whole thing.
       "savingsBalance": 48200.00,
       "outstandingAdvance": 10000.00,
       "outstandingLoan": 0.00,
-      "outstandingManure": 8500.00,
+      "outstandingManure": 15300.00,
       "updatedAt": "2026-08-07T14:22:00+05:30"
     }
   ],
@@ -255,6 +255,10 @@ Abbreviated here; the sample file has the whole thing.
 | **`balanceAmount`, `finalBalance`, `coinsCarriedForward`** | Balance Amount (gross − deductions), the Balance actually paid **after the factory's rounding** (68,220.00 when it pays in tens), and the rest carried forward (6.91) |
 | **`greenLeafAmount`, `extraPayment`, `totalRatePerKg`** | The three lines above the gross. Send them; do not leave the platform to multiply |
 | **`loanInstalmentNo`** | The number printed after "Loans / Advance" (the **3** in "Loans / Advance 3"): which instalment of the loan this is. `null` when no loan was deducted |
+| **`carryForward.loanBalance`** | The slip's "Loan Balance": the **loan** still owed after this month's instalment. **Not the advance.** An advance is taken back in full on its own month's bill and never carries a balance; what the account could not cover goes to `nextMonthDeb` |
+| **`carryForward.loanInterest`** | The slip's "Loan Interest": **this month's interest charge, in rupees**. Not a rate, and not the interest owed to date |
+| **`carryForward.nextMonthDeb`**, **`manureBalance`** | "Next Month Deb" (what this bill could not cover, deducted as Previous Debts next month) and the manure still owed |
+| **`deductions.otherCards`** | Small deductions the office types by hand. The app shows the line as "Other deductions" |
 | **`savings`** | The slip's savings block: This month, Previous, Todate |
 | **`savingsWithdrawal`** | Savings paid back to the supplier on this bill, if the factory does that. `0` when none; omit the field if the system never does |
 | **`billNo`, `billDateTime`** | The number and the date **and time** printed on the slip (`2026210869`, 2026/08/10 10:58:22) |

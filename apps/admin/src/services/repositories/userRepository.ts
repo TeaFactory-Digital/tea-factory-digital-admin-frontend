@@ -76,7 +76,7 @@ function requireReason(reason: string): string {
  *
  * ⚠️ Which is exactly why the account **should owe a password change on first sign-in**,
  * the way a supplier does (BR-008). It does not yet, and that is the server's half. See
- * `BACKEND-API-GAPS.md`.
+ * `docs/v2/api-contract.md` ("Agreed shapes").
  *
  * `crypto.getRandomValues`, never `Math.random`: this is a credential.
  */

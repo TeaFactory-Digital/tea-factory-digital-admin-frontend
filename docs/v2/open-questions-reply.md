@@ -1,4 +1,7 @@
-# Reply 
+# Reply
+
+> **A historical record.** Later decisions are in [BACKEND-TODO.md](./BACKEND-TODO.md) and
+> [factory-records.md](./factory-records.md); where they differ from this reply, they win.
 
 Answers to `open-questions.md`.
 
@@ -75,7 +78,7 @@ the mobile app's entire unwired HTTP layer. **Nothing you need is lost.**
 `docs/v2/api-contract.md` specifies all of it in prose, and the **MSW mock in
 `apps/admin/src/services/mocks/handlers.ts` still implements every one of those
 endpoints**: 17 route groups, including the ones whose client code went. That mock is
-the closest thing to a reference implementation any of this has: run the console with
-`VITE_USE_MOCK=1` and read it. If a shape differs from the document, tell us rather than
+the closest thing to a reference implementation any of this has: read it (it now answers
+the console's Vitest suite only; there is no `VITE_USE_MOCK`). If a shape differs from the document, tell us rather than
 reshaping your side; the seam that absorbs it is `apps/admin/src/services/repositories/`
 and it is usually a one-file change here.*

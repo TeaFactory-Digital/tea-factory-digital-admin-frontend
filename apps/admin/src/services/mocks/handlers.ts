@@ -1699,6 +1699,22 @@ const IMPORT_CAPABILITY: Record<ImportKind, Capability> = {
  * `409 factory-sync-on`: with the sync on these records come from the factory's own
  * system, and a second source would be a second answer to "what did they deliver".
  */
+/** Months with bills generated and not yet published, oldest first. */
+function unpublishedBillMonths(): string[] {
+  return [...new Set(state.bills.filter((bill) => bill.publishedAt === null).map((bill) => bill.monthKey))].sort();
+}
+
+/** An open loan blocks a new loan and an advance until it is repaid (BR-320). */
+function refuseWhileLoanOpen(supplier: AdminSupplier, facility: CreditFacility): Response | null {
+  if (facility === 'manure' || !(supplier.creditBalances.loan > 0)) return null;
+  return fail({
+    status: 409,
+    code: 'loan-outstanding',
+    message: 'A loan is still owed: no new loan or advance until it is repaid.',
+    details: { loanOutstanding: supplier.creditBalances.loan },
+  });
+}
+
 function refuseWhileSyncOn(request: Request): Response | null {
   if (!isFactorySyncEnabled(tenantConfig(request))) return null;
   return fail({
@@ -2778,6 +2794,21 @@ export const handlers: HttpHandler[] = [
       };
     }
     if (patch.collectionPoints) config.collectionPoints = patch.collectionPoints.map((p) => ({ ...p }));
+    // Neither switch moves while a month is half done: its bills were made one way.
+    const halfDone = unpublishedBillMonths();
+    const syncChanges =
+      patch.factorySync !== undefined && patch.factorySync.enabled !== isFactorySyncEnabled(config);
+    const sourceChanges =
+      patch.billSettings?.source !== undefined &&
+      patch.billSettings.source !== billSourceOf(config.billSettings);
+    if (halfDone.length > 0 && (syncChanges || sourceChanges)) {
+      return fail({
+        status: 409,
+        code: syncChanges ? 'sync-switch-blocked' : 'bill-source-blocked',
+        message: 'Publish the months with generated bills first.',
+        details: { months: halfDone },
+      });
+    }
     if (patch.factorySync) config.factorySync = { enabled: patch.factorySync.enabled };
     if (patch.billSettings) config.billSettings = { ...patch.billSettings };
     if (patch.loanInterest) {
@@ -5580,6 +5611,10 @@ export const handlers: HttpHandler[] = [
 
       const supplier = state.suppliers.find((s) => s.id === before.supplierId);
       if (!supplier) return fail({ status: 404, code: '404', message: 'No such supplier.' });
+      if (verb === 'approve') {
+        const loanOpen = refuseWhileLoanOpen(supplier, before.facility);
+        if (loanOpen) return loanOpen;
+      }
 
       const fresh = eligibilityFor(supplier, before.facility, {
         deliveries: state.deliveries,
@@ -7555,6 +7590,8 @@ export const handlers: HttpHandler[] = [
     if (!(body.amount > 0) || !body.note || body.note.trim().length < 10) {
       return fail({ status: 422, code: 'invalid', message: 'An amount above 0 and a note are required.' });
     }
+    const loanOpen = refuseWhileLoanOpen(supplier, body.facility);
+    if (loanOpen) return loanOpen;
     const created = addWalkInRequest(supplier, body, auth.user);
     recordBy(auth, 'creditRequest.create', 'creditRequest', created.id, {
       after: { facility: created.facility, amount: created.amount, channel: 'office' },
@@ -7678,6 +7715,9 @@ export function mockSupplierRecord(id: string): AdminSupplier {
 }
 
 export function resetMockState(): void {
+  // Maps outlive a reassignment of the arrays below, so they are emptied explicitly.
+  state.openingBalances.clear();
+  state.activityReadUpTo.clear();
   state.suppliers = mockSuppliers.map((s) => ({ ...s }));
   state.changeRequests = mockChangeRequests.map((r) => ({ ...r }));
   /**

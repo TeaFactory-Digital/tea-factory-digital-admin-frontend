@@ -317,6 +317,56 @@ describe('with the factory-system sync off', () => {
     expect(saved).toMatchObject({ status: 'pending', channel: 'office', amount: 5000 });
   });
 
+  it('refuses a walk-in loan or advance while the supplier still owes a loan, but not manure', async () => {
+    await setSync(false);
+    await signInAs(CLERK);
+    // A supplier who came over with a loan still running.
+    const owing = await factoryRecordRepository.createSupplier({
+      supplierCode: '9177',
+      name: 'Saman Jayasena',
+      nic: '853210456V',
+      collectionPoint: 'DENIYAYA',
+      paymentMethod: 'cash',
+      savingsPerKg: 0,
+    });
+    await factoryRecordRepository.saveOpeningBalances(owing.id, {
+      asOfMonth: currentMonthKey,
+      advance: 0,
+      loan: 30000,
+      manure: 0,
+      teaPackets: 0,
+      savings: 0,
+      previousDebt: 0,
+      note: 'From the September ledger.',
+    });
+    for (const facility of ['advance', 'loan'] as const) {
+      await expect(
+        factoryRecordRepository.createWalkInCredit({
+          supplierId: owing.id,
+          facility,
+          amount: 5000,
+          repaymentMonths: facility === 'loan' ? 6 : undefined,
+          note: 'Asked at the counter for school fees.',
+        }),
+      ).rejects.toMatchObject({ code: 'loan-outstanding' });
+    }
+  });
+
+  it('will not switch the sync or the bill source while a month is half done', async () => {
+    await setSync(false);
+    await signInAs(MANAGER);
+    await monthRepository.setRate(currentMonthKey, { ratePerKg: 118.75, extraRatePerKg: 6 });
+    await billRepository.generate(currentMonthKey);
+    await signInAs(ADMIN);
+    const { config, usage } = await adminConfigRepository.get();
+    await expect(
+      adminConfigRepository.patch({ factorySync: { enabled: true } }, config, usage),
+    ).rejects.toMatchObject({ code: 'sync-switch-blocked' });
+    await expect(
+      adminConfigRepository.patch({ billSettings: { paymentUnit: 1, source: 'imported' } }, config, usage),
+    ).rejects.toMatchObject({ code: 'bill-source-blocked' });
+  });
+
   it('keeps opening balances until a bill is published, then locks them', async () => {
     await setSync(false);
     await signInAs(CLERK);

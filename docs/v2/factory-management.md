@@ -20,8 +20,15 @@ Every rate, every account, every payout and every approval stays where it is. Th
 a window onto that, plus a letterbox for requests. The office still decides, still keys
 the request into the existing system, and still holds every rupee of the accounting.
 
+**Where the existing system cannot be connected**, the factory can run with the
+"Factory system sync" switched **off**: the office keeps suppliers, leaf, rates, bills and
+balances in the new console instead, and the app reads them from there
+([factory-records.md](./factory-records.md)). This is Galaboda's arrangement: its own system
+keeps printing the bills, and the office imports them into the console each month.
+
 The full design is in [factory-integration-spec.md](./factory-integration-spec.md).
-**This document only covers what management has to decide.**
+**This document only covers what management has to decide**, and records what it has
+already decided (§2a).
 
 ---
 
@@ -78,11 +85,33 @@ and a named source address, and that is the factory's call to make, not the plat
 team's. The detail is in
 [factory-system-team.md §7](./factory-system-team.md#7-if-either-assumption-is-false).
 
-**If both are refused, the factory should know what it still gets:** the app can be built
-and released with supplier accounts, factory news, notifications, and the ability to
-*send* requests to the office. **What it cannot show is money** (no weighings, no monthly
-account, no balances) because those figures exist only in the Factory System. That is a
-materially smaller product, and it is better known now than six months in.
+**If both are refused, the app still shows money**, but the office must keep the records
+in the new console with the sync off: suppliers and their opening balances, each day's
+leaf, the month's rate, and the bills (imported from the factory's own system each month,
+or calculated in the console). That is more work for the office than the sync, and it is
+better decided now than six months in.
+
+---
+
+## 2a. Already decided
+
+Decided by the factory between 9 and 22 October 2026 (the detail is in
+[factory-records.md §8](./factory-records.md#8-decided-by-the-factory)). Nothing here is
+open.
+
+| # | Decision |
+| --- | --- |
+| 1 | **Transport** can differ by collection point and by supplier |
+| 2 | The bill's `otherCards` line is **"Other deductions"**: small deductions the office types, each with a reason |
+| 3 | **The bill follows the printed slip**: the coins brought forward are part of the gross, the payment is rounded to the factory's unit (Galaboda pays in tens), and "Loans / Advance 3" is the loan and its instalment number |
+| 4 | **Galaboda's own system keeps printing the bills**; the office imports them and the console must match them exactly. A factory without such a system can have them calculated in the console |
+| 5 | **An advance is closed within its month**: deducted in full on that month's bill; anything the account cannot cover becomes Next Month Deb |
+| 6 | **"Loan Balance" is the loan's** balance; **"Loan Interest" is this month's charge** in rupees |
+| 7 | **Loan interest** is 0% unless set in Configuration, and the factory chooses whether it is taken on top of the instalment or inside it |
+| 8 | **No new loan and no advance while a loan is owed** (manure is not affected) |
+| 9 | **A supplier number is unique across the factory** |
+| 10 | **Bill numbers**: the year of the bill's month, and a serial that never resets |
+| 11 | **The office enters each day's leaf** while the sync is off |
 
 ---
 
@@ -98,6 +127,16 @@ phone can tell them, which is the point of the whole project.
 
 - [ ] **Confirm the office agrees to that step**, and that it is somebody's named job.
       Every other part of the office's day is unchanged
+
+**With the sync off** (Galaboda's arrangement) the office's work is different, and two jobs need
+a named owner:
+
+- [ ] **Who types each approval made in the new console into the factory's own system**
+      before the bills are printed. An imported bill file that lacks an approved advance,
+      loan, manure or tea packet is refused, naming the supplier
+- [ ] **Who imports the month's finished bills, and who publishes them.** Two different
+      people: the one who imports cannot publish (four-eyes). A clerk may import; a
+      manager publishes
 
 ---
 
@@ -118,8 +157,9 @@ is promising money the factory will not lend.
 
 ## 5. Who is called when it breaks
 
-The app's figures are copies, refreshed from the Factory System through the day. If that
-refresh stops, the console says so on every screen, but somebody has to act on it.
+With the sync on, the app's figures are copies, refreshed from the Factory System through
+the day. If that refresh stops, the console says so on every screen, but somebody has to
+act on it. (With the sync off there is no refresh to stop.)
 
 - [ ] **Name who is called when the sync fails**, at the factory and at the vendor
 
@@ -133,7 +173,7 @@ Worth stating, because it is the usual worry:
 | --- | --- |
 | **Any change to how the factory calculates anything** | Not asked for. Rates, accounts, deductions, payouts and approvals stay exactly as they are |
 | **Replacing the existing Factory System** | Not proposed, now or later |
-| **Who may approve credit** | Unchanged. The office decides, in the system it decides in today |
+| **Who may approve credit** | Unchanged. The office decides: with the sync on, in the system it decides in today; with it off, in the new console, where the person who records a request cannot approve it |
 | **New work for the collection points** | None. Weighing is unchanged |
 
 ---
@@ -142,8 +182,11 @@ Worth stating, because it is the usual worry:
 
 | Decision | Owner | Blocking? |
 | --- | --- | --- |
-| Who instructs the existing vendor, and on what commercial terms | **Management** | ✅ **Yes, nothing starts without it** |
-| What happens if the vendor declines | **Management** | ✅ Yes |
-| The office's **Handled** step | Management + office | ✅ Yes |
+| Who instructs the existing vendor, and on what commercial terms | **Management** | ✅ **Yes, for the sync; nothing on it starts without it** |
+| What happens if the vendor declines (a database login, or the sync off) | **Management** | ✅ Yes |
+| The office's **Handled** step (sync on) | Management + office | ✅ Yes |
+| Who types approvals into the factory's system, who imports the bills and who publishes them (sync off) | Management + office | Before the first month is imported |
 | Who owns the lending rule screen | Management | Before the app shows a limit |
-| Who is called when the sync fails | Management | Before go-live |
+| Who is called when the sync fails (sync on) | Management | Before go-live |
+
+The decisions in §2a are taken and are not repeated here.

@@ -1,40 +1,33 @@
 # The mock API
 
-## v2: the handlers outlived the modules
+## Where it runs now: Vitest only
 
-**This is the document that made keeping the internal-process code obviously correct.**
+**The console no longer runs against the mock.** `npm run dev` calls the local API
+(`.env.development`), `npm run dev:staging` the staging API, and there is no
+`VITE_USE_MOCK`, no demo build and no in-browser service worker: a running console that
+answered from fixtures would look exactly like a working one, which is the one failure an
+office cannot see (`main.tsx`, `config/env.ts`). The MSW handlers answer **Vitest and
+nothing else** (`services/mocks/server.ts`, started by `test/setup.ts`).
 
-Its central claim is that the MSW handlers are *"an executable reading of
-api-contract.md: the specification the server has to satisfy, not a stand-in for
-one"*. That claim does not weaken when a module leaves this console's scope. M4's five
-ordered publish refusals, M6's payout serialiser, M3's per-row batch rejections and
-M8's ledger-from-published-bills rule are the **only written statement** of what those
-flows require, and the factory's own console has to satisfy every one of them or the
-app will disagree with it.
+They stay because they are still the **executable reading of
+[api-contract.md](./api-contract.md) and [factory-records.md](./factory-records.md)**: the
+specification the server has to satisfy, not a stand-in for one. M4's ordered publish
+refusals, M6's payout serialiser, M3's per-row batch rejections, M8's
+ledger-from-published-bills rule and every factory-records rule below are written here as
+code, and the backend copies them (factory-records.md §4.1: "the console's mock implements
+each one; copy its rules").
 
-So the handlers stay, live and untouched, for endpoints no screen here calls. Two
-consequences:
+**The fixture seeds the whole money chain**: eight months of deliveries, months with stored
+stages, bills and savings ledgers chained month to month, payout runs in every state. It
+also carries **six tea-packet requests** covering every state the M18 screen renders
+(including one over the stock cap and one raised at the counter for BR-501) and **four
+banners**: live, expired, scheduled and draft.
 
-- **The fixture still seeds the whole money chain**: eight months of deliveries,
-  months with stored stages, bills and savings ledgers chained month to month, payout
-  runs in every state. Removing it would have broken M5's read-only slip anyway, which
-  reads the same bills.
-- **The `enablePayouts` and `enableReports` gates were removed from inside their
-  handlers**, not the handlers themselves: the flags are gone from `FeatureFlagSet` and
-  nothing else about those endpoints changed. The gates are in git history.
-
-New in v2's fixture: **six tea-packet requests** covering every state the M18 screen
-renders (including one over the stock cap and one raised at the counter for BR-501),
-and **four banners**: live, expired, scheduled and draft. The last two are states only
-the office ever sees, and the scheduled one is the case that catches an office out:
-published, correct, and in front of nobody.
-
-The backend has not started, so the console runs against MSW. This document is
-what it does, what it deliberately does not, and how to leave it behind.
+This document is what the mock does, what it deliberately does not, and why.
 
 ---
 
-## Why a service worker rather than stubbed repositories
+## Why MSW rather than stubbed repositories
 
 The obvious shortcut is to make `services/repositories/*` return fixtures. It was
 not taken, for one reason: the console would then never exercise its own
@@ -42,16 +35,10 @@ transport. Interceptors, refresh-on-401, the idempotency header and the error
 envelope would all be untested, and **§17.7's error-code flattening bug is exactly
 the class of defect that hides behind a stubbed repository.**
 
-With MSW, swapping to the live API changes what answers, not how the console asks.
-
-Same handlers in both places:
-
-- **Browser**: `services/mocks/browser.ts`, started in `main.tsx` before React
-  mounts, gated on `import.meta.env.DEV && env.useMock`.
-- **Vitest**: `services/mocks/server.ts`, via `test/setup.ts`.
-
-A test that passed against different fixtures from the ones a developer clicks
-through proves nothing about the console.
+With MSW, a test exercises exactly the code that talks to the live API: only what
+answers is different. `test/setup.ts` starts `services/mocks/server.ts` with
+`onUnhandledRequest: 'error'`, so a call the mock does not answer fails the test rather
+than passing quietly: an unmocked call is a gap in the contract.
 
 ---
 
@@ -84,6 +71,9 @@ what makes `handlers.ts` readable as an executable version of
 | A withdrawal that writes **no ledger entry** | It is paid on the next bill, so the passbook moves when that bill is published: one rule for what moves a balance, not two |
 | `409 run-not-approved` on a payout **file** taken from a draft | A file generated before the four-eyes release and uploaded to the bank walks straight around BR-501 |
 | Full account numbers in the payout file, and **nowhere else** | §20.4. A payment file cannot be masked, which is why producing one is audited (`payout.run.export`) and the console cannot assemble it from the grid |
+| `409 factory-sync-on` on every factory-record write while the sync is on | factory-records.md §2. One source at a time |
+| `422 import-invalid` refusing the **whole file**, with every row's problems | factory-records.md §4.2: all rows or none, checked by the same `importRowProblems` the console runs, plus the server-only checks |
+| `409 wrong-bill-source` on generating bills, or importing them, in a factory set the other way | factory-records.md §5a |
 
 Two structural choices worth copying into the backend:
 
@@ -123,30 +113,25 @@ on real values.
 | `manager@galabodatea.lk` | `manager` | Approves, publishes a month |
 | `editor@galabodatea.lk` | `editor` | **The only one who can write content.** `content: W` and nothing else at all, not even `auditLog: R` |
 | `factoryadmin@galabodatea.lk` | `factoryAdmin` | **The only one who can publish it.** §12.1 splits writing from publishing, and that split *is* M11/M12's control |
-| `factory-system@galabodatea.lk` | *none* | **The only one who can move leaf.** No `ConsoleRole` at all; every capability arrives from the server |
+| `factory-system@galabodatea.lk` | *none* | No `ConsoleRole` at all; every capability arrives from the server |
 
 There is no MFA column any more: the factory withdrew the second factor, so a password is
 the whole of every sign-in here (status.md gap 33).
 
-Password for all five: `demo1234`, and all five are **printed on the sign-in
-screen** while `VITE_USE_MOCK` is on, deliberate, because a demo credential that
-has to be looked up in a source file gets pasted into a chat thread and outlives
-the demo. The block cannot render in a production build.
+Password for all five: `demo1234`. They exist only in the fixture; tests sign in with
+`signInAs()` (`test/render.tsx`). The real API's dev seed has its own administrator
+(`npm run db:seed:dev` in the backend repository).
 
 The editor is worth a second look: it is the **narrowest account the console has**, and it
 is why the news screen's audit panel tolerates a `403` instead of treating it as an error:
 the person most likely to be on that screen cannot read the log.
 
-**The last row is the one that changed in v2.** `weigher` and `accountant` are gone from
-`ConsoleRole`; with deliveries, rates and payouts owned by the factory's own console,
-neither could do anything here but read. They still exist over there against the same user
-table, so the server still sends grants for them, and rbac.md's asymmetric merge exists to
-honour grants for roles this build has never heard of. `factory-system` is that case as a
-fixture rather than as a paragraph.
-
-It is also load-bearing for two properties that would otherwise be untestable: M5's
-staleness and M7's recomputation are *relationships* between a stored figure and live
-weighing, and nothing else in the fixture can change one side of them.
+**The last row is the odd one.** `weigher` and `accountant` are not in `ConsoleRole`, but
+a server may still send grants for roles this build has never heard of, and rbac.md's
+asymmetric merge exists to honour them. `factory-system` is that case as a fixture rather
+than as a paragraph. It also weighs leaf and enters rates, which keeps M5's staleness and
+M7's recomputation reachable, and lets `bills.test.ts` show four-eyes on the month close.
+(The clerk can weigh leaf too now, `deliveries: W`, for factories with the sync off.)
 
 **One identity per rule that needs two people.** AC-10 ("no console user can approve a
 record they created") cannot be demonstrated with one, and neither can BR-501 on the
@@ -177,7 +162,7 @@ present:
 - savings rates cycle through `0, 0, 5, 10, 15, 20, 25`, so opted-out suppliers
   are always in view
 
-### Change requests (14)
+### Change requests (15)
 
 The ids are fixed, because the integration tests name them:
 
@@ -192,6 +177,7 @@ The ids are fixed, because the integration tests name them:
 | `chg-7`…`chg-12` | mixed | ages 2 h to 5 d, so SLA colouring has something to show |
 | `chg-13` | approved | so the non-pending filters are not empty |
 | `chg-14` | rejected | with a real rejection note |
+| `chg-15` | address | app-raised; approving it must leave `estateAddress` alone |
 
 ### Credit requests (14)
 
@@ -271,8 +257,8 @@ Four properties are load-bearing rather than decorative:
   `includeVoided` has something to return. It sits in the **open** month
   deliberately: BR-108 refuses a void in a published one, and a fixture showing an
   impossible state teaches the wrong rule.
-- **A scale file every fourth day**, so `source` and the unbuilt import path have
-  something to show.
+- **A scale file every fourth day**, so `source: 'scaleFile'` (what an imported file of
+  leaf is stored as) has something to show.
 
 The dashboard's "today's leaf" and 14-day trend are computed from these rows, so
 committing a session in M3 moves the dashboard, which is what
@@ -391,14 +377,21 @@ thing to an answer to §21.24 already in the codebase. Three sends seed the log:
 automatic and one composed to a single collection point, the last with 3 reached against
 11 opted out, which is the figure that tells an office a push was the wrong channel.
 
-### Tenants (3)
+### Tenants (3), test data only
+
+Three factory configs in `mockConfigs`. Only `galaboda` is a real factory and the only
+bundled brand (`packages/brand/src/clients/index.ts`); the other two exist for tests and
+have no brand of their own:
 
 `galaboda` (full), `hillcountry` (full, different palette and radius, and **push turned
 on with no `push` block at all**, which is a real state rather than an oversight: the flag
 being on and the module being configured are different things, and M13 answers
 `push-not-configured` for it), and
 **`highland`, the reduced-feature reference**: no loans, no manure, no push, no
-reports, no payouts, **no news**, and it authors content in English and Tamil only, mirroring mobile's `clientB`.
+reports, no payouts, **no news**, and it authors content in English and Tamil only.
+
+None of the three sets `factorySync`, so all start with the sync **on**; a test switches it
+off through `PATCH /admin/config`, as a factory administrator would.
 
 `highland` is what makes AC-07's second half assertable, and it now covers two
 modules rather than one:
@@ -423,57 +416,69 @@ would actually use, rather than a fourth fixture tenant invented to be assertabl
 tenant is still the better demonstration (`highland` shows a reduced-feature console on
 arrival); a config edit is the better test.
 
-Switching to `highland` in the dev tenant switcher should visibly empty those rows
-out of the sidebar. It is the fastest check that no surface is hardcoded, and a
-Playwright spec asserts it.
+A test signed in at `highland` should find those rows gone from the sidebar. It is the
+fastest check that no surface is hardcoded.
+
+### Factory records (sync off)
+
+The handlers implement every endpoint in factory-records.md §4.1, with the rules in §4.2:
+
+- **Leaf and months** (the v1 endpoints, restored): deliveries with per-row rejections and
+  the idempotent batch replay, voids, the monthly rate, exceptions, bill generation and the
+  ordered publish refusals.
+- **Add supplier** (bare-number identity, `supplier-code-taken`), **opening balances**
+  (one cut-over month, locked once a bill is published), the **transport rate per
+  supplier**, **Other deductions** on a calculated bill (kept across a re-generation),
+  and **walk-in credit requests** (`channel: 'office'`, pending, decided by someone else).
+- **Imports**, `POST /admin/imports/:kind`, every kind in `IMPORT_KINDS`, all rows or
+  none, including **finished bills** (`bills`): each row stored as printed with
+  `source: 'imported'`, the month's rate taken from the rows (`rate-differs` when a file
+  disagrees), the month moved to `billsGenerated`.
+- **Config blocks:** `factorySync`, `billSettings` (`paymentUnit`, `nextBillSerial`,
+  `source`), `advanceInterest`, `loanInterest`, and `transportByPoint` on the deduction
+  rates. A calculated bill goes through `computeBillAmounts`, `transportChargeFor`,
+  `loanRecovery` and `advanceInterestFor` from `@tfd/domain`, never a second calculation.
+- **The activity feed** behind the bell: `GET /admin/activity` derived from supplier
+  actions, and `POST /admin/activity/read` keeping one read mark per user.
+
+**Not in the mock yet**, so build them from factory-records.md rather than from here:
+`409 sync-switch-blocked` and `409 bill-source-blocked` (switching with a generated but
+unpublished month), the `409 loan-outstanding` refusal (the eligibility already reads
+`loanOutstanding`, so the app and the queue show no limit, but no route refuses), and the
+imported-bills **approvals check** and balance update (factory-records.md §5a "What the
+import checks" and "What it sets").
 
 ---
 
 ## Two honest caveats
 
-**1. Writes do not survive a reload.** State lives in module scope, the same
-property the mobile app's `mockDb` has (status.md §10 item 6). A feature for a demo
-(the fixture is always the same) and a trap in a manual test. Stated here rather
-than discovered.
-
-`resetMockState()` exists for Vitest, where module state persists across files and
-a decided request leaking into the next case would make failures order-dependent.
+**1. State lives in module scope.** `resetMockState()` runs after every test
+(`test/setup.ts`), because module state persists across files and a decided request
+leaking into the next case would make failures order-dependent.
 
 **2. `POST /admin/auth/refresh` has no rotation or reuse detection.** The real
 implementation reads a *rotating* httpOnly cookie; the mock stands in with a
 `sessionStorage` entry holding a mock user id.
 
-That stand-in matters more than it sounds. The console holds its access token in
-memory by design, so a fresh document has none and must recover the session from
-the refresh cookie. Without something that survives a reload, **every browser
-refresh and every deep link bounced the developer back to sign-in**: the console
-behaving correctly against a mock that could not answer. `sessionStorage` is the
-closest honest analogue: scoped to the tab, cleared on close, cleared on sign-out,
-and holding no credential. A Playwright spec covers reload, deep-link and
-sign-out-then-reload.
+It is the closest honest analogue of the cookie: scoped to the tab, cleared on sign-out,
+and holding no credential.
 
 What still cannot be tested here is **token rotation and reuse detection**
 ([api-contract.md](./api-contract.md) §2.2). Those need the real backend.
 
 ---
 
-## Leaving the mock behind
+## When the API differs from the mock
 
-```bash
-VITE_USE_MOCK=0
-VITE_API_BASE_URL=https://api.your-real-host.lk/v1
-```
-
-That is the whole change. `assertEnvUsable()` refuses a production build with mocks
-on, and the MSW chunk is eliminated from production entirely; the guard is
-`import.meta.env.DEV && env.useMock`, so Vite drops the branch rather than shipping
-a ~300 kB chunk nobody loads.
-
+The mock is not a switch to turn off any more; the console already talks to the real API.
 **When a real shape differs from the contract**, the seam that absorbs it is
-`services/repositories/`. Map it there and tell the backend developer; do not
-reshape `@tfd/domain`'s types to match a temporary backend quirk, because those
-types are also the app's and the API's.
+`services/repositories/`. Map it there and tell the backend developer; do not reshape
+`@tfd/domain`'s types to match a temporary backend quirk, because those types are also the
+app's and the API's. When the contract itself changes, change the handler in the same
+commit, so the tests keep describing what the server must do.
 
-The mock is worth keeping after the API lands: as the test fixture, and as the way
-to develop offline or against a broken staging environment. `services/mocks/` is
-excluded from nothing except the production bundle.
+A feature the mock implements but the API does not yet serve is hidden in one place,
+`apps/admin/src/lib/serverReady.ts`, until it ships (BACKEND-TODO #45).
+
+`msw` is a dev dependency, and nothing under `services/mocks/` is imported by the
+application, so none of it reaches a build.

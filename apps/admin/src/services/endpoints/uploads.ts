@@ -32,11 +32,9 @@
  * read is a freshly signed `coverImageUrl` or `imageUrl` the server mints per response.
  * That is why `attachmentId` below is the value the editors keep.
  *
- * ⚠️ **None of these endpoints exists yet.** The `Attachment` table is in the schema and
- * nothing implements it (the backend's O1). The flow is written against the contract
- * recorded in `docs/v2/BACKEND-API-GAPS.md`, and `uploadRepository` turns the resulting
- * `404` into a coded refusal the editors render as *"uploads are not available yet"*
- * rather than a stack trace over a form.
+ * The API implements the three steps (`docs/v2/api-contract.md`). A server without them
+ * answers `404`, which `uploadRepository` turns into a coded refusal the editors render as
+ * *"uploads are not available yet"* rather than a stack trace over a form.
  */
 
 import { apiClient } from '../api/client';

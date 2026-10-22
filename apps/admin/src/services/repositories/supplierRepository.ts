@@ -104,12 +104,9 @@ export const supplierRepository = {
     toNotificationStatus(id, await supplierEndpoints.notifications(id), offered),
 
   /**
-   * There is **no `create`**.
-   *
-   * The API has no `POST /admin/suppliers`, and the v2 console has no screen that would
-   * call one: the register is replicated from the factory's own system, and this console
-   * manages the *app* side of a supplier rather than inventing the supplier. A method
-   * here would be a lever with nothing behind it. See gap **G-01** if that changes.
+   * Creating a supplier lives in `factoryRecordRepository.createSupplier`: it exists only
+   * while the factory keeps its records here (sync off), and with the sync on the register
+   * comes from the factory's own system.
    */
   update: (id: string, body: Partial<SupplierEditable>): Promise<MutationAck> =>
     supplierEndpoints.update(id, body),

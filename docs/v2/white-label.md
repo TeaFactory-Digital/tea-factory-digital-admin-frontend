@@ -2,7 +2,9 @@
 
 One bundle, many branded factory consoles. Everything that differs between
 factories is data served at runtime (identity, theme, feature flags, bank list,
-savings options, tea-packet policy, collection points), never forked code.
+savings options, tea-packet policy, credit rules, collection points, whether the
+records come from the factory's own system, how bills are paid, numbered and charged
+interest), never forked code.
 
 The mobile equivalent is the mobile repo's `docs/white-label.md`. Read that for
 the product rules; this document is the console's implementation of them.
@@ -23,8 +25,8 @@ The mobile app resolves its brand at **build** time: one binary per factory,
 `APP_CLIENT` baked in. The console cannot. There is one deployment, and which
 factory it shows depends on the subdomain it was reached through.
 
-So the console **cannot `import { clientA }`**. It fetches the same `/config`
-payload the app does and themes itself from that. Which is the point: the office
+So the console **cannot import a factory's brand at build time**. It fetches the
+same `/config` payload the app does and themes itself from that. Which is the point: the office
 sees its own colours and logo, and a platform admin switching tenants sees the
 console rebrand.
 
@@ -92,7 +94,7 @@ without a DOM:
 | `galaboda.admin.teafactory.lk` | `galaboda` (source: `subdomain`) |
 | `admin.teafactory.lk` | `null` → fallback. It is the bare deployment, not a factory called "admin" |
 | `localhost` | `null` → `VITE_DEFAULT_TENANT` |
-| `localhost?tenant=highland` | `highland` (source: `override`), **development only** |
+| `localhost?tenant=highland` | `highland` (source: `override`), **development only**. `highland` is a mock tenant, test data only |
 
 **The `?tenant=` override is off in production.** A query parameter that
 repointed a live console at another factory would be a tenant-switch primitive in
@@ -101,9 +103,9 @@ as someone else, which is confusing at best.
 
 **Resolved once, at module load.** A tenant that could change mid-session would
 mean every cached query, every open form and the applied theme belong to a factory
-that is no longer selected. The dev switcher therefore reloads the page, which is
-also what production does, since switching tenant there means a different
-subdomain and a fresh document.
+that is no longer selected. Switching tenant in development therefore means loading
+the page again with a different `?tenant=`, which is also what production does,
+since switching tenant there means a different subdomain and a fresh document.
 
 **The subdomain is a routing hint, never an authorization decision.** The
 authoritative tenant is inside the access token; a mismatch is a `403`. See
@@ -130,7 +132,7 @@ Three things are bundled, for different reasons:
 
 | Bundled | Why |
 | --- | --- |
-| **Brand colours** per tenant (`@tfd/brand`'s registry) | A grey login screen is a visible regression, and a colour cannot be wrong in a way that misleads anyone |
+| **Brand colours** per tenant (`@tfd/brand`'s registry: today `base` and `galaboda` only) | A grey login screen is a visible regression, and a colour cannot be wrong in a way that misleads anyone |
 | **One default mark** (`public/brand/logo.svg`, wired up in `brand/assets.ts`) | Same argument as the colours: artwork cannot be wrong in a way that misleads anyone, and two grey initials on the login screen of a tea factory is a visible regression. It is *one* generic mark, never a factory's own; see below |
 | **Neutral identity + all flags on** (`config/defaults.ts`) | A per-tenant name and telephone number here would be a second source of truth, and *a wrong telephone number in a shipped bundle is exactly what serving config was meant to fix* |
 
@@ -227,10 +229,13 @@ and `banners.test.ts`. AC-07 did not weaken; it moved to flags the app actually 
 
 ### The reduced-feature reference
 
-Still **`highland`**: no loans, no manure, no news, no push, and now no tea packets
-and no promo banner. Switching to it in the dev switcher should visibly empty those
-rows out of the sidebar, which is the fastest way to check nothing is hardcoded. A
-Playwright spec asserts exactly that.
+**`highland`**, a tenant that exists only in the mock (`services/mocks/seed.ts`) as
+test data: no loans, no manure, no news, no push, no tea packets and no promo banner.
+It has no bundled brand (the `hillcountry` and `highland` brands were removed from
+`packages/brand`), so it renders on the neutral base. Opening the console in
+development with `?tenant=highland` should visibly empty those rows out of the
+sidebar, which is the fastest way to check nothing is hardcoded. The Playwright specs
+(`e2e/smoke.spec.ts`, `e2e/queues.spec.ts`) assert exactly that.
 
 Its app-only flags are deliberately **not** all off: a tenant with every app flag
 false would be a phone with almost no screens, which tests nothing anybody ships.
@@ -305,16 +310,31 @@ Two things measured rather than assumed:
 ## Adding a tenant
 
 **A new factory is a DNS record and a `client_config` row.** No build, no deploy.
+The step by step is [new-factory.md](./new-factory.md).
 
 That asymmetry with mobile (where a new brand still needs a binary) is expected:
 app stores demand binaries, browsers do not.
 
 **Since M14, the row is editable from inside the console**, which is what turns AC-12 from a
-mechanism into something you can watch happen. `/configuration` has a control for every block
-of the row: identity, **the fourteen flags**, collection points, banks, savings rates, the
-tea-packet policy, **the credit rules**, languages, branding and the push block. That completeness is the criterion:
-one field still requiring a developer would make AC-12 false however good the rest of the
-screen was.
+mechanism into something you can watch happen. `/configuration` has a section for every block
+of the row:
+
+| Section | Blocks of the row |
+| --- | --- |
+| The factory | `factory` (identity, as printed on the bill) |
+| Features | `flags`, **the fourteen** |
+| Factory system | `factorySync`: the sync on or off |
+| Collection & savings | `collectionPoints`, `savings` (rates, withdrawal month, interest), `manureProducts` |
+| Banks & branches | `banks` |
+| Languages & branding | `localization`, `branding`, `theme` |
+| Notifications | `push` |
+| Tea packets | `teaPackets` |
+| Credit rules | `creditRules` |
+| Bill calculation | `billSettings` (where the bills come from, pay in Rs. 1 / 5 / 10, the next bill serial), `advanceInterest`, `loanInterest` (rate and how it is taken) |
+| Common notes | `noteSuggestions` |
+
+That completeness is the criterion: one field still requiring a developer would make AC-12
+false however good the rest of the screen was.
 
 **And until v2 it was false.** The screen said "ten flags" and meant it: six of the app's
 fourteen had no control here at all, so a factory wanting to turn off the onboarding screens
@@ -341,6 +361,19 @@ Consequences worth knowing before you use it:
 
   The bundled defaults reproduce the old formulas exactly, so a factory that never
   opens the screen sees no change in what anybody may borrow.
+- **Where a factory's records come from is configuration.** *Factory system* switches the
+  hourly sync off, and the office then keeps suppliers, daily leaf, rates and bills in the
+  console ([factory-records.md](./factory-records.md)); the **Factory records** sidebar
+  section (Leaf intake, Rates & month close) and the entry and import screens appear only
+  then. The API refuses the switch while a month has generated but unpublished bills
+  (`sync-switch-blocked`).
+- **How a bill is worked out is configuration**, and it only matters with the sync off.
+  *Bill calculation* says whether the bills are **imported** as the factory's own system
+  printed them (galaboda) or **calculated** here, the unit the payment is rounded down to,
+  the serial the next bill number continues from, and the advance and loan interest a month
+  (loan 0% unless set, taken on top of the instalment or inside it). With the sync on the
+  factory system's bills carry their own figures, and the section says so rather than
+  hiding, so an administrator about to switch the sync off can set them first.
 - **The tea-packet policy is configuration**: the pack size, the price and the most one
   supplier may take at once. New in v2 with M18, and it carries the row's argument in
   miniature: a factory that changes its packet price changes a value, not a build. It is also
@@ -359,12 +392,14 @@ Consequences worth knowing before you use it:
   serialiser rather than a second guess at the format.
 
 What is still outside the console is **creating** the row for a factory that has none. §12.1
-has a `tenants` capability and no screen behind it, so the first row is inserted by whoever
-adds the DNS record, the same act by the same person, which is what AC-12 describes.
-Everything after that is the configuration screen.
+has a `tenants` capability and no screen behind it, so the platform team creates it with the
+backend's onboarding command (`npm run db:seed:tenant`, see [new-factory.md](./new-factory.md)):
+the factory, its configuration with every flag written, banks, collection points, the first
+administrator, and the default static pages and notification triggers. Everything after that
+is the configuration screen.
 
 Optionally, for a branded login screen on the very first paint before `/config`
-resolves, add a bundled fallback:
+resolves, add a bundled fallback. Only `galaboda` has one today:
 
 ```ts
 // packages/brand/src/clients/index.ts

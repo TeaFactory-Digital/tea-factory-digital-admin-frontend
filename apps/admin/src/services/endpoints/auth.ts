@@ -82,9 +82,8 @@ export const authEndpoints = {
    * `422 invalid` with `{ field: 'password', minLength: 12 }` when it is too short, and
    * `maxLength: 200` when it is absurdly long. No code of its own for either.
    *
-   * ⚠️ There is **no** refusal for re-entering the password already on the account, so
-   * the rule can be satisfied by retyping the one that was issued. See
-   * `BACKEND-API-GAPS.md`.
+   * Re-entering the password already on the account is refused with
+   * `422 password-unchanged` (G-34).
    */
   setInitialPassword: (next: string) =>
     apiClient

@@ -1,304 +1,299 @@
 # Modules
 
-The v2 module map: what this console contains, what each module decides, and what
-left. Scope and rationale for the original seventeen are in the mobile repo's
-`docs/admin-console.md`; the v1 state against them is in git history at
-`docs/v1/modules.md`.
+The module map as built: what this console contains, what each module decides, and which
+screens exist only while the office keeps the factory's records here. Scope and rationale
+for the original seventeen are in the mobile repo's `docs/admin-console.md`; the v1 state
+against them is in git history at `docs/v1/modules.md`.
 
-`NAVIGATION` in `apps/admin/src/layout/navigation.ts` is the machine-readable
-version of this table; it carries each module's capability and feature flag, and
-the sidebar is generated from it. The v1 rows were removed from that file; git history
-has them, with the reason each left.
+`NAVIGATION` in `apps/admin/src/layout/navigation.ts` is the machine-readable version of
+this table; it carries each row's capability, feature flag, queue badge and whether it is a
+**factory record** (shown only with the sync off), and the sidebar and the search menu are
+generated from it. `routes/router.tsx` applies the same gates to the URL.
 
 ---
 
 ## Status
 
-| # | Module | Status | Route |
+| # | Module | Shown | Route |
 | --- | --- | --- | --- |
-| M1 | **Dashboard** | ✅ Rebuilt around app adoption and content health | `/` |
-| M2 | **Suppliers** | ✅ Narrowed to the app account | `/suppliers`, `/suppliers/:id` |
-| M5 | **Bills** | ✅ **Read-only** support view | `/bills`, `/bills/:id` |
-| M7 | **Credit queues** | ✅ Built | `/credit`, `/credit/:id` |
-| M9 | **Change requests** | ✅ Built | `/change-requests`, `/change-requests/:id` |
-| M10 | **Inquiries** | ✅ Built | `/inquiries`, `/inquiries/:id` |
-| M11 | **News (CMS)** | ✅ Built | `/news`, `/news/:id` |
-| M11 | **Promo banners** | 🆕 **New in v2** | `/banners`, `/banners/:id` |
-| M12 | **Static content** | ✅ Built | `/content` |
-| M13 | **Notifications** | ✅ Built | `/notifications` |
-| M14 | **Configuration** | ✅ Built, **7 sections**, fourteen flags, **the factory's own lending rules** | `/configuration` |
-| M15 | **Users & roles** | ✅ Built | `/users` |
-| M16 | **Reports** | ✅ Narrowed to `channelShift` | `/reports` |
-| M17 | **Audit log** | ✅ Built (no export) | `/audit` |
-| **M18** | **Tea packets** | 🆕 **New in v2** | `/tea-packets` |
+| M1 | **Dashboard** | Always | `/` |
+| M2 | **Suppliers** (Add supplier, opening balances and transport rate with the sync off) | Always | `/suppliers`, `/suppliers/:id` |
+| M3 | **Leaf intake** | **Sync off** | `/deliveries` |
+| M4 | **Rates & month close** (deduction rates, bill run) | **Sync off** | `/rates` |
+| M5 | **Bills** | Always | `/bills`, `/bills/:id` |
+| M7 | **Credit queues** (walk-in requests with the sync off) | Any of `enableAdvances`, `enableLoans`, `enableManure` | `/credit`, `/credit/:id` |
+| M9 | **Change requests** | Always | `/change-requests`, `/change-requests/:id` |
+| M10 | **Inquiries** | `enableInquiry` | `/inquiries`, `/inquiries/:id` |
+| M11 | **News** | `enableNews` | `/news`, `/news/:id` |
+| M11 | **Promo banners** | `enablePromoBanner` | `/banners`, `/banners/:id` |
+| M12 | **Static content** | Always | `/content` |
+| M13 | **Notifications** | `enablePushNotifications` | `/notifications` |
+| M14 | **Configuration**, eleven sections | Always | `/configuration` |
+| M15 | **Users & roles** | Always | `/users` |
+| M16 | **Reports**: app use, credit given, savings held | Always | `/reports` |
+| M17 | **Audit log** | Always | `/audit` |
+| M18 | **Tea packets** | `enableTeaPackets` | `/tea-packets` |
+
+"Always" still means the user's role must allow it (`RequireCapability`). Outside the
+sidebar: the **notification bell** and the **search menu** (Ctrl+K) in the top bar, the
+**sync status chip** and `/data-status` (where the figures come from), and `/profile` (the
+reader's own account, appearance and text size).
+
+The sidebar sections are Overview (M1, M2), Queues (M9, M7, M18, M10), Support (M5),
+**Factory records** (M3, M4; sync off only), Content (M11, banners, M12, M13) and
+Administration (M16, M17, M14, M15).
 
 ---
 
-## What moved to the factory's own console
+## Two modes: the factory-system sync
 
-| # | Module | Route (v1) | Why it left |
-| --- | --- | --- | --- |
-| M3 | Leaf collection | `/deliveries` | The weighing point is the factory's system of record, and it has one |
-| M4 | Rates & month close | `/rates` | The auction result and the publish are the accountant's, in the console that holds the ledger |
-| M6 | Payouts | `/payouts` | Money leaving the factory, reconciled against the factory's own bank statements |
-| M8 | Savings | `/savings` | A view over published bills, which this console no longer produces |
+**Sync on (the default).** Suppliers, leaf, rates, bills and balances arrive from the
+factory's own system by the hourly sync. The console manages the app: queues, content,
+notifications, configuration, users and audit, plus a read-only view of the bills so a
+clerk can see the account a supplier is telephoning about. The Factory records section is
+not in the sidebar, `/deliveries` and `/rates` say the records come from the factory
+system, and the API refuses every record write with `409 factory-sync-on`.
 
-**Their screens are gone; their API is not.** The four module directories, their
-components and their UI tests were deleted: routes, sidebar rows, lazy imports and
-all. What stayed is the layer below: the MSW handlers, the repositories, the endpoints
-and the domain arithmetic.
+**Sync off.** For a factory whose system cannot be reached, the office keeps the records the
+app needs **here**: suppliers, opening balances, transport rate per supplier, daily leaf,
+the monthly rate and month close, bills, walk-in credit requests and other deductions.
+Every record can be entered one at a time or imported from an Excel (`.xlsx`) or CSV file
+(`ImportMenu` and `ImportDialog`: check every row first, then the server saves **all rows
+or none**). The full contract is [factory-records.md](./factory-records.md).
 
-That split is the whole of the reasoning:
+The switch is Configuration → **Factory system** (`config.factorySync.enabled`, read only
+through `isFactorySyncEnabled`; in the console `useKeepsFactoryRecords()`). One source at a
+time: switching is refused while a month has generated but unpublished bills
+(`409 sync-switch-blocked`).
 
-- **The handlers are a specification.** [mocks.md](./mocks.md) calls them *"the
-  specification the server has to satisfy, not a stand-in for one"*. M4's five
-  ordered publish refusals and M6's `payoutExport.ts` serialiser are the only
-  written statement of what those flows require, and the factory's own console has
-  to satisfy the same rules or the app will disagree with it. They are still
-  exercised by tests, which is what keeps them true.
-- **A screen nobody routes to is not a specification.** It is a second implementation
-  with no test able to reach it, which rots silently, the same argument that removed
-  `navigation.ts`'s unreachable `status: 'planned'` branch. Kept-but-dead code was the
-  earlier answer here, and it lasted exactly as long as it took somebody to ask why
-  seventeen modules' worth of screens sat behind ten sidebar rows.
-- **The argument survives in prose, not in dead code.** This table is why each module
-  left; git history has the screens if the decision is revisited.
+**Bills with the sync off, one way per factory** (Configuration → **Bill calculation** →
+"Where the bills come from", `billSettings.source`, read through `billSourceOf`):
 
-**Two roles left with them.** `weigher` and `accountant` existed for `deliveries`,
-`ratesAndMonthClose` and `payouts`; strip those and neither could do anything in this
-console but read. Both are gone from `ConsoleRole`; the three capabilities stay, because
-the server holds the same matrix and still grants them to the factory's own console. See
-[rbac.md](./rbac.md).
+| `source` | The bills | On Rates & month close |
+| --- | --- | --- |
+| `imported` | The factory's own system prints them; the office imports the finished bills and the console stores them **exactly as printed**. They must equal the factory's final figures (galaboda) | Import → Finished bills, then review and publish |
+| `calculated` (default) | Worked out here from the leaf, the month's rate and the approved deduction rates by `computeBillAmounts` (`packages/domain/src/bill.ts`) | Generate bills (`BillRunCard`), review, type other deductions, publish |
 
-**Nothing was left behind a capability nobody holds, and nothing renders a "moved"
-notice.** This console has no way to know where the factory's own console lives,
-and a screen that guessed would be a broken link somebody maintains. A v1 URL
-inside the shell goes home, via the `*` route.
-
----
-
-## Why this slice
-
-The v1 document argued its milestone order and that argument is in git history at
-`docs/v1/modules.md`. v2's slice is not a milestone; it is a
-boundary, so it is argued differently: **by what breaks on a phone if it is
-missing.** Every module above answers that question, and the four that left do not.
-
-Three consequences worth naming:
-
-- **The queues did not change and should not have.** M7, M9 and M10 were already
-  the app's open loops. What changed is that they are now the *point* of the
-  console rather than three of seventeen modules.
-- **The gaps this exposed were app-facing ones.** Narrowing to the app is what
-  surfaced tea packets, the missing banner editor and the four flags, none of
-  which a seventeen-module console noticed, because they were small next to a month
-  close.
-- **M5 survived by a different argument from the rest**, and it is the only one:
-  reading a bill is app support, producing one is not. See below.
+**Features the backend has not built yet are hidden in one place**,
+`apps/admin/src/lib/serverReady.ts`, and listed in [status.md](./status.md) and
+[BACKEND-TODO.md](./BACKEND-TODO.md).
 
 ---
 
 ## M1 Dashboard
 
-*The app at a glance.* One request: `GET /admin/dashboard`.
-
-**v1 led with today's kilos and the month-cycle stage.** That is the right first
-screen for a console that runs the factory, and the wrong one for a console that
-manages an app; the office has a weighing system for kilos.
+*The app at a glance.* One request: `GET /admin/dashboard`. It greets the user by their full
+name.
 
 | Area | What it shows |
 | --- | --- |
-| **Queue cards** | Unchanged. Pending count per queue, the age of the **oldest** item, and a count past the §14.4 target. A queue of three sitting four days is worse than twenty from this morning |
-| **App adoption** | Suppliers signed in against the total, devices registered, and this month's app-request share. §19.3 calls app adoption and channel shift *"the two KPIs that justify the project"*, and nothing else in the factory can answer it |
+| **Headline tiles** | Waiting, on the app, requests from the app, devices |
+| **Queue cards** | Pending count per queue, the age of the **oldest** item, and a count past the §14.4 target. A queue of three sitting four days is worse than twenty from this morning |
+| **App adoption** | Suppliers signed in against the total, devices registered, and this month's app-request share. §19.3 calls app adoption and channel shift *"the two KPIs that justify the project"* |
 | **Content** | Banners live now, plus what is quietly wrong: published articles falling back, banners whose window has closed, fixed pages nobody has written |
-| **Alerts** | Server-composed, as an i18n key + params. Unchanged |
+| **Alerts** | Server-composed, as an i18n key + params |
 | **Adoption trend** | Twelve months of app-request share, oldest first |
 
-**Every figure on the content card is a silent failure.** A supplier reading a
-Sinhala article in English, an FAQ page that is still the bundled default, a banner
-published a fortnight ago whose window closed on Tuesday; none of them produce an
-error anywhere, and only a screen that goes looking will find them. That is AC-08's
-argument about editor-visible gaps, one level up.
+**Every figure on the content card is a silent failure.** A supplier reading a Sinhala
+article in English, an FAQ page that is still the default, a banner whose window closed on
+Tuesday; none of them produce an error anywhere, and only a screen that goes looking will
+find them.
 
-**The trend is monthly, not daily.** Adoption moves when the office hands out
-passwords at the counter, which is a campaign rather than a day's weather. A month
-with no requests carries `null` and **breaks the line** rather than dropping it to
-zero: a month with no requests has no adoption share, and a zero would report a
-collapse that did not happen (BR-102, as a chart).
+**The trend is monthly, not daily.** Adoption moves when the office hands out passwords at
+the counter. A month with no requests carries `null` and **breaks the line** rather than
+dropping it to zero (BR-102, as a chart).
 
-The **shell** owns this query, not the screen, because the sidebar's queue badges
-need the same numbers. A queue whose feature flag is off is **absent**, not zero.
+The **shell** owns this query, not the screen, because the sidebar's queue badges and the
+bell need the same numbers. A queue whose feature flag is off is **absent**, not zero.
 
-`cycle`, `today` and `intakeTrend` are still on the payload; the cards that read them
-were removed from the screen and are in git history. The month-cycle card is the one
-most likely to be wanted back: `awaitingRate` is *why the app is showing a supplier
-blanks instead of amounts*, and that is a telephone call the office takes either way.
+`cycle`, `today` and `intakeTrend` are still on the payload; no card reads them now.
+`cycle.awaitingRate` is *why the app is showing a supplier blanks instead of amounts*.
+
+## The top bar: notification bell, search, sync status
+
+- **Notification bell** (`layout/NotificationBell.tsx`). Two halves. **Waiting for you**:
+  the queues from the dashboard summary, oldest-overdue first, each a link. **Recent
+  activity**: what suppliers just did (a credit or tea-packet request sent or cancelled, an
+  inquiry reply, an account-deletion request; `packages/domain/src/activity.ts`), from
+  `GET /admin/activity`, newest first, with a dot on what this user has not read. Closing
+  the bell marks it read **for this user only** (`POST /admin/activity/read`). Kinds whose
+  feature flag is off are not shown (`ACTIVITY_FLAG`). Supplier actions only: what the
+  office did is the audit log's. The badge counts unread activity; while the server has no
+  feed it counts what is waiting instead.
+- **Search menu** (`layout/CommandMenu.tsx`, Ctrl+K or ⌘K): a supplier by code or name, or
+  a page by its name, filtered the way the sidebar is.
+- **Sync status chip** (`layout/SyncStatusChip.tsx`): shown only while the figures are not
+  current (behind, never synced, or "Sync status unknown" when the status call itself
+  fails), linking to `/data-status`. Not shown with the sync off: there is nothing to be
+  behind.
 
 ## M2 Suppliers
 
-*The app account, and everything support needs to answer a telephone call.* The
-registry (register, suspend, close, edit the estate address) is the factory's own
-console's. What is left is the record app support works from, and v2 added three
-things to it that v1 could not show **for one person** even though it held every
-fact needed for all three.
+*The app account, and everything support needs to answer a telephone call.*
 
-- **`hasApp` is the first column**, ahead of the last delivery date. The question a
-  clerk arrives with is "are they using it", not "when did they last deliver".
-- **Three states, not two.** Signed in with a device registered, signed in with
-  none (they turned notifications off, or the token expired; a supplier who will
-  never see a `billPublished` push), and never installed. Collapsing the middle case
-  into "has the app" hides the reason a supplier says nobody told them.
-- **`?hasApp=false` is the working filter**, and the dashboard's adoption card links
-  straight into it. A percentage nobody can turn into a list of names is a
-  percentage nobody acts on, which is what filter-state-in-the-URL is for.
-- **Everything else is read-only**: the bank details, the savings rate, the credit
-  balances. Every value shown is the **active** one (AC-01); a pending change appears
-  as pending, never as applied.
-- **The audited bank reveal stays**, unchanged from v1. §20.4 applies to a support
-  clerk exactly as it applied to a registry clerk: a reason is required, the clerk is
-  told it is recorded before they ask, the audit id is shown back, and the revealed
-  number is never cached.
-- **Resetting the app password stays**, and it is now one of the module's main jobs:
-  §21.15/§21.16 as the factory answered them. The password is one-time
-  (`owesPasswordChange`), how identity was checked is recorded, and existing sessions
-  end. See `packages/domain/src/supplierCredentials.ts`.
+- **`hasApp` is the first column.** Three states, not two: signed in with a device
+  registered, signed in with none (a supplier who will never see a `billPublished` push),
+  and never installed. **`?hasApp=false` is the working filter**, and the dashboard's
+  adoption card links straight into it.
+- **Every value shown is the active one** (AC-01); a pending change appears as pending,
+  never as applied.
+- **The audited bank reveal**: a reason is required, the clerk is told it is recorded
+  before they ask, the audit id is shown back, and the revealed number is never cached.
+- **Resetting the app password**: §21.15/§21.16 as the factory answered them. The password
+  is one-time (`owesPasswordChange`, and the app forces the change at first sign-in), how
+  identity was checked is recorded, and existing sessions end. See
+  `packages/domain/src/supplierCredentials.ts`.
+- **CSV export** of the grid as filtered.
 
-`hasApp` and `mockDevicesBySupplier` are derived from the **same rule** in the
-fixture, deliberately: the dashboard counts adoption from the device registry and
-this grid reads `hasApp`, so two different predicates would put a percentage on one
-screen that the list on the next screen disagrees with.
+The detail page has six tabs: Overview, Money, Requests, Income, Notifications and
+Activity.
+
+### With the sync off: Add supplier, opening balances, transport rate
+
+| Where | What | Permission |
+| --- | --- | --- |
+| Suppliers → **Add supplier** (`AddSupplierDialog`) | The factory's own supplier code (letters and digits, optional `(division)`; the bare number is the identity, unique per factory), name, collection point, payment method, bank details. A new supplier has no app account until the office issues a password | `suppliers: W` |
+| Suppliers → **Import** | Suppliers, opening balances, transport rates, from a file | `suppliers: W` |
+| Supplier → Money → **Opening balances** (`OpeningBalancesCard`) | Advance, loan, manure, tea packets, savings and previous debt as of one cut-over month for the whole factory; locked once a bill is published for the supplier. **Hidden until the backend ships it** (`OPENING_BALANCES_ON_SERVER`) | `suppliers: W` |
+| Supplier → Money → **Transport rate** (`TransportRateCard`) | The supplier's own rate per kg, or back to their collection point's, with a note | `suppliers: W` |
+
+With the sync on, suppliers arrive from the factory's system and none of these are shown.
 
 ### Month history: graph, list and deductions
 
-**The screen a clerk needs while the supplier is talking**, and v1 had no way to show
-it. `BillQuery` offered `monthKey` and a text search: the accountant's axis: pick a
-month, then filter within it. Right when M5 fed the month close; wrong now that M5
-survives only as support, because the question support is asked is never about one
-month. It is *"why is my July less than my June?"*, and answering it needs both.
-
-So `supplierId` is on `BillQuery`, and `GET /admin/suppliers/{id}/income` serves the
-series. **The three views are the app's three views, in the app's order**, because the
-whole point is that the clerk and the supplier are looking at the same thing:
+**The screen a clerk needs while the supplier is talking.** `supplierId` is on `BillQuery`,
+and `GET /admin/suppliers/{id}/income` serves the series. **The three views are the app's
+three views, in the app's order**:
 
 | View | What it answers |
 | --- | --- |
-| **Graph** | A bar per month, switchable between earnings and kilos. The switch is what makes *"I delivered more and got less"* visible rather than arguable; it is a rate question, and the two series have to be seen apart |
+| **Graph** | A bar per month, switchable between earnings and kilos, which is what makes *"I delivered more and got less"* visible rather than arguable |
 | **List** | The months, newest first, each opening the slip the supplier is holding |
-| **Deductions** | A donut of one month's nine lines. The view that answers the real complaint most of the time: the gross was fine and something came off it |
+| **Deductions** | A donut of one month's nine lines: the gross was fine and something came off it |
 
-Two rules carried from the app rather than reinvented:
-
-- **`null` is not `0`** (BR-102). The graph **omits** an unsettled month in earnings
-  mode rather than drawing a zero bar, and the list shows a pending badge. A zero
-  would tell a supplier they earned nothing in a month that has simply not settled.
-- **The deduction labels are M5's**, not a second set. The donut and the slip must
-  name a line identically, or a clerk reading one to a supplier holding the other is
-  reading two different words for one charge.
-
-The series arrives **oldest-first** and the list reverses it: a chart reads left to
-right, a list is read from the top.
+- **`null` is not `0`** (BR-102). The graph omits an unsettled month in earnings mode, and
+  the list shows a pending badge.
+- **The deduction labels are M5's**, not a second set, so the donut and the slip name a line
+  identically.
 
 ### Notifications: why a push does or does not reach *this* supplier
 
-**The most common push support call there is, and v1 could not answer it.**
-
-*"Nobody told me my account was ready."* There are four possible reasons, and the
-console held every fact for all four (the device registry, the tenant's category
-list, each device's consent list, the send log) while exposing them only in
-aggregate. M13's reach panel can say *"reaches 61 devices, 6 opted out"* and cannot
-name one of the six.
-
-The panel is a **diagnosis, not a dump**. One line per category, and when it does not
-reach, which reason it is, because the reasons have different fixes:
+One line per category, and when it does not reach, which reason it is:
 
 | Reason | What the office does |
 | --- | --- |
-| No device at all | Help them install it. Nothing else on the panel applies, so nothing else is shown |
-| The factory does not send this category | M14. Not the supplier's doing, and sending them to their phone settings wastes both their time |
-| Every device opted out | Their setting, on their phone. The office can explain it and cannot change it |
+| No device at all | Help them install it |
+| The factory does not send this category | M14. Not the supplier's doing |
+| Every device opted out | Their setting, on their phone |
 | Reachable, and nothing was sent | The send log below it |
 
-That last row is why `recentSends` is on the panel rather than left to M13: **a clean
-diagnosis and an empty log is a complete answer**, and the two halves have to be on
-one screen to be read as one. Without it the panel shows four green ticks and leaves
-the office insisting the message must have arrived.
-
-`deliveredToDevices: 0` on a send that reached hundreds is the row that matters, and
-an aggregate log can never show it, which is why the figure is per-supplier on the
-wire.
-
-**No push token anywhere on the payload.** It is a credential, nothing in the office
-can act on one, and §20.4's argument about account numbers applies unchanged.
+**No push token anywhere on the payload.** It is a credential, and nothing in the office can
+act on one.
 
 ### Every queue this supplier can be in
 
-v1 linked to **one** of four. The app shows a supplier their whole request history in
-a single list (`RequestHistoryList`); the office had to visit four screens and type
-the supplier code into each, which in practice means checking one and assuming the
-rest.
+The Requests tab links into all four queues filtered to the supplier, unconditionally:
+*"nothing outstanding"* is an answer a clerk needs. Each is gated on the same flag as its
+sidebar row.
 
-`supplierId` was already on all four query types. Only the links were missing. They
-are unconditional rather than hidden when a queue is empty: *"nothing outstanding"* is
-an answer a clerk needs, and a row that vanishes when the answer is *no* cannot give
-it. Each is gated on the same flag as its sidebar row.
+## M3 Leaf intake (sync off)
 
-Deliberately **not** counts: four extra requests to render numbers that are stale the
-moment a colleague decides something, when the queue itself answers accurately.
+*One day at one collection point.* Sidebar: Factory records → **Leaf intake**.
 
-## M5 Bills (read-only)
+- The date and the point are the primary controls and live in the URL, so "look at Makadura
+  yesterday" is a link.
+- **Open** month: the session grid is offered for entry (`EntrySession`). **Locked**
+  (published) month: no grid at all (BR-108). **Read-only user**: the day and its rows, no
+  grid.
+- A weighing can be voided with a reason (`VoidDeliveryDialog`); the row stays, marked.
+- **Import from file**: a day's or a month's weighings at once (kind `deliveries`). Hidden
+  until the backend ships the import.
+- Permission `deliveries: W`, which the clerk now holds.
+
+## M4 Rates & month close (sync off)
+
+*The month's rate, what stops the close, and the bills.* Sidebar: Factory records →
+**Rates & month close**. The month lives in the URL.
+
+| Card | What it does | Permission |
+| --- | --- | --- |
+| **Rate card** | Enter the month's rate per kg (and extra rate) | `ratesAndMonthClose: W` |
+| **Close checklist** | What still blocks the close, and **Publish** (four-eyes: not the person who generated or imported) | `ratesAndMonthClose: A` |
+| **Exceptions queue** | The month's exceptions, each resolved with a note | `ratesAndMonthClose: W` |
+| **Deduction rates** | Transport per kg (factory-wide **and per collection point**), stamps, instalment caps. Proposed by one person, approved by another, because a change re-prices every account | `ratesAndMonthClose: W` propose, `A` approve |
+| **Bill run** (`BillRunCard`, calculated bills only) | Generate the month's bills, then **Review this month's bills** on M5 | `billing: W` |
+| **Import** | Monthly rates; Finished bills (imported) or Other deductions (calculated) | `ratesAndMonthClose: W` / `billing: W` |
+
+The publish refuses, in order, `rate-missing`, `exceptions-open`, `bills-stale`,
+`already-published` and `four-eyes-violation`. Publishing makes the bills visible in the
+app and fires `billPublished`. Generating in an importing factory is
+`409 wrong-bill-source`.
+
+## M5 Bills
 
 *The account the supplier is looking at on their phone.*
 
-**The only module kept on a support argument rather than an app-management one.**
-A supplier telephones about a figure; the clerk has to see the same account. That is
-a read. Generating a run, re-generating after a correction and publishing a month
-are the factory's own console's, and they move money.
+What a supplier can ask about: the nine deduction lines including the zeros, the coins
+brought and carried forward, `nextMonthDeb` on an account that owes more than it earned,
+and three lenses (*nothing payable*, *payable with no bank details*, *lines that do not add
+up*). The arithmetic is `packages/domain/src/bill.ts`, shared: AC-03 requires this screen,
+the printed slip and the app to agree field for field. The slip reads like the factory's
+printed one: coins brought forward are part of the gross, the payment is rounded down to
+the factory's unit (`billSettings.paymentUnit`, 1, 5 or 10) and the rest is Coins C/F; the
+`otherCards` line is **"Other deductions"** with its reason; the loan line carries its
+instalment number; "Loan Balance" is the loan still owed and "Loan Interest" is this
+month's charge.
 
-So `BillRunCard` is **removed from the screen rather than disabled**, and the distinction
-is the point: that card is a *control*: its entire subject is which of three states the
-run is in and which button to press about it. A disabled version would be a card
-explaining a decision nobody on this screen can make. The screen says where that work
-happens instead.
-
-What survives is what a supplier can ask about: the nine deduction lines including
-the zeros, the coins carried forward, `nextMonthDeb` on an account that owes more
-than it earned, and the three lenses (*nothing payable*, *payable with no bank
-details*, *lines that do not add up*). The arithmetic is still
-`packages/domain/src/bill.ts`, shared: AC-03 requires this screen, the printed slip
-and the app's Home screen to agree field for field, and that is now a three-way
-agreement across two consoles.
+- **Sync on**: read-only. Generating and publishing are the factory system's.
+- **Sync off**: this is where the office reviews the month's bills before publishing them
+  on M4. An imported bill is badged **Imported** and never edited here (a correction is made
+  in the factory's system and the month re-imported). A calculated, unpublished bill has
+  **Other deductions → Edit** (`OtherChargesDialog`): an amount and a reason, kept across a
+  re-generation. **Hidden until the backend ships it** (`OTHER_DEDUCTIONS_ON_SERVER`).
 
 ## M7 Credit queues
 
-*Advances, loans and manure on credit.* **Unchanged from v1**, and it is worth
-saying why nothing moved: these requests originate in the app, the eligibility
-figures must match what the supplier was shown byte for byte (AC-05), and the
-arithmetic behind them is `packages/domain/src/leafCredit.ts`, shared code the app,
-this console and the API all read.
+*Advances, loans and manure on credit.* These requests originate in the app (or at the
+counter), the eligibility figures must match what the supplier was shown byte for byte
+(AC-05), and the arithmetic behind them is `packages/domain/src/leafCredit.ts`, shared code
+the app, this console and the API all read.
 
-One queue, filtered, not three screens. The decision must be defensible: the detail
-page prints the working in the order the rule reads it, `ceilingSeen` makes BR-310
-enforceable, `over-ceiling` is refused on both sides, and BR-501 is checked **before**
-the figures because who may decide does not depend on what the ceiling says.
+One queue, filtered, not three screens. The detail page prints the working in the order the
+rule reads it, `ceilingSeen` makes BR-310 enforceable, `over-ceiling` is refused on both
+sides, and BR-501 is checked **before** the figures because who may decide does not depend
+on what the ceiling says.
 
-**§12.1 is unusual here and stays unusual**: `creditRequests` is `R` for the clerk,
-`A` for the manager alone. The person most likely to open this screen cannot act on
-it, and they are told who can.
+**Who does what.** The clerk holds `creditRequests: W`: they see the queue and record a
+counter request. Deciding is `A`, the manager's, and nobody decides a request they recorded
+(BR-501, four-eyes).
 
-## M18 Tea packets (new in v2)
+**The rules the queue enforces**:
+
+- **An open loan blocks both a new loan and an advance** until it is repaid (manure is not
+  affected): `buildCreditEligibility({ loanOutstanding })` answers `available: 0` with
+  `reasonKey: 'credit.reason.loanOutstanding'`, and the API refuses with
+  `409 loan-outstanding`. This extends BR-303 (no advance while an advance is outstanding).
+- **An advance is closed within its month**: deducted in full on that month's bill, even
+  past the gross (advance instalment share 100%); any shortfall is Next Month Deb.
+- With the sync off, the advance ceiling is this month's kilos so far × last month's
+  settled rate.
+- Approval also refuses `supplier-suspended`, `supplier-closed`, `advance-outstanding` and
+  `loan-outstanding`; each is explained in en/si/ta and blocks the approval dialog.
+
+**Walk-in requests (sync off).** **Record walk-in request** (`WalkInCreditDialog`) or
+**Import from file** (kind `walkInCredit`): a request made at the counter, created exactly
+like an app request with `channel: 'office'`, `status: 'pending'` and the recorder as
+creator, so someone else decides it. Manure is priced from the factory's catalogue; loans
+and manure offer the factory's repayment periods. Refused for a facility switched off, a
+suspended or closed supplier, a pending request on the same facility (`request-pending`)
+and `loan-outstanding`; **not** refused for being over the limit (it is recorded as asked,
+and approval refuses it).
+
+## M18 Tea packets
 
 *The factory's own tea, issued to the supplier who grew the leaf.*
 
-**This module exists because v1 had nothing for it at all.** The app has shipped
-`RequestTeaPacketsScreen` since its first release. This console had no type, no
-endpoint, no queue and no flag: a supplier could ask, and the request went nowhere.
-Every other `pending` in the app is a queue somewhere; this was the one that was not,
-and it was invisible because the domain package's own docblock claimed to be *"a
-verbatim port of the mobile app's `src/types/index.ts`"* while missing exactly two
-exports.
-
-**A separate queue from M7, not a fourth facility**, and that is the module's one
-real design decision:
+**A separate queue from M7, not a fourth facility**:
 
 | M7 | M18 |
 | --- | --- |
@@ -307,131 +302,75 @@ real design decision:
 | `ceilingSeen` + `stale-eligibility` (BR-310) | Nothing to go stale |
 | A detail page, because the working has to be printed | One screen, because every column fits in the grid |
 
-Folding it into `AdminCreditRequest` would have given every tea-packet row three
-null eligibility figures and an AC-05 obligation it cannot meet.
+**What the approver needs is the store's question**: how many packets, **what it weighs**,
+how it travels, and what it will cost on the account. The delivery filter is a working
+view: requests going back on the collection vehicle have to be packed before it leaves.
 
-**What the approver actually needs is the store's question**, so the grid carries it:
-how many packets, **what it weighs** (packets is the supplier's question, kilos is the
-storekeeper's), how it travels, and what it will cost on the account. The delivery
-filter is a working view: requests going back on the collection vehicle have to be
-packed before it leaves.
+**The price is stamped at the decision and never re-read.** **The cap is stock, not
+credit**: an over-cap request is refused on **approval only**, so the rejection stays
+available. **Approved and not yet recovered is money the factory is owed**, so
+`enableTeaPackets` is refused while any exists.
 
-**The price is stamped at the decision and never re-read.** A catalogue edit
-afterwards must not silently re-price a request the office already answered at a
-figure the supplier was quoted.
-
-**The cap is stock, not credit.** `maxPacketsPerRequest` says how much of the store
-one person may take at once. An over-cap request is refused on **approval only**; the
-rejection has to stay available, or the row is trapped in the queue for ever with the
-office unable either to issue the tea or to say why. Same reasoning as BR-310 not
-gating M7's rejections.
-
-**Approved and not yet recovered is money the factory is owed**, so
-`enableTeaPackets` is refused while any exists, the same rule that blocks
-`enableSavings` while balances exist.
-
-Rules shared with M9 and M7 unchanged: AC-06's note on both verbs, BR-501 on
-`createdById`, `already-decided` as a first-class case.
+Rules shared with M9 and M7: AC-06's note on both verbs, BR-501 on `createdById`,
+`already-decided` as a first-class case. CSV export of the grid.
 
 ## M9 Change requests
 
-*Payout, savings-rate **and address** approvals.* Oldest first within a status,
+*Payout, savings-rate and address approvals.* Oldest first within a status,
 current-vs-requested in the grid as well as on the detail page, and the three rules
-implemented rather than assumed: AC-06 in three layers, BR-501/AC-10 by withholding
-the buttons *and* refusing server-side, AC-02's asymmetry in the invalidation set.
+implemented rather than assumed: AC-06 in three layers, BR-501/AC-10 by withholding the
+buttons *and* refusing server-side, AC-02's asymmetry in the invalidation set.
 
-`already-decided` keeps the dialog open with an explanation and refetches, rather
-than discarding the note the clerk just wrote.
+`already-decided` keeps the dialog open with an explanation and refetches, rather than
+discarding the note the clerk just wrote.
 
 ### `address`: the fourth type
 
-**It corrects an asymmetry rather than adding a feature.** Bank details, the payment
-method and the savings rate came through this queue because they decide where money
-goes. An address decided nothing visible, so the app's `PATCH /profile` wrote it
-straight to the record and the office never heard about it.
+The **estate address is where the leaf comes from** and the **home address is where every
+printed Green Leaf Account is posted**, so an address change is asked for, not written
+straight to the record. The grid, the detail page and the decision dialog render it
+unchanged, because they were built against `currentSummary` and `requestedSummary`.
 
-That is wrong twice over. The **estate address is where the leaf comes from** (it
-ties a supplier to a collection point and to land) and the **home address is where
-every printed Green Leaf Account is posted**. A wrong one is a slip delivered nowhere,
-and nobody in the office knew it had changed.
-
-**The console needed almost nothing.** The grid, the detail page and the decision
-dialog render it unchanged, because they were built against `currentSummary` and
-`requestedSummary` rather than against the three types that happened to exist. The
-filter dropdown is the one place that names them. That is the design paying for
-itself: a queue that had branched per type would have needed four screens touched.
-
-Two things did need care:
-
-- **Apply per key, not per block.** `requestedAddress` carries only what moved, and
-  changing only the estate address is a normal request. A handler spreading the whole
-  object would blank the field the supplier never touched, and the leaf is filed
-  against that one. The fixture's seeded request changes the home address alone,
-  precisely so a test fails if anybody rewrites it as a spread.
-- **The write path had to close.** Adding the request type changes nothing while
-  `PATCH /profile` still accepts an address. The app enforces its half in the **type
-  system** (`EditablePersonal` no longer includes either field) because a form can
-  be changed back by anybody and a `Pick` cannot be reached around without the build
-  failing. The API must refuse rather than ignore; see
-  [api-contract.md](./api-contract.md) §6.4.
-
-**On the app side** the profile screen is now two cards with two lifecycles: contact
-details save immediately, addresses are asked for. A single form with one Save would
-have told a supplier correcting their email that their *address* had been submitted
-for approval. While a request is pending the address fields are read-only and show
-what was asked for: two pending changes to one address is two decisions for the
-office to reconcile, and the supplier cannot withdraw the first.
+- **Apply per key, not per block.** `requestedAddress` carries only what moved; a handler
+  spreading the whole object would blank the field the supplier never touched.
+- **The write path is closed.** The app's `EditablePersonal` no longer includes either
+  address, and the API refuses an address on `PATCH /profile`
+  ([api-contract.md](./api-contract.md) §6.4).
 
 ## M10 Inquiries
 
-*Messages from suppliers.* Unchanged. The only queue whose rows are prose, so the
-subject gets the width and the first line sits under it.
+*Messages from suppliers.* The only queue whose rows are prose, so the subject gets the
+width and the first line sits under it. Reply suggestions from the factory's common notes
+(Configuration → Common notes). CSV export of the grid.
 
 **Reply and close are different acts**: replying writes something the supplier reads,
-closing files a message that needed no answer. A single "resolve" would make the two
-indistinguishable, and *how many suppliers we actually answered* is the number
-§19.3's channel-shift KPI wants, which in v2 is the console's headline figure.
+closing files a message that needed no answer. *How many suppliers we actually answered* is
+the number §19.3's channel-shift KPI wants.
 
-§12.1 is unusual and stays: `A` for the **clerk**, `R` for the manager. Answering a
-supplier is counter work; a manager reading the queue is oversight.
+§12.1 is unusual and stays: `A` for the **clerk**, `R` for the manager. Answering a supplier
+is counter work; a manager reading the queue is oversight.
 
 ## M11 News
 
-*The feed suppliers read in the app.* Unchanged.
+*The feed suppliers read in the app.*
 
-AC-08 has two halves (copy falls back to English, *and* the gap is visible to the
-editor) and both are only true because `resolveTranslation` is **shared** and the
-preview is fetched from the server. A console with its own fallback would show the
-editor a preview of something that is never rendered.
+AC-08 has two halves (copy falls back to English, *and* the gap is visible to the editor)
+and both are true because `resolveTranslation` is **shared** and the preview is fetched
+from the server.
 
-Copy is saved one language at a time. Three states, not two, and the third earns the
-module: **stale**: written before the English it was translated from was corrected,
-which nothing anywhere looks wrong about.
+Copy is saved one language at a time. Three states, not two: **stale** is copy written
+before the English it was translated from was corrected. Publishing with a gap is allowed
+and loud; the one hard refusal is a record with no fallback copy at all. An article can be
+**published now or scheduled** for a time (picked in Colombo time), and can carry a cover
+image.
 
-Publishing with a gap is allowed and loud. The one hard refusal is a record with no
-fallback copy at all.
+## M11 Promo banners
 
-## M11 Promo banners (new in v2)
-
-*The full-width announcement on the way into the app.*
-
-**v1 shipped the flag, the type and the specification, and no way to author one.**
-`enablePromoBanner` was on the configuration screen mapped to M11; `PromoBanner` was
-in the domain package; the mobile repo's `docs/banners.md` described artwork,
-headline, one button, a live window and an action allowlist. A factory that turned the
-switch on got nothing, which is worse than the feature not existing, because the
-switch says otherwise.
-
-It gets its **own sidebar row** rather than living inside an article's detail page,
-for exactly that reason: a surface reachable only from inside another module is a
-surface the office does not know it has. Gated on `enablePromoBanner`, **not**
-`enableNews`: a factory that runs no feed may still want to say the store is closed
-on Friday.
+*The full-width announcement on the way into the app.* Its **own sidebar row**, gated on
+`enablePromoBanner`, **not** `enableNews`: a factory that runs no feed may still want to say
+the store is closed on Friday.
 
 ### The window is the column, not the status
-
-An article is published or it is not. A banner has a status **and** a live window,
-and the two disagree constantly:
 
 | State | What every badge says | What suppliers see |
 | --- | --- | --- |
@@ -440,268 +379,193 @@ and the two disagree constantly:
 | Draft | Draft | Nothing |
 | Published, inside the window | Published | The banner |
 
-So the list defaults to the **live** lens, and the editor screen leads with a window
-notice rather than a status badge; the office's question is "why are suppliers not
-seeing this", and the answer is a date. `window` is computed **server-side**: a
-console reading the browser's clock would disagree with the phone on the day a banner
-starts, and differently on every machine in the office.
+So the list defaults to the **live** lens, and the editor leads with a window notice.
+`window` is computed **server-side**, so the console and the phone agree on the day a banner
+starts.
 
 ### The action runs the app's own resolver
 
-This is the module's load-bearing decision. `banners.md` is explicit that an action
-the app cannot resolve renders **artwork with no button and reports nothing**, right
-on a phone, where a supplier can always close a banner and where a console newer than
-the app will eventually send action types the binary has never heard of.
-
-That silence is what makes it dangerous to author against: from the office, a banner
-with a dead button looks exactly like one that works. So `packages/domain/src/banners.ts`
-is a **verbatim port of the app's `src/services/banners`**, and the console runs
-`bannerTarget()` on every keystroke, at save, at patch and at publish.
+`packages/domain/src/banners.ts` is a **verbatim port of the app's `src/services/banners`**,
+and the console runs `bannerTarget()` on every keystroke, at save, at patch and at publish.
+An action the app cannot resolve renders artwork with no button and reports nothing, so
+from the office a dead button looks exactly like a working one.
 
 | Refusal | Why it is named separately |
 | --- | --- |
-| `banners.action.appSchemeRefused` | `teafactory://manure` is the mistake an editor makes **on purpose**, and the answer is "use an in-app screen", not "unsupported scheme" |
+| `banners.action.appSchemeRefused` | `teafactory://manure` is the mistake an editor makes **on purpose**; the answer is "use an in-app screen" |
 | `banners.action.badPath` | A path with a query string is one the linking config cannot match |
-| `banners.action.badUrl` | `https`, `tel`, `mailto` only, parsed with `new URL` so malformed input is refused rather than normalised |
+| `banners.action.badUrl` | `https`, `tel`, `mailto` only, parsed with `new URL` |
 
-The field also prints, in words, **what the app will do** with what is currently
-typed. Positive confirmation rather than only an error, because "no error" and "this
-works" are different claims, and it is how an editor notices they pasted a tracking
-URL that normalised into something else.
+The field also prints, in words, **what the app will do** with what is typed.
 
-### Two asymmetries with M11's articles
-
-- **A missing translation may be published over; a refused action may not.** The
-  first falls back to English and the supplier reads *something*, which AC-08
-  explicitly permits. The second has nothing to fall back to: the button is simply
-  not drawn, so publishing puts artwork in front of every supplier with no way to act
-  on it.
-- **"Written" means headline + button label, not headline + body.** A headline-only
-  banner is a normal banner; a banner with no button label is not. Reusing
-  `content.ts`'s `isWritten` would have marked the first as missing and the second as
-  written: both halves of AC-08 pointing the wrong way. Hence `isBannerWritten` and
-  `staleBannerTranslations` beside the shared ones.
-
-**Taking a banner down is distinct from editing `endsAt`.** The window is a schedule;
-this is an intervention: a banner announcing a price that turned out to be wrong has
-to stop showing this afternoon, and the record should say it was withdrawn.
+- **A missing translation may be published over; a refused action may not.**
+- **"Written" means headline + button label, not headline + body** (`isBannerWritten`,
+  `staleBannerTranslations`).
+- **Taking a banner down is distinct from editing `endsAt`**, and the record says it was
+  withdrawn.
+- **Artwork can be uploaded** (up to 5 MB). With no artwork the app draws a branded panel
+  carrying the same message.
 
 ## M12 Static content
 
-*The app's fixed pages.* Unchanged. A closed set, not a collection: no create, no
-delete, no archive, and the list returns all six **including the ones nobody has
-written**, because an unwritten page is a state to be shown; the app is rendering its
-own bundled default and an office that cannot see the page listed assumes it filled it
-in.
+*The app's fixed pages.* A closed set: no create, no delete, and the list returns all six
+**including the ones nobody has written**, because the app is then rendering its default and
+an office that cannot see the page assumes it filled it in. Every factory starts with the
+defaults in `static-pages.seed.json`. A body is a list of points (an FAQ question, a terms
+section) the office can add, change or remove, and a page can be put back to the default
+text.
 
-An edit to a live page is live when saved, and what makes that safe rather than merely
-convenient is the audit entry recording the previous wording and the new one.
+An edit to a live page is live when saved; the audit entry records the previous wording and
+the new one.
 
 ## M13 Notifications
 
-*What suppliers are told, and what they are told automatically.* Unchanged.
+*What suppliers are told, and what they are told automatically.*
 
-§21.24 is answered as **configuration rather than code**, so the factory's eventual
-answer is a switch and not a rewrite. A push is the only act in this console with no
-undo and no delivery report, so every safeguard is a *pre*-check: `unknown-category`,
-per-device consent, `no-recipients` on a composed send only, `push-not-configured`.
+§21.24 is answered as **configuration rather than code**: every automatic trigger is a
+per-tenant row, defaulted from `push.defaultCategories`. A push is the only act in this
+console with no undo and no delivery report, so every safeguard is a *pre*-check:
+`unknown-category`, per-device consent, `no-recipients` on a composed send only,
+`push-not-configured`.
 
-The reach panel is the module: three numbers rather than one, because *reaches 3, 11
-opted out* is a circular that belongs on the noticeboard, and there is no way to learn
-that afterwards.
+The reach panel is the module: three numbers rather than one, because *reaches 3, 11 opted
+out* is a circular that belongs on the noticeboard.
 
-**One v2 note.** Automatic sends fire from the module that owns the event, and two of
-those events (`month.publish` and a payout) now happen in the factory's own console.
-The trigger rows are unchanged and the API contract is unchanged; what changes is
-*which system calls it*. That is in [api-contract.md](./api-contract.md) and
-[status.md](./status.md), because it is an integration this console cannot verify.
+**Where the events come from.** `billPublished` fires off a month's publish. With the sync
+off that publish is on M4 in this console; with the sync on, the bills arrive from the
+factory's system, so the trigger depends on the sync. Either way the trigger rows and the
+API contract are the same.
 
 ## M14 Configuration
 
-*Everything about a factory that is data rather than code.*
+*Everything about a factory that is data rather than code.* This module is AC-12: a new
+factory is a DNS record and configuration, with a control here for every field the app and
+the console read.
 
-**This module is AC-12, and v2 is where the criterion actually became true.**
-[white-label.md](./white-label.md) has always said a new factory is *"a DNS record and
-a `client_config` row, no build, no deploy"*, and the test is whether the **last**
-field a factory needs is on this screen. It was not: six of the app's fourteen feature
-flags had no control anywhere in the console, so turning off biometric sign-in or the
-onboarding screens required a developer.
+**Eleven sections**, each drafted locally and saved as one `PATCH`:
 
-Seven sections: factory identity, **the fourteen flags**, collection points / banks /
-savings rates, languages and branding, the push block, the **tea-packet policy**, and
-the **credit rules**. The last two are new in v2 and both are the same kind of thing:
-a number the factory decides that used to require a release.
+| Section | What it holds |
+| --- | --- |
+| The factory | Name, telephone, registration number, location, support email and office hours. These print on every bill |
+| Features | The feature flags. Some remove a console module **and** an app screen (`enableManure` → M7), the rest only an app screen |
+| **Factory system** | The sync switch (on / off), with what appears or disappears before Save and a second confirmation |
+| Collection & savings | Collection points, savings rates per kg, the fertilizer (manure) catalogue with bag size and price |
+| Banks & branches | The factory's bank and branch list ([bank-catalogue.md](./bank-catalogue.md)) |
+| Languages & branding | Content languages, fallback language, brand colours and logo |
+| Notifications | The push block: categories and topic |
+| Tea packets | Pack size, price, the per-request cap |
+| Credit rules | The ceiling rule per facility and the repayment periods offered |
+| **Bill calculation** | Where the bills come from (`imported` / `calculated`); pay in Rs. 1 / 5 / 10 and the next bill serial (calculated bills); advance interest; loan interest (% a month, 0% by default) and how it is taken (`onTop` or `withinInstalment`) |
+| Common notes | The note suggestions shown as chips under the note boxes (decision dialogs, inquiry replies) |
 
-**The flag section now says two different things**, and the distinction is v2's:
-some flags remove a console module *and* an app screen (`enableManure` → M7), and the
-rest remove only an app screen (`enableBiometricLogin` → the app). Saying "M7" against
-the first and "the app" against the second is more honest than inventing a module id
-for a phone setting. **Editing a flag is a console feature; obeying it is the app's
-job.**
+### Bill calculation
 
-**The tea-packet section is its own section**, not three fields appended to
-*Operations*, for the reason the banner editor got its own row: a price buried under a
-heading about collection points is a price nobody finds, and M18 then quotes
-`DEFAULT_TEA_PACKET_POLICY` at real suppliers, a real number, and not this factory's.
-Both the queue and this section say so when it has never been set.
+- **Payment unit** (`billSettings.paymentUnit`): the payment is rounded down to it and the
+  rest is Coins C/F (galaboda pays in tens).
+- **Next bill serial** (`billSettings.nextBillSerial`): new bills are numbered
+  `factoryBillNumber(year, serial)`, the year of the bill's month and a serial that never
+  resets (`2026210869`, then `2027210870`). Without it, `GL/YYYY-MM/NNNN`.
+- **Loan interest** (`config.loanInterest`): worked on the loan owed at the start of the
+  month, simple interest, never on interest. `onTop`: Rs. 50,000 over 10 months at 1%
+  deducts 5,500 and the loan falls 5,000; `withinInstalment`: deducts 5,000 and the loan
+  falls 4,500.
+- **Advance interest** (`config.advanceInterest`): only when an account could not cover its
+  advance.
+- "Where the bills come from" and "How the loan interest is taken" are **hidden until the
+  backend accepts them** (`BILL_SOURCE_AND_RECOVERY_ON_SERVER`). Changing the source is
+  refused while a month has generated but unpublished bills (`409 bill-source-blocked`).
 
 ### Credit rules: how much a supplier may borrow
 
-**The three ceilings used to be formulas in the build**, with two constants behind them
-(`REQUIRED_MONTHS_OF_HISTORY`, `LIMIT_MULTIPLIER`). A factory wanting *"manure: average
-the last three months, capped at 20,000"* needed a release, which is exactly the shape
-of thing white-label.md says belongs in a `client_config` row.
-
-It matters more than the other configurable values because of **who reads the result**:
-the ceiling is printed in the supplier's app before they ask for anything. A limit this
-platform guessed at is a supplier told they may borrow money the office then refuses.
-
-Five fields per facility, and they are these five because every ceiling the product has
-ever used is one sentence: *take a basis, average it if that is what the basis is,
-multiply it, cap it, and require some history first*:
+**The three ceilings are configuration**, not formulas in the build. Five fields per
+facility, because every ceiling the product has used is one sentence: *take a basis,
+average it if that is what the basis is, multiply it, cap it, and require some history
+first*:
 
 | Field | What it is |
 | --- | --- |
-| **Basis** | `thisMonthLeaf` · `lastSettledMonth` · `averageIncome`. The three things a tea factory actually prices credit off |
+| **Basis** | `thisMonthLeaf` · `lastSettledMonth` · `averageIncome` |
 | **Multiplier** | `1` means the basis itself |
-| **Months to average** | Only asked for when the basis is an average; a field with no effect beside a rule that ignores it is a field an administrator stops trusting |
-| **Settled months required** | `0` offers it from the supplier's first month, which is right for an advance and rarely right for a loan |
-| **Cap** | Empty means none. **Applied after the multiplier**, which is the only order that reads the way an office states it |
+| **Months to average** | Only asked for when the basis is an average |
+| **Settled months required** | `0` offers it from the supplier's first month |
+| **Cap** | Empty means none. Applied after the multiplier |
 
-Three decisions worth keeping:
-
-- **The defaults reproduce the hard-coded formulas exactly.** A factory that never
-  opens the screen must not discover its lending moved on deploy day. Asserted by a
-  test that compares `creditCeilingFromRule(DEFAULT_CREDIT_RULES[f])` against the old
-  `creditCeiling(f)` for all three facilities.
-- **Every value blocks rather than warns.** A multiplier of `0` does not fail visibly;
-  it offers every supplier a ceiling of nothing and reads on screen as a policy rather
-  than a mistake. Turning the facility off under *Features* is what "nobody may borrow"
-  is for.
+- **The defaults reproduce the former hard-coded formulas exactly**, asserted by a test.
+- **Every value blocks rather than warns.** Turning the facility off under *Features* is
+  what "nobody may borrow" is for.
 - **The screen prints what the five numbers mean**, in a sentence, under each facility.
-  Five fields is enough to express every formula and also enough to get wrong silently.
+- **The same rule runs in the app**: `creditCeilingFromRule` is ported to the mobile repo,
+  and the app's "working" lines come from the server's figures (multiplier, basis, cap).
 
-**The same rule runs in the app.** `creditCeilingFromRule` is ported to the mobile
-repository and the request screens call it with the served rule, so the limit a supplier
-reads and the limit the queue checks are one calculation rather than two that agree
-until the first policy change.
+### What an edit costs
 
-**The screen's real job is still showing what an edit costs**, computed from the same
-`configImpact` the API refuses with:
+Computed from the same `configImpact` the API refuses with:
 
 | Impact | Severity | Why |
 | --- | --- | --- |
-| `savingsHeld`, `creditOutstanding`, **`teaPacketsOutstanding`** | **Blocks** | Turning off a flag whose module holds money would hide what the factory owes, or, for tea, what it is owed |
+| `savingsHeld`, `creditOutstanding`, `teaPacketsOutstanding` | **Blocks** | Turning off a flag whose module holds money would hide what the factory owes, or is owed |
 | `pointInUse` | **Blocks** | A delivery names its collection point and nothing else |
 | `fallbackLanguageRequired` | **Blocks** | Every article, page and banner falls back to English |
-| **`teaPacketPolicy.*`** | **Blocks** | A zero pack size or negative price does not fail visibly; it prices every request wrong, and the person who finds out is holding a slip with it deducted |
+| `teaPacketPolicy.*` | **Blocks** | A zero pack size or negative price prices every request wrong |
 | `surfaceRemoved` | Warns | A flag that only shows something is a choice the factory is entitled to make |
 | `bankInUse`, `languageDroppedWithCopy` | Warns | The data survives; only what is offered changes |
 
-`tenantId` is shown and not editable (`tenant-immutable`). One `PATCH` per section,
-drafted locally and saved as a unit so the impact list can describe the *complete*
-change.
-
-**`payoutFile` is no longer edited here**, with M6. `PayoutFileSection.tsx` and
-`payoutExport.ts` both stay: §21.17's answer (that the layout is configuration rather
-than three guessed serialisers) is still the right answer, and whoever owns payouts
-next needs the serialiser rather than a second guess at the format.
+`tenantId` is shown and not editable (`tenant-immutable`). `payoutFile` is not edited here;
+`payoutExport.ts` stays in `@tfd/domain`.
 
 ## M15 Users & roles
 
-*Who may use the console.* Unchanged.
+*Who may use the console.* Five roles: `clerk`, `manager`, `editor`, `factoryAdmin`,
+`platformAdmin` ([rbac.md](./rbac.md)). The office sets a new user's first password, shown
+once (`IssuedPasswordField`), and the user must change it at first sign-in. Deleting a user
+waits three days and can be undone until then.
 
-Every refusal is one failure wearing different clothes: a factory locking itself out.
-`last-admin`, `self-modification`, and the one nobody thinks of: strip `usersAndRoles`
-from every **role** and every user keeps the roles they had while nobody can manage
-users again, which a check written per user misses entirely (`matrixKeepsRecovery`).
+Every refusal guards one failure, a factory locking itself out: `last-admin`,
+`self-modification`, and a matrix that strips `usersAndRoles` from every role
+(`matrixKeepsRecovery`).
 
-There is no delete: a user who approved a request is the actor on an audit entry, and
-an entry whose actor cannot be resolved is not evidence.
+**The role matrix shows twelve of the fifteen capabilities.** `deliveries`,
+`ratesAndMonthClose` and `payouts` (`FACTORY_CONSOLE_CAPABILITIES`) are not rendered, and
+their stored levels are preserved on save. The default matrix (`DEFAULT_ROLE_MATRIX` in
+`packages/domain/src/rbac.ts`) gives the clerk `deliveries: W`, `creditRequests: W` and
+`billing: W` for the sync-off counter work, and the manager `ratesAndMonthClose: A` to
+publish a month. Savings withdrawals need `billing: A` (the manager).
 
-**§12.1's matrix keeps every capability** (including `deliveries`,
-`ratesAndMonthClose` and `payouts`), **but the screen shows twelve of the fifteen.**
-Removing the keys would be a migration of every role record for no gain, and the same
-roles exist in the factory's own console; rendering them would put three dropdowns in
-front of an administrator that change nothing here. Hidden values are preserved on save,
-which is a test rather than an intention. See [rbac.md](./rbac.md).
+## M16 Reports
 
-## M16 Reports: narrowed to one
+Three tabs, each read only:
 
-*The one report an app-management console owes anybody.*
+| Tab | What it answers |
+| --- | --- |
+| **App use** (`channelShift`) | Are suppliers moving from the counter to the app? Four figures for the chosen period, the trend month by month, and the table behind it (downloadable) |
+| **Credit given** | Advances, loans and manure approved, tea packets issued and requests refused, month by month, by the month they were decided |
+| **Savings held** | How much the factory holds for suppliers, for how many, and what came in and went out each month. Absent when the factory runs no savings scheme |
 
-`channelShift` stays because §19.3 calls app adoption and channel shift **"the two
-KPIs that justify the project"**. The other three (`dormantSuppliers`,
-`leafByCollectionPoint`, `monthSummary`) are the factory's own console's, and are
-in git history, removed from `REPORT_IDS`, from the mock's `runReport` switch and from
-the test suite, each with its citation intact in the commit that removed it.
-
-**No flag.** `enableReports` was console-only and went with `enablePayouts`; what is
-left is not a feature a factory declines to have.
-
-A report is still asked for and answered, never stored. It still describes itself:
-columns come with the rows carrying what each one *is*, and `null` is never `0`
-(BR-102): a month with no requests has no adoption share.
+A report is asked for and answered, never stored. `null` is never `0` (BR-102). No flag.
 
 ## M17 Audit log
 
-Filterable by entity, read-only, newest first. It gains two entity types
-(`promoBanner` and `teaPacketRequest`) and one field that closes a real hole.
+Filterable by entity and by actor, read only, newest first, with **CSV export**.
+Before/after render as JSON, deliberately: an audit entry is evidence.
 
 ### `actorType`: what the supplier did themselves
 
-v1 had no such field, because every entry was written by somebody signed into this
-console: `actorId` implied `consoleUser` and nothing needed to say so.
-
-That stopped being true when the console became the app's management surface. **The
-app lets a supplier change their own name, telephone, date of birth and both
-addresses through `PATCH /profile`**, no approval, no change request
-(`ChangeRequestType` covers only payout and savings-rate changes), and v1 recorded it
-**nowhere**. The office could be asked *"when did this address change?"* and had no
-way to answer; a wrong telephone number had no history at all.
-
-Three kinds rather than a boolean, because the third is a real and separate answer:
-
 | `actorType` | Who |
 | --- | --- |
-| `consoleUser` | The office. **The default**, and an entry with no `actorType` is one of these; every v1 entry was |
-| `supplier` | The supplier, in the app. Their own profile edits, and their first-sign-in password change |
-| `system` | An automatic send firing off an event. Attributing it to whoever published the month would read as though they composed it |
+| `consoleUser` | The office. **The default**; an entry with no `actorType` is one of these |
+| `supplier` | The supplier, in the app: their own profile edits, their first-sign-in password change |
+| `system` | An automatic send firing off an event |
 
-**The supplier's actions sit on the same timeline as the office's**, on the same
-record, deliberately: *"what we did to this account"* and *"what they did"* are two
-readings of one history, and a clerk investigating a dispute needs them interleaved.
-Which makes the label essential: an address change by the supplier and one by a clerk
-are the same row shape and completely different facts.
+The supplier's actions sit on the same timeline as the office's, on the same record. Office
+entries carry no badge, so the exception stays visible. An `ip` of `null` on a supplier
+entry is deliberate.
 
-Office entries carry **no** badge. They are the norm here, and badging every row would
-make the exception invisible again, which is the failure this closes. M17 gains an
-actor filter for the same reason: an investigator is always asking one of the two
-questions rather than both.
+Entries worth knowing about:
 
-`supplier.password.change` is the entry that makes §21.16 auditable end to end. The
-office issues a one-time password and records the identity check; this is the other
-half: the supplier replacing it, which is what makes the credential the office knew
-stop working. Without it the console can show that a password was issued and never
-that it was consumed.
-
-An `ip` of `null` on a supplier entry is deliberate: a phone on a mobile network has no
-address the office can act on, and inventing one would make the column look meaningful.
-
-Before/after render as JSON, deliberately: an audit entry is evidence, and a
-prettified summary is an interpretation of evidence.
-
-Two v2 entries are worth knowing about:
-
-- **A banner publish records the languages that will fall back.** "Who decided a Tamil
-  supplier could read this in English" is the question AC-08 turns into an argument six
-  months later, and the answer has to be in the record rather than in somebody's memory
-  of a confirmation dialog.
-- **A tea-packet decision records the unit price.** "Approved at LKR 1,200 a packet" is
-  what settles a query about a `deductions.tea` line three weeks afterwards.
-
-**CSV/XLSX export is still not built**, recorded in [status.md](./status.md) rather
-than implied by a disabled button.
+- **A banner publish records the languages that will fall back.**
+- **A tea-packet decision records the unit price.**
+- **Factory records** add `supplier.openingBalances`, `supplier.transportRate`,
+  `bill.adjust` and `import.apply` (one entry per file, not per row), labelled in en/si/ta.
 
 ---
 
@@ -709,24 +573,14 @@ than implied by a disabled button.
 
 | § | Question | What is missing | Why not guess |
 | --- | --- | --- | --- |
-| - | Artwork upload for banners | The image **upload**; `imageUrl` and `imageAspectRatio` are on the record and the app renders them | `uploadRepository` exists for attachments, but a CMS image needs a store, a size policy and a CDN, none of which is this repository. The app draws a branded panel without one, deliberately |
-| 21.10 | What is `otherCards`? | The **ninth** deduction line | Unchanged from v1. The other eight are answered, and `tea` is now answered by M18 rather than being *"an app request"* with nothing behind it |
-| 19.1 | What shape is the reporting warehouse? | Everything beyond `channelShift` | A report nobody asked for is a query somebody maintains and nobody reads. §19.1 is in the mobile repo |
-| - | CSV/XLSX export | M16 and M17 | Absent rather than a disabled button |
-
-The v1 table's other rows (§21.17's fixed-width bank file, §21.9's interest accrual,
-§21.8's post-publish correction) are **not** listed here, because they are questions
-about modules this console no longer contains. They are in git history at
-`docs/v1/modules.md`, where the factory's own build can read them.
-
----
+| 19.1 | What shape is the reporting warehouse? | Reports beyond the three tabs | A report nobody asked for is a query somebody maintains and nobody reads |
+| - | Payouts and savings postings | M6 payouts and M8 savings screens | The factory pays from its own system; savings are read from the bills and shown on the supplier's record and in M16 |
 
 ## What a real deployment still needs
 
 | Needs | Why it is not a console change |
 | --- | --- |
-| **A real API** | Every screen talks to MSW, which is an executable reading of [api-contract.md](./api-contract.md), see [mocks.md](./mocks.md) |
-| **A push provider** | M13 records what it *would* send and what it would reach. The topic prefix and category list are configured (M14); the transport is not this repository |
-| **The factory's console calling the notification triggers** | `month.publish` and a payout decision fire `billPublished` and `requestDecided`. Those events now happen elsewhere, so the trigger is an integration this repository cannot verify |
-| **An image store for banner artwork** | See above |
+| **The rest of BACKEND-TODO #45** | Opening balances, leaf and months, the remaining imports, other deductions, the bill source and loan-interest recovery settings, and the bill engine. The console hides each until it ships (`lib/serverReady.ts`) |
+| **A push sender** | M13 records what it would send and what it would reach; the API's sender is not built |
+| **The factory-system sync** | Sync on assumes an hourly pull from the factory's endpoint (backend Phase 10); [factory-integration-spec.md](./factory-integration-spec.md) |
 | **§19.1's warehouse** | M16 grows a report list without a console release |

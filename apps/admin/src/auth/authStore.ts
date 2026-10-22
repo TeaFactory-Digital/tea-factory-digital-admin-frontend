@@ -56,7 +56,7 @@ interface AuthState {
    * then refuse every request, with nothing on screen saying why.
    *
    * The transport calls this when any response carries `password-change-required`, which
-   * turns that dead end into the screen that resolves it. See `BACKEND-API-GAPS.md`.
+   * turns that dead end into the screen that resolves it. See `docs/v2/api-contract.md` ("Agreed shapes").
    */
   noteOwesPasswordChange: () => void;
   /** Cleared locally once the API has accepted the new password, or the decision to keep. */

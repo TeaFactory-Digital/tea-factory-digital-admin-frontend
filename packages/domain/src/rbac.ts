@@ -39,15 +39,17 @@ const ACCESS_ORDER: AccessLevel[] = ['none', 'read', 'write', 'approve'];
 const rank = (level: AccessLevel): number => ACCESS_ORDER.indexOf(level);
 
 /**
- * The capabilities the **factory's own console** owns, which this build routes nothing
- * behind.
+ * The capabilities this build routes nothing behind: today only `payouts`, which the
+ * factory's own system runs. `deliveries` and `ratesAndMonthClose` were here until the
+ * factory-records screens came back (Leaf intake, Rates & month close, shown with the
+ * factory-system sync off), so their rows are shown again and an administrator can set them.
  *
  * Kept as columns in the matrix rather than dropped from `Capability`: the server holds
  * the same table and still grants these to roles over there, so removing the keys would
  * be a migration of every role record for no gain, and a `RoleMatrix` whose shape
  * differed from the server's would be a different type, not a smaller one.
  *
- * But **kept in the data is not the same as shown in the UI**. Rendered, they are three
+ * But **kept in the data is not the same as shown in the UI**. Rendered, they would be
  * rows an administrator can set to `approve`, get a success toast for, and change nothing
  * whatsoever by: the same failure as a role that grants nothing, one level down. So M15
  * hides these rows and preserves their values untouched; see `RoleMatrixView`.
@@ -56,11 +58,7 @@ const rank = (level: AccessLevel): number => ACCESS_ORDER.indexOf(level);
  * console route?" is a scope decision, and a heuristic over `NAVIGATION` would silently
  * hide a row the day somebody flag-gated a module.
  */
-export const FACTORY_CONSOLE_CAPABILITIES: readonly Capability[] = [
-  'deliveries',
-  'ratesAndMonthClose',
-  'payouts',
-];
+export const FACTORY_CONSOLE_CAPABILITIES: readonly Capability[] = ['payouts'];
 
 /** Is this capability one this console actually routes something behind? */
 export function isRoutedCapability(capability: Capability): boolean {

@@ -48,7 +48,7 @@ import { errorMessageKey } from '@/lib/errorMessage';
  * satisfied by retyping what was read out down the corridor. Not worked around here: a
  * console cannot compare against a hash it has never seen, and a client-side check
  * against the string the clerk typed at sign-in would be a credential kept in memory for
- * no good reason. Recorded in `BACKEND-API-GAPS.md`.
+ * no good reason. Recorded in `docs/v2/api-contract.md` ("Agreed shapes").
  */
 const MIN_LENGTH = 12;
 
