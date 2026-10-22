@@ -38,7 +38,8 @@ import { ImportMenu } from '@/components/ImportMenu';
 import { BillRunCard } from '@/modules/bills/BillRunCard';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { billSourceOf } from '@tfd/domain';
-import { useBillRun } from '@/modules/bills/hooks';
+import { useBillRun, useComparesWithSlips, useSlipComparison } from '@/modules/bills/hooks';
+import { SlipComparisonCard } from '@/modules/bills/SlipComparisonCard';
 import { useBillMonths } from '@/modules/money/monthOptions';
 
 export function MonthCloseScreen() {
@@ -69,6 +70,9 @@ export function MonthCloseScreen() {
   const month = useMonth(monthKey);
   const billMonths = useBillMonths();
   const run = useBillRun(monthKey);
+  // Ours against the factory's printed slips, once there are bills to compare.
+  const comparesWithSlips = useComparesWithSlips();
+  const slips = useSlipComparison(monthKey, comparesWithSlips && Boolean(run.data));
   // A file of monthly rates needs the rate permission; a file of "other deductions" lines,
   // or of the month's finished bills from the factory's own system, edits bills.
   const canRates = useCan('ratesAndMonthClose', 'write');
@@ -79,6 +83,7 @@ export function MonthCloseScreen() {
     ...(canRates ? (['monthlyRates'] as const) : []),
     ...(canBills && billSource === 'imported' ? (['bills'] as const) : []),
     ...(canBills && billSource === 'calculated' ? (['billAdjustments'] as const) : []),
+    ...(canBills && comparesWithSlips ? (['printedBalances'] as const) : []),
   ];
 
   if (months.error) return <ErrorState error={months.error} onRetry={() => void months.refetch()} />;
@@ -146,7 +151,11 @@ export function MonthCloseScreen() {
           month={billMonths.data?.find((one) => one.monthKey === monthKey)}
           run={run.data ?? undefined}
           runError={run.error}
+          heldCount={slips.data?.counts.held ?? 0}
         />
+      ) : null}
+      {comparesWithSlips && run.data ? (
+        <SlipComparisonCard monthKey={monthKey} monthOpen={current.open} />
       ) : null}
       <div className="-mt-md flex justify-end">
         <Link

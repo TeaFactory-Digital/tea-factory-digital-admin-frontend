@@ -170,6 +170,7 @@ export function BillsScreen() {
               {/* Worst first: a slip that does not add up is a data fault, a missing
                   account is an office task, and a carried debt is normal. */}
               {row.unbalanced ? <Badge tone="error">{t('bills.flag.unbalanced')}</Badge> : null}
+              {row.held ? <Badge tone="warning">{t('slips.status.held')}</Badge> : null}
               {(row.finalBalance ?? 0) > 0 && !row.hasBankDetails ? (
                 <Badge tone="warning">{t('bills.flag.noBank')}</Badge>
               ) : null}

@@ -90,12 +90,27 @@ export function BillDetailScreen() {
             {data.source === 'imported' ? (
               <Badge tone="neutral">{t('records.bills.imported')}</Badge>
             ) : null}
+            {data.heldAt ? <Badge tone="warning">{t('slips.status.held')}</Badge> : null}
             <Badge tone={data.publishedAt ? 'success' : 'info'}>
               {data.publishedAt ? t('bills.published') : t('bills.draft')}
             </Badge>
           </div>
         }
       />
+
+      {/* Held back from the publish until it agrees with the factory's printed slip. */}
+      {data.heldAt ? (
+        <p className="shrink-0 rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
+          {t('slips.heldNotice', {
+            name: data.heldByName ?? '',
+            reason: data.holdReason ?? '',
+            printed:
+              data.printedFinalBalance === null || data.printedFinalBalance === undefined
+                ? '-'
+                : formatMoney(data.printedFinalBalance),
+          })}
+        </p>
+      ) : null}
 
       {/* BR-107, said loudly. This is the last screen before the figure is a document
           somebody is holding. */}

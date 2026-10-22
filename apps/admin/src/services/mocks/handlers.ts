@@ -19,6 +19,11 @@
 import {
   isFactorySyncEnabled,
   billSourceOf,
+  compareWithSlip,
+  HOLD_REASON_MIN,
+  slipComparisonBlocks,
+  type MonthSlipComparison,
+  type SlipComparisonRow,
   billNumberFor,
   slipMonthLabel,
   type FactoryInfo,
@@ -1015,6 +1020,57 @@ function lockedMonth(monthKey: string): boolean {
 }
 
 /**
+ * The bill held back from a published month, if this supplier has one. A held bill was
+ * never published, so its leaf, its other deductions and the bill itself stay open to
+ * correction until it is released (`compareWithSlip`).
+ */
+function heldBill(monthKey: string, supplierId: string): AdminBill | undefined {
+  return state.bills.find(
+    (bill) => bill.monthKey === monthKey && bill.supplierId === supplierId && bill.heldAt && !bill.publishedAt,
+  );
+}
+
+/** Locked for this supplier: the month is published and their bill is not held. */
+function lockedFor(monthKey: string, supplierId: string | undefined): boolean {
+  return lockedMonth(monthKey) && !(supplierId && heldBill(monthKey, supplierId));
+}
+
+/** Only a factory that calculates its bills here, with the sync off, compares with printed slips. */
+function comparesWithSlips(request: Request): boolean {
+  const config = tenantConfig(request);
+  return !isFactorySyncEnabled(config) && billSourceOf(config.billSettings) === 'calculated';
+}
+
+function slipRow(bill: AdminBill): SlipComparisonRow {
+  const printed = bill.printedFinalBalance ?? null;
+  return {
+    billId: bill.id,
+    supplierId: bill.supplierId,
+    supplierCode: bill.supplierCode,
+    supplierName: bill.supplierName,
+    ours: bill.finalBalance,
+    printed,
+    difference: printed === null ? null : round2((bill.finalBalance ?? 0) - printed),
+    status: compareWithSlip(bill.finalBalance, printed),
+    held: Boolean(bill.heldAt),
+    holdReason: bill.holdReason ?? null,
+  };
+}
+
+function slipComparisonOf(monthKey: string): MonthSlipComparison {
+  const all = state.bills
+    .filter((bill) => bill.monthKey === monthKey)
+    .map(slipRow)
+    .sort((a, b) => a.supplierCode.localeCompare(b.supplierCode));
+  const counts = { match: 0, mismatch: 0, missing: 0, held: 0 };
+  for (const row of all) {
+    counts[row.status] += 1;
+    if (row.held) counts.held += 1;
+  }
+  return { monthKey, counts, rows: all.filter((row) => row.status !== 'match' || row.held) };
+}
+
+/**
  * The record for a month the API knows about, or `null`.
  *
  * Deliberately **not** materialized on demand. An earlier version created a record
@@ -1124,6 +1180,7 @@ function toBillListItem(bill: AdminBill): BillListItem {
     hasBankDetails: bill.hasBankDetails,
     // BR-107, checked rather than assumed. See the generate handler.
     unbalanced: !deductionsBalance(bill.deductions),
+    held: Boolean(bill.heldAt),
   };
 }
 
@@ -1204,10 +1261,14 @@ function pendingWithdrawalsFor(supplierId: string): SavingsWithdrawal[] {
  * The entry is **negative**, which is what `SavingsLedgerEntry` documents: positive is a
  * contribution, negative a withdrawal, so the running balance needs no special case.
  */
-function settleWithdrawalsFor(monthKey: string, publishedAt: string): number {
+function settleWithdrawalsFor(
+  monthKey: string,
+  publishedAt: string,
+  only: (bill: AdminBill) => boolean = () => true,
+): number {
   let settled = 0;
 
-  for (const bill of state.bills.filter((one) => one.monthKey === monthKey)) {
+  for (const bill of state.bills.filter((one) => one.monthKey === monthKey && only(one))) {
     if (bill.savingsWithdrawal <= 0) continue;
 
     for (const request of pendingWithdrawalsFor(bill.supplierId)) {
@@ -1249,9 +1310,13 @@ function settleWithdrawalsFor(monthKey: string, publishedAt: string): number {
   return settled;
 }
 
-function postSavingsFor(monthKey: string, publishedAt: string): number {
+function postSavingsFor(
+  monthKey: string,
+  publishedAt: string,
+  only: (bill: AdminBill) => boolean = () => true,
+): number {
   const bills = state.bills
-    .filter((bill) => bill.monthKey === monthKey && bill.deductions.savings > 0)
+    .filter((bill) => bill.monthKey === monthKey && bill.deductions.savings > 0 && only(bill))
     .sort((a, b) => a.supplierCode.localeCompare(b.supplierCode));
 
   for (const bill of bills) {
@@ -1693,6 +1758,7 @@ const IMPORT_CAPABILITY: Record<ImportKind, Capability> = {
   billAdjustments: 'billing',
   transportRates: 'suppliers',
   bills: 'billing',
+  printedBalances: 'billing',
 };
 
 /**
@@ -1902,7 +1968,7 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
       }
       case 'deliveries': {
         if (code && !supplier) push('supplierCode', 'unknown-supplier');
-        if (row.date && lockedMonth(monthKeyOf(row.date))) push('date', 'month-locked');
+        if (row.date && lockedFor(monthKeyOf(row.date), supplier?.id)) push('date', 'month-locked');
         if (row.collectionPoint && !points.includes(row.collectionPoint)) {
           push('collectionPoint', 'unknown-collection-point');
         }
@@ -1937,7 +2003,7 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
         if (seen.has(key)) push('supplierCode', 'duplicate');
         seen.add(key);
         if (!supplier) return push('supplierCode', 'unknown-supplier');
-        if (lockedMonth(row.month)) return push('month', 'month-locked');
+        if (lockedFor(row.month, supplier.id)) return push('month', 'month-locked');
         if (!state.bills.some((bill) => bill.supplierId === supplier.id && bill.monthKey === row.month)) {
           push('supplierCode', 'no-bill');
         }
@@ -1965,6 +2031,17 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
         if (seen.has(code)) push('supplierCode', 'duplicate');
         seen.add(code);
         if (!supplier) push('supplierCode', 'unknown-supplier');
+        return;
+      }
+      case 'printedBalances': {
+        if (!code || !row.month) return;
+        const key = `${row.month}:${code}`;
+        if (seen.has(key)) push('supplierCode', 'duplicate');
+        seen.add(key);
+        if (!supplier) return push('supplierCode', 'unknown-supplier');
+        const bill = state.bills.find((one) => one.supplierId === supplier.id && one.monthKey === row.month);
+        if (!bill) return push('supplierCode', 'no-bill');
+        if (bill.publishedAt) push('month', 'month-locked');
         return;
       }
     }
@@ -2202,6 +2279,13 @@ function applyImport(
       return;
     case 'bills':
       importBills(rows, user, factory);
+      return;
+    case 'printedBalances':
+      for (const row of rows) {
+        const supplier = supplierByCode(row.supplierCode!)!;
+        const bill = state.bills.find((one) => one.supplierId === supplier.id && one.monthKey === row.month)!;
+        bill.printedFinalBalance = num(row.finalBalance);
+      }
       return;
     case 'transportRates':
       // An empty rate puts the supplier back on their collection point's.
@@ -3593,7 +3677,9 @@ export const handlers: HttpHandler[] = [
     const replay = state.batches.get(batch.batchId);
     if (replay) return HttpResponse.json(replay);
 
-    if (lockedMonth(monthKey)) {
+    // A published month takes leaf only for suppliers whose bill is held: correcting a
+    // weighing is how a held bill is brought into line with the printed slip.
+    if (lockedMonth(monthKey) && !batch.rows.every((row) => !lockedFor(monthKey, row.supplierId))) {
       return fail({
         status: 409,
         code: 'month-locked',
@@ -3711,7 +3797,7 @@ export const handlers: HttpHandler[] = [
 
     const before = state.deliveries[index]!;
 
-    if (lockedMonth(before.monthKey)) {
+    if (lockedFor(before.monthKey, before.supplierId)) {
       return fail({
         status: 409,
         code: 'month-locked',
@@ -3856,7 +3942,16 @@ export const handlers: HttpHandler[] = [
 
     const record = monthRecord(monthKey);
     if (!record) return noSuchMonth(monthKey);
-    if (record.stage === 'published') {
+    /**
+     * After the publish only the **held** bills are recalculated: they were never handed
+     * over, and recalculating is how a corrected weighing or approval reaches them. Every
+     * published bill stays exactly as the supplier was given it.
+     */
+    const heldOnly =
+      record.stage === 'published'
+        ? new Set(state.bills.filter((one) => one.monthKey === monthKey && one.heldAt && !one.publishedAt).map((one) => one.supplierId))
+        : null;
+    if (heldOnly && heldOnly.size === 0) {
       return fail({
         status: 409,
         code: 'month-locked',
@@ -3909,7 +4004,7 @@ export const handlers: HttpHandler[] = [
       loanInstalmentsBefore.set(supplier.id, count);
     }
 
-    const bills = generateBills({
+    const generated = generateBills({
       monthKey,
       runId,
       generatedAt,
@@ -3963,6 +4058,7 @@ export const handlers: HttpHandler[] = [
         ]),
       ),
     });
+    const bills = heldOnly ? generated.filter((bill) => heldOnly.has(bill.supplierId)) : generated;
 
     /**
      * BR-107, as a refusal rather than a warning.
@@ -3987,6 +4083,7 @@ export const handlers: HttpHandler[] = [
     // runs for one open month is two sets of figures nobody can choose between.
     // The office's typed line survives a recomputation: re-generating after a corrected
     // weighing must not silently drop the "other deductions" somebody entered.
+    // So does the printed slip's figure and a hold: the office compares again after fixing.
     for (const bill of bills) {
       const previous = state.bills.find((one) => one.monthKey === monthKey && one.supplierId === bill.supplierId);
       if (previous && (previous.deductions.otherCards > 0 || previous.otherCardsNote)) {
@@ -3996,9 +4093,21 @@ export const handlers: HttpHandler[] = [
           settings?.paymentUnit,
         );
       }
+      if (previous) {
+        bill.printedFinalBalance = previous.printedFinalBalance ?? null;
+        bill.heldAt = previous.heldAt ?? null;
+        bill.heldByName = previous.heldByName ?? null;
+        bill.holdReason = previous.holdReason ?? null;
+      }
     }
-    state.bills = [...state.bills.filter((bill) => bill.monthKey !== monthKey), ...bills];
-    const summary = summariseBillRun(monthKey, runId, bills, {
+    state.bills = heldOnly
+      ? [
+          ...state.bills.filter((bill) => !(bill.monthKey === monthKey && heldOnly.has(bill.supplierId))),
+          ...bills,
+        ]
+      : [...state.bills.filter((bill) => bill.monthKey !== monthKey), ...bills];
+    const monthBills = state.bills.filter((bill) => bill.monthKey === monthKey);
+    const summary = summariseBillRun(monthKey, runId, monthBills, {
       generatedAt,
       generatedById: auth.user.id,
       generatedByName: auth.user.name,
@@ -4235,6 +4344,26 @@ export const handlers: HttpHandler[] = [
       });
     }
 
+    /**
+     * The factory's own system printed a slip for every supplier, and the supplier holds
+     * both, so ours must agree to the rupee. A bill that does not, or whose printed figure
+     * was never entered, is held before the month goes out (`compareWithSlip`).
+     */
+    if (comparesWithSlips(request)) {
+      const blocking = slipComparisonBlocks(slipComparisonOf(monthKey).rows);
+      if (blocking.length > 0) {
+        return fail({
+          status: 409,
+          code: 'bills-mismatch',
+          message: `${blocking.length} bills do not match the printed slips. Fix them or hold them first.`,
+          details: {
+            count: blocking.length,
+            suppliers: blocking.slice(0, 10).map((row) => ({ supplierCode: row.supplierCode, status: row.status })),
+          },
+        });
+      }
+    }
+
     // BR-501, the four-eyes rule. Reachable because a manager holds `approve`,
     // which implies `write`, so the same person *could* enter a rate and close the
     // month on it, and this is what stops them.
@@ -4262,13 +4391,15 @@ export const handlers: HttpHandler[] = [
      * contributions would show a supplier a deduction with no matching passbook
      * entry, which is the first thing they would query.
      */
+    // A held bill stays behind: the supplier does not see it until it is released.
+    const notHeld = (bill: AdminBill) => !bill.heldAt;
     for (let index = 0; index < state.bills.length; index += 1) {
       const bill = state.bills[index]!;
-      if (bill.monthKey === monthKey) state.bills[index] = { ...bill, publishedAt };
+      if (bill.monthKey === monthKey && notHeld(bill)) state.bills[index] = { ...bill, publishedAt };
     }
-    const credited = postSavingsFor(monthKey, publishedAt);
+    const credited = postSavingsFor(monthKey, publishedAt, notHeld);
     // And the other direction (§21.9): withdrawals this month's accounts paid out.
-    settleWithdrawalsFor(monthKey, publishedAt);
+    settleWithdrawalsFor(monthKey, publishedAt, notHeld);
 
     /**
      * M13, if this factory has the trigger on.
@@ -4293,6 +4424,7 @@ export const handlers: HttpHandler[] = [
         ratePerKg: record.rate.ratePerKg,
         extraRatePerKg: record.rate.extraRatePerKg,
         bills: run.billCount,
+        held: state.bills.filter((bill) => bill.monthKey === monthKey && bill.heldAt).length,
         savingsCredited: credited,
         note: body.note ?? null,
       },
@@ -4603,7 +4735,8 @@ export const handlers: HttpHandler[] = [
       });
     }
 
-    const monthBills = state.bills.filter((bill) => bill.monthKey === monthKey);
+    // A held bill was never published, so nothing is paid against it until it is released.
+    const monthBills = state.bills.filter((bill) => bill.monthKey === monthKey && bill.publishedAt);
     if (monthBills.length === 0) {
       return fail({
         status: 409,
@@ -7599,6 +7732,149 @@ export const handlers: HttpHandler[] = [
     return HttpResponse.json({ id: created.id }, { status: 201 });
   }),
 
+  /**
+   * Ours against the factory's printed slips: every bill that is not a plain match, with
+   * the counts. Only a factory that calculates its bills here, with the sync off.
+   */
+  http.get('*/admin/months/:monthKey/slip-comparison', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'billing');
+    if ('response' in auth) return auth.response;
+    if (!comparesWithSlips(request)) {
+      return fail({
+        status: 409,
+        code: 'wrong-bill-source',
+        message: 'Only a factory whose bills are calculated here compares them with printed slips.',
+      });
+    }
+    const monthKey = String(params.monthKey);
+    if (!monthRecord(monthKey)) return noSuchMonth(monthKey);
+    return HttpResponse.json(slipComparisonOf(monthKey));
+  }),
+
+  /** The printed slip's "Balance" for one bill. `null` clears it. */
+  http.put('*/admin/bills/:id/printed', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'billing', 'write');
+    if ('response' in auth) return auth.response;
+    if (!comparesWithSlips(request)) {
+      return fail({
+        status: 409,
+        code: 'wrong-bill-source',
+        message: 'Only a factory whose bills are calculated here compares them with printed slips.',
+      });
+    }
+    const bill = state.bills.find((one) => one.id === params.id);
+    if (!bill) return fail({ status: 404, code: 'not-found', message: 'No such bill.' });
+    if (bill.publishedAt) {
+      return fail({ status: 409, code: 'month-locked', message: 'This bill is published.' });
+    }
+    const body = (await request.json().catch(() => ({}))) as { finalBalance?: number | null };
+    const value = body.finalBalance;
+    if (value !== null && !(typeof value === 'number' && Number.isFinite(value) && value >= 0)) {
+      return fail({ status: 422, code: 'invalid', message: 'Enter the Balance printed on the slip.' });
+    }
+    const before = bill.printedFinalBalance ?? null;
+    bill.printedFinalBalance = value === null ? null : round2(value);
+    recordBy(auth, 'bill.printed', 'bill', bill.id, {
+      before: { printedFinalBalance: before },
+      after: { printedFinalBalance: bill.printedFinalBalance },
+    });
+    return HttpResponse.json(slipRow(bill));
+  }),
+
+  /** Keep one bill back from publishing until it agrees with the printed slip. */
+  http.post('*/admin/bills/:id/hold', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'billing', 'write');
+    if ('response' in auth) return auth.response;
+    if (!comparesWithSlips(request)) {
+      return fail({
+        status: 409,
+        code: 'wrong-bill-source',
+        message: 'Only a factory whose bills are calculated here holds bills against printed slips.',
+      });
+    }
+    const bill = state.bills.find((one) => one.id === params.id);
+    if (!bill) return fail({ status: 404, code: 'not-found', message: 'No such bill.' });
+    if (bill.publishedAt) {
+      return fail({ status: 409, code: 'month-locked', message: 'This bill is already published.' });
+    }
+    const { reason } = (await request.json().catch(() => ({}))) as { reason?: string };
+    if (!reason || reason.trim().length < HOLD_REASON_MIN) {
+      return fail({ status: 422, code: 'invalid', message: 'Say why the bill is held.' });
+    }
+    bill.heldAt = new Date().toISOString();
+    bill.heldByName = auth.user.name;
+    bill.holdReason = reason.trim();
+    recordBy(auth, 'bill.hold', 'bill', bill.id, { after: { holdReason: bill.holdReason } });
+    return HttpResponse.json(slipRow(bill));
+  }),
+
+  /**
+   * Let a held bill go. It must now match its printed slip. In a month already published
+   * this **publishes the one bill**: the supplier sees it, its savings are posted and its
+   * withdrawals settled, exactly as the month's publish would have done.
+   */
+  http.post('*/admin/bills/:id/release', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'ratesAndMonthClose', 'approve');
+    if ('response' in auth) return auth.response;
+    const bill = state.bills.find((one) => one.id === params.id);
+    if (!bill) return fail({ status: 404, code: 'not-found', message: 'No such bill.' });
+    if (!bill.heldAt || bill.publishedAt) {
+      return fail({ status: 409, code: 'bill-not-held', message: 'This bill is not held.' });
+    }
+    // Leaf corrected after the bill was calculated: recalculate before comparing.
+    const liveKgs = round2(
+      state.deliveries
+        .filter((one) => one.supplierId === bill.supplierId && one.monthKey === bill.monthKey && !one.voidedAt)
+        .reduce((sum, one) => sum + one.kgs, 0),
+    );
+    if (liveKgs !== round2(bill.totalKgs)) {
+      return fail({
+        status: 409,
+        code: 'bills-stale',
+        message: 'The leaf has changed since this bill was calculated. Re-generate it first.',
+        details: { billKgs: bill.totalKgs, liveKgs },
+      });
+    }
+    if (compareWithSlip(bill.finalBalance, bill.printedFinalBalance) !== 'match') {
+      return fail({
+        status: 409,
+        code: 'bill-still-mismatched',
+        message: 'This bill still does not match the printed slip.',
+        details: { ours: bill.finalBalance, printed: bill.printedFinalBalance ?? null },
+      });
+    }
+    const before = { heldAt: bill.heldAt, holdReason: bill.holdReason ?? null };
+    bill.heldAt = null;
+    bill.heldByName = null;
+    bill.holdReason = null;
+    let published = false;
+    if (lockedMonth(bill.monthKey)) {
+      const publishedAt = new Date().toISOString();
+      bill.publishedAt = publishedAt;
+      const only = (one: AdminBill) => one.id === bill.id;
+      postSavingsFor(bill.monthKey, publishedAt, only);
+      settleWithdrawalsFor(bill.monthKey, publishedAt, only);
+      fireAutomatic(
+        request,
+        'billPublished',
+        {
+          title: `Your ${bill.monthKey} account is ready`,
+          body: 'The Green Leaf Account has been published. Open the app to see your kilos and your balance.',
+          entity: 'bill',
+          entityId: bill.id,
+        },
+        { kind: 'supplier', supplierId: bill.supplierId },
+      );
+      published = true;
+    }
+    recordBy(auth, 'bill.release', 'bill', bill.id, { before, after: { published } });
+    return HttpResponse.json({ ...slipRow(bill), published });
+  }),
+
   /** The bill's "other deductions" line, before the month is published. */
   http.put('*/admin/bills/:id/adjustment', async ({ request, params }) => {
     await delay(LATENCY_MS);
@@ -7609,7 +7885,7 @@ export const handlers: HttpHandler[] = [
 
     const bill = state.bills.find((one) => one.id === params.id);
     if (!bill) return fail({ status: 404, code: 'not-found', message: 'No such bill.' });
-    if (bill.publishedAt || lockedMonth(bill.monthKey)) {
+    if (bill.publishedAt || lockedFor(bill.monthKey, bill.supplierId)) {
       return fail({ status: 409, code: 'month-locked', message: 'The month is published.' });
     }
     const body = (await request.json()) as BillAdjustment;
@@ -7641,6 +7917,13 @@ export const handlers: HttpHandler[] = [
     if (syncOn) return syncOn;
 
     const { rows, fileName } = (await request.json()) as { fileName: string; rows: ImportRow[] };
+    if (kind === 'printedBalances' && !comparesWithSlips(request)) {
+      return fail({
+        status: 409,
+        code: 'wrong-bill-source',
+        message: 'Only a factory whose bills are calculated here compares them with printed slips.',
+      });
+    }
     if (kind === 'bills' && billSourceOf(tenantConfig(request).billSettings) !== 'imported') {
       return fail({
         status: 409,

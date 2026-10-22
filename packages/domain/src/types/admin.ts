@@ -35,6 +35,7 @@ import type {
   BillSettings,
   FactorySyncSetting,
   LoanInterestSetting,
+  SlipCheck,
 } from '../factoryRecords';
 import type { ContentTranslation, ContentTranslations } from '../content';
 import type { BannerTranslations } from '../banners';
@@ -1152,7 +1153,7 @@ export interface MonthSummary extends MonthCycleStatus {
  * slip and the app's Home screen must be the same figures field for field. A
  * console-shaped DTO alongside the app's would be two read models over one fact.
  */
-export interface AdminBill extends GreenLeafBill {
+export interface AdminBill extends GreenLeafBill, SlipCheck {
   supplierId: string;
   /**
    * How the bill came to be, while the factory keeps its records here: `calculated` by
@@ -1202,6 +1203,8 @@ export interface BillListItem {
    * visible in the list instead of only on the slip nobody opened.
    */
   unbalanced: boolean;
+  /** Held back from publishing until it agrees with the factory's printed slip. */
+  held?: boolean;
 }
 
 /**
@@ -2302,6 +2305,11 @@ export interface FeatureFlagSet {
   enableDarkModeToggle: boolean;
   enableProfileTab: boolean;
   enableAutoLock: boolean;
+  /**
+   * "This month so far" on the app's Account tab (`GET /bills/month-to-date`, `MonthToDate`).
+   * Off by default: it is only as good as the office's daily leaf entries.
+   */
+  enableMonthToDate: boolean;
 
   /* ────────────────────────────────────────────────────────────────────────────
    * v1 console-only flags, kept for reference.
@@ -2450,6 +2458,15 @@ export const ADMIN_ERROR_CODES = [
   'wrong-bill-source',
   /** Changing where the bills come from while a month has generated but unpublished bills. */
   'bill-source-blocked',
+  /**
+   * Publishing a month whose bills are calculated here while a bill disagrees with the
+   * factory's printed slip, or has no printed figure, and is not held (`compareWithSlip`).
+   */
+  'bills-mismatch',
+  /** Releasing a bill that is not held. */
+  'bill-not-held',
+  /** Releasing a held bill that still does not match its printed slip. */
+  'bill-still-mismatched',
 ] as const;
 
 export type AdminErrorCode = (typeof ADMIN_ERROR_CODES)[number];

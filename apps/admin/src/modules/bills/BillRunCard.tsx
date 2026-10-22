@@ -36,11 +36,14 @@ export function BillRunCard({
   month,
   run,
   runError,
+  heldCount = 0,
 }: {
   monthKey: string;
   month: BillMonth | undefined;
   run: BillRun | undefined;
   runError: unknown;
+  /** Bills held back from the publish: after it, only these are recalculated. */
+  heldCount?: number;
 }) {
   const { t } = useTranslation();
   const toast = useToast();
@@ -137,10 +140,26 @@ export function BillRunCard({
         ) : null}
 
         {!open ? (
-          <p className="flex items-start gap-xs rounded-md bg-surface-variant px-md py-sm text-body-small text-text-secondary">
-            <Lock className="mt-xxs size-icon-sm shrink-0" aria-hidden />
-            {t('bills.publishedLock')}
-          </p>
+          <>
+            <p className="flex items-start gap-xs rounded-md bg-surface-variant px-md py-sm text-body-small text-text-secondary">
+              <Lock className="mt-xxs size-icon-sm shrink-0" aria-hidden />
+              {t('bills.publishedLock')}
+            </p>
+            {/* A held bill was never published: recalculating is how a fix reaches it. */}
+            {heldCount > 0 && canGenerate ? (
+              <div className="flex flex-col gap-xs border-t border-divider pt-md">
+                <Button
+                  variant="secondary"
+                  loading={generate.isPending}
+                  iconLeft={<RefreshCw className="size-icon-sm" aria-hidden />}
+                  onClick={() => void submit()}
+                >
+                  {t('bills.regenerateHeld', { count: heldCount })}
+                </Button>
+                <p className="text-caption text-text-secondary">{t('bills.regenerateHeldHint')}</p>
+              </div>
+            ) : null}
+          </>
         ) : canGenerate ? (
           <div className="flex flex-col gap-xs border-t border-divider pt-md">
             <Button

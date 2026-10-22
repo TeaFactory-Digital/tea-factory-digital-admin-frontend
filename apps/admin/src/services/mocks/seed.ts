@@ -1450,6 +1450,7 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
       enableDarkModeToggle: true,
       enableProfileTab: true,
       enableAutoLock: true,
+      enableMonthToDate: false,
     },
     savings: { perKgOptions: [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50] },
     // §21.10: the same list M7's requests are drawn from, so the catalogue and the queue
@@ -1507,6 +1508,7 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
       enableDarkModeToggle: false,
       enableProfileTab: true,
       enableAutoLock: true,
+      enableMonthToDate: false,
     },
     savings: { perKgOptions: [0, 10, 20, 30, 40] },
     manureProducts: MANURE_PRODUCTS.map((one) => ({ ...one })),
@@ -1572,6 +1574,7 @@ export const mockConfigs: Record<string, RuntimeConfig> = {
       enableDarkModeToggle: false,
       enableProfileTab: true,
       enableAutoLock: true,
+      enableMonthToDate: false,
     },
     savings: { perKgOptions: [0, 15, 30] },
     banks: BANKS.slice(0, 2).map((b) => ({ name: b.name, branches: [...b.branches] })),

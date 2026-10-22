@@ -103,8 +103,9 @@ factory's colours as soon as `GET /config` answers.
 - [ ] **Bills imported** (the factory's own system prints them, as at Galaboda): import one
       month's finished bills (**Rates & month close → Import → Finished bills**), check a
       few against the printed slips, then publish.
-- [ ] **Bills calculated here:** generate one month's bills and have the factory's
-      accountant check them against their own before publishing.
+- [ ] **Bills calculated here:** generate one month's bills, enter or import each printed
+      slip's Balance (**Rates & month close → Compare with printed slips**), fix or hold
+      every bill that differs, then publish.
 
 ## 5. Supplier app: one build for this factory (mobile developer)
 

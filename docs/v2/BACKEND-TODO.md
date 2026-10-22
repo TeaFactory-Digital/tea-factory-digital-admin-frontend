@@ -12,6 +12,40 @@ Each item says what is wrong or missing, where, and what to change.
 | # | What | Priority |
 |---|------|----------|
 | 45 | Factory records without the factory system: the bills import, opening balances, leaf and months, then the bill engine | High |
+| 48 | "This month so far" on the app's Account tab: the `enableMonthToDate` flag and `GET /bills/month-to-date` | Medium |
+
+### Urgent: staging answers 500 on four routes
+
+Checked on 22 October 2026 against `https://tfd-api-fja1.onrender.com/v1`, tenant
+`galaboda`, signed in as the manager, **GET requests only** (37 routes the console reads).
+Four answer `500 internal`; every other route answers 200, or 404 where the route is not
+built yet (expected, below).
+
+| Route | Answer | requestId (for your logs) |
+|---|---|---|
+| `GET /config` | **500** | `e85a7dc9-e3c8-41e3-a425-8695daaf7201` (also `ee8eab4b-5b06-4036-9810-310618db2676`) |
+| `GET /admin/config` | **500** | `b8b15fa8-7050-40f3-9f66-66c18e0ac986` |
+| `GET /admin/activity?limit=20` | **500** | `d5086cbd-ed3e-49d5-a552-8c3cde1cdafc` |
+| `GET /admin/suppliers/:id` (any supplier, e.g. `78830bab-c0e2-416d-b377-0cdc5930aeff`) | **500** | `17737c57-483e-4579-a7c3-207d501cfe0f` |
+
+**What the office sees:** the red "Could not reach the factory configuration" banner on
+every screen, the wrong branding and flags, the sync read as **on** (so the Factory records
+section never appears, even for a manager), Configuration that will not open, the bell's
+recent activity empty, and every supplier's detail page failing.
+
+**Likely cause:** all four read the columns added by the October migrations
+(`factory_sync`, `advance_interest`, `loan_interest`, `bill_settings`, the activity read
+marks, `transport_per_kg`). You mentioned six migrations not yet applied on staging. Please
+check the requestIds, run the migrations, and confirm all four answer 200 (`GET /config`
+with `factorySync` in it).
+
+**404, expected (not built yet, #45 below):** `/admin/deliveries`,
+`/admin/deliveries/summary`, `/admin/months`, `/admin/months/:monthKey`,
+`/admin/suppliers/:id/opening-balances`.
+
+**Not checked:** detail routes for credit requests, change requests, inquiries and tea-packet
+requests (their lists were empty on staging), every write route (we change nothing on
+staging), and the supplier app's routes.
 
 **Before you start:** pull the console repo and `vendor:pull`. `@tfd/domain` has changed
 since your last re-vendor: `factoryRecords.ts` (bills import, `billSourceOf`, `loanRecovery`,
@@ -78,13 +112,22 @@ work list, what is decided, and what the console is holding back for you.
    `monthlyRates` imports.
 5. **Other deductions** (`PUT /admin/bills/:id/adjustment`, the `billAdjustments` import).
 6. **The bill engine** (factory-records §5), last: galaboda imports its bills, so no factory
-   needs it yet.
+   needs it yet. **With it, the printed-slip check and hold** (factory-records §5,
+   "Comparing with the printed slips"): `GET /admin/months/:monthKey/slip-comparison`,
+   `PUT /admin/bills/:id/printed`, `POST /admin/bills/:id/hold` and `/release`, the
+   `printedBalances` import, and `409 bills-mismatch` on the publish. A held bill is left out
+   of the publish (no savings, no withdrawals, no payout, **not returned to the app**), stays
+   open to leaf and other-deduction fixes, and is recalculated alone by `generate` on the
+   published month; releasing it then publishes that one bill.
 
 Alongside:
 
 - **Open loan rule (B2):** pass `loanOutstanding` to `buildCreditEligibility` for every
   facility, and refuse a loan or an advance while a loan is owed with
   `409 loan-outstanding`: in the app's own request, a walk-in, and approval.
+- **Platform admin reads the records:** `platformAdmin` is now `deliveries: R`,
+  `ratesAndMonthClose: R`, `billing: R` in `DEFAULT_ROLE_MATRIX` (`vendor:pull`). Read only:
+  every write on those routes still refuses it.
 - **Savings withdrawals:** creating or cancelling one needs `billing: A` (the manager), not
   `W`, on `POST /admin/savings/withdrawals` and `.../:id/cancel`.
 - **Loan balance:** the slip's "Loan Balance" is the **loan's**. Fix the comment in
@@ -109,6 +152,8 @@ remove it in the same PR:
 | Opening balances card (supplier → Money) | `GET` / `PUT /admin/suppliers/:id/opening-balances` | `OPENING_BALANCES_ON_SERVER = false` |
 | "Other deductions" → Edit on a bill | `PUT /admin/bills/:id/adjustment` | `OTHER_DEDUCTIONS_ON_SERVER = false` |
 | Bill calculation: "Where the bills come from" and "How the loan interest is taken" | `PATCH /admin/config` accepting `billSettings.source` and `loanInterest.recovery` | `BILL_SOURCE_AND_RECOVERY_ON_SERVER = false` |
+| Rates & month close: "Compare with printed slips" card, the checklist step, held badges | `GET .../slip-comparison`, `PUT /admin/bills/:id/printed`, `POST /admin/bills/:id/hold`, `/release` | `SLIP_COMPARISON_ON_SERVER = false` |
+| Import → Printed slip balances | `POST /admin/imports/printedBalances` | `IMPORT_KINDS_NOT_ON_SERVER`: `'printedBalances'` |
 
 The leaf intake grid and Rates & month close also call the v1 leaf and month endpoints; they
 stay visible because the rest of those screens works, and start working as those land.
@@ -203,8 +248,13 @@ Confirmed by the factory where marked; the rest decided on the console side.
   `unknown-collection-point`, `bank-details-required`, `opening-balances-locked`,
   `unknown-supplier`, `no-bill`, `import-invalid`, `import-size`, `request-pending`,
   `supplier-suspended`, `supplier-closed`, `advance-outstanding`, `loan-outstanding`,
-  `loan-installments-invalid`, `manure-installments-invalid`. The credit refusals block the
-  approval dialog. `sync-switch-blocked` and `bill-source-blocked` name `details.months`.
+  `loan-installments-invalid`, `manure-installments-invalid`, `bills-mismatch`,
+  `bill-not-held`, `bill-still-mismatched`. The credit refusals block the approval dialog.
+  `sync-switch-blocked` and `bill-source-blocked` name `details.months`; `bills-mismatch`
+  names `details.count`.
+- Printed-slip check (`factoryRecords.ts`): `compareWithSlip`, `slipComparisonBlocks`,
+  `HOLD_REASON_MIN`, the types `SlipCheck` (on `AdminBill`), `SlipComparisonRow`,
+  `MonthSlipComparison`, `IMPORT_COLUMNS.printedBalances`; `BillListItem.held`.
 - Import problem text, en/si/ta, for every code above and `unknown-bank`,
   `bank-not-in-catalogue`, `too-large`, `feature-disabled`, `too-short`, `too-many-decimals`,
   `does-not-add-up`, `rate-differs`. The dialog shows `details.total` ("The server found N
@@ -231,3 +281,45 @@ them onto `BillRow` (`savingsThisMonth`, `savingsPrevious`, `savingsToDate` alre
 here back to the sync ("the sync's records replace ours") also waits for Phase 10.
 
 **Check:** the list in §9 of `factory-records.md`.
+
+## 48. "This month so far" on the app's Account tab
+
+**Why.** The Account tab shows only the newest **published** bill, so in the middle of
+October a supplier sees September. Factories asked for the month in progress. There is no
+money in it until the auction rate is set, so it shows the **kilos and the approvals**:
+total kilos, days with leaf, the daily grid, and what was approved this month. Built in the
+app and the console; both hide it until this lands.
+
+**1. The flag.** `enableMonthToDate` is the fifteenth app flag (`FeatureFlagSet`,
+`featureFlagSetSchema`, `vendor:pull`). App-only, **default `false`** for every factory
+(seed it in `db:seed:tenant` and add it to existing `client_config` rows as `false`).
+Accept it in `PATCH /admin/config` and serve it in `GET /config`. A factory turns it on
+only if the office enters leaf daily (sync on: the hourly sync does that).
+
+**2. `GET /bills/month-to-date`** (supplier realm, own data only). Declare it **before**
+`GET /bills/:monthKey`, or `month-to-date` is read as a month. Answers `MonthToDate`
+(`packages/domain/src/types/app.ts`) or `200 null`:
+
+- `null` when the flag is off (not `403`: the app treats `null` and `404` alike, as
+  "nothing to show").
+- **Which month:** the first month after the supplier's newest **published** bill. A held
+  or unpublished bill is not published, so a finished month stays on the card, complete,
+  until its bill is out; then the next month follows. A supplier with no bill yet gets the
+  current month. `monthEnded` is true once that calendar month is over (Asia/Colombo).
+- `totalKgs`, `supplyDays`, `lastSupplyDate` (`YYYY-MM-DD`) and `dailySupply` (every day of
+  the month, `kgs: null` on a day without leaf, the same shape as `GreenLeafBill.dailySupply`)
+  from the **non-voided** deliveries of that month.
+- `approved`: rupees approved in that month by facility (`advance`, `loan`, `manure`,
+  `teaPackets`), 0 for none or a facility switched off. By approval date, not request date.
+- `asOf`: when it was computed. Never include a rate, gross or balance: a draft bill's
+  figures must not reach the app before the publish.
+
+**When it ships:** set `MONTH_TO_DATE_ON_SERVER = true` in
+`apps/admin/src/lib/serverReady.ts` (it shows the flag in Configuration → Features). The app
+needs no change.
+
+**Check:** flag off: `null`. Flag on, mid-month with 11 days of leaf and an approved Rs.
+15,000 advance: `totalKgs` equals the sum of that month's non-voided deliveries,
+`supplyDays: 11`, `approved.advance: 15000`. After the month ends and before publishing:
+still that month, `monthEnded: true`. After publishing: the next month.
+

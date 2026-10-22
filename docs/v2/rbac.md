@@ -70,9 +70,9 @@ rather than assumed.
 | Capability | Clerk | Manager | Editor | Fac. admin | Plat. admin |
 | --- | --- | --- | --- | --- | --- |
 | `suppliers` | W | R | - | R | R |
-| `deliveries` | W | R | - | - | - |
-| `ratesAndMonthClose` | - | A | - | - | - |
-| `billing` | W | A | - | - | - |
+| `deliveries` | W | R | - | - | R |
+| `ratesAndMonthClose` | - | A | - | - | R |
+| `billing` | W | A | - | - | R |
 | `payouts` | R | A | - | - | - |
 | `creditRequests` | W | A | - | - | - |
 | `creditAboveThreshold` | - | A | - | - | - |
@@ -271,6 +271,10 @@ console.
   rule and the audit log, none of which ever depended on a second factor. The integration
   test that asserted a manager could read nothing until MFA was verified now asserts the
   inverse, beside the refusals proving the matrix still holds (`changeRequests.test.tsx`).
+- **The platform admin reads a factory's records, never changes them.** `R` on
+  `deliveries`, `ratesAndMonthClose` and `billing`, so the platform team can look at a
+  factory's leaf, rates and bills to answer a support question; entering, approving and
+  publishing stay with the factory's own clerk and manager (four-eyes, audit).
 - **Roles are per factory.** A platform admin is the only identity that spans
   tenants, and every cross-tenant action is audited.
 - **Sessions are revocable**, and every approval carries the actor into the audit

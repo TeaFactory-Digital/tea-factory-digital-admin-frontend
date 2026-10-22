@@ -17,7 +17,16 @@
  *    audited reversal endpoint, never a relaxation of the lock.
  */
 
-import type { AdminBill, BillListItem, BillMonth, BillQuery, BillRun, Paged } from '@tfd/domain';
+import type {
+  AdminBill,
+  BillListItem,
+  BillMonth,
+  BillQuery,
+  BillRun,
+  MonthSlipComparison,
+  Paged,
+  SlipComparisonRow,
+} from '@tfd/domain';
 import { apiClient } from '../api/client';
 import { toParams } from './params';
 
@@ -66,5 +75,36 @@ export const billEndpoints = {
   generate: (monthKey: string) =>
     apiClient
       .post<BillRun>(`/admin/months/${monthKey}/bills/generate`, { monthKey })
+      .then((response) => response.data),
+
+  /**
+   * Ours against the factory's printed slips (`compareWithSlip`): the counts, and every bill
+   * that is not a plain match. Only a factory that calculates its bills here with the sync
+   * off; any other answers `409 wrong-bill-source`.
+   */
+  slipComparison: (monthKey: string) =>
+    apiClient
+      .get<MonthSlipComparison>(`/admin/months/${monthKey}/slip-comparison`)
+      .then((response) => response.data),
+
+  /** The printed slip's "Balance" for one bill; `null` clears it. `409 month-locked` once published. */
+  setPrinted: (billId: string, finalBalance: number | null) =>
+    apiClient
+      .put<SlipComparisonRow>(`/admin/bills/${billId}/printed`, { finalBalance })
+      .then((response) => response.data),
+
+  /** Keep a bill back from publishing. A reason of 10+ characters. */
+  hold: (billId: string, reason: string) =>
+    apiClient
+      .post<SlipComparisonRow>(`/admin/bills/${billId}/hold`, { reason })
+      .then((response) => response.data),
+
+  /**
+   * Let a held bill go once it matches (`409 bill-still-mismatched` otherwise). In a month
+   * already published this publishes the one bill.
+   */
+  release: (billId: string) =>
+    apiClient
+      .post<SlipComparisonRow & { published: boolean }>(`/admin/bills/${billId}/release`)
       .then((response) => response.data),
 };

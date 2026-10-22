@@ -397,6 +397,7 @@ describe('configImpact (the shared rule)', () => {
       enableDarkModeToggle: true,
       enableProfileTab: true,
       enableAutoLock: true,
+      enableMonthToDate: false,
     },
     collectionPoints: [{ name: 'MAKADURA' }],
     banks: [{ name: 'Bank of Ceylon' }],
@@ -460,8 +461,8 @@ describe('configImpact (the shared rule)', () => {
  * keeps an older console working against a newer server.
  */
 describe('featureFlagSetSchema', () => {
-  it('is the fourteen the app reads, and knows when one is missing', () => {
-    expect(FEATURE_FLAG_NAMES).toHaveLength(14);
+  it('is the fifteen the app reads, and knows when one is missing', () => {
+    expect(FEATURE_FLAG_NAMES).toHaveLength(15);
     expect(featureFlagSetSchema.safeParse(bundledConfig.flags).success).toBe(true);
 
     const { enableManure: _dropped, ...incomplete } = bundledConfig.flags;

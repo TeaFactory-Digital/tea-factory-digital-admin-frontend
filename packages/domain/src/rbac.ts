@@ -160,9 +160,14 @@ export const DEFAULT_ROLE_MATRIX: Record<ConsoleRole, Record<Capability, AccessL
   },
   platformAdmin: {
     suppliers: R,
-    deliveries: NONE,
-    ratesAndMonthClose: NONE,
-    billing: NONE,
+    /*
+     * `R` on the factory's records (leaf, rates, bills): the platform team may look at a
+     * factory's figures to answer a support question, never change them. Entering,
+     * approving and publishing stay with the factory's own people (four-eyes, audit).
+     */
+    deliveries: R,
+    ratesAndMonthClose: R,
+    billing: R,
     payouts: NONE,
     creditRequests: NONE,
     creditAboveThreshold: NONE,

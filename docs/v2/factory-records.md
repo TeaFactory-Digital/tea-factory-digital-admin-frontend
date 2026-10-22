@@ -66,6 +66,7 @@ CSV file**.
 | Factory records → **Leaf intake** (`/deliveries`) | Session grid (v1, restored) | **Import from file** | `deliveries: W` |
 | Factory records → **Rates & month close** (`/rates`) | Rate card (v1, restored) | **Import → Monthly rates** | `ratesAndMonthClose: W` |
 | Same screen, bills **calculated** | **Generate bills**, then **Review this month's bills**, then Publish | | `billing: W` / `ratesAndMonthClose: A` |
+| Same screen, bills **calculated** | **Compare with printed slips** card: each slip's Balance against ours; **Enter printed**, **Hold**, **Release** (§5, "Comparing with the printed slips") | **Import → Printed slip balances** | `billing: W` (enter, hold) / `ratesAndMonthClose: A` (release) |
 | Same screen, bills **imported** | **Review this month's bills**, then Publish | **Import → Finished bills** | `billing: W` / `ratesAndMonthClose: A` |
 | Same screen | Deduction rates card: transport per kg (factory-wide **and per collection point**), stamps, instalment caps | | `ratesAndMonthClose: W` propose, `A` approve |
 | Bill detail (calculated bills only) | **Other deductions → Edit** (before publishing) | **Import → Other deductions** | `billing: W` |
@@ -78,7 +79,9 @@ CSV file**.
 counter request, and import, generate or adjust bills. Deciding a request and publishing a
 month stay with the manager (`A`, BR-501 refuses the recorder or importer as approver).
 **Savings withdrawals need `billing: A`**: the clerk's `W` must not let them pay out a
-supplier's savings.
+supplier's savings. **The platform admin reads, never writes:** `deliveries`,
+`ratesAndMonthClose` and `billing` are `R` for it, so the platform team can see a factory's
+records for support; the factory administrator has no access to them.
 
 ## 4. API
 
@@ -93,20 +96,24 @@ BACKEND-TODO #45 says which of these are built.
 |---|---|---|
 | `GET /admin/deliveries?date&collectionPoint&includeVoided&page&pageSize&sort&dir` | `Paged<Delivery>` | |
 | `GET /admin/deliveries/summary?date&collectionPoint` | `CollectionDaySummary` | |
-| `POST /admin/deliveries` | `DeliveryBatch` → `DeliveryBatchResult` (per-row refusals inside a 200) | `409 month-locked`, `422 batch-too-large` |
-| `POST /admin/deliveries/:id/void` | `{ reason }` → `Delivery` | `422 note-required`, `409 month-locked` |
+| `POST /admin/deliveries` | `DeliveryBatch` → `DeliveryBatchResult` (per-row refusals inside a 200) | `409 month-locked` (unless every row's supplier has a **held** bill that month, §5), `422 batch-too-large` |
+| `POST /admin/deliveries/:id/void` | `{ reason }` → `Delivery` | `422 note-required`, `409 month-locked` (unless the supplier's bill is held) |
 | `GET /admin/months`, `GET /admin/months/:monthKey` | `Paged<MonthSummary>`, `MonthSummary` | `404` unknown month |
 | `PUT /admin/months/:monthKey/rate` | `MonthlyRateEntry` → `MonthSummary` | `409 month-locked`, `422 invalid-rate` |
 | `GET /admin/months/:monthKey/exceptions`, `POST .../exceptions/:id/resolve` | `Paged<MonthException>`, `{ note }` | `422 note-required` |
-| `POST /admin/months/:monthKey/bills/generate` | `{ monthKey }` → `BillRun` | `409 wrong-bill-source` (first), `409 rate-missing`, `409 month-locked` |
-| `POST /admin/months/:monthKey/publish` | `{ monthKey, note? }` → `MonthSummary` | `rate-missing`, `exceptions-open`, `bills-stale`, `already-published`, `four-eyes-violation` |
+| `POST /admin/months/:monthKey/bills/generate` | `{ monthKey }` → `BillRun`. In a published month, recalculates **only the held bills** (§5) | `409 wrong-bill-source` (first), `409 rate-missing`, `409 month-locked` (published, nothing held) |
+| `POST /admin/months/:monthKey/publish` | `{ monthKey, note? }` → `MonthSummary`. Held bills stay unpublished (§5) | `rate-missing`, `exceptions-open`, `bills-stale`, `bills-mismatch` (calculated bills, §5), `already-published`, `four-eyes-violation` |
+| `GET /admin/months/:monthKey/slip-comparison` | `MonthSlipComparison` (`billing: R`) | `409 wrong-bill-source` (not calculated, or sync on), `404` unknown month |
+| `PUT /admin/bills/:id/printed` | `{ finalBalance: number \| null }` → `SlipComparisonRow` (`billing: W`) | `409 wrong-bill-source`, `409 month-locked` (published), `422 invalid` |
+| `POST /admin/bills/:id/hold` | `{ reason }` (10+ characters) → `SlipComparisonRow` (`billing: W`) | `409 wrong-bill-source`, `409 month-locked` (published), `422 invalid` |
+| `POST /admin/bills/:id/release` | → `SlipComparisonRow & { published }` (`ratesAndMonthClose: A`) | `409 bill-not-held`, `409 bills-stale` (leaf moved since the bill was calculated), `409 bill-still-mismatched` |
 | `POST /admin/suppliers` | `NewSupplier` → `{ id }` (201) | `409 supplier-code-taken`, `422 unknown-collection-point`, `422 bank-details-required` |
 | `GET /admin/suppliers/:id/opening-balances` | `OpeningBalancesRecord` | `404` none yet |
 | `PUT /admin/suppliers/:id/opening-balances` | `OpeningBalances & { note }` → `OpeningBalancesRecord` | `409 opening-balances-locked`, `422 note-required` |
 | `POST /admin/credit-requests` | `WalkInCreditRequest` → `{ id }` (201) | `404` supplier, `422 invalid`, `feature-disabled`, `supplier-suspended`, `supplier-closed`, `request-pending`, `loan-outstanding`, the instalment codes |
 | `PUT /admin/suppliers/:id/transport-rate` | `SupplierTransportRate` → `{ id }` | `422 negative`, `422 note-required` |
-| `PUT /admin/bills/:id/adjustment` | `BillAdjustment` → `{ id }` | `409 month-locked`, `422 negative`, `422 note-required` |
-| `POST /admin/imports/:kind` | `{ fileName, rows }` → `ImportResult` | `422 import-invalid` with `details.problems` (at most 500) and `details.total`, `422 import-size`, `409 wrong-bill-source` (`bills`) |
+| `PUT /admin/bills/:id/adjustment` | `BillAdjustment` → `{ id }` | `409 month-locked` (published; a held bill is not), `422 negative`, `422 note-required` |
+| `POST /admin/imports/:kind` | `{ fileName, rows }` → `ImportResult` | `422 import-invalid` with `details.problems` (at most 500) and `details.total`, `422 import-size`, `409 wrong-bill-source` (`bills`, `printedBalances`) |
 
 Already on the backend and used as they are: `GET /admin/bill-months`, `GET /admin/bills`,
 `GET /admin/bills/:id`, `GET /admin/months/:monthKey/bill-run`, the four
@@ -129,6 +136,8 @@ Config and shapes on existing routes (`GET /config`, `GET /admin/config`,
 - **`AdminSupplier.transportPerKg?: number | null`** (and `SupplierDetail`): `null` or
   absent means the point's rate.
 - **`AdminBill.source?: 'calculated' | 'imported'`**, absent on a synced bill.
+- **`AdminBill` also carries `SlipCheck`**: `printedFinalBalance?`, `heldAt?`, `heldByName?`,
+  `holdReason?` (§5). **`BillListItem.held?: boolean`**.
 - **`GreenLeafBill.loanInstalmentNo?: number | null`** and **`otherCardsNote?`**.
 
 ### 4.2 Rules
@@ -207,6 +216,7 @@ edited here. Audit `bill.adjust`.
 | `billAdjustments` | `duplicate` (month + code), `unknown-supplier`, `month-locked`, `no-bill`, note missing (`required`) | Other deductions, as above |
 | `transportRates` | `duplicate`, `unknown-supplier` | Each supplier's own rate; an empty `transportPerKg` sets `null` |
 | `bills` | `duplicate` (month + code), `unknown-supplier`, `unknown-month`, `month-locked`, `rate-differs`, and **the approvals check (§5a)** | The month's bills **as printed** (§5a) for the suppliers in the file |
+| `printedBalances` | `duplicate` (month + code), `unknown-supplier`, `no-bill`, `month-locked` (the bill is published) | Each bill's `printedFinalBalance` (§5) |
 
 Every problem code above, and `required`, `not-a-number`, `negative`, `too-many-decimals`,
 `too-short`, `not-a-date`, `not-a-month`, `not-allowed`, `does-not-add-up`, is explained by
@@ -276,8 +286,46 @@ six digits growing to seven (`2026210869`). The serial **never resets**: after
 it, `GL/YYYY-MM/NNNN`. Hand out serials in the same transaction as the bills, so two runs
 cannot take the same number.
 
-Generate → review on the bills screen → publish (four-eyes). Publishing makes the bills
-visible in the app and fires `billPublished`.
+Generate → review on the bills screen → **compare with the printed slips** → publish
+(four-eyes). Publishing makes the bills visible in the app and fires `billPublished`.
+
+### Comparing with the printed slips (hold)
+
+The factory's system prints a slip for every supplier, so before a month is published each
+of our bills is compared with it (`compareWithSlip`, `packages/domain/src/factoryRecords.ts`).
+Only for `source: 'calculated'` with the sync off; any other factory answers
+`409 wrong-bill-source` on these routes.
+
+1. **The office enters each printed slip's "Balance"** (the amount paid), one at a time
+   (`PUT /admin/bills/:id/printed`) or from a file (`printedBalances` import: `month`,
+   `supplierCode`, `finalBalance`). It is stored on the bill as `printedFinalBalance` and
+   **kept through a re-generation**.
+2. **Each bill is `match`** (ours equals it to the rupee), **`mismatch`**, or **`missing`**
+   (no printed figure yet). `GET /admin/months/:monthKey/slip-comparison` answers
+   `MonthSlipComparison`: the counts (`match`, `mismatch`, `missing`, `held`) and a row for
+   every bill that is not a plain match, or is held (`SlipComparisonRow`: ours, printed,
+   `difference` = ours − printed, status, held, reason).
+3. **A difference is fixed at its cause**: a leaf weighing, the rate, or an approval entered
+   in one system only. Correct it in the system that is wrong, re-generate, compare again.
+4. **Or the bill is held** (`POST /admin/bills/:id/hold`, a reason of 10+ characters, kept
+   through a re-generation). The publish refuses **`409 bills-mismatch`** while any bill is
+   `mismatch` or `missing` and not held, with `details.count` and `details.suppliers`
+   (`[{ supplierCode, status }]`, at most 10). Checked after `bills-stale`, before the
+   four-eyes rule.
+5. **The publish leaves held bills out.** They keep `publishedAt: null`; their savings are
+   not posted and their withdrawals not settled; a payout run does not pay them. **The app
+   must not return a held bill**; the app then says "No bill is available yet".
+6. **A held bill stays open after the publish.** Its supplier's leaf for that month may be
+   entered or voided, its other deductions edited, and `generate` on the published month
+   recalculates **only the held bills** (every published bill stays exactly as it was).
+7. **Release** (`POST /admin/bills/:id/release`, `ratesAndMonthClose: A`) needs the bill to
+   match now (`409 bill-still-mismatched`), and its kilos to equal the supplier's live leaf
+   (`409 bills-stale`: re-generate first). Before the publish it only clears the hold. **After
+   the publish it publishes that one bill**: `publishedAt` set, its savings posted, its
+   withdrawals settled, and `billPublished` sent to that supplier alone. Answers
+   `published: true` then.
+
+Audit `bill.printed`, `bill.hold` (`holdReason`) and `bill.release` (`published`).
 
 ## 5a. Bills imported from the factory's own system
 
@@ -332,8 +380,9 @@ with no balance change and no notification.
 
 ## 6. Audit actions to add to `ACTION_REGISTRY`
 
-`supplier.openingBalances`, `supplier.transportRate`, `bill.adjust`, `import.apply`.
-(`supplier.create` and `creditRequest.create` exist.) The console labels all four in en/si/ta.
+`supplier.openingBalances`, `supplier.transportRate`, `bill.adjust`, `import.apply`,
+`bill.printed`, `bill.hold`, `bill.release`. (`supplier.create` and `creditRequest.create`
+exist.) The console labels all seven in en/si/ta.
 
 ## 7. Mobile app (done)
 
@@ -366,6 +415,8 @@ From 9 to 22 October 2026:
 9. **A supplier number is unique across the factory.**
 10. **Bill numbers:** the year of the bill's month, and a serial that never resets.
 11. **The office enters daily leaf** while the sync is off.
+12. **A calculated bill that does not match the printed slip is held**: the rest of the
+    month publishes, the held bill is fixed, compared again and released on its own.
 
 ## 9. Checks
 
@@ -381,6 +432,13 @@ From 9 to 22 October 2026:
   one other deduction, regenerate (it stays), publish; the app shows the bill with the note.
   The slip in §5 comes out to the cent with `paymentUnit: 10`. With `nextBillSerial: 210870`
   the first new bill is `<year>210870`; re-generating keeps it.
+- **Printed slips (calculated bills):** generate a month; publish is
+  `409 bills-mismatch` (every bill `missing`). Import printed balances equal to ours except one
+  Rs. 10 lower: one `mismatch`, publish still refused. Hold it (a 5-character reason is
+  `422`): publish succeeds, that bill stays `publishedAt: null`, the others are published.
+  Release while it differs: `409 bill-still-mismatched`. Edit its other deductions (allowed;
+  another supplier's published bill is `409 month-locked`), re-generate (only it changes),
+  enter the matching printed figure, release: `published: true`.
 - Loan interest at 1%, Rs. 50,000 over 10 months: `onTop` deducts 5,500 and leaves 45,000;
   `withinInstalment` deducts 5,000 and leaves 45,500; `loanInterest` is 500 either way.
 - Opening balances lock once a bill is **published** for the supplier, not on a draft.

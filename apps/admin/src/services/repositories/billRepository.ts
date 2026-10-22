@@ -20,7 +20,9 @@ import {
   type BillMonth,
   type BillQuery,
   type BillRun,
+  type MonthSlipComparison,
   type Paged,
+  type SlipComparisonRow,
 } from '@tfd/domain';
 import { billEndpoints } from '../endpoints/bills';
 import { ApiError } from '../api/errors';
@@ -34,6 +36,18 @@ export const billRepository = {
   get: (id: string): Promise<AdminBill> => billEndpoints.get(id),
 
   run: (monthKey: string): Promise<BillRun> => billEndpoints.run(monthKey),
+
+  slipComparison: (monthKey: string): Promise<MonthSlipComparison> =>
+    billEndpoints.slipComparison(monthKey),
+
+  setPrinted: (billId: string, finalBalance: number | null): Promise<SlipComparisonRow> =>
+    billEndpoints.setPrinted(billId, finalBalance),
+
+  hold: (billId: string, reason: string): Promise<SlipComparisonRow> =>
+    billEndpoints.hold(billId, reason.trim()),
+
+  release: (billId: string): Promise<SlipComparisonRow & { published: boolean }> =>
+    billEndpoints.release(billId),
 
   generate: async (monthKey: string): Promise<BillRun> => {
     const parsed = generateBillsSchema.safeParse({ monthKey });

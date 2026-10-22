@@ -116,6 +116,31 @@ export interface BillSavingsSummary {
  * A **read model, not a table** (api.md §16): daily deliveries and a monthly
  * rate are the facts, and this is generated from them at month close.
  */
+/**
+ * "This month so far" (`GET /bills/month-to-date`, supplier realm): the leaf recorded for the
+ * month whose bill is **next**, before that bill is published. Behind the app flag
+ * `enableMonthToDate`; `null` when it is off or there is nothing to show.
+ *
+ * The month is the first one after the supplier's newest published bill (a held bill is not
+ * published), so a finished month stays here, complete, until its bill is out. No money:
+ * the rate is set after the auction.
+ */
+export interface MonthToDate {
+  monthKey: string;
+  /** The calendar month is over (Asia/Colombo); its bill is being prepared. */
+  monthEnded: boolean;
+  asOf: string;
+  /** `YYYY-MM-DD` of the last day with leaf, or `null`. */
+  lastSupplyDate: string | null;
+  /** Non-voided deliveries in the month, to two decimals. */
+  totalKgs: number;
+  supplyDays: number;
+  /** Every day of the month, `kgs: null` on a day without leaf, as on the bill. */
+  dailySupply: DailySupply[];
+  /** Rupees approved in the month, by facility; 0 for none or a facility switched off. */
+  approved: { advance: number; loan: number; manure: number; teaPackets: number };
+}
+
 export interface GreenLeafBill {
   id: string;
   factory: FactoryInfo;

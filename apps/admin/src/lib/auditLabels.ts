@@ -101,6 +101,9 @@ const ACTION_KEYS: Record<string, string> = {
   // Factory records, kept in the console while the factory-system sync is off.
   'supplier.openingBalances': 'audit.action.supplierOpeningBalances',
   'bill.adjust': 'audit.action.billAdjust',
+  'bill.printed': 'audit.action.billPrinted',
+  'bill.hold': 'audit.action.billHold',
+  'bill.release': 'audit.action.billRelease',
   'supplier.transportRate': 'audit.action.supplierTransportRate',
   'import.apply': 'audit.action.importApply',
 

@@ -36,6 +36,7 @@ import { monthRepository } from '@/services/repositories/monthRepository';
 import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { currentMonthKey } from '@/services/mocks/seed';
 import { bundledConfig } from '@/config/defaults';
+import { DEFAULT_ROLE_MATRIX, can, grantsFromRoles } from '@tfd/domain';
 import { renderWithProviders, signInAs, signOut } from './render';
 
 const ADMIN = 'factoryadmin@galabodatea.lk';
@@ -220,6 +221,15 @@ describe('the rules the console and the API share', () => {
     });
     expect(amounts.deductions.total).toBe(46418);
     expect(factoryBillNumber(2026, 210869)).toBe('2026210869');
+  });
+
+  it('lets the platform team read a factory’s records, never change them', () => {
+    const grants = grantsFromRoles(['platformAdmin']);
+    for (const capability of ['deliveries', 'ratesAndMonthClose', 'billing'] as const) {
+      expect(DEFAULT_ROLE_MATRIX.platformAdmin[capability]).toBe('read');
+      expect(can(grants, capability, 'read')).toBe(true);
+      expect(can(grants, capability, 'write')).toBe(false);
+    }
   });
 
   it('needs a reason for any other charge', () => {

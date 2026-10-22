@@ -29,7 +29,9 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Dialog } from '@/components/ui/Dialog';
 import { Field, Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
-import { errorMessageKey } from '@/lib/errorMessage';
+import { errorMessageKey, errorMessageValues } from '@/lib/errorMessage';
+import { slipComparisonBlocks } from '@tfd/domain';
+import { useComparesWithSlips, useSlipComparison } from '@/modules/bills/hooks';
 import { formatCount, formatDateTime, formatKg, formatMoney, formatMonthKey } from '@/lib/format';
 import { useBillRun } from '@/modules/bills/hooks';
 import { usePublishMonth } from './hooks';
@@ -58,6 +60,9 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
    * month may be published: which is M4's job and where the four-eyes rule lives.
    */
   const run = useBillRun(month.monthKey);
+  const comparesWithSlips = useComparesWithSlips();
+  const slips = useSlipComparison(month.monthKey, comparesWithSlips && Boolean(run.data));
+  const slipBlocking = slips.data ? slipComparisonBlocks(slips.data.rows).length : 0;
 
   const [confirming, setConfirming] = useState(false);
   const [note, setNote] = useState('');
@@ -124,6 +129,23 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
       href: `/bills?month=${month.monthKey}`,
       hrefLabel: t('months.step.openBills'),
     },
+    /**
+     * The factory's own system printed a slip for every supplier: each bill matches it, or
+     * is held back (`409 bills-mismatch`). Worked in the "Compare with printed slips" card.
+     */
+    ...(comparesWithSlips && run.data
+      ? [
+          {
+            key: 'slips',
+            done: Boolean(slips.data) && slipBlocking === 0,
+            label: t('months.step.slips'),
+            detail:
+              slipBlocking > 0
+                ? t('months.step.slipsOpen', { count: slipBlocking })
+                : t('months.step.slipsDone', { held: formatCount(slips.data?.counts.held ?? 0) }),
+          },
+        ]
+      : []),
   ];
 
   const blocked = steps.some((step) => !step.done) || wouldBeSelfApproval;
@@ -137,7 +159,7 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
     } catch (cause) {
       // The dialog stays open: `exceptions-open` or a four-eyes refusal is
       // information about what to do next, not a toast over a closed dialog.
-      toast.error(t('months.publishFailed'), t(errorMessageKey(cause)));
+      toast.error(t('months.publishFailed'), t(errorMessageKey(cause), errorMessageValues(cause)));
     }
   }
 

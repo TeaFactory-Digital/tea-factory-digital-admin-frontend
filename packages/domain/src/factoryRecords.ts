@@ -103,6 +103,73 @@ export function loanRecovery(
   return { interest, deducted: round2(instalment + interest), principalRepaid: instalment };
 }
 
+/* ─────────────────────── comparing with the printed slip ─────────────────────── */
+
+/**
+ * A factory whose bills are calculated here still runs its own system, which **prints its
+ * own slip**. The supplier holds both, so they must agree. Before a month is published the
+ * office enters each printed slip's "Balance" (the amount paid), and every bill is one of:
+ *
+ * - `match`: ours pays the same, to the rupee.
+ * - `mismatch`: they differ. Find the line that differs (leaf, rate, an approval entered in
+ *   one system only), fix it in the system that is wrong, regenerate, compare again.
+ * - `missing`: no printed figure entered yet.
+ *
+ * A bill that does not match must be **held** before the month can be published
+ * (`409 bills-mismatch`). A held bill is left out of the publish, so the supplier never sees
+ * a figure the factory did not pay; it is fixed, compared again, and **released** on its own.
+ */
+export type SlipComparison = 'match' | 'mismatch' | 'missing';
+
+export function compareWithSlip(
+  ours: number | null | undefined,
+  printed: number | null | undefined,
+): SlipComparison {
+  if (printed === null || printed === undefined) return 'missing';
+  return round2(ours ?? 0) === round2(printed) ? 'match' : 'mismatch';
+}
+
+/** What the office has recorded against one bill. On `AdminBill`. */
+export interface SlipCheck {
+  /** The printed slip's "Balance". `null` until entered. */
+  printedFinalBalance?: number | null;
+  /** Set while the bill is held back from publishing. */
+  heldAt?: string | null;
+  heldByName?: string | null;
+  holdReason?: string | null;
+}
+
+/** One bill that needs the office's attention (anything but a match, or held). */
+export interface SlipComparisonRow {
+  billId: string;
+  supplierId: string;
+  supplierCode: string;
+  supplierName: string;
+  ours: number | null;
+  printed: number | null;
+  /** ours − printed; `null` while the printed figure is missing. */
+  difference: number | null;
+  status: SlipComparison;
+  held: boolean;
+  holdReason: string | null;
+}
+
+/** `GET /admin/months/:monthKey/slip-comparison`. */
+export interface MonthSlipComparison {
+  monthKey: string;
+  counts: Record<SlipComparison | 'held', number>;
+  /** Everything that is not a plain match: mismatches, missing figures, held bills. */
+  rows: SlipComparisonRow[];
+}
+
+/** May this month be published? Every bill matches, or is held. */
+export function slipComparisonBlocks(rows: readonly SlipComparisonRow[]): SlipComparisonRow[] {
+  return rows.filter((row) => row.status !== 'match' && !row.held);
+}
+
+/** The smallest checks before the server's. A hold needs a reason the manager can read. */
+export const HOLD_REASON_MIN = 10;
+
 /* ─────────────────────────── the bill's own rules ─────────────────────────── */
 
 /**
@@ -253,6 +320,7 @@ export const IMPORT_KINDS = [
   'billAdjustments',
   'transportRates',
   'bills',
+  'printedBalances',
 ] as const;
 export type ImportKind = (typeof IMPORT_KINDS)[number];
 
@@ -383,6 +451,16 @@ export const IMPORT_COLUMNS: Record<ImportKind, readonly ImportColumn[]> = {
     { key: 'loanInterest', type: 'number', required: false, example: '0' },
     { key: 'savingsPrevious', type: 'number', required: false, example: '21970' },
     { key: 'savingsToDate', type: 'number', required: false, example: '27065' },
+  ],
+  /**
+   * The "Balance" (the amount paid) on each slip the factory's own system printed, for a
+   * factory whose bills are calculated here: compared with ours before the month is
+   * published (`compareWithSlip`).
+   */
+  printedBalances: [
+    { key: 'month', type: 'month', required: true, example: '2026-07' },
+    { key: 'supplierCode', type: 'text', required: true, example: '5708' },
+    { key: 'finalBalance', type: 'number', required: true, example: '68220' },
   ],
 };
 

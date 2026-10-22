@@ -125,6 +125,7 @@ export const qk = {
     list: (query: BillQuery) => ['bills', 'list', query] as const,
     detail: (id: string) => ['bills', 'detail', id] as const,
     run: (monthKey: string) => ['bills', 'run', monthKey] as const,
+    slips: (monthKey: string) => ['bills', 'slips', monthKey] as const,
   },
 
   /**

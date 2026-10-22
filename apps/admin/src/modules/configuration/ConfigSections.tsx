@@ -36,6 +36,7 @@ import { ManureCatalogue } from './ManureCatalogue';
 import { StringListEditor } from './StringListEditor';
 import { InfoTip } from '@/components/ui/Tooltip';
 import { OfficeHoursEditor } from './OfficeHoursEditor';
+import { MONTH_TO_DATE_ON_SERVER } from '@/lib/serverReady';
 
 
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -160,12 +161,13 @@ const FLAG_GATES: Record<FeatureFlagName, string> = {
   enableDarkModeToggle: 'app',
   enableProfileTab: 'app',
   enableAutoLock: 'app',
+  enableMonthToDate: 'app',
 
   /* v1: enablePayouts: 'M6', enableReports: 'M16'; both gone with the modules. */
 };
 
 /**
- * The fourteen flags, and what each one removes.
+ * The fifteen flags, and what each one removes.
  *
  * This is the section with teeth, and in v2 it is **the point of the whole console**:
  * these are the app's flags, and this screen is the only place they can be changed
@@ -193,7 +195,11 @@ export function FeaturesSection(props: SectionProps) {
    * the bundled default was still in force. Iterating the declared set fixes both, and
    * fixes the order: declaration order rather than whatever order the JSON arrived in.
    */
-  const names = FEATURE_FLAG_NAMES;
+  // Hidden, and never sent, until the API stores it (`serverReady.ts`).
+  const names = FEATURE_FLAG_NAMES.filter((name) => MONTH_TO_DATE_ON_SERVER || name !== 'enableMonthToDate');
+  const sent = MONTH_TO_DATE_ON_SERVER
+    ? draft
+    : (Object.fromEntries(Object.entries(draft).filter(([name]) => name !== 'enableMonthToDate')) as typeof draft);
 
   return (
     <CardBody className="flex flex-col gap-md">
@@ -227,7 +233,7 @@ export function FeaturesSection(props: SectionProps) {
 
       <SectionFooter
         {...props}
-        patch={{ flags: draft }}
+        patch={{ flags: sent }}
         dirty={dirty}
         onRevert={() => setDraft(props.config.flags)}
       />

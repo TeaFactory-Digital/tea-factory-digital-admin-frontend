@@ -10,7 +10,9 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { BillQuery } from '@tfd/domain';
+import { billSourceOf, isFactorySyncEnabled, type BillQuery } from '@tfd/domain';
+import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
+import { SLIP_COMPARISON_ON_SERVER } from '@/lib/serverReady';
 import { billRepository } from '@/services/repositories/billRepository';
 import { qk } from '@/query/queryKeys';
 
@@ -47,6 +49,49 @@ export function useBillRun(monthKey: string) {
     retry: false,
   });
 }
+
+/** Does this factory compare its bills with printed slips? Sync off, bills calculated here. */
+export function useComparesWithSlips(): boolean {
+  const { config } = useRuntimeConfig();
+  return (
+    SLIP_COMPARISON_ON_SERVER &&
+    !isFactorySyncEnabled(config) &&
+    billSourceOf(config.billSettings) === 'calculated'
+  );
+}
+
+/**
+ * Ours against the factory's printed slips. Only asked for where it applies (`enabled`),
+ * because any other factory answers `409 wrong-bill-source`.
+ */
+export function useSlipComparison(monthKey: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.bills.slips(monthKey),
+    queryFn: () => billRepository.slipComparison(monthKey),
+    enabled: enabled && Boolean(monthKey),
+  });
+}
+
+/**
+ * Entering a printed figure, holding and releasing all move the comparison and the bill; a
+ * release in a published month also publishes the bill, so the month and payouts move too.
+ */
+function useSlipMutation<Args extends unknown[], Result>(run: (...args: Args) => Promise<Result>) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (args: Args) => run(...args),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: qk.bills.all });
+      void client.invalidateQueries({ queryKey: qk.months.all });
+      void client.invalidateQueries({ queryKey: qk.dashboard });
+      void client.invalidateQueries({ queryKey: qk.audit.all });
+    },
+  });
+}
+
+export const useSetPrinted = () => useSlipMutation(billRepository.setPrinted);
+export const useHoldBill = () => useSlipMutation(billRepository.hold);
+export const useReleaseBill = () => useSlipMutation(billRepository.release);
 
 export function useGenerateBills(monthKey: string) {
   const client = useQueryClient();

@@ -14,6 +14,7 @@ export const IMPORT_KINDS_NOT_ON_SERVER: ReadonlySet<ImportKind> = new Set<Impor
   'monthlyRates',
   'billAdjustments',
   'bills',
+  'printedBalances',
 ]);
 
 /** Saving opening balances (`PUT /admin/suppliers/:id/opening-balances`). */
@@ -28,3 +29,16 @@ export const OTHER_DEDUCTIONS_ON_SERVER = false;
  * shows nor sends them.
  */
 export const BILL_SOURCE_AND_RECOVERY_ON_SERVER = false;
+
+/**
+ * Comparing calculated bills with the factory's printed slips, and holding the ones that
+ * differ: `GET /admin/months/:monthKey/slip-comparison`, `PUT /admin/bills/:id/printed`,
+ * `POST /admin/bills/:id/hold` and `/release`, and `409 bills-mismatch` on the publish.
+ */
+export const SLIP_COMPARISON_ON_SERVER = false;
+
+/**
+ * The app's `enableMonthToDate` flag in `PATCH /admin/config`, and `GET /bills/month-to-date`
+ * behind it. Until then Configuration → Features neither shows nor sends the flag.
+ */
+export const MONTH_TO_DATE_ON_SERVER = false;

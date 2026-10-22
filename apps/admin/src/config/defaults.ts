@@ -65,6 +65,7 @@ export const bundledConfig: RuntimeConfig = {
     enableDarkModeToggle: true,
     enableProfileTab: true,
     enableAutoLock: true,
+    enableMonthToDate: false,
 
     /* v1 console-only flags, gone with M6 and M16's gate:
      *   enablePayouts: true,

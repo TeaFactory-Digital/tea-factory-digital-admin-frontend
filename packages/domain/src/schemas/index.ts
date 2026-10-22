@@ -506,6 +506,7 @@ const featureFlagShape: Record<FeatureFlagName, z.ZodBoolean> = {
   enableDarkModeToggle: z.boolean(),
   enableProfileTab: z.boolean(),
   enableAutoLock: z.boolean(),
+  enableMonthToDate: z.boolean(),
 };
 
 export const featureFlagSetSchema = z.object(featureFlagShape);

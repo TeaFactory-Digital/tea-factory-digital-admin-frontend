@@ -200,8 +200,9 @@ the app's flag set.** Nothing more, nothing less.
 | `enableDarkModeToggle` | - | The dark-mode switch |
 | `enableProfileTab` | - | The profile tab |
 | `enableAutoLock` | - | `useAutoLock` |
+| `enableMonthToDate` | - | "This month so far" on the Account tab (off by default; BACKEND-TODO #48) |
 
-**Five of the fourteen gate nothing this console renders, and that is expected.**
+**Six of the fifteen gate nothing this console renders, and that is expected.**
 `enableBiometricLogin` is a phone capability; there is no office equivalent and
 there should not be one. **Editing a flag is a console feature; obeying it is the
 app's job.** M14's flag list says which kind each one is rather than citing a module
@@ -322,7 +323,7 @@ of the row:
 | Section | Blocks of the row |
 | --- | --- |
 | The factory | `factory` (identity, as printed on the bill) |
-| Features | `flags`, **the fourteen** |
+| Features | `flags`, **the fifteen** |
 | Factory system | `factorySync`: the sync on or off |
 | Collection & savings | `collectionPoints`, `savings` (rates, withdrawal month, interest), `manureProducts` |
 | Banks & branches | `banks` |

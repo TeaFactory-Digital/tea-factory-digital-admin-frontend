@@ -110,6 +110,9 @@ const BY_CODE: Record<string, string> = {
   'loan-outstanding': 'error.loanOutstanding',
   'wrong-bill-source': 'error.wrongBillSource',
   'bill-source-blocked': 'error.billSourceBlocked',
+  'bills-mismatch': 'error.billsMismatch',
+  'bill-not-held': 'error.billNotHeld',
+  'bill-still-mismatched': 'error.billStillMismatched',
   '403': 'error.forbidden',
   '404': 'error.notFound',
 };
@@ -144,13 +147,15 @@ export function errorMessageKey(error: unknown): string {
 
 /**
  * The values an error's message names, from its `details`: today the months behind
- * `sync-switch-blocked`, printed as "2026-09, 2026-10".
+ * `sync-switch-blocked`, printed as "2026-09, 2026-10", and the count behind `bills-mismatch`.
  */
 export function errorMessageValues(error: unknown): Record<string, string> {
   if (!isApiError(error)) return {};
-  const details = error.details as { months?: unknown } | undefined;
+  const details = error.details as { months?: unknown; count?: unknown } | undefined;
   const months = Array.isArray(details?.months) ? details.months.map(String).join(', ') : '';
-  return months ? { months } : {};
+  // `bills-mismatch`: how many bills still disagree with their printed slip.
+  const count = typeof details?.count === 'number' ? String(details.count) : '';
+  return { ...(months ? { months } : {}), ...(count ? { count } : {}) };
 }
 
 /**

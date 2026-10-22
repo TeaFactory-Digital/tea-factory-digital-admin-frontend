@@ -28,6 +28,7 @@ const IMPORT_REFRESHES: Record<ImportKind, QueryKey[]> = {
   billAdjustments: [qk.bills.all],
   transportRates: [qk.suppliers.all],
   bills: [qk.bills.all, qk.months.all],
+  printedBalances: [qk.bills.all],
 };
 
 function useRefresh() {
