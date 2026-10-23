@@ -1034,6 +1034,13 @@ function heldBill(monthKey: string, supplierId: string): AdminBill | undefined {
   );
 }
 
+/** This supplier's oldest bill before `monthKey` that is still held, if any. */
+function earlierHeldBill(supplierId: string, monthKey: string): AdminBill | undefined {
+  return state.bills
+    .filter((one) => one.supplierId === supplierId && one.monthKey < monthKey && one.heldAt && !one.publishedAt)
+    .sort((a, b) => a.monthKey.localeCompare(b.monthKey))[0];
+}
+
 /** Locked for this supplier: the month is published and their bill is not held. */
 function lockedFor(monthKey: string, supplierId: string | undefined): boolean {
   return lockedMonth(monthKey) && !(supplierId && heldBill(monthKey, supplierId));
@@ -1058,6 +1065,7 @@ function slipRow(bill: AdminBill): SlipComparisonRow {
     status: compareWithSlip(bill.finalBalance, printed),
     held: Boolean(bill.heldAt),
     holdReason: bill.holdReason ?? null,
+    heldForMonth: bill.heldForMonth ?? null,
   };
 }
 
@@ -4134,6 +4142,19 @@ export const handlers: HttpHandler[] = [
         bill.heldAt = previous.heldAt ?? null;
         bill.heldByName = previous.heldByName ?? null;
         bill.holdReason = previous.holdReason ?? null;
+        bill.heldForMonth = previous.heldForMonth ?? null;
+      }
+      /**
+       * The supplier's bill for an earlier month is still held: this one's coins, debt and
+       * loan balance come from it, so this one is held too. The month goes ahead for
+       * everyone else; this supplier's bills are released in order.
+       */
+      const earlier = earlierHeldBill(bill.supplierId, monthKey);
+      if (!bill.heldAt && earlier) {
+        bill.heldAt = generatedAt;
+        bill.heldByName = null;
+        bill.holdReason = null;
+        bill.heldForMonth = earlier.monthKey;
       }
     }
     state.bills = heldOnly
@@ -7861,6 +7882,29 @@ export const handlers: HttpHandler[] = [
     if (!bill.heldAt || bill.publishedAt) {
       return fail({ status: 409, code: 'bill-not-held', message: 'This bill is not held.' });
     }
+    // In order: an earlier held bill first, because this one's balances come from it.
+    const earlier = earlierHeldBill(bill.supplierId, bill.monthKey);
+    if (earlier) {
+      return fail({
+        status: 409,
+        code: 'earlier-bill-held',
+        message: `Release this supplier's ${earlier.monthKey} bill first.`,
+        details: { monthKey: earlier.monthKey, billId: earlier.id },
+      });
+    }
+    // The earlier bill was released after this one was calculated: what it carries over may
+    // have changed, so this one is recalculated first.
+    const previous = state.bills
+      .filter((one) => one.supplierId === bill.supplierId && one.monthKey < bill.monthKey && one.publishedAt)
+      .sort((a, b) => b.monthKey.localeCompare(a.monthKey))[0];
+    if (previous?.publishedAt && previous.publishedAt > bill.generatedAt) {
+      return fail({
+        status: 409,
+        code: 'bills-stale',
+        message: 'The previous bill was released after this one was calculated. Re-generate it first.',
+        details: { previousMonthKey: previous.monthKey },
+      });
+    }
     // Leaf corrected after the bill was calculated: recalculate before comparing.
     const liveKgs = round2(
       state.deliveries
@@ -7887,6 +7931,7 @@ export const handlers: HttpHandler[] = [
     bill.heldAt = null;
     bill.heldByName = null;
     bill.holdReason = null;
+    bill.heldForMonth = null;
     let published = false;
     if (lockedMonth(bill.monthKey)) {
       const publishedAt = new Date().toISOString();
@@ -8045,6 +8090,20 @@ export function setOwesPasswordChange(email: string, owes: boolean): void {
  */
 export function mockSendLog(): NotificationSend[] {
   return [...state.notificationSends].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+/**
+ * **Tests only.** Put a published bill back into the held state, as if it had been held at
+ * its month's publish: the fixture's earlier months are all published, and a test of what
+ * a held bill does to the **next** month needs one.
+ */
+export function mockHoldPublishedBill(billId: string, reason: string): void {
+  const bill = state.bills.find((one) => one.id === billId);
+  if (!bill) throw new Error(`No mock bill ${billId}`);
+  bill.publishedAt = null;
+  bill.heldAt = new Date(Date.now() - 86_400_000).toISOString();
+  bill.heldByName = 'Test';
+  bill.holdReason = reason;
 }
 
 export function mockSupplierRecord(id: string): AdminSupplier {

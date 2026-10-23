@@ -137,6 +137,12 @@ export interface SlipCheck {
   heldAt?: string | null;
   heldByName?: string | null;
   holdReason?: string | null;
+  /**
+   * Held **because** this supplier's bill for an earlier month is held, set by the
+   * generation, not by a person. Its coins, debt and loan balance come from that bill, so
+   * it waits: release the earlier one, recalculate this month, compare, release this one.
+   */
+  heldForMonth?: string | null;
 }
 
 /** One bill that needs the office's attention (anything but a match, or held). */
@@ -152,6 +158,8 @@ export interface SlipComparisonRow {
   status: SlipComparison;
   held: boolean;
   holdReason: string | null;
+  /** `SlipCheck.heldForMonth`. */
+  heldForMonth: string | null;
 }
 
 /** `GET /admin/months/:monthKey/slip-comparison`. */

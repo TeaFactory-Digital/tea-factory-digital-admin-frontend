@@ -2467,6 +2467,8 @@ export const ADMIN_ERROR_CODES = [
   'bill-not-held',
   /** Releasing a held bill that still does not match its printed slip. */
   'bill-still-mismatched',
+  /** Releasing a bill while the same supplier's bill for an earlier month is still held. */
+  'earlier-bill-held',
 ] as const;
 
 export type AdminErrorCode = (typeof ADMIN_ERROR_CODES)[number];

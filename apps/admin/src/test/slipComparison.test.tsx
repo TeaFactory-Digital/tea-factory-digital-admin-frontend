@@ -13,6 +13,7 @@ import { billRepository } from '@/services/repositories/billRepository';
 import { factoryRecordRepository } from '@/services/repositories/factoryRecordRepository';
 import { monthRepository } from '@/services/repositories/monthRepository';
 import { bundledConfig } from '@/config/defaults';
+import { mockHoldPublishedBill } from '@/services/mocks/handlers';
 import type * as ServerReady from '@/lib/serverReady';
 import { renderWithProviders, signInAs, signOut } from './render';
 
@@ -160,6 +161,55 @@ describe('a factory that calculates its bills here', () => {
     expect(released.published).toBe(true);
     expect((await billRepository.get(odd.id)).publishedAt).not.toBeNull();
     await expect(billRepository.release(odd.id)).rejects.toMatchObject({ code: 'bill-not-held' });
+  }, 20_000);
+
+  it('holds the next bill too while an earlier one is held, and releases them in order', async () => {
+    await setSyncOff();
+    // The newest published month, with this supplier's bill held at its publish.
+    await signInAs(MANAGER);
+    const earlierMonth = (await monthRepository.list()).items.find((one) => !one.open)!;
+    const earlierBills = (await billRepository.list({ monthKey: earlierMonth.monthKey, pageSize: 500 })).items;
+    const { monthKey, bills } = await readyMonth();
+    const current = bills.find((one) => earlierBills.some((e) => e.supplierId === one.supplierId))!;
+    const earlier = earlierBills.find((one) => one.supplierId === current.supplierId)!;
+    mockHoldPublishedBill(earlier.id, 'Stamps line differs from the printed slip');
+
+    // Re-run the open month: this supplier's bill is held automatically, nobody else's.
+    await signInAs(FACTORY_SYSTEM);
+    await billRepository.generate(monthKey);
+    await signInAs(MANAGER);
+    const comparison = await billRepository.slipComparison(monthKey);
+    expect(comparison.rows.find((row) => row.billId === current.id)).toMatchObject({
+      held: true,
+      holdReason: null,
+      heldForMonth: earlier.monthKey,
+    });
+    expect(comparison.counts.held).toBe(1);
+
+    // Not before the earlier one.
+    await expect(billRepository.release(current.id)).rejects.toMatchObject({
+      code: 'earlier-bill-held',
+      details: { monthKey: earlier.monthKey },
+    });
+
+    // Release the earlier one, once it matches its slip.
+    await signInAs(CLERK);
+    const earlierBill = await billRepository.get(earlier.id);
+    await billRepository.setPrinted(earlier.id, earlierBill.finalBalance);
+    await signInAs(MANAGER);
+    expect((await billRepository.release(earlier.id)).published).toBe(true);
+
+    // This month was calculated before that release: recalculate, compare, release.
+    await signInAs(CLERK);
+    await billRepository.setPrinted(current.id, (await billRepository.get(current.id)).finalBalance);
+    await signInAs(MANAGER);
+    await expect(billRepository.release(current.id)).rejects.toMatchObject({ code: 'bills-stale' });
+    await signInAs(FACTORY_SYSTEM);
+    await billRepository.generate(monthKey);
+    await signInAs(CLERK);
+    await billRepository.setPrinted(current.id, (await billRepository.get(current.id)).finalBalance);
+    await signInAs(MANAGER);
+    expect(await billRepository.release(current.id)).toMatchObject({ held: false, published: false });
   }, 20_000);
 
   it('lists the bills that differ on Rates & month close', async () => {

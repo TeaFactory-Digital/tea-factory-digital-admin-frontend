@@ -26,8 +26,8 @@ import { Dialog } from '@/components/ui/Dialog';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import { ErrorState, Notice, Spinner } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
-import { errorMessageKey } from '@/lib/errorMessage';
-import { formatCount, formatMoney } from '@/lib/format';
+import { errorMessageKey, errorMessageValues } from '@/lib/errorMessage';
+import { formatCount, formatMoney, formatMonthKey } from '@/lib/format';
 import { cn } from '@/lib/cn';
 import { useHoldBill, useReleaseBill, useSetPrinted, useSlipComparison } from './hooks';
 
@@ -108,8 +108,11 @@ export function SlipComparisonCard({ monthKey, monthOpen }: { monthKey: string; 
                               {row.supplierCode}
                             </Link>{' '}
                             <span className="text-text-primary">{row.supplierName}</span>
-                            {row.holdReason ? (
-                              <p className="text-caption text-text-secondary">{row.holdReason}</p>
+                            {row.holdReason || row.heldForMonth ? (
+                              <p className="text-caption text-text-secondary">
+                                {row.holdReason ??
+                                  t('slips.heldForEarlier', { month: formatMonthKey(row.heldForMonth!) })}
+                              </p>
                             ) : null}
                           </td>
                           <td className="numeric px-md py-sm text-right text-text-primary">
@@ -209,7 +212,7 @@ function PrintedDialog({ row, onClose }: { row: SlipComparisonRow; onClose: () =
       toast.success(t('slips.printedSaved', { code: row.supplierCode }));
       onClose();
     } catch (error) {
-      toast.error(t('slips.failed'), t(errorMessageKey(error)));
+      toast.error(t('slips.failed'), t(errorMessageKey(error), errorMessageValues(error)));
     }
   }
 
@@ -267,7 +270,7 @@ function HoldDialog({ row, onClose }: { row: SlipComparisonRow; onClose: () => v
       toast.success(t('slips.heldToast', { code: row.supplierCode }));
       onClose();
     } catch (error) {
-      toast.error(t('slips.failed'), t(errorMessageKey(error)));
+      toast.error(t('slips.failed'), t(errorMessageKey(error), errorMessageValues(error)));
     }
   }
 
@@ -330,7 +333,7 @@ function ReleaseDialog({
           : t('slips.released', { code: row.supplierCode }),
       );
     } catch (error) {
-      toast.error(t('slips.failed'), t(errorMessageKey(error)));
+      toast.error(t('slips.failed'), t(errorMessageKey(error), errorMessageValues(error)));
     }
   }
 

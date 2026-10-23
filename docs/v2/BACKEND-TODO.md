@@ -170,6 +170,21 @@ stay visible because the rest of those screens works, and start working as those
 
 Confirmed by the factory where marked; the rest decided on the console side.
 
+**Bills held against the printed slip (your two bill-engine questions, factory)**
+
+- **Leaf in a published month for a held supplier:** yes, deliberately, for that supplier's
+  held bill only, as you propose. Every other supplier's month stays locked.
+- **The next month while a bill is held: it goes ahead, and that supplier's next bill is
+  held too.** Generate and publish the next month for everyone. A supplier whose bill for
+  an earlier month is still held gets the new bill **held automatically**
+  (`SlipCheck.heldForMonth` = the earlier month, no person, no reason text), because its
+  coins, debt and loan balance come from the held bill. Release **in order**: releasing a
+  bill while an earlier one of the same supplier is held is `409 earlier-bill-held` with
+  `details.monthKey`. And a bill calculated before the earlier one was released is
+  `409 bills-stale` on release: recalculate it (`generate` on its month), compare, release.
+  factory-records §5, "Comparing with the printed slips", step 8. The console mock does
+  exactly this (`earlierHeldBill` in `handlers.ts`).
+
 **Bills: where they come from**
 
 - **Every factory runs its own system, which prints its bills (factory).** Sync off means we
@@ -257,7 +272,9 @@ Confirmed by the factory where marked; the rest decided on the console side.
   `unknown-supplier`, `no-bill`, `import-invalid`, `import-size`, `request-pending`,
   `supplier-suspended`, `supplier-closed`, `advance-outstanding`, `loan-outstanding`,
   `loan-installments-invalid`, `manure-installments-invalid`, `bills-mismatch`,
-  `bill-not-held`, `bill-still-mismatched`. The credit refusals block the approval dialog.
+  `bill-not-held`, `bill-still-mismatched`, `earlier-bill-held` (names
+  `details.monthKey`). `SlipCheck.heldForMonth` and `SlipComparisonRow.heldForMonth` for the
+  automatic hold. The credit refusals block the approval dialog.
   `sync-switch-blocked` and `bill-source-blocked` name `details.months`; `bills-mismatch`
   names `details.count`.
 - Importing again (`factoryRecords.ts`): `ImportRequest`, `ImportSkippedRow`,
@@ -313,10 +330,12 @@ only if the office enters leaf daily (sync on: the hourly sync does that).
 
 - `null` when the flag is off (not `403`: the app treats `null` and `404` alike, as
   "nothing to show").
-- **Which month:** the first month after the supplier's newest **published** bill. A held
-  or unpublished bill is not published, so a finished month stays on the card, complete,
-  until its bill is out; then the next month follows. A supplier with no bill yet gets the
-  current month. `monthEnded` is true once that calendar month is over (Asia/Colombo).
+- **Which month (your rule, agreed):** the supplier's **oldest month that still has an
+  unpublished or held bill**; otherwise **the month after the factory's newest published
+  month**. So a finished month stays on the card, complete, until its bill is out, and a
+  supplier with no leaf (so no bill) in a month is not stuck on it: once the factory
+  publishes that month, the card moves on. `monthEnded` is true once that calendar month is
+  over (Asia/Colombo).
 - `totalKgs`, `supplyDays`, `lastSupplyDate` (`YYYY-MM-DD`) and `dailySupply` (every day of
   the month, `kgs: null` on a day without leaf, the same shape as `GreenLeafBill.dailySupply`)
   from the **non-voided** deliveries of that month.

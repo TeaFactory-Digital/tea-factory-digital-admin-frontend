@@ -343,8 +343,15 @@ Only for `source: 'calculated'` with the sync off; any other factory answers
    the publish it publishes that one bill**: `publishedAt` set, its savings posted, its
    withdrawals settled, and `billPublished` sent to that supplier alone. Answers
    `published: true` then.
+8. **The next month does not wait (factory).** It is generated and published for everyone.
+   A supplier whose bill for an earlier month is still held gets the new bill **held
+   automatically** (`heldForMonth` = the earlier month; no `holdReason`), because its coins,
+   debt and loan balance come from the held bill. Release in order: an earlier held bill
+   first (`409 earlier-bill-held`, `details.monthKey`), then recalculate the later month
+   (a bill calculated before the earlier release is `409 bills-stale`), compare, release.
 
-Audit `bill.printed`, `bill.hold` (`holdReason`) and `bill.release` (`published`).
+Audit `bill.printed`, `bill.hold` (`holdReason`) and `bill.release` (`published`). An
+automatic hold is part of `month.bills.generate`, not a `bill.hold` of its own.
 
 ## 5a. Bills imported from the factory's own system
 
@@ -435,7 +442,9 @@ From 9 to 22 October 2026:
 10. **Bill numbers:** the year of the bill's month, and a serial that never resets.
 11. **The office enters daily leaf** while the sync is off.
 12. **A calculated bill that does not match the printed slip is held**: the rest of the
-    month publishes, the held bill is fixed, compared again and released on its own.
+    month publishes, the held bill is fixed, compared again and released on its own. **The
+    next month goes ahead**; that supplier's next bill is held too, and the two are released
+    in order.
 13. **Importing a file again skips what is already there.** Galaboda's scale file has no
     weighing number, so leaf is matched on date, supplier, kilos and collection point; the
     office may still import a real second weighing. A supplier already on the roll is

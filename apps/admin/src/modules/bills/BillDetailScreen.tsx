@@ -99,7 +99,11 @@ export function BillDetailScreen() {
       />
 
       {/* Held back from the publish until it agrees with the factory's printed slip. */}
-      {data.heldAt ? (
+      {data.heldAt && data.heldForMonth ? (
+        <p className="shrink-0 rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
+          {t('slips.heldForEarlierNotice', { month: formatMonthKey(data.heldForMonth) })}
+        </p>
+      ) : data.heldAt ? (
         <p className="shrink-0 rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
           {t('slips.heldNotice', {
             name: data.heldByName ?? '',

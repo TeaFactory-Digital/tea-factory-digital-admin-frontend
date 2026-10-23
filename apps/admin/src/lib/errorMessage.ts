@@ -113,6 +113,7 @@ const BY_CODE: Record<string, string> = {
   'bills-mismatch': 'error.billsMismatch',
   'bill-not-held': 'error.billNotHeld',
   'bill-still-mismatched': 'error.billStillMismatched',
+  'earlier-bill-held': 'error.earlierBillHeld',
   '403': 'error.forbidden',
   '404': 'error.notFound',
 };
@@ -151,11 +152,13 @@ export function errorMessageKey(error: unknown): string {
  */
 export function errorMessageValues(error: unknown): Record<string, string> {
   if (!isApiError(error)) return {};
-  const details = error.details as { months?: unknown; count?: unknown } | undefined;
+  const details = error.details as { months?: unknown; count?: unknown; monthKey?: unknown } | undefined;
   const months = Array.isArray(details?.months) ? details.months.map(String).join(', ') : '';
   // `bills-mismatch`: how many bills still disagree with their printed slip.
   const count = typeof details?.count === 'number' ? String(details.count) : '';
-  return { ...(months ? { months } : {}), ...(count ? { count } : {}) };
+  // `earlier-bill-held`: the month whose bill has to be released first.
+  const month = typeof details?.monthKey === 'string' ? details.monthKey : '';
+  return { ...(months ? { months } : {}), ...(count ? { count } : {}), ...(month ? { month } : {}) };
 }
 
 /**
