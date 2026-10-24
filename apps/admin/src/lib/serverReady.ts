@@ -24,13 +24,6 @@ export const OPENING_BALANCES_ON_SERVER = false;
 export const OTHER_DEDUCTIONS_ON_SERVER = false;
 
 /**
- * `billSettings.source` and `loanInterest.recovery` in `PATCH /admin/config`. Until the API
- * accepts them it refuses the whole save with `422`, so the Bill calculation section neither
- * shows nor sends them.
- */
-export const BILL_SOURCE_AND_RECOVERY_ON_SERVER = false;
-
-/**
  * Comparing calculated bills with the factory's printed slips, and holding the ones that
  * differ: `GET /admin/months/:monthKey/slip-comparison`, `PUT /admin/bills/:id/printed`,
  * `POST /admin/bills/:id/hold` and `/release`, and `409 bills-mismatch` on the publish.

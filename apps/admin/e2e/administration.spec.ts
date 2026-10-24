@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /**
  * The Administration section in a browser: configuration, users and roles, reports.
@@ -10,7 +11,8 @@ import { expect, test, type Page } from '@playwright/test';
  *  - M14: the cost of a flag appears while it is being considered, not after it is pressed.
  *  - M15: "only way back in" stops being true the moment somebody else is given the role, and
  *    the button that was withheld comes back.
- *  - M16: a total is printed only under the columns that add up, and the gaps are the point.
+ *  - M16: the answer comes first, and a total is worked out from the totals rather than
+ *    averaged from the months.
  *
  * Signed in as the factory administrator, because §12.1 gives `flagsAndBranding: W` and
  * `usersAndRoles: W` to them and nobody else. A manager sees all three screens read-only,
@@ -37,6 +39,17 @@ async function signIn(page: Page) {
  */
 const toast = (page: Page) => page.locator('li[data-state="open"]');
 
+/**
+ * Choose an option from one of the console's dropdowns.
+ *
+ * They are Radix popups now, not native `<select>`s (`components/ui/Select.tsx`), so
+ * `selectOption` has nothing to act on: open the trigger, then pick the option by name.
+ */
+async function choose(page: Page, trigger: Locator, option: RegExp) {
+  await trigger.click();
+  await page.getByRole('option', { name: option }).click();
+}
+
 test('states what a flag costs before it can be turned off, and refuses the ones holding money', async ({
   page,
 }) => {
@@ -50,8 +63,10 @@ test('states what a flag costs before it can be turned off, and refuses the ones
   // The tenant id is shown and is not a field: it comes from the subdomain and everything
   // else is keyed on it.
   await expect(page.locator('#main').getByText('galaboda', { exact: true })).toBeVisible();
-  // AC-12, stated on the screen it is about.
-  await expect(page.getByText(/no new version of the console/i)).toBeVisible();
+  // AC-12, stated on the screen it is about: behind "About this screen", which opens on
+  // hover or focus.
+  await page.getByRole('button', { name: /^about this screen$/i }).hover();
+  await expect(page.getByRole('tooltip')).toContainText(/no new version of the console/i);
 
   await page.getByRole('button', { name: /^features/i }).click();
 
@@ -91,6 +106,9 @@ test('saves one section and says what else changed', async ({ page }) => {
   await hours.fill('8.00 a.m. to 3.30 p.m.');
 
   await page.getByRole('button', { name: /save this section/i }).click();
+  // A config save reaches other modules, so it is confirmed first.
+  const confirm = page.getByRole('dialog', { name: /save these configuration changes/i });
+  await confirm.getByRole('button', { name: /save this section/i }).click();
 
   // The toast says the change is already live, because a config save is the one edit whose
   // effect is mostly somewhere the reader is not looking.
@@ -117,7 +135,10 @@ test('stops withholding the suspend button once somebody else can get back in', 
    * having no console.
    */
   await expect(grid.getByText(/only way back in/i)).toHaveCount(1);
-  await expect(page.getByText(/never deleted/i)).toBeVisible();
+  // Deleting exists now, but waits, and never takes a name off the records it signed.
+  await page.getByRole('button', { name: /^how deleting works$/i }).hover();
+  await expect(page.getByRole('tooltip')).toContainText(/deleting waits 3 days/i);
+  await expect(page.getByRole('tooltip')).toContainText(/name stays on every record/i);
 
   // Add a second one.
   await page.getByRole('button', { name: /add a user/i }).click();
@@ -127,8 +148,16 @@ test('stops withholding the suspend button once somebody else can get back in', 
   await dialog.getByRole('checkbox', { name: /factory administrator/i }).check();
 
   await dialog.getByRole('button', { name: /add a user/i }).click();
+  // And confirmed, in a second dialog on top of the form.
+  const confirm = page.getByRole('dialog').filter({ hasText: /create a new console account/i });
+  await confirm.getByRole('button', { name: /add a user/i }).click();
 
   await expect(toast(page)).toContainText(/can now sign in/i, { timeout: 15_000 });
+
+  // The first password is shown once, in the form, and the form stays until it is noted.
+  await expect(dialog.getByText(/this password is shown once/i)).toBeVisible();
+  await dialog.getByRole('button', { name: /i have written it down/i }).click();
+  await expect(dialog).toHaveCount(0);
 
   /**
    * And the badge is gone from **both** rows: `isLastAdministrator` is derived per read, so
@@ -158,7 +187,7 @@ test('refuses the matrix edit that would leave nobody able to get back in', asyn
    * Two roles grant `usersAndRoles: W` by default, so removing the first is a legitimate
    * narrowing and is saved…
    */
-  await matrix.getByLabel(/users & roles for platform administrator/i).selectOption('none');
+  await choose(page, matrix.getByLabel(/users & roles for platform administrator/i), /^-$/);
   await expect(toast(page)).toContainText(/platform administrator updated/i, { timeout: 15_000 });
   await expect(page.getByText(/changed for this factory/i)).toBeVisible();
 
@@ -167,127 +196,138 @@ test('refuses the matrix edit that would leave nobody able to get back in', asyn
    * while the roles stop granting recovery, so no user record changes, which is why the
    * guard is on the proposed matrix rather than on any row.
    */
-  await matrix.getByLabel(/users & roles for factory administrator/i).selectOption('none');
+  await choose(page, matrix.getByLabel(/users & roles for factory administrator/i), /^-$/);
   // `.last()` because the first save's toast is still on screen: the refusal is the new one.
   await expect(toast(page).last()).toContainText(/would lock everybody out/i, { timeout: 15_000 });
   await expect(toast(page).last()).toContainText(/nobody could ever change this back/i);
 
   // Refused before the request went, so the cell still holds its value.
-  await expect(matrix.getByLabel(/users & roles for factory administrator/i)).toHaveValue('write');
+  await expect(matrix.getByLabel(/users & roles for factory administrator/i)).toHaveText(/^change$/i);
 });
 
-test('reports describe themselves, and total only the columns that add up', async ({ page }) => {
+/**
+ * v2 left one generic report, app use, and gave it a screen of its own: the answer for the
+ * period, the trend, then the numbers. Credit and savings are tabs beside it.
+ */
+test('reports lead with the answer, and total from the totals', async ({ page }) => {
   await signIn(page);
 
   await page.getByRole('link', { name: /^reports$/i }).click();
-  // Level 1, because the rail's card header is a "Reports" heading too.
+  await expect(page.getByRole('heading', { name: /^reports$/i, level: 1 })).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(page.getByRole('tab', { name: /^app use$/i })).toHaveAttribute('aria-selected', 'true');
+
+  // The report says what it counts. A figure with no definition is one somebody quotes wrong.
+  await page.getByRole('button', { name: /^what is counted$/i }).hover();
+  await expect(page.getByRole('tooltip')).toContainText(/in the app means the supplier sent it/i);
+
+  /**
+   * The answer runs on arrival, for the last six months: no button to press for an answer
+   * already available.
+   */
+  await expect(page.getByRole('button', { name: /^last 6 months$/i })).toHaveAttribute('aria-pressed', 'true');
+  const summary = page.getByRole('region', { name: /summary for the period/i });
+  await expect(summary).toBeVisible({ timeout: 15_000 });
+  await expect(summary).toContainText(/share from the app/i);
+  await expect(summary).toContainText(/%/);
+
+  const numbers = page.getByRole('table', { name: /^the numbers$/i });
+  await expect(numbers.locator('tbody tr').first()).toBeVisible();
+  // A month is data, not a key: it must render as a month.
+  await expect(numbers.getByText(/reports\.(metric|column|appUse)\./)).toHaveCount(0);
+
+  /**
+   * The totals row. Every count adds up, and the share is worked out **from the totals**:
+   * an average of monthly percentages would weigh a quiet month the same as a busy one.
+   */
+  const totals = numbers.locator('tfoot tr');
+  await expect(totals).toContainText(/period total/i);
+  const cells = totals.locator('td');
+  await expect(cells.nth(1)).not.toBeEmpty(); // in the app
+  await expect(cells.nth(2)).not.toBeEmpty(); // at the office
+  await expect(cells.nth(3)).not.toBeEmpty(); // all requests
+  await expect(cells.nth(4)).toContainText(/%/); // share
+  await expect(summary).toContainText((await cells.nth(4).textContent())!.trim());
+
+  // A download, now, of the same columns and months as on screen.
+  await expect(page.getByRole('button', { name: /download csv/i })).toBeVisible();
+
+  // A different period swaps the figures rather than the screen: at most the three months
+  // that have requests in them.
+  await page.getByRole('button', { name: /^last 3 months$/i }).click();
+  await expect(page.getByRole('button', { name: /^last 3 months$/i })).toHaveAttribute('aria-pressed', 'true');
+  await expect(numbers.locator('tbody tr').first()).toBeVisible();
+  expect(await numbers.locator('tbody tr').count()).toBeLessThanOrEqual(3);
+});
+
+test('keeps the report tab in the address, and says when the server has no such report', async ({
+  page,
+}) => {
+  await signIn(page);
+  await page.goto('/reports');
   await expect(page.getByRole('heading', { name: /^reports$/i, level: 1 })).toBeVisible({
     timeout: 15_000,
   });
 
-  // Each report carries what defines it. A report with no citation is one somebody thought
-  // would be useful.
-  await expect(page.getByText(/§19\.2, via SupplierQuery/i)).toBeVisible();
-  await expect(page.getByText(/§19\.3: app adoption/i)).toBeVisible();
-  // And §19.1 is stated where somebody would look for the fifth report.
-  await expect(page.getByText(/need a separate reporting database/i)).toBeVisible();
+  // One tab per report, so a link to one opens on it.
+  const tabs = page.getByRole('tablist', { name: /^reports$/i });
+  await expect(tabs.getByRole('tab')).toHaveText([/app use/i, /credit & tea packets/i, /savings/i]);
+  await tabs.getByRole('tab', { name: /credit & tea packets/i }).click();
+  await expect(page).toHaveURL(/[?&]report=credit\b/);
 
-  /**
-   * The default report runs on arrival: no button to press for an answer already available.
-   *
-   * This assertion is the one that found a real defect: the month picker was fed from M5's
-   * `GET /admin/bill-months`, and §12.1 gives this administrator `reports: R` with
-   * `billing: none`. The screen rendered, the picker was empty, and it said "nothing to show
-   * yet" for a report they are entitled to run.
-   */
-  const summary = page.getByRole('table', { name: /month summary/i });
-  await expect(summary).toBeVisible({ timeout: 15_000 });
-  await expect(summary.getByText(/where the month is/i)).toBeVisible();
+  // A report the API does not serve yet (`404`) is said so, not shown as an error.
+  await expect(page.getByText(/not available on this server/i)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/something went wrong/i)).toHaveCount(0);
 
-  /**
-   * The row label and its value are both keys, from **different namespaces**, and both used
-   * to be translated as one: `t('reports.metric.' + value)` ran on every `text` column, which
-   * translated the stage under the wrong prefix (`reports.metric.awaitingRate`, never defined)
-   * and translated literal data in every other report (`reports.metric.5091`,
-   * `reports.metric.MAKADURA`) that happened to share the `text` type. Asserting the rendered
-   * words, not just "no raw key on screen", because a stale key can still read as English if
-   * `t()` falls back to its argument.
-   */
-  await expect(summary.getByText(/^(collecting leaf|awaiting auction result|rate entered|bills generated|published)$/i)).toBeVisible();
-  await expect(summary.getByText(/reports\.metric\./)).toHaveCount(0);
-
-  await page.getByRole('button', { name: /leaf by collection point/i }).click();
-  const byPoint = page.getByRole('table', { name: /leaf by collection point/i });
-  await expect(byPoint.locator('tbody tr').first()).toBeVisible({ timeout: 15_000 });
-
-  // A collection point's name is data, not a key: it must render literally.
-  await expect(byPoint.getByText(/^(makadura|deniyaya)$/i).first()).toBeVisible();
-  await expect(byPoint.getByText(/reports\.metric\./)).toHaveCount(0);
-
-  /**
-   * The totals row, and the **gap in it** is the assertion. Kilos and weighings add up;
-   * suppliers do not, because a grower who delivers to two points appears in both rows and a
-   * sum would double-count people. The cell is blank rather than zero: a zero there is a
-   * figure the office would quote.
-   */
-  const totals = byPoint.locator('tfoot tr');
-  await expect(totals).toContainText(/total/i);
-  const cells = totals.locator('td');
-  await expect(cells.nth(1)).not.toBeEmpty(); // kilos
-  await expect(cells.nth(2)).toBeEmpty(); // suppliers
-  await expect(cells.nth(3)).not.toBeEmpty(); // weighings
-
-  // §18.1 stated where somebody would look for a download button.
-  await expect(page.getByText(/no download yet/i)).toBeVisible();
-
-  // A report with a different parameter shape swaps the form rather than the screen.
-  await page.getByRole('button', { name: /suppliers who have stopped/i }).click();
-  await expect(page.getByLabel(/no leaf for at least/i)).toBeVisible({ timeout: 15_000 });
-  const dormant = page.getByRole('table', { name: /suppliers who have stopped/i });
-  await expect(dormant.locator('tbody tr').first()).toBeVisible({ timeout: 15_000 });
-
-  // A supplier code is data, not a key: the other `text` column this bug reached.
-  await expect(dormant.getByText(/reports\.metric\./)).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('tab', { name: /credit & tea packets/i })).toHaveAttribute(
+    'aria-selected',
+    'true',
+    { timeout: 15_000 },
+  );
 });
 
-
-test('configures the payout file layout and previews what the bank will get', async ({ page }) => {
+/**
+ * The payout file layout this used to configure went with payouts (v2 has no payout runs),
+ * so the closest screen left is the one that decides what a bill pays and is numbered, and
+ * it is the same kind of check: the example follows the setting before anything is saved,
+ * and a value the bill cannot carry is refused in the form.
+ */
+test('configures how a bill is paid and numbered, and shows the slip it will produce', async ({
+  page,
+}) => {
   await signIn(page);
-  await page.goto('/configuration?section=payoutFile');
+  await page.goto('/configuration?section=billCalculation');
   await expect(page.getByRole('heading', { name: /^configuration$/i })).toBeVisible({
     timeout: 15_000,
   });
 
-  /**
-   * What the screen says it cannot do, before anything is edited.
-   *
-   * §21.17 is only *half* answered: a column template covers the CSV family and not a
-   * fixed-width scheme with control totals, and somebody arriving here has been told their
-   * bank wants "SLIPS". Configuring a template and believing it produced a SLIPS file is
-   * the failure this sentence exists to prevent.
-   */
-  await expect(page.getByText(/cannot yet produce a fixed-width file/i)).toBeVisible();
+  // With the sync off (the default), the console calculates the bills, so its rounding and
+  // numbering are the ones printed.
+  await expect(page.getByLabel(/where the bills come from/i)).toHaveText(/calculated in this console/i, {
+    timeout: 15_000,
+  });
 
-  // The preview is the point of the screen: rendered from the same serialiser the API
-  // writes the real file with, so a reader can check it against their bank's sheet.
-  const preview = page.locator('pre').first();
-  await expect(preview).toContainText('Supplier Code,Name,Account Number');
-  // A supplier whose name carries a comma is quoted: the defect that shifts every
-  // subsequent column and lands an amount in the branch field.
-  await expect(preview).toContainText('"Perera, K."');
+  // The example is worked on the factory's own slip balance, so a reader can check it
+  // against a paper bill.
+  const example = page.getByText(/a balance of rs\. 68,226\.91 is paid as/i);
+  await expect(example).toContainText('Rs. 68,226.00');
+  await expect(example).toContainText('Rs. 0.91 carried forward');
 
-  // Change the amount format, and the sample follows immediately.
-  await expect(preview).toContainText('4213.50');
-  await page.getByLabel(/amounts written as/i).selectOption('cents');
-  await expect(preview).toContainText('421350');
-  await expect(preview).not.toContainText('4213.50');
+  // Change the unit, and the example follows immediately.
+  await choose(page, page.getByLabel(/pay the balance in/i), /rs\. 10 units/i);
+  await expect(example).toContainText('Rs. 68,220.00');
+  await expect(example).toContainText('Rs. 6.91 carried forward');
 
-  /**
-   * The refusal, computed in the browser from the same `configImpact` the API refuses
-   * with: a file with no amount column is a mailing list, not a payment instruction.
-   */
-  await page.getByRole('button', { name: /^remove amount$/i }).click();
-  await expect(page.getByText(/not a payment instruction/i)).toBeVisible();
+  // The factory's own numbers continue from its last paper bill.
+  await expect(example).toContainText(/numbered GL\/YYYY-MM\/NNNN/);
+  await page.getByLabel(/next bill number/i).fill('210870');
+  await expect(example).toContainText(/the next new bill is numbered \S*210870/i);
+  await expect(page.getByRole('button', { name: /save this section/i })).toBeEnabled();
+
+  // A serial the bill cannot carry is refused before anything is sent.
+  await page.getByLabel(/next bill number/i).fill('12.5');
+  await expect(page.getByText(/enter a whole number from 1 to/i)).toBeVisible();
   await expect(page.getByRole('button', { name: /save this section/i })).toBeDisabled();
-  await expect(page.getByText(/fix the problems above/i)).toBeVisible();
 });

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /**
  * The three things only a browser can confirm.
@@ -47,6 +47,9 @@ test('survives a page reload', async ({ page }) => {
   // Signing out must not leave a session behind on a shared office machine.
   await page.getByRole('button', { name: new RegExp(CLERK.split('@')[0]!, 'i') }).click();
   await page.getByRole('menuitem', { name: /sign out/i }).click();
+  // Sign-out asks first, so a stray click does not throw away unsaved work.
+  const confirm = page.getByRole('dialog', { name: /^sign out$/i });
+  await confirm.getByRole('button', { name: /^sign out$/i }).click();
   await expect(page.getByRole('heading', { name: /sign in to the console/i })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('heading', { name: /sign in to the console/i })).toBeVisible();
@@ -63,12 +66,19 @@ test('applies the tenant brand as CSS custom properties', async ({ page }) => {
   );
   expect(primary.toUpperCase()).toBe('#2E8B57');
 
-  // And a different tenant repaints without a rebuild.
+  // And a different tenant repaints without a rebuild. `hillcountry` has no bundled
+  // fallback, so it first paints the neutral base and then its own green once the
+  // served `GET /config` lands: the colour comes from the server, not the bundle.
   await page.goto('/sign-in?tenant=hillcountry');
-  const hillcountry = await page.evaluate(() =>
-    getComputedStyle(document.documentElement).getPropertyValue('--brand-color-primary').trim(),
-  );
-  expect(hillcountry.toUpperCase()).toBe('#1B5E20');
+  await expect
+    .poll(async () =>
+      (
+        await page.evaluate(() =>
+          getComputedStyle(document.documentElement).getPropertyValue('--brand-color-primary').trim(),
+        )
+      ).toUpperCase(),
+    )
+    .toBe('#1B5E20');
 });
 
 test('a reduced-feature tenant loses the queues it does not use', async ({ page }) => {

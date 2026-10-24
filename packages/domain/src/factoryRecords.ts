@@ -21,14 +21,18 @@ import type { SupplierRegistration } from './types/admin';
 
 /* ───────────────────────────── the switch ───────────────────────────── */
 
-/** The configuration block for the switch. Absent means "on": the platform's normal case. */
+/**
+ * The configuration block for the switch. **Absent or `null` means off** (the factory's
+ * decision): a factory keeps its records here until its own system is connected and the
+ * sync is switched on deliberately. None is connected yet.
+ */
 export interface FactorySyncSetting {
   enabled: boolean;
 }
 
 /** Is the factory's own system the source of suppliers, leaf, rates, bills and balances? */
-export function isFactorySyncEnabled(config: { factorySync?: FactorySyncSetting }): boolean {
-  return config.factorySync?.enabled ?? true;
+export function isFactorySyncEnabled(config: { factorySync?: FactorySyncSetting | null }): boolean {
+  return config.factorySync?.enabled === true;
 }
 
 /* ─────────────────────────── advance interest ─────────────────────────── */

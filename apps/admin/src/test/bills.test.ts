@@ -18,7 +18,7 @@
  * screens rely on are in the path too.
  */
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DEDUCTION_CATEGORIES, colomboDayOf, round2, sumDeductionLines } from '@tfd/domain';
 import { billRepository, billIsBalanced } from '@/services/repositories/billRepository';
 import { deliveryRepository } from '@/services/repositories/deliveryRepository';
@@ -27,6 +27,7 @@ import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { isApiError } from '@/services/api/errors';
 import { signInAs, signOut } from './render';
+import { clearFactorySync, setFactorySync } from './factorySync';
 
 const MANAGER = 'manager@galabodatea.lk';
 const FACTORY_SYSTEM = 'factory-system@galabodatea.lk';
@@ -268,7 +269,11 @@ describe('M5 bills', () => {
     expect((await billRepository.generate(month.monthKey)).stale).toBe(false);
   }, 20_000);
 
+  afterEach(clearFactorySync);
+
   it('locks the bills once the month is published (BR-108)', async () => {
+    // A synced factory: its bills are not compared with printed slips before the publish.
+    await setFactorySync(true);
     /**
      * **Two identities, and BR-501 is why.** Whoever enters a month's rate may not be
      * whoever publishes it, so a version of this that did both as the manager fails on

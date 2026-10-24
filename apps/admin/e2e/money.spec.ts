@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /**
  * The supplier-support path, in a browser: bills → the slip.
@@ -39,10 +40,14 @@ test('reads a month’s bills and opens one supplier’s slip', async ({ page })
 
   await expect(page.getByText(/read-only/i).first()).toBeVisible({ timeout: 15_000 });
 
-  // Switch to a published month, which the fixture generated bills for.
+  // Switch to a published month, which the fixture generated bills for: the oldest, last
+  // in the list. The picker is a Radix popup, so its options exist only while it is open.
   const monthSelect = page.getByLabel(/^month$/i);
-  const published = (await monthSelect.locator('option').last().getAttribute('value'))!;
-  await monthSelect.selectOption(published);
+  await monthSelect.click();
+  const published = page.getByRole('option').last();
+  const publishedName = (await published.textContent())!.trim();
+  await published.click();
+  await expect(monthSelect).toHaveText(publishedName);
 
   const grid = page.getByRole('table', { name: /^bills$/i });
   await expect(grid.locator('tbody tr').first()).toBeVisible({ timeout: 15_000 });

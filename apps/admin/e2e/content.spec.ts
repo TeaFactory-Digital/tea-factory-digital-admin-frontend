@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /**
  * The content path in a browser: the language tabs, the gap, and the preview.
@@ -26,6 +27,12 @@ async function signIn(page: Page) {
   await expect(page.getByRole('navigation').first()).toBeVisible({ timeout: 15_000 });
 }
 
+/** Choose from one of the console's dropdowns, which are Radix popups, not `<select>`s. */
+async function choose(page: Page, trigger: Locator, option: RegExp) {
+  await trigger.click();
+  await page.getByRole('option', { name: option }).click();
+}
+
 test('shows a live article’s missing translation on the tab that has it', async ({ page }) => {
   await signIn(page);
 
@@ -33,7 +40,7 @@ test('shows a live article’s missing translation on the tab that has it', asyn
   await expect(page.getByRole('heading', { name: /^news$/i })).toBeVisible({ timeout: 15_000 });
 
   // The AC-08 working list: live, and falling back for somebody.
-  await page.getByLabel(/^show$/i).selectOption('incomplete');
+  await choose(page, page.getByLabel(/^show$/i), /^live with a gap$/i);
   const grid = page.getByRole('table', { name: /^news$/i });
   await expect(grid.locator('tbody tr').first()).toBeVisible({ timeout: 15_000 });
 
@@ -90,6 +97,8 @@ test('lists every fixed page, including one nobody has written', async ({ page }
   await expect(page.getByText(/shows its own built-in version/i)).toBeVisible();
   await expect(page.getByText(/nothing to show/i)).toBeVisible();
 
-  // The editor writes; publishing is the factory administrator's (§12.1).
-  await expect(page.getByText(/publishing is the factory administrator/i)).toBeVisible();
+  // The editor writes; publishing is the factory administrator's (§12.1), said behind
+  // the button where the publish control would be.
+  await page.getByRole('button', { name: /^administrator publishes$/i }).hover();
+  await expect(page.getByRole('tooltip')).toContainText(/publishing is the factory administrator/i);
 });

@@ -99,6 +99,23 @@ describe('importing a file again', () => {
     expect((await supplierRepository.get(known.id)).name).toBe(known.name);
   });
 
+  it('finds 0708 from a 708 a spreadsheet wrote, and will not add 708 beside it', async () => {
+    await setSyncOff();
+    const point = (await someSupplier()).collectionPoint?.name ?? '';
+    const roll = (code: string, name: string) => ({ supplierCode: code, name, nic: '901234567V', collectionPoint: point, paymentMethod: 'cash' });
+    expect(await factoryRecordRepository.importRows('suppliers', 'roll.csv', [roll('0708', 'Leading Zero')])).toMatchObject({ saved: 1 });
+
+    // The same digits are the same supplier: skipped, not added again.
+    expect(await factoryRecordRepository.importRows('suppliers', 'roll.csv', [roll('708', 'Leading Zero')])).toMatchObject({
+      saved: 0,
+      skipped: [{ row: 2, code: 'supplier-exists' }],
+    });
+    // A leaf file whose code lost its zero still finds them.
+    expect(
+      await factoryRecordRepository.importRows('deliveries', 'day.csv', [{ date: today(), supplierCode: '708', kg: '12.4' }]),
+    ).toMatchObject({ saved: 1, problems: [] });
+  });
+
   it('tells the office before importing, and lets it keep a second weighing', async () => {
     await setSyncOff();
     const user = userEvent.setup();

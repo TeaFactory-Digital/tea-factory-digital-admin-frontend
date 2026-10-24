@@ -62,9 +62,11 @@ afterEach(() => {
 });
 
 describe('the rules the console and the API share', () => {
-  it('treats a factory with no setting as synced', () => {
-    expect(isFactorySyncEnabled({})).toBe(true);
+  it('treats a factory with no setting as keeping its records here (sync off)', () => {
+    expect(isFactorySyncEnabled({})).toBe(false);
+    expect(isFactorySyncEnabled({ factorySync: null })).toBe(false);
     expect(isFactorySyncEnabled({ factorySync: { enabled: false } })).toBe(false);
+    expect(isFactorySyncEnabled({ factorySync: { enabled: true } })).toBe(true);
   });
 
   it('names each problem by spreadsheet row and column', () => {
@@ -223,13 +225,26 @@ describe('the rules the console and the API share', () => {
     expect(factoryBillNumber(2026, 210869)).toBe('2026210869');
   });
 
-  it('lets the platform team read a factory’s records, never change them', () => {
-    const grants = grantsFromRoles(['platformAdmin']);
-    for (const capability of ['deliveries', 'ratesAndMonthClose', 'billing'] as const) {
-      expect(DEFAULT_ROLE_MATRIX.platformAdmin[capability]).toBe('read');
-      expect(can(grants, capability, 'read')).toBe(true);
-      expect(can(grants, capability, 'write')).toBe(false);
+  it('lets the factory and platform admins read a factory’s records, never change them', () => {
+    for (const role of ['factoryAdmin', 'platformAdmin'] as const) {
+      const grants = grantsFromRoles([role]);
+      for (const capability of ['deliveries', 'ratesAndMonthClose', 'billing'] as const) {
+        expect(DEFAULT_ROLE_MATRIX[role][capability]).toBe('read');
+        expect(can(grants, capability, 'read')).toBe(true);
+        expect(can(grants, capability, 'write')).toBe(false);
+      }
     }
+  });
+
+  it('refuses the factory administrator’s writes on the records it can read', async () => {
+    await setSync(false);
+    await signInAs(ADMIN);
+    const today = new Date().toISOString().slice(0, 10);
+    // Reading the day's leaf is allowed; importing it is not.
+    await expect(deliveryRepository.list({ date: today, pageSize: 5 })).resolves.toBeTruthy();
+    await expect(
+      factoryRecordRepository.importRows('deliveries', 'day.csv', [{ date: today, supplierCode: '1', kg: '1' }]),
+    ).rejects.toMatchObject({ status: 403 });
   });
 
   it('needs a reason for any other charge', () => {
@@ -241,6 +256,7 @@ describe('the rules the console and the API share', () => {
 
 describe('with the factory-system sync on', () => {
   it('offers no way to add a supplier, and the API refuses one', async () => {
+    await setSync(true);
     await signInAs(CLERK);
     renderWithProviders(<SuppliersScreen />, { route: '/suppliers' });
     await screen.findByRole('heading', { name: 'Suppliers' });

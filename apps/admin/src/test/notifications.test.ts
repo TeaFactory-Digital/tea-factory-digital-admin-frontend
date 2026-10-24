@@ -22,7 +22,7 @@
  * because a trigger that cannot be turned off is not a setting.
  */
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   NOTIFICATION_CATEGORIES,
   NOTIFICATION_EVENTS,
@@ -39,6 +39,7 @@ import { auditRepository } from '@/services/repositories/auditRepository';
 import { isApiError } from '@/services/api/errors';
 import { useAuthStore } from '@/auth/authStore';
 import { signInAs, signOut } from './render';
+import { clearFactorySync, setFactorySync } from './factorySync';
 
 const ADMIN = 'factoryadmin@galabodatea.lk';
 const EDITOR = 'editor@galabodatea.lk';
@@ -296,7 +297,11 @@ describe('M13 automatic triggers', () => {
     );
   }
 
+  afterEach(clearFactorySync);
+
   it('fires billPublished when a month is published, once', async () => {
+    // A synced factory: its bills are not compared with printed slips before the publish.
+    await setFactorySync(true);
     // The month is closed by the factory's own system, which holds `ratesAndMonthClose: W`
     // from the server and no `content` grant at all, so the baseline has to be read by
     // somebody who *can* read it. The person who closes a month is not the person who

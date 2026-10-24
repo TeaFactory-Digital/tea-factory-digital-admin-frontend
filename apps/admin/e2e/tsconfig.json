@@ -11,7 +11,15 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["node"]
+    "resolveJsonModule": true,
+    "types": ["node", "vite/client"],
+    // The fixture loads the mock handlers, which import the app's own modules.
+    "baseUrl": "..",
+    "paths": {
+      "@/*": ["src/*"],
+      "@tfd/domain": ["../../packages/domain/src/index.ts"],
+      "@tfd/brand": ["../../packages/brand/src/index.ts"]
+    }
   },
   "include": ["**/*.ts"]
 }

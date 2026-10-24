@@ -1,8 +1,8 @@
 # Factory records without the factory system
 
-**Status (22 October 2026):** the console is built against the mock and tested; the backend
-is partly built (see [BACKEND-TODO.md](./BACKEND-TODO.md) #45 for what is done, what is next,
-and what the console hides until it lands).
+**Status (23 October 2026):** the console is built against the mock and tested; the backend
+is partly built (see [BACKEND-TODO.md](./BACKEND-TODO.md) #45 for what is still to build, in
+order, and what the console hides until it lands).
 **For:** the backend developer. This file is the contract the console was built against.
 
 ## 1. Why
@@ -27,7 +27,7 @@ sources writing the same weighing is how a bill comes to disagree with itself.
 
 ## 2. The switch
 
-| | Sync **on** (default) | Sync **off** |
+| | Sync **on** | Sync **off** (default) |
 |---|---|---|
 | Where records come from | The hourly sync | The office, in the console |
 | Entry and import screens | Hidden; routes show "comes from the factory system" | Shown |
@@ -39,10 +39,14 @@ Stored in the tenant config:
 
 ```ts
 // packages/domain/src/factoryRecords.ts
-config.factorySync?: { enabled: boolean }   // absent = enabled (true)
+config.factorySync?: { enabled: boolean } | null   // absent or null = off (false)
 isFactorySyncEnabled(config)                // the one reading of it
 ```
 
+- **Default off (factory):** a new factory, and any `client_config` row without the field,
+  is sync **off**: the office keeps its records here until the factory's own system is
+  connected and someone switches the sync on deliberately. Store `{ enabled: false }`
+  rather than leaving it `null`.
 - `PATCH /admin/config` accepts `{ factorySync: { enabled } }`, saved whole, audited as
   `config.update` like any section. `GET /config` and `GET /admin/config` return it.
 - Who may change it: `flagsAndBranding: W` (factory administrator), as for every config section.
@@ -79,9 +83,10 @@ CSV file**.
 counter request, and import, generate or adjust bills. Deciding a request and publishing a
 month stay with the manager (`A`, BR-501 refuses the recorder or importer as approver).
 **Savings withdrawals need `billing: A`**: the clerk's `W` must not let them pay out a
-supplier's savings. **The platform admin reads, never writes:** `deliveries`,
-`ratesAndMonthClose` and `billing` are `R` for it, so the platform team can see a factory's
-records for support; the factory administrator has no access to them.
+supplier's savings. **The factory and platform admins read, never write (factory):**
+`deliveries`, `ratesAndMonthClose` and `billing` are `R` for both, so the factory
+administrator sees the Factory records menu and every figure in it, and the platform team
+can see a factory's records for support. Every write on those routes still refuses them.
 
 ## 4. API
 

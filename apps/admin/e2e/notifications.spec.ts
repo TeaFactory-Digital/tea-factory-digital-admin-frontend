@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /**
  * The notification path in a browser.
@@ -23,6 +24,12 @@ async function signIn(page: Page) {
   await expect(page.getByRole('navigation').first()).toBeVisible({ timeout: 15_000 });
 }
 
+/** Choose from one of the console's dropdowns, which are Radix popups, not `<select>`s. */
+async function choose(page: Page, trigger: Locator, option: RegExp) {
+  await trigger.click();
+  await page.getByRole('option', { name: option }).click();
+}
+
 test('shows what fires automatically, and what fired', async ({ page }) => {
   await signIn(page);
 
@@ -35,8 +42,9 @@ test('shows what fires automatically, and what fired', async ({ page }) => {
   // setting nobody can reason about.
   await expect(page.getByText(/fires when a month is published/i)).toBeVisible();
 
-  // §21.24 stated where the decision is made.
-  await expect(page.getByText(/still an open question with the factory/i)).toBeVisible();
+  // §21.24 stated where the decision is made, behind "Not decided yet".
+  await page.getByRole('button', { name: /^not decided yet$/i }).hover();
+  await expect(page.getByRole('tooltip')).toContainText(/still an open question with the factory/i);
 
   // The log carries reach and opt-outs side by side.
   const log = page.getByRole('table', { name: /^notifications$/i });
@@ -59,7 +67,7 @@ test('works out who a message reaches before it can be sent', async ({ page }) =
   // app routes on it.
   await expect(dialog.getByRole('button', { name: /^send/i })).toBeDisabled();
 
-  await dialog.getByLabel(/^kind$/i).selectOption('newsArticle');
+  await choose(page, dialog.getByLabel(/^kind/i), /^news article$/i);
 
   /**
    * The reach panel: the whole reason this is a dialog and not a form.

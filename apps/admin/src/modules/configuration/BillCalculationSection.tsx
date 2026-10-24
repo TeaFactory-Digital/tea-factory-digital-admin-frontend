@@ -31,7 +31,6 @@ import { Notice } from '@/components/ui/states';
 import { formatAmount } from '@/lib/format';
 import { InfoTip } from '@/components/ui/Tooltip';
 import { cn } from '@/lib/cn';
-import { BILL_SOURCE_AND_RECOVERY_ON_SERVER } from '@/lib/serverReady';
 import { SectionFooter, type SectionProps } from './SectionFooter';
 
 /** The balance the interest example is worked on. */
@@ -74,7 +73,7 @@ export function BillCalculationSection(props: SectionProps) {
   const nextBillSerial = serial.trim() === '' ? undefined : Number(serial);
   const settings = {
     paymentUnit: unit,
-    ...(BILL_SOURCE_AND_RECOVERY_ON_SERVER ? { source } : {}),
+    source,
     ...(nextBillSerial === undefined ? {} : { nextBillSerial }),
   };
   const monthlyRatePercent = rate.trim() === '' ? Number.NaN : Number(rate);
@@ -99,22 +98,20 @@ export function BillCalculationSection(props: SectionProps) {
       {isFactorySyncEnabled(props.config) ? (
         <Notice tone="info">{t('config.bill.syncOn')}</Notice>
       ) : null}
-      {BILL_SOURCE_AND_RECOVERY_ON_SERVER ? (
-        <Field label={t('config.bill.source')} hint={t(`config.bill.sourceHint.${source}`)}>
-          {({ id, describedBy }) => (
-            <Select
-              id={id}
-              aria-describedby={describedBy}
-              disabled={props.readOnly}
-              value={source}
-              onChange={(event) => setSource(event.target.value as BillSource)}
-            >
-              <option value="imported">{t('config.bill.sourceImported')}</option>
-              <option value="calculated">{t('config.bill.sourceCalculated')}</option>
-            </Select>
-          )}
-        </Field>
-      ) : null}
+      <Field label={t('config.bill.source')} hint={t(`config.bill.sourceHint.${source}`)}>
+        {({ id, describedBy }) => (
+          <Select
+            id={id}
+            aria-describedby={describedBy}
+            disabled={props.readOnly}
+            value={source}
+            onChange={(event) => setSource(event.target.value as BillSource)}
+          >
+            <option value="imported">{t('config.bill.sourceImported')}</option>
+            <option value="calculated">{t('config.bill.sourceCalculated')}</option>
+          </Select>
+        )}
+      </Field>
 
       {/* Rounding and bill numbers are this console's only when it calculates the bills;
           an imported bill keeps the factory's own. */}
@@ -228,7 +225,7 @@ export function BillCalculationSection(props: SectionProps) {
       </div>
 
       {/* How a loan's interest is recovered: only worth asking once there is a rate. */}
-      {BILL_SOURCE_AND_RECOVERY_ON_SERVER && loanRatePercent > 0 && !loanRateProblem ? (
+      {loanRatePercent > 0 && !loanRateProblem ? (
         <fieldset className="flex flex-col gap-xs">
           <legend className="pb-xs text-label text-text-primary">
             {t('config.interest.recovery')}
@@ -281,7 +278,7 @@ export function BillCalculationSection(props: SectionProps) {
           advanceInterest: { monthlyRatePercent },
           loanInterest: {
             monthlyRatePercent: loanRatePercent,
-            ...(BILL_SOURCE_AND_RECOVERY_ON_SERVER ? { recovery } : {}),
+            recovery,
           },
         }}
         dirty={

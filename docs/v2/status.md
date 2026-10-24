@@ -62,15 +62,18 @@ ships:
 
 | Console feature | Waits for |
 | --- | --- |
-| Import → Opening balances, Daily leaf, Monthly rates, Other deductions, Finished bills | `POST /admin/imports/{openingBalances, deliveries, monthlyRates, billAdjustments, bills}` (`IMPORT_KINDS_NOT_ON_SERVER`) |
+| Import → Opening balances, Daily leaf, Monthly rates, Other deductions, Finished bills, Printed slip balances | `POST /admin/imports/{openingBalances, deliveries, monthlyRates, billAdjustments, bills, printedBalances}` (`IMPORT_KINDS_NOT_ON_SERVER`) |
 | Opening balances card (supplier → Money) | `GET` / `PUT /admin/suppliers/:id/opening-balances` (`OPENING_BALANCES_ON_SERVER`) |
 | Other deductions → Edit on a bill | `PUT /admin/bills/:id/adjustment` (`OTHER_DEDUCTIONS_ON_SERVER`) |
-| Bill calculation: "Where the bills come from" and "How the loan interest is taken" | `PATCH /admin/config` accepting `billSettings.source` and `loanInterest.recovery` (`BILL_SOURCE_AND_RECOVERY_ON_SERVER`) |
+| Rates & month close: "Compare with printed slips", the checklist step, held badges | `GET .../slip-comparison`, `PUT /admin/bills/:id/printed`, `POST /admin/bills/:id/hold`, `/release` (`SLIP_COMPARISON_ON_SERVER`) |
+| Configuration → Features: "Account tab: this month so far" | `GET /bills/month-to-date` (`MONTH_TO_DATE_ON_SERVER`) |
+| Import dialog: the preview of rows already there, "import them anyway" for leaf | `dryRun`, `duplicates`, `skipped` on `POST /admin/imports/:kind` (`IMPORT_SKIP_ON_SERVER`) |
 
 The Leaf intake grid and Rates & month close stay visible; they call the v1 leaf and month
-endpoints and start working as those land. Still to come on the backend, in order: the two
-config fields, the bills import, opening balances, leaf and months, other deductions, then
-the bill engine (no factory needs it yet: galaboda imports its bills).
+endpoints and start working as those land. Still to come on the backend, in order: the
+bills import with the month reads and publish, opening balances, leaf and months, other
+deductions, then the bill engine (no factory needs it yet: galaboda imports its bills).
+"Where the bills come from" and "How the loan interest is taken" shipped in `970be6f`.
 
 ---
 

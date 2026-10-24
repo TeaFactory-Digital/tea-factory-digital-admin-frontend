@@ -9,6 +9,12 @@ import { defineConfig, devices } from '@playwright/test';
  * starts**, that the **CSS-variable brand bridge actually paints**, and that the
  * sign-in → dashboard path works against the built app.
  *
+ * **The API is answered by the tests** (`e2e/fixtures.ts`), from the same MSW handlers as
+ * Vitest: the console itself has no in-browser mock. Its own dev server runs on 5274 with
+ * `VITE_API_BASE_URL` pointed at `/v1` on that same origin, so every call is intercepted
+ * and none can reach a real backend. Sign in with the fixture's accounts
+ * (`clerk@galabodatea.lk`, `demo1234`).
+ *
  * Needs `npx playwright install chromium` once: the browsers are not installed by
  * `npm install`, so `npm run e2e` will tell you to do that rather than mysteriously
  * failing.
@@ -21,7 +27,7 @@ export default defineConfig({
   reporter: process.env.CI ? 'github' : 'list',
 
   use: {
-    baseURL: 'http://localhost:5273',
+    baseURL: 'http://localhost:5274',
     trace: 'on-first-retry',
     // The office runs 1366×768 laptops; testing at 1920 hides every layout
     // problem that actually gets reported.
@@ -31,9 +37,11 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5273',
-    reuseExistingServer: !process.env.CI,
+    // Its own port, never a developer's `npm run dev` (5273, pointed at a real API).
+    command: 'npx vite --port 5274 --strictPort',
+    url: 'http://localhost:5274',
+    reuseExistingServer: false,
     timeout: 60_000,
+    env: { VITE_API_BASE_URL: 'http://localhost:5274/v1', VITE_DEFAULT_TENANT: 'galaboda' },
   },
 });

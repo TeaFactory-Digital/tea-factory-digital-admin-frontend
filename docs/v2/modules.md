@@ -471,9 +471,9 @@ the console read.
   falls 4,500.
 - **Advance interest** (`config.advanceInterest`): only when an account could not cover its
   advance.
-- "Where the bills come from" and "How the loan interest is taken" are **hidden until the
-  backend accepts them** (`BILL_SOURCE_AND_RECOVERY_ON_SERVER`). Changing the source is
-  refused while a month has generated but unpublished bills (`409 bill-source-blocked`).
+- "Where the bills come from" and "How the loan interest is taken": changing the source is
+  refused while a month has generated but unpublished bills (`409 bill-source-blocked`). A
+  save sends both; the API keeps what is stored for a field left out.
 
 ### Credit rules: how much a supplier may borrow
 
@@ -580,7 +580,7 @@ Entries worth knowing about:
 
 | Needs | Why it is not a console change |
 | --- | --- |
-| **The rest of BACKEND-TODO #45** | Opening balances, leaf and months, the remaining imports, other deductions, the bill source and loan-interest recovery settings, and the bill engine. The console hides each until it ships (`lib/serverReady.ts`) |
+| **The rest of BACKEND-TODO #45** | The bills import with the month reads and publish, opening balances, leaf and months, the remaining imports, other deductions, and the bill engine. The console hides each until it ships (`lib/serverReady.ts`) |
 | **A push sender** | M13 records what it would send and what it would reach; the API's sender is not built |
 | **The factory-system sync** | Sync on assumes an hourly pull from the factory's endpoint (backend Phase 10); [factory-integration-spec.md](./factory-integration-spec.md) |
 | **§19.1's warehouse** | M16 grows a report list without a console release |

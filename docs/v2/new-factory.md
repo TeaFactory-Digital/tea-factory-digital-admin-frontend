@@ -79,8 +79,7 @@ factory's colours as soon as `GET /config` answers.
       factory's own system, or **calculated** here); for calculated bills, pay in Rs. 1, 5
       or 10 and the next bill number after the factory's last paper bill; advance and loan
       interest per month (loan 0% unless set) and whether the loan interest is taken on
-      top of the instalment or inside it. (The bill source and how the loan interest is
-      taken appear once the API accepts them: BACKEND-TODO #45.)
+      top of the instalment or inside it.
 - [ ] **Common notes:** the office's ready-made sentences.
 - [ ] **Static content:** read the default terms, privacy, FAQ, savings scheme, credit terms
       and about pages in all three languages, and edit them for this factory.

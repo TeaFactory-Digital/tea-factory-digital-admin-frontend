@@ -30,6 +30,8 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { SearchInput, Select } from '@/components/ui/Field';
 import { EmptyState, Notice } from '@/components/ui/states';
 import { SyncFreshness } from '@/components/SyncFreshness';
+import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
+import { isFactorySyncEnabled } from '@tfd/domain';
 import { useDebounced } from '@/lib/useDebounced';
 import { formatAmount, formatKg, formatMoney } from '@/lib/format';
 import { MonthSelect } from '@/modules/money/MonthSelect';
@@ -40,6 +42,7 @@ type Lens = 'all' | 'missingBankDetails' | 'carriesDebt';
 
 export function BillsScreen() {
   const { t } = useTranslation();
+  const syncOn = isFactorySyncEnabled(useRuntimeConfig().config);
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
 
@@ -212,10 +215,12 @@ export function BillsScreen() {
         }
       />
 
-      <Notice tone="info">{t('bills.readOnlyNotice')}</Notice>
+      {/* Where the bills come from depends on the switch: the factory system's, or this
+          console's own Rates & month close. */}
+      <Notice tone="info">{t(syncOn ? 'bills.readOnlyNotice' : 'bills.readOnlyNoticeRecords')}</Notice>
       {/* "Read-only" says nobody here changes it; this says how old it is. Both, because
           the first without the second reads as "read-only and live". */}
-      <SyncFreshness />
+      {syncOn ? <SyncFreshness /> : null}
 
       <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-end gap-sm border-b border-divider p-md">

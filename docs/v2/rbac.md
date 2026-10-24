@@ -70,9 +70,9 @@ rather than assumed.
 | Capability | Clerk | Manager | Editor | Fac. admin | Plat. admin |
 | --- | --- | --- | --- | --- | --- |
 | `suppliers` | W | R | - | R | R |
-| `deliveries` | W | R | - | - | R |
-| `ratesAndMonthClose` | - | A | - | - | R |
-| `billing` | W | A | - | - | R |
+| `deliveries` | W | R | - | R | R |
+| `ratesAndMonthClose` | - | A | - | R | R |
+| `billing` | W | A | - | R | R |
 | `payouts` | R | A | - | - | - |
 | `creditRequests` | W | A | - | - | - |
 | `creditAboveThreshold` | - | A | - | - | - |
@@ -271,9 +271,10 @@ console.
   rule and the audit log, none of which ever depended on a second factor. The integration
   test that asserted a manager could read nothing until MFA was verified now asserts the
   inverse, beside the refusals proving the matrix still holds (`changeRequests.test.tsx`).
-- **The platform admin reads a factory's records, never changes them.** `R` on
-  `deliveries`, `ratesAndMonthClose` and `billing`, so the platform team can look at a
-  factory's leaf, rates and bills to answer a support question; entering, approving and
+- **The factory and platform admins read a factory's records, never change them.** `R` on
+  `deliveries`, `ratesAndMonthClose` and `billing`: the factory administrator sees the
+  Factory records menu (the factory's decision), and the platform team can look at a
+  factory's leaf, rates and bills to answer a support question. Entering, approving and
   publishing stay with the factory's own clerk and manager (four-eyes, audit).
 - **Roles are per factory.** A platform admin is the only identity that spans
   tenants, and every cross-tenant action is audited.

@@ -51,7 +51,8 @@ import {
   type ImportResult,
 } from '@tfd/domain';
 import { HttpResponse, delay, http, type HttpHandler } from 'msw';
-import STATIC_PAGE_DEFAULTS from '../../../../../docs/v2/static-pages.seed.json';
+// `with { type: 'json' }`: Node's ESM needs it when the e2e fixture loads this file.
+import STATIC_PAGE_DEFAULTS from '../../../../../docs/v2/static-pages.seed.json' with { type: 'json' };
 import type { ServedBannerPreview, ServedContentPreview } from '../api/adapters';
 import type { ServedAudience } from '../endpoints/notifications';
 import type {
@@ -1804,12 +1805,41 @@ function refuseWhileSyncOn(request: Request): Response | null {
 
 /** By the factory's code: `5147` matches `5147 (DENIYAYA)`. */
 function supplierByCode(code: string): AdminSupplier | undefined {
-  const wanted = code.trim().toUpperCase();
-  const bare = wanted.split(/\s|\(/)[0];
-  return state.suppliers.find((one) => {
-    const own = one.supplierCode.toUpperCase();
-    return own === wanted || own.split(/\s|\(/)[0] === bare;
-  });
+  const found = findSupplierByCode(code);
+  return 'supplier' in found ? found.supplier : undefined;
+}
+
+/** The bare number of a code: `5147 (DENIYAYA)` → `5147`, leading zeros kept. */
+function bareCode(code: string): string {
+  const trimmed = code.trim().toUpperCase();
+  return /^([0-9A-Z]+)/.exec(trimmed)?.[1] ?? trimmed;
+}
+
+/** An all-digit bare number without its leading zeros (`0708` → `708`); `null` with letters. */
+function digitsKey(bare: string): string | null {
+  return /^\d+$/.test(bare) ? bare.replace(/^0+(?=\d)/, '') : null;
+}
+
+/**
+ * As the API does it (`supplier-code.ts`): the exact bare number first; failing that, an
+ * all-digit code ignoring leading zeros, because a spreadsheet turns `0708` into `708`, but
+ * only when exactly one supplier fits. Two that fit is `ambiguous`, never a guess.
+ */
+function findSupplierByCode(code: string): { supplier: AdminSupplier } | { problem: 'unknown' | 'ambiguous' } {
+  const bare = bareCode(code);
+  const exact = state.suppliers.find((one) => bareCode(one.supplierCode) === bare);
+  if (exact) return { supplier: exact };
+  const key = digitsKey(bare);
+  if (key === null) return { problem: 'unknown' };
+  const fits = state.suppliers.filter((one) => digitsKey(bareCode(one.supplierCode)) === key);
+  if (fits.length === 1) return { supplier: fits[0]! };
+  return { problem: fits.length === 0 ? 'unknown' : 'ambiguous' };
+}
+
+/** More than one supplier fits this code once its leading zeros are dropped. */
+function supplierCodeAmbiguous(code: string): boolean {
+  const found = findSupplierByCode(code);
+  return 'problem' in found && found.problem === 'ambiguous';
 }
 
 /**
@@ -1821,7 +1851,8 @@ function hasBill(supplierId: string): boolean {
 }
 
 function newSupplierProblem(request: Request, body: NewSupplier): string | null {
-  if (supplierByCode(body.supplierCode)) return 'supplier-code-taken';
+  // `708` is taken when `0708` exists: the same digits are the same supplier.
+  if (supplierByCode(body.supplierCode) || supplierCodeAmbiguous(body.supplierCode)) return 'supplier-code-taken';
   const points = tenantConfig(request).collectionPoints.map((point) => point.name);
   if (!points.includes(body.collectionPoint)) return 'unknown-collection-point';
   if (body.paymentMethod === 'bankTransfer' && !body.bankDetails?.accountNumber) {
@@ -1960,8 +1991,15 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
 
   rows.forEach((row, index) => {
     const line = index + 2;
-    const push = (column: string, code: string) => problems.push({ row: line, column, code });
     const code = (row.supplierCode ?? '').trim();
+    // A code that fits two suppliers once its leading zeros are dropped is named as such,
+    // not as unknown: the fix is to write it in full.
+    const push = (column: string, problem: string) =>
+      problems.push({
+        row: line,
+        column,
+        code: problem === 'unknown-supplier' && code && supplierCodeAmbiguous(code) ? 'ambiguous-supplier' : problem,
+      });
     const supplier = code ? supplierByCode(code) : undefined;
 
     switch (kind) {
@@ -2076,7 +2114,9 @@ function importSkips(kind: ImportKind, rows: ImportRow[], duplicates: ImportRequ
   if (kind === 'suppliers') {
     return rows.flatMap((row, index) => {
       const code = (row.supplierCode ?? '').trim();
-      return code && supplierByCode(code) ? [{ row: index + 2, code: 'supplier-exists' as const }] : [];
+      return code && (supplierByCode(code) || supplierCodeAmbiguous(code))
+        ? [{ row: index + 2, code: 'supplier-exists' as const }]
+        : [];
     });
   }
   if (kind !== 'deliveries' || duplicates === 'import') return [];
@@ -2404,6 +2444,12 @@ export const handlers: HttpHandler[] = [
         ? Number(url.searchParams.get('dormantMonths'))
         : undefined,
     };
+
+    // As the API does (`reports.service.ts`): app use with no window covers every month.
+    if (id === 'channelShift') {
+      runParams.from ??= '0000-00';
+      runParams.to ??= '9999-99';
+    }
 
     const missing = missingReportParams(id, runParams);
     if (missing.length > 0) {

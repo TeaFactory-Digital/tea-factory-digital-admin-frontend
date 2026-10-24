@@ -2237,10 +2237,10 @@ export interface RuntimeConfig {
   collectionPoints: Array<{ id: string; name: string }>;
   /**
    * Is the factory's own system the source of suppliers, leaf, rates, bills and balances?
-   * Absent means on. Off: the office keeps those records in the console instead
-   * (`factoryRecords.ts`).
+   * **Absent or `null` means off**: the office keeps those records in the console
+   * (`factoryRecords.ts`) until the sync is switched on deliberately.
    */
-  factorySync?: FactorySyncSetting;
+  factorySync?: FactorySyncSetting | null;
   /**
    * Interest on an advance, for the bills calculated here (sync off). Absent means none.
    * With the sync on, the factory system's bill carries its own interest figure.

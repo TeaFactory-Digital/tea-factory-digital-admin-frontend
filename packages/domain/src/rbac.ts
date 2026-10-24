@@ -143,9 +143,14 @@ export const DEFAULT_ROLE_MATRIX: Record<ConsoleRole, Record<Capability, AccessL
   },
   factoryAdmin: {
     suppliers: R,
-    deliveries: NONE,
-    ratesAndMonthClose: NONE,
-    billing: NONE,
+    /*
+     * `R` on the factory's records (leaf, rates, bills), the factory's decision: the
+     * administrator can see the Factory records menu and every figure in it, but entering,
+     * approving and publishing stay with the clerk and the manager (four-eyes, audit).
+     */
+    deliveries: R,
+    ratesAndMonthClose: R,
+    billing: R,
     payouts: NONE,
     creditRequests: NONE,
     creditAboveThreshold: NONE,

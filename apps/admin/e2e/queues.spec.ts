@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /**
  * The Queues section, in a real browser.
@@ -97,15 +98,19 @@ test('opens an inquiry and offers both outcomes', async ({ page }) => {
   await expect(grid.locator('tbody tr').first()).toBeVisible({ timeout: 15_000 });
   await grid.locator('tbody tr').first().click();
 
-  // Answering and closing are different acts, and the screen says so.
-  await expect(page.getByRole('button', { name: /^reply$/i })).toBeVisible({ timeout: 15_000 });
+  // Answering and closing are different acts, and the screen says so. The answer is
+  // written on the conversation itself, not in a dialog over it.
+  const answer = page.getByRole('textbox', { name: /your answer/i });
+  await expect(answer).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('button', { name: /close unanswered/i })).toBeVisible();
 
-  await page.getByRole('button', { name: /^reply$/i }).click();
-  const dialog = page.getByRole('dialog');
-  await expect(dialog).toBeVisible();
-  // Disabled until there is an actual answer in it.
-  await expect(dialog.getByRole('button', { name: /send reply/i })).toBeDisabled();
+  // Disabled until there is an actual answer in it: a few words are not one.
+  const send = page.getByRole('button', { name: /send reply/i });
+  await expect(send).toBeDisabled();
+  await answer.fill('We are checking.');
+  await expect(send).toBeDisabled();
+  await answer.fill('We checked: your cheque is at the counter from Monday.');
+  await expect(send).toBeEnabled();
 });
 
 test('a factory that does not lend against income sees only the facilities it sells', async ({
@@ -132,8 +137,11 @@ test('a factory that does not lend against income sees only the facilities it se
     timeout: 15_000,
   });
 
-  const facilityFilter = page.getByLabel(/^facility$/i);
-  await expect(facilityFilter.getByRole('option', { name: /^advance$/i })).toHaveCount(1);
-  await expect(facilityFilter.getByRole('option', { name: /^loan$/i })).toHaveCount(0);
-  await expect(facilityFilter.getByRole('option', { name: /^manure$/i })).toHaveCount(0);
+  // The filter is a Radix popup, so its options exist only while it is open.
+  await page.getByLabel(/^facility$/i).click();
+  const options = page.getByRole('listbox');
+  await expect(options.getByRole('option', { name: /^any facility$/i })).toHaveCount(1);
+  await expect(options.getByRole('option', { name: /^advance$/i })).toHaveCount(1);
+  await expect(options.getByRole('option', { name: /^loan$/i })).toHaveCount(0);
+  await expect(options.getByRole('option', { name: /^manure$/i })).toHaveCount(0);
 });
