@@ -1035,6 +1035,33 @@ function heldBill(monthKey: string, supplierId: string): AdminBill | undefined {
   );
 }
 
+/**
+ * The fixture's clock for the rules that depend on today, in the factory's calendar
+ * (Asia/Colombo). Tests move it with `setMockNow`, e.g. to the day a month's slips print.
+ */
+let mockNow: () => Date = () => new Date();
+
+/** **Tests only.** Pin "now" for the rules that depend on today; `null` puts the real clock back. */
+export function setMockNow(now: Date | null): void {
+  mockNow = now ? () => now : () => new Date();
+}
+
+/** The calendar month in progress in Colombo, `YYYY-MM`. */
+function colomboMonthNow(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo', year: 'numeric', month: '2-digit' })
+    .format(mockNow())
+    .slice(0, 7);
+}
+
+/** The newest month that has been published, if any. */
+function newestPublishedMonth(): string | undefined {
+  return Object.values(state.months)
+    .filter((record) => record.stage === 'published')
+    .map((record) => record.monthKey)
+    .sort()
+    .pop();
+}
+
 /** This supplier's oldest bill before `monthKey` that is still held, if any. */
 function earlierHeldBill(supplierId: string, monthKey: string): AdminBill | undefined {
   return state.bills
@@ -2072,6 +2099,11 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
         if (!supplier) return push('supplierCode', 'unknown-supplier');
         if (!monthRecord(row.month)) return push('month', 'unknown-month');
         if (lockedMonth(row.month)) return push('month', 'month-locked');
+        // Ledgers move forward only: nothing before the newest published month.
+        const newest = newestPublishedMonth();
+        if (newest && row.month < newest) return push('month', 'month-out-of-order');
+        // The month must be over: its approvals window is still open until its last day.
+        if (row.month >= colomboMonthNow()) return push('month', 'month-not-ended');
         const rate = `${num(row.ratePerKg)}|${num(row.extraRatePerKg)}`;
         const earlier = monthRates.get(row.month);
         if (earlier && earlier !== rate) push('ratePerKg', 'rate-differs');
@@ -2131,6 +2163,27 @@ function importSkips(kind: ImportKind, rows: ImportRow[], duplicates: ImportRequ
     return leafRecordKey(row.date, supplier.id, roundKg(kg), row.collectionPoint || supplier.collectionPoint);
   });
   return matchRecorded(recorded, incoming).map((index) => ({ row: index + 2, code: 'already-recorded' as const }));
+}
+
+/**
+ * A8: the slip's kilos are kept; this says how many suppliers' kilos differ from the leaf
+ * entered here for the month, and by how many kilos in all.
+ */
+function leafDifferencesOf(rows: ImportRow[]): { suppliers: number; kgs: number } {
+  let suppliers = 0;
+  let kgs = 0;
+  for (const row of rows) {
+    const supplier = supplierByCode(row.supplierCode!)!;
+    const entered = state.deliveries
+      .filter((one) => one.supplierId === supplier.id && one.monthKey === row.month && !one.voidedAt)
+      .reduce((sum, one) => sum + one.kgs, 0);
+    const difference = Math.abs(round2(num(row.totalKg) - entered));
+    if (difference > 0) {
+      suppliers += 1;
+      kgs = round2(kgs + difference);
+    }
+  }
+  return { suppliers, kgs };
 }
 
 /**
@@ -4388,6 +4441,23 @@ export const handlers: HttpHandler[] = [
         code: 'already-published',
         message: `${monthKey} was already published.`,
         details: { publishedAt: record.publishedAt, publishedByName: record.publishedByName },
+      });
+    }
+    // Ledgers move forward in order: an earlier month with bills still unpublished first.
+    const earlier = Object.values(state.months)
+      .filter(
+        (one) =>
+          one.monthKey < monthKey &&
+          one.stage !== 'published' &&
+          state.bills.some((bill) => bill.monthKey === one.monthKey && !bill.publishedAt),
+      )
+      .sort((a, b) => a.monthKey.localeCompare(b.monthKey))[0];
+    if (earlier) {
+      return fail({
+        status: 409,
+        code: 'earlier-month-unpublished',
+        message: `Publish ${earlier.monthKey} first.`,
+        details: { monthKey: earlier.monthKey },
       });
     }
     if (!record.rate) {
@@ -8089,6 +8159,7 @@ export const handlers: HttpHandler[] = [
       problems: [],
       skipped: skipped.slice(0, 500),
       skippedTotal: skipped.length,
+      ...(kind === 'bills' ? { leafDifferences: leafDifferencesOf(toSave) } : {}),
     } satisfies ImportResult;
     if (dryRun) return HttpResponse.json({ ...answer, dryRun: true } satisfies ImportResult);
 
@@ -8159,6 +8230,7 @@ export function mockSupplierRecord(id: string): AdminSupplier {
 }
 
 export function resetMockState(): void {
+  mockNow = () => new Date();
   // Maps outlive a reassignment of the arrays below, so they are emptied explicitly.
   state.openingBalances.clear();
   state.activityReadUpTo.clear();

@@ -59,7 +59,14 @@ credit requests in the console while the sync is off. **Contract:** factory-reco
 1. **The bills import** (`POST /admin/imports/bills`, factory-records §5a) with the approvals
    check (§5a "What the import checks"), and with it the month reads (`GET /admin/months`,
    `GET /admin/months/:monthKey`) and `POST /admin/months/:monthKey/publish`: an imported
-   month cannot be published without them.
+   month cannot be published without them. **Your round-three questions are answered in
+   §5a** ("What the import checks", "Which months", "What it sets"; decision 14), and your
+   ADR-038 (post differences at publish, never set a balance) is agreed and written in.
+   New in the domain (`vendor:pull`): `ImportRowProblem.amount`,
+   `ImportResult.leafDifferences`, `finalBalance` `decimals: 0`, the `ratePerKg` and
+   `savingsToDate` checks, and the codes `earlier-month-unpublished` and `approval-missing`;
+   import problem text for `approval-missing`, `month-not-ended`, `month-out-of-order`,
+   `must-be-positive` in en/si/ta.
 2. **Opening balances:** `GET` / `PUT /admin/suppliers/:id/opening-balances` and the
    `openingBalances` import (factory-records §4.2).
 3. **Leaf and months:** the leaf and month endpoints in factory-records §4.1

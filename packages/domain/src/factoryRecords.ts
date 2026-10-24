@@ -456,7 +456,8 @@ export const IMPORT_COLUMNS: Record<ImportKind, readonly ImportColumn[]> = {
     { key: 'balanceAmount', type: 'number', required: true, allowNegative: true, example: '68226.91' },
     { key: 'savingsWithdrawal', type: 'number', required: false, example: '0' },
     { key: 'coinsCarriedForward', type: 'number', required: false, example: '6.91' },
-    { key: 'finalBalance', type: 'number', required: true, example: '68220' },
+    // Paid in whole rupees (the factory's unit is 1, 5 or 10).
+    { key: 'finalBalance', type: 'number', required: true, decimals: 0, example: '68220' },
     { key: 'nextMonthDebt', type: 'number', required: false, example: '0' },
     { key: 'loanBalance', type: 'number', required: false, example: '0' },
     { key: 'manureBalance', type: 'number', required: false, example: '0' },
@@ -503,6 +504,12 @@ function importedBillProblems(row: ImportRow, line: number): ImportRowProblem[] 
   const doubt = (column: string) => out.push({ row: line, column, code: 'does-not-add-up' });
 
   const kg = n('totalKg');
+  // A month's bill has a rate: 0 or less is a shifted or empty column, not a price.
+  if ((row.ratePerKg ?? '').trim() !== '' && !(n('ratePerKg') > 0)) {
+    out.push({ row: line, column: 'ratePerKg', code: 'must-be-positive' });
+  }
+  // The rate products may differ by a rupee (the factory's system may round per weighing);
+  // every sum must agree to the cent.
   if (!near(n('greenLeafAmount'), kg * n('ratePerKg'), 1)) doubt('greenLeafAmount');
   if (!near(n('extraPayment'), kg * n('extraRatePerKg'), 1)) doubt('extraPayment');
   if (!near(n('grossAmount'), n('greenLeafAmount') + n('extraPayment') + n('coinsBroughtForward'), 0.01)) {
@@ -521,6 +528,13 @@ function importedBillProblems(row: ImportRow, line: number): ImportRowProblem[] 
     if (n('finalBalance') !== 0) doubt('finalBalance');
     if (!near(n('nextMonthDebt'), -payable, 0.01)) doubt('nextMonthDebt');
   }
+  // Savings To-date already has this month's withdrawal taken off (the factory, 24 October
+  // 2026): previous + this month − withdrawal. Checked once any savings figure is stated;
+  // a blank cell is 0.
+  const savingsStated = ['savingsPrevious', 'savings', 'savingsToDate'].some((key) => (row[key] ?? '').trim() !== '');
+  if (savingsStated && !near(n('savingsToDate'), n('savingsPrevious') + n('savings') - n('savingsWithdrawal'), 0.01)) {
+    doubt('savingsToDate');
+  }
   if (n('otherCards') > 0 && (row.otherCardsNote ?? '').trim().length < 3) {
     out.push({ row: line, column: 'otherCardsNote', code: 'required' });
   }
@@ -534,6 +548,12 @@ export interface ImportRowProblem {
   /** 1-based, counting the header as row 1, so it matches what the spreadsheet shows. */
   row: number;
   column?: string;
+  /**
+   * The rupees a problem is about, where it has one: `approval-missing` names what we
+   * approved that the slip lacks (the column says which line: `advance`, `tea`,
+   * `savingsWithdrawal`, `loanBalance`, `manureBalance`).
+   */
+  amount?: number;
   code:
     | 'required'
     | 'not-a-number'
@@ -598,6 +618,11 @@ export interface ImportResult {
   skippedTotal?: number;
   /** Echoed: nothing was saved. */
   dryRun?: boolean;
+  /**
+   * `bills` only (A8): the slip's kilos are kept, and this says how many suppliers' kilos
+   * differ from the leaf entered here for the month, and by how many kilos in all.
+   */
+  leafDifferences?: { suppliers: number; kgs: number };
 }
 
 /**

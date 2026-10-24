@@ -114,6 +114,8 @@ const BY_CODE: Record<string, string> = {
   'bill-not-held': 'error.billNotHeld',
   'bill-still-mismatched': 'error.billStillMismatched',
   'earlier-bill-held': 'error.earlierBillHeld',
+  'earlier-month-unpublished': 'error.earlierMonthUnpublished',
+  'approval-missing': 'error.approvalMissing',
   '403': 'error.forbidden',
   '404': 'error.notFound',
 };

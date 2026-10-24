@@ -35,6 +35,7 @@ import { factoryRecordRepository } from '@/services/repositories/factoryRecordRe
 import { monthRepository } from '@/services/repositories/monthRepository';
 import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { currentMonthKey } from '@/services/mocks/seed';
+import { setMockNow } from '@/services/mocks/handlers';
 import { bundledConfig } from '@/config/defaults';
 import { DEFAULT_ROLE_MATRIX, can, grantsFromRoles } from '@tfd/domain';
 import { renderWithProviders, signInAs, signOut } from './render';
@@ -120,10 +121,25 @@ describe('the rules the console and the API share', () => {
       nextMonthDebt: '1773.09',
     };
     expect(importRowProblems('bills', [owed])).toEqual([]);
-    // A savings withdrawal paid on the bill is part of what was paid.
+    // A savings withdrawal paid on the bill is part of what was paid, and Savings To-date
+    // already has it taken off (the factory's answer): 21970 + 5095 - 1000.
+    expect(
+      importRowProblems('bills', [
+        { ...slip, savingsWithdrawal: '1000', finalBalance: '69220', savingsToDate: '26065' },
+      ]),
+    ).toEqual([]);
     expect(
       importRowProblems('bills', [{ ...slip, savingsWithdrawal: '1000', finalBalance: '69220' }]),
-    ).toEqual([]);
+    ).toEqual([{ row: 2, column: 'savingsToDate', code: 'does-not-add-up' }]);
+    // A rate of 0 is an empty or shifted column; the payment is whole rupees.
+    expect(importRowProblems('bills', [{ ...slip, ratePerKg: '0', greenLeafAmount: '0', grossAmount: '1535.91', totalDeductions: '46418', balanceAmount: '-44882.09', finalBalance: '0', coinsCarriedForward: '0', nextMonthDebt: '44882.09' }])).toContainEqual(
+      { row: 2, column: 'ratePerKg', code: 'must-be-positive' },
+    );
+    expect(importRowProblems('bills', [{ ...slip, finalBalance: '68220.5' }])).toContainEqual({
+      row: 2,
+      column: 'finalBalance',
+      code: 'too-many-decimals',
+    });
     // A gross typed one column over: caught, and nothing else is guessed at.
     expect(importRowProblems('bills', [{ ...slip, grossAmount: '113109' }])).toEqual([
       { row: 2, column: 'grossAmount', code: 'does-not-add-up' },
@@ -528,10 +544,21 @@ describe('with the factory-system sync off', () => {
     await expect(billRepository.generate(currentMonthKey)).rejects.toMatchObject({ code: 'wrong-bill-source' });
     const someone = (await billRepository.list({ pageSize: 1 })).items[0]!;
     const slip = Object.fromEntries(IMPORT_COLUMNS.bills.map((column) => [column.key, column.example]));
-    const result = await factoryRecordRepository.importRows('bills', 'july-bills.xlsx', [
-      { ...slip, month: currentMonthKey, supplierCode: someone.supplierCode },
-    ]);
+    const rows = [{ ...slip, month: currentMonthKey, supplierCode: someone.supplierCode }];
+
+    // Not while the month is still running: its approvals window is open until its last day.
+    expect(await factoryRecordRepository.importRows('bills', 'july-bills.xlsx', rows)).toMatchObject({
+      saved: 0,
+      problems: [{ row: 2, column: 'month', code: 'month-not-ended' }],
+    });
+
+    // The 10th of the next month, when the factory prints the slips.
+    const [year, month] = currentMonthKey.split('-').map(Number) as [number, number];
+    setMockNow(new Date(Date.UTC(year, month, 10, 6)));
+    const result = await factoryRecordRepository.importRows('bills', 'july-bills.xlsx', rows);
     expect(result).toMatchObject({ saved: 1, problems: [] });
+    // A8: the slip's kilos are kept, and the console is told how many differ from the leaf.
+    expect(result.leafDifferences?.suppliers).toBe(1);
 
     const bill = await billRepository.get(`bill-${currentMonthKey}-${someone.supplierId}`);
     expect(bill).toMatchObject({

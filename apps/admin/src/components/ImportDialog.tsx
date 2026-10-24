@@ -42,6 +42,7 @@ import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/cn';
 import { downloadText } from '@/lib/csv';
 import { errorMessageKey } from '@/lib/errorMessage';
+import { formatCount, formatKg, formatMoney } from '@/lib/format';
 import { ImportFileError, readImportFile, type ImportFile } from '@/lib/importFile';
 import { useImportRows, usePreviewImport } from '@/modules/records/hooks';
 
@@ -74,6 +75,8 @@ export function ImportDialog({
   // What the server would do with this file, and the skipped rows of the actual import.
   const [preview, setPreview] = useState<ImportResult | null>(null);
   const [savedSkipped, setSavedSkipped] = useState(0);
+  // `bills` (A8): how many suppliers' kilos on the slips differ from the leaf entered here.
+  const [leafDifferences, setLeafDifferences] = useState<ImportResult['leafDifferences']>(undefined);
   // Leaf only: import the rows already recorded anyway.
   const [keepDuplicates, setKeepDuplicates] = useState(false);
 
@@ -133,6 +136,7 @@ export function ImportDialog({
     setSaved(null);
     setPreview(null);
     setSavedSkipped(0);
+    setLeafDifferences(undefined);
     setKeepDuplicates(false);
     if (input.current) input.current.value = '';
   }
@@ -169,6 +173,7 @@ export function ImportDialog({
       }
       setSaved(result.saved);
       setSavedSkipped(result.skippedTotal ?? result.skipped?.length ?? 0);
+      setLeafDifferences(result.leafDifferences);
       toast.success(t('records.import.saved', { count: result.saved }));
     } catch (error) {
       toast.error(t('records.import.failed'), t(errorMessageKey(error)));
@@ -179,9 +184,14 @@ export function ImportDialog({
     t('records.import.problemLine', {
       row: problem.row,
       column: problem.column ?? '-',
-      message: t(`records.import.problem.${problem.code}`, {
-        defaultValue: t('records.import.problem.other', { code: problem.code }),
-      }),
+      message:
+        // `approval-missing` names the rupees we approved that the slip lacks, when sent.
+        problem.code === 'approval-missing' && problem.amount === undefined
+          ? t('records.import.problem.approval-missing-plain')
+          : t(`records.import.problem.${problem.code}`, {
+              amount: problem.amount === undefined ? '' : formatMoney(problem.amount),
+              defaultValue: t('records.import.problem.other', { code: problem.code }),
+            }),
     });
 
   const shownColumns = file ? columns.filter((c) => file.data.headers.includes(c.key)) : [];
@@ -235,6 +245,14 @@ export function ImportDialog({
             <p className="text-subtitle font-semibold text-text-primary">
               {t('records.import.saved', { count: saved })}
             </p>
+            {leafDifferences && leafDifferences.suppliers > 0 ? (
+              <p className="text-body-small text-text-secondary">
+                {t('records.import.leafDifferences', {
+                  suppliers: formatCount(leafDifferences.suppliers),
+                  kgs: formatKg(leafDifferences.kgs),
+                })}
+              </p>
+            ) : null}
             {savedSkipped > 0 ? (
               <p className="text-body-small text-text-secondary">
                 {t(`records.import.skip.done.${kind === 'suppliers' ? 'suppliers' : 'deliveries'}`, {

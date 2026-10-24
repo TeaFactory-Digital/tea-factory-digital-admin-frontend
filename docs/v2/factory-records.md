@@ -107,7 +107,7 @@ BACKEND-TODO #45 says which of these are built.
 | `PUT /admin/months/:monthKey/rate` | `MonthlyRateEntry` → `MonthSummary` | `409 month-locked`, `422 invalid-rate` |
 | `GET /admin/months/:monthKey/exceptions`, `POST .../exceptions/:id/resolve` | `Paged<MonthException>`, `{ note }` | `422 note-required` |
 | `POST /admin/months/:monthKey/bills/generate` | `{ monthKey }` → `BillRun`. In a published month, recalculates **only the held bills** (§5) | `409 wrong-bill-source` (first), `409 rate-missing`, `409 month-locked` (published, nothing held) |
-| `POST /admin/months/:monthKey/publish` | `{ monthKey, note? }` → `MonthSummary`. Held bills stay unpublished (§5) | `rate-missing`, `exceptions-open`, `bills-stale`, `bills-mismatch` (calculated bills, §5), `already-published`, `four-eyes-violation` |
+| `POST /admin/months/:monthKey/publish` | `{ monthKey, note? }` → `MonthSummary`. Held bills stay unpublished (§5) | `already-published`, `earlier-month-unpublished` (`details.monthKey`, §5a), `rate-missing`, `exceptions-open`, `bills-stale`, `bills-mismatch` (calculated bills, §5), `approval-missing` (imported bills, §5a), `four-eyes-violation` |
 | `GET /admin/months/:monthKey/slip-comparison` | `MonthSlipComparison` (`billing: R`) | `409 wrong-bill-source` (not calculated, or sync on), `404` unknown month |
 | `PUT /admin/bills/:id/printed` | `{ finalBalance: number \| null }` → `SlipComparisonRow` (`billing: W`) | `409 wrong-bill-source`, `409 month-locked` (published), `422 invalid` |
 | `POST /admin/bills/:id/hold` | `{ reason }` (10+ characters) → `SlipComparisonRow` (`billing: W`) | `409 wrong-bill-source`, `409 month-locked` (published), `422 invalid` |
@@ -239,7 +239,7 @@ edited here. Audit `bill.adjust`.
 | `walkInCredit` | `unknown-supplier`, manure without type or quantity (`required`), and the walk-in refusals above | Pending office requests |
 | `billAdjustments` | `duplicate` (month + code), `unknown-supplier`, `month-locked`, `no-bill`, note missing (`required`) | Other deductions, as above |
 | `transportRates` | `duplicate`, `unknown-supplier` | Each supplier's own rate; an empty `transportPerKg` sets `null` |
-| `bills` | `duplicate` (month + code), `unknown-supplier`, `unknown-month`, `month-locked`, `rate-differs`, and **the approvals check (§5a)** | The month's bills **as printed** (§5a) for the suppliers in the file |
+| `bills` | `duplicate` (month + code), `unknown-supplier`, `unknown-month`, `month-locked`, `month-out-of-order`, `month-not-ended`, `rate-differs`, and **the approvals check** (`approval-missing`, §5a) | The month's bills **as printed** (§5a) for the suppliers in the file; `leafDifferences` in the answer |
 | `printedBalances` | `duplicate` (month + code), `unknown-supplier`, `no-bill`, `month-locked` (the bill is published) | Each bill's `printedFinalBalance` (§5) |
 
 Every problem code above, and `required`, `not-a-number`, `negative`, `too-many-decimals`,
@@ -377,12 +377,27 @@ the month's is `rate-differs`. Then review and publish as usual.
    gross = green leaf + extra + coins brought forward; the nine lines = their total;
    balance = gross − total; paid + coins carried = balance + savings withdrawal. A month the
    supplier owes has a negative `balanceAmount`, `finalBalance` 0 and the shortfall as
-   `nextMonthDebt`. The two rate products are held to a rupee, the sums to the cent.
+   `nextMonthDebt`. The two rate products are held to a rupee (the factory's system may round
+   per weighing); every sum to the cent. `ratePerKg` must be above 0 (`must-be-positive`) and
+   `finalBalance` is whole rupees (`decimals: 0`). **Savings To-date already has this month's
+   withdrawal taken off (factory):** `savingsToDate = savingsPrevious + savings −
+   savingsWithdrawal`, checked once any of the three is stated. **A blank cell is 0
+   (factory)**, also for `loanBalance`, `manureBalance`, `savingsPrevious` and
+   `savingsToDate`: the factory's system leaves a nil balance blank. One shared function, so a
+   file the console accepts is one the server accepts.
 2. **Everything we approved reached their slip, or the file is refused**, naming the
    supplier and the item. Requests approved in our console are typed into the factory's
    system by the office, which prints them on the slip; a slip without one means it was not
    typed. The console's approval dialogs (credit, tea packets, change requests) remind the
-   approver to do this, in every mode (§1). "For the month" means approved on or before its last day.
+   approver to do this, in every mode (§1). **"For the month" means approved on or before its
+   last day (factory):** something approved between the 1st and the day the slips print (about
+   the 10th) is on the **next** slip, not this one. **A supplier with no slip for a month**
+   (no leaf) carries that month's approvals to their **next** slip (factory): the check looks
+   for them there.
+   - The problem is `approval-missing`, its `column` the slip's column for the item
+     (`advance`, `tea`, `savingsWithdrawal`, `loanBalance`, `manureBalance`) and `amount` the
+     rupees approved. The console names them ("we approved Rs. 15,000.00 for this month and
+     the slip does not have it").
    - Advances, tea packets, savings withdrawals: the slip's line is **at least** what we
      approved (more is the factory's own counter).
    - Loans and manure, through the balance:
@@ -390,9 +405,26 @@ the month's is `rate-differs`. Then review and publish as usual.
      approved this month`, and the same with `manureBalance` and `manure`. Last month is the
      previous imported slip, or the opening balance for the first.
 
-**What it sets.** The slip is the record: the supplier's savings, loan and manure balances
-become the slip's figures; where ours differ, both go in the audit. The slip's kilos are
-accepted; the console is told how many differ from the leaf entered here. An imported bill is
+**Which months.** Only a month that has **ended** (`month-not-ended` otherwise: its approvals
+window is still open), and never one before the newest published month
+(`month-out-of-order`): ledgers move forward only. A month is **published in order**: publish
+refuses while an earlier month still has unpublished bills (`409 earlier-month-unpublished`,
+`details.monthKey`). The approvals check runs again at publish; if it now fails (something
+approved since the import), publish is `409 approval-missing` with the problems, and the
+office imports the corrected file. **Imported months have no month exceptions** (A13): the
+slip is the record. **A late division file after the publish** adds bills only for suppliers
+who have none for that month, and those bills are published at once (savings posted,
+notification sent); a supplier who already has a bill is `month-locked`.
+
+**What it sets (your ADR-038).** At publish the slip's figures become the record **without
+overwriting anything approved after the month**: each ledger posts the slip's repayments,
+then one adjustment that brings the balance **as it stood at the first instant of the next
+month** (Asia/Colombo) to the slip's figure. A loan approved on 3 November stays when October
+is published on 10 November. Savings likewise: the deduction, the withdrawal, then an
+adjustment to `savingsToDate`. Where ours differed, the adjustment is in the audit. The
+slip's kilos are accepted; the answer's `leafDifferences` (`{ suppliers, kgs }`) says how
+many suppliers' kilos differ from the leaf entered here, and the import dialog shows it. An
+imported bill is
 `AdminBill.source: 'imported'` (shown as "Imported") and is never edited here: a correction
 is made in the factory's system and the month re-imported. The day grid comes from the leaf
 entered or imported for that month. Past months may later be imported as published history,
@@ -454,6 +486,10 @@ From 9 to 22 October 2026:
     weighing number, so leaf is matched on date, supplier, kilos and collection point; the
     office may still import a real second weighing. A supplier already on the roll is
     skipped, not updated, and the rest of the file is added.
+14. **Galaboda's slip (24 October 2026):** a month's slip carries only what was approved by
+    its last day (later approvals are on the next slip); a supplier with no slip for a month
+    carries its approvals to the next slip; a blank balance or savings cell is 0; Savings
+    To-date already has the month's withdrawal taken off.
 
 ## 9. Checks
 
@@ -469,7 +505,12 @@ From 9 to 22 October 2026:
 - **Imported bills (galaboda):** import the template's example row: the bill matches the
   slip to the cent (gross 114,644.91, paid 68,220, coins 6.91). Approve a Rs. 40,000 advance
   for July, then import a July slip with Advance 0: refused, naming the supplier and the
-  advance. Generating bills in this factory is `409 wrong-bill-source`.
+  advance. Generating bills in this factory is `409 wrong-bill-source`. Importing the
+  current month is `month-not-ended`; on the 10th of the next month it saves and answers
+  `leafDifferences`. A row with a withdrawal of 1,000 and To-date unchanged is
+  `does-not-add-up` on `savingsToDate`. With an earlier month unpublished, publish is
+  `409 earlier-month-unpublished`. A loan approved on the 3rd of the next month is still
+  owed after the month is published.
 - **Calculated bills:** add a supplier, import 200 weighings, enter a rate, generate, type
   one other deduction, regenerate (it stays), publish; the app shows the bill with the note.
   The slip in §5 comes out to the cent with `paymentUnit: 10`. With `nextBillSerial: 210870`

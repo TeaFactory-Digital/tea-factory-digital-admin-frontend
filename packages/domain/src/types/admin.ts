@@ -2469,6 +2469,13 @@ export const ADMIN_ERROR_CODES = [
   'bill-still-mismatched',
   /** Releasing a bill while the same supplier's bill for an earlier month is still held. */
   'earlier-bill-held',
+  /** Publishing a month while an earlier month still has unpublished bills (`details.monthKey`). */
+  'earlier-month-unpublished',
+  /**
+   * Publishing an imported month whose approvals check, run again, now fails: something
+   * approved for the month is not on a slip (`details.problems`, as the import names them).
+   */
+  'approval-missing',
 ] as const;
 
 export type AdminErrorCode = (typeof ADMIN_ERROR_CODES)[number];
