@@ -44,7 +44,7 @@ and implemented by the mock with the same rules the API must keep:
 
 ### Done on the backend
 
-From [BACKEND-TODO.md](./BACKEND-TODO.md) "Done on the backend": `factorySync`,
+Shipped by the backend up to `970be6f` (BACKEND-TODO.md now lists only what is open): `factorySync`,
 `advanceInterest` and `billSettings` in config; `409 factory-sync-on` on every record
 write; `transportByPoint`; deduction rates gated on `ratesAndMonthClose`;
 `PUT /admin/suppliers/:id/transport-rate`; loan interest; `409 sync-switch-blocked`; the
