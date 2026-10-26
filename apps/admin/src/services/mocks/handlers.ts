@@ -1035,6 +1035,14 @@ function heldBill(monthKey: string, supplierId: string): AdminBill | undefined {
   );
 }
 
+/** Who imported each imported bill, by bill id: the four-eyes rule refuses them at publish. */
+const importedBy = new Map<string, string>();
+
+/** Bills of a month that came from the factory's own system. */
+function isImportedMonth(monthKey: string): boolean {
+  return state.bills.some((bill) => bill.monthKey === monthKey && bill.source === 'imported');
+}
+
 /**
  * The fixture's clock for the rules that depend on today, in the factory's calendar
  * (Asia/Colombo). Tests move it with `setMockNow`, e.g. to the day a month's slips print.
@@ -1159,6 +1167,11 @@ function monthSummary(record: MonthRecord): MonthSummary {
     supplierCount: totals.supplierCount,
     deliveryCount: totals.rowCount,
     open: record.stage !== 'published',
+    // A late division file's bills, waiting for a manager in a published month (#45 R15).
+    lateBills:
+      record.stage === 'published'
+        ? state.bills.filter((bill) => bill.monthKey === monthKey && !bill.publishedAt && !bill.heldAt).length
+        : 0,
   };
 }
 
@@ -2097,17 +2110,31 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
         if (seen.has(key)) push('supplierCode', 'duplicate');
         seen.add(key);
         if (!supplier) return push('supplierCode', 'unknown-supplier');
-        if (!monthRecord(row.month)) return push('month', 'unknown-month');
-        if (lockedMonth(row.month)) return push('month', 'month-locked');
-        // Ledgers move forward only: nothing before the newest published month.
-        const newest = newestPublishedMonth();
-        if (newest && row.month < newest) return push('month', 'month-out-of-order');
         // The month must be over: its approvals window is still open until its last day.
         if (row.month >= colomboMonthNow()) return push('month', 'month-not-ended');
+        // Ledgers move forward only: nothing before the newest published month. (The
+        // import creates a month it has not seen: there is no `unknown-month` here.)
+        const newest = newestPublishedMonth();
+        if (newest && row.month < newest) return push('month', 'month-out-of-order');
+        // A late division file in a published month: only suppliers with no bill yet.
+        const hasBill = state.bills.some((bill) => bill.monthKey === row.month && bill.supplierId === supplier.id);
+        if (lockedMonth(row.month) && hasBill) return push('month', 'month-locked');
+        // One rate a month: the other rows of the file, and the rate already stored.
         const rate = `${num(row.ratePerKg)}|${num(row.extraRatePerKg)}`;
-        const earlier = monthRates.get(row.month);
+        const stored = monthRecord(row.month)?.rate;
+        const earlier = monthRates.get(row.month) ?? (stored ? `${stored.ratePerKg}|${stored.extraRatePerKg}` : undefined);
         if (earlier && earlier !== rate) push('ratePerKg', 'rate-differs');
         else monthRates.set(row.month, rate);
+        // The slip's number is the factory's; it may not belong to another bill.
+        const billNo = row.billNo?.trim();
+        if (
+          billNo &&
+          state.bills.some(
+            (bill) => bill.billNo === billNo && !(bill.monthKey === row.month && bill.supplierId === supplier.id),
+          )
+        ) {
+          push('billNo', 'bill-no-taken');
+        }
         return;
       }
       case 'transportRates': {
@@ -2200,7 +2227,17 @@ function importBills(rows: ImportRow[], user: MockUser, factory: FactoryInfo): v
     const now = new Date().toISOString();
     const runId = `run-${monthKey}-${nextId()}`;
     const first = monthRows[0]!;
-    const record = monthRecord(monthKey)!;
+    // The import is what creates an imported month.
+    const record =
+      monthRecord(monthKey) ??
+      (state.months[monthKey] = {
+        monthKey,
+        stage: 'awaitingRate',
+        rate: null,
+        publishedAt: null,
+        publishedByName: null,
+        publishedById: null,
+      });
     const ratePerKg = num(first.ratePerKg);
     const extraRatePerKg = num(first.extraRatePerKg);
     record.rate = {
@@ -2287,6 +2324,7 @@ function importBills(rows: ImportRow[], user: MockUser, factory: FactoryInfo): v
 
     // Only the suppliers in the file are replaced, so a factory may send one file per
     // division; the month's run is everything it now holds.
+    for (const bill of bills) importedBy.set(bill.id, user.id);
     const replaced = new Set(bills.map((bill) => bill.supplierId));
     state.bills = [
       ...state.bills.filter((bill) => !(bill.monthKey === monthKey && replaced.has(bill.supplierId))),
@@ -4436,12 +4474,52 @@ export const handlers: HttpHandler[] = [
     const record = monthRecord(monthKey);
     if (!record) return noSuchMonth(monthKey);
     if (record.stage === 'published') {
-      return fail({
-        status: 409,
-        code: 'already-published',
-        message: `${monthKey} was already published.`,
-        details: { publishedAt: record.publishedAt, publishedByName: record.publishedByName },
+      /**
+       * A late division file (#45 R15): its suppliers' bills wait in the published month,
+       * and a manager other than the importer publishes them with this same call.
+       */
+      const late = state.bills.filter((bill) => bill.monthKey === monthKey && !bill.publishedAt && !bill.heldAt);
+      if (late.length === 0) {
+        return fail({
+          status: 409,
+          code: 'already-published',
+          message: `${monthKey} was already published.`,
+          details: { publishedAt: record.publishedAt, publishedByName: record.publishedByName },
+        });
+      }
+      if (late.some((bill) => importedBy.get(bill.id) === auth.user.id)) {
+        return fail({
+          status: 409,
+          code: 'four-eyes-violation',
+          message: 'You imported these bills, so you cannot publish them.',
+        });
+      }
+      const publishedAt = new Date().toISOString();
+      const ids = new Set(late.map((bill) => bill.id));
+      for (let index = 0; index < state.bills.length; index += 1) {
+        const bill = state.bills[index]!;
+        if (ids.has(bill.id)) state.bills[index] = { ...bill, publishedAt };
+      }
+      const only = (bill: AdminBill) => ids.has(bill.id);
+      postSavingsFor(monthKey, publishedAt, only);
+      settleWithdrawalsFor(monthKey, publishedAt, only);
+      for (const bill of late) {
+        fireAutomatic(
+          request,
+          'billPublished',
+          {
+            title: `Your ${monthKey} account is ready`,
+            body: 'The Green Leaf Account has been published. Open the app to see your kilos and your balance.',
+            entity: 'bill',
+            entityId: bill.id,
+          },
+          { kind: 'supplier', supplierId: bill.supplierId },
+        );
+      }
+      recordBy(auth, 'month.publish', 'monthlyRate', monthKey, {
+        after: { lateBills: late.length, note: body.note ?? null },
       });
+      return HttpResponse.json(monthSummary(record));
     }
     // Ledgers move forward in order: an earlier month with bills still unpublished first.
     const earlier = Object.values(state.months)
@@ -4468,9 +4546,10 @@ export const handlers: HttpHandler[] = [
       });
     }
 
-    const open = state.monthExceptions.filter(
-      (e) => e.monthKey === monthKey && e.resolvedAt === null,
-    );
+    const imported = isImportedMonth(monthKey);
+    const open = imported
+      ? []
+      : state.monthExceptions.filter((e) => e.monthKey === monthKey && e.resolvedAt === null);
     // AC-04: the accountant resolves each one. A count that could be clicked past
     // is not a control.
     if (open.length > 0) {
@@ -4508,7 +4587,7 @@ export const handlers: HttpHandler[] = [
         details: { monthKey },
       });
     }
-    if (serialiseBillRun(run).stale) {
+    if (!imported && serialiseBillRun(run).stale) {
       return fail({
         status: 409,
         code: 'bills-stale',
@@ -4540,6 +4619,15 @@ export const handlers: HttpHandler[] = [
     // BR-501, the four-eyes rule. Reachable because a manager holds `approve`,
     // which implies `write`, so the same person *could* enter a rate and close the
     // month on it, and this is what stops them.
+    if (
+      state.bills.some((bill) => bill.monthKey === monthKey && importedBy.get(bill.id) === auth.user.id)
+    ) {
+      return fail({
+        status: 409,
+        code: 'four-eyes-violation',
+        message: 'You imported bills of this month, so you cannot publish it.',
+      });
+    }
     if (isSelfApproval(auth.user, record.rate.enteredById)) {
       return fail({
         status: 409,
@@ -8231,6 +8319,7 @@ export function mockSupplierRecord(id: string): AdminSupplier {
 
 export function resetMockState(): void {
   mockNow = () => new Date();
+  importedBy.clear();
   // Maps outlive a reassignment of the arrays below, so they are emptied explicitly.
   state.openingBalances.clear();
   state.activityReadUpTo.clear();

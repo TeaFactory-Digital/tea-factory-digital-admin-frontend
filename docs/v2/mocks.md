@@ -433,7 +433,18 @@ The handlers implement every endpoint in factory-records.md §4.1, with the rule
 - **Imports**, `POST /admin/imports/:kind`, every kind in `IMPORT_KINDS`, all rows or
   none, including **finished bills** (`bills`): each row stored as printed with
   `source: 'imported'`, the month's rate taken from the rows (`rate-differs` when a file
-  disagrees), the month moved to `billsGenerated`.
+  disagrees, or disagrees with the month's stored rate), the month moved to
+  `billsGenerated`. As the API does it (#45 step 1): the import **creates the month**; it
+  refuses a month not yet ended (`month-not-ended`) or before the newest published one
+  (`month-out-of-order`), and a bill number another bill has (`bill-no-taken`); a late
+  division file in a published month adds only suppliers with no bill, whose bills **wait**
+  (`MonthSummary.lateBills`) until a manager other than the importer publishes them; publish
+  refuses an earlier unpublished month (`earlier-month-unpublished`) and whoever imported a
+  bill of the month, and skips exceptions and staleness for imported months. Each import
+  answers `leafDifferences`. The approvals check (`approval-missing`) is **not** in the mock:
+  the API runs it, and the console only lists what it sends.
+- **The clock:** rules that depend on today (`month-not-ended`) read the mock's own clock;
+  a test moves it with `setMockNow` (e.g. to the 10th of the next month, when slips print).
 - **Config blocks:** `factorySync`, `billSettings` (`paymentUnit`, `nextBillSerial`,
   `source`), `advanceInterest`, `loanInterest`, and `transportByPoint` on the deduction
   rates. A calculated bill goes through `computeBillAmounts`, `transportChargeFor`,

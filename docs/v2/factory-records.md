@@ -239,7 +239,7 @@ edited here. Audit `bill.adjust`.
 | `walkInCredit` | `unknown-supplier`, manure without type or quantity (`required`), and the walk-in refusals above | Pending office requests |
 | `billAdjustments` | `duplicate` (month + code), `unknown-supplier`, `month-locked`, `no-bill`, note missing (`required`) | Other deductions, as above |
 | `transportRates` | `duplicate`, `unknown-supplier` | Each supplier's own rate; an empty `transportPerKg` sets `null` |
-| `bills` | `duplicate` (month + code), `unknown-supplier`, `unknown-month`, `month-locked`, `month-out-of-order`, `month-not-ended`, `rate-differs`, and **the approvals check** (`approval-missing`, §5a) | The month's bills **as printed** (§5a) for the suppliers in the file; `leafDifferences` in the answer |
+| `bills` | `missing-column` (row 1), `unknown-supplier` / `ambiguous-supplier`, `duplicate` (month + code), `month-not-ended`, `month-out-of-order`, `month-locked` (the supplier already has a bill in a published month), `rate-differs` (against the file and the month's stored rate), `bill-no-taken`, `too-large` / `must-be-positive` (`loanInstalmentNo` 1 to 360), and **the approvals check** (`approval-missing`, §5a). No `unknown-month`: the import creates the month | The month's bills **as printed** (§5a) for the suppliers in the file; `leafDifferences` in the answer |
 | `printedBalances` | `duplicate` (month + code), `unknown-supplier`, `no-bill`, `month-locked` (the bill is published) | Each bill's `printedFinalBalance` (§5) |
 
 Every problem code above, and `required`, `not-a-number`, `negative`, `too-many-decimals`,
@@ -379,7 +379,12 @@ the month's is `rate-differs`. Then review and publish as usual.
    supplier owes has a negative `balanceAmount`, `finalBalance` 0 and the shortfall as
    `nextMonthDebt`. The two rate products are held to a rupee (the factory's system may round
    per weighing); every sum to the cent. `ratePerKg` must be above 0 (`must-be-positive`) and
-   `finalBalance` is whole rupees (`decimals: 0`). **Savings To-date already has this month's
+   `finalBalance` is whole rupees (`decimals: 0`). Every sum is exact **in whole cents**, with no
+   tolerance. Paid in full (payable ≥ 0): `nextMonthDebt` is 0. Owed (payable below 0):
+   `coinsCarriedForward` is 0. `loanInstalmentNo` is 1 to 360. **The headers `loanBalance`,
+   `manureBalance` and `savingsToDate` must be in the file** even though a cell may be blank
+   (`headerRequired`; `missingImportColumns`; the server answers `missing-column` on row 1):
+   a blank is 0, so a missing column would set every balance to 0. **Savings To-date already has this month's
    withdrawal taken off (factory):** `savingsToDate = savingsPrevious + savings −
    savingsWithdrawal`, checked once any of the three is stated. **A blank cell is 0
    (factory)**, also for `loanBalance`, `manureBalance`, `savingsPrevious` and
@@ -407,14 +412,35 @@ the month's is `rate-differs`. Then review and publish as usual.
 
 **Which months.** Only a month that has **ended** (`month-not-ended` otherwise: its approvals
 window is still open), and never one before the newest published month
-(`month-out-of-order`): ledgers move forward only. A month is **published in order**: publish
+(`month-out-of-order`): ledgers move forward only. **The import creates the month** (R14);
+the month close screen offers Import even before there is any month. A month is **published in order**: publish
 refuses while an earlier month still has unpublished bills (`409 earlier-month-unpublished`,
 `details.monthKey`). The approvals check runs again at publish; if it now fails (something
-approved since the import), publish is `409 approval-missing` with the problems, and the
-office imports the corrected file. **Imported months have no month exceptions** (A13): the
-slip is the record. **A late division file after the publish** adds bills only for suppliers
-who have none for that month, and those bills are published at once (savings posted,
-notification sent); a supplier who already has a bill is `month-locked`.
+approved since the import), publish is `409 approval-missing` with `details.problems`
+(`supplierCode`, `column`, `amount`, `code`) and `details.total`; the console lists them in
+the publish dialog, and the office imports the corrected file. **Imported months have no
+month exceptions and no leaf step** (A13, A8): the slip is the record, and the close
+checklist skips both. **Four-eyes covers the importer** (R16): publish refuses whoever entered
+the rate **or imported a bill of the month**.
+
+**A late division file after the publish (factory, R15):** it adds bills only for suppliers
+who have none for that month (one who has is `month-locked`), and **those bills wait**: they
+are not published at once. `MonthSummary.lateBills` counts them, the console shows "N bills
+from a late file are waiting", and a manager **other than the importer** publishes them with
+the same `POST /admin/months/:monthKey/publish` (which on a published month publishes its
+late bills: savings posted, withdrawals settled, each supplier notified; `already-published`
+only when none are left; `four-eyes-violation` for the importer).
+
+**Busy and retried.** A credit or tea-packet decision, or a savings withdrawal, that meets a
+publish in progress is `409 records-busy`: nothing saved, send it again. A file whose month
+was published while it waited is a top-level `409 month-locked` with
+`details.reason: 'published-during-import'`: send the same file again (the console says so).
+
+**Before the first imported month (R17).** Opening balances cover the cut-over: a supplier's
+first slip is checked against their opening loan and manure balances, and approvals made
+before the cut-over are in those balances. **A savings withdrawal still pending at cut-over is
+settled or cancelled before it (factory)**, and the opening savings balance is entered after
+that, so none is left pending from before.
 
 **What it sets (your ADR-038).** At publish the slip's figures become the record **without
 overwriting anything approved after the month**: each ledger posts the slip's repayments,
@@ -490,6 +516,10 @@ From 9 to 22 October 2026:
     its last day (later approvals are on the next slip); a supplier with no slip for a month
     carries its approvals to the next slip; a blank balance or savings cell is 0; Savings
     To-date already has the month's withdrawal taken off.
+15. **Imported months (26 October 2026):** the import creates the month; a late division
+    file's bills wait for a manager other than the importer to publish them; four-eyes
+    covers the importer as well as the rate's enterer; savings withdrawals pending at
+    cut-over are settled or cancelled before it.
 
 ## 9. Checks
 

@@ -22,7 +22,10 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Check, CircleAlert, Lock } from 'lucide-react';
 import type { MonthSummary } from '@tfd/domain';
-import { round2 } from '@tfd/domain';
+import { billSourceOf, isFactorySyncEnabled, round2 } from '@tfd/domain';
+import { Notice } from '@/components/ui/states';
+import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
+import { isApiError } from '@/services/api/errors';
 import { useAuthStore, useCan } from '@/auth/authStore';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
@@ -52,6 +55,17 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
   const canPublish = useCan('ratesAndMonthClose', 'approve');
   const userId = useAuthStore((s) => s.user?.id);
   const publish = usePublishMonth(month.monthKey);
+  // A month of bills imported from the factory's own system: no leaf entry and no month
+  // exceptions to work through (the slip is the record, A8 and A13).
+  const { config } = useRuntimeConfig();
+  const imported = !isFactorySyncEnabled(config) && billSourceOf(config.billSettings) === 'imported';
+  // A late division file's bills, waiting in a published month for a manager (#45 R15).
+  const lateBills = month.open ? 0 : (month.lateBills ?? 0);
+  /** What a publish refused with `approval-missing`: whose slip to fix, and what is missing. */
+  const [missingApprovals, setMissingApprovals] = useState<{
+    problems: { supplierCode: string; column: string; amount?: number }[];
+    total: number;
+  } | null>(null);
   /**
    * M5's run, read from M4.
    *
@@ -72,7 +86,12 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
    * commit to a dialog. The server refuses regardless (BR-501): the console can
    * be lied to about who entered a rate.
    */
-  const wouldBeSelfApproval = Boolean(month.rate && userId && month.rate.enteredById === userId);
+  const wouldBeSelfApproval = Boolean(
+    userId &&
+      ((month.rate && month.rate.enteredById === userId) ||
+        // The server also refuses whoever imported the month's bills.
+        (imported && run.data?.generatedById === userId)),
+  );
 
   const steps: Step[] = [
     {
@@ -148,15 +167,30 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
       : []),
   ];
 
-  const blocked = steps.some((step) => !step.done) || wouldBeSelfApproval;
+  // Leaf and exceptions are this console's own records; an imported month has neither.
+  const shown = imported ? steps.filter((step) => step.key !== 'leaf' && step.key !== 'exceptions') : steps;
+  const blocked = shown.some((step) => !step.done) || wouldBeSelfApproval;
 
   async function submit() {
+    setMissingApprovals(null);
     try {
       await publish.mutateAsync(note.trim() || undefined);
       setConfirming(false);
       setNote('');
-      toast.success(t('months.published', { month: formatMonthKey(month.monthKey) }));
+      toast.success(
+        lateBills > 0
+          ? t('months.latePublished', { count: lateBills })
+          : t('months.published', { month: formatMonthKey(month.monthKey) }),
+      );
     } catch (cause) {
+      // The office has to know whose slip to fix, so the problems are listed in the dialog.
+      if (isApiError(cause) && cause.code === 'approval-missing') {
+        const details = cause.details as
+          | { problems?: { supplierCode: string; column: string; amount?: number }[]; total?: number }
+          | undefined;
+        const problems = details?.problems ?? [];
+        setMissingApprovals({ problems, total: details?.total ?? problems.length });
+      }
       // The dialog stays open: `exceptions-open` or a four-eyes refusal is
       // information about what to do next, not a toast over a closed dialog.
       toast.error(t('months.publishFailed'), t(errorMessageKey(cause), errorMessageValues(cause)));
@@ -180,7 +214,7 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
          */}
         {month.open ? (
           <ol className="flex flex-col gap-sm">
-            {steps.map((step) => (
+            {shown.map((step) => (
               <li key={step.key} className="flex items-start gap-sm">
                 <span
                   aria-hidden
@@ -221,13 +255,33 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
         ) : null}
 
         {!month.open ? (
-          <p className="flex items-start gap-xs rounded-md bg-surface-variant px-md py-sm text-body-small text-text-secondary">
-            <Lock className="mt-xxs size-icon-sm shrink-0" aria-hidden />
-            {t('months.alreadyPublished', {
-              name: month.publishedByName ?? '-',
-              date: formatDateTime(month.publishedAt),
-            })}
-          </p>
+          <>
+            <p className="flex items-start gap-xs rounded-md bg-surface-variant px-md py-sm text-body-small text-text-secondary">
+              <Lock className="mt-xxs size-icon-sm shrink-0" aria-hidden />
+              {t('months.alreadyPublished', {
+                name: month.publishedByName ?? '-',
+                date: formatDateTime(month.publishedAt),
+              })}
+            </p>
+            {/* A late division file: its bills wait for a manager other than the importer. */}
+            {lateBills > 0 ? (
+              <div className="flex flex-col gap-xs border-t border-divider pt-md">
+                <Notice tone="warning">{t('months.lateBillsWaiting', { count: lateBills })}</Notice>
+                {canPublish ? (
+                  <>
+                    <Button variant="primary" disabled={wouldBeSelfApproval} onClick={() => setConfirming(true)}>
+                      {t('months.publishLate', { count: lateBills })}
+                    </Button>
+                    {wouldBeSelfApproval ? (
+                      <p className="text-caption text-warning">{t('months.fourEyesHint')}</p>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="text-caption text-text-secondary">{t('months.publishNeedsManager')}</p>
+                )}
+              </div>
+            ) : null}
+          </>
         ) : canPublish ? (
           <div className="flex flex-col gap-xs border-t border-divider pt-md">
             <Button variant="primary" disabled={blocked} onClick={() => setConfirming(true)}>
@@ -254,8 +308,12 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
         onOpenChange={(open) => {
           if (!open) setConfirming(false);
         }}
-        title={t('months.confirmTitle', { month: formatMonthKey(month.monthKey) })}
-        description={t('months.confirmDescription')}
+        title={
+          lateBills > 0
+            ? t('months.confirmLateTitle', { count: lateBills, month: formatMonthKey(month.monthKey) })
+            : t('months.confirmTitle', { month: formatMonthKey(month.monthKey) })
+        }
+        description={lateBills > 0 ? t('months.confirmLateDescription') : t('months.confirmDescription')}
         footer={
           <>
             <Button variant="secondary" onClick={() => setConfirming(false)}>
@@ -268,18 +326,47 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
         }
       >
         <div className="flex flex-col gap-md">
+          {missingApprovals ? (
+            <Notice tone="error">
+              <span className="flex flex-col gap-xs">
+                <strong className="font-semibold">
+                  {t('months.approvalMissingTitle', { count: missingApprovals.total })}
+                </strong>
+                <ul className="max-h-40 list-disc overflow-y-auto pl-lg">
+                  {missingApprovals.problems.map((problem, index) => (
+                    <li key={index}>
+                      {t('months.approvalMissingLine', {
+                        code: problem.supplierCode,
+                        column: problem.column,
+                        amount: problem.amount === undefined ? '-' : formatMoney(problem.amount),
+                      })}
+                    </li>
+                  ))}
+                </ul>
+                {missingApprovals.total > missingApprovals.problems.length ? (
+                  <span>
+                    {t('months.approvalMissingMore', {
+                      count: missingApprovals.total - missingApprovals.problems.length,
+                    })}
+                  </span>
+                ) : null}
+              </span>
+            </Notice>
+          ) : null}
           {/* The figures, repeated. This is the last screen before the month
               becomes the record every bill and payout is built from. */}
           <dl className="flex flex-col gap-xs rounded-md bg-surface-variant px-md py-sm text-body-small">
             <div className="flex justify-between gap-md">
               <dt className="text-text-secondary">{t('months.totalKgs')}</dt>
               <dd className="numeric font-semibold text-text-primary">
-                {formatKg(month.totalKgs)}
+                {formatKg(imported && run.data ? run.data.totalKgs : month.totalKgs)}
               </dd>
             </div>
             <div className="flex justify-between gap-md">
               <dt className="text-text-secondary">{t('months.suppliers')}</dt>
-              <dd className="numeric text-text-primary">{formatCount(month.supplierCount)}</dd>
+              <dd className="numeric text-text-primary">
+                {formatCount(imported && run.data ? run.data.billCount : month.supplierCount)}
+              </dd>
             </div>
             <div className="flex justify-between gap-md">
               <dt className="text-text-secondary">{t('months.totalPerKg')}</dt>
@@ -298,6 +385,7 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
                 aria-describedby={describedBy}
                 rows={3}
                 value={note}
+                maxLength={1000}
                 onChange={(event) => setNote(event.target.value)}
               />
             )}

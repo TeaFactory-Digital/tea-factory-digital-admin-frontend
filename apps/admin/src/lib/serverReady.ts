@@ -13,7 +13,6 @@ export const IMPORT_KINDS_NOT_ON_SERVER: ReadonlySet<ImportKind> = new Set<Impor
   'deliveries',
   'monthlyRates',
   'billAdjustments',
-  'bills',
   'printedBalances',
 ]);
 

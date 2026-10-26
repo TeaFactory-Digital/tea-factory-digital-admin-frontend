@@ -26,6 +26,7 @@ import {
   IMPORT_COLUMNS,
   IMPORT_SKIP_KINDS,
   importRowProblems,
+  missingImportColumns,
   importTemplateCsv,
   type ImportKind,
   type ImportRow,
@@ -81,13 +82,8 @@ export function ImportDialog({
   const [keepDuplicates, setKeepDuplicates] = useState(false);
 
   const columns = IMPORT_COLUMNS[kind];
-  const missing = useMemo(
-    () =>
-      file
-        ? columns.filter((c) => c.required && !file.data.headers.includes(c.key)).map((c) => c.key)
-        : [],
-    [file, columns],
-  );
+  // Required columns, and the balance columns whose header must be there even when blank.
+  const missing = useMemo(() => (file ? missingImportColumns(kind, file.data.headers) : []), [file, kind]);
   const problems = useMemo(
     () => serverProblems ?? (file && missing.length === 0 ? importRowProblems(kind, file.data.rows) : []),
     [serverProblems, file, missing, kind],

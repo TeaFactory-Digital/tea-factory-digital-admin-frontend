@@ -1141,6 +1141,12 @@ export interface MonthSummary extends MonthCycleStatus {
   totalExceptions: number;
   /** `false` once published (BR-108), the same flag M3 reads before offering entry. */
   open: boolean;
+  /**
+   * Bills in a **published** month that are not published yet and not held: a late division
+   * file's (#45 R15). A manager publishes them with the same publish call; 0 or absent when
+   * there are none.
+   */
+  lateBills?: number;
 }
 
 /* ────────────────────────────── M5 Bills ────────────────────────────── */
@@ -2471,6 +2477,11 @@ export const ADMIN_ERROR_CODES = [
   'earlier-bill-held',
   /** Publishing a month while an earlier month still has unpublished bills (`details.monthKey`). */
   'earlier-month-unpublished',
+  /**
+   * A credit or tea-packet decision, or a savings withdrawal asked or cancelled, that waited
+   * while a month was being published. Nothing was saved; sending it again is safe.
+   */
+  'records-busy',
   /**
    * Publishing an imported month whose approvals check, run again, now fails: something
    * approved for the month is not on a slip (`details.problems`, as the import names them).

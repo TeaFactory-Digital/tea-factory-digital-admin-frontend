@@ -351,6 +351,15 @@ export interface ImportColumn {
   minLength?: number;
   /** For `number`: a value below zero is real (a bill's balance in a month owed). */
   allowNegative?: boolean;
+  /** For `number`: the range accepted (`must-be-positive` below `min`, `too-large` above `max`). */
+  min?: number;
+  max?: number;
+  /**
+   * The header must be in the file even though a cell may be blank (blank is 0). For a
+   * balance a missing column would read as 0 for every supplier, so its absence is refused
+   * once, on row 1 (`missing-column`; `missingImportColumns`).
+   */
+  headerRequired?: boolean;
   /** One example value, used in the template. */
   example: string;
 }
@@ -445,7 +454,7 @@ export const IMPORT_COLUMNS: Record<ImportKind, readonly ImportColumn[]> = {
     { key: 'tea', type: 'number', required: false, example: '1298' },
     { key: 'savings', type: 'number', required: false, example: '5095' },
     { key: 'loansAdvance', type: 'number', required: false, example: '0' },
-    { key: 'loanInstalmentNo', type: 'number', required: false, decimals: 0, example: '' },
+    { key: 'loanInstalmentNo', type: 'number', required: false, decimals: 0, min: 1, max: 360, example: '' },
     { key: 'advance', type: 'number', required: false, example: '40000' },
     { key: 'manure', type: 'number', required: false, example: '0' },
     { key: 'otherCards', type: 'number', required: false, example: '0' },
@@ -459,11 +468,11 @@ export const IMPORT_COLUMNS: Record<ImportKind, readonly ImportColumn[]> = {
     // Paid in whole rupees (the factory's unit is 1, 5 or 10).
     { key: 'finalBalance', type: 'number', required: true, decimals: 0, example: '68220' },
     { key: 'nextMonthDebt', type: 'number', required: false, example: '0' },
-    { key: 'loanBalance', type: 'number', required: false, example: '0' },
-    { key: 'manureBalance', type: 'number', required: false, example: '0' },
+    { key: 'loanBalance', type: 'number', required: false, headerRequired: true, example: '0' },
+    { key: 'manureBalance', type: 'number', required: false, headerRequired: true, example: '0' },
     { key: 'loanInterest', type: 'number', required: false, example: '0' },
     { key: 'savingsPrevious', type: 'number', required: false, example: '21970' },
-    { key: 'savingsToDate', type: 'number', required: false, example: '27065' },
+    { key: 'savingsToDate', type: 'number', required: false, headerRequired: true, example: '27065' },
   ],
   /**
    * The "Balance" (the amount paid) on each slip the factory's own system printed, for a
@@ -500,6 +509,9 @@ function importedBillProblems(row: ImportRow, line: number): ImportRowProblem[] 
     return value === '' ? 0 : Number(value);
   };
   const near = (a: number, b: number, within: number) => Math.abs(a - b) <= within + 1e-9;
+  // Every sum exact in whole cents, as the database holds money.
+  const cents = (value: number) => Math.round(value * 100);
+  const same = (a: number, b: number) => cents(a) === cents(b);
   const out: ImportRowProblem[] = [];
   const doubt = (column: string) => out.push({ row: line, column, code: 'does-not-add-up' });
 
@@ -512,27 +524,31 @@ function importedBillProblems(row: ImportRow, line: number): ImportRowProblem[] 
   // every sum must agree to the cent.
   if (!near(n('greenLeafAmount'), kg * n('ratePerKg'), 1)) doubt('greenLeafAmount');
   if (!near(n('extraPayment'), kg * n('extraRatePerKg'), 1)) doubt('extraPayment');
-  if (!near(n('grossAmount'), n('greenLeafAmount') + n('extraPayment') + n('coinsBroughtForward'), 0.01)) {
+  if (cents(n('grossAmount')) !== cents(n('greenLeafAmount')) + cents(n('extraPayment')) + cents(n('coinsBroughtForward'))) {
     doubt('grossAmount');
   }
-  const lines = IMPORTED_BILL_DEDUCTIONS.reduce((sum, key) => sum + n(key), 0);
-  if (!near(n('totalDeductions'), lines, 0.01)) doubt('totalDeductions');
-  if (!near(n('balanceAmount'), n('grossAmount') - n('totalDeductions'), 0.01)) doubt('balanceAmount');
+  const lines = IMPORTED_BILL_DEDUCTIONS.reduce((sum, key) => sum + cents(n(key)), 0);
+  if (cents(n('totalDeductions')) !== lines) doubt('totalDeductions');
+  if (cents(n('balanceAmount')) !== cents(n('grossAmount')) - cents(n('totalDeductions'))) doubt('balanceAmount');
   // Paid plus held back is the balance plus any savings paid back on this bill. Below zero,
   // nothing is paid and the shortfall is next month's debt.
-  const payable = n('balanceAmount') + n('savingsWithdrawal');
-  const paidAndHeld = n('finalBalance') + n('coinsCarriedForward');
+  const payable = cents(n('balanceAmount')) + cents(n('savingsWithdrawal'));
+  const paidAndHeld = cents(n('finalBalance')) + cents(n('coinsCarriedForward'));
   if (payable >= 0) {
-    if (!near(paidAndHeld, payable, 0.01)) doubt('finalBalance');
+    if (paidAndHeld !== payable) doubt('finalBalance');
+    // Nothing is owed when the account covered its deductions.
+    if (cents(n('nextMonthDebt')) !== 0) doubt('nextMonthDebt');
   } else {
     if (n('finalBalance') !== 0) doubt('finalBalance');
-    if (!near(n('nextMonthDebt'), -payable, 0.01)) doubt('nextMonthDebt');
+    // Nothing is paid, so nothing is held back as coins either.
+    if (cents(n('coinsCarriedForward')) !== 0) doubt('coinsCarriedForward');
+    if (cents(n('nextMonthDebt')) !== -payable) doubt('nextMonthDebt');
   }
   // Savings To-date already has this month's withdrawal taken off (the factory, 24 October
   // 2026): previous + this month − withdrawal. Checked once any savings figure is stated;
   // a blank cell is 0.
   const savingsStated = ['savingsPrevious', 'savings', 'savingsToDate'].some((key) => (row[key] ?? '').trim() !== '');
-  if (savingsStated && !near(n('savingsToDate'), n('savingsPrevious') + n('savings') - n('savingsWithdrawal'), 0.01)) {
+  if (savingsStated && !same(n('savingsToDate'), n('savingsPrevious') + n('savings') - n('savingsWithdrawal'))) {
     doubt('savingsToDate');
   }
   if (n('otherCards') > 0 && (row.otherCardsNote ?? '').trim().length < 3) {
@@ -699,6 +715,10 @@ export function importRowProblems(kind: ImportKind, rows: readonly ImportRow[]):
           // Refused rather than rounded: a scale that printed 24.555 kg, rounded here, is a
           // figure the supplier's passbook will not show.
           problems.push({ row: line, column: column.key, code: 'too-many-decimals' });
+        } else if (column.min !== undefined && Number(value) < column.min) {
+          problems.push({ row: line, column: column.key, code: 'must-be-positive' });
+        } else if (column.max !== undefined && Number(value) > column.max) {
+          problems.push({ row: line, column: column.key, code: 'too-large' });
         }
       } else if (column.type === 'text' && column.minLength && value.length < column.minLength) {
         problems.push({ row: line, column: column.key, code: 'too-short' });
@@ -714,6 +734,17 @@ export function importRowProblems(kind: ImportKind, rows: readonly ImportRow[]):
     if (kind === 'bills' && problems.length === before) problems.push(...importedBillProblems(row, line));
   });
   return problems;
+}
+
+/**
+ * The columns a file's header lacks: every required one, and every `headerRequired` one (a
+ * blank cell is fine there, a missing column is not). The console refuses the file before
+ * sending it; the server answers the same as `missing-column` on row 1.
+ */
+export function missingImportColumns(kind: ImportKind, headers: readonly string[]): string[] {
+  return IMPORT_COLUMNS[kind]
+    .filter((column) => (column.required || column.headerRequired) && !headers.includes(column.key))
+    .map((column) => column.key);
 }
 
 /** The template: the header row and one example row, as CSV text. */

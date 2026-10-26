@@ -23,7 +23,7 @@ import type { MonthSummary } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Select } from '@/components/ui/Field';
-import { ErrorState, Spinner } from '@/components/ui/states';
+import { EmptyState, ErrorState, Spinner } from '@/components/ui/states';
 import { formatCount, formatKg, formatMonthKey } from '@/lib/format';
 import { CloseChecklist } from './CloseChecklist';
 import { ExceptionsQueue } from './ExceptionsQueue';
@@ -87,6 +87,27 @@ export function MonthCloseScreen() {
   ];
 
   if (months.error) return <ErrorState error={months.error} onRetry={() => void months.refetch()} />;
+  /**
+   * No months yet: a factory whose bills are imported has none until its first file, and the
+   * import is what creates the month. So the Import menu is offered here, not a spinner.
+   */
+  if (months.data && known.length === 0) {
+    return (
+      <>
+        <PageHeader
+          title={t('months.title')}
+          description={t('months.subtitle')}
+          actions={
+            importKinds.length > 0 ? <ImportMenu kinds={importKinds as [ImportKind, ...ImportKind[]]} /> : null
+          }
+        />
+        <EmptyState
+          title={t('months.noMonthsTitle')}
+          body={billSource === 'imported' ? t('months.noMonthsImported') : t('months.noMonthsCalculated')}
+        />
+      </>
+    );
+  }
   if (!monthKey || month.isPending) {
     return (
       <div className="flex justify-center py-xxxl">

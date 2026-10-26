@@ -9,7 +9,7 @@ and `packages/domain` (please `vendor:pull` after each console change).
 | 49 | `factorySync` defaults to **off**, never `null` | High, now |
 | 50 | Staging: `enableMonthToDate` is not served yet | Now |
 | 51 | The factory administrator reads the factory's records (`vendor:pull`) | Now, small |
-| 45 | Factory records: the bills import (with month reads and publish), opening balances, leaf and months, other deductions, importing again, then the bill engine | High |
+| 45 | Factory records: late bills wait for a manager (the one change to step 1), then opening balances, leaf and months, other deductions, importing again, the bill engine | High |
 | 48 | "This month so far": `GET /bills/month-to-date` | Medium |
 | - | Later: factory sync (Phase 10), balance corrections | Later |
 
@@ -56,17 +56,18 @@ credit requests in the console while the sync is off. **Contract:** factory-reco
 
 **In this order:**
 
-1. **The bills import** (`POST /admin/imports/bills`, factory-records §5a) with the approvals
-   check (§5a "What the import checks"), and with it the month reads (`GET /admin/months`,
-   `GET /admin/months/:monthKey`) and `POST /admin/months/:monthKey/publish`: an imported
-   month cannot be published without them. **Your round-three questions are answered in
-   §5a** ("What the import checks", "Which months", "What it sets"; decision 14), and your
-   ADR-038 (post differences at publish, never set a balance) is agreed and written in.
-   New in the domain (`vendor:pull`): `ImportRowProblem.amount`,
-   `ImportResult.leafDifferences`, `finalBalance` `decimals: 0`, the `ratePerKg` and
-   `savingsToDate` checks, and the codes `earlier-month-unpublished` and `approval-missing`;
-   import problem text for `approval-missing`, `month-not-ended`, `month-out-of-order`,
-   `must-be-positive` in en/si/ta.
+1. **One change to step 1 (`12eea12`), decided by the factory (R15): a late division
+   file's bills wait for a manager.** Today they are published at once by the importer. Keep
+   them unpublished in the published month, count them in `MonthSummary.lateBills`, and let
+   `POST /admin/months/:monthKey/publish` on a published month publish them (four-eyes
+   against their importer; `already-published` only when none are left). factory-records
+   §5a "A late division file". The console and the mock already do this. Your other
+   round-four questions: **R14** yes, the import creates the month; **R16** yes, four-eyes
+   covers the importer; **R17** opening balances cover the first slip and approvals before
+   the cut-over, and withdrawals pending at cut-over are settled or cancelled before it
+   (decision 15). Your T8 list is done in the console (`vendor:pull` for
+   `headerRequired` / `missingImportColumns`, the exact-cent checks, `loanInstalmentNo`
+   1 to 360, `records-busy`, `MonthSummary.lateBills`).
 2. **Opening balances:** `GET` / `PUT /admin/suppliers/:id/opening-balances` and the
    `openingBalances` import (factory-records §4.2).
 3. **Leaf and months:** the leaf and month endpoints in factory-records §4.1
@@ -135,7 +136,7 @@ the same PR) and the feature appears:
 
 | Console feature | Waits for | Line in `serverReady.ts` |
 |---|---|---|
-| Import → Opening balances, Daily leaf, Monthly rates, Other deductions, Finished bills, Printed slip balances | `POST /admin/imports/{openingBalances, deliveries, monthlyRates, billAdjustments, bills, printedBalances}` | `IMPORT_KINDS_NOT_ON_SERVER` (one entry each) |
+| Import → Opening balances, Daily leaf, Monthly rates, Other deductions, Printed slip balances | `POST /admin/imports/{openingBalances, deliveries, monthlyRates, billAdjustments, printedBalances}` | `IMPORT_KINDS_NOT_ON_SERVER` (one entry each; Finished bills is live) |
 | Opening balances card (supplier → Money) | `GET` / `PUT /admin/suppliers/:id/opening-balances` | `OPENING_BALANCES_ON_SERVER = false` |
 | "Other deductions" → Edit on a bill | `PUT /admin/bills/:id/adjustment` | `OTHER_DEDUCTIONS_ON_SERVER = false` |
 | Rates & month close: "Compare with printed slips", the checklist step, held badges | `slip-comparison`, `printed`, `hold`, `release` | `SLIP_COMPARISON_ON_SERVER = false` |

@@ -181,7 +181,10 @@ copy interpolates.
 | `rate-missing` | 409 | Publish attempted before the auction rate was entered (§10.5) |
 | `exceptions-open` | 409 | Publish attempted with unresolved M4 exceptions (AC-04). `details: { open }` |
 | `already-resolved` | 409 | Two accountants worked the same exception list (§10.4) |
-| `already-published` | 409 | The month was closed while this screen was open. `details: { publishedAt, publishedByName }` |
+| `already-published` | 409 | The month was closed while this screen was open, and has no late bills waiting. `details: { publishedAt, publishedByName }` |
+| `earlier-month-unpublished` | 409 | Publish attempted while an earlier month still has unpublished bills: months are published in order. `details: { monthKey }` |
+| `approval-missing` | 409 | Publish of an imported month whose approvals check now fails. `details: { problems: [{ supplierCode, column, amount, code }], total }` (factory-records.md §5a) |
+| `records-busy` | 409 | A credit or tea-packet decision, or a savings withdrawal, met a publish in progress. Nothing saved; send it again |
 | `month-mismatch` | 409 | The month in the body disagrees with the month in the path (§10.5) |
 | `factory-sync-on` | 409 | A record write while the factory-system sync is on (§5.8, §25) |
 | `loan-outstanding` | 409 | A loan or an advance asked for while a loan is still owed (§14.4) |
@@ -196,7 +199,7 @@ unknown code is safe but unhelpful.
 | --- | --- |
 | General | `feature-disabled` (403), `forbidden` (403), `four-eyes-violation` (409), `stale-eligibility` (409), `note-required` (422), `month-locked` (409), `supplier-code-taken` (409), `already-decided` (409) |
 | M3 Leaf collection | `batch-too-large` (422), `already-voided` (409), `invalid-batch` (the console's own, below) |
-| M4 Rates & month close | `invalid-rate` (422), `rate-missing` (409), `exceptions-open` (409), `already-resolved` (409), `already-published` (409), `month-mismatch` (409) |
+| M4 Rates & month close | `invalid-rate` (422), `rate-missing` (409), `exceptions-open` (409), `already-resolved` (409), `already-published` (409), `month-mismatch` (409), `earlier-month-unpublished` (409), `approval-missing` (409), `records-busy` (409) |
 | M5 Bills | `bills-missing` (409; 404 on `GET .../bill-run`), `bills-unbalanced` (422), `bills-stale` (409) |
 | M11 / M12 Content | `fallback-translation-missing` (422), `slug-taken` (409), `content-not-published` (409) |
 | M14 Configuration | `tenant-immutable` (409), `flag-has-records` (409), `point-in-use` (409), `fallback-language-required` (422) |
@@ -1423,12 +1426,21 @@ question asked about a month that closed with exceptions on it.
 The refusals **are** the module. In order:
 
 ```
-409 month-mismatch       body.monthKey ≠ the path         + details.expected, received
-409 already-published    someone closed it first          + details.publishedAt, publishedByName
-409 rate-missing         no auction rate entered
-409 exceptions-open      unresolved exceptions remain     + details.open   (AC-04)
-409 four-eyes-violation  the publisher entered the rate   + details.enteredByName  (BR-501)
+409 month-mismatch             body.monthKey ≠ the path        + details.expected, received
+409 already-published          closed, and no late bills wait  + details.publishedAt, publishedByName
+409 earlier-month-unpublished  an earlier month is unpublished + details.monthKey
+409 rate-missing               no auction rate entered
+409 exceptions-open            unresolved exceptions remain    + details.open   (AC-04; not imported months)
+409 bills-missing / bills-stale                                (below; stale: not imported months)
+409 bills-mismatch             calculated bills vs printed slips (factory-records.md §5)
+409 approval-missing           imported bills: an approval is not on a slip + details.problems, total
+409 four-eyes-violation        the publisher entered the rate, or imported a bill of the month (BR-501)
 ```
+
+**A published month with late bills.** A late division file adds bills to a published month
+for suppliers who had none; they wait (`MonthSummary.lateBills`), and the same call
+publishes them, refused for their importer (four-eyes). `already-published` only when none
+are left (factory-records.md §5a).
 
 `month-mismatch` exists because the close screen can sit open on July while a
 colleague publishes June; publishing what the accountant is *looking at* is the
@@ -3117,7 +3129,7 @@ names in `IMPORT_COLUMNS[kind]`.
 | `monthlyRates` | `ratesAndMonthClose: W` | `duplicate`, `unknown-month`, `month-locked` |
 | `walkInCredit` | `creditRequests: W` | `unknown-supplier`, `required` (manure without type or quantity), and §14.4's refusals |
 | `billAdjustments` | `billing: W` | `duplicate` (month + code), `unknown-supplier`, `month-locked`, `no-bill`, `required` |
-| `bills` | `billing: W` | `duplicate` (month + code), `unknown-supplier`, `unknown-month`, `month-locked`, `rate-differs`, and the approvals check (factory-records.md §5a) |
+| `bills` | `billing: W` | `missing-column` (row 1), `unknown-supplier` / `ambiguous-supplier`, `duplicate` (month + code), `month-not-ended`, `month-out-of-order`, `month-locked` (supplier already billed in a published month), `rate-differs`, `bill-no-taken`, `too-large` / `must-be-positive` (`loanInstalmentNo`), and the approvals check `approval-missing` (factory-records.md §5a). The import creates the month; a top-level `409 month-locked` with `details.reason: 'published-during-import'` means send the file again |
 
 **All rows or none.** Run the shared `importRowProblems(kind, rows)` first (the console runs
 the same function), then the server-only checks; any problem refuses the whole file and

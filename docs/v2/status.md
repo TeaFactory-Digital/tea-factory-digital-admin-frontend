@@ -62,7 +62,7 @@ ships:
 
 | Console feature | Waits for |
 | --- | --- |
-| Import → Opening balances, Daily leaf, Monthly rates, Other deductions, Finished bills, Printed slip balances | `POST /admin/imports/{openingBalances, deliveries, monthlyRates, billAdjustments, bills, printedBalances}` (`IMPORT_KINDS_NOT_ON_SERVER`) |
+| Import → Opening balances, Daily leaf, Monthly rates, Other deductions, Printed slip balances | `POST /admin/imports/{openingBalances, deliveries, monthlyRates, billAdjustments, printedBalances}` (`IMPORT_KINDS_NOT_ON_SERVER`; Finished bills is live since `12eea12`) |
 | Opening balances card (supplier → Money) | `GET` / `PUT /admin/suppliers/:id/opening-balances` (`OPENING_BALANCES_ON_SERVER`) |
 | Other deductions → Edit on a bill | `PUT /admin/bills/:id/adjustment` (`OTHER_DEDUCTIONS_ON_SERVER`) |
 | Rates & month close: "Compare with printed slips", the checklist step, held badges | `GET .../slip-comparison`, `PUT /admin/bills/:id/printed`, `POST /admin/bills/:id/hold`, `/release` (`SLIP_COMPARISON_ON_SERVER`) |
@@ -86,7 +86,7 @@ Against `docs/admin-console.md` §18.3 in the mobile repo.
 | AC-01 | App and M2 show the same active bank details, savings rate, payment method | ✅ Met: active values only; a pending change renders as pending |
 | AC-02 | Approving changes the app's displayed value; rejecting leaves it and shows the note | ✅ Met, with an integration test on both halves |
 | AC-03 | A bill matches the app's Home screen and the PDF field for field | ✅ **Console and app met**: the slip follows the factory's printed one line for line from the shared `bill.ts`, and the app shows the same lines (Other deductions with its reason, the loan instalment number). With the sync off the bill is produced here (imported exactly as printed, or calculated); with the sync on it comes from the factory's system, which must send every line (`factory-system-team.md` §3) |
-| AC-04 | The month cannot be published with an unresolved exception | ✅ **Met with the sync off**, against the mock: `exceptions-open` is the second of the publish's five ordered refusals. Waits for the backend's month endpoints (#45). With the sync on, the month is closed in the factory's system |
+| AC-04 | The month cannot be published with an unresolved exception | ✅ **Met with the sync off**: `exceptions-open` is in the publish's ordered refusals (api-contract §10.5), against the mock for calculated bills. The backend's month reads and publish are live since `12eea12` for imported months, which have no exceptions (A13). With the sync on, the month is closed in the factory's system |
 | AC-05 | Credit eligibility matches the app's, byte for byte, including the working | ✅ Every intermediate figure is rendered and the derivation is shared (`leafCredit.ts`); the app's working lines come from the server's figures |
 | AC-06 | Rejecting without a note is impossible | ✅ Met at three layers on every queue, including M18 |
 | AC-07 | A flag off removes the surface **and** the endpoint refuses | ✅ The console hides the surface; the mock and the backend refuse with `403 feature-disabled` |

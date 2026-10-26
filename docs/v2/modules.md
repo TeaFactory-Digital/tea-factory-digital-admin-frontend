@@ -218,16 +218,18 @@ sidebar row.
 | Card | What it does | Permission |
 | --- | --- | --- |
 | **Rate card** | Enter the month's rate per kg (and extra rate) | `ratesAndMonthClose: W` |
-| **Close checklist** | What still blocks the close, and **Publish** (four-eyes: not the person who generated or imported) | `ratesAndMonthClose: A` |
+| **Close checklist** | What still blocks the close, and **Publish** (four-eyes: not the person who entered the rate or imported a bill). For imported bills the leaf and exceptions steps are skipped. A refused publish's `approval-missing` problems are listed in the dialog. On a published month with late bills: "N bills from a late file are waiting" and **Publish the late bills** | `ratesAndMonthClose: A` |
 | **Exceptions queue** | The month's exceptions, each resolved with a note | `ratesAndMonthClose: W` |
 | **Deduction rates** | Transport per kg (factory-wide **and per collection point**), stamps, instalment caps. Proposed by one person, approved by another, because a change re-prices every account | `ratesAndMonthClose: W` propose, `A` approve |
 | **Bill run** (`BillRunCard`, calculated bills only) | Generate the month's bills, then **Review this month's bills** on M5 | `billing: W` |
 | **Import** | Monthly rates; Finished bills (imported) or Other deductions (calculated) | `ratesAndMonthClose: W` / `billing: W` |
 
-The publish refuses, in order, `rate-missing`, `exceptions-open`, `bills-stale`,
-`already-published` and `four-eyes-violation`. Publishing makes the bills visible in the
-app and fires `billPublished`. Generating in an importing factory is
-`409 wrong-bill-source`.
+With **no months yet** (a new importing factory) the screen shows an empty state with the
+Import menu: the import creates the month. The publish refuses, in order,
+`already-published`, `earlier-month-unpublished`, `rate-missing`, `exceptions-open`,
+`bills-missing`, `bills-stale`, `bills-mismatch`, `approval-missing` and
+`four-eyes-violation` (api-contract §10.5). Publishing makes the bills visible in the app
+and fires `billPublished`. Generating in an importing factory is `409 wrong-bill-source`.
 
 ## M5 Bills
 

@@ -116,6 +116,7 @@ const BY_CODE: Record<string, string> = {
   'earlier-bill-held': 'error.earlierBillHeld',
   'earlier-month-unpublished': 'error.earlierMonthUnpublished',
   'approval-missing': 'error.approvalMissing',
+  'records-busy': 'error.recordsBusy',
   '403': 'error.forbidden',
   '404': 'error.notFound',
 };
@@ -127,6 +128,8 @@ const BY_CODE: Record<string, string> = {
 const BY_REASON: Record<string, string> = {
   // The API cannot apply a bank change yet: it does not keep the new account number.
   'bank-details-approval-not-implemented': 'changeRequests.bankNotReady.body',
+  // A month published while the file waited: the file is fine, it just has to go again.
+  'published-during-import': 'error.publishedDuringImport',
 };
 
 /** `details.reason`, when the server sent one. */
