@@ -42,7 +42,7 @@ the factory-records work. What changed is what sits inside them:
   `src/services/banners`**: the console runs the app's rule, not a second implementation
   of it).
 
-How the console is built. Screens and scope are in [modules.md](./modules.md);
+How the console is built. Screens and scope are in [status.md](./status.md#modules);
 the brand machinery is in [white-label.md](./white-label.md).
 
 ---
@@ -66,7 +66,7 @@ sharing the model rather than publishing it.
 
 ### Why two packages
 
-`docs/admin-console.md` in the mobile repo prescribes this split, and the
+The mobile repo's `docs/domain-logic.md` §18.5 prescribes this split, and the
 argument is worth restating because it is the whole reason for the workspace:
 
 > The decisive argument: `src/types/index.ts` is already the domain model.

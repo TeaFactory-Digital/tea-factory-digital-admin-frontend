@@ -438,7 +438,7 @@ exists to avoid.
 | Never use a t-shirt-named sizing utility | **Yes**, `max-w-md`, `w-lg`, `h-xl` are errors. They resolve against `--spacing-*`, so `max-w-md` means 12px here, not 28rem (see [design-system.md](./design-system.md) → Layout widths) |
 | Never hardcode a string | **No**, a review item. A missing `t()` key warns in the dev console instead |
 | Never branch on the tenant id | **No**, not statically checkable. A review item |
-| The console's flag set matches the app's | **No**, the two live in different repositories, and v1 drifted by four flags with a docblock claiming otherwise. A review item, and the reason [modules.md](./modules.md) states the count |
+| The console's flag set matches the app's | **No**, the two live in different repositories, and v1 drifted by four flags with a docblock claiming otherwise. A review item, and the reason [status.md](./status.md#m14-configuration) states the count (M14 Configuration, Features) |
 | UI never imports axios | **Yes**, by import path |
 | Only repositories import endpoints | **Yes**, by import path |
 | `@tfd/*` stays framework-free | **Yes**, react/react-native/axios imports are errors there |

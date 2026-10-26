@@ -2,7 +2,7 @@
  * Console authentication: a **separate realm** from suppliers.
  *
  * Different table, different token audience, different login screen
- * (admin-console.md → Auth and roles). A supplier token must never open the
+ * (mobile docs/domain-logic.md §18.5 → Auth and roles). A supplier token must never open the
  * console, and the console's token carries a factory id and a role set. That is
  * why these paths are `/admin/auth/*` and not the app's `/auth/*`: sharing the
  * path would invite sharing the realm.

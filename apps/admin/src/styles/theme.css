@@ -281,7 +281,7 @@
  * Tabular, lining figures for money and kilos.
  *
  * Not cosmetic: a clerk scans a column of amounts to catch a mistyped kilo
- * before it becomes a bill (admin-console.md §18.2), and proportional digits
+ * before it becomes a bill (mobile docs/domain-logic.md §18.2), and proportional digits
  * make that column unscannable.
  */
 @utility numeric {

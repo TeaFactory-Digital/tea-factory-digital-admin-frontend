@@ -2,7 +2,7 @@
  * One supplier's savings passbook: every line in and out, with the balance after each.
  *
  * **Read only, on purpose.** Savings belong to the factory's own system; this console
- * shows a copy (factory-integration-spec §1.1). So there is no withdrawal button here:
+ * shows a copy (factory-system-team.md §A.2). So there is no withdrawal button here:
  * a withdrawal is recorded where the money is, and arrives in this passbook from there.
  *
  * Newest first, because the office opens this to answer "what happened last month".

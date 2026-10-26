@@ -2,7 +2,7 @@
  * `@tfd/domain`: the shared tea-factory model.
  *
  * Consumed by the console today, and by the API and the mobile app once they
- * move into the same workspace (admin-console.md → Sharing the domain and the
+ * move into the same workspace (mobile docs/domain-logic.md §18.5 → Sharing the domain and the
  * brand). Framework-free by design: no React, no React Native, no axios. If
  * something here cannot be imported by a Node service, it is in the wrong
  * package.

@@ -2,7 +2,7 @@
  * Route guards.
  *
  * Both of these are **courtesies**. Permissions are enforced server-side per
- * endpoint (admin-console.md → Auth and roles), and a guard that were the only
+ * endpoint (mobile docs/domain-logic.md §18.5 → Auth and roles), and a guard that were the only
  * check would be bypassed by anyone who can edit JavaScript. What they buy is a
  * clerk not being shown a screen whose every request will 403.
  */

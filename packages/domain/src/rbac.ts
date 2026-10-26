@@ -10,7 +10,7 @@
  * Two things this module deliberately does **not** do:
  *
  *  - **It does not authorize anything.** Permissions are enforced server-side
- *    per endpoint (admin-console.md → Auth and roles); hiding a button is a
+ *    per endpoint (mobile docs/domain-logic.md §18.5 → Auth and roles); hiding a button is a
  *    courtesy so a clerk is not shown a lever that will 403.
  *  - **It does not decide four-eyes.** `isSelfApproval` is a UI pre-check; the
  *    server must refuse with `four-eyes-violation` regardless (BR-501),

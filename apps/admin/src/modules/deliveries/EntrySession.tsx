@@ -1,9 +1,10 @@
 /**
  * The weighing session: M3's reason to exist.
  *
- * modules.md: *"a data-entry product, not a screen"*. Everything here follows from
- * that, and it is worth stating what it means concretely, because a grid that
- * merely looks like this one is much slower to use:
+ * The v1 module map (git history, `docs/v1/`): *"a data-entry product, not a
+ * screen"*. Everything here follows from that, and it is worth stating what it
+ * means concretely, because a grid that merely looks like this one is much
+ * slower to use:
  *
  *  - **Two fields and the Enter key.** Code → Tab → kilos → Enter, and the caret
  *    is back in the code field. A clerk with a queue at the counter never leaves

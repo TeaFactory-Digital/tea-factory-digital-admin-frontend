@@ -4,7 +4,7 @@
  * It matters more than it looks: the grids are server-paged, so a sort the client
  * applied would sort the fifty rows it happens to be holding. A clerk sorting 84
  * suppliers by code would see 5301 at the top of page 2 and reasonably conclude
- * the console is lying to them (admin-console.md §18.2).
+ * the console is lying to them (mobile docs/domain-logic.md §18.2).
  *
  * The tests go through the repositories rather than the screens: what is under
  * test is the request the console sends and the order the API answers with, and a

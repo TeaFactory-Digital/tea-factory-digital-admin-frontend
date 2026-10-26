@@ -1,9 +1,9 @@
 /**
  * M16 Reports: the shared half.
  *
- * **The report list is deliberately short, and this comment is the reason.** modules.md says
- * M16 *"needs the warehouse shape from §19.1 more than the report list"*, and §19.1 lives in
- * the mobile repository; it is not in this one. So rather than inventing a plausible dozen,
+ * **The report list is deliberately short, and this comment is the reason.** status.md
+ * ("What is deliberately not built") says M16 *"needs §19.1's warehouse shape more than a
+ * report list"*, and §19.1 lives in the mobile repository; it is not in this one. So rather than inventing a plausible dozen,
  * the four below are the reports whose **definition already exists in this codebase**:
  *
  *  | Report | Where it is defined here |

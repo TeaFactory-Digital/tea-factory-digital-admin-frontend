@@ -26,7 +26,7 @@ of it re-brandable is in [white-label.md](./white-label.md).
 > richness of the rare one.** A clerk enters hundreds of delivery rows a day and
 > approves twenty requests. Keyboard entry, bulk actions and a fast queue matter
 > more than dashboards.
-> Source: `docs/admin-console.md` §18
+> Source: the mobile repo's `docs/domain-logic.md` §18
 
 Every decision below follows from that sentence. This is a **data-entry product
 on a 1366×768 office laptop**, not a marketing site.

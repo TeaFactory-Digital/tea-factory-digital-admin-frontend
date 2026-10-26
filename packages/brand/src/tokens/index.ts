@@ -3,7 +3,7 @@
  *
  * **Unitless on purpose.** The values are the same numbers the React Native app
  * uses as dp; `css.ts` is the single place that decides they mean px on the web
- * (admin-console.md → "`src/theme` needs a translation layer for the web").
+ * (mobile docs/domain-logic.md §18.5 → "`src/theme` needs a translation layer for the web").
  * Keeping them unitless is what lets both platforms share one source.
  */
 

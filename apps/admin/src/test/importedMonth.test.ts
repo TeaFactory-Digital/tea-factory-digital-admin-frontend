@@ -128,7 +128,32 @@ describe('a month of imported bills', () => {
       await factoryRecordRepository.importRows('bills', 'division-a.xlsx', [row(first!.supplierCode, '2026300001')]),
     ).toMatchObject({ saved: 0, problems: [{ row: 2, column: 'month', code: 'month-locked' }] });
 
+    // While it waits, a late bill found wrong is replaced by sending it again (R18).
+    expect(
+      await factoryRecordRepository.importRows('bills', 'division-c.xlsx', [
+        { ...row(third!.supplierCode, '2026300003'), otherCards: '0', note: 'corrected' },
+      ]),
+    ).toMatchObject({ saved: 1, problems: [] });
+
+    // Waiting late bills hold back the switches, and the next month's publish.
+    await signInAs(ADMIN);
+    const { config, usage } = await adminConfigRepository.get();
+    await expect(adminConfigRepository.patch({ factorySync: { enabled: true } }, config, usage)).rejects.toMatchObject({
+      code: 'sync-switch-blocked',
+    });
+    const [year, month] = currentMonthKey.split('-').map(Number) as [number, number];
+    const nextKey = `${month === 12 ? year + 1 : year}-${String((month % 12) + 1).padStart(2, '0')}`;
+    setMockNow(new Date(Date.UTC(year, month + 1, 10, 6)));
+    await signInAs(CLERK);
+    await factoryRecordRepository.importRows('bills', 'next-a.xlsx', [
+      { ...row(first!.supplierCode, '2026300010'), month: nextKey },
+    ]);
     await signInAs(MANAGER);
+    await expect(monthRepository.publish(nextKey)).rejects.toMatchObject({
+      code: 'earlier-month-unpublished',
+      details: { monthKey: currentMonthKey },
+    });
+
     expect((await monthRepository.get(currentMonthKey)).lateBills).toBe(1);
     expect((await billRepository.get(`bill-${currentMonthKey}-${third!.id}`)).publishedAt).toBeNull();
     // The manager publishes the late bills with the same call.
@@ -136,5 +161,7 @@ describe('a month of imported bills', () => {
     expect((await billRepository.get(`bill-${currentMonthKey}-${third!.id}`)).publishedAt).not.toBeNull();
     expect((await monthRepository.get(currentMonthKey)).lateBills).toBe(0);
     await expect(monthRepository.publish(currentMonthKey)).rejects.toMatchObject({ code: 'already-published' });
+    // Then the next month goes out.
+    await monthRepository.publish(nextKey);
   }, 20_000);
 });

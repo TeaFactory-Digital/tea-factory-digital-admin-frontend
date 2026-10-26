@@ -2,7 +2,7 @@
  * Query keys, centralized.
  *
  * Copied verbatim in spirit from the mobile app's `queryKeys.ts`, which
- * admin-console.md calls "a pattern worth copying verbatim". The reason it earns
+ * the mobile repo's docs/domain-logic.md §18.5 calls "a pattern worth copying verbatim". The reason it earns
  * that: invalidation is the hard part of a queue-driven console. After approving
  * a change request, four things are stale (the queue, that request, the
  * supplier whose value changed, and the dashboard counts) and a key spelled

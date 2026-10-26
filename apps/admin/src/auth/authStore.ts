@@ -241,7 +241,7 @@ export const useAuthStatus = () => useAuthStore((s) => s.status);
 /**
  * May the current session do this?
  *
- * A courtesy, not a control (admin-console.md → Auth and roles): permissions are
+ * A courtesy, not a control (mobile docs/domain-logic.md §18.5 → Auth and roles): permissions are
  * enforced server-side per endpoint, and this only decides whether to render a
  * lever that would 403 anyway. Hiding it is kinder than offering it.
  */

@@ -1,10 +1,11 @@
 /**
  * The close checklist: the control AC-04 is about.
  *
- * modules.md: a month close *"needs a checklist that will not let the accountant
- * past an unresolved exception"*. So the button is not merely disabled: each step
- * states **what is blocking it and where to go**, because "Publish (disabled)" with
- * no reason is a support call, and a tooltip is a reason nobody reads.
+ * The v1 module map (git history, `docs/v1/`): a month close *"needs a checklist
+ * that will not let the accountant past an unresolved exception"*. So the button
+ * is not merely disabled: each step states **what is blocking it and where to go**,
+ * because "Publish (disabled)" with no reason is a support call, and a tooltip is a
+ * reason nobody reads.
  *
  * Publishing is the one irreversible act in the console. Three things follow:
  *

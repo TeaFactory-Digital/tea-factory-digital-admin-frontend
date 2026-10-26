@@ -59,7 +59,16 @@ Sections that changed:
 It extends `docs/api.md` §17.6 in the mobile repo, which lists the admin surface
 by area. Where the two disagree, this document is more specific and §17.6 is the
 scope. Conventions (§17.1), the error codes the app understands (§17.4), and the
-supplier-facing endpoints are unchanged; build those from `api.md`.
+supplier-facing endpoints are unchanged; build those from `api.md`. **This document
+governs the admin realm; mobile `docs/api.md` §17.1 to §17.5 governs the supplier realm.**
+
+**Do not build from §17.6's endpoint sketch.** It is a v1-era outline and is wrong in five
+places: there is no `/admin/rates/{monthKey}` (the rate is `PUT /admin/months/{monthKey}/rate`,
+§10.3), no `/months/{key}/close` (`POST /admin/months/{monthKey}/publish`, §10.5), no
+`PUT /admin/config` (`PATCH /admin/config`, §18.2), no `PUT /admin/users/{id}/roles` (roles
+travel on `PATCH /admin/users/{id}`, §19.2, and the matrix on `PUT /admin/roles/{role}`,
+§19.4), and no `/admin/bills/{id}/adjustments` list (the one hand-typed line on a
+calculated bill is `PUT /admin/bills/{id}/adjustment`, §11.5a).
 
 > **The base URL below is a placeholder.** `https://api.teafactory.example/v1`
 > is what the console ships with; replace it and nothing else changes.
@@ -124,12 +133,22 @@ that later moves to its own deployment needs no console release.
 
 ### 1.3 Idempotency
 
-The console sends `Idempotency-Key: <uuid>` on **every** non-GET request. Honour
-it: return the original response for a repeated key rather than acting twice.
+The console sends `Idempotency-Key: <uuid>` on **every** non-GET request, a **fresh key
+per HTTP request** (`services/api/client.ts`). So a repeated key means the transport
+retried, not that a clerk clicked twice: build it as a **network-retry guard**. A
+double action (a clerk who clicks *Approve* twice because the first click seemed not to
+register) stays guarded by the record's own state: `already-decided`,
+`four-eyes-violation`. The one exception is a weighing session, whose `batchId` is the key
+(§9.3).
 
-The reason is not theoretical. A clerk who clicks *Approve* twice because the
-first click seemed not to register must not produce two disbursements, and a
-retried payout run must not pay twice.
+| Case | Answer |
+| --- | --- |
+| Same key, same body | Replay the original response **verbatim**; never act twice |
+| Same key, different body | `422 idempotency-key-reused`; never replay |
+| No key on a mutation | `400 idempotency-key-required` |
+| Same key while the first request is still running | `409 idempotency-in-progress` |
+
+Scope: tenant + user + endpoint. Keep a key for 24 hours.
 
 ### 1.4 Paging
 
@@ -159,6 +178,13 @@ parameter means "no filter", and `?status=` should never arrive.
 `message` is **English only** and treated as a fallback; the console has its own
 copy for every code it knows. `details` is free-form and used for context the
 copy interpolates.
+
+**The order of refusals:** `401` → capability (`403 forbidden`) → flag
+(`403 feature-disabled`) → `404` → the record's state. So an unknown id at a factory with
+the flag off is `403 feature-disabled`, not `404`. The one exception: where the flag
+depends on the record (`credit-requests/{id}`, whose flag is per facility), the `404`
+comes first, because the gate cannot precede the load. Where the mock disagrees, build the
+rule, not the mock.
 
 #### Codes the console handles specifically
 
@@ -606,6 +632,8 @@ payload carries no name.
   which the console renders as no freshness caption at all. It rides here rather than on
   an endpoint of its own (there is no `GET /admin/factory-sync`, ADR-005). When the
   dashboard call fails, the console says "Sync status unknown", never sample figures.
+  **Send the three timestamps, never a boolean `isStale`**: the threshold is the
+  console's (`FACTORY_SYNC_STALE_HOURS`, measured in polling hours), not the server's.
 - **Alerts carry an i18n key and params, never a sentence** (BR-110): the API sends
   `{ key, params }`, optionally `id` and `severity`, and the console maps them to its
   `DashboardAlert` (`severity` defaults to `info`). Keys the console renders:
@@ -657,6 +685,11 @@ number first**; only when nothing matches exactly does an all-digit code given w
 leading zeros (`708`) find `0708`, and only when exactly one supplier fits. Two that fit is
 `ambiguous-supplier` in an import (§25), never a guess; adding `708` while `0708` exists is
 `supplier-code-taken`. Sign-in stays exact.
+
+**The same bare code is the supplier's app sign-in.** In the supplier realm the wire field
+is `idNumber`, and it carries the supplier code: do not rename it, the app keychains
+credentials under that key. Store the code as a string, never an integer (`0708` is not
+`708`). The NIC is a search key here, never a login identifier.
 
 ```json
 200 { "items": [{
@@ -761,8 +794,16 @@ A new app password for a supplier, issued at the counter (§21.16).
 
 - **The field is `identityCheckNote`, not `reason`**: it records *how the person was
   shown to be the supplier*, and its floor is 15 characters (`422 note-required`).
-- The password is answered **once**: not stored readably, not re-fetchable. The app
-  forces a change at first sign-in (`owesPasswordChange`).
+- Capability `suppliers: write`.
+- The password is **9 characters from `SUPPLIER_PASSWORD_ALPHABET`**
+  (`ACDEFGHJKMNPQRTUVWXY34679`, `packages/domain/src/supplierCredentials.ts`), drawn by a
+  CSPRNG. It is answered **once**: not stored readably, not re-fetchable, never in the
+  audit entry. The record gets `owesPasswordChange`, the supplier's existing sessions end,
+  and `sessionsEnded` is the real count.
+- **The half that makes it safe is on the supplier API.** The app's `POST /auth/login`
+  answers `passwordChangeRequired: true` (the app's own name for it; `owesPasswordChange`
+  is this realm's, on `SupplierCredentialReset` only), and the API refuses every other
+  supplier endpoint until the password is changed.
 - `409 supplier-closed` for a closed account. This is also how a supplier added in the
   console (§5.8) gets an app account: a new supplier has none until the office issues one.
 
@@ -856,6 +897,10 @@ is the question the office is actually asked and which no count can answer.
 - `recentSends` includes only sends that actually went out. `deliveredToDevices: 0` on a
   send that reached hundreds is the row worth seeing, and an aggregate log can never
   show it, which is why the figure is per-supplier here.
+- **`deliveredToDevices` is counted at send, and stays at-send.** Nothing reports back
+  yet, so it is the only true figure. A per-device result arriving later goes on
+  `NotificationSend.status` (`queued`, `failed`); a confirmed delivery, when there is one,
+  is a new field, never a redefinition of this one.
 - **A clean diagnosis with an empty `recentSends` is a complete answer**: everything
   works and nobody told them.
 
@@ -1079,6 +1124,10 @@ courtesy to save a clerk a wasted upload; the signature is the control.
 Capability: `auditLog` (read). Per §12.1 that is **manager and above; a clerk
 has no audit access at all**, which is deliberate: the log is for the people
 reviewing the work, not the people doing it.
+
+**No hard deletes anywhere, and the audit log survives an erasure request.** A closed
+supplier, a deleted user and a withdrawn record all stay, so the trail they left still
+leads somewhere.
 
 Query: `entity`, `entityId`, `actorId`, **`actorType`**, `action`, `from`, `to`, plus
 paging. Newest first.
@@ -1468,9 +1517,13 @@ The refusals **are** the module. In order:
 for suppliers who had none; they wait unpublished (`MonthSummary.lateBills`) until a manager
 **other than their importer** publishes them with this same call (`four-eyes-violation` for
 the importer): savings posted, withdrawals settled, each supplier notified.
-`already-published` only when none are left (factory decision R15; factory-records.md §5a).
-**The API does not do this yet**: today it publishes a late file's bills at once, and has
-been asked to change (BACKEND-TODO #45). The console and its mock already follow R15.
+`already-published` only when none are left (factory decision R15, built in `671627d`;
+factory-records.md §5a). While late bills wait, the next month's publish is
+`409 earlier-month-unpublished` (`details.monthKey` that month), switching the sync or the
+bill source is refused with that month in `details.months`, and a waiting bill may be
+replaced by sending it again (R18; only a supplier with a published bill is `month-locked`).
+A publish queued behind another manager's publish of the same month answers
+`already-published`.
 
 `month-mismatch` exists because the close screen can sit open on July while a
 colleague publishes June; publishing what the accountant is *looking at* is the
@@ -2339,7 +2392,8 @@ cannot be shown to anybody, so allowing it only defers the error to somebody els
 `slug` is derived from the **fallback** title; a Sinhala title transliterates to nothing
 useful, and a slug is a link target the supplier never reads. Suffix a collision rather
 than refusing it: two articles called "August rate" in consecutive years is normal, and an
-editor should not have to invent a title to satisfy a validator.
+editor should not have to invent a title to satisfy a validator. So a news create never
+answers `409 slug-taken`.
 
 ### 16.4a `PATCH /admin/news/{id}` · scheduling
 
@@ -3006,7 +3060,7 @@ end when you get there:
 | Area | Ask |
 | --- | --- |
 | **The push transport** | §17 specifies the record and the reach, and everything up to the send is built on both sides. Delivery to a phone waits on FCM and APNs credentials (the backend's O2). It brings a failure mode the console has no shape for yet: a per-device delivery result arriving asynchronously, minutes later. `NotificationSend.status` already carries `queued` and `failed` for it |
-| **`billPublished` at a synced factory** | §17.5 fires it from §10.5's publish. At a synced factory the month is closed in the factory's own system and the bills arrive by sync, so the send has to fire when the sync brings a newly published month; a sync that does not is a supplier who is never told their account is ready, and nothing in this repository can detect that |
+| **`billPublished` at a synced factory** | §17.5 fires it from §10.5's publish. At a synced factory the month is closed in the factory's own system and the bills arrive by sync, so the send has to fire when the sync brings a newly published month; a sync that does not is a supplier who is never told their account is ready, and nothing in this repository can detect that. The agreed shape: a **service-to-service** trigger (the backend's `POST /integration/notifications/trigger`, built and not yet exercised): a machine credential, never a clerk's token; body `{ category, event, occurredAt, context }`; idempotent on `{ category, eventKey }`, e.g. `month.publish:2026-07`; `no-recipients` **accepted**, not refused. The month's `stage` travels in the hourly sync (factory-system-team.md §2, `months`), so a publish that never fired the trigger is detectable |
 | **M16's read replica** | §20's queries are live scans over the same store a clerk is writing to. §19.5 asks for a read replica or a nightly snapshot; a month-close query must not compete with leaf entry |
 | **The reports beyond one** | §20.1's list is served, so it grows without a console release, but the reports themselves need §19.1's warehouse shape. `channelShift` is the one this console owes |
 | **The payout file** | Not called (§12). `payoutExport.ts` is the shared serialiser and §21.17's answer (layout as configuration) still stands for whoever builds payouts |
@@ -3079,8 +3133,9 @@ The console hides each of these until it lands, in one place:
 - [x] The `bills` import (§25) with the approvals check, `GET /admin/months`,
       `GET /admin/months/{monthKey}` and the publish (§10.5) for imported months
       (backend `12eea12`)
-- [ ] Late bills wait for a manager other than their importer (R15, §10.5): the one change
-      to `12eea12`, which publishes them at once
+- [x] Late bills wait for a manager other than their importer (R15, §10.5; backend
+      `671627d`), blocking the next month's publish and both switches
+- [ ] A waiting late bill replaced by sending it again (R18)
 - [ ] Opening balances (§5.8) and the `openingBalances` import
 - [ ] Leaf and months: the rest of §9 and §10, and the `deliveries` and `monthlyRates` imports
 - [ ] Other deductions: `PUT /admin/bills/{id}/adjustment` and the `billAdjustments` import

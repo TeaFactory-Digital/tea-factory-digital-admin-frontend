@@ -1602,7 +1602,7 @@ function paginate<T>(items: T[], url: URL): Paged<T> {
  *
  * Server-side because the grid is server-paged: sorting page 3 of 84 suppliers in
  * the browser sorts *that page*, which is the bug where a clerk sorts by code and
- * the first row is 5301 (admin-console.md §18.2).
+ * the first row is 5301 (mobile docs/domain-logic.md §18.2).
  *
  * Returns a copy. `state.audit` is handed out unfiltered when no filter is set, and
  * an in-place sort would reorder the mock's own log as a side effect of reading it.
@@ -2116,9 +2116,12 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
         // import creates a month it has not seen: there is no `unknown-month` here.)
         const newest = newestPublishedMonth();
         if (newest && row.month < newest) return push('month', 'month-out-of-order');
-        // A late division file in a published month: only suppliers with no bill yet.
-        const hasBill = state.bills.some((bill) => bill.monthKey === row.month && bill.supplierId === supplier.id);
-        if (lockedMonth(row.month) && hasBill) return push('month', 'month-locked');
+        // A late division file in a published month: only suppliers with no published bill.
+        // A late bill still waiting may be replaced by sending it again (R18).
+        const hasPublishedBill = state.bills.some(
+          (bill) => bill.monthKey === row.month && bill.supplierId === supplier.id && bill.publishedAt,
+        );
+        if (lockedMonth(row.month) && hasPublishedBill) return push('month', 'month-locked');
         // One rate a month: the other rows of the file, and the rate already stored.
         const rate = `${num(row.ratePerKg)}|${num(row.extraRatePerKg)}`;
         const stored = monthRecord(row.month)?.rate;
@@ -4521,13 +4524,20 @@ export const handlers: HttpHandler[] = [
       });
       return HttpResponse.json(monthSummary(record));
     }
-    // Ledgers move forward in order: an earlier month with bills still unpublished first.
+    // Ledgers move forward in order: an earlier month with bills still unpublished first,
+    // including a published month whose late division bills are waiting (their month-end
+    // balances would otherwise be worked out over this month's postings). A held bill does
+    // not hold the next month back; the next bill is held with it instead.
     const earlier = Object.values(state.months)
       .filter(
         (one) =>
           one.monthKey < monthKey &&
-          one.stage !== 'published' &&
-          state.bills.some((bill) => bill.monthKey === one.monthKey && !bill.publishedAt),
+          state.bills.some(
+            (bill) =>
+              bill.monthKey === one.monthKey &&
+              !bill.publishedAt &&
+              (one.stage !== 'published' || !bill.heldAt),
+          ),
       )
       .sort((a, b) => a.monthKey.localeCompare(b.monthKey))[0];
     if (earlier) {

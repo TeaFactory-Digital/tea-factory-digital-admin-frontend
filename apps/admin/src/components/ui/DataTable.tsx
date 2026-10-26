@@ -2,7 +2,7 @@
  * The data grid. The console is mostly grids, so this is the component that
  * decides whether the office is fast or slow.
  *
- * Four decisions, each of them from admin-console.md §18.2 ("speed of the
+ * Four decisions, each of them from the mobile repo's docs/domain-logic.md §18.2 ("speed of the
  * repetitive path beats richness of the rare one"):
  *
  *  1. **Server-side paging and sorting.** A factory has thousands of suppliers;

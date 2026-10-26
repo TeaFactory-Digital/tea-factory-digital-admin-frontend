@@ -50,7 +50,7 @@ where authorization is actually enforced.
 
 > Permissions are enforced **server-side per endpoint**; the console hides what a
 > role cannot do only as a courtesy.
-> Source: `docs/admin-console.md`, Auth and roles
+> Source: the mobile repo's `docs/domain-logic.md` §18.5, Auth and roles
 
 Every capability check in this codebase (`useCan()`, `RequireCapability`, a
 hidden button, an absent sidebar row) exists so a clerk is not shown a lever

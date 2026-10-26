@@ -32,10 +32,25 @@ packages/
 apps/
   admin/      React 19 · Vite · Tailwind v4 · TanStack Query/Table · Radix
               (MSW in the Vitest and Playwright suites only)
-docs/v2/      Current: the module map, the API contract, the backend's to-do, status
+docs/v2/      The documentation: see "Documentation" below
 ```
 
 ## Two modes: the factory-system sync
+
+**This console manages the mobile app.** The platform's product is the supplier app; the
+console is the office's side of it: every `pending` in the app is a queue here, every flag
+the app reads is a control here, and every figure the app shows has to come from somewhere.
+Where those figures come from is the one thing that differs between factories, and it is
+a switch (Configuration → **Factory system**).
+
+| | Factory system sync **on** | Factory system sync **off** (the default) |
+| --- | --- | --- |
+| Where suppliers, leaf, rates and bills come from | The factory's own system, pulled every hour (backend Phase 10, not built yet) | The office, in this console |
+| What the console is | App management: queues, content, notifications, configuration, users, audit, and a read-only view of the bills for support | All of that, **plus** the factory's records |
+| Extra screens | None. `/deliveries` and `/rates` say the records come from the factory system | Sidebar section **Factory records**: **Leaf intake** (`/deliveries`) and **Rates & month close** (`/rates`); **Add supplier**, opening balances and transport rate per supplier; **walk-in credit requests**; other deductions on a bill; **Import from file** (Excel or CSV, all rows or none) on each of them |
+| Record writes on the API | Refused, `409 factory-sync-on` | Allowed |
+
+One source at a time: a factory either syncs or keeps its records here, never both.
 
 **Sync on.** The factory's own system feeds suppliers, leaf, rates and bills
 to the platform every hour. The console manages the app: M1 Dashboard, M2 Suppliers, M5
@@ -50,14 +65,21 @@ deduction rates and the bill run), bills, **walk-in credit requests** and other
 deductions. Every record one at a time or from an Excel/CSV file (all rows or none). These
 screens, and the sidebar section "Factory records", appear **only with the sync off**.
 
-With the sync off the bills come one way per factory (Configuration → Bill calculation):
-**imported** from the factory's own system exactly as printed (galaboda), or
-**calculated** here from the leaf, the rate and the deduction rates.
+With the sync off the bills come one way per factory (Configuration → **Bill
+calculation** → "Where the bills come from", `billSettings.source`):
 
-Details: [docs/v2/modules.md](./docs/v2/modules.md) and
-[docs/v2/factory-records.md](./docs/v2/factory-records.md).
-[docs/v2/status.md](./docs/v2/status.md) is the gap list, including what the console hides
-until the backend ships it (`apps/admin/src/lib/serverReady.ts`); nothing is quietly
+- **Imported**: the factory's own system still prints the bills; each month the office
+  imports the finished bills (Import → Finished bills, which creates the month) and the
+  console stores them exactly as printed. They must equal the factory's final figures.
+  Galaboda works this way.
+- **Calculated**: the console works them out from the leaf, the month's rate and the
+  approved deduction rates (`computeBillAmounts` in `packages/domain/src/bill.ts`),
+  compares each with the factory's printed slip, and the office reviews and publishes them.
+
+Details: [docs/v2/status.md](./docs/v2/status.md#modules) (every module) and
+[docs/v2/factory-records.md](./docs/v2/factory-records.md) (the sync-off contract).
+[docs/v2/status.md](./docs/v2/status.md) is also the gap list, including what the console
+hides until the backend ships it (`apps/admin/src/lib/serverReady.ts`); nothing is quietly
 assumed to be solved.
 
 ---
@@ -143,26 +165,48 @@ consistently. All of them come from the product spec in the mobile repo's `docs/
 
 ## Documentation
 
-Start at [docs/v2/README.md](./docs/v2/README.md).
+Everything is in `docs/v2/`. Start from the row for who you are.
 
-|                                                |                                                                                             |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| [BACKEND-TODO.md](./docs/v2/BACKEND-TODO.md)   | **For the backend developer**: what is still open, in order, and what the console hides until then |
-| [api-contract.md](./docs/v2/api-contract.md)   | Every endpoint, payload and refusal, and the agreed shapes                                  |
-| [factory-records.md](./docs/v2/factory-records.md) | Sync off: the factory's records kept in the console, imports, bills imported or calculated |
-| [new-factory.md](./docs/v2/new-factory.md)     | Adding a new factory, step by step                                                          |
-| [architecture.md](./docs/v2/architecture.md)   | Layers, state, start-up, security posture                                                   |
-| [white-label.md](./docs/v2/white-label.md)     | Runtime branding, the Tailwind and token bridge, the feature flags                          |
-| [design-system.md](./docs/v2/design-system.md) | Tokens, components, density, accessibility                                                  |
-| [rbac.md](./docs/v2/rbac.md)                   | The permission matrix and where it is really enforced                                       |
-| [modules.md](./docs/v2/modules.md)             | What each module decides, and which screens appear only with the sync off                   |
-| [mocks.md](./docs/v2/mocks.md)                 | The mock API the Vitest and Playwright suites run against                                   |
-| [operations.md](./docs/v2/operations.md)       | Environments, deployment, testing, CI                                                       |
-| [status.md](./docs/v2/status.md)               | **What is built, what the backend has, known gaps, open questions**                         |
+| Document | Reader | What is in it |
+| --- | --- | --- |
+| [status.md](./docs/v2/status.md) | Anyone reviewing or planning; a front-end developer joining | **What is built, module by module, and what is open**: what the backend has, what the console hides until it ships, the module map and what each module decides (and which screens appear only with the sync off), acceptance criteria, known gaps, open business questions |
+| [BACKEND-TODO.md](./docs/v2/BACKEND-TODO.md) | **The backend developer**, first | The backend's open work only, in order, what the console hides in `lib/serverReady.ts`, and the decisions behind it (what is done is in status.md) |
+| [factory-records.md](./docs/v2/factory-records.md) | The backend developer, then anyone working on sync off | **Sync off**: the switch, the screens, entry and Excel/CSV import, the API, how bills are imported or calculated, credit rules while records are kept here, and what the factory decided |
+| [api-contract.md](./docs/v2/api-contract.md) | The backend developer | Base URL, auth realm, every endpoint with payloads, the error envelope and refusal order, idempotency, and the agreed shapes |
+| [new-factory.md](./docs/v2/new-factory.md) | The platform team, the factory administrator, **the factory's owner and management** | **Adding and running a factory**: who does what, the slug, `npm run db:seed:tenant`, DNS, the console configuration, the factory's records, the per-factory app build; the decisions only the factory can make and those it has taken; the roles in the office; the platform team's side of each mode (consuming the sync, the credit ceiling, the freshness indicator) |
+| [factory-system-team.md](./docs/v2/factory-system-team.md) | **The factory's own system vendor** (sync on); whoever runs the first meetings | The one read-only endpoint, field by field, the volumes and the fallbacks; then the design behind it: what each side does, how a request is never recorded twice, who decides credit, the three conversations before build |
+| [factory-updates-sample.json](./docs/v2/factory-updates-sample.json) | The factory's system vendor | A complete, valid sample response for that endpoint (bill `2026210869` is a real slip). Send it with factory-system-team.md |
+| [architecture.md](./docs/v2/architecture.md) | Front-end developer | The workspace, layer boundaries, the provider stack, state, start-up, security posture |
+| [white-label.md](./docs/v2/white-label.md) | Front-end developer | Runtime brand resolution, the Tailwind and token bridge, the feature flags |
+| [design-system.md](./docs/v2/design-system.md) | Front-end developer | Tokens, components, density, tables, forms, accessibility |
+| [rbac.md](./docs/v2/rbac.md) | Front-end and backend developers | The §12.1 permission matrix as data, four-eyes, where authorization is really enforced |
+| [mocks.md](./docs/v2/mocks.md) | Front-end developer; the backend developer as a reference implementation | The mock API the Vitest and Playwright suites run against: what it enforces and its fixtures |
+| [operations.md](./docs/v2/operations.md) | Whoever deploys | Commands, environments, deployment per subdomain, testing, CI |
+| [bank-catalogue.md](./docs/v2/bank-catalogue.md) | Platform team | Where the bank and branch list lives and the decisions behind it |
+| [sri-lanka-banks.seed.json](./docs/v2/sri-lanka-banks.seed.json) | Backend seed | The bank catalogue as JSON: 45 institutions, 3,682 branches, with clearing codes. The backend seeds `client_config.banks` from it |
+| [static-pages.seed.json](./docs/v2/static-pages.seed.json) | Backend seed | The six default static pages (FAQ, terms, privacy and the rest) in en/si/ta that every factory starts with |
+| [tea-factory-digital-admin-frontend.code-workspace](./docs/v2/tea-factory-digital-admin-frontend.code-workspace) | Any developer | A VS Code workspace opening the console, backend, mobile and website repositories together |
 
 **v1 (the seventeen-module console) is in git history, not in the tree.** Recover it with
-`git log -- docs/v1/` and `git show <rev>:docs/v1/<file>`.
+`git log -- docs/v1/` and `git show <rev>:docs/v1/<file>`. The same goes for the v2
+documents since merged into the ones above (the old file names, and where each went, are
+in [BACKEND-TODO.md](./docs/v2/BACKEND-TODO.md#docs-merged-in-the-console-repo-update-your-links)).
 
 The product specification, what the console is for and why, lives in the mobile
-repository's `docs/`, and nothing here restates it. `BR-###`, `AC-##` and `§n`
-references throughout point there.
+repository's `docs/`, and nothing here restates it.
+
+**One rule binds all of it: the supplier's app and this console are two views of the same
+records.** Nothing is computed in one place and re-derived in the other, which is why
+`packages/domain` exists: the bill (`bill.ts`), the credit arithmetic (`leafCredit.ts`), the
+deduction rates (`deductionRates.ts`), the import columns and checks (`factoryRecords.ts`)
+and the banner action resolver (`banners.ts`) are shared code. The backend vendors the
+package (`vendor:pull`); the app carries ports of the rules it runs.
+
+Conventions in these documents:
+
+- **`BR-###`, `AC-##` and `§n`** cite the mobile repo's `docs/`. They are stable ids; an
+  `AC-02` here is the same `AC-02` there.
+- **A gap is written down as a gap**, in status.md, never implied by a disabled button.
+- **Decisions record their reason**, because the next person's instinct will be to change
+  them.
+- **No em dash characters**; a "no value" is shown as `-`.

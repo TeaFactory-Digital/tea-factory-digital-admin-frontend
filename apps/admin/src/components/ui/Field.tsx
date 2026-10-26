@@ -5,7 +5,7 @@
  * for one reason that outweighs the styling gain: **this is a keyboard product.**
  * A clerk enters hundreds of rows a day, and a native select opens on first
  * keystroke, filters by typing, and works with the OS's own accessibility tools.
- * A custom listbox is prettier and slower, and admin-console.md is explicit that
+ * A custom listbox is prettier and slower, and the mobile repo's docs/domain-logic.md §18.2 is explicit that
  * "speed of the repetitive path beats richness of the rare one".
  *
  * Radix is used where the platform has no equivalent: dialogs, toasts, menus.

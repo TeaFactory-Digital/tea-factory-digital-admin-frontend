@@ -2,7 +2,7 @@
  * Savings held, across the factory: how much it is holding for suppliers, for how many,
  * and what came in and went out each month.
  *
- * **Read only.** The figures are the factory system's (factory-integration-spec §1.1);
+ * **Read only.** The figures are the factory system's (factory-system-team.md §A.2);
  * this console shows a copy and records nothing. A supplier's own lines are on their
  * record (Suppliers → Money → Savings passbook).
  *

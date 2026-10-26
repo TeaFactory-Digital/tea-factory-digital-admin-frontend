@@ -429,13 +429,25 @@ month exceptions and no leaf step** (A13, A8): the slip is the record, and the c
 checklist skips both. **Four-eyes covers the importer** (R16): publish refuses whoever entered
 the rate **or imported a bill of the month**.
 
-**A late division file after the publish (factory, R15):** it adds bills only for suppliers
-who have none for that month (one who has is `month-locked`), and **those bills wait**: they
-are not published at once. `MonthSummary.lateBills` counts them, the console shows "N bills
-from a late file are waiting", and a manager **other than the importer** publishes them with
-the same `POST /admin/months/:monthKey/publish` (which on a published month publishes its
-late bills: savings posted, withdrawals settled, each supplier notified; `already-published`
-only when none are left; `four-eyes-violation` for the importer).
+**A late division file after the publish (factory, R15; built `671627d`):** it adds bills
+only for suppliers who have no **published** bill that month (one who has is
+`month-locked`), and **those bills wait**: they are not published at once.
+`MonthSummary.lateBills` counts them, the console shows "N bills from a late file are
+waiting", and a manager **other than the importer** publishes them with the same
+`POST /admin/months/:monthKey/publish` (which on a published month runs the approvals check
+again and publishes its late bills: balances posted, withdrawals settled, each supplier
+notified; `already-published` only when none are left; `four-eyes-violation` for the
+importer; the audit's `after.lateBills` is how many went out).
+
+- **While they wait:** a late bill found wrong is **replaced by sending it again** (factory,
+  R18). The **next month cannot be published** (`409 earlier-month-unpublished`,
+  `details.monthKey` the month with the waiting bills): its month-end balances would
+  otherwise be worked out over the next month's postings, so the office publishes the late
+  bills first. They also **block switching the sync or the bill source**
+  (`sync-switch-blocked` / `bill-source-blocked`, the month in `details.months`).
+- **Two managers at once:** a publish queued behind another manager's publish of the same
+  month answers `already-published`; it never sends out a late file that manager did not
+  see.
 
 **Busy and retried.** A credit or tea-packet decision, or a savings withdrawal, that meets a
 publish in progress is `409 records-busy`: nothing saved, send it again. A file whose month
@@ -523,9 +535,10 @@ From 9 to 22 October 2026:
     carries its approvals to the next slip; a blank balance or savings cell is 0; Savings
     To-date already has the month's withdrawal taken off.
 15. **Imported months (26 October 2026):** the import creates the month; a late division
-    file's bills wait for a manager other than the importer to publish them; four-eyes
-    covers the importer as well as the rate's enterer; savings withdrawals pending at
-    cut-over are settled or cancelled before it.
+    file's bills wait for a manager other than the importer to publish them, and a waiting
+    one may be replaced by sending it again (R18); four-eyes covers the importer as well as
+    the rate's enterer; savings withdrawals pending at cut-over are settled or cancelled
+    before it.
 
 ## 9. Checks
 

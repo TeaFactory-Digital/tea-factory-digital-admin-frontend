@@ -39,9 +39,10 @@ describe('M16 reports', () => {
     const served = await reportRepository.list();
 
     /**
-     * The list is short **on purpose**: modules.md records that M16 needs §19.1's warehouse
-     * shape more than a report list, and §19.1 is not in this repository. A fifth report here
-     * would be a guess dressed as a requirement.
+     * The list is short **on purpose**: status.md ("What is deliberately not built")
+     * records that M16 needs §19.1's warehouse shape more than a report list, and §19.1
+     * is not in this repository. A fifth report here would be a guess dressed as a
+     * requirement.
      */
     expect(served.reports.map((one) => one.id).sort()).toEqual([...REPORT_IDS].sort());
     for (const definition of served.reports) {
