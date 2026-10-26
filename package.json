@@ -18,6 +18,7 @@
     "test": "vitest run --root apps/admin",
     "test:watch": "vitest --root apps/admin",
     "e2e": "playwright test --config apps/admin/playwright.config.ts",
+    "domain:drift": "node scripts/domain-drift.mjs",
     "dev:staging": "npm run dev:staging --workspace @tfd/admin"
   },
   "devDependencies": {

@@ -94,8 +94,12 @@ assumed to be solved.
 | `npm run build:staging` | Production bundle pointed at staging                          |
 | `npm run typecheck`  | `tsc --build`, all three projects                                |
 | `npm run lint`       | Includes the white-label and layering rules                      |
-| `npm run test`       | Vitest against the MSW mock, 565 tests in 77 files               |
+| `npm run test`       | Vitest against the MSW mock, 568 tests in 77 files               |
 | `npm run e2e`        | Playwright, 29 tests in 7 specs, on its own dev server (port 5274) with the API answered by the MSW handlers (`apps/admin/e2e/fixtures.ts`; `npx playwright install chromium` once) |
+| `npm run domain:drift` | Does the backend's copy of `@tfd/domain` match this one (sibling checkout)? |
+
+CI (`.github/workflows/ci.yml`) runs typecheck, lint, the unit tests, the build and the
+Playwright suite on every push to `main` and every pull request (operations.md, CI).
 
 ### Running against staging
 

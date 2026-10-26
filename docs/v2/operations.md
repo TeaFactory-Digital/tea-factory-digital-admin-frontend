@@ -24,10 +24,11 @@ From the workspace root:
 | `npm run preview`       | Serves the built bundle                                                                    |
 | `npm run typecheck`     | `tsc --build --force` across the projects                                                  |
 | `npm run lint`          | ESLint, including the white-label and layering rules                                       |
-| `npm run test`          | Vitest against the MSW fixtures: 565 tests in 77 files (26 October 2026)                   |
+| `npm run test`          | Vitest against the MSW fixtures: 568 tests in 77 files (26 October 2026)                   |
 | `npm run test:watch`    | Vitest in watch mode                                                                       |
 | `npm run e2e`           | Playwright against its own dev server on port 5274, API answered by `e2e/fixtures.ts`. Needs `npx playwright install chromium` once; see Testing |
 | `npm run format`        | Prettier                                                                                   |
+| `npm run domain:drift`  | Does the backend's copy of `@tfd/domain` match this one? Line endings ignored; defaults to the sibling `../tea-factory-digital-backend` checkout; see CI |
 
 **First run:** start the API (`npm run setup`, then `npm run dev`, in
 `tea-factory-digital-backend`), then `npm run dev` here. `.env.development` is committed,
@@ -162,7 +163,7 @@ old binaries are in the field, and feature flags are the release valve.
 
 Layered so each layer tests what only it can.
 
-### Vitest: 565 tests in 77 files
+### Vitest: 568 tests in 77 files
 
 Every file runs against the MSW fixtures through the real transport, store and screens
 (`test/setup.ts`); only the server is a stand-in. Counts drift with every change, so
@@ -226,19 +227,22 @@ gets reported.
 
 ## CI
 
-Five steps, in this order; each fails faster than the next:
+GitHub Actions, `.github/workflows/ci.yml`, on every push to `main` and every pull
+request, on Node 22.11 (the `engines` floor). Three jobs:
 
-```yaml
-- npm ci
-- npm run typecheck
-- npm run lint
-- npm run test
-- npm run build
-```
-
-Add `npm run e2e` behind `npx playwright install --with-deps chromium`. The
-Playwright config already sets `forbidOnly` and one retry under `CI`, and reports
-in GitHub format.
+- **`verify`**, five steps in this order, each failing faster than the next:
+  `npm ci`, `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`.
+- **`e2e`**: `npx playwright install --with-deps chromium`, then `npm run e2e`. The
+  Playwright config sets `forbidOnly` and one retry under `CI` and reports in GitHub
+  format; on a failure the traces are uploaded (`playwright-traces`, kept 7 days).
+- **`domain-drift`**: checks out the backend and runs `scripts/domain-drift.mjs` against
+  it: does its `packages/domain/src` match ours, line endings ignored (a Windows checkout
+  has CRLF files holding the same text). **Information, never a blocker**
+  (`continue-on-error`): a change to the shared package runs ahead of the backend until it
+  runs `vendor:pull`. It runs only once the repository variable `BACKEND_REPO`
+  (`owner/name`) is set, with the secret `BACKEND_READ_TOKEN` (read-only) when that
+  repository is private. The backend's own nightly `upstream-drift` job asks the same
+  question from its side.
 
 ---
 

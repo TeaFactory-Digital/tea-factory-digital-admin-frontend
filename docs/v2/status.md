@@ -13,9 +13,9 @@ the next slice.
 | | |
 | --- | --- |
 | **Console** | Every module in [Modules](#modules) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
-| **Backend** | `tea-factory-digital-backend`, shipped up to `671627d`; staging is not yet running `068faf3` or later (BACKEND-TODO #50). BACKEND-TODO **#1 to #44, #46, #47, #49 and #51 are done**; **#45** (factory records without the factory system) is partly done (step 1, the bills import with the month reads and publish, is live, late bills waiting for a manager included; replacing a waiting one is R18); **#48** and **#50** are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
+| **Backend** | `tea-factory-digital-backend`, shipped up to `671627d`; staging is not yet running `068faf3` or later (BACKEND-TODO #50). BACKEND-TODO **#1 to #44, #46, #47, #49 and #51 are done**; **#45** (factory records without the factory system) is partly done (step 1, the bills import with the month reads and publish, is live, late bills waiting for a manager included; replacing a waiting one is R18); **#48**, **#50** and **#53** (a `vendor:pull`) are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
-| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **565 tests in 77 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
+| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **568 tests in 77 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
 ### Built against the mock and tested
 
@@ -639,13 +639,14 @@ Factory records menu read-only. Savings withdrawals need `billing: A` (the manag
 
 ### M16 Reports
 
-Three tabs, each read only:
+Three tabs, each read only, each a report the API serves (`channelShift`, `creditGiven`,
+`savingsHeld`):
 
 | Tab | What it answers |
 | --- | --- |
 | **App use** (`channelShift`) | Are suppliers moving from the counter to the app? Four figures for the chosen period, the trend month by month, and the table behind it (downloadable) |
 | **Credit & tea packets** | Advances, loans and manure approved, tea packets issued and requests refused, month by month, by the month they were decided |
-| **Savings** | How much the factory holds for suppliers, for how many, and what came in and went out each month. Absent when the factory runs no savings scheme |
+| **Savings** | How much the factory holds for suppliers, for how many, and what came in and went out each month. Absent when the factory runs no savings scheme (`enableSavings` off: no tab, and the API leaves the report out of its list) |
 
 A report is asked for and answered, never stored. `null` is never `0` (BR-102). No flag.
 
@@ -719,7 +720,9 @@ Worst first: correctness, then plumbing, then polish.
    hidden.
 
 3. **`@tfd/domain` is shared with the backend but copied into the app.** The backend
-   vendors it (`vendor:pull`), so the two cannot drift silently. The mobile app keeps its
+   vendors it (`vendor:pull`), so the two cannot drift silently, and this repository's CI
+   (`domain-drift`, or `npm run domain:drift` locally) says when the backend's copy is
+   behind. The mobile app keeps its
    own types and ports of the shared rules (`creditCeilingFromRule`, `bannerTarget()`),
    and drift there is found by reading the two side by side. *To close:* merge the repos,
    or a CI check that diffs the exported symbol lists.

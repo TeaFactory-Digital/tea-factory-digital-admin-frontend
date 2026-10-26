@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch makes the older run's answer moot.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The floor declared in `engines` (>= 22.11), not whatever a developer runs.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.11'
+          cache: npm
+      # Each step fails faster than the next (operations.md, CI).
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.11'
+          cache: npm
+      - run: npm ci
+      # The browsers are not installed by `npm ci`.
+      - run: npx playwright install --with-deps chromium
+      # Its own dev server on 5274, every `/v1/**` call answered by the MSW handlers in
+      # Node (e2e/fixtures.ts): nothing reaches a real API.
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: apps/admin/test-results/
+          retention-days: 7
+
+  domain-drift:
+    # Does the backend's copy of @tfd/domain match this one? Information, not a failure of
+    # the change under review: a change to the shared package is expected to run ahead of
+    # the backend until it runs `vendor:pull`. So it never blocks a merge, and it only runs
+    # once the repository variable BACKEND_REPO (owner/name) is set, with BACKEND_READ_TOKEN
+    # a read-only token for that repository when it is private.
+    if: vars.BACKEND_REPO != ''
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: admin }
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.BACKEND_REPO }}
+          token: ${{ secrets.BACKEND_READ_TOKEN || github.token }}
+          path: backend
+      - uses: actions/setup-node@v4
+        with: { node-version: '22.11' }
+      - run: node admin/scripts/domain-drift.mjs backend

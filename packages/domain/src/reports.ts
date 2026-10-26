@@ -22,9 +22,11 @@
  * from, which is the same argument that keeps a bill a read model over deliveries and a rate.
  */
 
-/** The four reports this codebase can define without guessing. */
+/** The reports this codebase can define without guessing, as the API serves them. */
 export const REPORT_IDS = [
   'channelShift',
+  'creditGiven',
+  'savingsHeld',
 ] as const;
 
 export type ReportId = (typeof REPORT_IDS)[number];
@@ -50,6 +52,18 @@ export const REPORT_DEFINITIONS: Record<ReportId, ReportDefinition> = {
     id: 'channelShift',
     params: ['monthRange'],
     definedBy: '§19.3: app adoption and channel shift',
+  },
+  /** By the month a request was DECIDED: money that left the factory that month. */
+  creditGiven: {
+    id: 'creditGiven',
+    params: [],
+    definedBy: '§19.3: credit and tea packets given',
+  },
+  /** What the factory holds for everyone, month by month, from the passbooks. */
+  savingsHeld: {
+    id: 'savingsHeld',
+    params: [],
+    definedBy: '§19.3: savings held',
   },
 };
 

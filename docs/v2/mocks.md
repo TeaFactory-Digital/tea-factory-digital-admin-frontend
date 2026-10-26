@@ -446,8 +446,12 @@ The handlers implement every endpoint in factory-records.md §4.1, with the rule
   (`MonthSummary.lateBills`) until a manager other than the importer publishes them; publish
   refuses an earlier unpublished month (`earlier-month-unpublished`) and whoever imported a
   bill of the month, and skips exceptions and staleness for imported months. Each import
-  answers `leafDifferences`. The approvals check (`approval-missing`) is **not** in the mock:
-  the API runs it, and the console only lists what it sends.
+  answers `leafDifferences`. The **approvals check** runs as the API runs it: at import,
+  each slip short of what was approved is an `approval-missing` row problem with the
+  approved `amount` (advances, tea packets and savings withdrawals by the line; loans and
+  manure through the balance; a month with no slip carries its approvals to the next,
+  R10), and at publish it runs again over the month's (or the late file's) imported bills,
+  `409 approval-missing` with up to 50 `problems` and the `total`.
 - **The clock:** rules that depend on today (`month-not-ended`) read the mock's own clock;
   a test moves it with `setMockNow` (e.g. to the 10th of the next month, when slips print).
 - **Config blocks:** `factorySync`, `billSettings` (`paymentUnit`, `nextBillSerial`,
@@ -463,11 +467,21 @@ advance and on approving one, the supplier-code match (`ambiguous-supplier`), an
 for calculated bills, the printed-slip comparison, hold and release (`bills-mismatch`,
 `heldForMonth`, `earlier-bill-held`).
 
-**Not in the mock yet**, so build them from factory-records.md rather than from here: the
-imported-bills **approvals check** at import and at publish (`approval-missing`) and the
-balance update (factory-records.md §5a "What the import checks" and "What it sets"), and
-the concurrency answers `409 records-busy` and `409 month-locked` with
-`details.reason: 'published-during-import'` (§5a "Busy and retried").
+**The two race answers**, which a test cannot make happen by itself, are switched on by
+hooks: `setMockPublishInProgress(true)` makes a credit or tea-packet decision and a
+savings withdrawal (create or cancel) answer `409 records-busy` (nothing saved; safe to
+send again), and `mockPublishDuringNextImport()` makes the next bills import answer
+`409 month-locked` with `details.reason: 'published-during-import'` (send the file
+again). `resetMockState()` turns both off (factory-records.md §5a "Busy and retried").
+
+**Reports:** all three the API serves. `channelShift` (app use), `creditGiven` (advances,
+loans and manure approved, tea packets and refusals, by the Colombo month each was
+decided) and `savingsHeld` (paid in, taken out, the balance held and how many suppliers
+save, from the savings ledger). `savingsHeld` is left out of `GET /admin/reports` and
+refused `403 feature-disabled` while `enableSavings` is off, as the API does it.
+
+**Not in the mock yet**, so build it from factory-records.md rather than from here: the
+imported bills' **balance update** (factory-records.md §5a "What it sets").
 
 ---
 

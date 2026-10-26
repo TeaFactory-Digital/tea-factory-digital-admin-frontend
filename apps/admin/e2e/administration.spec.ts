@@ -261,7 +261,7 @@ test('reports lead with the answer, and total from the totals', async ({ page })
   expect(await numbers.locator('tbody tr').count()).toBeLessThanOrEqual(3);
 });
 
-test('keeps the report tab in the address, and says when the server has no such report', async ({
+test('keeps the report tab in the address, and shows the credit report the server serves', async ({
   page,
 }) => {
   await signIn(page);
@@ -276,8 +276,12 @@ test('keeps the report tab in the address, and says when the server has no such 
   await tabs.getByRole('tab', { name: /credit & tea packets/i }).click();
   await expect(page).toHaveURL(/[?&]report=credit\b/);
 
-  // A report the API does not serve yet (`404`) is said so, not shown as an error.
-  await expect(page.getByText(/not available on this server/i)).toBeVisible({ timeout: 15_000 });
+  // Served by the API (and the mock): the summary tiles, not "not available on this server"
+  // and not an error. (A report the API does not serve answers 404 and is said so.)
+  await expect(page.getByRole('group', { name: /summary/i }).or(page.getByText(/advances/i).first())).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(page.getByText(/not available on this server/i)).toHaveCount(0);
   await expect(page.getByText(/something went wrong/i)).toHaveCount(0);
 
   await page.reload();

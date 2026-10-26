@@ -13,7 +13,8 @@
       // A CLI code generator, run by hand and documented in
       // docs/v2/bank-catalogue.md. Nothing imports it because nothing is meant
       // to: it writes packages/domain/src/data/sriLankaBanks.ts.
-      "entry": ["scripts/generate-banks.mjs"],
+      // `scripts/domain-drift.mjs` is the same: run by `npm run domain:drift` and by CI.
+      "entry": ["scripts/generate-banks.mjs", "scripts/domain-drift.mjs"],
 
       // Driven from the root `test` script, installed in the @tfd/admin workspace.
       "ignoreBinaries": ["vitest"]

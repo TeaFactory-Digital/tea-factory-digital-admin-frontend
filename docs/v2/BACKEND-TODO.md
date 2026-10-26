@@ -9,6 +9,7 @@ and `packages/domain` (please `vendor:pull` after each console change).
 | 50 | Staging is not running the latest commits | Now |
 | 45 | Factory records: a waiting late bill may be replaced (R18, small), then opening balances, leaf and months, other deductions, importing again, the bill engine | High |
 | 48 | "This month so far": `GET /bills/month-to-date` | Medium |
+| 53 | `vendor:pull`: `@tfd/domain` has moved ([below](#53-vendorpull-the-domain-package-has-moved)) | Low |
 | - | Later: factory sync (Phase 10), balance corrections | Later |
 | 52 | Docs merged in the console repo: update your links ([below](#docs-merged-in-the-console-repo-update-your-links)) | Low |
 
@@ -109,6 +110,20 @@ the same PR) and the feature appears:
 
 The leaf intake grid and Rates & month close stay visible; they call the leaf and month
 endpoints and start working as those land.
+
+## 53. `vendor:pull`: the domain package has moved
+
+Compared on 26 October 2026 with line endings ignored (`npm run domain:drift` in the
+console repo), your `packages/domain/src` differs from the console's in four files:
+
+- `reports.ts`: `REPORT_IDS` is now `channelShift`, `creditGiven`, `savingsHeld`, the three
+  your `reports.service.ts` already serves, each with its `definedBy` citation and no
+  params. Nothing else changes for you.
+- `factorySync.ts`, `rbac.ts`, `index.ts`: doc-comment links only.
+
+Your other 24 files show as modified to `vendor:upstream` on your machine only because
+your checkout has CRLF line endings; their text is the same. The console's CI now runs the
+same comparison (`domain-drift`, never blocking) once its `BACKEND_REPO` variable is set.
 
 ## Docs merged in the console repo: update your links
 

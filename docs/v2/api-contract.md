@@ -44,7 +44,7 @@ Sections that changed:
 | §14 M7 Credit | Unchanged, and **§14a is new**: `/admin/tea-packet-requests` |
 | §16 M11 Content | **§16a is new**: `/admin/banners` |
 | §18 M14 Configuration | The `teaPackets` block; `payouts.export` still served, no longer patched by this console |
-| §20 M16 Reports | One report id, not four |
+| §20 M16 Reports | Three report ids: app use, credit given, savings held |
 | §1.5 Errors | Every code in `ADMIN_ERROR_CODES`, including the factory-records and credit refusals |
 | §2 Auth | Refresh answers the whole session; first-password endpoints (BR-008) |
 | §3 / §18 Configuration | `factorySync`, `advanceInterest`, `loanInterest` (with `recovery`), `billSettings` (`paymentUnit`, `nextBillSerial`, `source`), `noteSuggestions` |
@@ -2975,24 +2975,35 @@ the only question ever asked about a permission change, and it gets asked months
 
 ## 20. M16 Reports
 
-**No feature gate in v2.** `enableReports` was console-only and went with
-`enablePayouts`; what is left of the module is `channelShift`, which is not a feature a
-factory declines to have. Authorize on `reports: read`, which §12.1 gives to every
-operational role, because this is the dashboard's capability.
+**No module gate in v2.** `enableReports` was console-only and went with
+`enablePayouts`. Authorize on `reports: read`, which §12.1 gives to every operational
+role, because this is the dashboard's capability. One report has a flag of its own:
+`savingsHeld` is **absent from the list** while `enableSavings` is off, and running it is
+`403 feature-disabled` (checked after the `404`), because the console builds its tabs from
+the list and a tab that cannot answer should not be drawn.
 
-**One report id**, not four. `dormantSuppliers`, `leafByCollectionPoint` and
-`monthSummary` are the factory's own console's; their definitions and citations are
-in git history: in `packages/domain/src/reports.ts` and in v1's `api-contract.md`,
-because each was defined by something that still exists.
+**Three report ids** (`REPORT_IDS` in `packages/domain/src/reports.ts`), none taking
+parameters except `channelShift`'s range:
 
-`channelShift` stays because §19.3 calls app adoption and channel shift *"the two KPIs
-that justify the project"*, the one report an app-management console owes anybody.
+| Id | What | Rows |
+| --- | --- | --- |
+| `channelShift` | App use: §19.3 calls app adoption and channel shift *"the two KPIs that justify the project"* | per month: `total`, `fromApp`, `appShare` |
+| `creditGiven` | What was given out, by the Colombo month each request was **decided** (money that left the factory that month, not the month it was asked for) | per month: `advanceAmount`/`Count`, `loanAmount`/`Count`, `manureAmount`/`Count`, `teaPacketAmount`, `teaPackets`, `rejected` |
+| `savingsHeld` | What the factory holds for everyone: one passbook existed, the total did not, and it is the figure an auditor asks for first | per month: `paidIn`, `takenOut`, `balanceTotal` (each supplier's latest balance), `suppliersSaving` |
+
+`dormantSuppliers`, `leafByCollectionPoint` and `monthSummary` are the factory's own
+console's; their definitions and citations are in git history (in
+`packages/domain/src/reports.ts` and in v1's `api-contract.md`).
 
 ### 20.1 `GET /admin/reports` → `ReportCatalogue`
 
 ```json
 { "reports": [{ "id": "channelShift", "params": ["monthRange"],
-                "definedBy": "§19.3: app adoption and channel shift" }],
+                "definedBy": "§19.3: app adoption and channel shift" },
+              { "id": "creditGiven", "params": [],
+                "definedBy": "§19.3: credit and tea packets given" },
+              { "id": "savingsHeld", "params": [],
+                "definedBy": "§19.3: savings held" }],
   "months": ["2026-07", "2026-06", "2026-05"] }
 ```
 
@@ -3062,7 +3073,7 @@ end when you get there:
 | **The push transport** | §17 specifies the record and the reach, and everything up to the send is built on both sides. Delivery to a phone waits on FCM and APNs credentials (the backend's O2). It brings a failure mode the console has no shape for yet: a per-device delivery result arriving asynchronously, minutes later. `NotificationSend.status` already carries `queued` and `failed` for it |
 | **`billPublished` at a synced factory** | §17.5 fires it from §10.5's publish. At a synced factory the month is closed in the factory's own system and the bills arrive by sync, so the send has to fire when the sync brings a newly published month; a sync that does not is a supplier who is never told their account is ready, and nothing in this repository can detect that. The agreed shape: a **service-to-service** trigger (the backend's `POST /integration/notifications/trigger`, built and not yet exercised): a machine credential, never a clerk's token; body `{ category, event, occurredAt, context }`; idempotent on `{ category, eventKey }`, e.g. `month.publish:2026-07`; `no-recipients` **accepted**, not refused. The month's `stage` travels in the hourly sync (factory-system-team.md §2, `months`), so a publish that never fired the trigger is detectable |
 | **M16's read replica** | §20's queries are live scans over the same store a clerk is writing to. §19.5 asks for a read replica or a nightly snapshot; a month-close query must not compete with leaf entry |
-| **The reports beyond one** | §20.1's list is served, so it grows without a console release, but the reports themselves need §19.1's warehouse shape. `channelShift` is the one this console owes |
+| **The reports beyond three** | §20.1's list is served, so it grows without a console release, but more reports need §19.1's warehouse shape. App use, credit given and savings held are the three this console owes |
 | **The payout file** | Not called (§12). `payoutExport.ts` is the shared serialiser and §21.17's answer (layout as configuration) still stands for whoever builds payouts |
 | **Switching the sync back on** | Phase 10 (factory-records.md §2): suppliers entered here matched to the factory system's by the bare number, the sync's records replacing ours for the same supplier, day or month |
 | **A correction after the first published bill** | Later: a manager posts a correction entry with a note, applied on the next bill (BACKEND-TODO, decision C5) |

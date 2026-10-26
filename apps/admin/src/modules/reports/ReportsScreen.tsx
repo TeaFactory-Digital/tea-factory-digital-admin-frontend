@@ -35,6 +35,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
+import { useFeatureFlags } from '@/config/RuntimeConfigProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { SavingsReport } from './SavingsReport';
 import { CreditReport } from './CreditReport';
@@ -54,14 +55,16 @@ type Range = (typeof RANGES)[number];
 /**
  * The reports, one tab each: **App use** (are suppliers moving to the app), **Credit &
  * tea packets** (what was given out), and **Savings**
- * (how much the factory is holding for suppliers). The tab is kept in the address, so a
- * link to the savings report opens on it.
+ * (how much the factory is holding for suppliers), drawn only when the factory runs a
+ * savings scheme (`enableSavings`; the API leaves the report out of its list otherwise).
+ * The tab is kept in the address, so a link to the savings report opens on it.
  */
 export function ReportsScreen() {
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
+  const savings = useFeatureFlags().enableSavings;
   const asked = params.get('report');
-  const tab = asked === 'savings' || asked === 'credit' ? asked : 'appUse';
+  const tab = (asked === 'savings' && savings) || asked === 'credit' ? asked : 'appUse';
 
   return (
     <>
@@ -84,10 +87,12 @@ export function ReportsScreen() {
             <HandCoins className="size-icon-sm" aria-hidden />
             {t('reports.credit.title')}
           </TabsTrigger>
-          <TabsTrigger value="savings" className="gap-xs">
-            <PiggyBank className="size-icon-sm" aria-hidden />
-            {t('reports.savings.title')}
-          </TabsTrigger>
+          {savings ? (
+            <TabsTrigger value="savings" className="gap-xs">
+              <PiggyBank className="size-icon-sm" aria-hidden />
+              {t('reports.savings.title')}
+            </TabsTrigger>
+          ) : null}
         </TabsList>
         <TabsContent value="appUse" className="mt-lg flex flex-col gap-lg">
           <AppUseReport />
@@ -95,9 +100,11 @@ export function ReportsScreen() {
         <TabsContent value="credit" className="mt-lg flex flex-col gap-lg">
           <CreditReport />
         </TabsContent>
-        <TabsContent value="savings" className="mt-lg flex flex-col gap-lg">
-          <SavingsReport />
-        </TabsContent>
+        {savings ? (
+          <TabsContent value="savings" className="mt-lg flex flex-col gap-lg">
+            <SavingsReport />
+          </TabsContent>
+        ) : null}
       </Tabs>
     </>
   );

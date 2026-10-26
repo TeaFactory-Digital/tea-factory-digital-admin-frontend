@@ -48,7 +48,8 @@ describe('M16 reports', () => {
     for (const definition of served.reports) {
       // A report with no citation is one somebody thought would be useful.
       expect(definition.definedBy, `${definition.id} has no citation`).toBeTruthy();
-      expect(definition.params.length).toBeGreaterThan(0);
+      // Credit given and savings held cover every month there is; app use takes a range.
+      expect(Array.isArray(definition.params)).toBe(true);
     }
 
     // The months come with the list, newest first: a report is nearly always about the
@@ -87,6 +88,22 @@ describe('missingReportParams (the shared rule)', () => {
     expect(missingReportParams('channelShift', { from: '2026-01' })).toEqual(['monthRange']);
     expect(missingReportParams('channelShift', { from: '2026-01', to: '2026-07' })).toEqual([]);
 
+  });
+
+  it('serves credit given and savings held, month by month, as the API does', async () => {
+    await signInAs('manager@galabodatea.lk');
+    const credit = await reportRepository.creditGiven();
+    const savings = await reportRepository.savingsHeld();
+
+    // Served now, so neither tab says "not available on this server".
+    expect(credit).not.toBeNull();
+    expect(savings).not.toBeNull();
+    expect(credit!.length).toBeGreaterThan(0);
+    expect(savings!.length).toBeGreaterThan(0);
+    // Oldest first, and a balance is every supplier's latest, never negative in sum.
+    expect(credit!.map((row) => row.monthKey)).toEqual([...credit!.map((row) => row.monthKey)].sort());
+    expect(savings!.every((row) => row.balanceTotal >= 0 && row.takenOut >= 0)).toBe(true);
+    expect(savings!.some((row) => row.suppliersSaving > 0)).toBe(true);
   });
 
   it('keeps every definition\'s params satisfiable', () => {

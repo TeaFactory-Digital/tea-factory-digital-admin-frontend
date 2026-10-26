@@ -7,7 +7,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { IMPORT_COLUMNS, importRowProblems, missingImportColumns } from '@tfd/domain';
 import { bundledConfig } from '@/config/defaults';
-import { setMockNow } from '@/services/mocks/handlers';
+import { mockPublishDuringNextImport, setMockNow, setMockPublishInProgress } from '@/services/mocks/handlers';
+import { creditRepository } from '@/services/repositories/creditRepository';
+import { errorMessageKey } from '@/lib/errorMessage';
 import { currentMonthKey } from '@/services/mocks/seed';
 import { adminConfigRepository } from '@/services/repositories/adminConfigRepository';
 import { billRepository } from '@/services/repositories/billRepository';
@@ -164,4 +166,96 @@ describe('a month of imported bills', () => {
     // Then the next month goes out.
     await monthRepository.publish(nextKey);
   }, 20_000);
+});
+
+describe('the approvals check, and the two races', () => {
+  const NOTE = 'Checked against the leaf already weighed this month at the counter.';
+  /** The template slip without its Rs. 40,000 advance, still adding up. */
+  const withoutAdvance = (code: string) => ({
+    ...slip(),
+    month: currentMonthKey,
+    supplierCode: code,
+    billNo: '2026300100',
+    advance: '0',
+    totalDeductions: '6418',
+    balanceAmount: '108226.91',
+    finalBalance: '108220',
+  });
+
+  it('refuses a slip that lacks what we approved, at the import and again at the publish', async () => {
+    await importingFactory();
+    await signInAs(MANAGER);
+    const request = await creditRepository.get('crd-1'); // an advance, pending
+    const supplier = await supplierRepository.get(request.supplierId);
+
+    // Without its advance line the slip lacks the advance this supplier already had approved
+    // this month (in the fixture), so it is refused, naming the line and the rupees.
+    const refused = await factoryRecordRepository.importRows('bills', 'a.xlsx', [withoutAdvance(supplier.supplierCode)]);
+    expect(refused).toMatchObject({ saved: 0, problems: [{ row: 2, column: 'advance', code: 'approval-missing' }] });
+    const alreadyApproved = refused.problems[0]!.amount!;
+    expect(alreadyApproved).toBeGreaterThan(0);
+
+    // The printed slip, whose Rs. 40,000 advance covers it, goes in.
+    const printed = { ...slip(), month: currentMonthKey, supplierCode: supplier.supplierCode, billNo: '2026300100' };
+    await signInAs(CLERK);
+    expect(await factoryRecordRepository.importRows('bills', 'a.xlsx', [printed])).toMatchObject({
+      saved: 1,
+      problems: [],
+    });
+
+    // Then the advance is approved for the month, after the file went in.
+    await signInAs(MANAGER);
+    const eligibility = request.eligibility!;
+    await creditRepository.approve(
+      'crd-1',
+      { note: NOTE, ceilingSeen: eligibility.ceiling },
+      { amount: request.amount, available: eligibility.available },
+    );
+
+    const approvedNow = Math.round((alreadyApproved + request.amount) * 100) / 100;
+
+    // The same printed slip no longer covers both: refused at the import...
+    await signInAs(CLERK);
+    expect(await factoryRecordRepository.importRows('bills', 'a.xlsx', [printed])).toMatchObject({
+      saved: 0,
+      problems: [{ row: 2, column: 'advance', code: 'approval-missing', amount: approvedNow }],
+    });
+
+    // ...and the bill already imported is refused again at the publish.
+    await signInAs(MANAGER);
+    await expect(monthRepository.publish(currentMonthKey)).rejects.toMatchObject({
+      code: 'approval-missing',
+      details: {
+        problems: [{ supplierCode: supplier.supplierCode, column: 'advance', amount: approvedNow }],
+        total: 1,
+      },
+    });
+  });
+
+  it('answers records-busy to a decision met by a publish, and asks for a file again', async () => {
+    await importingFactory();
+    await signInAs(MANAGER);
+    const request = await creditRepository.get('crd-1');
+    setMockPublishInProgress(true);
+    const busy = await creditRepository
+      .approve(
+        'crd-1',
+        { note: NOTE, ceilingSeen: request.eligibility!.ceiling },
+        { amount: request.amount, available: request.eligibility!.available },
+      )
+      .catch((error: unknown) => error);
+    expect(busy).toMatchObject({ code: 'records-busy' });
+    expect(errorMessageKey(busy)).toBe('error.recordsBusy');
+    setMockPublishInProgress(false);
+
+    await signInAs(CLERK);
+    const supplier = await supplierRepository.get(request.supplierId);
+    mockPublishDuringNextImport();
+    const again = await factoryRecordRepository
+      .importRows('bills', 'a.xlsx', [withoutAdvance(supplier.supplierCode)])
+      .catch((error: unknown) => error);
+    expect(again).toMatchObject({ code: 'month-locked', details: { reason: 'published-during-import' } });
+    // "Send the file again", not "the month is published".
+    expect(errorMessageKey(again)).toBe('error.publishedDuringImport');
+  });
 });

@@ -39,7 +39,7 @@ export const reportRepository = {
   creditGiven: async (): Promise<CreditMonth[] | null> => {
     let served: { rows?: Array<Record<string, unknown>> };
     try {
-      served = (await reportEndpoints.run('creditGiven' as ReportId, {})) as unknown as typeof served;
+      served = (await reportEndpoints.run('creditGiven', {})) as unknown as typeof served;
     } catch (error) {
       if (error instanceof ApiError && (error.code === 'not-found' || error.status === 404)) {
         return null;
@@ -72,7 +72,7 @@ export const reportRepository = {
   savingsHeld: async (): Promise<SavingsMonth[] | null> => {
     let served: { rows?: Array<Record<string, unknown>> };
     try {
-      served = (await reportEndpoints.run('savingsHeld' as ReportId, {})) as unknown as typeof served;
+      served = (await reportEndpoints.run('savingsHeld', {})) as unknown as typeof served;
     } catch (error) {
       if (error instanceof ApiError && (error.code === 'not-found' || error.status === 404)) {
         return null;

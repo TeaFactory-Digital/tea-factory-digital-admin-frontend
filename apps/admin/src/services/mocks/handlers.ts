@@ -446,6 +446,115 @@ function runReport(
         },
       };
     }
+    /**
+     * Credit and tea packets given, by the month each request was **decided** (Colombo), as
+     * the API's `reports.service.ts` does it: a request raised on the 30th and approved on
+     * the 2nd is money that left in the second month.
+     */
+    case 'creditGiven': {
+      type Row = {
+        monthKey: string;
+        advanceAmount: number;
+        advanceCount: number;
+        loanAmount: number;
+        loanCount: number;
+        manureAmount: number;
+        manureCount: number;
+        teaPacketAmount: number;
+        teaPackets: number;
+        rejected: number;
+      };
+      const months = new Map<string, Row>();
+      const rowOf = (decidedAt: string) => {
+        const monthKey = colomboMonthOf(decidedAt);
+        const row = months.get(monthKey) ?? {
+          monthKey,
+          advanceAmount: 0,
+          advanceCount: 0,
+          loanAmount: 0,
+          loanCount: 0,
+          manureAmount: 0,
+          manureCount: 0,
+          teaPacketAmount: 0,
+          teaPackets: 0,
+          rejected: 0,
+        };
+        months.set(monthKey, row);
+        return row;
+      };
+      for (const request of state.creditRequests) {
+        const decidedAt = request.decision?.decidedAt;
+        if (!decidedAt) continue;
+        const row = rowOf(decidedAt);
+        if (request.status === 'rejected') row.rejected += 1;
+        if (request.status !== 'approved') continue;
+        row[`${request.facility}Amount`] = round2(row[`${request.facility}Amount`] + request.amount);
+        row[`${request.facility}Count`] += 1;
+      }
+      for (const request of state.teaPacketRequests) {
+        const decidedAt = request.decision?.decidedAt;
+        if (!decidedAt) continue;
+        const row = rowOf(decidedAt);
+        if (request.status === 'rejected') row.rejected += 1;
+        if (request.status !== 'approved') continue;
+        row.teaPacketAmount = round2(row.teaPacketAmount + (request.amount ?? 0));
+        row.teaPackets += request.packets;
+      }
+      const rows = [...months.values()].sort((a, b) => a.monthKey.localeCompare(b.monthKey));
+      const money = ['advanceAmount', 'loanAmount', 'manureAmount', 'teaPacketAmount'] as const;
+      const counts = ['advanceCount', 'loanCount', 'manureCount', 'teaPackets', 'rejected'] as const;
+      return {
+        id,
+        columns: [
+          { key: 'monthKey', labelKey: 'reports.column.month', type: 'month' },
+          ...money.map((key) => ({ key, labelKey: `reports.column.${key}`, type: 'money' as const })),
+          ...counts.map((key) => ({ key, labelKey: `reports.column.${key}`, type: 'count' as const })),
+        ],
+        rows,
+        totals: Object.fromEntries(
+          [...money, ...counts].map((key) => [key, round2(rows.reduce((sum, row) => sum + row[key], 0))]),
+        ),
+      };
+    }
+    /**
+     * What the factory holds for everyone, month by month, from the passbooks: paid in and
+     * taken out in the month, and every supplier's **latest** balance up to that month
+     * summed (not the movements accumulated), as the API does it.
+     */
+    case 'savingsHeld': {
+      const monthKeys = [...new Set(state.savingsLedger.map((entry) => entry.monthKey))].sort();
+      const rows = monthKeys.map((monthKey) => {
+        const inMonth = state.savingsLedger.filter((entry) => entry.monthKey === monthKey);
+        const latest = new Map<string, number>();
+        for (const entry of state.savingsLedger) {
+          if (entry.monthKey <= monthKey) latest.set(entry.supplierId, entry.balance);
+        }
+        const balances = [...latest.values()];
+        return {
+          monthKey,
+          paidIn: round2(inMonth.filter((entry) => entry.amount > 0).reduce((sum, entry) => sum + entry.amount, 0)),
+          takenOut: round2(-inMonth.filter((entry) => entry.amount < 0).reduce((sum, entry) => sum + entry.amount, 0)),
+          balanceTotal: round2(balances.reduce((sum, balance) => sum + balance, 0)),
+          suppliersSaving: balances.filter((balance) => balance > 0).length,
+        };
+      });
+      return {
+        id,
+        columns: [
+          { key: 'monthKey', labelKey: 'reports.column.month', type: 'month' },
+          { key: 'paidIn', labelKey: 'reports.column.paidIn', type: 'money' },
+          { key: 'takenOut', labelKey: 'reports.column.takenOut', type: 'money' },
+          { key: 'balanceTotal', labelKey: 'reports.column.balanceTotal', type: 'money' },
+          { key: 'suppliersSaving', labelKey: 'reports.column.suppliersSaving', type: 'count' },
+        ],
+        rows,
+        // Movements add up across months; a balance does not, so it has no total.
+        totals: {
+          paidIn: round2(rows.reduce((sum, row) => sum + row.paidIn, 0)),
+          takenOut: round2(rows.reduce((sum, row) => sum + row.takenOut, 0)),
+        },
+      };
+    }
   }
 }
 
@@ -1059,6 +1168,134 @@ function colomboMonthNow(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo', year: 'numeric', month: '2-digit' })
     .format(mockNow())
     .slice(0, 7);
+}
+
+/** The Colombo `YYYY-MM` of an instant. */
+function colomboMonthOf(iso: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo', year: 'numeric', month: '2-digit' })
+    .format(new Date(iso))
+    .slice(0, 7);
+}
+
+/** A slip's figures the approvals check reads (factory-records §5a). */
+interface SlipFigures {
+  advance: number;
+  tea: number;
+  savingsWithdrawal: number;
+  loanBalance: number;
+  loansAdvance: number;
+  manureBalance: number;
+  manure: number;
+}
+
+/**
+ * "Everything we approved reached their slip" (factory-records §5a, as the API does it in
+ * `approvals-check.ts`). "For the month" is approved on or before its last day; a supplier
+ * with no slip for a month carries that month's approvals to the next slip (R10), so the
+ * window runs from the month after their previous bill to this one. Advances, tea packets
+ * and savings withdrawals: the slip's line is at least what we approved. Loans and manure,
+ * through the balance: this balance + this month's line ≥ last balance + approved.
+ */
+function approvalProblems(supplierId: string, monthKey: string, slip: SlipFigures): { column: string; amount: number }[] {
+  const previous = state.bills
+    .filter((bill) => bill.supplierId === supplierId && bill.monthKey < monthKey)
+    .sort((a, b) => b.monthKey.localeCompare(a.monthKey))[0];
+  const inWindow = (iso: string | null | undefined) => {
+    if (!iso) return false;
+    const month = colomboMonthOf(iso);
+    return previous ? month > previous.monthKey && month <= monthKey : month === monthKey;
+  };
+  const approved = (facility: CreditFacility) =>
+    round2(
+      state.creditRequests
+        .filter(
+          (one) =>
+            one.supplierId === supplierId &&
+            one.facility === facility &&
+            one.status === 'approved' &&
+            inWindow(one.decision?.decidedAt),
+        )
+        .reduce((sum, one) => sum + one.amount, 0),
+    );
+  const teaPackets = round2(
+    state.teaPacketRequests
+      .filter((one) => one.supplierId === supplierId && one.status === 'approved' && inWindow(one.decision?.decidedAt))
+      .reduce((sum, one) => sum + one.amount, 0),
+  );
+  const withdrawals = round2(
+    state.savingsWithdrawals
+      .filter((one) => one.supplierId === supplierId && one.status !== 'cancelled' && inWindow(one.requestedAt))
+      .reduce((sum, one) => sum + one.amount, 0),
+  );
+  const opening = state.openingBalances.get(supplierId);
+  const lastLoan = previous ? previous.carryForward.loanBalance : (opening?.loan ?? 0);
+  const lastManure = previous ? previous.carryForward.manureBalance : (opening?.manure ?? 0);
+
+  const out: { column: string; amount: number }[] = [];
+  const advance = approved('advance');
+  if (advance > 0 && slip.advance < advance) out.push({ column: 'advance', amount: advance });
+  if (teaPackets > 0 && slip.tea < teaPackets) out.push({ column: 'tea', amount: teaPackets });
+  if (withdrawals > 0 && slip.savingsWithdrawal < withdrawals) {
+    out.push({ column: 'savingsWithdrawal', amount: withdrawals });
+  }
+  const loan = approved('loan');
+  if (loan > 0 && round2(slip.loanBalance + slip.loansAdvance) < round2(lastLoan + loan)) {
+    out.push({ column: 'loanBalance', amount: loan });
+  }
+  const manure = approved('manure');
+  if (manure > 0 && round2(slip.manureBalance + slip.manure) < round2(lastManure + manure)) {
+    out.push({ column: 'manureBalance', amount: manure });
+  }
+  return out;
+}
+
+/** The same check over bills already imported, as publish runs it again. */
+function publishApprovalProblems(bills: AdminBill[]) {
+  return bills.flatMap((bill) =>
+    approvalProblems(bill.supplierId, bill.monthKey, {
+      advance: bill.deductions.advance,
+      tea: bill.deductions.tea,
+      savingsWithdrawal: bill.savingsWithdrawal,
+      loanBalance: bill.carryForward.loanBalance,
+      loansAdvance: bill.deductions.loansAdvance,
+      manureBalance: bill.carryForward.manureBalance,
+      manure: bill.deductions.manure,
+    }).map((problem) => ({ supplierCode: bill.supplierCode, ...problem, code: 'approval-missing' })),
+  );
+}
+
+/** `409 approval-missing` at publish: at most 50 problems named, `total` counts them all. */
+function approvalMissing(problems: ReturnType<typeof publishApprovalProblems>) {
+  return fail({
+    status: 409,
+    code: 'approval-missing',
+    message: `${problems.length} approvals are not on the slips.`,
+    details: { problems: problems.slice(0, 50), total: problems.length },
+  });
+}
+
+/**
+ * **Tests only.** The two answers a race produces, which a test cannot make happen:
+ * `records-busy` (a decision or withdrawal meets a publish in progress) and
+ * `published-during-import` (the month was published while a file waited).
+ */
+let publishInProgress = false;
+let publishDuringNextImport = false;
+export function setMockPublishInProgress(on: boolean): void {
+  publishInProgress = on;
+}
+export function mockPublishDuringNextImport(): void {
+  publishDuringNextImport = true;
+}
+
+/** `409 records-busy`: nothing saved; the same request is safe to send again. */
+function recordsBusy(): Response | null {
+  if (!publishInProgress) return null;
+  return fail({
+    status: 409,
+    code: 'records-busy',
+    message: 'A month is being published. Nothing was saved; try again.',
+  });
 }
 
 /** The newest month that has been published, if any. */
@@ -2128,6 +2365,18 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
         const earlier = monthRates.get(row.month) ?? (stored ? `${stored.ratePerKg}|${stored.extraRatePerKg}` : undefined);
         if (earlier && earlier !== rate) push('ratePerKg', 'rate-differs');
         else monthRates.set(row.month, rate);
+        // Everything we approved for the supplier reached the slip (§5a).
+        for (const problem of approvalProblems(supplier.id, row.month, {
+          advance: num(row.advance),
+          tea: num(row.tea),
+          savingsWithdrawal: num(row.savingsWithdrawal),
+          loanBalance: num(row.loanBalance),
+          loansAdvance: num(row.loansAdvance),
+          manureBalance: num(row.manureBalance),
+          manure: num(row.manure),
+        })) {
+          problems.push({ row: line, column: problem.column, code: 'approval-missing', amount: problem.amount });
+        }
         // The slip's number is the factory's; it may not belong to another bill.
         const billNo = row.billNo?.trim();
         if (
@@ -2496,8 +2745,11 @@ export const handlers: HttpHandler[] = [
      * run. The months matter because §12.1 gives the factory administrator `reports: R`
      * and `billing: none`, so this is the only place they can learn which months exist.
      */
+    // A report whose feature is off is absent from the list, not present and refusing, as
+    // the API does it: the console builds its tabs from this list.
+    const savingsOn = flagsOf(request).enableSavings;
     return HttpResponse.json({
-      reports: Object.values(REPORT_DEFINITIONS),
+      reports: Object.values(REPORT_DEFINITIONS).filter((one) => savingsOn || one.id !== 'savingsHeld'),
       months: Object.keys(state.months).sort().reverse(),
     });
   }),
@@ -2506,7 +2758,7 @@ export const handlers: HttpHandler[] = [
    * Run one.
    *
    * **Every figure is derived from live state at request time**, which is the whole reason
-   * these four exist and nothing else does: each is a query anybody can re-run against the
+   * these three exist and nothing else does: each is a query anybody can re-run against the
    * records it came from. A stored result would be a second answer waiting to disagree with
    * them: the same argument that keeps a bill a read model over deliveries and a rate.
    *
@@ -2527,6 +2779,11 @@ export const handlers: HttpHandler[] = [
         message: 'No such report.',
         details: { reports: REPORT_IDS },
       });
+    }
+    // 404 first, then the flag: an unknown id is a different mistake.
+    if (id === 'savingsHeld') {
+      const gated = featureGate(request, 'enableSavings');
+      if (gated) return gated;
     }
 
     const url = new URL(request.url);
@@ -4490,6 +4747,8 @@ export const handlers: HttpHandler[] = [
           details: { publishedAt: record.publishedAt, publishedByName: record.publishedByName },
         });
       }
+      const lateProblems = publishApprovalProblems(late.filter((bill) => bill.source === 'imported'));
+      if (lateProblems.length > 0) return approvalMissing(lateProblems);
       if (late.some((bill) => importedBy.get(bill.id) === auth.user.id)) {
         return fail({
           status: 409,
@@ -4629,6 +4888,14 @@ export const handlers: HttpHandler[] = [
     // BR-501, the four-eyes rule. Reachable because a manager holds `approve`,
     // which implies `write`, so the same person *could* enter a rate and close the
     // month on it, and this is what stops them.
+    // Imported months: the approvals check runs again, since something may have been approved
+    // for the month after the file was imported.
+    if (imported) {
+      const problems = publishApprovalProblems(
+        state.bills.filter((bill) => bill.monthKey === monthKey && bill.source === 'imported' && !bill.heldAt),
+      );
+      if (problems.length > 0) return approvalMissing(problems);
+    }
     if (
       state.bills.some((bill) => bill.monthKey === monthKey && importedBy.get(bill.id) === auth.user.id)
     ) {
@@ -5498,6 +5765,10 @@ export const handlers: HttpHandler[] = [
     // `billing: approve`: paying a supplier's savings back is the manager's. A clerk holds
     // `billing: W` to prepare bills, and that must not let them move what is in a passbook.
     const auth = authorize(request, 'billing', 'approve');
+    if (!('response' in auth)) {
+      const busy = recordsBusy();
+      if (busy) return busy;
+    }
     if ('response' in auth) return auth.response;
 
     const supplier = state.suppliers.find((candidate) => candidate.id === params.supplierId);
@@ -5584,6 +5855,8 @@ export const handlers: HttpHandler[] = [
     if (gated) return gated;
     const auth = authorize(request, 'billing', 'approve');
     if ('response' in auth) return auth.response;
+    const busy = recordsBusy();
+    if (busy) return busy;
 
     const index = state.savingsWithdrawals.findIndex((one) => one.id === params.id);
     if (index < 0) return fail({ status: 404, code: '404', message: 'No such withdrawal.' });
@@ -5972,6 +6245,8 @@ export const handlers: HttpHandler[] = [
       await delay(LATENCY_MS);
       const auth = authorize(request, 'creditRequests', 'approve');
       if ('response' in auth) return auth.response;
+      const busy = recordsBusy();
+      if (busy) return busy;
 
       const index = state.creditRequests.findIndex((r) => r.id === params.id);
       if (index < 0) return fail({ status: 404, code: '404', message: 'No such request.' });
@@ -6206,6 +6481,8 @@ export const handlers: HttpHandler[] = [
       if (gate) return gate;
       const auth = authorize(request, 'creditRequests', 'approve');
       if ('response' in auth) return auth.response;
+      const busy = recordsBusy();
+      if (busy) return busy;
 
       const index = state.teaPacketRequests.findIndex((row) => row.id === params.id);
       if (index < 0) return fail({ status: 404, code: '404', message: 'No such request.' });
@@ -8219,6 +8496,15 @@ export const handlers: HttpHandler[] = [
         message: 'Only a factory whose bills are calculated here compares them with printed slips.',
       });
     }
+    if (kind === 'bills' && publishDuringNextImport) {
+      publishDuringNextImport = false;
+      return fail({
+        status: 409,
+        code: 'month-locked',
+        message: 'The month was published while this file waited. Send it again.',
+        details: { reason: 'published-during-import', monthKey: rows?.[0]?.month ?? null },
+      });
+    }
     if (kind === 'bills' && billSourceOf(tenantConfig(request).billSettings) !== 'imported') {
       return fail({
         status: 409,
@@ -8329,6 +8615,8 @@ export function mockSupplierRecord(id: string): AdminSupplier {
 
 export function resetMockState(): void {
   mockNow = () => new Date();
+  publishInProgress = false;
+  publishDuringNextImport = false;
   importedBy.clear();
   // Maps outlive a reassignment of the arrays below, so they are emptied explicitly.
   state.openingBalances.clear();
