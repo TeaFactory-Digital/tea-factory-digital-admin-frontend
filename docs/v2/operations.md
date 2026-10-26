@@ -5,8 +5,8 @@ Running, testing and deploying the console.
 **In one paragraph:** the console is one static bundle served for every tenant. It
 resolves the tenant from the subdomain and always talks to a real API: the local one in
 development, the staging one with `dev:staging`, production in a production build. There
-is **no in-browser mock** and no `VITE_USE_MOCK`; the MSW fixtures answer Vitest and
-nothing else ([mocks.md](./mocks.md)).
+is **no in-browser mock** and no `VITE_USE_MOCK`; the MSW fixtures answer Vitest and the
+Playwright fixture (`e2e/fixtures.ts`), and nothing else ([mocks.md](./mocks.md)).
 
 ---
 
@@ -24,9 +24,9 @@ From the workspace root:
 | `npm run preview`       | Serves the built bundle                                                                    |
 | `npm run typecheck`     | `tsc --build --force` across the projects                                                  |
 | `npm run lint`          | ESLint, including the white-label and layering rules                                       |
-| `npm run test`          | Vitest against the MSW fixtures: 544 tests in 74 files (22 October 2026)                   |
+| `npm run test`          | Vitest against the MSW fixtures: 565 tests in 77 files (26 October 2026)                   |
 | `npm run test:watch`    | Vitest in watch mode                                                                       |
-| `npm run e2e`           | Playwright against the dev server. Needs `npx playwright install chromium` once; see Testing |
+| `npm run e2e`           | Playwright against its own dev server on port 5274, API answered by `e2e/fixtures.ts`. Needs `npx playwright install chromium` once; see Testing |
 | `npm run format`        | Prettier                                                                                   |
 
 **First run:** start the API (`npm run setup`, then `npm run dev`, in
@@ -130,9 +130,6 @@ headers           /assets/* immutable, index.html no-cache (requirement 3), noin
                   the usual security headers on everything
 ```
 
-`vercel.json` still carries a header rule for `/mockServiceWorker.js`, left from the
-in-browser mock; no such file is built any more, so it matches nothing.
-
 Connect the GitHub repo once in the Vercel dashboard, then **set the root directory
 to the repo root, not `apps/admin`**: Vercel offers to "helpfully" detect the app
 directory, and taking the offer hides this file. The build is written for the
@@ -165,7 +162,7 @@ old binaries are in the field, and feature flags are the release valve.
 
 Layered so each layer tests what only it can.
 
-### Vitest: 544 tests in 74 files
+### Vitest: 565 tests in 77 files
 
 Every file runs against the MSW fixtures through the real transport, store and screens
 (`test/setup.ts`); only the server is a stand-in. Counts drift with every change, so
@@ -173,9 +170,10 @@ re-read them from `npm test` rather than from here. The files worth knowing:
 
 | File | Covers |
 | --- | --- |
-| `rbac.test.ts` | The §12.1 matrix (including the clerk's `deliveries`, `creditRequests` and `billing: W`), grant merging, four-eyes, the approval threshold |
+| `rbac.test.ts` | The §12.1 matrix, grant merging, four-eyes, the approval threshold |
 | `money.test.ts` | `floor2`/`round2`, the credit basis, BR-107, account masking |
-| `factoryRecords.test.tsx` | Records kept in the console with the sync off: the switch, Add supplier, imports all rows or none, finished bills taken as printed, opening balances locking on a published bill, walk-in requests, transport per supplier, other deductions, loan and advance interest, bill numbers, and the bill **reproducing the factory's printed slip** to the cent |
+| `factoryRecords.test.tsx` | Records kept in the console with the sync off: the switch, the factory and platform administrators reading the records but never writing them, Add supplier, imports all rows or none, finished bills taken as printed, opening balances locking on a published bill, walk-in requests, transport per supplier, other deductions, loan and advance interest, bill numbers, and the bill **reproducing the factory's printed slip** to the cent |
+| `importedMonth.test.ts`, `slipComparison.test.tsx`, `importSkip.test.tsx` | Imported bills (four-eyes against the importer, a late division file waiting for a manager); calculated bills checked against the printed slips, with hold and release in order; importing a file again (rows already there skipped, `708` matching `0708`) |
 | `bills.test.ts` | M5: the slip's arithmetic as identities (AC-03), the coins carry, re-generation, staleness, and the publish lock |
 | `credit.test.tsx`, `creditDecided.test.tsx`, `creditRules.test.ts` | M7: the eligibility working (AC-05), `stale-eligibility`, `over-ceiling` on both sides, the configured rule |
 | `changeRequests.test.tsx` | M9 and M2 end to end through the real transport |
@@ -189,7 +187,13 @@ re-read them from `npm test` rather than from here. The files worth knowing:
 a factory will ask to change, and the ceiling arithmetic is the one place a bug produces
 a dispute rather than a crash.
 
-### Playwright: 24 tests in 7 specs
+### Playwright: 29 tests in 7 specs
+
+`npm run e2e` starts its own dev server on **port 5274** (never your `npm run dev` on
+5273) with `VITE_API_BASE_URL` pointed at `/v1` on that origin, and `e2e/fixtures.ts`
+answers every `/v1/**` call in the Node test process from the same MSW handlers Vitest
+uses, from a fresh fixture state per test. The browser runs the real app; no call reaches
+a real backend, and nothing mock-related is served to the page.
 
 `short-screen.spec.ts` is the odd one out and earns its place: it renders every grid at
 five viewports down to 1152×640 and asserts the first row is **inside the viewport**. It
@@ -201,11 +205,9 @@ reduced-feature tenant losing its queues, and a handful of behaviours per module
 (`money`, `content`, `notifications`, `administration`, `queues`) that only exist once a
 screen renders.
 
-> ⚠️ **The specs still assume the in-browser mock.** They sign in as
-> `clerk@galabodatea.lk` / `demo1234` and open `?tenant=hillcountry` and
-> `?tenant=highland`. `npm run e2e` now starts the dev server, which calls the local API,
-> and the backend's dev seed has none of those accounts or tenants. Until the specs are
-> moved to the API's seed (or the seed gains them), they do not pass as they stand.
+The specs sign in with the fixture's accounts (`clerk@galabodatea.lk` / `demo1234`) and
+open `?tenant=hillcountry` and `?tenant=highland`, which exist only in the mock: that is
+why the API is answered by the fixture rather than the backend's dev seed.
 
 Viewport is **1366×768**: testing at 1920 hides every layout problem that actually
 gets reported.

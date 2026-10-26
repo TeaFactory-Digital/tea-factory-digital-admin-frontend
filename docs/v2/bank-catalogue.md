@@ -97,6 +97,12 @@ those values were chosen from.
 banks.find((bank) => bank.name === supplier.bankDetails.bankName)?.branches ?? []
 ```
 
+On the backend, a supplier's bank details (`supplier_bank_details`) keep a snapshot of both
+names always, and the catalogue's codes when the catalogue has that bank and branch. **A
+bank the factory added to its own list that the national catalogue lacks is accepted and
+kept by name, without codes** (D4: the factory pays from its own system; migration
+`20261023010000_month_to_date_flag_and_optional_bank_codes` made the codes optional).
+
 That join is why the names in every fixture must match the catalogue **exactly**. It has
 already been got wrong twice: the console's seed carried `Commercial Bank` and `Hatton
 National Bank` where the clearing list says `Commercial Bank PLC` and `Hatton National
@@ -119,18 +125,21 @@ outcome, because their account really was recorded under that name.
 > If rename is wanted later it needs one of two things, and both are larger than the
 > button: records referencing a **stable id** (the SLIPS code in the seed file is the
 > obvious candidate), or a **cascading update** across every supplier record, which also
-> rewrites what past payout runs and approved change requests said at the time.
+> rewrites what approved change requests said at the time.
 
 ---
 
 ## 4. Why the seed keeps the clearing codes
 
-Nothing reads them. `client_config.banks` is names-only, `BankDetails` is names-only, and
-the payout export writes `bankName` and `branchName`.
+Nothing in the console or the app reads them. `client_config.banks` is names-only,
+`BankDetails` is names-only, and the console no longer makes payout files (the payouts
+module is gone; the factory pays from its own system). The backend stores them on a
+supplier's bank details where the catalogue has the bank (§3.2), but no payout file is
+made from them today.
 
 They are kept because **a name is recoverable from a code and a code is not recoverable
 from a name.** A SLIPS payout file routes on `7056` / `045` rather than on a spelling, so
-the day the file needs them, the alternative is re-running the generator against whatever
+the day a file needs them, the alternative is re-running the generator against whatever
 upstream says *then*, and matching 3,682 branch names against a list that has moved in
 the meantime.
 

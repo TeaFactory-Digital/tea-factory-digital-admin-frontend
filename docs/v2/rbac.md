@@ -98,13 +98,11 @@ not let them pay that money out. So the manager creates and cancels withdrawals
 (`POST /admin/savings/accounts/:supplierId/withdrawals` and
 `POST /admin/savings/withdrawals/:id/cancel`).
 
-`deliveries`, `ratesAndMonthClose` and `payouts` are listed in
-`FACTORY_CONSOLE_CAPABILITIES`, and **M15 does not render those three rows**: it shows
-twelve. That list was written when all three gated nothing here; `deliveries` and
-`ratesAndMonthClose` now gate the sync-off screens, so a factory that wants to change who
-may enter leaf or publish a month cannot do it from `/users?view=roles` today. Their stored
-levels are preserved untouched: `RoleMatrixView` saves the whole `matrix[role]`, and
-`users.test.ts` asserts it, because that spread is the only thing standing between hiding a
+Only `payouts` is listed in `FACTORY_CONSOLE_CAPABILITIES` now, and **M15 does not render
+that row**: it shows fourteen. `deliveries` and `ratesAndMonthClose` left the list when the
+sync-off screens came back, so a factory can change who may enter leaf or publish a month
+from `/users?view=roles`. The hidden row's stored levels are preserved untouched:
+`RoleMatrixView` saves the whole `matrix[role]`, and `users.test.ts` asserts it, because that spread is the only thing standing between hiding a
 value and dropping it.
 
 Levels are ordered `none < read < write < approve`, and **the stronger implies
@@ -129,7 +127,7 @@ splits are load-bearing and merging them breaks something:
 `creditAboveThreshold` is a third split of the same kind, inside the manager row rather
 than between two roles: above the threshold, approval **escalates rather than widens**.
 
-### Two rows that catch people out
+### Three rows that catch people out
 
 - **A manager cannot edit a supplier record.** §12.1 gives them `R`, not `W`.
   Easy to get wrong because a manager outranks a clerk almost everywhere else.
@@ -219,8 +217,9 @@ whole queue.
 
 **A walk-in request is the clerk's record.** `POST /admin/credit-requests` stores it with
 `channel: 'office'` and `createdById` set to whoever typed it, so the same check stops them
-deciding it. Publishing a month (sync off) refuses whoever entered its rate; an imported
-month takes its rate from the finished-bills file, so that is the person who imported it.
+deciding it. Publishing a month (sync off) refuses whoever entered its rate **or imported a
+bill of the month** (an imported month takes its rate from the finished-bills file), and a
+late division file's bills wait for a manager other than their importer.
 
 ### The approval threshold is still unanswered
 

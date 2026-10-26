@@ -24,13 +24,6 @@
     {
       "source": "/index.html",
       "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
-    },
-    {
-      "source": "/mockServiceWorker.js",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, must-revalidate" },
-        { "key": "Service-Worker-Allowed", "value": "/" }
-      ]
     }
   ],
 

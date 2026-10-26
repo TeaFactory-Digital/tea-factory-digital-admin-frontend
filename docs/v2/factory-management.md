@@ -20,11 +20,12 @@ Every rate, every account, every payout and every approval stays where it is. Th
 a window onto that, plus a letterbox for requests. The office still decides, still keys
 the request into the existing system, and still holds every rupee of the accounting.
 
-**Where the existing system cannot be connected**, the factory can run with the
-"Factory system sync" switched **off**: the office keeps suppliers, leaf, rates, bills and
-balances in the new console instead, and the app reads them from there
-([factory-records.md](./factory-records.md)). This is Galaboda's arrangement: its own system
-keeps printing the bills, and the office imports them into the console each month.
+**Until the existing system is connected**, the "Factory system sync" stays **off**, which
+is how every factory starts: the office keeps suppliers, leaf, rates, bills and balances in
+the new console instead, and the app reads them from there
+([factory-records.md](./factory-records.md)). The sync is switched on only deliberately,
+once the factory's system is connected. This is Galaboda's arrangement today: its own
+system keeps printing the bills, and the office imports them into the console each month.
 
 The full design is in [factory-integration-spec.md](./factory-integration-spec.md).
 **This document only covers what management has to decide**, and records what it has
@@ -95,7 +96,7 @@ better decided now than six months in.
 
 ## 2a. Already decided
 
-Decided by the factory between 9 and 22 October 2026 (the detail is in
+Decided by the factory between 9 and 26 October 2026 (the detail is in
 [factory-records.md §8](./factory-records.md#8-decided-by-the-factory)). Nothing here is
 open.
 
@@ -112,6 +113,12 @@ open.
 | 9 | **A supplier number is unique across the factory** |
 | 10 | **Bill numbers**: the year of the bill's month, and a serial that never resets |
 | 11 | **The office enters each day's leaf** while the sync is off |
+| 12 | **A calculated bill that does not match the printed slip is held**: the rest of the month is published, the held bill is fixed and released on its own, and that supplier's next bill waits behind it |
+| 13 | **Importing a file again skips what is already there**; a supplier already in the console is left as they are |
+| 14 | **Galaboda's slip** carries only what was approved by the month's last day; a blank balance is 0 |
+| 15 | **Imported months**: a division file that arrives after the month is published waits for a manager to publish its bills, and **whoever imported a month's bills cannot publish them** |
+| 16 | **The sync starts off.** A factory keeps its records in the new console until its own system is connected and the sync is switched on deliberately |
+| 17 | **The factory administrator can see the factory's records** (leaf, rates, bills) but not change them; entering, approving and publishing stay with the clerk and the manager |
 
 ---
 
@@ -136,7 +143,7 @@ a named owner:
       loan, manure or tea packet is refused, naming the supplier
 - [ ] **Who imports the month's finished bills, and who publishes them.** Two different
       people: the one who imports cannot publish (four-eyes). A clerk may import; a
-      manager publishes
+      manager publishes, including the bills of a division file that arrives late
 
 ---
 

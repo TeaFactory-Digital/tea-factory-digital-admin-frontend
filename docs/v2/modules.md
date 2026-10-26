@@ -30,7 +30,7 @@ generated from it. `routes/router.tsx` applies the same gates to the URL.
 | M13 | **Notifications** | `enablePushNotifications` | `/notifications` |
 | M14 | **Configuration**, eleven sections | Always | `/configuration` |
 | M15 | **Users & roles** | Always | `/users` |
-| M16 | **Reports**: app use, credit given, savings held | Always | `/reports` |
+| M16 | **Reports**: app use, credit and tea packets, savings | Always | `/reports` |
 | M17 | **Audit log** | Always | `/audit` |
 | M18 | **Tea packets** | `enableTeaPackets` | `/tea-packets` |
 
@@ -47,14 +47,14 @@ Administration (M16, M17, M14, M15).
 
 ## Two modes: the factory-system sync
 
-**Sync on (the default).** Suppliers, leaf, rates, bills and balances arrive from the
+**Sync on.** Suppliers, leaf, rates, bills and balances arrive from the
 factory's own system by the hourly sync. The console manages the app: queues, content,
 notifications, configuration, users and audit, plus a read-only view of the bills so a
 clerk can see the account a supplier is telephoning about. The Factory records section is
 not in the sidebar, `/deliveries` and `/rates` say the records come from the factory
 system, and the API refuses every record write with `409 factory-sync-on`.
 
-**Sync off.** For a factory whose system cannot be connected (it still runs, and every approval is also entered there by the office), the office keeps the records the
+**Sync off (the default).** For a factory whose system cannot be connected (it still runs, and every approval is also entered there by the office), the office keeps the records the
 app needs **here**: suppliers, opening balances, transport rate per supplier, daily leaf,
 the monthly rate and month close, bills, walk-in credit requests and other deductions.
 Every record can be entered one at a time or imported from an Excel (`.xlsx`) or CSV file
@@ -62,7 +62,8 @@ Every record can be entered one at a time or imported from an Excel (`.xlsx`) or
 or none**). The full contract is [factory-records.md](./factory-records.md).
 
 The switch is Configuration → **Factory system** (`config.factorySync.enabled`, read only
-through `isFactorySyncEnabled`; in the console `useKeepsFactoryRecords()`). One source at a
+through `isFactorySyncEnabled`; in the console `useKeepsFactoryRecords()`). Absent or
+`null` is off, and the backend stores `{ enabled: false }` for every factory. One source at a
 time: switching is refused while a month has generated but unpublished bills
 (`409 sync-switch-blocked`).
 
@@ -153,7 +154,7 @@ Activity.
 | Where | What | Permission |
 | --- | --- | --- |
 | Suppliers → **Add supplier** (`AddSupplierDialog`) | The factory's own supplier code (letters and digits, optional `(division)`; the bare number is the identity, unique per factory), name, collection point, payment method, bank details. A new supplier has no app account until the office issues a password | `suppliers: W` |
-| Suppliers → **Import** | Suppliers, opening balances, transport rates, from a file | `suppliers: W` |
+| Suppliers → **Import** | Suppliers, opening balances (hidden until the backend ships it), transport rates, from a file. Importing suppliers again skips a code already on the roll once `IMPORT_SKIP_ON_SERVER` is on | `suppliers: W` |
 | Supplier → Money → **Opening balances** (`OpeningBalancesCard`) | Advance, loan, manure, tea packets, savings and previous debt as of one cut-over month for the whole factory; locked once a bill is published for the supplier. **Hidden until the backend ships it** (`OPENING_BALANCES_ON_SERVER`) | `suppliers: W` |
 | Supplier → Money → **Transport rate** (`TransportRateCard`) | The supplier's own rate per kg, or back to their collection point's, with a note | `suppliers: W` |
 
@@ -207,7 +208,9 @@ sidebar row.
   grid.
 - A weighing can be voided with a reason (`VoidDeliveryDialog`); the row stays, marked.
 - **Import from file**: a day's or a month's weighings at once (kind `deliveries`). Hidden
-  until the backend ships the import.
+  until the backend ships the import. Importing again skips a weighing already recorded
+  (same date, supplier, kilos and point, matched by count), with "import them anyway" for a
+  real second weighing (`IMPORT_SKIP_ON_SERVER`).
 - Permission `deliveries: W`, which the clerk now holds.
 
 ## M4 Rates & month close (sync off)
@@ -218,11 +221,12 @@ sidebar row.
 | Card | What it does | Permission |
 | --- | --- | --- |
 | **Rate card** | Enter the month's rate per kg (and extra rate) | `ratesAndMonthClose: W` |
-| **Close checklist** | What still blocks the close, and **Publish** (four-eyes: not the person who entered the rate or imported a bill). For imported bills the leaf and exceptions steps are skipped. A refused publish's `approval-missing` problems are listed in the dialog. On a published month with late bills: "N bills from a late file are waiting" and **Publish the late bills** | `ratesAndMonthClose: A` |
+| **Close checklist** | What still blocks the close, and **Publish** (four-eyes: not the person who entered the rate or imported a bill; that person is warned instead of offered the button). For imported bills the leaf and exceptions steps are skipped. A refused publish's `approval-missing` problems are listed in the dialog. On a published month with late bills: "N bills from a late file are waiting" and **Publish the late bills** | `ratesAndMonthClose: A` |
 | **Exceptions queue** | The month's exceptions, each resolved with a note | `ratesAndMonthClose: W` |
 | **Deduction rates** | Transport per kg (factory-wide **and per collection point**), stamps, instalment caps. Proposed by one person, approved by another, because a change re-prices every account | `ratesAndMonthClose: W` propose, `A` approve |
 | **Bill run** (`BillRunCard`, calculated bills only) | Generate the month's bills, then **Review this month's bills** on M5 | `billing: W` |
-| **Import** | Monthly rates; Finished bills (imported) or Other deductions (calculated) | `ratesAndMonthClose: W` / `billing: W` |
+| **Compare with printed slips** (`SlipComparisonCard`, calculated bills only) | Each bill's Balance against the printed slip; **Enter printed**, **Hold** (a reason), **Release**. A held bill stays out of the publish; the supplier's next month's bill is held automatically and released after it. **Hidden until the backend ships it** (`SLIP_COMPARISON_ON_SERVER`) | `billing: W` (enter, hold) / `ratesAndMonthClose: A` (release) |
+| **Import** | Monthly rates; Finished bills (imported) or Other deductions and Printed slip balances (calculated) | `ratesAndMonthClose: W` / `billing: W` |
 
 With **no months yet** (a new importing factory) the screen shows an empty state with the
 Import menu: the import creates the month. The publish refuses, in order,
@@ -267,7 +271,9 @@ on what the ceiling says.
 
 **Who does what.** The clerk holds `creditRequests: W`: they see the queue and record a
 counter request. Deciding is `A`, the manager's, and nobody decides a request they recorded
-(BR-501, four-eyes).
+(BR-501, four-eyes). The decision dialog reminds the approver to enter the approval in the
+factory's own system too (`FactorySystemReminder`, also in the tea-packet and
+change-request dialogs), because nothing here writes to it.
 
 **The rules the queue enforces**:
 
@@ -449,7 +455,7 @@ the console read.
 | Section | What it holds |
 | --- | --- |
 | The factory | Name, telephone, registration number, location, support email and office hours. These print on every bill |
-| Features | The feature flags. Some remove a console module **and** an app screen (`enableManure` → M7), the rest only an app screen |
+| Features | The feature flags (fifteen). Some remove a console module **and** an app screen (`enableManure` → M7), the rest only an app screen. `enableMonthToDate` is neither shown nor sent until `GET /bills/month-to-date` ships (`MONTH_TO_DATE_ON_SERVER`) |
 | **Factory system** | The sync switch (on / off), with what appears or disappears before Save and a second confirmation |
 | Collection & savings | Collection points, savings rates per kg, the fertilizer (manure) catalogue with bag size and price |
 | Banks & branches | The factory's bank and branch list ([bank-catalogue.md](./bank-catalogue.md)) |
@@ -526,12 +532,13 @@ Every refusal guards one failure, a factory locking itself out: `last-admin`,
 `self-modification`, and a matrix that strips `usersAndRoles` from every role
 (`matrixKeepsRecovery`).
 
-**The role matrix shows twelve of the fifteen capabilities.** `deliveries`,
-`ratesAndMonthClose` and `payouts` (`FACTORY_CONSOLE_CAPABILITIES`) are not rendered, and
-their stored levels are preserved on save. The default matrix (`DEFAULT_ROLE_MATRIX` in
-`packages/domain/src/rbac.ts`) gives the clerk `deliveries: W`, `creditRequests: W` and
-`billing: W` for the sync-off counter work, and the manager `ratesAndMonthClose: A` to
-publish a month. Savings withdrawals need `billing: A` (the manager).
+**The role matrix shows fourteen of the fifteen capabilities.** Only `payouts`
+(`FACTORY_CONSOLE_CAPABILITIES`) is not rendered, and its stored levels are preserved on
+save. The default matrix (`DEFAULT_ROLE_MATRIX` in `packages/domain/src/rbac.ts`) gives the
+clerk `deliveries: W`, `creditRequests: W` and `billing: W` for the sync-off counter work,
+the manager `ratesAndMonthClose: A` to publish a month, and both administrators `R` on
+`deliveries`, `ratesAndMonthClose` and `billing`, so the factory administrator sees the
+Factory records menu read-only. Savings withdrawals need `billing: A` (the manager).
 
 ## M16 Reports
 
@@ -540,8 +547,8 @@ Three tabs, each read only:
 | Tab | What it answers |
 | --- | --- |
 | **App use** (`channelShift`) | Are suppliers moving from the counter to the app? Four figures for the chosen period, the trend month by month, and the table behind it (downloadable) |
-| **Credit given** | Advances, loans and manure approved, tea packets issued and requests refused, month by month, by the month they were decided |
-| **Savings held** | How much the factory holds for suppliers, for how many, and what came in and went out each month. Absent when the factory runs no savings scheme |
+| **Credit & tea packets** | Advances, loans and manure approved, tea packets issued and requests refused, month by month, by the month they were decided |
+| **Savings** | How much the factory holds for suppliers, for how many, and what came in and went out each month. Absent when the factory runs no savings scheme |
 
 A report is asked for and answered, never stored. `null` is never `0` (BR-102). No flag.
 
@@ -567,7 +574,8 @@ Entries worth knowing about:
 - **A banner publish records the languages that will fall back.**
 - **A tea-packet decision records the unit price.**
 - **Factory records** add `supplier.openingBalances`, `supplier.transportRate`,
-  `bill.adjust` and `import.apply` (one entry per file, not per row), labelled in en/si/ta.
+  `bill.adjust`, `import.apply` (one entry per file, not per row), `bill.printed`,
+  `bill.hold` and `bill.release`, labelled in en/si/ta.
 
 ---
 
@@ -582,7 +590,7 @@ Entries worth knowing about:
 
 | Needs | Why it is not a console change |
 | --- | --- |
-| **The rest of BACKEND-TODO #45** | The bills import with the month reads and publish, opening balances, leaf and months, the remaining imports, other deductions, and the bill engine. The console hides each until it ships (`lib/serverReady.ts`) |
+| **The rest of BACKEND-TODO #45** | Late bills waiting for a manager (the bills import, month reads and publish are live since `12eea12`), opening balances, leaf and months, the remaining imports, importing again, other deductions, and the bill engine with the printed-slip check. The console hides each until it ships (`lib/serverReady.ts`) |
 | **A push sender** | M13 records what it would send and what it would reach; the API's sender is not built |
 | **The factory-system sync** | Sync on assumes an hourly pull from the factory's endpoint (backend Phase 10); [factory-integration-spec.md](./factory-integration-spec.md) |
 | **§19.1's warehouse** | M16 grows a report list without a console release |

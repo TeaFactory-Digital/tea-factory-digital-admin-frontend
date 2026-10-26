@@ -85,10 +85,12 @@ office does the same work, in the same system, as before.**
 ### 1.2 When the Factory System cannot be connected
 
 Everything below assumes the platform can read the Factory System (**"Factory system
-sync: on"**, the default). Some factories have no system that can be reached, or not yet.
-For them the factory administrator switches the sync **off** (Configuration → Factory
-system), and the office keeps, in the new console, the smallest set of records the app
-needs: suppliers, opening balances, daily leaf, the monthly rate, bills, walk-in credit
+sync: on"**). That is not the default: **the sync starts off** (stored as
+`{ enabled: false }`; absent or `null` also reads as off), and a factory keeps its records
+in the new console until its own system is connected and the factory administrator
+switches the sync on deliberately (Configuration → Factory system). No factory's system is
+connected yet. While it is off, the office keeps, in the new console, the smallest set of
+records the app needs: suppliers, opening balances, daily leaf, the monthly rate, bills, walk-in credit
 requests and other deductions, one at a time or from an Excel/CSV file. A factory uses
 one source at a time, never both. The contract is
 [factory-records.md](./factory-records.md).
@@ -103,9 +105,14 @@ calculation → "Where the bills come from"):
 - **Imported.** The factory's own system keeps printing every bill. Each month the office
   exports the finished bills to Excel and imports them; they are stored exactly as
   printed, and the import refuses a file that lacks something approved in the console.
+  Whoever imported a month's bills cannot publish it (four-eyes), and a division file
+  that arrives after the publish waits for a manager to publish its bills.
   **Galaboda works this way** ([factory-records.md §5a](./factory-records.md#5a-bills-imported-from-the-factorys-own-system)).
 - **Calculated** in the console from the leaf, the rate and the deduction rates, for a
-  factory with no system printing bills (factory-records.md §5).
+  factory whose own system still prints its bills but cannot export them
+  (factory-records.md §5). Each calculated bill is compared with the factory's printed
+  slip before the month is published; one that differs is held, and released later in
+  order. No factory needs this yet, so it is built last.
 
 The rest of this document describes the sync. Nothing in it is asked of a factory that
 keeps its records in the console.

@@ -2,9 +2,11 @@
 
 **This is the document to hand to the backend developer.** It specifies every
 endpoint the console calls, the exact payloads, the error envelope, and the
-refusals the server must produce. The console is written against it already and
-runs on a mock that implements it (`apps/admin/src/services/mocks/handlers.ts`, see
-[mocks.md](./mocks.md)), so anything here is testable the day it lands.
+refusals the server must produce. The console is written against it already, and its
+tests run against a mock that implements it (`apps/admin/src/services/mocks/handlers.ts`,
+see [mocks.md](./mocks.md)), so anything here is testable the day it lands. The mock
+answers Vitest and the Playwright e2e fixture (`apps/admin/e2e/fixtures.ts`) only: there
+is no in-browser mock, and the running console always calls `VITE_API_BASE_URL`.
 
 The factory-records endpoints (the console keeping a factory's records while its
 factory-system sync is off) are summarised in §5.8 and §25 here and specified in full,
@@ -14,7 +16,8 @@ factory-records.md is the detailed statement and this document must not contradi
 ## What v2 changed
 
 **Two kinds of factory, one API.** At a factory whose own system feeds the platform
-(the hourly sync, `config.factorySync` on, the default), the console manages the
+(the hourly sync, `config.factorySync.enabled: true`, switched on deliberately once that
+system is connected; absent, `null` or `false` is off, and off is the default), the console manages the
 supplier app and reads the records the sync brings: it does not enter leaf, rates or
 bills. At a factory with the sync **off**, the office keeps those records in the
 console ([factory-records.md](./factory-records.md)), and §9 (leaf collection), §10
@@ -32,7 +35,7 @@ Sections that changed:
 
 | § | Change |
 | --- | --- |
-| §3 `GET /config` | **Fourteen flags**, not ten. Two console-only flags removed, six app flags added, plus a `teaPackets` block |
+| §3 `GET /config` | **Fifteen flags**, not ten. Two console-only flags removed, seven app flags added (the latest `enableMonthToDate`), plus a `teaPackets` block |
 | §4 `GET /admin/dashboard` | Two new blocks (`app` and `content`) and an `adoptionTrend`. The v1 blocks stay on the payload |
 | §5 M2 Suppliers | `hasApp`, `deviceCount`, `lastAppSignInAt` on the record; `?hasApp=` on the query. **§5.6 and §5.7 are new**: a supplier's month history and their per-category push reach |
 | §6 M9 Change requests | **`address`**: a fourth request type, and the write path `PATCH /profile` must stop accepting |
@@ -46,11 +49,12 @@ Sections that changed:
 | §2 Auth | Refresh answers the whole session; first-password endpoints (BR-008) |
 | §3 / §18 Configuration | `factorySync`, `advanceInterest`, `loanInterest` (with `recovery`), `billSettings` (`paymentUnit`, `nextBillSerial`, `source`), `noteSuggestions` |
 | §5.8 Factory records | Add supplier, opening balances, a supplier's own transport rate (sync off) |
-| §11 M5 Bills | `AdminBill.source`, `loanInstalmentNo`, `otherCardsNote`; `loanBalance` is the loan's, `loanInterest` is this month's charge; `PUT /admin/bills/{id}/adjustment` |
+| §10 M4 Months | `MonthSummary.lateBills`; publish refuses `earlier-month-unpublished`, `bills-mismatch`, `approval-missing`, and four-eyes covers the importer |
+| §11 M5 Bills | `AdminBill.source`, `loanInstalmentNo`, `otherCardsNote`; `loanBalance` is the loan's, `loanInterest` is this month's charge; `PUT /admin/bills/{id}/adjustment`; printed-slip comparison and holds (§11.5b) |
 | §14 M7 Credit | Walk-in requests (`POST /admin/credit-requests`); an open loan blocks a loan and an advance (`loan-outstanding`) |
 | §23 Activity | The notification bell: `GET /admin/activity`, `POST /admin/activity/read` |
 | §24 Agreed shapes | Where the API and the shared types differ by agreement, with the gap ids the code cites |
-| §25 Imports | `POST /admin/imports/{kind}`, all rows or none, including finished `bills` |
+| §25 Imports | `POST /admin/imports/{kind}`, all rows or none, including finished `bills` and `printedBalances`; importing again (`dryRun`, `duplicates`, `skipped`) |
 
 It extends `docs/api.md` §17.6 in the mobile repo, which lists the admin surface
 by area. Where the two disagree, this document is more specific and §17.6 is the
@@ -174,7 +178,7 @@ copy interpolates.
 | `note-required` | 422 | A decision, suspension or reveal arrived without a reason (AC-06) |
 | `stale-eligibility` | 409 | Credit eligibility moved since the queue rendered (BR-310). **Refuse, do not warn** |
 | `supplier-code-taken` | 409 | The bare supplier number exists **for this factory** (§5.8) |
-| `month-locked` | 409 | The month is published, so nothing in it may change: a delivery, a void, a rate (BR-108). `details: { monthKey }` |
+| `month-locked` | 409 | The month is published, so nothing in it may change: a delivery, a void, a rate (BR-108). `details: { monthKey }`. On the `bills` import, `details.reason: 'published-during-import'` means the month was published while the file waited: send the same file again (§25) |
 | `batch-too-large` | 422 | More than 200 rows in one weighing session (§9.3) |
 | `already-voided` | 409 | The delivery has already been withdrawn (§9.4) |
 | `invalid-rate` | 422 | A rate that is not money: negative, zero or more than two decimals (§10.3) |
@@ -188,6 +192,8 @@ copy interpolates.
 | `month-mismatch` | 409 | The month in the body disagrees with the month in the path (§10.5) |
 | `factory-sync-on` | 409 | A record write while the factory-system sync is on (§5.8, §25) |
 | `loan-outstanding` | 409 | A loan or an advance asked for while a loan is still owed (§14.4) |
+| `bills-mismatch` | 409 | Publish of a calculated month while a bill disagrees with its printed slip, or has no printed figure, and is not held (§11.5b) |
+| `earlier-bill-held` | 409 | Releasing a held bill while the same supplier's bill for an earlier month is still held (§11.5b). `details: { monthKey, billId }` |
 
 #### Every code the console explains
 
@@ -200,7 +206,7 @@ unknown code is safe but unhelpful.
 | General | `feature-disabled` (403), `forbidden` (403), `four-eyes-violation` (409), `stale-eligibility` (409), `note-required` (422), `month-locked` (409), `supplier-code-taken` (409), `already-decided` (409) |
 | M3 Leaf collection | `batch-too-large` (422), `already-voided` (409), `invalid-batch` (the console's own, below) |
 | M4 Rates & month close | `invalid-rate` (422), `rate-missing` (409), `exceptions-open` (409), `already-resolved` (409), `already-published` (409), `month-mismatch` (409), `earlier-month-unpublished` (409), `approval-missing` (409), `records-busy` (409) |
-| M5 Bills | `bills-missing` (409; 404 on `GET .../bill-run`), `bills-unbalanced` (422), `bills-stale` (409) |
+| M5 Bills | `bills-missing` (409; 404 on `GET .../bill-run`), `bills-unbalanced` (422), `bills-stale` (409), `bills-mismatch` (409), `bill-not-held` (409), `bill-still-mismatched` (409), `earlier-bill-held` (409) |
 | M11 / M12 Content | `fallback-translation-missing` (422), `slug-taken` (409), `content-not-published` (409) |
 | M14 Configuration | `tenant-immutable` (409), `flag-has-records` (409), `point-in-use` (409), `fallback-language-required` (422) |
 | M15 Users & roles | `last-admin` (409), `self-modification` (409), `email-taken` (409), `unknown-role` (422) |
@@ -390,7 +396,8 @@ public identity, its feature flags, its bank list and its collection points.
     "enableManure": true, "enableTeaPackets": true, "enableInquiry": true,
     "enableNews": true, "enablePushNotifications": true, "enablePromoBanner": true,
     "enableOnboarding": true, "enableBiometricLogin": true,
-    "enableDarkModeToggle": true, "enableProfileTab": true, "enableAutoLock": true
+    "enableDarkModeToggle": true, "enableProfileTab": true, "enableAutoLock": true,
+    "enableMonthToDate": false
   },
   "savings": { "perKgOptions": [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50] },
   "teaPackets": { "packGrams": 400, "pricePerPacket": 1200, "maxPacketsPerRequest": 10 },
@@ -428,7 +435,7 @@ Notes for the implementer:
 
 - **Serve `ETag` and honour `If-None-Match`.** The console fetches this on every
   load; a `304` makes it free.
-- **`flags` is the same block the mobile app reads, all fourteen of them.** One
+- **`flags` is the same block the mobile app reads, all fifteen of them.** One
   source, both consumers, and that is what makes "turning off manure removes the
   manure queue from the office as well as the request screen from the app" true.
 
@@ -447,7 +454,15 @@ Notes for the implementer:
   quietly off. Parse the list at boot and the same mistake is a start-up failure naming
   the flag. Call `.strict()` on the schema for that check: an unrecognised flag in *your
   own* list is a bug. The console deliberately does not; it strips unknown keys instead,
-  so a console one release behind survives a server that has learned a fifteenth flag.
+  so a console one release behind survives a server that has learned a sixteenth flag.
+
+  **`enableMonthToDate`** (off by default, and `false` in every seed) gates the app's
+  "This month so far" on the Account tab: `GET /bills/month-to-date` in the supplier realm
+  answers `MonthToDate` (`packages/domain/src/types/app.ts`), or `200 null` while the flag is
+  off. Its month is the supplier's oldest month with an unpublished or held bill, else the
+  month after the factory's newest published month; it carries leaf and approvals, never a
+  rate, gross or balance. Until that endpoint ships, Configuration neither shows nor sends
+  the flag (`MONTH_TO_DATE_ON_SERVER`, §22).
 - **`creditRules` is how much a supplier may borrow, and it is served on the *public*
   payload deliberately.** The app prints the ceiling before a supplier asks for
   anything, and the console's queue checks a request against it; one served rule is
@@ -498,7 +513,7 @@ Notes for the implementer:
 
   | Block | Absent means | Shape |
   | --- | --- | --- |
-  | `factorySync` | **On** (`isFactorySyncEnabled`) | `{ enabled }`. Off: the office keeps the records in the console |
+  | `factorySync` | **Off** (`isFactorySyncEnabled` is `enabled === true`; `null` is off too) | `{ enabled }`. Off: the office keeps the records in the console. Store `{ enabled: false }` for a new factory, never `null`; it is switched on deliberately once the factory's own system is connected |
   | `advanceInterest` | 0% | `{ monthlyRatePercent }`, 0 to 10 (`advanceInterestProblem`). Charged only when an account could not cover its advance |
   | `loanInterest` | 0% | `LoanInterestSetting`: `{ monthlyRatePercent, recovery? }`, the same range; `recovery` is `onTop` (default) or `withinInstalment` |
   | `billSettings` | `{ paymentUnit: 1 }`, `GL/YYYY-MM/NNNN` numbers, `source: 'calculated'` | `{ paymentUnit: 1 \| 5 \| 10, nextBillSerial?, source? }`, `source` read through `billSourceOf` |
@@ -637,8 +652,11 @@ name and NIC. The office searches by whichever they remember: `5708`,
 
 **The bare number is the supplier's identity**, unique across the factory: letters and
 digits only (`supplierCodeSchema`), with the optional `(division)` shown and stored apart,
-so `5147` and `5147 (DENIYAYA)` are one supplier. An all-digit code given without its
-leading zeros (`708`) finds `0708` only when exactly one supplier fits. Sign-in stays exact.
+so `5147` and `5147 (DENIYAYA)` are one supplier. A code is matched on the **exact bare
+number first**; only when nothing matches exactly does an all-digit code given without its
+leading zeros (`708`) find `0708`, and only when exactly one supplier fits. Two that fit is
+`ambiguous-supplier` in an import (§25), never a guess; adding `708` while `0708` exists is
+`supplier-code-taken`. Sign-in stays exact.
 
 ```json
 200 { "items": [{
@@ -843,7 +861,8 @@ is the question the office is actually asked and which no count can answer.
 
 ### 5.8 Factory records on a supplier (sync off)
 
-For a factory whose `config.factorySync.enabled` is `false`. **Every write here answers
+For a factory whose sync is off: `config.factorySync` absent, `null` or `{ enabled: false }`
+(`isFactorySyncEnabled`). **Every write here answers
 `409 factory-sync-on` while the sync is on**, and `403` without `suppliers: write`. The
 rules are in [factory-records.md](./factory-records.md) §4.2; the shapes are the domain
 types named (`packages/domain/src/factoryRecords.ts`).
@@ -1132,7 +1151,7 @@ shape and completely different facts.
   `teaPacketRequest.reject`, `banner.create`, `banner.publish`, `config.update`, and the
   factory-records actions: `supplier.create`, `supplier.openingBalances`,
   `supplier.transportRate`, `creditRequest.create` (a walk-in), `bill.adjust`,
-  `import.apply` (one per file).
+  `bill.printed`, `bill.hold`, `bill.release` (§11.5b), `import.apply` (one per file).
 - **A weighing session is one entry, not one per row** (§9.3). Two hundred lines
   for one commit would bury every other action in the log on a busy day.
 - The log **outlives everything it describes** (§20.4). Do not cascade-delete it.
@@ -1142,7 +1161,8 @@ shape and completely different facts.
 ## 9. M3 Leaf collection: `/admin/deliveries`
 
 Capability: `deliveries`. `read` for the day and its rows, **`write`** to record
-or void: the **clerk** holds `W` and the manager `R` (§12.1, [rbac.md](./rbac.md)).
+or void: the **clerk** holds `W`; the manager and the factory and platform administrators
+hold `R`, and see every figure without changing one (§12.1, [rbac.md](./rbac.md)).
 
 **Called by this console only while the factory-system sync is off**, from **Factory
 records → Leaf intake** (`/deliveries`). With the sync on, the leaf comes from the
@@ -1310,13 +1330,17 @@ is closed rather than being asked for a reason that cannot help.
 Capability: `ratesAndMonthClose`. **`write`** to enter a rate and resolve
 exceptions, **`approve`** to publish (the manager alone). That split is
 BR-501 made structural: the person who types the auction rate is not the person
-who closes the month on it.
+who closes the month on it. The factory and platform administrators hold `read` only,
+as on `deliveries` and `billing`; the clerk holds nothing here.
 
 **Called by this console only while the factory-system sync is off**, from **Factory
 records → Rates & month close** (`/rates`); with the sync on the writes answer
 `409 factory-sync-on`. Rates can also arrive from a file (the `monthlyRates` import, §25),
 and an imported month of finished bills sets the month's rate from the file, entered by
-the importer, so the four-eyes check below refuses the importer as publisher.
+the importer, so the four-eyes check below refuses the importer as publisher. **The bills
+import creates the month**: `GET /admin/months`, `GET /admin/months/{monthKey}` and the
+publish are live on the API for imported months (backend `12eea12`); the rate, exceptions
+and leaf endpoints are still being built.
 
 **The stage is stored state, not a calendar calculation.** This is the
 load-bearing decision of the module. Publishing is irreversible, so a stage
@@ -1338,7 +1362,8 @@ accepting leaf into a closed month.
   "openExceptions": 3, "totalExceptions": 11,
   "ratePerKg": 122.50, "extraRatePerKg": 8.00,
   "publishedAt": null, "publishedByName": null,
-  "open": true
+  "open": true,
+  "lateBills": 0
 }
 ```
 
@@ -1350,6 +1375,8 @@ accepting leaf into a closed month.
   leaf in it.
 - `stage` ∈ the §13 cycle. `open` is `false` once published, the same flag M3
   reads as `locked`.
+- `lateBills` counts the bills in a **published** month that are neither published nor
+  held: a late division file's, waiting for §10.5. `0` or absent when there are none.
 
 ### 10.3 `PUT /admin/months/{monthKey}/rate`
 
@@ -1432,15 +1459,18 @@ The refusals **are** the module. In order:
 409 rate-missing               no auction rate entered
 409 exceptions-open            unresolved exceptions remain    + details.open   (AC-04; not imported months)
 409 bills-missing / bills-stale                                (below; stale: not imported months)
-409 bills-mismatch             calculated bills vs printed slips (factory-records.md §5)
+409 bills-mismatch             calculated bills vs printed slips, not held (§11.5b)
 409 approval-missing           imported bills: an approval is not on a slip + details.problems, total
 409 four-eyes-violation        the publisher entered the rate, or imported a bill of the month (BR-501)
 ```
 
 **A published month with late bills.** A late division file adds bills to a published month
-for suppliers who had none; they wait (`MonthSummary.lateBills`), and the same call
-publishes them, refused for their importer (four-eyes). `already-published` only when none
-are left (factory-records.md §5a).
+for suppliers who had none; they wait unpublished (`MonthSummary.lateBills`) until a manager
+**other than their importer** publishes them with this same call (`four-eyes-violation` for
+the importer): savings posted, withdrawals settled, each supplier notified.
+`already-published` only when none are left (factory decision R15; factory-records.md §5a).
+**The API does not do this yet**: today it publishes a late file's bills at once, and has
+been asked to change (BACKEND-TODO #45). The console and its mock already follow R15.
 
 `month-mismatch` exists because the close screen can sit open on July while a
 colleague publishes June; publishing what the accountant is *looking at* is the
@@ -1474,6 +1504,15 @@ savings ledger. A month that published its bills but not its savings would show 
 supplier a deduction with no matching passbook entry, which is the first thing they
 would query. The savings post must be **idempotent on `billId`**; a replayed request
 that credited a supplier twice is money.
+
+**A held bill is left out** (§11.5b): it stays unpublished, the supplier does not see it,
+and its savings are not posted until it is released.
+
+**An imported month posts differences, never overwrites** (backend ADR-038;
+factory-records.md §5a). Each ledger posts the slip's repayments, then one adjustment that
+brings the balance as it stood at the first instant of the next month (Asia/Colombo) to the
+slip's figure, so a loan approved after the month stays owed. Where ours differed, the
+adjustment is in the audit.
 
 Audit: `month.publish`, with the rate, the bill count, the savings credited and the
 note in `after`.
@@ -1510,7 +1549,7 @@ which is a permission decision made by accident.
 
 ### 11.2 `GET /admin/bills` → `Paged<BillListItem>`
 
-Filters: `monthKey`, `q` (code, name or bill number), `missingBankDetails`,
+Filters: `monthKey`, `supplierId`, `q` (code, name or bill number), `missingBankDetails`,
 `carriesDebt`. Default order **by supplier code**, which is how the paper ledgers were
 kept and the order the office checks a run down.
 
@@ -1531,6 +1570,7 @@ The full slip: the app's `GreenLeafBill` plus `supplierId`, `source`, `runId`,
 | `grossAmount` | Green leaf + extra payment + **coins brought forward**, so `balanceAmount` is the slip's "Balance Amount" |
 | `carryForward.loanBalance` | The **loan** still owed after this month's instalment (the slip's "Loan Balance"). An advance never carries a balance: it is taken back in full on its month's bill, and any shortfall is `nextMonthDeb` |
 | `carryForward.loanInterest` | **This month's interest charge, in rupees**: the loan's (`config.loanInterest`), plus advance interest (`config.advanceInterest`) only when the account could not cover its advance. Applied, not just displayed |
+| `SlipCheck` fields | Calculated bills only (§11.5b): `printedFinalBalance` (the printed slip's "Balance", `null` until entered), `heldAt`, `heldByName`, `holdReason`, and `heldForMonth` (held automatically because the supplier's bill for that earlier month is held) |
 
 Three invariants the console renders and therefore depends on:
 
@@ -1575,14 +1615,18 @@ two runs for one open month is two sets of figures nobody can choose between.
 
 ```
 409 wrong-bill-source this factory imports its bills
-409 month-locked      the month is published (BR-108)
-409 rate-missing      no auction result to build from
 409 month-mismatch    body.monthKey ≠ the path
+409 month-locked      the month is published and none of its bills is held (BR-108)
+409 rate-missing      no auction result to build from
 422 bills-unbalanced  a slip's lines disagree with its total  + details.billNos
 ```
 
-A re-generation **keeps each supplier's `otherCards` and `otherCardsNote`** (§11.5a) and
-bill number.
+A re-generation **keeps each supplier's `otherCards` and `otherCardsNote`** (§11.5a), bill
+number, printed figure and hold (§11.5b). In a published month only the **held** bills are
+recalculated; every published bill stays exactly as the supplier was given it. A supplier
+whose bill for an earlier month is still held has this month's bill **held automatically**
+(`heldForMonth`), because its coins, debt and loan balance come from that bill; the month
+goes ahead for everyone else.
 
 `bills-unbalanced` refuses the **whole run**, and it is aimed squarely at an
 implementation that computes `total` separately from the lines. Better a run that
@@ -1617,6 +1661,35 @@ the month is published. `billing: write`; `409 factory-sync-on` while the sync i
 Recalculate the bill with `computeBillAmounts`; never patch the totals. The note reaches
 the app as `GreenLeafBill.otherCardsNote`. Audit `bill.adjust`, before and after. Many at
 once: the `billAdjustments` import (§25).
+
+### 11.5b Printed slips: compare, hold, release
+
+A factory whose bills are **calculated** here (sync off, `billSettings.source: 'calculated'`)
+still prints its own slip, and the supplier holds both, so they must agree to the rupee
+before the month is published. Each bill is `match`, `mismatch` or `missing`
+(`compareWithSlip` in `factoryRecords.ts`). Any other factory answers every call here with
+`409 wrong-bill-source`. The full steps are factory-records.md §5.
+
+| Method and path | Who | Body → answer | Refusals |
+| --- | --- | --- | --- |
+| `GET /admin/months/{monthKey}/slip-comparison` | `billing: R` | → `MonthSlipComparison` (`counts` by status and `held`; `rows`: every bill that is not a plain match, or is held) | `404` no such month |
+| `PUT /admin/bills/{id}/printed` | `billing: W` | `{ finalBalance: number \| null }` → `SlipComparisonRow`; `null` clears it | `409 month-locked` once the bill is published, `422 invalid` for a figure that is not money |
+| `POST /admin/bills/{id}/hold` | `billing: W` | `{ reason }` (10+ characters) → `SlipComparisonRow` | `409 month-locked`, `422 invalid` |
+| `POST /admin/bills/{id}/release` | `ratesAndMonthClose: A` | → `SlipComparisonRow & { published }` | In order: `409 bill-not-held`, `409 earlier-bill-held` (`details.monthKey`, `billId`), `409 bills-stale` (the earlier bill was released after this one was calculated, or the leaf moved), `409 bill-still-mismatched` |
+
+- **Publishing refuses** `409 bills-mismatch` (`details.count`, `suppliers`) while any bill
+  neither matches nor is held (§10.5). A **held bill is left out of the publish** and the
+  supplier never sees it.
+- **Releasing in a published month publishes that one bill**: savings posted, withdrawals
+  settled, the supplier notified (`published: true`).
+- **Release in order.** A supplier's next month is held automatically while an earlier bill
+  is held (`heldForMonth`, §11.5). Release the earlier one, regenerate this month, compare,
+  then release this one; releasing out of order is `earlier-bill-held`, and a bill calculated
+  before the earlier release is `bills-stale`.
+- Many printed figures at once: the `printedBalances` import (§25). Audit `bill.printed`
+  (before and after), `bill.hold`, `bill.release`.
+- **Not on the API yet** (it comes with the bill engine): the console hides all of it behind
+  `SLIP_COMPARISON_ON_SERVER` (§22).
 
 ---
 
@@ -1663,8 +1736,10 @@ and never clears the debt.
 ## 12. M6 Payouts
 
 **Not called by this console.** A factory pays from its own system, including a factory
-whose records are kept here (factory-records.md, decision A12). The endpoints stay specified
-because the payout run is the shape a payment would take. There is no `enablePayouts` flag
+whose records are kept here (factory-records.md, decision A12). The console's M6 screens
+(payout runs, line marking, the payout file and its layout editor) were **removed** (commit
+`4c3eee3`); nothing in this section describes a console feature. The endpoints stay
+specified because the payout run is the shape a payment would take. There is no `enablePayouts` flag
 any more (it was console-only and went with M6); authorize on `payouts` alone.
 
 ### 12.1 `GET /admin/payout-runs` → `Paged<PayoutRun>`
@@ -1766,9 +1841,10 @@ format this contract names. §21.17 is unanswered (SLIPS, CEFTS or the bank's ow
 and three coded serialisers behind a dropdown would invent two of the three layouts. A file
 the bank rejects is two hundred suppliers unpaid until the run is re-sent.
 
-`packages/domain/src/payoutExport.ts` is the shared serialiser. Import it: the console
-previews the template on the configuration screen and you write the bytes, and a preview
-that disagreed with the file would be worse than no preview.
+`packages/domain/src/payoutExport.ts` is the shared serialiser. Import it: whoever builds a
+payout screen previews the template with it and you write the bytes, and a preview that
+disagreed with the file would be worse than no preview. (This console's preview went with
+M6.)
 
 ```
 Content-Type: text/csv; charset=utf-8
@@ -1800,8 +1876,9 @@ produce two conventions in one shared folder.
 
 **Still not specified, and still open:** a **fixed-width** layout with record types and
 control totals (that is rules rather than a column order, and a template cannot express it)
-and **cheque printing on pre-printed stock**. Both are stated on the console's screens
-rather than implied by a button that produces the wrong thing.
+and **cheque printing on pre-printed stock**. Both were stated on the console's payout
+screens, before M6 was removed, rather than implied by a button that produces the wrong
+thing.
 
 ---
 
@@ -1817,8 +1894,11 @@ to move the same money is two balances to reconcile, and the two that disagree a
 supplier's passbook and their slip.
 
 For a factory that **imports** its finished bills (§25, kind `bills`), the slip is the
-record: an imported month sets the supplier's savings, loan and manure balances to the
-slip's figures, and where ours differed both go in the audit (factory-records.md §5a).
+record: publishing an imported month posts the slip's repayments and then one adjustment
+that brings the savings, loan and manure balances, as they stood at the end of the month, to
+the slip's figures. It never overwrites a balance, so anything approved after the month
+stays (ADR-038, §10.5), and where ours differed the adjustment is in the audit
+(factory-records.md §5a).
 
 ### 13.1 `GET /admin/savings/summary` → `SavingsSummary`
 
@@ -2594,8 +2674,8 @@ Fire from the endpoint that owns the event, not from a job watching the audit lo
 
 | Category | Fires in |
 | --- | --- |
-| `billPublished` | §10.5 publish, after the bills are stamped and savings posted |
-| `requestDecided` | §11's approve/reject |
+| `billPublished` | §10.5 publish, after the bills are stamped and savings posted; for late bills (§10.5) and a bill released in a published month (§11.5b), to that supplier only |
+| `requestDecided` | The approve/reject of §6, §14 and §14a |
 | `newsArticle` | §16.6 publish |
 | `inquiryReplied` | §15's reply |
 
@@ -2681,7 +2761,7 @@ The `invalid` problems come from the shared checks: `advanceInterestProblem`
 (`out-of-range`, for both interest blocks) and `billSettingsProblem` (`payment-unit`: not
 1, 5 or 10; `bill-serial`: not a whole number from 1 to 9,999,999).
 
-**The patchable blocks**: `factory`, `flags` (all fourteen), `savings`,
+**The patchable blocks**: `factory`, `flags` (all fifteen), `savings`,
 `manureProducts`, **`teaPackets`**, **`creditRules`**, `banks`, `localization`,
 `branding`, `theme`, `push`, `collectionPoints`, `noteSuggestions`, and the
 factory-records blocks **`factorySync`**, **`advanceInterest`**, **`loanInterest`** and
@@ -2689,11 +2769,15 @@ factory-records blocks **`factorySync`**, **`advanceInterest`**, **`loanInterest
 
 `teaPackets`, `creditRules`, `noteSuggestions` and the four factory-records blocks are
 **replaced wholesale rather than merged**: each is a small record whose fields are read
-together, and a half-applied lending rule is a ceiling nobody chose.
+together, and a half-applied lending rule is a ceiling nobody chose. One exception, on the
+API (`970be6f`): a `billSettings` without `source`, or a `loanInterest` without `recovery`,
+keeps the stored value, so a console that does not know the field cannot reset galaboda's
+`imported`.
 
-- **`factorySync`** decides which screens exist and who keeps the records. Switching it
-  either way is refused while any month has generated but unpublished bills, which would
-  leave that month half calculated by each side.
+- **`factorySync`** decides which screens exist and who keeps the records. Absent or
+  `null` reads as off (`isFactorySyncEnabled`). Switching it either way is refused while
+  any month has generated but unpublished bills, which would leave that month half
+  calculated by each side.
 - **`billSettings.source`** is one per factory (`billSourceOf`, absent = `calculated`):
   `imported` makes `POST .../bills/generate` answer `409 wrong-bill-source`, and
   `calculated` does the same to the `bills` import.
@@ -2863,9 +2947,9 @@ that justify the project"*, the one report an app-management console owes anybod
 the list honest: a report with no citation is one somebody thought would be useful.
 
 `months` is here and **not on a billing endpoint**, which is a mistake this repository made
-and fixed: §12.1 gives the factory administrator `reports: read` and `billing: none`, so a
-month picker fed from §11.1 left the one role that owns the Administration section with an
-empty picker. **The list a report is chosen from belongs behind the same grant as the
+and fixed: §12.1 then gave the factory administrator `reports: read` and `billing: none`
+(it now holds `billing: read` as well), so a month picker fed from §11.1 left the one role
+that owns the Administration section with an empty picker. **The list a report is chosen from belongs behind the same grant as the
 report.**
 
 ### 20.2 `GET /admin/reports/{id}` → `ReportResult`
@@ -2938,12 +3022,13 @@ endpoint; it shows `otherCardsNote` and the loan's instalment number like the sc
 
 Ordered so each step is independently useful to the console. Most of the first list is
 built and checked on staging; it stays here as the definition of done for a new
-deployment. The second list is what BACKEND-TODO #45 still has open, in its order.
+deployment. The second list is BACKEND-TODO #45's, in its order, with what has shipped
+ticked.
 
 ### The app-management console (every factory)
 
-- [ ] `GET /config` for one tenant, unauthenticated, with `ETag`, **all fourteen
-      flags**, the `teaPackets` block once the factory has set one, and the public part of
+- [ ] `GET /config` for one tenant, unauthenticated, with `ETag`, **all fifteen
+      flags** (`enableMonthToDate` included, `false` by default), the `teaPackets` block once the factory has set one, and the public part of
       the factory-records blocks (§3)
 - [ ] The error envelope with domain `code`, **before anything else**, because
       every later endpoint's failures are unreadable without it
@@ -2978,18 +3063,32 @@ deployment. The second list is what BACKEND-TODO #45 still has open, in its orde
 ### Factory records (sync off), in BACKEND-TODO #45's order
 
 The console hides each of these until it lands, in one place:
-`apps/admin/src/lib/serverReady.ts`. Remove the line when the endpoint ships.
+`apps/admin/src/lib/serverReady.ts`. Remove the line when the endpoint ships. Today it holds
+`IMPORT_KINDS_NOT_ON_SERVER` (`openingBalances`, `deliveries`, `monthlyRates`,
+`billAdjustments`, `printedBalances`), `OPENING_BALANCES_ON_SERVER`,
+`OTHER_DEDUCTIONS_ON_SERVER`, `SLIP_COMPARISON_ON_SERVER`, `MONTH_TO_DATE_ON_SERVER` and
+`IMPORT_SKIP_ON_SERVER`, all `false`.
 
-- [ ] `PATCH /admin/config` accepting `billSettings.source` and `loanInterest.recovery`,
-      with `409 bill-source-blocked`
-- [ ] The `bills` import (§25), with the approvals check
+- [x] `PATCH /admin/config` accepting `billSettings.source` and `loanInterest.recovery`,
+      with `409 bill-source-blocked` (backend `970be6f`)
+- [x] Alongside step 1: `loanOutstanding` in `buildCreditEligibility` and
+      `409 loan-outstanding` in the app's request, a walk-in and approval; savings
+      withdrawals on `billing: A`; leading zeros and `ambiguous-supplier`;
+      `enableMonthToDate` served as `false` (`970be6f`); `factorySync` stored as
+      `{ enabled: false }` and the factory administrator's `R` on records (`068faf3`)
+- [x] The `bills` import (§25) with the approvals check, `GET /admin/months`,
+      `GET /admin/months/{monthKey}` and the publish (§10.5) for imported months
+      (backend `12eea12`)
+- [ ] Late bills wait for a manager other than their importer (R15, §10.5): the one change
+      to `12eea12`, which publishes them at once
 - [ ] Opening balances (§5.8) and the `openingBalances` import
-- [ ] Leaf and months: §9, §10, and the `deliveries` and `monthlyRates` imports
+- [ ] Leaf and months: the rest of §9 and §10, and the `deliveries` and `monthlyRates` imports
 - [ ] Other deductions: `PUT /admin/bills/{id}/adjustment` and the `billAdjustments` import
-- [ ] The bill engine (§11.5, factory-records.md §5), last: galaboda imports its bills
-- [ ] Alongside: `loanOutstanding` in `buildCreditEligibility` and `409 loan-outstanding`
-      in the app's request, a walk-in and approval; savings withdrawals on `billing: A`;
+- [ ] The bill engine (§11.5, factory-records.md §5), last: galaboda imports its bills. With
+      it the printed-slip comparison (§11.5b), the `printedBalances` import, and
       `carryForward.loanBalance` filled from the loan, never the advance
+- [ ] Alongside, any time: importing again (§25: `dryRun`, `duplicates`, `skipped`), and
+      the app's `GET /bills/month-to-date` (§3)
 
 Point `VITE_API_BASE_URL` at it; the console needs no other change. If a shape differs from this document, the seam that absorbs it is
 `apps/admin/src/services/repositories/` (and `services/api/adapters.ts` for envelopes);
@@ -3111,25 +3210,36 @@ each kind saves, are [factory-records.md](./factory-records.md) §4.2 and §5a.
 ```json
 → { "fileName": "suppliers-october.xlsx",
     "rows": [ { "supplierCode": "5147", "name": "Kamal Perera", "nic": "883210456V",
-                "collectionPoint": "DENIYAYA", "paymentMethod": "cash" } ] }
-200 { "kind": "suppliers", "saved": 1, "problems": [] }
+                "collectionPoint": "DENIYAYA", "paymentMethod": "cash" } ],
+    "dryRun": false }
+200 { "kind": "suppliers", "saved": 1, "problems": [],
+      "skipped": [ { "row": 3, "code": "supplier-exists" } ], "skippedTotal": 1 }
 ```
+
+The body is `ImportRequest` `{ fileName, rows, dryRun?, duplicates? }` and the answer
+`ImportResult` `{ kind, saved, problems, problemTotal?, skipped?, skippedTotal?, dryRun?,
+leafDifferences? }` (`factoryRecords.ts`).
 
 `kind` ∈ `IMPORT_KINDS`: `suppliers`, `deliveries`, `monthlyRates`, `openingBalances`,
 `walkInCredit`, `billAdjustments`, `transportRates`, **`bills`** (the month's finished bills
-as the factory's own system printed them). Rows are objects of text keyed by the column
-names in `IMPORT_COLUMNS[kind]`.
+as the factory's own system printed them), **`printedBalances`** (each printed slip's
+"Balance", for §11.5b). Rows are objects of text keyed by the column names in
+`IMPORT_COLUMNS[kind]`.
 
 | Kind | Permission | Server-only problem codes, beyond the shared row checks |
 | --- | --- | --- |
-| `suppliers` | `suppliers: W` | `duplicate`, `supplier-code-taken`, `unknown-collection-point`, `bank-details-required`, `unknown-bank`, `bank-not-in-catalogue` |
+| `suppliers` | `suppliers: W` | `duplicate`, `unknown-collection-point`, `bank-details-required`, `unknown-bank`. A code already on the roll is **skipped** (`supplier-exists`), left as it is, not refused (see "Importing again") |
 | `openingBalances` | `suppliers: W` | `duplicate`, `unknown-supplier`, `opening-balances-locked`, a different cut-over month |
 | `transportRates` | `suppliers: W` | `duplicate`, `unknown-supplier` |
-| `deliveries` | `deliveries: W` | `unknown-supplier`, `month-locked`, `unknown-collection-point` |
+| `deliveries` | `deliveries: W` | `unknown-supplier`, `month-locked`, `unknown-collection-point`. A weighing already recorded is **skipped** (`already-recorded`) unless `duplicates: 'import'` |
 | `monthlyRates` | `ratesAndMonthClose: W` | `duplicate`, `unknown-month`, `month-locked` |
 | `walkInCredit` | `creditRequests: W` | `unknown-supplier`, `required` (manure without type or quantity), and §14.4's refusals |
 | `billAdjustments` | `billing: W` | `duplicate` (month + code), `unknown-supplier`, `month-locked`, `no-bill`, `required` |
-| `bills` | `billing: W` | `missing-column` (row 1), `unknown-supplier` / `ambiguous-supplier`, `duplicate` (month + code), `month-not-ended`, `month-out-of-order`, `month-locked` (supplier already billed in a published month), `rate-differs`, `bill-no-taken`, `too-large` / `must-be-positive` (`loanInstalmentNo`), and the approvals check `approval-missing` (factory-records.md §5a). The import creates the month; a top-level `409 month-locked` with `details.reason: 'published-during-import'` means send the file again |
+| `bills` | `billing: W` | `missing-column` (row 1), `unknown-supplier` / `ambiguous-supplier`, `duplicate` (month + code), `month-not-ended`, `month-out-of-order`, `month-locked` (supplier already billed in a published month), `rate-differs` (between rows of the file, or with the month's stored rate), `bill-no-taken`, `too-large` / `must-be-positive` (`loanInstalmentNo` 1 to 360; `ratePerKg` above 0), and the approvals check `approval-missing` with the rupees in `amount` (factory-records.md §5a). The import creates the month; a top-level `409 month-locked` with `details.reason: 'published-during-import'` means send the file again |
+| `printedBalances` | `billing: W` | `409 wrong-bill-source` unless the bills are calculated here; `duplicate` (month + code), `unknown-supplier`, `no-bill`, `month-locked` (the bill is published) |
+
+Any `unknown-supplier` is answered as **`ambiguous-supplier`** when the code, read without
+its leading zeros, fits more than one supplier (§5.1): the fix is to write it in full.
 
 **All rows or none.** Run the shared `importRowProblems(kind, rows)` first (the console runs
 the same function), then the server-only checks; any problem refuses the whole file and
@@ -3137,21 +3247,53 @@ saves nothing:
 
 ```
 409 factory-sync-on    the sync is on
-409 wrong-bill-source  kind `bills` in a factory whose bills are calculated (checked first)
+409 wrong-bill-source  kind `bills` in a factory whose bills are calculated, or
+                       `printedBalances` in one whose bills are imported (checked first)
 422 import-size        no rows, or more than 5,000
 422 import-invalid     details.problems: ImportRowProblem[] (at most 500), details.total
 ```
 
-- An `ImportRowProblem` is `{ row, column?, code }`, `row` being the spreadsheet row (the
-  first data row is **2**). Shared codes: `required`, `not-a-number`, `negative`,
-  `too-many-decimals`, `too-short`, `not-a-date`, `not-a-month`, `not-allowed`,
-  `does-not-add-up`. The console explains every code named here in en/si/ta and shows any
-  other as "refused (code)".
+- An `ImportRowProblem` is `{ row, column?, amount?, code }`, `row` being the spreadsheet
+  row (the first data row is **2**; `missing-column` is on row 1). Shared codes: `required`,
+  `not-a-number`, `negative`, `too-many-decimals`, `too-short`, `not-a-date`, `not-a-month`,
+  `not-allowed`, `must-be-positive`, `too-large`, `does-not-add-up`. The console explains
+  every code named here in en/si/ta and shows any other as "refused (code)".
 - **Refuse, never round.** A number with more decimals than its column allows, a minus sign
   where the column has no `allowNegative`, `0x1A`, `1e3` or `2026-02-31` is refused.
 - An imported **finished bill** is stored as printed, never recalculated, as
   `AdminBill.source: 'imported'`; any number of files per month, each replacing only the
   suppliers in it. Each row must add up, and **everything approved in the console for the
   month must have reached the slip**, or the file is refused naming the supplier and the
-  item (factory-records.md §5a).
-- Audit one `import.apply` entry per file, `{ kind, rows, fileName }`, not one per row.
+  item (factory-records.md §5a). Adding up, in the shared `importRowProblems`: every sum
+  **exact in whole cents** (the two rate products within a rupee). The payable is
+  `balanceAmount` + `savingsWithdrawal`: when it is ≥ 0, `finalBalance` +
+  `coinsCarriedForward` equals it and `nextMonthDebt` is 0; when it is below 0,
+  `finalBalance` and `coinsCarriedForward` are 0 and `nextMonthDebt` is the shortfall; `savingsToDate = savingsPrevious + savings −
+  savingsWithdrawal`. The headers `loanBalance`, `manureBalance` and `savingsToDate` must
+  be in the file though a cell may be blank (a blank is 0): a missing one is
+  `missing-column` on row 1 (`missingImportColumns`).
+- A `bills` answer carries **`leafDifferences`** `{ suppliers, kgs }`: the slip's kilos are
+  kept, and this says how many suppliers' kilos differ from the leaf entered here.
+- Audit one `import.apply` entry per file, `{ kind, rows, skipped, fileName }`, not one
+  per row.
+
+**Importing again** (`IMPORT_SKIP_KINDS`: `deliveries`, `suppliers`). A file may be sent
+twice without doubling anything: rows already there are **skipped, not refused**, and the
+rest still saves. `skipped` lists them (`{ row, code }`, at most 500; `skippedTotal`
+counts all). Skips are worked out first, so a skipped row is not refused for a server-only
+problem (a weighing in a month since published); the shared row checks still apply to it.
+
+- `deliveries`: a row is `already-recorded` when the same date, supplier, kilos (to the
+  gram) and collection point (the row's, or the supplier's own when blank) is recorded and
+  not voided (`leafRecordKey`), matched **by count** (`matchRecorded`): two identical rows
+  against one recorded weighing save one. `duplicates: 'import'` (default `skip`) keeps
+  them all, for a file that really holds a second weighing of the same kilos.
+- `suppliers`: a code already on the roll (leading zeros as in §5.1) is `supplier-exists`
+  and left as it is, never updated from the file.
+- `dryRun: true` checks the file and answers what **would** happen (`saved`, `skipped`,
+  `problems`) without saving anything, echoing `dryRun: true`. The import dialog asks this
+  first.
+- **Not on the API yet** (BACKEND-TODO #45): the console sends no `dryRun` or
+  `duplicates` until `IMPORT_SKIP_ON_SERVER` (§22), since an API that ignored `dryRun`
+  would save the file, and meanwhile a supplier code already on the roll still refuses the
+  whole file with `supplier-code-taken`.

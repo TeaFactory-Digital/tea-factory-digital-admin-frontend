@@ -1,7 +1,8 @@
 # Factory records without the factory system
 
-**Status (23 October 2026):** the console is built against the mock and tested; the backend
-is partly built (see [BACKEND-TODO.md](./BACKEND-TODO.md) #45 for what is still to build, in
+**Status (26 October 2026):** the console is built against the mock and tested; the backend
+is partly built (the finished-bills import, the month reads and the publish are live since
+`12eea12`; see [BACKEND-TODO.md](./BACKEND-TODO.md) #45 for what is still to build, in
 order, and what the console hides until it lands).
 **For:** the backend developer. This file is the contract the console was built against.
 
@@ -45,8 +46,9 @@ isFactorySyncEnabled(config)                // the one reading of it
 
 - **Default off (factory):** a new factory, and any `client_config` row without the field,
   is sync **off**: the office keeps its records here until the factory's own system is
-  connected and someone switches the sync on deliberately. Store `{ enabled: false }`
-  rather than leaving it `null`.
+  connected and someone switches the sync on deliberately. The backend stores
+  `{ enabled: false }`, never `null`: `db:seed:tenant` writes it, and migration
+  `20261024010000` set it on every row that was `null`.
 - `PATCH /admin/config` accepts `{ factorySync: { enabled } }`, saved whole, audited as
   `config.update` like any section. `GET /config` and `GET /admin/config` return it.
 - Who may change it: `flagsAndBranding: W` (factory administrator), as for every config section.
@@ -103,11 +105,11 @@ BACKEND-TODO #45 says which of these are built.
 | `GET /admin/deliveries/summary?date&collectionPoint` | `CollectionDaySummary` | |
 | `POST /admin/deliveries` | `DeliveryBatch` → `DeliveryBatchResult` (per-row refusals inside a 200) | `409 month-locked` (unless every row's supplier has a **held** bill that month, §5), `422 batch-too-large` |
 | `POST /admin/deliveries/:id/void` | `{ reason }` → `Delivery` | `422 note-required`, `409 month-locked` (unless the supplier's bill is held) |
-| `GET /admin/months`, `GET /admin/months/:monthKey` | `Paged<MonthSummary>`, `MonthSummary` | `404` unknown month |
+| `GET /admin/months`, `GET /admin/months/:monthKey` | `Paged<MonthSummary>`, `MonthSummary` (with `lateBills`, §5a) | `404` unknown month |
 | `PUT /admin/months/:monthKey/rate` | `MonthlyRateEntry` → `MonthSummary` | `409 month-locked`, `422 invalid-rate` |
 | `GET /admin/months/:monthKey/exceptions`, `POST .../exceptions/:id/resolve` | `Paged<MonthException>`, `{ note }` | `422 note-required` |
 | `POST /admin/months/:monthKey/bills/generate` | `{ monthKey }` → `BillRun`. In a published month, recalculates **only the held bills** (§5) | `409 wrong-bill-source` (first), `409 rate-missing`, `409 month-locked` (published, nothing held) |
-| `POST /admin/months/:monthKey/publish` | `{ monthKey, note? }` → `MonthSummary`. Held bills stay unpublished (§5) | `already-published`, `earlier-month-unpublished` (`details.monthKey`, §5a), `rate-missing`, `exceptions-open`, `bills-stale`, `bills-mismatch` (calculated bills, §5), `approval-missing` (imported bills, §5a), `four-eyes-violation` |
+| `POST /admin/months/:monthKey/publish` | `{ monthKey, note? }` → `MonthSummary`. Held bills stay unpublished (§5). On a published month, publishes its late bills (§5a) | `already-published`, `earlier-month-unpublished` (`details.monthKey`, §5a), `rate-missing`, `exceptions-open`, `bills-missing`, `bills-stale`, `bills-mismatch` (calculated bills, §5), `approval-missing` (imported bills, §5a), `four-eyes-violation` |
 | `GET /admin/months/:monthKey/slip-comparison` | `MonthSlipComparison` (`billing: R`) | `409 wrong-bill-source` (not calculated, or sync on), `404` unknown month |
 | `PUT /admin/bills/:id/printed` | `{ finalBalance: number \| null }` → `SlipComparisonRow` (`billing: W`) | `409 wrong-bill-source`, `409 month-locked` (published), `422 invalid` |
 | `POST /admin/bills/:id/hold` | `{ reason }` (10+ characters) → `SlipComparisonRow` (`billing: W`) | `409 wrong-bill-source`, `409 month-locked` (published), `422 invalid` |
@@ -122,7 +124,9 @@ BACKEND-TODO #45 says which of these are built.
 
 Already on the backend and used as they are: `GET /admin/bill-months`, `GET /admin/bills`,
 `GET /admin/bills/:id`, `GET /admin/months/:monthKey/bill-run`, the four
-`/admin/deduction-rates` routes, credit approve/reject.
+`/admin/deduction-rates` routes, credit approve/reject, and since `12eea12` the `bills`
+import, `GET /admin/months`, `GET /admin/months/:monthKey` and the publish (imported
+months; the late bills of §5a are still to come).
 
 Config and shapes on existing routes (`GET /config`, `GET /admin/config`,
 `PATCH /admin/config`; each block saved whole):
@@ -150,8 +154,10 @@ Config and shapes on existing routes (`GET /config`, `GET /admin/config`,
 **Add supplier.** `supplierCode` is the factory's own code and the app's sign-in id. The
 **bare number is the identity**, unique across the whole factory: letters and digits only;
 the `(division)` after it is shown and stored apart, so `5147` clashes with
-`5147 (DENIYAYA)`. A supplier signs in with the bare number. An all-digit code given without
-its leading zeros (`708`) finds `0708` only when exactly one supplier fits. `bankTransfer`
+`5147 (DENIYAYA)`. A supplier signs in with the bare number. A code is matched on the exact
+bare number first; an all-digit code given without its leading zeros (`708`) then finds
+`0708` only when exactly one supplier fits. When more than one fits, an import row naming
+it is `ambiguous-supplier` and Add supplier refuses it as `supplier-code-taken`. `bankTransfer`
 needs `bankDetails`; the account number is stored in full and masked on every read; the
 account name defaults to the supplier's full name; the bank and branch are checked against
 the factory's own `config.banks`. The collection point may be given by code or name, any

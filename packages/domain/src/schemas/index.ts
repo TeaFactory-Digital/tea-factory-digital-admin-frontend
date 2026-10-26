@@ -487,7 +487,7 @@ export type ComposeNotificationInput = z.infer<typeof composeNotificationSchema>
  * boot failure with the offending name in it.
  *
  * Unknown keys are **stripped, not refused**, so a console on an older build survives a
- * server that has learned a fifteenth flag. A consumer that wants the opposite (the
+ * server that has learned a sixteenth flag. A consumer that wants the opposite (the
  * API validating its own list, where an unrecognised flag is a bug rather than a newer
  * peer) should call `.strict()` on it at the call site.
  */

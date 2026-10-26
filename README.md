@@ -31,19 +31,19 @@ packages/
               makes Tailwind's build-time classes resolve to runtime brand values.
 apps/
   admin/      React 19 · Vite · Tailwind v4 · TanStack Query/Table · Radix
-              (MSW in the Vitest suite only)
+              (MSW in the Vitest and Playwright suites only)
 docs/v2/      Current: the module map, the API contract, the backend's to-do, status
 ```
 
 ## Two modes: the factory-system sync
 
-**Sync on (the default).** The factory's own system feeds suppliers, leaf, rates and bills
+**Sync on.** The factory's own system feeds suppliers, leaf, rates and bills
 to the platform every hour. The console manages the app: M1 Dashboard, M2 Suppliers, M5
 Bills (read-only, for support), M7 Credit queues, M18 Tea packets, M9 Change requests, M10
 Inquiries, M11 News and promo banners, M12 Static content, M13 Notifications, M14
 Configuration, M15 Users & roles, M16 Reports, M17 Audit log, plus the notification bell.
 
-**Sync off** (Configuration → Factory system). The office also keeps the factory's records
+**Sync off** (the default; Configuration → Factory system). The office also keeps the factory's records
 in the console: **Add supplier**, opening balances, transport rate per supplier, daily leaf
 (**Leaf intake**), the monthly rate and month close (**Rates & month close**, with the
 deduction rates and the bill run), bills, **walk-in credit requests** and other
@@ -72,8 +72,8 @@ assumed to be solved.
 | `npm run build:staging` | Production bundle pointed at staging                          |
 | `npm run typecheck`  | `tsc --build`, all three projects                                |
 | `npm run lint`       | Includes the white-label and layering rules                      |
-| `npm run test`       | Vitest against the MSW mock, 544 tests in 74 files               |
-| `npm run e2e`        | Playwright, 24 tests in 7 specs, against the dev server (`npx playwright install chromium` once) |
+| `npm run test`       | Vitest against the MSW mock, 565 tests in 77 files               |
+| `npm run e2e`        | Playwright, 29 tests in 7 specs, on its own dev server (port 5274) with the API answered by the MSW handlers (`apps/admin/e2e/fixtures.ts`; `npx playwright install chromium` once) |
 
 ### Running against staging
 
@@ -101,10 +101,11 @@ Sign in on tenant `galaboda`. Which account matters:
 | `manager@galaboda.lk` | the queues: credit, change requests, tea packets, inquiries |
 | `manager2@galaboda.lk` | the second pair of eyes, for four-eyes approval |
 | `clerk@galaboda.lk` | the clerk's narrower view |
-| `admin@galaboda.lk` | users, content and config only |
+| `admin@galaboda.lk` | users, content and config; reads the factory records |
 
 ⚠️ **The admin account cannot open the credit queue.** That is `factoryAdmin` correctly
-having no money capability (§12.1), not a bug. Use `manager` for anything in a queue.
+having no credit capability (§12.1), not a bug: it reads leaf, rates and bills (`R`) and
+changes none of them. Use `manager` for anything in a queue.
 
 **The first request after a quiet period takes about 33 seconds.** Staging is a free
 Render instance and it sleeps when idle, so `.env.staging` sets a 45s timeout where local
@@ -155,7 +156,7 @@ Start at [docs/v2/README.md](./docs/v2/README.md).
 | [design-system.md](./docs/v2/design-system.md) | Tokens, components, density, accessibility                                                  |
 | [rbac.md](./docs/v2/rbac.md)                   | The permission matrix and where it is really enforced                                       |
 | [modules.md](./docs/v2/modules.md)             | What each module decides, and which screens appear only with the sync off                   |
-| [mocks.md](./docs/v2/mocks.md)                 | The mock API the Vitest suite runs against                                                  |
+| [mocks.md](./docs/v2/mocks.md)                 | The mock API the Vitest and Playwright suites run against                                   |
 | [operations.md](./docs/v2/operations.md)       | Environments, deployment, testing, CI                                                       |
 | [status.md](./docs/v2/status.md)               | **What is built, what the backend has, known gaps, open questions**                         |
 

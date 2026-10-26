@@ -6,9 +6,10 @@
  * classes for its own colours is a component whose brand can be overridden by
  * accident. `className` is still accepted, for layout only.
  *
- * Every size clears the 44 px minimum touch target on its shorter axis. The
- * console is a mouse-and-keyboard product, but the same office uses a touchscreen
- * all-in-one often enough that a 28 px-high button is a support call.
+ * `md` is the size for anything a finger may press; `sm` is the compact size for dense
+ * rows and toolbars, below the 44 px touch target. The console is a mouse-and-keyboard
+ * product, but the same office uses a touchscreen all-in-one often enough that a
+ * 28 px-high button is a support call.
  */
 
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';

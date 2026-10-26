@@ -94,14 +94,18 @@ factory's colours as soon as `GET /config` answers.
       [factory-updates-sample.json](./factory-updates-sample.json).
 - [ ] The first full pull is checked against one month of the factory's paper bills.
 
-**Sync off:**
+**Sync off** (some of these wait for the backend; the console hides each until it ships,
+see [status.md](./status.md)):
 - [ ] Import the suppliers, then their opening balances, from Excel/CSV
-      (**Suppliers → Import**; each screen offers a template).
+      (**Suppliers → Import**; each screen offers a template). Settle or cancel any savings
+      withdrawal still pending before the cut-over month, then enter the opening savings.
 - [ ] Enter or import the month's leaf (**Factory records → Leaf intake**), the rate, and the
       deduction rates (transport per collection point, stamps, caps).
-- [ ] **Bills imported** (the factory's own system prints them, as at Galaboda): import one
-      month's finished bills (**Rates & month close → Import → Finished bills**), check a
-      few against the printed slips, then publish.
+- [ ] **Bills imported** (the factory's own system prints them, as at Galaboda): once the
+      month has ended, import its finished bills (**Rates & month close → Import → Finished
+      bills**; with no months yet the screen offers the Import menu, and the import creates
+      the month), check a few against the printed slips, then a manager **other than the
+      importer** publishes.
 - [ ] **Bills calculated here:** generate one month's bills, enter or import each printed
       slip's Balance (**Rates & month close → Compare with printed slips**), fix or hold
       every bill that differs, then publish.

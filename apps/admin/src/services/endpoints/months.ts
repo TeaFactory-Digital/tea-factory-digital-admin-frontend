@@ -61,9 +61,12 @@ export const monthEndpoints = {
       .then((response) => response.data),
 
   /**
-   * Four refusals, and each one is a month the office would otherwise have closed
-   * wrongly: `rate-missing`, `exceptions-open` (AC-04), `already-published`, and
-   * `four-eyes-violation` when the publisher entered the rate (BR-501).
+   * Each refusal is a month the office would otherwise have closed wrongly, in order:
+   * `already-published` (no late bills left), `earlier-month-unpublished`, `rate-missing`,
+   * `exceptions-open` (AC-04), `bills-missing`, `bills-stale`, `bills-mismatch`,
+   * `approval-missing` (imported bills) and `four-eyes-violation` when the publisher entered
+   * the rate or imported a bill of the month (BR-501). On a published month with late bills
+   * (`MonthSummary.lateBills`) the same call publishes them.
    */
   publish: (monthKey: string, note?: string) =>
     apiClient

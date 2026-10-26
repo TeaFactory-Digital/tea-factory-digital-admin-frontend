@@ -1,13 +1,16 @@
 # The mock API
 
-## Where it runs now: Vitest only
+## Where it runs now: Vitest and the e2e fixture
 
 **The console no longer runs against the mock.** `npm run dev` calls the local API
 (`.env.development`), `npm run dev:staging` the staging API, and there is no
 `VITE_USE_MOCK`, no demo build and no in-browser service worker: a running console that
 answered from fixtures would look exactly like a working one, which is the one failure an
-office cannot see (`main.tsx`, `config/env.ts`). The MSW handlers answer **Vitest and
-nothing else** (`services/mocks/server.ts`, started by `test/setup.ts`).
+office cannot see (`main.tsx`, `config/env.ts`). The MSW handlers answer **the tests and
+nothing else**: Vitest (`services/mocks/server.ts`, started by `test/setup.ts`) and the
+Playwright suite (`npm run e2e`), whose fixture `e2e/fixtures.ts` answers every `/v1/**`
+call of the real console in Node from the same handlers, on its own dev server (port 5274,
+`VITE_API_BASE_URL` pointed at it). Nothing mock-related is served to the page.
 
 They stay because they are still the **executable reading of
 [api-contract.md](./api-contract.md) and [factory-records.md](./factory-records.md)**: the
@@ -116,7 +119,7 @@ on real values.
 | `factory-system@galabodatea.lk` | *none* | No `ConsoleRole` at all; every capability arrives from the server |
 
 There is no MFA column any more: the factory withdrew the second factor, so a password is
-the whole of every sign-in here (status.md gap 33).
+the whole of every sign-in here ([rbac.md](./rbac.md), "The console's own identities").
 
 Password for all five: `demo1234`. They exist only in the fixture; tests sign in with
 `signInAs()` (`test/render.tsx`). The real API's dev seed has its own administrator
@@ -241,8 +244,8 @@ are different figures everywhere they appear.
 
 It spans **the fixture's whole month window, not the last fortnight**, and that is
 M5's doing rather than generosity: a bill is a read model over these rows, so a
-published month with no leaf in it generates no bills, and Bills, Payouts and
-Savings would each render an empty screen that reads as a broken module rather than
+published month with no leaf in it generates no bills, and Bills and the savings
+figures would each render an empty screen that reads as a broken module rather than
 as a fixture with nothing in it.
 
 Four properties are load-bearing rather than decorative:
@@ -324,10 +327,10 @@ What that produces, and why each piece is there:
 | Payout runs in **all three states**: `completed`, `approved` part-worked with a failed line, `draft` | Each is a different set of available actions, and none of them should need creating before it can be seen |
 | A **savings ledger derived from the published bills**, with the registry's `savingsBalance` recomputed from it | M2's detail page and M8's account row must be one number, not two (AC-01) |
 
-The **deduction values are the mock's invention and the shape is not**; see
-status.md gap 6. `savings` (kilos × the supplier's rate) and `previousDebts` (last
-month's shortfall) are real derivations the API must reproduce; the other seven lines
-stand in for §21.10, which nobody has answered.
+The **deduction values are the mock's invention and the shape is not**. `savings`
+(kilos × the supplier's rate) and `previousDebts` (last month's shortfall) are real
+derivations the API must reproduce; the other seven lines stand in for §21.10, which nobody
+has answered.
 
 ### News and static content: AC-08 in the fixture
 
@@ -346,7 +349,7 @@ the fixture exists rather than decoration:
 | `creditTerms` | **Never written** | The app falls back to its bundled default. A state the office must be able to see rather than mistake for a page it already filled in |
 
 **The Sinhala and Tamil copy has not been reviewed by a native speaker** (status.md gap
-19). It is real script rather than Latin placeholders on purpose (the `[lang="si"]` and
+8). It is real script rather than Latin placeholders on purpose (the `[lang="si"]` and
 `[lang="ta"]` rules in §20.2 cannot be exercised by English three times over), but it is
 approximate, and it must be replaced before the console is shown to the factory.
 
@@ -387,17 +390,19 @@ have no brand of their own:
 on with no `push` block at all**, which is a real state rather than an oversight: the flag
 being on and the module being configured are different things, and M13 answers
 `push-not-configured` for it), and
-**`highland`, the reduced-feature reference**: no loans, no manure, no push, no
-reports, no payouts, **no news**, and it authors content in English and Tamil only.
+**`highland`, the reduced-feature reference**: no loans, no manure, no push, no tea
+packets, no promo banners, **no news**, and it authors content in English and Tamil only.
 
-None of the three sets `factorySync`, so all start with the sync **on**; a test switches it
-off through `PATCH /admin/config`, as a factory administrator would.
+None of the three sets `factorySync`, so all start with the sync **off** (absent means off);
+a test of a synced factory switches it on with `setFactorySync(true)` (`test/factorySync.ts`),
+through `PATCH /admin/config`, as a factory administrator would.
 
 `highland` is what makes AC-07's second half assertable, and it now covers two
 modules rather than one:
 
-- `enablePayouts: false`: the sidebar loses the row **and**
-  `GET /admin/payout-runs` answers `403 feature-disabled`.
+- `enableTeaPackets: false` and `enablePromoBanner: false`: the sidebar loses both rows
+  **and** their endpoints answer `403 feature-disabled` (`teaPackets.test.ts`,
+  `banners.test.ts`, and the e2e smoke spec).
 - `enableLoans: false` and `enableManure: false`: the credit queue still **opens**,
   because the factory does lend against leaf, and it serves only advances. A loan
   reached by its own URL answers `403 feature-disabled` rather than merely being
@@ -452,12 +457,17 @@ The handlers implement every endpoint in factory-records.md §4.1, with the rule
 - **The activity feed** behind the bell: `GET /admin/activity` derived from supplier
   actions, and `POST /admin/activity/read` keeping one read mark per user.
 
-**Not in the mock yet**, so build them from factory-records.md rather than from here:
-`409 sync-switch-blocked` and `409 bill-source-blocked` (switching with a generated but
-unpublished month), the `409 loan-outstanding` refusal (the eligibility already reads
-`loanOutstanding`, so the app and the queue show no limit, but no route refuses), and the
-imported-bills **approvals check** and balance update (factory-records.md §5a "What the
-import checks" and "What it sets").
+Also in the mock: `409 sync-switch-blocked` and `409 bill-source-blocked` (switching with a
+generated but unpublished month, `details.months`), `409 loan-outstanding` on a walk-in loan or
+advance and on approving one, the supplier-code match (`ambiguous-supplier`), and,
+for calculated bills, the printed-slip comparison, hold and release (`bills-mismatch`,
+`heldForMonth`, `earlier-bill-held`).
+
+**Not in the mock yet**, so build them from factory-records.md rather than from here: the
+imported-bills **approvals check** at import and at publish (`approval-missing`) and the
+balance update (factory-records.md §5a "What the import checks" and "What it sets"), and
+the concurrency answers `409 records-busy` and `409 month-locked` with
+`details.reason: 'published-during-import'` (§5a "Busy and retried").
 
 ---
 

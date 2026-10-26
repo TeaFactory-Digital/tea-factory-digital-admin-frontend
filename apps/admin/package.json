@@ -12,7 +12,6 @@
     "typecheck": "tsc --build --force",
     "test": "vitest run",
     "test:watch": "vitest",
-    "mock:init": "msw init public --save",
     "dev:staging": "vite --mode staging"
   },
   "dependencies": {

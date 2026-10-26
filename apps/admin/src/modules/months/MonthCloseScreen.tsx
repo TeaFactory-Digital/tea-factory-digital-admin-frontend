@@ -188,7 +188,8 @@ export function MonthCloseScreen() {
         </Link>
       </div>
 
-      <ExceptionsQueue month={current} />
+      {/* An imported month has no exceptions (A13): the slip is the record. */}
+      {billSource === 'imported' ? null : <ExceptionsQueue month={current} />}
 
       {/* §21.10's standing rates, under the month's own rate: both are figures that decide
           what a supplier is paid, and both need a second person. */}

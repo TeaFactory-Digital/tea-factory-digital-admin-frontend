@@ -1,53 +1,23 @@
 # Backend to-do
 
-Only the work still open (23 October 2026). Finished work is taken out; git history keeps it.
+Only the work still open (26 October 2026). Finished work is taken out; git history keeps it.
 The rules for every item are in [`factory-records.md`](./factory-records.md) (the console)
 and `packages/domain` (please `vendor:pull` after each console change).
 
 | # | What | Priority |
 |---|------|----------|
-| 49 | `factorySync` defaults to **off**, never `null` | High, now |
-| 50 | Staging: `enableMonthToDate` is not served yet | Now |
-| 51 | The factory administrator reads the factory's records (`vendor:pull`) | Now, small |
+| 50 | Staging is not running the latest commits | Now |
 | 45 | Factory records: late bills wait for a manager (the one change to step 1), then opening balances, leaf and months, other deductions, importing again, the bill engine | High |
 | 48 | "This month so far": `GET /bills/month-to-date` | Medium |
 | - | Later: factory sync (Phase 10), balance corrections | Later |
 
-## 49. `factorySync` defaults to off
+## 50. Staging is not running the latest commits
 
-**Decided by the factory:** a factory keeps its records in the console until its own system
-is connected and someone switches the sync on deliberately. So **off is the default.**
-
-On staging, galaboda's `factorySync` is `null` on `GET /config` and `GET /admin/config`. The
-console used to read that as "on", which is why the Factory records menu never appeared.
-
-1. **Store `{ enabled: false }`, never `null`:** in `db:seed:tenant` for every new factory,
-   and a migration that sets it on every existing `client_config` row where it is `null`
-   (galaboda included).
-2. **Read absent or `null` as off** everywhere on the server: the `409 factory-sync-on`
-   guard on record writes, and the hourly sync job (it must not run for such a factory).
-3. The console already reads it this way: `isFactorySyncEnabled` is now
-   `factorySync?.enabled === true`, and `FactorySyncSetting` may be `null`
-   (`factoryRecords.ts`, `types/admin.ts`; `vendor:pull`).
-
-**Check:** a new tenant from `db:seed:tenant` answers `factorySync: { enabled: false }`;
-galaboda on staging answers the same; a record write for it is allowed, not
-`409 factory-sync-on`.
-
-## 50. Staging: `enableMonthToDate` is not served yet
-
-`GET /config` for galaboda on staging sends **14 flags**; `enableMonthToDate` is missing.
-Is `970be6f` deployed there, and is migration `20261023010000_month_to_date_flag_and_optional_bank_codes`
-applied? Nothing breaks meanwhile (the app reads a missing flag as off), but it should be
-there as `false`.
-
-## 51. The factory administrator reads the factory's records
-
-**Decided by the factory:** `factoryAdmin` is now `deliveries: R`, `ratesAndMonthClose: R` and
-`billing: R` in `DEFAULT_ROLE_MATRIX` (`packages/domain/src/rbac.ts`), like the platform
-admin. The console shows them the Factory records menu read-only. After `vendor:pull`, check
-that their reads answer 200 and every write on those routes (leaf, rate, imports, generate,
-publish) still answers `403`.
+Checked on 26 October 2026 (read only): `GET /config` for galaboda still answers
+`factorySync: null` and **14 flags** (no `enableMonthToDate`). So staging is not on
+`068faf3` (and therefore not `12eea12`): migrations `20261023010000`, `20261024010000` and
+`20261026010000` are not applied there. Please deploy and migrate, so the console can be
+tried against the bills import and publish.
 
 ## 45. Factory records without the factory system
 

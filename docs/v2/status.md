@@ -1,6 +1,6 @@
 # Status
 
-**As of 22 October 2026.** What works, what the backend has, what the console hides until
+**As of 26 October 2026.** What works, what the backend has, what the console hides until
 the backend ships, and what is still open. Read this before planning the next slice.
 
 **Anything marked a gap is exactly that.** Nothing here is quietly assumed to be solved.
@@ -12,9 +12,9 @@ the backend ships, and what is still open. Read this before planning the next sl
 | | |
 | --- | --- |
 | **Console** | Every module in [modules.md](./modules.md) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
-| **Backend** | `tea-factory-digital-backend`, deployed to staging. BACKEND-TODO **#1 to #44, #46 and #47 are done**; **#45** (factory records without the factory system) is partly done. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
+| **Backend** | `tea-factory-digital-backend`, deployed to staging, latest `12eea12`. BACKEND-TODO **#1 to #44, #46, #47, #49 and #51 are done**; **#45** (factory records without the factory system) is partly done (step 1, the bills import with the month reads and publish, is live except the late-bills change); **#48** and **#50** are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
-| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **544 tests in 74 files**. Playwright: 24 tests in 7 specs. Typecheck and lint clean |
+| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **565 tests in 77 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
 ### Built against the mock and tested
 
@@ -29,23 +29,42 @@ and implemented by the mock with the same rules the API must keep:
 - **Transport rate** per supplier and per collection point.
 - **Leaf intake** (session grid, void with a reason) and the `deliveries` import.
 - **Rates & month close**: the rate card, exceptions, deduction rates (four-eyes), the
-  publish with its five ordered refusals, and the `monthlyRates` import.
+  publish with its ordered refusals, and the `monthlyRates` import. With no months yet it
+  shows an empty state with the Import menu (the bills import creates the month).
 - **Bills, one way per factory**: `imported` (Import → Finished bills, stored as printed,
-  each row checked to add up, and the file refused unless everything approved here reached
-  the slip) or `calculated` (`computeBillAmounts`, the galaboda July 2026 slip reproduced to
-  the cent, payment rounded to `paymentUnit`, bill numbers from `nextBillSerial`).
+  each row checked to add up to the cent, `leafDifferences` shown in the import dialog; the
+  close checklist skips the leaf and exceptions steps, warns an importer they cannot publish,
+  lists `approval-missing` problems in the publish dialog, and offers **Publish the late
+  bills** when a late division file's bills wait) or `calculated` (`computeBillAmounts`, the
+  galaboda July 2026 slip reproduced to the cent, payment rounded to `paymentUnit`, bill
+  numbers from `nextBillSerial`, the printed-slip comparison with hold and release, the
+  next month's bill held automatically and released in order).
+- **Importing a file again** (`dryRun`, `duplicates`, `skipped`): leaf matched on date,
+  supplier, kilos and point by count; an existing supplier code skipped. Supplier codes
+  match the exact bare number, then the digits without leading zeros only when exactly one
+  supplier fits (`ambiguous-supplier` otherwise).
 - **Other deductions** on a calculated bill, with a reason, kept across a re-generation.
 - **Walk-in credit requests** and their import; four-eyes on the decision.
 - **Loan interest** (`onTop` or `withinInstalment`) and **advance interest**.
 - The credit rules: an advance is deducted in full in its month (default advance cap
   **100%**); an open loan blocks a new loan and an advance (`loan-outstanding`).
 - The **notification bell** with the supplier activity feed, read per user.
+- The **factory-system reminder** in every approval dialog (credit, tea packets, change
+  requests): the office must also enter the record in the factory's own system.
+- The app flag **`enableMonthToDate`** (fifteen flags in all) in Configuration → Features,
+  for the app's "This month so far", which reads `GET /bills/month-to-date` (BACKEND-TODO
+  #48; the flag stays hidden until then).
 - Every new error code and import problem explained in en/si/ta.
 
 ### Done on the backend
 
-Shipped by the backend up to `970be6f` (BACKEND-TODO.md now lists only what is open): `factorySync`,
-`advanceInterest` and `billSettings` in config; `409 factory-sync-on` on every record
+Shipped by the backend up to `12eea12` (BACKEND-TODO.md now lists only what is open): `factorySync`,
+`advanceInterest` and `billSettings` (including `source`) in config, and `loanInterest`
+with its `recovery`; `factorySync` stored as `{ enabled: false }` by default, absent or
+`null` read as off (`068faf3`, migration `20261024010000`); the factory administrator's
+`R` on `deliveries`, `ratesAndMonthClose` and `billing` (`068faf3`); the finished-bills
+import with `GET /admin/months`, `GET /admin/months/:monthKey` and
+`POST /admin/months/:monthKey/publish` (`12eea12`); `409 factory-sync-on` on every record
 write; `transportByPoint`; deduction rates gated on `ratesAndMonthClose`;
 `PUT /admin/suppliers/:id/transport-rate`; loan interest; `409 sync-switch-blocked`; the
 bell's activity feed, its read mark and flags; supplier identity by the bare number;
@@ -69,11 +88,14 @@ ships:
 | Configuration → Features: "Account tab: this month so far" | `GET /bills/month-to-date` (`MONTH_TO_DATE_ON_SERVER`) |
 | Import dialog: the preview of rows already there, "import them anyway" for leaf | `dryRun`, `duplicates`, `skipped` on `POST /admin/imports/:kind` (`IMPORT_SKIP_ON_SERVER`) |
 
-The Leaf intake grid and Rates & month close stay visible; they call the v1 leaf and month
-endpoints and start working as those land. Still to come on the backend, in order: the
-bills import with the month reads and publish, opening balances, leaf and months, other
-deductions, then the bill engine (no factory needs it yet: galaboda imports its bills).
-"Where the bills come from" and "How the loan interest is taken" shipped in `970be6f`.
+The Leaf intake grid and Rates & month close stay visible. On Rates & month close the
+month list, the finished-bills import, the checklist and the publish work against the API
+for imported months (`12eea12`); entering a rate, the exceptions queue (still rendered for
+an imported month) and the leaf calls start working as those endpoints land. Still to come on the backend, in order: late bills waiting
+for a manager (R15), opening balances, leaf and months, other deductions, then the bill
+engine with the printed-slip check (no factory needs it yet: galaboda imports its bills).
+"Where the bills come from" and "How the loan interest is taken" shipped in `970be6f`, so
+the console shows and sends both.
 
 ---
 
@@ -110,10 +132,11 @@ Worst first: correctness, then plumbing, then polish.
    headroom twice ([factory-integration-spec.md](./factory-integration-spec.md) §3.4).
    Switching a factory from records kept here back to the sync also waits for Phase 10.
 
-2. **BACKEND-TODO #45 is not finished.** Until it is, a sync-off factory can add
-   suppliers, set transport rates and record walk-ins, but not import its bills, enter
-   opening balances, enter leaf, close a month or type other deductions against the real
-   API. The table above says what is hidden.
+2. **BACKEND-TODO #45 is not finished.** A sync-off factory can add suppliers, set
+   transport rates, record walk-ins, and import and publish its finished bills against the
+   real API, but a late division file's bills are still published at once by the importer
+   (R15), and it cannot enter opening balances, enter leaf, enter a rate by hand, generate
+   bills or type other deductions. The table above says what is hidden.
 
 3. **`@tfd/domain` is shared with the backend but copied into the app.** The backend
    vendors it (`vendor:pull`), so the two cannot drift silently. The mobile app keeps its
@@ -153,13 +176,7 @@ Worst first: correctness, then plumbing, then polish.
     `role="alert"`, accessible names, a global focus ring), but nobody has driven NVDA or
     VoiceOver over it.
 
-12. **The role matrix shows twelve of fifteen capabilities.** `deliveries`,
-    `ratesAndMonthClose` and `payouts` are hidden on the Users & roles screen
-    (`FACTORY_CONSOLE_CAPABILITIES`) and keep their default levels. With the sync off,
-    `deliveries` and `ratesAndMonthClose` matter (Leaf intake, Rates & month close), so a
-    factory cannot yet change who holds them from the console.
-
-13. **Reports read live records.** §19.5 asks for a read replica; the reports are single
+12. **Reports read live records.** §19.5 asks for a read replica; the reports are single
     passes over live records, so moving them is a connection string, not a rewrite.
 
 ---
@@ -185,7 +202,7 @@ Numbering follows `status.md` §21 in the mobile repo.
 ## What I would build next
 
 1. **Finish #45 on the backend**, in the order in [BACKEND-TODO.md](./BACKEND-TODO.md):
-   galaboda's bills import first, then opening balances, leaf and months. Remove each line
+   the late bills (R15) first, then opening balances, leaf and months. Remove each line
    from `serverReady.ts` as it ships.
 2. **The push sender** (gap 4): every notification setting in the console is a control
    over nothing until it exists.

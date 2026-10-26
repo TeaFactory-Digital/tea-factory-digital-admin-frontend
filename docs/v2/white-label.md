@@ -134,7 +134,7 @@ Three things are bundled, for different reasons:
 | --- | --- |
 | **Brand colours** per tenant (`@tfd/brand`'s registry: today `base` and `galaboda` only) | A grey login screen is a visible regression, and a colour cannot be wrong in a way that misleads anyone |
 | **One default mark** (`public/brand/logo.svg`, wired up in `brand/assets.ts`) | Same argument as the colours: artwork cannot be wrong in a way that misleads anyone, and two grey initials on the login screen of a tea factory is a visible regression. It is *one* generic mark, never a factory's own; see below |
-| **Neutral identity + all flags on** (`config/defaults.ts`) | A per-tenant name and telephone number here would be a second source of truth, and *a wrong telephone number in a shipped bundle is exactly what serving config was meant to fix* |
+| **Neutral identity + every flag on but `enableMonthToDate`** (`config/defaults.ts`) | A per-tenant name and telephone number here would be a second source of truth, and *a wrong telephone number in a shipped bundle is exactly what serving config was meant to fix* |
 
 The bundled mark is the **default**, not a source of truth. `branding.logoUrl` from
 `GET /config` wins wherever it is set, so a factory that uploads artwork in M14
@@ -148,7 +148,8 @@ A tenant-specific image file in the bundle would be a second source of truth for
 that factory's identity, which is the mistake the neutral-identity row above
 exists to avoid.
 
-Flags default **on**. The alternative hides queues from a clerk whenever `/config`
+Flags default **on** (all but `enableMonthToDate`, which is app-only and ships off). The
+alternative hides queues from a clerk whenever `/config`
 is slow, which reads as "the manure requests have disappeared". Defaulting on
 risks briefly showing a queue the factory does not use, which reads as an empty
 inbox. The second failure is the cheaper one, and the API is the authority
@@ -175,8 +176,8 @@ const visible = (!item.flag || flags[item.flag]) && can(grants, item.capability)
 ### v2: the set is the app's, and it was not
 
 `FeatureFlagSet`'s docblock said the flags were *"identical to the app's set"*. The
-type held **ten**; the app's `FeatureFlags` (mobile `src/config/types.ts`) holds
-**fourteen**. Six the app gates real screens on had no control anywhere in this
+type held **ten**; the app's `FeatureFlags` (mobile `src/config/types.ts`) held
+**fourteen** (fifteen since `enableMonthToDate`). Six the app gates real screens on had no control anywhere in this
 console, and two were console-only.
 
 That is the most expensive kind of drift, because nothing fails. A factory wanting
@@ -200,7 +201,7 @@ the app's flag set.** Nothing more, nothing less.
 | `enableDarkModeToggle` | - | The dark-mode switch |
 | `enableProfileTab` | - | The profile tab |
 | `enableAutoLock` | - | `useAutoLock` |
-| `enableMonthToDate` | - | "This month so far" on the Account tab (off by default; BACKEND-TODO #48) |
+| `enableMonthToDate` | - (M14 shows its switch only once `MONTH_TO_DATE_ON_SERVER` is true) | "This month so far" on the Account tab: `MonthToDateCard`, compact, with a day strip (off by default; BACKEND-TODO #48) |
 
 **Six of the fifteen gate nothing this console renders, and that is expected.**
 `enableBiometricLogin` is a phone capability; there is no office equivalent and
@@ -323,8 +324,8 @@ of the row:
 | Section | Blocks of the row |
 | --- | --- |
 | The factory | `factory` (identity, as printed on the bill) |
-| Features | `flags`, **the fifteen** |
-| Factory system | `factorySync`: the sync on or off |
+| Features | `flags`, **the fifteen** (`enableMonthToDate` neither shown nor sent until `MONTH_TO_DATE_ON_SERVER`) |
+| Factory system | `factorySync`: the sync on or off (absent or `null` reads as off) |
 | Collection & savings | `collectionPoints`, `savings` (rates, withdrawal month, interest), `manureProducts` |
 | Banks & branches | `banks` |
 | Languages & branding | `localization`, `branding`, `theme` |
@@ -362,17 +363,22 @@ Consequences worth knowing before you use it:
 
   The bundled defaults reproduce the old formulas exactly, so a factory that never
   opens the screen sees no change in what anybody may borrow.
-- **Where a factory's records come from is configuration.** *Factory system* switches the
-  hourly sync off, and the office then keeps suppliers, daily leaf, rates and bills in the
-  console ([factory-records.md](./factory-records.md)); the **Factory records** sidebar
-  section (Leaf intake, Rates & month close) and the entry and import screens appear only
-  then. The API refuses the switch while a month has generated but unpublished bills
-  (`sync-switch-blocked`).
+- **Where a factory's records come from is configuration.** **Off is the default**
+  (stored as `{ enabled: false }`; absent or `null` also reads as off): the office keeps
+  suppliers, daily leaf, rates and bills in the console
+  ([factory-records.md](./factory-records.md)) until its own system is connected and
+  *Factory system* switches the hourly sync on deliberately. The **Factory records**
+  sidebar section (Leaf intake, Rates & month close) and the entry and import screens
+  appear only while it is off. The API refuses the switch while a month has generated but
+  unpublished bills (`sync-switch-blocked`).
 - **How a bill is worked out is configuration**, and it only matters with the sync off.
   *Bill calculation* says whether the bills are **imported** as the factory's own system
-  printed them (galaboda) or **calculated** here, the unit the payment is rounded down to,
-  the serial the next bill number continues from, and the advance and loan interest a month
-  (loan 0% unless set, taken on top of the instalment or inside it). With the sync on the
+  printed them (galaboda) or **calculated** here (one way per factory; the source cannot
+  change while a month has generated but unpublished bills, `bill-source-blocked`), the
+  unit the payment is rounded down to (Rs. 1, 5 or 10), the serial the next bill number
+  continues from (the year of the bill's month, then a serial that never resets), and the
+  advance and loan interest a month (loan 0% unless set, taken on top of the instalment or
+  inside it, `loanInterest.recovery`). With the sync on the
   factory system's bills carry their own figures, and the section says so rather than
   hiding, so an administrator about to switch the sync off can set them first.
 - **The tea-packet policy is configuration**: the pack size, the price and the most one
@@ -388,7 +394,8 @@ Consequences worth knowing before you use it:
 - **The payout file's layout is still configuration, and no longer edited here.** §21.17's
   answer (that the columns, headings, delimiter and number formats are per-tenant values
   rather than three guessed serialisers) remains the right answer, and `payoutExport.ts`
-  still holds the shared serialiser. But M6 is the factory's own console's in v2, so the
+  still holds the shared serialiser. But in v2 the factory pays from its own system and
+  the payouts module (M6: payout runs and payout files) has left the console, so the
   section that edited it is gone. Whoever owns payouts next inherits the
   serialiser rather than a second guess at the format.
 

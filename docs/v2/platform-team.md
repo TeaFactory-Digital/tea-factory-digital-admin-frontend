@@ -10,7 +10,7 @@
 
 **Two modes, one per factory** (Configuration → Factory system, `config.factorySync`):
 
-| | Sync **on** (default) | Sync **off** |
+| | Sync **on** | Sync **off** (default) |
 | --- | --- | --- |
 | Records come from | The hourly pull (§1), **not built yet: Phase 10** | The office, in the console (§4) |
 | Credit requests | The console records the factory's decision (§2; not built yet) | The console decides them, four-eyes |
@@ -112,12 +112,20 @@ endpoint.
 
 ## 4. Records kept in the console (sync off) ✅ console built
 
-For a factory whose system cannot be connected. The contract is
+For every factory until its own system is connected and the sync is switched on
+deliberately: that is the default. The contract is
 [factory-records.md](./factory-records.md); in short:
 
-- **The switch.** `config.factorySync.enabled`, read only through `isFactorySyncEnabled`.
-  While it is on, every record write answers `409 factory-sync-on`. Switching is refused
-  while a month has generated but unpublished bills (`409 sync-switch-blocked`).
+- **The switch.** `config.factorySync.enabled`, read only through `isFactorySyncEnabled`
+  (`enabled === true`; absent or `null` is off, and a new factory is stored as
+  `{ enabled: false }`). While it is on, every record write answers `409 factory-sync-on`.
+  Switching is refused while a month has generated but unpublished bills
+  (`409 sync-switch-blocked`).
+- **Who does what.** The clerk enters leaf, records walk-in requests and imports or
+  generates bills (`deliveries`, `creditRequests`, `billing: W`); the manager approves and
+  publishes; the factory and platform administrators **read** the records
+  (`deliveries`, `ratesAndMonthClose`, `billing: R`) and change none. A savings withdrawal
+  needs `billing: approve`.
 - **Screens that appear only with the sync off:** Add supplier, opening balances and the
   supplier's own transport rate (supplier → Money), the sidebar section **Factory
   records** (**Leaf intake**, `/deliveries`; **Rates & month close**, `/rates`), Other
@@ -127,11 +135,17 @@ For a factory whose system cannot be connected. The contract is
   lists every problem. The console checks each row with the same domain function the
   server runs (`importRowProblems`).
 - **Bills, one way per factory** (`billSettings.source`): **imported** from the factory's
-  own system, stored exactly as printed (Galaboda), or **calculated** here by
-  `computeBillAmounts`. Then reviewed and published, four-eyes.
+  own system, stored exactly as printed (Galaboda; live on the backend), or **calculated**
+  here by `computeBillAmounts` and compared with the factory's printed slips, a bill that
+  differs being held and later released. Then reviewed and published, four-eyes, which
+  also covers whoever imported the month's bills; a late division file's bills wait for a
+  manager (console and mock done; the backend's change is BACKEND-TODO #45 step 1).
+  Payment in units of Rs. 1, 5 or 10 (`paymentUnit`, plus `loanInterest.recovery` for how
+  loan interest is taken); bill numbers are the year of the bill's month and a
+  serial that never resets (`factoryBillNumber`).
 - **Not on the backend yet.** Features the API has not built are hidden in one place,
   `apps/admin/src/lib/serverReady.ts`; remove a line the day its endpoint ships
-  (BACKEND-TODO #45 lists them).
+  (BACKEND-TODO #45 and #48 list them).
 
 ## 5. Other console pieces the office relies on
 

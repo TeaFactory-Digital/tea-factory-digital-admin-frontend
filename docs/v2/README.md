@@ -9,7 +9,7 @@ a switch (Configuration → **Factory system**).
 
 ## Two modes
 
-| | Factory system sync **on** (the default) | Factory system sync **off** |
+| | Factory system sync **on** | Factory system sync **off** (the default) |
 | --- | --- | --- |
 | Where suppliers, leaf, rates and bills come from | The factory's own system, pulled every hour | The office, in this console |
 | What the console is | App management: queues, content, notifications, configuration, users, audit, and a read-only view of the bills for support | All of that, **plus** the factory's records |
@@ -51,14 +51,14 @@ backend still has to build for it, and what the console hides until then, is
 | [modules.md](./modules.md) | The module map: every screen, what it decides, and which ones appear only with the sync off |
 | [status.md](./status.md) | What is built, what the backend has, what the console hides until it ships, known gaps, open questions |
 | [factory-records.md](./factory-records.md) | **Sync off**: the switch, the screens, entry and Excel/CSV import, the API, how bills are imported or calculated, credit rules while records are kept here |
-| [BACKEND-TODO.md](./BACKEND-TODO.md) | The backend's open work, what is done on the backend, what the console hides in `lib/serverReady.ts`, and the decisions behind it |
+| [BACKEND-TODO.md](./BACKEND-TODO.md) | The backend's open work only, in order, what the console hides in `lib/serverReady.ts`, and the decisions behind it (what is done is in [status.md](./status.md)) |
 | [new-factory.md](./new-factory.md) | **Adding a new factory**, step by step: the slug, `npm run db:seed:tenant`, DNS, the console configuration, the factory's records (sync on or off), and the per-factory app build |
 | [api-contract.md](./api-contract.md) | Base URL, auth realm, every endpoint with payloads, the error envelope, and the agreed shapes |
 | [architecture.md](./architecture.md) | The workspace, the layer boundaries, the provider stack, state |
 | [white-label.md](./white-label.md) | Runtime brand resolution, the Tailwind and token bridge, and the feature flags |
 | [rbac.md](./rbac.md) | The §12.1 permission matrix as data, four-eyes, where authorization is enforced |
 | [design-system.md](./design-system.md) | Tokens, components, density, tables, forms, accessibility |
-| [mocks.md](./mocks.md) | The mock API the Vitest suite runs against: what it enforces and its fixtures |
+| [mocks.md](./mocks.md) | The mock API the Vitest and Playwright suites run against: what it enforces and its fixtures |
 | [operations.md](./operations.md) | Commands, environments, deployment per subdomain, testing, CI |
 | [factory-integration-spec.md](./factory-integration-spec.md) | **Sync on: the shared core**, and the front door to the documents below. The duplicate-prevention handshake, the office workflow, who decides what |
 | [factory-system-team.md](./factory-system-team.md) | **The document to hand the factory's own dev team.** The endpoint field by field, the volumes, the fallbacks |

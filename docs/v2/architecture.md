@@ -36,8 +36,8 @@ the factory-records work. What changed is what sits inside them:
   replicated figures are, `unknown` when the status call fails, nothing shown with the
   sync off.
 - **`packages/domain`** gained, among others, `factoryRecords.ts` (the sync switch,
-  `IMPORT_COLUMNS`, `importRowProblems`, `billSourceOf`, `loanRecovery`,
-  `factoryBillNumber`), `deductionRates.ts`, `creditRules.ts`, `activity.ts`,
+  `IMPORT_COLUMNS`, `importRowProblems`, `billSourceOf`, `loanRecovery`; the bill
+  number, `factoryBillNumber`, is in `bill.ts`), `deductionRates.ts`, `creditRules.ts`, `activity.ts`,
   `factorySync.ts`, `teaPackets.ts` and `banners.ts` (a **verbatim port of the app's
   `src/services/banners`**: the console runs the app's rule, not a second implementation
   of it).
@@ -183,7 +183,8 @@ Auth is **not** in the stack, for the reason in the table above.
 
 `main.tsx`, in order, and each step depends on the one before. **Nothing is intercepted**:
 every request reaches the API at `VITE_API_BASE_URL`. The MSW handlers in
-`services/mocks/` are for Vitest only.
+`services/mocks/` answer Vitest and the Playwright fixture (`e2e/fixtures.ts`, which
+answers `/v1/**` in Node); nothing mock-related is bundled.
 
 1. **`assertEnvUsable()`**: refuse to boot a production bundle wired to the
    placeholder origin. A console that looks fine, serves
@@ -219,8 +220,9 @@ is refused the way the sidebar would have hidden it:
 | `RequireAuth` | Signed in |
 | `RequireFlag` / `RequireAnyFlag` | The factory buys the feature (M7 opens on any of its three facilities) |
 | `RequireFactoryRecords` | The factory-system sync is off (Leaf intake, Rates & month close) |
-| `RequireCapability` | This user may read it. `/profile` and `/data-status` have none | Guards render an
-explanation rather than redirecting: a clerk who followed a link should be told
+| `RequireCapability` | This user may read it. `/profile` and `/data-status` have none |
+
+Guards render an explanation rather than redirecting: a clerk who followed a link should be told
 their role does not allow it, not silently returned to the dashboard wondering
 whether the link was broken.
 

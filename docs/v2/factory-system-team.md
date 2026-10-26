@@ -245,6 +245,7 @@ Abbreviated here; the sample file has the whole thing.
 | Field | Requirement |
 | --- | --- |
 | **`supplierId`** | Must be **stable for ever**. Everything on the platform is keyed on it. If the supplier code can change (a supplier moves division), send an unchanging internal id here and the display code in `supplierCode` |
+| **`supplierCode`** | As the factory writes it (`5147 (DENIYAYA)`). The **bare number** (`5147`) is the supplier's identity on the platform and their app sign-in id, so it must be unique across the whole factory. Keep any leading zeros (`0708`): a code that arrives without them (`708`) is matched only when exactly one supplier fits |
 | **All amounts, `kg`** | JSON **numbers**, 2 decimal places. Not strings. No thousands separators, no `Rs.` |
 | **Dates** | `YYYY-MM-DD`, Colombo local. Timestamps ISO-8601 **with offset** (`+05:30`) |
 | **`voided`** | A withdrawn weighing is sent with `voided: true`, **never omitted**. An absent row and a cancelled row look identical otherwise, and one of them still counts towards a total |

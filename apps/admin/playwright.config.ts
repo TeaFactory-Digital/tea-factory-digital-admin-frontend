@@ -5,9 +5,9 @@ import { defineConfig, devices } from '@playwright/test';
  *
  * Narrow on purpose. The Vitest + MSW suite already covers the console's logic in
  * jsdom, and duplicating it here would buy slow tests rather than confidence. What
- * only a browser can prove is the part jsdom fakes: that the **service worker
- * starts**, that the **CSS-variable brand bridge actually paints**, and that the
- * sign-in → dashboard path works against the built app.
+ * only a browser can prove is the part jsdom fakes: that the **CSS-variable brand bridge
+ * actually paints**, that a session **survives a reload**, that layouts hold on a short
+ * office screen, and that the sign-in → dashboard path works in a real browser.
  *
  * **The API is answered by the tests** (`e2e/fixtures.ts`), from the same MSW handlers as
  * Vitest: the console itself has no in-browser mock. Its own dev server runs on 5274 with
