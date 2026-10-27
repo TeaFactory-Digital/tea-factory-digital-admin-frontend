@@ -348,8 +348,8 @@ the fixture exists rather than decoration:
 | `savingsScheme`, `about`, `terms`, `privacy` | Live, English only | What a factory that has just gone live actually looks like |
 | `creditTerms` | **Never written** | The app falls back to its bundled default. A state the office must be able to see rather than mistake for a page it already filled in |
 
-**The Sinhala and Tamil copy has not been reviewed by a native speaker** (status.md gap
-8). It is real script rather than Latin placeholders on purpose (the `[lang="si"]` and
+**The fixtures' Sinhala and Tamil copy has not been reviewed** (the console's labels
+were, on 26 October 2026; status.md gap 7). It is real script rather than Latin placeholders on purpose (the `[lang="si"]` and
 `[lang="ta"]` rules in §20.2 cannot be exercised by English three times over), but it is
 approximate, and it must be replaced before the console is shown to the factory.
 

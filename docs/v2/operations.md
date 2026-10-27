@@ -24,7 +24,7 @@ From the workspace root:
 | `npm run preview`       | Serves the built bundle                                                                    |
 | `npm run typecheck`     | `tsc --build --force` across the projects                                                  |
 | `npm run lint`          | ESLint, including the white-label and layering rules                                       |
-| `npm run test`          | Vitest against the MSW fixtures: 568 tests in 77 files (26 October 2026)                   |
+| `npm run test`          | Vitest against the MSW fixtures: 582 tests in 79 files (26 October 2026)                   |
 | `npm run test:watch`    | Vitest in watch mode                                                                       |
 | `npm run e2e`           | Playwright against its own dev server on port 5274, API answered by `e2e/fixtures.ts`. Needs `npx playwright install chromium` once; see Testing |
 | `npm run format`        | Prettier                                                                                   |
@@ -163,7 +163,7 @@ old binaries are in the field, and feature flags are the release valve.
 
 Layered so each layer tests what only it can.
 
-### Vitest: 568 tests in 77 files
+### Vitest: 582 tests in 79 files
 
 Every file runs against the MSW fixtures through the real transport, store and screens
 (`test/setup.ts`); only the server is a stand-in. Counts drift with every change, so

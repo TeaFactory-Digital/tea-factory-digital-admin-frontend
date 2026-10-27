@@ -20,7 +20,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState, ErrorState, Notice, Skeleton } from '@/components/ui/states';
 import { isApiError } from '@/services/api/errors';
 import { cn } from '@/lib/cn';
-import { formatCount, formatDate, formatMoney } from '@/lib/format';
+import { formatDate, formatMoney, formatQuantityKg } from '@/lib/format';
 import { useSupplierRequestHistory } from './hooks';
 
 type Kind = CreditFacility | 'teaPackets';
@@ -57,7 +57,7 @@ export function SupplierRequestHistory({ supplierId }: { supplierId: string }) {
         request.facility === 'manure'
           ? [
               request.manureType,
-              request.quantityKg ? `${formatCount(request.quantityKg)} kg` : null,
+              request.quantityKg ? formatQuantityKg(request.quantityKg) : null,
             ]
               .filter(Boolean)
               .join(' · ')

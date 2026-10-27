@@ -36,7 +36,7 @@ import { Button } from '@/components/ui/Button';
 import { ImportMenu } from '@/components/ImportMenu';
 import { WalkInCreditDialog } from './WalkInCreditDialog';
 import { useDebounced } from '@/lib/useDebounced';
-import { formatAge, formatAmount } from '@/lib/format';
+import { formatAge, formatAmount, formatQuantityKg } from '@/lib/format';
 import { useCreditRequests } from './hooks';
 
 const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'neutral' } as const;
@@ -141,7 +141,7 @@ export function CreditScreen() {
               {row.manureType ? (
                 <span className="text-caption text-text-secondary">
                   {row.manureType}
-                  {row.quantityKg ? ` · ${row.quantityKg} kg` : ''}
+                  {row.quantityKg ? ` · ${formatQuantityKg(row.quantityKg)}` : ''}
                 </span>
               ) : null}
             </span>

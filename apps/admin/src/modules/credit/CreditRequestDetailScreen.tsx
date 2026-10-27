@@ -22,7 +22,7 @@ import { Card, CardBody, CardHeader, DetailRow } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, Skeleton } from '@/components/ui/states';
 import { AuditPanel } from '@/components/AuditPanel';
-import { formatAge, formatAmount, formatDateTime } from '@/lib/format';
+import { formatAge, formatAmount, formatDateTime, formatQuantityKg } from '@/lib/format';
 import { CreditDecisionActions } from './CreditDecisionDialog';
 import { EligibilityPanel } from './EligibilityPanel';
 import { useCreditRequest, useCreditRequestAudit } from './hooks';
@@ -114,7 +114,7 @@ export function CreditRequestDetailScreen() {
                   <DetailRow
                     label={t('credit.detail.quantity')}
                     numeric
-                    value={`${request.quantityKg} kg`}
+                    value={formatQuantityKg(request.quantityKg)}
                   />
                 ) : null}
                 <DetailRow

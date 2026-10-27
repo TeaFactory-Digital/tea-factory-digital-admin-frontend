@@ -289,6 +289,29 @@ machines report `en-*` near-universally regardless of who is sitting at them, so
 detection would be a coin toss dressed as a preference. `config.localization.defaultLanguage`
 is not it either; that is the *supplier app's* default, a different audience.
 
+### Dates, numbers and money
+
+`lib/format.ts` follows the chrome language, read at call time, so the language switch
+re-formats every screen it re-renders:
+
+| | English | Sinhala | Tamil |
+| --- | --- | --- | --- |
+| Date | `30 Jul 2026` | `2026 ජූලි 30` | `30 ஜூலை 2026` |
+| Date and time | `30 Jul 2026, 14:05` | `2026 ජූලි 30, 14:05` | `30 ஜூலை 2026, 14:05` |
+| Month | `July 2026` | `2026 ජූලි` | `ஜூலை 2026` |
+| Money | `LKR 1,234,567.50` | `රු. 1,234,567.50` | `ரூ. 1,234,567.50` |
+| Weight | `1,240.50 kg` | `1,240.50 කි.ග්‍රෑ.` | `1,240.50 கிலோ` |
+| Waiting | `5 h`, `3 d` | `පැය 5`, `දින 3` | `5 மணி நேரம்`, `3 நாள்` |
+
+The words and their order come from the string tables (`format.*`), **not from the
+browser's locale data**: ICU names the Sinhala months by the traditional calendar (`ඇසළ`
+for July, `දුරුතු` for January) in some versions and not in others, and a bill month must
+read the same on every machine. The digits and their grouping do **not** change: Western
+digits, grouped in thousands, in every language, as the factory's printed slip has them.
+(Tamil locale data groups in lakhs, `12,34,567.50`, which is not how Sri Lanka writes
+money.) Every time is Colombo time on the 24-hour clock. `format.test.ts` holds the table
+above.
+
 ### What the scripts cost
 
 The font stack in `packages/brand` carries `Noto Sans Sinhala` and `Noto Sans Tamil`

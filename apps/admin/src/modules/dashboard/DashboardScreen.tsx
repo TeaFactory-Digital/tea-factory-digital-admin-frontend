@@ -84,7 +84,14 @@ import { seriesColor } from '@/components/charts/palette';
 import { ChartTooltip } from '@/components/charts/ChartTooltip';
 import { GRID, LINE_CURSOR, X_AXIS, Y_AXIS, activeDot } from '@/components/charts/rechartsTheme';
 import { cn } from '@/lib/cn';
-import { formatAge, formatCount, formatMonthKey, formatPercent, hoursSince } from '@/lib/format';
+import {
+  formatAge,
+  formatCount,
+  formatMonthKey,
+  formatMonthShort,
+  formatPercent,
+  hoursSince,
+} from '@/lib/format';
 
 type Trend = Array<{ monthKey: string; appShare: number | null }>;
 
@@ -372,7 +379,7 @@ function AdoptionTrend({ data, known }: { data: Trend; known: Trend }) {
           <CartesianGrid {...GRID} />
           <XAxis
             dataKey="monthKey"
-            tickFormatter={(value: string) => shortMonth(value)}
+            tickFormatter={(value: string) => formatMonthShort(value)}
             {...X_AXIS}
           />
           <YAxis
@@ -405,15 +412,6 @@ function AdoptionTrend({ data, known }: { data: Trend; known: Trend }) {
         </AreaChart>
       </ResponsiveContainer>
     </div>
-  );
-}
-
-/** `2026-09` → `Sep`. The year is in the tooltip, and twelve of them do not fit. */
-function shortMonth(monthKey: string): string {
-  const [year, month] = monthKey.split('-').map(Number);
-  if (!year || !month) return monthKey;
-  return new Intl.DateTimeFormat('en-GB', { month: 'short', timeZone: 'UTC' }).format(
-    new Date(Date.UTC(year, month - 1, 1)),
   );
 }
 

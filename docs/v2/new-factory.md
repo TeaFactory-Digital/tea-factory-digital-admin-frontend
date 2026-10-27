@@ -350,6 +350,7 @@ open; where the console or the API has not caught up, the row says so.
 | 15 | **Imported months**: a division file that arrives after the month is published waits for a manager to publish its bills, and **whoever imported a month's bills cannot publish them**. Both are built (backend `671627d`). While late bills wait, the next month cannot be published, and a waiting bill may be replaced by sending it again (R18) |
 | 16 | **The sync starts off.** A factory keeps its records in the new console until its own system is connected and the sync is switched on deliberately |
 | 17 | **The factory administrator can see the factory's records** (leaf, rates, bills) but not change them; entering, approving and publishing stay with the clerk and the manager |
+| 18 | **A full bank account number may be revealed by anyone who can open the supplier's record** (clerk, manager, both administrators), as built: each reveal asks for a reason and is audited (api-contract.md §5.4). Kept as it is (26 October 2026) |
 
 ---
 

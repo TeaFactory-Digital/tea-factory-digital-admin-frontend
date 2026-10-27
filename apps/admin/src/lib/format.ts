@@ -10,9 +10,28 @@
  *  - **`null` is not `0`** (BR-102). A rate-derived field that is `null` means
  *    the auction result is not in, and it renders as a hyphen, never as
  *    `LKR 0.00`, which is a number the office would have to explain.
+ *
+ * **They follow the chrome language** (en, si, ta), read at call time, so a screen
+ * re-rendered by the language switch formats in the new one. What changes is the words
+ * and their order: month names, the date's order (Sinhala writes the year first,
+ * `2026 ජූලි 30`), the currency and kilogram labels, the age units. Each comes from the
+ * string tables (`format.*`), not from the browser's locale data: ICU names the Sinhala
+ * months by the traditional calendar (`ඇසළ` for July) in some versions and not in others,
+ * and a bill month must read the same on every machine. What does **not** change is the
+ * digits and their grouping, `1,234,567.50` in every language, as the printed slip has
+ * them (Tamil locale data would group in lakhs, `12,34,567.50`, which is not how Sri
+ * Lanka writes money).
  */
 
 import { CURRENCY_CODE, FACTORY_TIME_ZONE, colomboDayOf } from '@tfd/domain';
+import { i18next } from '@/i18n';
+
+/** A `format.*` string in the active language. */
+function word(key: string, values?: Record<string, string>): string {
+  return i18next.t(key, values);
+}
+
+const isEnglish = () => !i18next.language || i18next.language.startsWith('en');
 
 /** What a `null` money or rate field renders as. Not a zero. */
 export const NOT_AVAILABLE = '-';
@@ -32,10 +51,13 @@ const decimal = new Intl.NumberFormat('en-LK', {
 
 const integer = new Intl.NumberFormat('en-LK', { maximumFractionDigits: 0 });
 
-/** `LKR 12,450.00`, or `-` when the auction result is not in. */
+const number = new Intl.NumberFormat('en-LK', { maximumFractionDigits: 2 });
+
+/** `LKR 12,450.00` (`රු. 12,450.00`, `ரூ. 12,450.00`), or `-` when the auction result is not in. */
 export function formatMoney(value: number | null | undefined): string {
   if (value === null || value === undefined) return NOT_AVAILABLE;
-  return currency.format(value);
+  const formatted = currency.format(value);
+  return isEnglish() ? formatted : formatted.replace(CURRENCY_CODE, word('format.currency'));
 }
 
 /** Amount without the currency code, for a column whose header already says LKR. */
@@ -44,10 +66,20 @@ export function formatAmount(value: number | null | undefined): string {
   return decimal.format(value);
 }
 
-/** `1,240.50 kg`. */
+/** `1,240.50 kg` (`කි.ග්‍රෑ.`, `கிலோ`). */
 export function formatKg(value: number | null | undefined): string {
   if (value === null || value === undefined) return NOT_AVAILABLE;
-  return `${decimal.format(value)} kg`;
+  return `${decimal.format(value)} ${word('format.kg')}`;
+}
+
+/** A quantity asked for in kilograms, as typed: `50 kg`, `12.5 kg`. */
+export function formatQuantityKg(value: number): string {
+  return `${number.format(value)} ${word('format.kg')}`;
+}
+
+/** Any other number, grouped the same way in every language: `1,234,567.5`. */
+export function formatNumber(value: number): string {
+  return number.format(value);
 }
 
 export function formatCount(value: number | null | undefined): string {
@@ -73,52 +105,62 @@ export function formatPercent(value: number | null | undefined): string {
   return percent.format(value);
 }
 
-const dateFmt = new Intl.DateTimeFormat('en-GB', {
+/**
+ * The Colombo wall clock of an instant, as numbers. Only the parts are taken from
+ * `Intl` (pinned to the factory's zone, BR-104); the words come from the string tables.
+ */
+const colomboParts = new Intl.DateTimeFormat('en-GB', {
   timeZone: FACTORY_TIME_ZONE,
-  day: '2-digit',
-  month: 'short',
   year: 'numeric',
-});
-
-const dateTimeFmt = new Intl.DateTimeFormat('en-GB', {
-  timeZone: FACTORY_TIME_ZONE,
+  month: 'numeric',
   day: '2-digit',
-  month: 'short',
-  year: 'numeric',
   hour: '2-digit',
   minute: '2-digit',
-  hour12: false,
+  hourCycle: 'h23',
 });
 
-const monthFmt = new Intl.DateTimeFormat('en-GB', {
-  timeZone: FACTORY_TIME_ZONE,
-  month: 'long',
-  year: 'numeric',
-});
+function colomboClock(iso: string | null | undefined) {
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  const parts: Partial<Record<Intl.DateTimeFormatPartTypes, string>> = Object.fromEntries(
+    colomboParts.formatToParts(date).map((part) => [part.type, part.value]),
+  );
+  return {
+    year: parts.year ?? '',
+    month: Number(parts.month),
+    day: parts.day ?? '',
+    time: `${parts.hour}:${parts.minute}`,
+  };
+}
 
-/** No year and no timezone: a bare month name for a rule that recurs every year. */
-const monthNameFmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', month: 'long' });
+const validMonth = (month: number) => Number.isInteger(month) && month >= 1 && month <= 12;
 
-/** `30 Jul 2026`, in Colombo time. */
+/** `30 Jul 2026` (`2026 ජූලි 30`, `30 ஜூலை 2026`), in Colombo time. */
 export function formatDate(iso: string | null | undefined): string {
-  if (!iso) return NOT_AVAILABLE;
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? NOT_AVAILABLE : dateFmt.format(date);
+  const clock = colomboClock(iso);
+  if (!clock) return NOT_AVAILABLE;
+  return word('format.date', {
+    day: clock.day,
+    month: word(`format.month.${clock.month}`),
+    monthShort: word(`format.monthShort.${clock.month}`),
+    year: clock.year,
+  });
 }
 
-/** `30 Jul 2026, 14:05`, in Colombo time. */
+/** `30 Jul 2026, 14:05`, in Colombo time, on the 24-hour clock in every language. */
 export function formatDateTime(iso: string | null | undefined): string {
-  if (!iso) return NOT_AVAILABLE;
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? NOT_AVAILABLE : dateTimeFmt.format(date);
+  const clock = colomboClock(iso);
+  if (!clock) return NOT_AVAILABLE;
+  return word('format.dateTime', { date: formatDate(iso), time: clock.time });
 }
 
-/** `"2026-07"` → `July 2026`. Months travel as keys, never as display strings. */
+/** `"2026-07"` → `July 2026` (`2026 ජූලි`, `ஜூலை 2026`). Months travel as keys, never as display strings. */
 export function formatMonthKey(monthKey: string | null | undefined): string {
   if (!monthKey) return NOT_AVAILABLE;
   const [year, month] = monthKey.split('-').map(Number);
-  if (!year || !month) return NOT_AVAILABLE;
-  return monthFmt.format(new Date(Date.UTC(year, month - 1, 15)));
+  if (!year || month === undefined || !validMonth(month)) return NOT_AVAILABLE;
+  return word('format.monthYear', { month: word(`format.month.${month}`), year: String(year) });
 }
 
 /**
@@ -128,8 +170,14 @@ export function formatMonthKey(monthKey: string | null | undefined): string {
  * withdrawal window (§21.9). Rendering it as `April 2026` there would read as a one-off.
  */
 export function formatMonthName(month: number): string {
-  if (!Number.isInteger(month) || month < 1 || month > 12) return NOT_AVAILABLE;
-  return monthNameFmt.format(new Date(Date.UTC(2000, month - 1, 15)));
+  if (!validMonth(month)) return NOT_AVAILABLE;
+  return word(`format.month.${month}`);
+}
+
+/** `2026-09` → `Sep` (`සැප්`, `செப்.`): a chart's axis, where twelve full names do not fit. */
+export function formatMonthShort(monthKey: string): string {
+  const month = Number(monthKey.split('-')[1]);
+  return validMonth(month) ? word(`format.monthShort.${month}`) : monthKey;
 }
 
 
@@ -150,9 +198,9 @@ export function colomboToday(now: Date = new Date()): string {
 export function formatAge(hours: number | null | undefined): string {
   // An age the API did not send is absent, not "NaN d" (BR-102).
   if (hours === null || hours === undefined || !Number.isFinite(hours)) return NOT_AVAILABLE;
-  if (hours < 1) return '< 1 h';
-  if (hours < 48) return `${Math.floor(hours)} h`;
-  return `${Math.floor(hours / 24)} d`;
+  if (hours < 1) return word('format.age.underAnHour');
+  if (hours < 48) return word('format.age.hours', { n: String(Math.floor(hours)) });
+  return word('format.age.days', { n: String(Math.floor(hours / 24)) });
 }
 
 /** Hours between an ISO timestamp and now: the input to `formatAge`. */

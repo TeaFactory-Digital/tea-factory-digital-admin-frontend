@@ -15,7 +15,7 @@ the next slice.
 | **Console** | Every module in [Modules](#modules) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
 | **Backend** | `tea-factory-digital-backend`, shipped up to `671627d`; staging is not yet running `068faf3` or later (BACKEND-TODO #50). BACKEND-TODO **#1 to #44, #46, #47, #49 and #51 are done**; **#45** (factory records without the factory system) is partly done (step 1, the bills import with the month reads and publish, is live, late bills waiting for a manager included; replacing a waiting one is R18); **#48**, **#50** and **#53** (a `vendor:pull`) are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
-| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **568 tests in 77 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
+| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **582 tests in 79 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
 ### Built against the mock and tested
 
@@ -740,26 +740,35 @@ Worst first: correctness, then plumbing, then polish.
    Decided (C5): a manager posts a correction with a note, applied on the next bill. Not
    built.
 
-7. **Dates, numbers and money are not localized.** `lib/format.ts` pins its `Intl`
-   formatters to `en-GB` and `en-LK`, so a Tamil console still reads "04 Aug 2026". It may
-   be right for figures two people read over the phone, but nobody has decided it.
+7. **The Sinhala and Tamil labels still need a native speaker's reading in place.** On
+   26 October 2026 every label was read against the English and 665 were corrected (323
+   Sinhala, 342 Tamil). Among them:
+   - meanings turned round: Tamil "take down" read as delete, and "Undo changes" as
+     "redo"; Sinhala "against" read as "opposed to", and "settled" as "balanced";
+   - English left in about 100 newer Sinhala labels;
+   - one word per term, the same as the app's where the app has one: Sinhala දළු,
+     ඇතුළු වන්න, ඉතිරිකිරීම්, විමසීම්, බලාපොරොත්තුවෙන්; Tamil வழங்குநர் (not
+     three names for the supplier), கொழுந்து, தேயிலைப் பொதி, திகதி, and the Sri
+     Lankan month spellings.
 
-8. **No Sinhala or Tamil here has been reviewed by a native speaker**: the fixtures, the
-   default pages and about 1,250 console labels per language. *To close:* somebody in the
-   office reads the si and ta screens in place, before the console is demonstrated in
-   either language. A unit test asserting each table's values fall in its own script range
-   would catch the Sinhala/Tamil look-alike code points.
+   `stringTables.test.ts` now fails on a letter of the other script, a broken vowel
+   sign, a renamed placeholder, untranslated English or an em dash. *To close:* somebody
+   in the office reads the si and ta screens in place, before the console is
+   demonstrated in either language. The fixtures and default pages (mocks.md) were not
+   part of the review. Two words chose themselves and are worth that person's eye:
+   Sinhala ආයාත / අපනයනය for import and export, and Tamil கொழுந்து (the console) against
+   பச்சை இலை (the app) for green leaf.
 
-9. **Change-request evidence attachments are shown only if the API sends them**, and it does
+8. **Change-request evidence attachments are shown only if the API sends them**, and it does
    not yet. Whether an attachment is required to approve a bank-details change is open.
 
-10. **No error reporting.** A console error reaches `console.error` and nowhere else.
+9. **No error reporting.** A console error reaches `console.error` and nowhere else.
 
-11. **No screen-reader pass.** The semantics are built in (real tables, `aria-sort`,
+10. **No screen-reader pass.** The semantics are built in (real tables, `aria-sort`,
     `role="alert"`, accessible names, a global focus ring), but nobody has driven NVDA or
     VoiceOver over it.
 
-12. **Reports read live records.** §19.5 asks for a read replica; the reports are single
+11. **Reports read live records.** §19.5 asks for a read replica; the reports are single
     passes over live records, so moving them is a connection string, not a rewrite.
 
 ---
@@ -775,7 +784,6 @@ Numbering follows `status.md` §21 in the mobile repo.
 | 21.12 | **Retention**: for bills, payout records, delivery data | M17's retention policy, and §20.4. Settled whatever the answer: no hard deletes anywhere, and the audit log survives an erasure request ([api-contract.md §8](./api-contract.md#8-m17-audit-get-adminaudit)) |
 | 21.18 | **Inquiry statuses**: is Resolved/Closed the right pair? | Built with both; `INQUIRY_STATUSES` is data, so a third is a row |
 | 21.24 | **Notifications**: should a bill publication push to every supplier, and is `content: approve` the right gate on free text? | Built as configuration (one switch per category); the factory has not confirmed the settings |
-| - | **Who may reveal a full bank account number?** | Any user who can open the supplier's record (clerk, manager, both administrators). Probably should be the clerk alone; a one-line change |
 | - | **Gross or net leaf?** Does the weighing point record one figure, or a gross weight and a sack/water deduction? | One net `kgs` per weighing in the console and on the wire. The backend already books `grossKg` + `deductionKg` (0) and derives `kgs`, so a two-figure answer is no migration on the server; it would still change `Delivery` in every client that reads it |
 | - | **What is a plausible weighing?** | The leaf grid questions a figure over 150 kg that is also 3× the session's mean (`OUTLIER_KG_MULTIPLE`, `OUTLIER_KG_FLOOR_KG`). A guess until the factory gives a number |
 | - | **How far back may leaf be entered?** | Any date in an unpublished month; the publish lock is the only guard |

@@ -13,7 +13,7 @@
  */
 
 import i18next from 'i18next';
-import { formatDateTime } from '@/lib/format';
+import { formatDateTime, formatNumber } from '@/lib/format';
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
@@ -119,7 +119,7 @@ function formatValue(key: string, value: unknown, t: Translate): string {
   }
 
   if (typeof value === 'number') {
-    return key === 'sizeBytes' ? formatBytes(value) : value.toLocaleString();
+    return key === 'sizeBytes' ? formatBytes(value) : formatNumber(value);
   }
 
   if (typeof value === 'string') {
