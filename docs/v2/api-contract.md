@@ -239,7 +239,7 @@ unknown code is safe but unhelpful.
 | M13 Notifications | `unknown-category` (422), `category-disabled` (409), `no-recipients` (409), `push-not-configured` (409) |
 | M6 Payouts | `month-not-published`, `run-exists`, `already-approved`, `run-not-approved`, `no-payable-lines`, `line-not-payable` (all 409) |
 | M7 Credit | `over-ceiling` (409) |
-| Factory records (sync off) | `factory-sync-on` (409), `sync-switch-blocked` (409, `details.months`), `negative` (422), `unknown-collection-point` (422), `bank-details-required` (422), `opening-balances-locked` (409), `unknown-supplier` (422), `no-bill` (422), `import-invalid` (422, `details.problems`, `details.total`), `import-size` (422) |
+| Factory records (sync off) | `factory-sync-on` (409), `sync-switch-blocked` (409, `details.months`), `negative` (422), `unknown-collection-point` (422), `bank-details-required` (422), `opening-balances-locked` (409), `cut-over-month` (409, `details.reason`, `details.asOfMonth`), `withdrawal-pending` (409), `unknown-supplier` (422), `no-bill` (422), `import-invalid` (422, `details.problems`, `details.total`), `import-size` (422) |
 | Credit refusals a walk-in or an approval can meet | `request-pending` (409), `supplier-suspended` (409), `supplier-closed` (409), `advance-outstanding` (409), `loan-installments-invalid` (422), `manure-installments-invalid` (422), `loan-outstanding` (409) |
 | Where the bills come from | `wrong-bill-source` (409), `bill-source-blocked` (409, `details.months`) |
 
@@ -916,7 +916,7 @@ types named (`packages/domain/src/factoryRecords.ts`).
 | --- | --- | --- |
 | `POST /admin/suppliers` | `NewSupplier` → `201 { id }` | `409 supplier-code-taken`, `422 unknown-collection-point`, `422 bank-details-required` |
 | `GET /admin/suppliers/{id}/opening-balances` | → `OpeningBalancesRecord` | `404 not-found` until entered |
-| `PUT /admin/suppliers/{id}/opening-balances` | `OpeningBalances & { note }` → `OpeningBalancesRecord` | `409 opening-balances-locked`, `422 note-required` |
+| `PUT /admin/suppliers/{id}/opening-balances` | `OpeningBalances & { note }` → `OpeningBalancesRecord` | `409 opening-balances-locked`, `422 note-required`, `422 negative`, `409 cut-over-month` (`details.reason`: `future`, `first-bill-month`, `different`; `details.asOfMonth`), `409 withdrawal-pending`, `409 records-busy` |
 | `PUT /admin/suppliers/{id}/transport-rate` | `SupplierTransportRate` → `{ id }` | `422 negative`, `422 note-required` |
 
 - **`NewSupplier`** is `SupplierRegistration` plus `bankDetails?` (required for
@@ -926,8 +926,11 @@ types named (`packages/domain/src/factoryRecords.ts`).
 - **`OpeningBalances`**: `asOfMonth`, `advance`, `loan`, `manure`, `teaPackets`,
   `savings`, `previousDebt` (all ≥ 0), optional `loanMonthsLeft` and
   `loanInstalmentsPaid`, and a `note` of 10+ characters. **One cut-over month for the
-  whole factory.** Locked (`editable: false` on read) once a bill has been **published**
-  for the supplier; a draft does not lock them. Audit `supplier.openingBalances`.
+  whole factory**: not in the future, the factory's first month with bills of ours, and the
+  same for every supplier (`409 cut-over-month`). `409 withdrawal-pending` while a savings
+  withdrawal from before it is pending. Locked (`editable: false` on read) once a bill of
+  ours has been **published** for the supplier; a draft or a synced bill does not lock
+  them. Built in backend `5b58f81` (ADR-039). Audit `supplier.openingBalances`.
 - **`SupplierTransportRate`**: `{ transportPerKg: number ≥ 0 | null, note }`, the note
   10+ characters. `null` puts the supplier back on their collection point's rate. Applies
   from the next bill generated. Audit `supplier.transportRate`, before and after.
@@ -3130,9 +3133,8 @@ ticked.
 
 The console hides each of these until it lands, in one place:
 `apps/admin/src/lib/serverReady.ts`. Remove the line when the endpoint ships. Today it holds
-`IMPORT_KINDS_NOT_ON_SERVER` (`openingBalances`, `deliveries`, `monthlyRates`,
-`billAdjustments`, `printedBalances`), `OPENING_BALANCES_ON_SERVER`,
-`OTHER_DEDUCTIONS_ON_SERVER`, `SLIP_COMPARISON_ON_SERVER`, `MONTH_TO_DATE_ON_SERVER` and
+`IMPORT_KINDS_NOT_ON_SERVER` (`deliveries`, `monthlyRates`, `billAdjustments`,
+`printedBalances`), `OTHER_DEDUCTIONS_ON_SERVER`, `SLIP_COMPARISON_ON_SERVER`, `MONTH_TO_DATE_ON_SERVER` and
 `IMPORT_SKIP_ON_SERVER`, all `false`.
 
 - [x] `PATCH /admin/config` accepting `billSettings.source` and `loanInterest.recovery`,
@@ -3148,7 +3150,8 @@ The console hides each of these until it lands, in one place:
 - [x] Late bills wait for a manager other than their importer (R15, §10.5; backend
       `671627d`), blocking the next month's publish and both switches
 - [x] A waiting late bill replaced by sending it again (R18; backend `76b50f2`)
-- [ ] Opening balances (§5.8) and the `openingBalances` import
+- [x] Opening balances (§5.8) and the `openingBalances` import, with the one cut-over
+      month (`cut-over-month`) and `withdrawal-pending` (backend `5b58f81`, ADR-039)
 - [ ] Leaf and months: the rest of §9 and §10, and the `deliveries` and `monthlyRates` imports
 - [ ] Other deductions: `PUT /admin/bills/{id}/adjustment` and the `billAdjustments` import
 - [ ] The bill engine (§11.5, factory-records.md §5), last: galaboda imports its bills. With
@@ -3296,7 +3299,7 @@ as the factory's own system printed them), **`printedBalances`** (each printed s
 | Kind | Permission | Server-only problem codes, beyond the shared row checks |
 | --- | --- | --- |
 | `suppliers` | `suppliers: W` | `duplicate`, `unknown-collection-point`, `bank-details-required`, `unknown-bank`. A code already on the roll is **skipped** (`supplier-exists`), left as it is, not refused (see "Importing again") |
-| `openingBalances` | `suppliers: W` | `duplicate`, `unknown-supplier`, `opening-balances-locked`, a different cut-over month |
+| `openingBalances` | `suppliers: W` | `duplicate`, `unknown-supplier`, `opening-balances-locked`, `cut-over-month` (on `asOfMonth`), `withdrawal-pending`. No note column: the file's name is the note |
 | `transportRates` | `suppliers: W` | `duplicate`, `unknown-supplier` |
 | `deliveries` | `deliveries: W` | `unknown-supplier`, `month-locked`, `unknown-collection-point`. A weighing already recorded is **skipped** (`already-recorded`) unless `duplicates: 'import'` |
 | `monthlyRates` | `ratesAndMonthClose: W` | `duplicate`, `unknown-month`, `month-locked` |

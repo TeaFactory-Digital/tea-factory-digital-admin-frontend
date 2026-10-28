@@ -95,6 +95,8 @@ const BY_CODE: Record<string, string> = {
   'unknown-collection-point': 'error.unknownCollectionPoint',
   'bank-details-required': 'error.bankDetailsRequired',
   'opening-balances-locked': 'error.openingBalancesLocked',
+  'cut-over-month': 'error.cutOverMonth',
+  'withdrawal-pending': 'error.withdrawalPending',
   'negative': 'error.negative',
   'unknown-supplier': 'error.unknownSupplier',
   'no-bill': 'error.noBill',
@@ -132,6 +134,8 @@ const BY_REASON: Record<string, string> = {
   'published-during-import': 'error.publishedDuringImport',
 };
 
+const CUT_OVER_REASONS = new Set(['future', 'first-bill-month', 'different']);
+
 /** `details.reason`, when the server sent one. */
 export function errorReason(error: unknown): string | undefined {
   if (!isApiError(error)) return undefined;
@@ -148,6 +152,11 @@ export function errorMessageKey(error: unknown): string {
   // request the server refused, and "Email or password is incorrect" under a decision
   // note sends the clerk looking for a password field.
   if (error.code === 'invalid' && error.status !== 401) return 'error.invalidRequest';
+  // Which cut-over rule: the month has not begun, is not the first month with bills here, or
+  // differs from the month the other suppliers' opening balances are as at.
+  if (error.code === 'cut-over-month' && reason && CUT_OVER_REASONS.has(reason)) {
+    return `error.cutOverMonth.${reason}`;
+  }
   return BY_CODE[error.code] ?? 'error.unknown';
 }
 
@@ -157,12 +166,20 @@ export function errorMessageKey(error: unknown): string {
  */
 export function errorMessageValues(error: unknown): Record<string, string> {
   if (!isApiError(error)) return {};
-  const details = error.details as { months?: unknown; count?: unknown; monthKey?: unknown } | undefined;
+  const details = error.details as
+    | { months?: unknown; count?: unknown; monthKey?: unknown; asOfMonth?: unknown }
+    | undefined;
   const months = Array.isArray(details?.months) ? details.months.map(String).join(', ') : '';
   // `bills-mismatch`: how many bills still disagree with their printed slip.
   const count = typeof details?.count === 'number' ? String(details.count) : '';
-  // `earlier-bill-held`: the month whose bill has to be released first.
-  const month = typeof details?.monthKey === 'string' ? details.monthKey : '';
+  // `earlier-bill-held`: the month whose bill has to be released first; `cut-over-month`:
+  // the factory's cut-over month.
+  const month =
+    typeof details?.monthKey === 'string'
+      ? details.monthKey
+      : typeof details?.asOfMonth === 'string'
+        ? details.asOfMonth
+        : '';
   return { ...(months ? { months } : {}), ...(count ? { count } : {}), ...(month ? { month } : {}) };
 }
 

@@ -1,15 +1,15 @@
 # Backend to-do
 
-Only the work still open (28 October 2026). Finished work is taken out; git history keeps it.
+Only the work still open (29 October 2026). Finished work is taken out; git history keeps it.
 The rules for every item are in [`factory-records.md`](./factory-records.md) (the console)
 and `packages/domain` (please `vendor:pull` after each console change).
 
 | # | What | Priority |
 |---|------|----------|
 | 50 | Staging is not running the latest commits | Now |
-| 45 | Factory records: opening balances next, then leaf and months, other deductions, importing again, the bill engine | High |
+| 45 | Factory records: leaf and months next, then other deductions, importing again, the bill engine | High |
 | 48 | "This month so far": `GET /bills/month-to-date` | Medium |
-| 54 | Default pages: copy `static-pages.seed.json` again (Tamil green leaf word) | Small, any time |
+| 54 | Default pages: `npm run vendor:pages` once more (the bare Tamil இலை) | Small, any time |
 | 55 | The clerk reads Rates & month close: `vendor:pull` and one test | Now (small) |
 | - | Later: factory sync (Phase 10), balance corrections | Later |
 
@@ -29,17 +29,18 @@ credit requests in the console while the sync is off. **Contract:** factory-reco
 
 **In this order:**
 
-Step 1 (the bills import, the month reads and publish) is built, with late bills waiting
-for a manager (R15, `671627d`) and a waiting one replaced by sending it again (R18,
-`76b50f2`).
+Built: the bills import, the month reads and publish, with late bills waiting for a manager
+(R15, `671627d`) and a waiting one replaced by sending it again (R18, `76b50f2`); and
+opening balances with the one cut-over month (`5b58f81`, ADR-039). Checked on the console
+side 29 October: the console's card and import are switched on, `cut-over-month` (each
+`details.reason`, naming `details.asOfMonth`) and `withdrawal-pending` are explained in
+en/si/ta, and the console's mock keeps the same rules.
 
-1. **Opening balances** (next): `GET` / `PUT /admin/suppliers/:id/opening-balances` and the
-   `openingBalances` import (factory-records §4.2).
-2. **Leaf and months:** the leaf and month endpoints in factory-records §4.1
+1. **Leaf and months** (next): the leaf and month endpoints in factory-records §4.1
    (`/admin/deliveries`, `/admin/deliveries/summary`, the rate, exceptions), and the
    `deliveries` and `monthlyRates` imports.
-3. **Other deductions:** `PUT /admin/bills/:id/adjustment` and the `billAdjustments` import.
-4. **The bill engine** (factory-records §5), last: galaboda imports its bills, so no factory
+2. **Other deductions:** `PUT /admin/bills/:id/adjustment` and the `billAdjustments` import.
+3. **The bill engine** (factory-records §5), last: galaboda imports its bills, so no factory
    needs it yet. With it, **the printed-slip check and hold** (§5, "Comparing with the printed
    slips", steps 1 to 8): `GET /admin/months/:monthKey/slip-comparison`,
    `PUT /admin/bills/:id/printed`, `POST /admin/bills/:id/hold` and `/release`, the
@@ -79,23 +80,24 @@ Rs. 15,000 advance: `totalKgs` is the sum of that month's non-voided deliveries,
 `supplyDays: 11`, `approved.advance: 15000`. After the month ends and before publishing:
 still that month, `monthEnded: true`. After publishing: the next month.
 
-## 54. Default pages: copy the seed again
+## 54. Default pages: one more `vendor:pages`
 
-Tamil green leaf is now one word everywhere, **கொழுந்து** (the account is கொழுந்துக்
-கணக்கு), decided with the factory on 28 October 2026. Our
-`docs/v2/static-pages.seed.json` has it (and, since 29 October, the bare இலை is கொழுந்து
-there too); your `apps/api/src/modules/tenant-defaults/static-pages.defaults.json` still says
-பச்சை இலை in six Tamil bodies, and one more body (`pages[0]`, the second translation) already differed
-before this change. Please replace your file with ours as it stands.
+Built in `41221c0`: the defaults are copied from our `docs/v2/static-pages.seed.json`, and
+`vendor:drift` reports the file when it differs. Thank you. One more copy is needed: since
+`db22632` the **bare இலை** ("leaf") in the six Tamil bodies is கொழுந்து too (decided with the
+factory: one word for green leaf everywhere). Your copy is from before that commit. Please
+`npm run vendor:pages`.
 
-**Check:** the two files are equal as JSON, and neither `grep 'பச்சை இலை'` nor a bare
-`இலை` finds anything in yours.
-Pages a factory has already edited keep their own text: only the defaults change.
+**Check:** `npm run vendor:drift` is clean, and a bare `இலை` finds nothing in your
+`static-pages.defaults.json`. Pages a factory has already edited keep their own text.
 
 ## 55. The clerk reads Rates & month close
 
 `DEFAULT_ROLE_MATRIX.clerk.ratesAndMonthClose` is now **`R`** (was `-`), in
-`packages/domain/src/rbac.ts` (28 October 2026). Please `npm run vendor:pull`.
+`packages/domain/src/rbac.ts` (28 October 2026, committed in `db22632`). Please
+`npm run vendor:pull`. The same pull brings `cut-over-month` and `withdrawal-pending` into
+`ADMIN_ERROR_CODES` (`packages/domain/src/types/admin.ts`), the two codes you added in
+`5b58f81`, so the console and the API name them from one list.
 
 **Why.** The clerk holds `billing: W` to import the finished bills (your `POST
 /admin/imports/bills` gates on exactly that), but the import is on Rates & month close, and
@@ -151,8 +153,7 @@ the same PR) and the feature appears:
 
 | Console feature | Waits for | Line in `serverReady.ts` |
 |---|---|---|
-| Import → Opening balances, Daily leaf, Monthly rates, Other deductions, Printed slip balances | `POST /admin/imports/{openingBalances, deliveries, monthlyRates, billAdjustments, printedBalances}` | `IMPORT_KINDS_NOT_ON_SERVER` (one entry each; Finished bills is live) |
-| Opening balances card (supplier → Money) | `GET` / `PUT /admin/suppliers/:id/opening-balances` | `OPENING_BALANCES_ON_SERVER = false` |
+| Import → Daily leaf, Monthly rates, Other deductions, Printed slip balances | `POST /admin/imports/{deliveries, monthlyRates, billAdjustments, printedBalances}` | `IMPORT_KINDS_NOT_ON_SERVER` (one entry each; Finished bills is live) |
 | "Other deductions" → Edit on a bill | `PUT /admin/bills/:id/adjustment` | `OTHER_DEDUCTIONS_ON_SERVER = false` |
 | Rates & month close: "Compare with printed slips", the checklist step, held badges | `slip-comparison`, `printed`, `hold`, `release` | `SLIP_COMPARISON_ON_SERVER = false` |
 | Configuration → Features: "Account tab: this month so far" | `GET /bills/month-to-date` | `MONTH_TO_DATE_ON_SERVER = false` |

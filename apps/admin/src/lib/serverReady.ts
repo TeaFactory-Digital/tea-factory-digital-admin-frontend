@@ -9,7 +9,6 @@
 import type { ImportKind } from '@tfd/domain';
 
 export const IMPORT_KINDS_NOT_ON_SERVER: ReadonlySet<ImportKind> = new Set<ImportKind>([
-  'openingBalances',
   'deliveries',
   'monthlyRates',
   'billAdjustments',
@@ -17,7 +16,7 @@ export const IMPORT_KINDS_NOT_ON_SERVER: ReadonlySet<ImportKind> = new Set<Impor
 ]);
 
 /** Saving opening balances (`PUT /admin/suppliers/:id/opening-balances`). */
-export const OPENING_BALANCES_ON_SERVER = false;
+export const OPENING_BALANCES_ON_SERVER = true;
 
 /** Typing other deductions on a bill (`PUT /admin/bills/:id/adjustment`). */
 export const OTHER_DEDUCTIONS_ON_SERVER = false;

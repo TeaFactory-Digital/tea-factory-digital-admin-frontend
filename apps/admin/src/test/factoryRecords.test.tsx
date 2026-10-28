@@ -35,7 +35,8 @@ import { factoryRecordRepository } from '@/services/repositories/factoryRecordRe
 import { monthRepository } from '@/services/repositories/monthRepository';
 import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { currentMonthKey } from '@/services/mocks/seed';
-import { setMockNow } from '@/services/mocks/handlers';
+import { mockMarkPublishedBillOurs, setMockNow } from '@/services/mocks/handlers';
+import { errorMessageKey, errorMessageValues } from '@/lib/errorMessage';
 import { bundledConfig } from '@/config/defaults';
 import { DEFAULT_ROLE_MATRIX, can, grantsFromRoles } from '@tfd/domain';
 import { renderWithProviders, signInAs, signOut } from './render';
@@ -434,11 +435,75 @@ describe('with the factory-system sync off', () => {
     });
     expect(saved).toMatchObject({ loan: 45000, savings: 12850, editable: true });
 
-    // A supplier who already has bills cannot be given opening balances.
+    // Bills that came by the sync do not lock them: a sync-fed account moves to the ledger.
     const billed = (await billRepository.list({ pageSize: 1 })).items[0]!;
+    await expect(
+      factoryRecordRepository.saveOpeningBalances(billed.supplierId, { ...saved, note: 'From the synced ledger.' }),
+    ).resolves.toMatchObject({ editable: true });
+
+    // A published bill of ours does.
+    mockMarkPublishedBillOurs(billed.supplierId);
     await expect(
       factoryRecordRepository.saveOpeningBalances(billed.supplierId, { ...saved, note: 'Trying again later.' }),
     ).rejects.toMatchObject({ code: 'opening-balances-locked' });
+  });
+
+  it('holds every opening balance to the factory’s one cut-over month (ADR-039)', async () => {
+    await setSync(false);
+    await signInAs(CLERK);
+    const shift = (monthKey: string, by: number) => {
+      const [year, month] = monthKey.split('-').map(Number) as [number, number];
+      const at = new Date(Date.UTC(year, month - 1 + by, 1));
+      return `${at.getUTCFullYear()}-${String(at.getUTCMonth() + 1).padStart(2, '0')}`;
+    };
+    const add = (supplierCode: string, nic: string) =>
+      factoryRecordRepository.createSupplier({
+        supplierCode,
+        name: `Supplier ${supplierCode}`,
+        nic,
+        collectionPoint: 'DENIYAYA',
+        paymentMethod: 'cash',
+        savingsPerKg: 0,
+      });
+    const first = await add('9201', '873210457V');
+    const second = await add('9202', '873210458V');
+    const figures = {
+      advance: 0,
+      loan: 0,
+      manure: 0,
+      teaPackets: 0,
+      savings: 1000,
+      previousDebt: 0,
+      note: 'From the paper ledger.',
+    };
+    await factoryRecordRepository.saveOpeningBalances(first.id, { ...figures, asOfMonth: currentMonthKey });
+
+    // Another month while the first supplier's are as at this one.
+    const different = await factoryRecordRepository
+      .saveOpeningBalances(second.id, { ...figures, asOfMonth: shift(currentMonthKey, -1) })
+      .catch((error: unknown) => error);
+    expect(different).toMatchObject({ code: 'cut-over-month', details: { reason: 'different', asOfMonth: currentMonthKey } });
+    expect(errorMessageKey(different)).toBe('error.cutOverMonth.different');
+    expect(errorMessageValues(different)).toEqual({ month: currentMonthKey });
+
+    // A month that has not begun.
+    await expect(
+      factoryRecordRepository.saveOpeningBalances(second.id, { ...figures, asOfMonth: shift(currentMonthKey, 1) }),
+    ).rejects.toMatchObject({ code: 'cut-over-month', details: { reason: 'future' } });
+
+    // A file in another month is refused on that row, saving nothing.
+    const file = await factoryRecordRepository.importRows('openingBalances', 'opening.csv', [
+      { supplierCode: '9202', asOfMonth: shift(currentMonthKey, -1), savings: '500' },
+    ]);
+    expect(file).toMatchObject({ kind: 'openingBalances', problemTotal: 1 });
+    expect((file as { problems: unknown[] }).problems).toContainEqual(
+      expect.objectContaining({ row: 2, column: 'asOfMonth', code: 'cut-over-month' }),
+    );
+
+    // The same month is fine.
+    await expect(
+      factoryRecordRepository.saveOpeningBalances(second.id, { ...figures, asOfMonth: currentMonthKey }),
+    ).resolves.toMatchObject({ asOfMonth: currentMonthKey });
   });
 
   it('bills a supplier’s own transport rate and the configured advance interest', async () => {

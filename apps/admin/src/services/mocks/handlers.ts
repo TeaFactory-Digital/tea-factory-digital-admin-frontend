@@ -2123,8 +2123,14 @@ function supplierCodeAmbiguous(code: string): boolean {
  * Opening balances lock on the first **published** bill. A draft can be re-generated, and
  * locking on it meant a replaced run kept them locked for ever.
  */
+/**
+ * A published bill of ours (imported or calculated) for the supplier: what locks their
+ * opening balances. A synced bill does not: a sync-fed account moves to the ledger (ADR-039).
+ */
 function hasBill(supplierId: string): boolean {
-  return state.bills.some((bill) => bill.supplierId === supplierId && bill.publishedAt !== null);
+  return state.bills.some(
+    (bill) => bill.supplierId === supplierId && bill.publishedAt !== null && Boolean(bill.source),
+  );
 }
 
 function newSupplierProblem(request: Request, body: NewSupplier): string | null {
@@ -2170,6 +2176,43 @@ function addSupplier(body: NewSupplier): AdminSupplier {
   };
   state.suppliers = [...state.suppliers, supplier];
   return supplier;
+}
+
+/**
+ * The factory's one cut-over month (ADR-039), as the API decides it: not in the future, the
+ * factory's first month with bills of ours (imported or calculated, not synced), and the
+ * month every other supplier's opening balances are as at. `supplierIds` are the records
+ * being saved now: saving every record again is how the month is re-chosen.
+ */
+function cutoverProblem(
+  month: string,
+  supplierIds: readonly string[],
+): { reason: 'future' | 'first-bill-month' | 'different'; asOfMonth: string | null } | null {
+  if (month > colomboMonthNow()) return { reason: 'future', asOfMonth: null };
+  const first = state.bills
+    .filter((bill) => bill.source)
+    .map((bill) => bill.monthKey)
+    .sort()[0];
+  if (first && first !== month) return { reason: 'first-bill-month', asOfMonth: first };
+  for (const [supplierId, record] of state.openingBalances) {
+    if (!supplierIds.includes(supplierId) && record.asOfMonth !== month) {
+      return { reason: 'different', asOfMonth: record.asOfMonth };
+    }
+  }
+  return null;
+}
+
+/** The cut-over month opening balances already use, if any. */
+function openingCutover(): string | null {
+  const first = state.openingBalances.values().next();
+  return first.done ? null : first.value.asOfMonth;
+}
+
+/** A savings withdrawal asked for before the cut-over and still pending (decision 15). */
+function withdrawalPendingBefore(supplierId: string, month: string): boolean {
+  return state.savingsWithdrawals.some(
+    (one) => one.supplierId === supplierId && one.status === 'pending' && one.requestedMonth < month,
+  );
 }
 
 function saveOpeningBalances(
@@ -2315,8 +2358,12 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
         if (!code) return;
         if (seen.has(code)) push('supplierCode', 'duplicate');
         seen.add(code);
-        if (!supplier) push('supplierCode', 'unknown-supplier');
-        else if (hasBill(supplier.id)) push('supplierCode', 'opening-balances-locked');
+        if (!supplier) return push('supplierCode', 'unknown-supplier');
+        if (hasBill(supplier.id)) return push('supplierCode', 'opening-balances-locked');
+        const month = (row.asOfMonth ?? '').trim();
+        const inFile = rows.map((one) => supplierByCode((one.supplierCode ?? '').trim())?.id).filter(Boolean) as string[];
+        if (month && cutoverProblem(month, inFile)) return push('asOfMonth', 'cut-over-month');
+        if (month && withdrawalPendingBefore(supplier.id, month)) push('supplierCode', 'withdrawal-pending');
         return;
       }
       case 'walkInCredit': {
@@ -2353,6 +2400,17 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
         // import creates a month it has not seen: there is no `unknown-month` here.)
         const newest = newestPublishedMonth();
         if (newest && row.month < newest) return push('month', 'month-out-of-order');
+        // Ledgers start at the cut-over (ADR-039): nothing before it, and before any bill of
+        // ours the file must include the cut-over month itself.
+        const cutover = openingCutover();
+        if (cutover && row.month < cutover) return push('month', 'month-out-of-order');
+        if (
+          cutover &&
+          !rows.some((one) => one.month === cutover) &&
+          !state.bills.some((bill) => bill.source)
+        ) {
+          return push('month', 'cut-over-month');
+        }
         // A late division file in a published month: only suppliers with no published bill.
         // A late bill still waiting may be replaced by sending it again (R18).
         const hasPublishedBill = state.bills.some(
@@ -8194,6 +8252,23 @@ export const handlers: HttpHandler[] = [
     if (!body.note || body.note.trim().length < 10) {
       return fail({ status: 422, code: 'note-required', message: 'Say where the figures came from.' });
     }
+    const cutover = cutoverProblem(body.asOfMonth, [id]);
+    if (cutover) {
+      return fail({
+        status: 409,
+        code: 'cut-over-month',
+        message: "Opening balances are as at the factory's one cut-over month.",
+        details: cutover,
+      });
+    }
+    if (withdrawalPendingBefore(id, body.asOfMonth)) {
+      return fail({
+        status: 409,
+        code: 'withdrawal-pending',
+        message: 'A savings withdrawal from before the cut-over is still pending; settle or cancel it first.',
+        details: { supplierId: id, asOfMonth: body.asOfMonth },
+      });
+    }
     const saved = saveOpeningBalances(id, body, auth.user.name);
     recordBy(auth, 'supplier.openingBalances', 'supplier', id, { after: saved });
     return HttpResponse.json(saved);
@@ -8598,6 +8673,14 @@ export function mockSendLog(): NotificationSend[] {
  * its month's publish: the fixture's earlier months are all published, and a test of what
  * a held bill does to the **next** month needs one.
  */
+/** Test hook: the supplier's newest published bill becomes one of ours (calculated here). */
+export function mockMarkPublishedBillOurs(supplierId: string): void {
+  const bill = state.bills
+    .filter((one) => one.supplierId === supplierId && one.publishedAt !== null)
+    .sort((a, b) => b.monthKey.localeCompare(a.monthKey))[0];
+  if (bill) bill.source = 'calculated';
+}
+
 export function mockHoldPublishedBill(billId: string, reason: string): void {
   const bill = state.bills.find((one) => one.id === billId);
   if (!bill) throw new Error(`No mock bill ${billId}`);

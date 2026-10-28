@@ -1,8 +1,8 @@
 # Factory records without the factory system
 
-**Status (26 October 2026):** the console is built against the mock and tested; the backend
-is partly built (the finished-bills import, the month reads and the publish are live since
-`12eea12`; see [BACKEND-TODO.md](./BACKEND-TODO.md) #45 for what is still to build, in
+**Status (29 October 2026):** the console is built against the mock and tested; the backend
+is partly built (the finished-bills import, the month reads and the publish since `12eea12`,
+and opening balances since `5b58f81`; see [BACKEND-TODO.md](./BACKEND-TODO.md) #45 for what is still to build, in
 order, and what the console hides until it lands).
 **For:** the backend developer. This file is the contract the console was built against.
 
@@ -170,12 +170,22 @@ case. New suppliers have no app account; the office issues one with
 **Opening balances.** One record per supplier: `asOfMonth` (`YYYY-MM`), `advance`, `loan`,
 `manure`, `teaPackets`, `savings`, `previousDebt` (all ≥ 0), optional `loanMonthsLeft` and
 `loanInstalmentsPaid` for a loan already running (whole numbers), and a `note` of 10+
-characters. **One cut-over month for the whole factory**: refuse a different `asOfMonth`
-from the one already used. They seed the ledgers the first bill reads. With
+characters. **One cut-over month for the whole factory** (backend ADR-039, built `5b58f81`): not in
+the future (`409 cut-over-month`, `details.reason: 'future'`); the factory's first month with
+bills of ours, imported or calculated (`'first-bill-month'`, `details.asOfMonth`); and the
+month the other suppliers' opening balances are as at (`'different'`, `details.asOfMonth`),
+which changes only by saving every record again in the new month. Refused with
+`409 withdrawal-pending` while a savings withdrawal asked for before the cut-over is still
+pending (settle or cancel it first). They seed the ledgers the first bill reads, as
+differences: the balance becomes the opening figure plus every movement since the start of
+the cut-over month, so an advance approved on the 10th survives figures typed on the 20th,
+and saving twice posts nothing. A supplier fed by the sync until now moves to the ledger. With
 `loanMonthsLeft`, the loan is recovered at `loan / loanMonthsLeft` a month under the cap and
 the first bill here is instalment `loanInstalmentsPaid + 1`; without it, under the cap
 alone, numbered from 1. **Locked** (`409 opening-balances-locked`, `editable: false` on read)
-once a bill has been **published** for the supplier; a draft does not lock them. Audit
+once a bill **of ours** (imported or calculated) has been **published** for the supplier; a
+draft does not lock them, and neither does a bill that came by the sync. The import has no
+note column: the file's name is the note. Audit
 `supplier.openingBalances`.
 
 **Walk-in credit request.** Creates an `AdminCreditRequest` exactly like an app request,
@@ -244,11 +254,11 @@ edited here. Audit `bill.adjust`.
 | `suppliers` | `duplicate` in file, an existing code **skipped** (`supplier-exists`, not refused), `unknown-collection-point`, `bank-details-required`, `unknown-bank`, `bank-not-in-catalogue` | Suppliers, as Add supplier |
 | `deliveries` | `unknown-supplier`, `month-locked`, `unknown-collection-point`; a weighing already recorded **skipped** (`already-recorded`) | Deliveries, `source: 'scaleFile'`; point defaults to the supplier's |
 | `monthlyRates` | `duplicate`, `unknown-month`, `month-locked` | The month's rate, moving the stage to `rateEntered` |
-| `openingBalances` | `duplicate`, `unknown-supplier`, `opening-balances-locked`, a different cut-over month | Opening balances |
+| `openingBalances` | `duplicate`, `unknown-supplier`, `opening-balances-locked`, `cut-over-month` (on `asOfMonth`), `withdrawal-pending` | Opening balances |
 | `walkInCredit` | `unknown-supplier`, manure without type or quantity (`required`), and the walk-in refusals above | Pending office requests |
 | `billAdjustments` | `duplicate` (month + code), `unknown-supplier`, `month-locked`, `no-bill`, note missing (`required`) | Other deductions, as above |
 | `transportRates` | `duplicate`, `unknown-supplier` | Each supplier's own rate; an empty `transportPerKg` sets `null` |
-| `bills` | `missing-column` (row 1), `unknown-supplier` / `ambiguous-supplier`, `duplicate` (month + code), `month-not-ended`, `month-out-of-order`, `month-locked` (the supplier already has a bill in a published month), `rate-differs` (against the file and the month's stored rate), `bill-no-taken`, `too-large` / `must-be-positive` (`loanInstalmentNo` 1 to 360), and **the approvals check** (`approval-missing`, §5a). No `unknown-month`: the import creates the month | The month's bills **as printed** (§5a) for the suppliers in the file; `leafDifferences` in the answer |
+| `bills` | `missing-column` (row 1), `unknown-supplier` / `ambiguous-supplier`, `duplicate` (month + code), `month-not-ended`, `month-out-of-order` (also a month before the cut-over), `cut-over-month` (before any bill of ours, the file must include the cut-over month), `month-locked` (the supplier already has a bill in a published month), `rate-differs` (against the file and the month's stored rate), `bill-no-taken`, `too-large` / `must-be-positive` (`loanInstalmentNo` 1 to 360), and **the approvals check** (`approval-missing`, §5a). No `unknown-month`: the import creates the month | The month's bills **as printed** (§5a) for the suppliers in the file; `leafDifferences` in the answer |
 | `printedBalances` | `duplicate` (month + code), `unknown-supplier`, `no-bill`, `month-locked` (the bill is published) | Each bill's `printedFinalBalance` (§5) |
 
 Every problem code above, and `required`, `not-a-number`, `negative`, `too-many-decimals`,

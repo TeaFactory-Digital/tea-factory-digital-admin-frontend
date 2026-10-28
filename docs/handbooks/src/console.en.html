@@ -314,11 +314,12 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
   <li>How the supplier's identity was checked is recorded.</li>
   <li>Seeing a full bank account number needs a reason, is recorded in the audit log, and is never kept on screen afterwards.</li>
 </ul>
-<h2>7.4 Opening balances (sync off) <span class="tag soon">Coming</span></h2>
+<h2>7.4 Opening balances (sync off)</h2>
 <p>What each supplier already owed or held on the day the factory started keeping records here.</p>
 <ul>
   <li>Fields: advance, loan, manure, tea packets, savings and previous debt (all 0 or more), and for a running loan the months left and instalments already paid. A note of at least 10 characters.</li>
   <li><strong>One cut-over month for the whole factory.</strong> A different month for one supplier is refused.</li>
+  <li>The cut-over month is the factory's first month with bills here (imported or calculated), and cannot be a month that has not started. To change it, every supplier's opening balances are saved again in the new month. A supplier whose earlier bills came by the sync can still be given them.</li>
   <li>With months left given, the loan is recovered at loan ÷ months left a month (under the cap), and the first bill here is instalment number "paid + 1". Without it, under the cap alone, numbered from 1.</li>
   <li><strong>Locked once a bill is published</strong> for that supplier. A draft does not lock them.</li>
   <li>A savings withdrawal still pending at cut-over is settled or cancelled first; the opening savings is entered after that.</li>
@@ -707,7 +708,7 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
   <tr><td>Suppliers</td><td>New suppliers</td><td>Duplicate in the file, unknown collection point or bank, bank details missing</td></tr>
   <tr><td>Daily leaf <span class="tag soon">Coming</span></td><td>Weighings</td><td>Unknown supplier, month published</td></tr>
   <tr><td>Monthly rates <span class="tag soon">Coming</span></td><td>The month's rate</td><td>Month published</td></tr>
-  <tr><td>Opening balances <span class="tag soon">Coming</span></td><td>Opening balances</td><td>Locked, a different cut-over month</td></tr>
+  <tr><td>Opening balances</td><td>Opening balances</td><td>Locked, not the cut-over month, a savings withdrawal still pending</td></tr>
   <tr><td>Walk-in requests</td><td>Pending office requests</td><td>As in section 15.1</td></tr>
   <tr><td>Other deductions <span class="tag soon">Coming</span></td><td>Other deductions with reasons</td><td>No bill, month published, reason missing</td></tr>
   <tr><td>Transport rates</td><td>Suppliers' own rates (empty = back to the point's)</td><td>Unknown supplier</td></tr>
@@ -718,13 +719,13 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
 
 <!-- 24 -->
 <h1>24. What works today and what is coming</h1>
-<p>As of 28 October 2026. The console hides each unfinished feature until the server supports it, so the office never meets an error page.</p>
+<p>As of 29 October 2026. The console hides each unfinished feature until the server supports it, so the office never meets an error page.</p>
 <table>
   <tr><th>Area</th><th>Status</th></tr>
   <tr><td>App management: queues, change requests, inquiries, news, banners, pages, notifications, configuration, users, reports, audit</td><td><span class="tag now">Working</span></td></tr>
   <tr><td>Factory system switch, Add supplier, supplier import, transport rates, walk-in requests</td><td><span class="tag now">Working</span></td></tr>
   <tr><td>Imported bills: Import → Finished bills, all checks, publish, late division files</td><td><span class="tag now">Working</span> (galaboda)</td></tr>
-  <tr><td>Opening balances</td><td><span class="tag soon">Next on the server</span></td></tr>
+  <tr><td>Opening balances</td><td><span class="tag now">Working</span></td></tr>
   <tr><td>Leaf intake and rate entry on the server, leaf and rate imports</td><td><span class="tag soon">Coming</span></td></tr>
   <tr><td>Other deductions</td><td><span class="tag soon">Coming</span></td></tr>
   <tr><td>Importing a file again with skipping</td><td><span class="tag soon">Coming</span></td></tr>

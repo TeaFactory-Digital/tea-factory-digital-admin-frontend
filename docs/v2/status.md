@@ -13,7 +13,7 @@ the next slice.
 | | |
 | --- | --- |
 | **Console** | Every module in [Modules](#modules) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
-| **Backend** | `tea-factory-digital-backend`, shipped up to `76b50f2`; staging is not yet running `068faf3` or later (BACKEND-TODO #50, being deployed). BACKEND-TODO **#1 to #44, #46, #47, #49 and #51 to #53 are done**; **#45** (factory records without the factory system) is partly done (step 1, the bills import with the month reads and publish, is live, late bills waiting for a manager and replacing a waiting one included; opening balances are next); **#48** and **#50** are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
+| **Backend** | `tea-factory-digital-backend`, shipped up to `5b58f81`; staging is not yet running `068faf3` or later (BACKEND-TODO #50, being deployed). BACKEND-TODO **#1 to #44, #46, #47, #49 and #51 to #53 are done**, and **#54** is built with one more copy to make; **#45** (factory records without the factory system) is partly done (the bills import with the month reads and publish, late bills included, and opening balances, `5b58f81`, are live; leaf and months are next); **#48**, **#50** and **#55** are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
 | **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **588 tests in 80 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
@@ -25,7 +25,8 @@ and implemented by the mock with the same rules the API must keep:
 - The **Factory system** switch, with `409 sync-switch-blocked` naming the months.
 - **Add supplier** and the `suppliers` import; supplier identity is the bare number,
   unique per factory.
-- **Opening balances** (one cut-over month, locked once a bill is published) and their
+- **Opening balances** (one cut-over month, locked once a bill of ours is published; live
+  on the backend since `5b58f81`, with `cut-over-month` and `withdrawal-pending`) and their
   import.
 - **Transport rate** per supplier and per collection point.
 - **Leaf intake** (session grid, void with a reason) and the `deliveries` import.
@@ -59,7 +60,11 @@ and implemented by the mock with the same rules the API must keep:
 
 ### Done on the backend
 
-Shipped by the backend up to `76b50f2` (BACKEND-TODO.md now lists only what is open): `factorySync`,
+Shipped by the backend up to `5b58f81` (BACKEND-TODO.md now lists only what is open): opening
+balances with the one cut-over month (`5b58f81`, ADR-039: `cut-over-month`,
+`withdrawal-pending`, the ledgers moved by differences, the bills import holding the first
+bills to the cut-over month); the default pages copied from `static-pages.seed.json` with a
+drift check and `npm run vendor:pages` (`41221c0`); `factorySync`,
 `advanceInterest` and `billSettings` (including `source`) in config, and `loanInterest`
 with its `recovery`; `factorySync` stored as `{ enabled: false }` by default, absent or
 `null` read as off (`068faf3`, migration `20261024010000`); the factory administrator's
@@ -85,8 +90,7 @@ ships:
 
 | Console feature | Waits for |
 | --- | --- |
-| Import → Opening balances, Daily leaf, Monthly rates, Other deductions, Printed slip balances | `POST /admin/imports/{openingBalances, deliveries, monthlyRates, billAdjustments, printedBalances}` (`IMPORT_KINDS_NOT_ON_SERVER`; Finished bills is live since `12eea12`) |
-| Opening balances card (supplier → Money) | `GET` / `PUT /admin/suppliers/:id/opening-balances` (`OPENING_BALANCES_ON_SERVER`) |
+| Import → Daily leaf, Monthly rates, Other deductions, Printed slip balances | `POST /admin/imports/{deliveries, monthlyRates, billAdjustments, printedBalances}` (`IMPORT_KINDS_NOT_ON_SERVER`; Finished bills is live since `12eea12`) |
 | Other deductions → Edit on a bill | `PUT /admin/bills/:id/adjustment` (`OTHER_DEDUCTIONS_ON_SERVER`) |
 | Rates & month close: "Compare with printed slips", the checklist step, held badges | `GET .../slip-comparison`, `PUT /admin/bills/:id/printed`, `POST /admin/bills/:id/hold`, `/release` (`SLIP_COMPARISON_ON_SERVER`) |
 | Configuration → Features: "Account tab: this month so far" | `GET /bills/month-to-date` (`MONTH_TO_DATE_ON_SERVER`) |
@@ -95,8 +99,8 @@ ships:
 The Leaf intake grid and Rates & month close stay visible. On Rates & month close the
 month list, the finished-bills import, the checklist and the publish work against the API
 for imported months (`12eea12`); entering a rate, the exceptions queue (not shown for an
-imported month, which has none) and the leaf calls start working as those endpoints land. Still to come on the backend, in order: opening
-balances (next), leaf and months, other deductions, then the bill
+imported month, which has none) and the leaf calls start working as those endpoints land. Still to come on the backend, in order: leaf
+and months (next), other deductions, then the bill
 engine with the printed-slip check (no factory needs it yet: galaboda imports its bills).
 "Where the bills come from" and "How the loan interest is taken" shipped in `970be6f`, so
 the console shows and sends both.
@@ -254,8 +258,8 @@ Activity.
 | Where | What | Permission |
 | --- | --- | --- |
 | Suppliers → **Add supplier** (`AddSupplierDialog`) | The factory's own supplier code (letters and digits, optional `(division)`; the bare number is the identity, unique per factory), name, collection point, payment method, bank details. A new supplier has no app account until the office issues a password | `suppliers: W` |
-| Suppliers → **Import** | Suppliers, opening balances (hidden until the backend ships it), transport rates, from a file. Importing suppliers again skips a code already on the roll once `IMPORT_SKIP_ON_SERVER` is on | `suppliers: W` |
-| Supplier → Money → **Opening balances** (`OpeningBalancesCard`) | Advance, loan, manure, tea packets, savings and previous debt as of one cut-over month for the whole factory; locked once a bill is published for the supplier. **Hidden until the backend ships it** (`OPENING_BALANCES_ON_SERVER`) | `suppliers: W` |
+| Suppliers → **Import** | Suppliers, opening balances, transport rates, from a file. Importing suppliers again skips a code already on the roll once `IMPORT_SKIP_ON_SERVER` is on | `suppliers: W` |
+| Supplier → Money → **Opening balances** (`OpeningBalancesCard`) | Advance, loan, manure, tea packets, savings and previous debt as of one cut-over month for the whole factory (not in the future, the factory's first month with bills of ours); locked once a bill of ours is published for the supplier. Live since backend `5b58f81` | `suppliers: W` |
 | Supplier → Money → **Transport rate** (`TransportRateCard`) | The supplier's own rate per kg, or back to their collection point's, with a note | `suppliers: W` |
 
 With the sync on, suppliers arrive from the factory's system and none of these are shown.
@@ -718,7 +722,7 @@ Worst first: correctness, then plumbing, then polish.
 2. **BACKEND-TODO #45 is not finished.** A sync-off factory can add suppliers, set
    transport rates, record walk-ins, and import and publish its finished bills against the
    real API (a late division file's bills wait for a manager, R15, and a waiting one is
-   replaced by sending it again, R18), but it cannot yet enter opening balances, enter leaf, enter a rate by hand, generate
+   replaced by sending it again, R18), and enter opening balances (one at a time or from a file, `5b58f81`), but it cannot yet enter leaf, enter a rate by hand, generate
    bills and compare them with the printed slips, type other deductions, run the remaining
    imports or import a file again (skipping what is already there). The table under
    [Hidden in the console](#hidden-in-the-console-until-the-backend-ships-it) says what is
@@ -814,7 +818,7 @@ Numbering follows `status.md` §21 in the mobile repo.
 ## What I would build next
 
 1. **Finish #45 on the backend**, in the order in [BACKEND-TODO.md](./BACKEND-TODO.md):
-   opening balances first, then leaf and months. Remove each line
+   leaf and months next (opening balances shipped in `5b58f81`). Remove each line
    from `serverReady.ts` as it ships.
 2. **The push sender** (gap 4): every notification setting in the console is a control
    over nothing until it exists.

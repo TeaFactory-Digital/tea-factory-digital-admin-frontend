@@ -2443,6 +2443,11 @@ export const ADMIN_ERROR_CODES = [
   'unknown-collection-point',
   'bank-details-required',
   'opening-balances-locked',
+  /** Opening balances are as at the factory's one cut-over month; `details.reason`:
+      `future`, `first-bill-month` or `different`, with `details.asOfMonth`. */
+  'cut-over-month',
+  /** Opening balances while a savings withdrawal from before the cut-over is pending. */
+  'withdrawal-pending',
   'unknown-supplier',
   'no-bill',
   'import-invalid',
