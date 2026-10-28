@@ -1055,7 +1055,7 @@ export const si: Record<TranslationKey, string> = {
     'මෙම සැපයුම්කරුට මුදල් ගෙවිය යුතු නමුත් බැංකු විස්තර ලියාපදිංචි කර නැත. ගෙවීම් වටයකදී මෙම පේළිය රඳවා තබනු ලැබේ.',
 
   'bills.carryForward': 'ඊළඟ මාසයට ගෙන ගියා',
-  'bills.nextMonthDeb': 'ඉදිරියට ගෙන ගිය ණය',
+  'bills.nextMonthDeb': 'ඉදිරියට ගෙන යන ණය',
   'bills.loanBalance': 'ණය ශේෂය',
   'bills.manureBalance': 'පොහොර ශේෂය',
   'bills.loanInterest': 'ණය පොලිය',

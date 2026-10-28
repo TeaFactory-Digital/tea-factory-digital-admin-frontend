@@ -1,0 +1,118 @@
+/* Shared print style for the logic handbooks. Printed to PDF by build.mjs (Chromium). */
+
+@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 16mm;
+}
+
+:root {
+  --ink: #1d2a24;
+  --muted: #5b6b63;
+  --line: #d5ddd8;
+  --brand: #2f6b4f;
+  --brand-soft: #e8f1ec;
+  --amber-soft: #fdf4e3;
+  --amber: #9a6a12;
+  --red-soft: #fbeceb;
+  --red: #9b3328;
+  --blue-soft: #e9f0fa;
+  --blue: #2c5a8c;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  font-family: -apple-system, "Helvetica Neue", Arial, "Noto Sans Sinhala", "Sinhala Sangam MN",
+    "Noto Sans Tamil", "Tamil Sangam MN", sans-serif;
+  font-size: 10.2pt;
+  line-height: 1.55;
+  color: var(--ink);
+  background: #fff;
+}
+
+html[lang="si"] { font-family: "Noto Sans Sinhala", "Sinhala Sangam MN", "Sinhala MN", -apple-system, Arial, sans-serif; line-height: 1.7; }
+html[lang="ta"] { font-family: "Noto Sans Tamil", "Tamil Sangam MN", "Tamil MN", -apple-system, Arial, sans-serif; font-size: 9.8pt; line-height: 1.7; }
+
+body { margin: 0; }
+
+/* Cover */
+.cover {
+  height: 255mm;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  page-break-after: always;
+  padding: 18mm 4mm 6mm;
+}
+.cover .kicker { color: var(--brand); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; font-size: 10pt; }
+html[lang="si"] .cover .kicker, html[lang="ta"] .cover .kicker { text-transform: none; letter-spacing: 0; }
+.cover h1 { font-size: 30pt; line-height: 1.2; margin: 8mm 0 4mm; color: var(--ink); border: 0; padding: 0; page-break-before: avoid; break-before: avoid; }
+html[lang="ta"] .cover h1 { font-size: 24pt; }
+.cover .sub { font-size: 13pt; color: var(--muted); max-width: 150mm; }
+.cover .meta { border-top: 2px solid var(--brand); padding-top: 4mm; color: var(--muted); font-size: 9.5pt; }
+.cover .meta strong { color: var(--ink); }
+.cover .band { height: 6mm; background: var(--brand); border-radius: 2px; width: 40mm; }
+
+/* Contents */
+.toc { page-break-after: always; }
+.toc h2 { margin-top: 0; }
+.toc ol { padding-left: 6mm; margin: 0; columns: 1; }
+.toc li { margin: 1.2mm 0; }
+.toc li span.n { color: var(--muted); }
+
+/* Headings */
+h1 {
+  font-size: 17pt;
+  line-height: 1.3;
+  color: var(--brand);
+  margin: 0 0 4mm;
+  padding-bottom: 2mm;
+  border-bottom: 2px solid var(--brand);
+  page-break-before: always;
+  page-break-after: avoid;
+}
+html[lang="ta"] h1 { font-size: 15pt; }
+h2 { font-size: 12.5pt; margin: 6mm 0 2mm; color: var(--ink); page-break-after: avoid; }
+h3 { font-size: 10.8pt; margin: 4mm 0 1.5mm; color: var(--brand); page-break-after: avoid; }
+p { margin: 0 0 2.4mm; }
+ul, ol { margin: 0 0 2.6mm; padding-left: 6mm; }
+li { margin: 0.8mm 0; }
+strong { font-weight: 700; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9.2pt; page-break-inside: auto; }
+html[lang="ta"] table { font-size: 8.8pt; }
+tr { page-break-inside: avoid; }
+th, td { border: 1px solid var(--line); padding: 1.6mm 2mm; vertical-align: top; text-align: left; }
+th { background: var(--brand-soft); font-weight: 700; }
+td.num, th.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+tr.total td { font-weight: 700; background: #f5f8f6; }
+tr.sub td { color: var(--muted); }
+
+/* Callouts */
+.box { border-radius: 3px; padding: 3mm 4mm; margin: 3mm 0 4mm; page-break-inside: avoid; border-left: 4px solid; }
+.box > :last-child { margin-bottom: 0; }
+.box .label { display: block; font-weight: 700; margin-bottom: 1mm; }
+.rule { background: var(--brand-soft); border-color: var(--brand); }
+.rule .label { color: var(--brand); }
+.example { background: var(--blue-soft); border-color: var(--blue); }
+.example .label { color: var(--blue); }
+.warn { background: var(--amber-soft); border-color: var(--amber); }
+.warn .label { color: var(--amber); }
+.stop { background: var(--red-soft); border-color: var(--red); }
+.stop .label { color: var(--red); }
+
+.calc { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.8pt; white-space: pre; line-height: 1.55; margin: 1mm 0 2mm; }
+html[lang="si"] .calc, html[lang="ta"] .calc { font-family: "SF Mono", Menlo, "Sinhala Sangam MN", "Tamil Sangam MN", monospace; }
+
+.tag { display: inline-block; font-size: 7.8pt; font-weight: 700; padding: 0.3mm 1.6mm; border-radius: 8px; vertical-align: 1px; white-space: nowrap; }
+.tag.now { background: var(--brand-soft); color: var(--brand); }
+.tag.soon { background: var(--amber-soft); color: var(--amber); }
+
+.flow { display: flex; flex-wrap: wrap; gap: 1.6mm; align-items: center; margin: 2mm 0 4mm; font-size: 8.8pt; }
+.flow span.step { border: 1px solid var(--brand); background: #fff; border-radius: 3px; padding: 1.2mm 2.2mm; }
+.flow span.arrow { color: var(--brand); font-weight: 700; }
+
+.keep { page-break-inside: avoid; }
+.muted { color: var(--muted); }
+.small { font-size: 8.8pt; }

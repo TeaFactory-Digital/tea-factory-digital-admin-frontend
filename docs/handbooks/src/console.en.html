@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin Console: How It Works</title>
+<link rel="stylesheet" href="handbook.css">
+</head>
+<body>
+
+<section class="cover">
+  <div>
+    <div class="band"></div>
+    <p class="kicker">Tea Factory Digital</p>
+    <h1>Admin Console: How It Works</h1>
+    <p class="sub">Every rule the office console follows, section by section: the monthly bill, the three ways a bill is made, why a supplier's final balance must equal the factory system's, advances, loans, manure, tea packets, savings, imports, approvals and roles. With worked examples.</p>
+  </div>
+  <div class="meta">
+    <p><strong>For:</strong> factory owners, managers, office staff and the support team.</p>
+    <p><strong>As of:</strong> 28 October 2026. Figures in the examples are examples unless they are marked as the real galaboda slip.</p>
+    <p><strong>Companion guide:</strong> "Supplier App: How It Works" explains the same rules from the supplier's phone.</p>
+  </div>
+</section>
+
+<section class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li>About the console</li>
+    <li>The monthly cycle</li>
+    <li>Where the records come from: the factory system switch</li>
+    <li>Three ways a bill is made</li>
+    <li>The bill, line by line</li>
+    <li>Why a final balance can differ, and how each mode keeps it equal</li>
+    <li>Suppliers</li>
+    <li>Leaf intake</li>
+    <li>Rates and month close</li>
+    <li>Credit: the rules all three share</li>
+    <li>Advance</li>
+    <li>Loan</li>
+    <li>Manure (fertilizer on credit)</li>
+    <li>How an instalment is worked out</li>
+    <li>Walk-in requests and credit rule settings</li>
+    <li>Tea packets</li>
+    <li>Savings</li>
+    <li>Change requests</li>
+    <li>Inquiries, news, banners, pages and notifications</li>
+    <li>Configuration and feature switches</li>
+    <li>Users, roles and the two-person rule</li>
+    <li>Dashboard, reports, audit log and sync status</li>
+    <li>Importing from Excel or CSV</li>
+    <li>What works today and what is coming</li>
+    <li>Glossary</li>
+  </ol>
+</section>
+
+<!-- 1 -->
+<h1>1. About the console</h1>
+<p>Tea Factory Digital has two parts: the <strong>supplier app</strong> on each supplier's phone, and the <strong>admin console</strong> the factory office uses in a web browser. Every figure the app shows and every decision it reports starts in the console.</p>
+<ul>
+  <li><strong>One factory per console.</strong> Each factory has its own address, its own colours and logo, its own users and its own data. A user of one factory never sees another factory's records.</li>
+  <li><strong>Three languages.</strong> The console works in English, Sinhala and Tamil. Each user picks a language; dates, numbers and money follow it.</li>
+  <li><strong>The console never writes to the factory's own system.</strong> Whatever the office approves here must also be entered in the factory's own system by the office. Every approval dialog reminds the approver of this.</li>
+</ul>
+<div class="box rule"><span class="label">The four rules behind everything</span>
+<ol>
+  <li><strong>No figure before the auction.</strong> A month has no rate until its tea is sold at auction. Until then every money figure for that month is blank, never "Rs. 0".</li>
+  <li><strong>A published bill is never changed.</strong> A mistake is corrected on the next month's bill.</li>
+  <li><strong>Two people for money.</strong> The person who records or imports something may not be the person who approves it.</li>
+  <li><strong>Nothing about money is deleted.</strong> Every change is a new record, and every approval, rejection, rate change and publish is written to the audit log with who, when, and before and after.</li>
+</ol>
+</div>
+
+<!-- 2 -->
+<h1>2. The monthly cycle</h1>
+<p>Everything hangs off one cycle. The factory cannot price a month's leaf until it has sold the tea that leaf became, and that happens at auction some weeks after the month ends.</p>
+<div class="flow">
+  <span class="step">1. Leaf weighed daily</span><span class="arrow">→</span>
+  <span class="step">2. Month ends</span><span class="arrow">→</span>
+  <span class="step">3. Auction rate set</span><span class="arrow">→</span>
+  <span class="step">4. Bills made (draft)</span><span class="arrow">→</span>
+  <span class="step">5. Reviewed and published</span><span class="arrow">→</span>
+  <span class="step">6. Paid</span><span class="arrow">→</span>
+  <span class="step">7. Balances carried to next month</span>
+</div>
+<table>
+  <tr><th>Stage</th><th>Who does it (sync off)</th><th>What the supplier sees in the app</th></tr>
+  <tr><td>1. Collection</td><td>Clerk: Leaf intake, or a file import</td><td>The newest published bill. Where the factory turns it on, "This month so far": kilos and days, no money</td></tr>
+  <tr><td>2. Month close</td><td>Clerk or manager</td><td>Same; the card says "Month ended, bill being prepared"</td></tr>
+  <tr><td>3. Auction result</td><td>Clerk enters the rate</td><td>Nothing new yet</td></tr>
+  <tr><td>4. Bills</td><td>Clerk imports the factory's printed bills, or the console calculates them</td><td>Nothing new: a draft is never shown</td></tr>
+  <tr><td>5. Publish</td><td>Manager (not the person who entered the rate or imported the bills)</td><td>The Account tab switches to the new bill; the month now counts as income history</td></tr>
+  <tr><td>6. Payment</td><td>The factory, by cheque, bank transfer or cash</td><td>The amount paid</td></tr>
+  <tr><td>7. Carry forward</td><td>Automatic</td><td>Debts, loan and manure balances, coins and savings move into the next month; credit limits move</td></tr>
+</table>
+<p>With the sync <strong>on</strong>, stages 1 to 4 and 6 happen in the factory's own system and arrive in the console by the hourly sync.</p>
+<div class="box warn"><span class="label">Publishing moves every supplier's credit limits</span>
+<p>Advance, loan and manure limits are worked out from the last <em>settled</em> (published) month. So publishing October is also the act that changes every supplier's November limits. Managers should know this before they press Publish.</p>
+</div>
+<div class="box rule"><span class="label">Month boundaries are Sri Lanka time</span>
+<p>A delivery at 9 pm on 31 July is a July delivery. Every month, window and deadline is worked out in Colombo time (UTC+5:30), whatever the computer's own clock says.</p>
+</div>
+
+<!-- 3 -->
+<h1>3. Where the records come from: the factory system switch</h1>
+<p>Every factory keeps running its own system. The switch in <strong>Configuration → Factory system</strong> says whether the console can <em>read</em> from it.</p>
+<table>
+  <tr><th></th><th>Sync ON</th><th>Sync OFF (the default)</th></tr>
+  <tr><td>Where suppliers, leaf, rates and bills come from</td><td>The factory's own system, by the hourly sync</td><td>The office, entered in the console one at a time or imported from Excel/CSV</td></tr>
+  <tr><td>"Factory records" menu (Leaf intake, Rates and month close)</td><td>Hidden; the pages say the records come from the factory system</td><td>Shown to the clerk and the manager; the factory admin can read but not change</td></tr>
+  <tr><td>Add supplier, opening balances, transport rate, walk-in requests, other deductions</td><td>Not offered; the server refuses them</td><td>Offered</td></tr>
+  <tr><td>Bills</td><td>The factory system's, read-only here</td><td>Imported from the factory's printed bills, or calculated here (section 4)</td></tr>
+  <tr><td>Hourly sync</td><td>Runs between 05:30 and 20:00</td><td>Does not run</td></tr>
+</table>
+<div class="box rule"><span class="label">One source at a time</span>
+<p>A factory either syncs or keeps its records here, never both. Two sources writing the same weighing is how a bill comes to disagree with itself.</p>
+</div>
+<h2>Rules for changing the switch</h2>
+<ul>
+  <li>Only the factory administrator may change it, and the screen shows what will appear and disappear before saving, then asks a second time.</li>
+  <li><strong>Refused while any month has bills made but not yet published</strong>, or late bills waiting. The refusal names the months. Publish or clear them first.</li>
+  <li><strong>Switching the sync on later:</strong> suppliers entered here are matched to the factory system's by the bare supplier number. No second supplier is ever created. For the same supplier, day or month, the sync's records replace ours.</li>
+</ul>
+<h2>Every approval is entered twice</h2>
+<p>The console does not write to the factory system in any mode. When a manager approves an advance, a loan, manure, tea packets, a savings withdrawal or a change of bank account here, the office must also enter it in the factory system, because that system prints the slips and pays the money. With imported bills the console checks this for you (section 6.2).</p>
+
+<!-- 4 -->
+<h1>4. Three ways a bill is made</h1>
+<p>A supplier's bill (the "Green Leaf Account") reaches the app one of three ways. The app looks the same in all three; only the office's work differs.</p>
+<table>
+  <tr><th>Mode</th><th>Who makes the bill</th><th>Office work each month</th><th>The supplier's figure is</th></tr>
+  <tr><td><strong>A. Sync on</strong></td><td>The factory's own system</td><td>None for bills; they arrive by the sync</td><td>Exactly the factory system's, as fresh as the last sync</td></tr>
+  <tr><td><strong>B. Sync off, bills imported</strong> (galaboda)</td><td>The factory's own system prints them; the office imports the finished bills</td><td>Export the finished bills to Excel, Import → Finished bills, review, publish</td><td>Exactly the printed slip, stored as printed, never recalculated</td></tr>
+  <tr><td><strong>C. Sync off, bills calculated</strong></td><td>The console, from leaf, rate and deduction rates</td><td>Enter leaf, enter the rate, generate, type other deductions, compare with the printed slips, publish</td><td>Calculated here; must equal the printed slip to the rupee before it is published</td></tr>
+</table>
+<p>Which of B and C a factory uses is set in <strong>Configuration → Bill calculation → Where the bills come from</strong>. It cannot be changed while a month has bills made but not published.</p>
+<div class="box example"><span class="label">Why mode C still compares with paper</span>
+<p>A factory whose system cannot export bills still prints a paper slip for every supplier. The supplier then holds two bills for the month: the paper one and the app's. They must agree to the rupee, or the office spends the month on the telephone.</p>
+</div>
+
+<!-- 5 -->
+<h1>5. The bill, line by line</h1>
+<p>The bill is laid out exactly like the factory's printed slip, so a supplier can hold the paper next to the phone and read the same figures in the same order.</p>
+<h2>5.1 The formula</h2>
+<div class="box rule"><span class="label">How the bill adds up</span>
+<div class="calc">Green leaf amount  = kilos × rate per kg
+Extra payment      = kilos × extra rate per kg
+Gross amount       = green leaf amount + extra payment + coins brought forward
+Total deductions   = the nine deduction lines added up
+Balance amount     = gross amount − total deductions
+Payable            = balance amount + savings withdrawal (if any)
+Paid (final)       = payable rounded DOWN to the payment unit (Rs. 1, 5 or 10)
+Coins carried fwd  = payable − paid   (paid on next month's bill)</div>
+<p>If payable is zero or less: nothing is paid, no coins are carried, and the shortfall becomes <strong>Next Month Deb</strong>, which is next month's "Previous debts" line.</p>
+</div>
+<h2>5.2 A real slip: galaboda, July 2026, supplier 5708</h2>
+<table>
+  <tr><th>Line</th><th class="num">Rs.</th><th>Note</th></tr>
+  <tr><td>Kilos</td><td class="num">509.5 kg</td><td>Rate 222.00 + extra 3.00 = 225.00 per kg</td></tr>
+  <tr><td>Coins brought forward</td><td class="num">7.41</td><td>Left over from June</td></tr>
+  <tr><td>Green leaf amount</td><td class="num">113,109.00</td><td>509.5 × 222</td></tr>
+  <tr><td>Extra payment</td><td class="num">1,528.50</td><td>509.5 × 3</td></tr>
+  <tr class="total"><td>Gross amount</td><td class="num">114,644.91</td><td></td></tr>
+  <tr class="sub"><td>Transport</td><td class="num">0.00</td><td></td></tr>
+  <tr class="sub"><td>Tea</td><td class="num">1,298.00</td><td>Tea issued to the supplier</td></tr>
+  <tr class="sub"><td>Savings</td><td class="num">5,095.00</td><td>Rs. 10 per kg × 509.5</td></tr>
+  <tr class="sub"><td>Loan (Loans / Advance)</td><td class="num">0.00</td><td>No loan running</td></tr>
+  <tr class="sub"><td>Advance</td><td class="num">40,000.00</td><td>Taken in July, deducted in full in July</td></tr>
+  <tr class="sub"><td>Manure</td><td class="num">0.00</td><td></td></tr>
+  <tr class="sub"><td>Other deductions</td><td class="num">0.00</td><td></td></tr>
+  <tr class="sub"><td>Stamps</td><td class="num">25.00</td><td></td></tr>
+  <tr class="sub"><td>Previous debts</td><td class="num">0.00</td><td></td></tr>
+  <tr class="total"><td>Total deductions</td><td class="num">46,418.00</td><td></td></tr>
+  <tr class="total"><td>Balance amount</td><td class="num">68,226.91</td><td>114,644.91 − 46,418.00</td></tr>
+  <tr class="total"><td>Paid (in tens)</td><td class="num">68,220.00</td><td>Rounded down to Rs. 10</td></tr>
+  <tr><td>Coins carried forward</td><td class="num">6.91</td><td>Paid on the August bill</td></tr>
+  <tr><td>Savings: previous / this month / to date</td><td class="num">21,970 / 5,095 / 27,065</td><td></td></tr>
+</table>
+<h2>5.3 The nine deduction lines</h2>
+<table>
+  <tr><th>Line</th><th>What it is</th><th>Where the figure comes from (calculated bills)</th></tr>
+  <tr><td>Transport</td><td>Bringing the leaf from the estate</td><td>Kilos × transport rate per kg: the supplier's own rate if set, else the collection point's, else the factory's. Priced per weighing, so a supplier who delivers to two points pays each point's rate</td></tr>
+  <tr><td>Tea</td><td>Tea issued to the supplier (tea packets)</td><td>Approved tea-packet requests</td></tr>
+  <tr><td>Savings</td><td>The supplier's chosen savings</td><td>Kilos × savings per kg</td></tr>
+  <tr><td>Loan ("Loans / Advance" on the slip, with the instalment number)</td><td>This month's loan instalment, plus interest if the factory charges it</td><td>Section 12</td></tr>
+  <tr><td>Advance</td><td>Cash given against this month's leaf</td><td>Deducted in full in the same month (section 11)</td></tr>
+  <tr><td>Manure</td><td>Fertilizer instalment</td><td>Section 13</td></tr>
+  <tr><td>Other deductions</td><td>Small amounts the office types, with a reason the supplier reads</td><td>Typed on the bill before publishing (section 9.5)</td></tr>
+  <tr><td>Stamps</td><td>Revenue stamp duty</td><td>The factory's approved stamp amount</td></tr>
+  <tr><td>Previous debts</td><td>What last month could not cover</td><td>Last bill's Next Month Deb, or the opening balance for the first bill</td></tr>
+</table>
+<div class="box rule"><span class="label">The lines are the truth</span>
+<p>The total is always the sum of the nine lines. A total that disagrees with its own lines is refused on import and visible on screen.</p>
+</div>
+<h2>5.4 Carried into next month</h2>
+<table>
+  <tr><th>Slip line</th><th>Means</th></tr>
+  <tr><td>Next Month Deb</td><td>What this account could not cover. It becomes next month's Previous debts</td></tr>
+  <tr><td>Loan Balance</td><td>The loan still owed after this bill</td></tr>
+  <tr><td>Manure Balance</td><td>Fertilizer still owed</td></tr>
+  <tr><td>Loan Interest</td><td>This month's interest charge in rupees (not a rate)</td></tr>
+  <tr><td>Coins C/F</td><td>Becomes next month's Coins B/F, inside next month's gross</td></tr>
+  <tr><td>Savings to date</td><td>Becomes next month's Savings previous</td></tr>
+</table>
+<h2>5.5 When the account owes more than it earned</h2>
+<div class="box example"><span class="label">Example</span>
+<div class="calc">Gross amount              30,000.00
+Deductions                40,025.00   (advance 40,000 + stamps 25)
+Balance amount           −10,025.00
+Paid                           0.00
+Next Month Deb            10,025.00   → next month's Previous debts</div>
+<p>A negative payment cannot go into a bank file or onto a cheque, so the bill pays 0 and carries the debt.</p>
+</div>
+<h2>5.6 Bill numbers</h2>
+<ul>
+  <li>With a serial set in Configuration, the number is the <strong>year of the bill's month</strong> followed by a running serial of six digits: <strong>2026210869</strong>. The serial never resets: the next one in January is 2027210870. It grows to seven digits after 999999.</li>
+  <li>The serial continues from the factory's last paper bill, so the first bill made here follows the last one the old system printed.</li>
+  <li>Re-making a month keeps each supplier's number.</li>
+  <li>With no serial set, the number is GL/2026-07/0042 (month and a sequence).</li>
+</ul>
+
+<!-- 6 -->
+<h1>6. Why a final balance can differ, and how each mode keeps it equal</h1>
+<p>The supplier has one question: "is the amount on my phone the amount I was paid?" The factory's own system is the reference, because it prints the slip and pays the money. Each mode has its own way of making sure the app's final balance equals the factory system's.</p>
+
+<h2>6.1 Mode A: sync on</h2>
+<ul>
+  <li>The bill is the factory system's own, copied as it is. There is nothing to calculate here, so there is nothing to disagree about.</li>
+  <li><strong>The only difference possible is time.</strong> The figures are as fresh as the last successful sync. If the sync has been failing for more than 3 working hours (counted only between 05:30 and 20:00), a "figures may be out of date" notice appears across the console, so nobody quotes an old balance over the telephone.</li>
+  <li>A correction is made in the factory system; it arrives with the next sync.</li>
+</ul>
+
+<h2>6.2 Mode B: sync off, bills imported</h2>
+<p>The office exports the month's finished bills from the factory system and uses <strong>Import → Finished bills</strong>. Every figure is stored <strong>as printed</strong> and never recalculated, so the final balance is the slip's. The import refuses a file that could not be the slip:</p>
+<table>
+  <tr><th>Check</th><th>What it catches</th></tr>
+  <tr><td><strong>Each row adds up, to the cent</strong>: gross = green leaf + extra + coins B/F; the nine lines = their total; balance = gross − total; paid + coins C/F = balance + savings withdrawal; Savings to date = previous + this month − withdrawal</td><td>A shifted column, a mistyped figure. The problem names the column that does not add up</td></tr>
+  <tr><td>Kilos × rate within Rs. 1 of the green leaf amount (the factory system may round per weighing)</td><td>A wrong rate or kilos column</td></tr>
+  <tr><td>The rate in the file equals the month's rate</td><td>A file from another month or another rate</td></tr>
+  <tr><td><strong>Everything we approved reached the slip</strong> (below)</td><td>An approval given in the console but never typed into the factory system</td></tr>
+  <tr><td>The month has ended, and is not before the newest published month</td><td>Importing the month too early, or out of order</td></tr>
+  <tr><td>The headers Loan Balance, Manure Balance and Savings To-date are in the file (a blank cell is 0, a missing column is refused)</td><td>A file that would silently set every balance to 0</td></tr>
+  <tr><td>A bill number is not already used; a supplier already published this month is refused</td><td>Importing the same slips twice</td></tr>
+</table>
+<h3>The approvals check</h3>
+<ul>
+  <li>A month's slip carries what was approved <strong>on or before the month's last day</strong>. Something approved between the 1st and the day the slips print (about the 10th) belongs on the next slip.</li>
+  <li>Advance, tea and savings withdrawal: the slip's line must be <strong>at least</strong> what we approved. More is allowed: the factory may have given more at its own counter.</li>
+  <li>Loan and manure, through the balances: <em>this month's balance + this month's instalment ≥ last month's balance + what we approved this month</em>.</li>
+  <li>A supplier with no slip this month (no leaf) carries the month's approvals to their next slip; the check looks there.</li>
+  <li>The check runs again at publish. If something was approved since the import, publish is refused and the dialog lists each supplier, item and amount. Enter it in the factory system, export again, import the corrected file.</li>
+</ul>
+<div class="box example"><span class="label">Example: an approval that was not typed into the factory system</span>
+<p>The manager approved a Rs. 40,000 July advance for supplier 5708 in the console. The office forgot to enter it in the factory system, so the July slip shows Advance 0. The import is refused: <em>"5708: we approved Rs. 40,000.00 for this month and the slip does not have it."</em> The supplier was given the cash; without this check the money would never be recovered.</p>
+</div>
+<h3>Leaf differences</h3>
+<p>If leaf was also entered in the console, the import says how many suppliers' kilos differ from the slip. <strong>The slip's kilos win</strong>; the difference is reported so someone can look.</p>
+<h3>What publishing an imported month does to the balances</h3>
+<p>Each ledger (loan, manure, savings) posts the slip's repayment, then one adjustment that brings the balance, <strong>as it stood at the first moment of the next month</strong>, to the slip's figure. Anything approved after the month is kept: a loan approved on 3 November is still owed after October is published on 10 November. Every adjustment is in the audit log.</p>
+<h3>A late division file</h3>
+<ul>
+  <li>Any number of files per month; each replaces only the suppliers in it, so one file per division works.</li>
+  <li>A file arriving <strong>after</strong> the month is published adds bills only for suppliers with no published bill that month. Those bills <strong>wait</strong>: the screen shows "N bills from a late file are waiting", and a manager other than the importer publishes them.</li>
+  <li>While they wait, a wrong one can be replaced by importing it again. The next month cannot be published until they are, and the switch and bill source cannot be changed.</li>
+</ul>
+<p>An imported bill is never edited in the console. A correction is made in the factory system and the month imported again.</p>
+
+<h2>6.3 Mode C: sync off, bills calculated</h2>
+<p>The console works the bill out from what the office entered. The factory system still prints its own slip, so before publishing, <strong>every bill is compared with its printed slip</strong>:</p>
+<ol>
+  <li>The office enters each printed slip's <strong>Balance</strong> (the amount paid), one at a time or from a file (Import → Printed slip balances). It is kept even if the bills are made again.</li>
+  <li>Each bill is <strong>match</strong> (equal to the rupee), <strong>mismatch</strong>, or <strong>missing</strong> (no printed figure yet).</li>
+  <li><strong>A difference is fixed at its cause</strong> (table below), in whichever system is wrong. Then make the bills again and compare again.</li>
+  <li><strong>Or the bill is held</strong>, with a reason of at least 10 characters. Publish is refused while any bill is mismatch or missing and not held.</li>
+  <li><strong>Publish leaves held bills out.</strong> The rest of the month is published. A held bill is not shown in the app, its savings are not posted and it is not paid.</li>
+  <li><strong>A held bill stays open</strong>: that supplier's leaf for the month can still be corrected and other deductions edited. Making the bills again on a published month recalculates only the held ones.</li>
+  <li><strong>Release</strong> (manager): only when the bill now matches and its kilos equal the supplier's leaf. After the publish, release publishes that one bill and notifies that supplier.</li>
+  <li><strong>The next month does not wait.</strong> It is published for everyone, but that supplier's next bill is held automatically, because its coins, debt and loan balance come from the held one. Release the earlier one first, recalculate the later, compare, release.</li>
+</ol>
+
+<h2>6.4 Typing one at a time or importing a file</h2>
+<p>The records are the same either way and follow the same rules. A file is checked whole first and saved <strong>all rows or none</strong>. Importing the same leaf file twice adds nothing (section 23). Neither path changes the bill's arithmetic.</p>
+
+<h2>6.5 Causes of a difference, and the fix</h2>
+<table>
+  <tr><th>Cause</th><th>Effect on the balance</th><th>Fix</th></tr>
+  <tr><td>A weighing typed with different kilos, missed, or entered twice</td><td>Green leaf, extra, transport and savings all move</td><td>Correct or void the weighing (with a reason), make the bills again</td></tr>
+  <tr><td>A weighing recorded at the wrong collection point</td><td>Transport moves when points have different rates</td><td>Void and re-enter at the right point</td></tr>
+  <tr><td>The month's rate or extra rate entered differently</td><td>Every bill in the month moves</td><td>Correct the rate before publishing</td></tr>
+  <tr><td>An approval entered in one system only (advance, loan, manure, tea, savings withdrawal)</td><td>That deduction or payment is missing on one side</td><td>Enter it in the system that lacks it. Imported bills: the import refuses it</td></tr>
+  <tr><td>Transport rate: the supplier's own, the point's, or the factory's set differently</td><td>Transport line moves</td><td>Align the rates; a change applies from the next bill made</td></tr>
+  <tr><td>Stamps, instalment caps or interest set differently</td><td>Those lines move</td><td>Align Configuration and deduction rates with the factory system</td></tr>
+  <tr><td>Payment unit different (Rs. 1, 5 or 10)</td><td>Paid amount and coins differ by a few rupees</td><td>Set the same unit as the factory</td></tr>
+  <tr><td>Opening balances wrong (debt, loan, manure, savings, months left)</td><td>The first bill and every one after it</td><td>Correct them before any bill is published for the supplier (they lock after)</td></tr>
+  <tr><td>A savings-rate change applied in a different month</td><td>Savings line moves</td><td>A change applies from the next unclosed month only</td></tr>
+  <tr><td>Other deductions typed here and not there</td><td>Other deductions line</td><td>Type the same amount in both</td></tr>
+  <tr><td>Sync on, sync not running</td><td>The console is behind the factory system</td><td>See the sync status page; the factory's IT team</td></tr>
+</table>
+
+<!-- 7 -->
+<h1>7. Suppliers</h1>
+<h2>7.1 Every value shown is the active one</h2>
+<p>The supplier page shows what is in force now. A change waiting for approval (bank, payment method, savings rate, address) is shown as pending beside it, never as if applied. The page has six tabs: Overview, Money, Requests, Income, Notifications and Activity.</p>
+<h2>7.2 Adding a supplier (sync off)</h2>
+<ul>
+  <li><strong>The supplier code is the factory's own code</strong> and the app's sign-in id: letters and digits, with the division in brackets if wanted, for example <strong>5708 (MAKADURA)</strong>.</li>
+  <li><strong>The bare number is the identity</strong>, unique across the whole factory. 5147 clashes with 5147 (DENIYAYA). A supplier signs in with the bare number.</li>
+  <li>A number typed without leading zeros (708) finds 0708 only when exactly one supplier fits; otherwise it is refused as ambiguous.</li>
+  <li>Bank transfer needs bank details. The account number is stored in full and shown masked; the account name defaults to the supplier's name; the bank and branch must be in the factory's bank list.</li>
+  <li>The collection point may be given by its code or name.</li>
+  <li>A new supplier has <strong>no app account</strong> until the office issues a password.</li>
+</ul>
+<h2>7.3 App password</h2>
+<ul>
+  <li>The office resets a password from the supplier page. The new one is <strong>one-time</strong>: the supplier must choose their own at the next sign-in, and every existing session on their phones ends.</li>
+  <li>How the supplier's identity was checked is recorded.</li>
+  <li>Seeing a full bank account number needs a reason, is recorded in the audit log, and is never kept on screen afterwards.</li>
+</ul>
+<h2>7.4 Opening balances (sync off) <span class="tag soon">Coming</span></h2>
+<p>What each supplier already owed or held on the day the factory started keeping records here.</p>
+<ul>
+  <li>Fields: advance, loan, manure, tea packets, savings and previous debt (all 0 or more), and for a running loan the months left and instalments already paid. A note of at least 10 characters.</li>
+  <li><strong>One cut-over month for the whole factory.</strong> A different month for one supplier is refused.</li>
+  <li>With months left given, the loan is recovered at loan ÷ months left a month (under the cap), and the first bill here is instalment number "paid + 1". Without it, under the cap alone, numbered from 1.</li>
+  <li><strong>Locked once a bill is published</strong> for that supplier. A draft does not lock them.</li>
+  <li>A savings withdrawal still pending at cut-over is settled or cancelled first; the opening savings is entered after that.</li>
+</ul>
+<div class="box example"><span class="label">Example</span>
+<p>Cut-over month 2026-10. Supplier 5147 owes Rs. 30,000 on a loan with 6 months left, 4 instalments paid. Their first bill here deducts 30,000 ÷ 6 = Rs. 5,000 (if the cap allows) and is shown as "Loan (instalment 5)".</p>
+</div>
+<h2>7.5 Transport rate per supplier and per collection point</h2>
+<ul>
+  <li><strong>Which rate applies:</strong> the supplier's own rate if set, else the collection point's rate, else the factory rate. A supplier's own rate of 0 is real (someone who brings their own leaf).</li>
+  <li>The factory and point rates are changed through deduction rates, by two people (section 9.3). A supplier's own rate needs a note of 10+ characters and is audited.</li>
+  <li>A change applies from the next bill made, never to a published month.</li>
+</ul>
+<div class="box example"><span class="label">Example</span>
+<p>Factory rate Rs. 2.50, Makadura point Rs. 4.00. A supplier delivers 300 kg at Makadura and 100 kg at the factory: 300 × 4.00 + 100 × 2.50 = Rs. 1,450.00. With their own rate of Rs. 3.00: 400 × 3.00 = Rs. 1,200.00 wherever it was weighed.</p>
+</div>
+
+<!-- 8 -->
+<h1>8. Leaf intake (sync off)</h1>
+<ul>
+  <li>One day at one collection point. The date and point are in the page address, so "Makadura yesterday" can be shared as a link.</li>
+  <li><strong>Open month:</strong> the entry grid is shown. <strong>Published month:</strong> no grid; the month is locked. <strong>Read-only user:</strong> the rows without the grid.</li>
+  <li>A weighing is never deleted. It is <strong>voided with a reason</strong>; the row stays, marked.</li>
+  <li><strong>Exception:</strong> if a supplier's bill for that month is held (section 6.3), their leaf may still be entered or voided after the publish.</li>
+  <li>Import from file: a day's or a month's weighings at once <span class="tag soon">Coming</span>. Importing again skips weighings already recorded (section 23).</li>
+  <li>For the advance: enter each supplier's leaf on the day it is weighed. The advance limit is this month's kilos so far, so it is 0 until leaf is recorded.</li>
+</ul>
+
+<!-- 9 -->
+<h1>9. Rates and month close (sync off)</h1>
+<h2>9.1 The rate card</h2>
+<p>The month's rate per kg and extra rate per kg, entered when the auction result is known. Entering the rate does not publish anything.</p>
+<h2>9.2 Exceptions</h2>
+<p>For calculated bills, things that must be looked at before the close (for example, leaf for a supplier with no bank details, a negative balance, deductions above the gross, a missing rate). Each is resolved with a note. Imported months have no exceptions step: the slip is the record.</p>
+<h2>9.3 Deduction rates (two people)</h2>
+<table>
+  <tr><th>Rate</th><th>Default until the factory sets its own</th></tr>
+  <tr><td>Transport per kg (factory-wide)</td><td>Rs. 2.50</td></tr>
+  <tr><td>Transport per collection point</td><td>None: points use the factory rate</td></tr>
+  <tr><td>Stamps</td><td>Rs. 25.00</td></tr>
+  <tr><td>Instalment cap: the most of a month's gross one facility may take</td><td>Advance 100%, loan 20%, manure 15%</td></tr>
+</table>
+<p>One person <strong>proposes</strong>, another <strong>approves</strong>, because Rs. 2.50 against Rs. 4.50 a kilo is a different sum on every account and nobody would notice for a month. The screen shows what each change moves from and to.</p>
+<h2>9.4 Publishing a month</h2>
+<p>Publish checks, in this order, and refuses with the first that fails:</p>
+<ol>
+  <li>Already published (and nothing late waiting).</li>
+  <li>An earlier month still has unpublished bills: months are published in order.</li>
+  <li>The rate is missing.</li>
+  <li>Exceptions still open (calculated bills).</li>
+  <li>Bills missing or out of date (leaf changed after they were made).</li>
+  <li>A bill differs from its printed slip and is not held (calculated bills).</li>
+  <li>An approval missing from a slip (imported bills).</li>
+  <li><strong>Two-person rule:</strong> the publisher may not be the person who entered the rate or imported a bill of the month. That person sees a warning instead of the button.</li>
+</ol>
+<p>Publishing makes the bills visible in the app, sends each supplier a "your account is ready" notification, posts savings, settles withdrawals and moves every credit limit.</p>
+<h2>9.5 Other deductions (calculated bills) <span class="tag soon">Coming</span></h2>
+<ul>
+  <li>The one line typed by hand: an amount of 0 or more, and a reason of at least 3 characters when above 0. The supplier reads the reason under the line.</li>
+  <li>Only before publishing (or on a held bill). The bill is recalculated, never patched.</li>
+  <li>Making the bills again keeps each supplier's other deductions and reason.</li>
+  <li>On an imported bill the line is the factory's and is not edited here.</li>
+</ul>
+
+<!-- 10 -->
+<h1>10. Credit: the rules all three share</h1>
+<p>The factory extends three kinds of credit against green leaf. They look alike on screen and are deliberately different underneath.</p>
+<table>
+  <tr><th></th><th>Advance</th><th>Loan</th><th>Manure</th></tr>
+  <tr><td>What it is</td><td>Cash against leaf already supplied this month</td><td>Cash against a record of income</td><td>Fertilizer taken on credit</td></tr>
+  <tr><td>Settled months needed (default)</td><td>None</td><td>6</td><td>6</td></tr>
+  <tr><td>Limit (default)</td><td>Last settled rate × this month's kilos so far</td><td>3 × average gross of the last 6 settled months</td><td>Last settled rate × that month's kilos</td></tr>
+  <tr><td>Blocked by</td><td>An advance not yet deducted, or any loan still owed</td><td>Any loan still owed</td><td>A balance already at the limit</td></tr>
+  <tr><td>Repaid</td><td>In full on the same month's bill</td><td>Over 3 to 12 bills, the supplier's choice</td><td>Over 1 to 6 bills, the supplier's choice</td></tr>
+</table>
+<div class="box rule"><span class="label">Rules for every credit request</span>
+<ul>
+  <li><strong>Settled months only.</strong> The month in progress has no rate, so it never prices a limit, counts as history or enters an average. "Income" means the bill's gross amount.</li>
+  <li><strong>Limits are cut down to the cent, never rounded up</strong>, so the limit shown is a figure the form accepts.</li>
+  <li><strong>Too little history gives a limit of 0</strong>, never a limit priced off two months.</li>
+  <li><strong>One pending request per facility.</strong> A second one is refused while the first waits.</li>
+  <li><strong>Checked again at approval.</strong> Between asking and approving, a month may have been published or a loan approved. An approval over the current limit is refused.</li>
+  <li><strong>The approver sees exactly what the supplier saw:</strong> the same months, rate × kilos or average, multiplier, cap and limit.</li>
+  <li><strong>Rejection needs a note</strong>, which the supplier reads in the app.</li>
+  <li><strong>Two people:</strong> nobody decides a request they recorded. Above the factory's manager threshold (when set), only someone with the higher permission may approve.</li>
+  <li><strong>The amount or term may differ</strong> from what was asked; the factory decides.</li>
+  <li><strong>Approval also refuses</strong> a suspended or closed supplier, an advance still outstanding, and a loan still owed.</li>
+  <li>The supplier may cancel their own request while it is pending. If the office decided first, the cancel is refused.</li>
+  <li>Every decision dialog reminds the approver to enter it in the factory system too.</li>
+</ul>
+</div>
+
+<!-- 11 -->
+<h1>11. Advance</h1>
+<ul>
+  <li><strong>Limit</strong> = last settled month's rate per kg × kilos supplied so far this month. So it is 0 until leaf is recorded this month, and it grows every day leaf is weighed.</li>
+  <li><strong>No history needed</strong>: a supplier in their first month can take an advance.</li>
+  <li><strong>Blocked</strong> while an advance already taken has not yet been deducted, and while <strong>any loan is still owed</strong>.</li>
+  <li><strong>Closed within its month:</strong> deducted in full on that month's bill, even past the gross. It never carries a balance. Whatever the account cannot cover is Next Month Deb.</li>
+  <li><strong>Advance interest</strong> (Configuration → Bill calculation, 0 to 10% a month, 0 unless set) is charged <strong>only</strong> on the part of an advance the account could not cover.</li>
+</ul>
+<div class="box example"><span class="label">Example</span>
+<div class="calc">Last settled month (September) rate     Rs. 200.00 per kg
+Kilos supplied 1 to 18 October          300 kg
+Advance limit                           200 × 300 = Rs. 60,000.00
+
+Supplier takes Rs. 40,000 on 18 October.
+October bill: gross 70,000, advance 40,000 deducted in full.
+
+If October's gross were only 30,000:
+  balance −10,000 (plus other lines) → paid 0, Next Month Deb 10,000
+  with advance interest 2% a month: interest 2% × 10,000 = Rs. 200</div>
+</div>
+
+<!-- 12 -->
+<h1>12. Loan</h1>
+<ul>
+  <li><strong>Needs 6 settled months</strong> (default).</li>
+  <li><strong>Limit</strong> = 3 × the average gross of the last 6 settled months (default), capped at a maximum when the factory sets one.</li>
+  <li><strong>Term:</strong> the supplier chooses 3 to 12 monthly bills (default); a term outside the factory's list is refused, never rounded.</li>
+  <li><strong>An open loan blocks a new loan and an advance</strong> until it is repaid. Manure is not affected. A supplier repaying a 10-month loan gets neither for those months.</li>
+  <li><strong>Each bill deducts a fixed instalment</strong> = amount borrowed ÷ months chosen, never more than the loan cap (20% of gross by default) and never more than is still owed. The slip shows its number: "Loans / Advance 3" is the third instalment.</li>
+  <li><strong>Loan Balance</strong> on the slip is the loan still owed after this bill.</li>
+</ul>
+<h2>12.1 Loan interest</h2>
+<ul>
+  <li>Set in Configuration → Bill calculation, as a percentage a month. <strong>0% unless the factory sets it.</strong></li>
+  <li><strong>Simple interest on the loan owed at the start of the month</strong>, never on unpaid interest.</li>
+  <li>The factory chooses how it is taken: <strong>on top</strong> of the instalment (the default), or <strong>inside</strong> it.</li>
+  <li>The month's charge in rupees is the slip's "Loan Interest" line.</li>
+</ul>
+<div class="box example"><span class="label">Example: Rs. 50,000 over 10 months at 1% a month</span>
+<table>
+  <tr><th></th><th class="num">On top</th><th class="num">Inside the instalment</th></tr>
+  <tr><td>Interest this month (1% of 50,000)</td><td class="num">500</td><td class="num">500</td></tr>
+  <tr><td>Deducted on the bill</td><td class="num">5,500</td><td class="num">5,000</td></tr>
+  <tr><td>Loan falls by</td><td class="num">5,000</td><td class="num">4,500</td></tr>
+  <tr><td>Loan Balance after</td><td class="num">45,000</td><td class="num">45,500</td></tr>
+</table>
+</div>
+<div class="box example"><span class="label">Example: the loan limit</span>
+<div class="calc">Gross of the last 6 settled months:
+  80,000  75,000  90,000  85,000  70,000  80,000  → average 80,000
+Loan limit = 3 × 80,000 = Rs. 240,000.00 (or the factory's cap if lower)
+Only 4 settled months?  → limit 0, "not enough history"</div>
+</div>
+
+<!-- 13 -->
+<h1>13. Manure (fertilizer on credit)</h1>
+<ul>
+  <li><strong>Needs 6 settled months</strong> (default) <strong>and</strong> room under the limit.</li>
+  <li><strong>Limit</strong> = last settled month's rate per kg × that same month's kilos (default). The balance already owed counts against it.</li>
+  <li><strong>Priced from the factory's catalogue</strong> (Configuration → Collection and savings): each fertilizer has a bag size and a price per bag. The amount is never typed by hand, by the supplier or the office.</li>
+  <li><strong>Whole bags, rounded up</strong>: a store does not issue half a sack.</li>
+  <li>A fertilizer the catalogue does not price is refused, so nothing is issued free.</li>
+  <li><strong>Term:</strong> 1 to 6 monthly bills (default), the supplier's choice, under the manure cap (15% of gross by default).</li>
+  <li>Approval usually comes days before the fertilizer is collected from the store.</li>
+</ul>
+<div class="box example"><span class="label">Example</span>
+<div class="calc">Catalogue: Urea, 50 kg bag, Rs. 9,000 a bag
+Supplier asks for 60 kg  → 2 bags (rounded up) → Rs. 18,000.00
+Limit: September rate 200 × September kilos 400 = Rs. 80,000.00
+Term 3 months → about Rs. 6,000 a bill, but never more than 15% of that bill's gross</div>
+</div>
+
+<!-- 14 -->
+<h1>14. How an instalment is worked out</h1>
+<p>For a loan or manure, the amount taken from one bill is the <strong>smallest</strong> of three figures:</p>
+<ol>
+  <li><strong>The planned instalment:</strong> what was borrowed ÷ the months the supplier chose. A fixed amount, so the debt actually clears. (Dividing what is <em>left</em> each month would shrink the instalment for ever and never finish.)</li>
+  <li><strong>The cap:</strong> the facility's share of this month's gross (loan 20%, manure 15% by default), so one poor month is not swallowed by a repayment agreed in a good one.</li>
+  <li><strong>What is still owed.</strong> The last instalment is whatever is left.</li>
+</ol>
+<p>If the gross is 0, nothing is taken that month. A credit approved before the app asked for a term falls back to the cap alone.</p>
+<div class="box example"><span class="label">Example</span>
+<div class="calc">Loan Rs. 120,000 over 10 months → planned 12,000
+Month with gross 80,000: cap 20% = 16,000 → takes 12,000
+Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs longer)</div>
+</div>
+
+<!-- 15 -->
+<h1>15. Walk-in requests and credit rule settings</h1>
+<h2>15.1 A request made at the counter (sync off)</h2>
+<ul>
+  <li><strong>Record walk-in request</strong>, or import many from a file. It is created exactly like an app request, marked as from the office, pending, with the clerk as its creator, so <strong>someone else decides it</strong>.</li>
+  <li>The reason is required (10+ characters). Manure is priced from the catalogue whatever amount is typed; loans and manure offer only the factory's terms.</li>
+  <li><strong>Refused</strong> for: a facility switched off, a suspended or closed supplier, a request already pending on that facility, a loan or advance while a loan is owed, a term the factory does not offer.</li>
+  <li><strong>Not refused for being over the limit.</strong> It is recorded as asked, with the limit shown, and the approval refuses it. That keeps the supplier's request on record.</li>
+</ul>
+<h2>15.2 Credit rules (Configuration → Credit rules)</h2>
+<p>Each factory sets its own lending policy. Every limit is one sentence: <em>take a basis, average it if needed, multiply it, cap it, and require some history first.</em></p>
+<table>
+  <tr><th>Field</th><th>Meaning</th></tr>
+  <tr><td>Basis</td><td>This month's leaf · Last settled month · Average income</td></tr>
+  <tr><td>Multiplier</td><td>1 means the basis itself</td></tr>
+  <tr><td>Months to average</td><td>Only for average income</td></tr>
+  <tr><td>Settled months required</td><td>0 offers it from the supplier's first month</td></tr>
+  <tr><td>Cap</td><td>Empty means none; applied after the multiplier</td></tr>
+  <tr><td>Repayment periods offered</td><td>The terms the app shows as choices (loan and manure)</td></tr>
+</table>
+<ul>
+  <li>The defaults are exactly the formulas above. A factory that never opens the screen keeps them.</li>
+  <li>A wrong value <strong>blocks the save</strong> rather than warning. A multiplier of 0 is refused: turning the facility off is how "nobody may borrow" is said.</li>
+  <li>The screen prints in a sentence what the numbers mean.</li>
+</ul>
+<div class="box example"><span class="label">Example</span>
+<p>"Manure: average of the last 3 months × 1, capped at Rs. 20,000" is basis Average income, months 3, multiplier 1, cap 20,000.</p>
+</div>
+
+<!-- 16 -->
+<h1>16. Tea packets</h1>
+<p>The factory's own made tea, for the supplier's household. <strong>A store issue, not credit.</strong></p>
+<ul>
+  <li><strong>No history and no limit priced off leaf.</strong> Only a <strong>monthly cap</strong> on packets (default 10), so a mistyped quantity cannot swallow a payment. The month's undecided and approved packets count toward it.</li>
+  <li><strong>Price</strong> from Configuration → Tea packets: pack size (for example 400 g) and price per packet (default Rs. 1,200 until set). Whole packets only.</li>
+  <li><strong>The price is fixed at the decision</strong> and never re-read, so a price change later does not move an approved request.</li>
+  <li><strong>Delivery:</strong> every request says how it travels: collect at the factory, or on the vehicle that collects the leaf. The queue can be filtered by it, so vehicle orders are packed before it leaves.</li>
+  <li>The cost comes off the <strong>next bill's Tea line</strong>.</li>
+  <li>An over-cap request is refused at approval only, so it can still be rejected with a note.</li>
+  <li>Tea packets cannot be switched off while any approved packets are not yet recovered: that is money the factory is owed.</li>
+  <li>A factory with no price set shows suppliers "the factory has not set a price yet" and no form.</li>
+</ul>
+<div class="box example"><span class="label">Example</span>
+<p>400 g packets at Rs. 1,200, cap 10 a month. A supplier asks for 3 in October (1.2 kg from the store): Rs. 3,600 on the next bill's Tea line, and 7 packets remain for October.</p>
+</div>
+
+<!-- 17 -->
+<h1>17. Savings</h1>
+<ul>
+  <li><strong>The deduction</strong> = savings per kg × the month's kilos. The amounts on offer per kg are the factory's (Configuration → Collection and savings). 0 means the supplier does not save, shown as "no savings", not "Rs. 0".</li>
+  <li><strong>Changing the rate</strong> is a request from the supplier; only approval moves it, one may be pending at a time, and it applies from the next unclosed month, never back-dated.</li>
+  <li><strong>The balance</strong> comes only from published bills: deductions in, withdrawals out.</li>
+</ul>
+<h2>17.1 Withdrawals</h2>
+<ul>
+  <li><strong>Recorded by the office, approved by the manager</strong> (the clerk cannot pay out a supplier's savings). A reason is required.</li>
+  <li><strong>Only in the factory's withdrawal month</strong>, April by default (changeable), in Colombo time.</li>
+  <li><strong>Available</strong> = balance − withdrawals already pending, so the same savings cannot be asked for twice.</li>
+  <li><strong>Paid on the next bill</strong>, added after the balance amount (it is the supplier's own money, not leaf income). The balance does not fall until that bill is published.</li>
+  <li>A supplier with no leaf that month still gets a bill, so the withdrawal has something to be paid on.</li>
+  <li>A withdrawal waits for the rate: it is not paid on an account with no figures.</li>
+  <li><strong>Interest</strong> on savings: the rate is recorded (0% by default) but never applied by the console. When the factory decides how it is worked out, the accountant posts it.</li>
+</ul>
+<div class="box example"><span class="label">Example</span>
+<p>Balance Rs. 27,065 in April; the manager approves a Rs. 10,000 withdrawal. Available for another request: 17,065. On the April bill: balance amount 50,004.20 + withdrawal 10,000 = payable 60,004.20, paid 60,000 (tens), coins 4.20. Savings to date = previous + this month − 10,000.</p>
+</div>
+
+<!-- 18 -->
+<h1>18. Change requests</h1>
+<p>Four things a supplier may only <em>ask</em> to change:</p>
+<table>
+  <tr><th>Type</th><th>Applies to</th></tr>
+  <tr><td>Payment method</td><td>Cheque, bank transfer or cash</td></tr>
+  <tr><td>Bank details</td><td>Bank, branch, account (a new record, never an overwrite)</td></tr>
+  <tr><td>Savings rate</td><td>Savings per kg (0 = stop saving), from the next unclosed month</td></tr>
+  <tr><td>Address</td><td>Home address (where the slip is sent) and estate address (where the leaf comes from); only the part that changed</td></tr>
+</table>
+<div class="box rule"><span class="label">A pending change never moves the active value</span>
+<p>Until it is approved, money goes to the account already approved. The app shows the active value with "pending approval" beside the requested one. Approval is the only way these four change; an office user editing them goes through the same approval.</p>
+</div>
+<ul>
+  <li>One pending request per type.</li>
+  <li><strong>Bank changes are where fraud happens:</strong> check a passbook or statement before approving. Who approved is audited.</li>
+  <li>Rejection needs a note. The person who recorded it may not approve it.</li>
+  <li>The dialog reminds the approver to make the same change in the factory system.</li>
+</ul>
+
+<!-- 19 -->
+<h1>19. Inquiries, news, banners, pages and notifications</h1>
+<h2>19.1 Inquiries</h2>
+<ul>
+  <li>Each inquiry is a conversation. <strong>Reply</strong> writes something the supplier reads; <strong>close</strong> files it. Once closed, the supplier cannot write more in it.</li>
+  <li>Answering is the clerk's job; the manager can read the queue.</li>
+  <li>Suggested replies come from Configuration → Common notes.</li>
+</ul>
+<h2>19.2 News</h2>
+<ul>
+  <li>Written one language at a time. If a Sinhala or Tamil version is missing, the app shows English, and the editor sees the gap. A translation written before the English was corrected is marked out of date.</li>
+  <li>Publish now or schedule for a time (Colombo time). A cover image is optional.</li>
+</ul>
+<h2>19.3 Promo banners</h2>
+<ul>
+  <li>A banner shows only inside its window (start and end). "Published" alone does not mean visible.</li>
+  <li>The button opens a screen in the app or an https, phone or email link; anything else is refused before saving.</li>
+  <li>A missing translation may be published over; a broken button may not. Taking a banner down is recorded as withdrawn.</li>
+</ul>
+<h2>19.4 Fixed pages</h2>
+<p>Terms, privacy, FAQ, support, savings scheme, credit terms and about. A fixed set: each factory starts with the default text, can add, change or remove points, and can put a page back to the default. An edit to a live page is live when saved, and the audit keeps the old wording.</p>
+<h2>19.5 Notifications</h2>
+<ul>
+  <li>Automatic: "your account is ready" on publish, "your request was decided", "the office replied". News is sent from the Notifications screen.</li>
+  <li>Each supplier chooses which kinds they receive. The supplier page explains why a notification does or does not reach them (no device, the factory does not send that kind, opted out, nothing sent).</li>
+  <li>A push cannot be taken back, so every check runs before sending.</li>
+</ul>
+
+<!-- 20 -->
+<h1>20. Configuration and feature switches</h1>
+<p>Everything about a factory that is data rather than software, in eleven sections, each saved whole:</p>
+<table>
+  <tr><th>Section</th><th>Holds</th></tr>
+  <tr><td>The factory</td><td>Name, telephone, registration number, location, support email, office hours (printed on every bill)</td></tr>
+  <tr><td>Features</td><td>The feature switches (below)</td></tr>
+  <tr><td>Factory system</td><td>The sync switch (section 3)</td></tr>
+  <tr><td>Collection and savings</td><td>Collection points, savings amounts per kg, the fertilizer catalogue</td></tr>
+  <tr><td>Banks and branches</td><td>The bank list suppliers choose from</td></tr>
+  <tr><td>Languages and branding</td><td>Languages, fallback language, colours, logo</td></tr>
+  <tr><td>Notifications</td><td>Kinds of notification sent</td></tr>
+  <tr><td>Tea packets</td><td>Pack size, price, monthly cap</td></tr>
+  <tr><td>Credit rules</td><td>Section 15.2</td></tr>
+  <tr><td>Bill calculation</td><td>Where bills come from; payment unit Rs. 1/5/10; next bill serial; advance interest; loan interest and how it is taken</td></tr>
+  <tr><td>Common notes</td><td>Suggested notes for decisions and replies</td></tr>
+</table>
+<h2>20.1 Feature switches</h2>
+<p>Advances, loans, manure, tea packets, savings, payouts, news, promo banners, inquiries, notifications, biometric sign-in, dark mode, auto-lock, onboarding tour, Profile tab and "This month so far". A switch turned off removes the screen from the app <strong>and</strong> the server refuses it.</p>
+<h2>20.2 What an edit is refused for</h2>
+<table>
+  <tr><th>Change</th><th>Result</th><th>Why</th></tr>
+  <tr><td>Turning off savings, a credit facility or tea packets while money is held or owed</td><td>Blocked</td><td>It would hide what the factory owes or is owed</td></tr>
+  <tr><td>Removing a collection point that weighings use</td><td>Blocked</td><td>A weighing names its point</td></tr>
+  <tr><td>Removing the fallback language</td><td>Blocked</td><td>Every article and page falls back to it</td></tr>
+  <tr><td>A tea packet size of 0 or a negative price</td><td>Blocked</td><td>Every request would be priced wrong</td></tr>
+  <tr><td>Turning off a switch that only shows something</td><td>Warning</td><td>The factory's choice</td></tr>
+  <tr><td>Removing a bank in use, or a language with copy</td><td>Warning</td><td>The data stays; only what is offered changes</td></tr>
+</table>
+
+<!-- 21 -->
+<h1>21. Users, roles and the two-person rule</h1>
+<p>Five roles. The factory can change the table; this is the default. R read, W create or edit, A approve, - no access.</p>
+<table>
+  <tr><th>Area</th><th>Clerk</th><th>Manager</th><th>Editor</th><th>Factory admin</th><th>Platform admin</th></tr>
+  <tr><td>Supplier records</td><td>W</td><td>R</td><td>-</td><td>R</td><td>R</td></tr>
+  <tr><td>Daily leaf (sync off)</td><td>W</td><td>R</td><td>-</td><td>R</td><td>R</td></tr>
+  <tr><td>Rates, month close, publish</td><td>-</td><td>A</td><td>-</td><td>R</td><td>R</td></tr>
+  <tr><td>Bills: import, generate, other deductions (savings withdrawals need A)</td><td>W</td><td>A</td><td>-</td><td>R</td><td>R</td></tr>
+  <tr><td>Advance, loan, manure, tea-packet requests</td><td>W</td><td>A</td><td>-</td><td>-</td><td>-</td></tr>
+  <tr><td>Credit above the threshold</td><td>-</td><td>A</td><td>-</td><td>-</td><td>-</td></tr>
+  <tr><td>Change requests</td><td>A</td><td>A</td><td>-</td><td>-</td><td>-</td></tr>
+  <tr><td>Inquiries</td><td>A</td><td>R</td><td>-</td><td>-</td><td>-</td></tr>
+  <tr><td>News and pages</td><td>R</td><td>R</td><td>W</td><td>A</td><td>-</td></tr>
+  <tr><td>Configuration, switches, branding</td><td>R</td><td>R</td><td>-</td><td>W</td><td>W</td></tr>
+  <tr><td>Console users and roles</td><td>-</td><td>R</td><td>-</td><td>W</td><td>W</td></tr>
+  <tr><td>Reports</td><td>R</td><td>R</td><td>-</td><td>R</td><td>R</td></tr>
+  <tr><td>Audit log</td><td>-</td><td>R</td><td>-</td><td>R</td><td>R</td></tr>
+</table>
+<div class="box rule"><span class="label">Rules above the table</span>
+<ul>
+  <li><strong>Two people on money:</strong> whoever records a request, imports a bill or enters a rate may not approve or publish it. A second clerk is not a substitute for a manager.</li>
+  <li>A clerk can record a request at the counter but never decide it.</li>
+  <li>The factory admin sees every factory record but cannot change any.</li>
+  <li>A new user's first password is shown once and must be changed at first sign-in. Deleting a user waits three days and can be undone until then.</li>
+  <li>The console refuses changes that would lock the factory out: removing the last admin, a user changing their own role, a table that leaves nobody able to manage users.</li>
+</ul>
+</div>
+
+<!-- 22 -->
+<h1>22. Dashboard, reports, audit log and sync status</h1>
+<ul>
+  <li><strong>Dashboard:</strong> what is waiting, the age of the oldest item in each queue and how many are past their target, app adoption (suppliers signed in, devices), content problems (articles falling back to English, banners whose window closed, pages nobody wrote).</li>
+  <li><strong>Proposed service targets</strong> (to agree with the factory): advance, first response same working day, resolved in 2; loan 2 and 5; manure same day, next distribution; bank change 2 and 5; savings rate 2, before next month close; inquiry 1 and 3.</li>
+  <li><strong>Notification bell:</strong> queues waiting, and what suppliers just did (requests sent or cancelled, inquiry replies, account-deletion requests). Read marks are per user.</li>
+  <li><strong>Reports:</strong> App use (are suppliers moving from the counter to the app), Credit and tea packets (approved, issued and refused by month), Savings (what the factory holds, for how many, in and out by month; only when savings is on).</li>
+  <li><strong>Audit log:</strong> who did what, when, before and after; filter and export; never edited.</li>
+  <li><strong>Sync status</strong> (sync on): "behind" after 3 polling hours without a successful sync; "never synced" is a setup problem, not a delay.</li>
+</ul>
+
+<!-- 23 -->
+<h1>23. Importing from Excel or CSV</h1>
+<div class="box rule"><span class="label">Rules for every file</span>
+<ul>
+  <li><strong>All rows or none.</strong> Every row is checked first; one problem refuses the whole file and nothing is saved. The problems list names each row (the first data row is row 2) and column.</li>
+  <li>1 to 5,000 rows per file.</li>
+  <li><strong>Refused, never rounded:</strong> too many decimals, a minus sign where not allowed, "1e3", 31 February.</li>
+  <li>One audit entry per file.</li>
+  <li>A template with an example row can be downloaded for each kind.</li>
+</ul>
+</div>
+<h2>23.1 Importing the same file again <span class="tag soon">Coming</span></h2>
+<ul>
+  <li><strong>Leaf:</strong> a weighing already recorded (same date, supplier, kilos and collection point) is skipped, counted one for one. The same file twice adds nothing; two real 20 kg weighings against one recorded saves the second. "Import them anyway" is for a file that really holds a second weighing.</li>
+  <li><strong>Suppliers:</strong> a code already on the roll is skipped and left as it is, not updated. The rest of the file is added.</li>
+  <li>The dialog first shows what <em>would</em> happen (saved, skipped, problems) before anything is saved.</li>
+</ul>
+<h2>23.2 The kinds</h2>
+<table>
+  <tr><th>File</th><th>Saves</th><th>Typical refusals</th></tr>
+  <tr><td>Suppliers</td><td>New suppliers</td><td>Duplicate in the file, unknown collection point or bank, bank details missing</td></tr>
+  <tr><td>Daily leaf <span class="tag soon">Coming</span></td><td>Weighings</td><td>Unknown supplier, month published</td></tr>
+  <tr><td>Monthly rates <span class="tag soon">Coming</span></td><td>The month's rate</td><td>Month published</td></tr>
+  <tr><td>Opening balances <span class="tag soon">Coming</span></td><td>Opening balances</td><td>Locked, a different cut-over month</td></tr>
+  <tr><td>Walk-in requests</td><td>Pending office requests</td><td>As in section 15.1</td></tr>
+  <tr><td>Other deductions <span class="tag soon">Coming</span></td><td>Other deductions with reasons</td><td>No bill, month published, reason missing</td></tr>
+  <tr><td>Transport rates</td><td>Suppliers' own rates (empty = back to the point's)</td><td>Unknown supplier</td></tr>
+  <tr><td>Finished bills</td><td>A month's bills as printed</td><td>Section 6.2</td></tr>
+  <tr><td>Printed slip balances <span class="tag soon">Coming</span></td><td>Each slip's paid amount, for comparison</td><td>No bill, month published</td></tr>
+</table>
+<p>A file whose month was published while it waited is refused with "send the same file again". A decision that meets a publish in progress says "busy, try again"; nothing is saved.</p>
+
+<!-- 24 -->
+<h1>24. What works today and what is coming</h1>
+<p>As of 28 October 2026. The console hides each unfinished feature until the server supports it, so the office never meets an error page.</p>
+<table>
+  <tr><th>Area</th><th>Status</th></tr>
+  <tr><td>App management: queues, change requests, inquiries, news, banners, pages, notifications, configuration, users, reports, audit</td><td><span class="tag now">Working</span></td></tr>
+  <tr><td>Factory system switch, Add supplier, supplier import, transport rates, walk-in requests</td><td><span class="tag now">Working</span></td></tr>
+  <tr><td>Imported bills: Import → Finished bills, all checks, publish, late division files</td><td><span class="tag now">Working</span> (galaboda)</td></tr>
+  <tr><td>Opening balances</td><td><span class="tag soon">Next on the server</span></td></tr>
+  <tr><td>Leaf intake and rate entry on the server, leaf and rate imports</td><td><span class="tag soon">Coming</span></td></tr>
+  <tr><td>Other deductions</td><td><span class="tag soon">Coming</span></td></tr>
+  <tr><td>Importing a file again with skipping</td><td><span class="tag soon">Coming</span></td></tr>
+  <tr><td>Calculated bills with the printed-slip check, hold and release</td><td><span class="tag soon">Last</span>: no factory needs it yet</td></tr>
+  <tr><td>App "This month so far"</td><td><span class="tag soon">Coming</span></td></tr>
+  <tr><td>Later: factory sync, correcting a balance found wrong after the first bill, importing past months as history</td><td><span class="tag soon">Later</span></td></tr>
+</table>
+
+<!-- 25 -->
+<h1>25. Glossary</h1>
+<table>
+  <tr><th>Term</th><th>Meaning</th></tr>
+  <tr><td>Green leaf</td><td>Tea leaf as plucked and delivered, weighed in kilograms</td></tr>
+  <tr><td>Supplier code</td><td>The factory's id for a supplier, for example 5708 (MAKADURA); the bare number is the sign-in id</td></tr>
+  <tr><td>Green Leaf Account (bill, slip)</td><td>The monthly statement</td></tr>
+  <tr><td>Settled month</td><td>A month whose auction rate is in and whose bill is published</td></tr>
+  <tr><td>Rate / extra rate</td><td>Price per kg for the month, and a top-up per kg</td></tr>
+  <tr><td>Gross amount</td><td>Green leaf + extra + coins brought forward, before deductions. "Income" in the app</td></tr>
+  <tr><td>Balance amount</td><td>Gross less deductions</td></tr>
+  <tr><td>Final balance (paid)</td><td>Balance plus any savings withdrawal, rounded down to the payment unit</td></tr>
+  <tr><td>Payment unit</td><td>Rs. 1, 5 or 10; galaboda pays in tens</td></tr>
+  <tr><td>Coins B/F, C/F</td><td>The part below the payment unit, held back and paid next month inside the gross</td></tr>
+  <tr><td>Next Month Deb</td><td>What a bill could not cover, carried as next month's previous debts</td></tr>
+  <tr><td>Collection point (division)</td><td>Where leaf is weighed; may have its own transport rate</td></tr>
+  <tr><td>Publish</td><td>Make a month's bills final and visible in the app</td></tr>
+  <tr><td>Hold / release</td><td>Keep one calculated bill out of the publish until it matches the printed slip</td></tr>
+  <tr><td>Cut-over month</td><td>The month the factory started keeping records here; opening balances are as of it</td></tr>
+  <tr><td>Walk-in request</td><td>A credit request made at the office counter, recorded by a clerk</td></tr>
+  <tr><td>Two-person rule (four eyes)</td><td>The person who records may not approve</td></tr>
+  <tr><td>Sync</td><td>Reading records from the factory's own system every hour</td></tr>
+</table>
+
+</body>
+</html>
