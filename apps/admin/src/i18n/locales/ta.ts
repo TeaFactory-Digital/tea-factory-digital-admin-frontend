@@ -992,7 +992,7 @@ export const ta: Record<TranslationKey, string> = {
 
   /* ───────────────────────────── M5 Bills ───────────────────────────── */
   'bills.title': 'பில்கள்',
-  'bills.subtitle': 'கொழுந்து கணக்குகள், மாதம் வெளியிடப்படும் முன் சரிபார்க்கப்படுகின்றன',
+  'bills.subtitle': 'கொழுந்துக் கணக்குகள், மாதம் வெளியிடப்படும் முன் சரிபார்க்கப்படுகின்றன',
   'bills.readOnlyNotice':
     'படிக்க மட்டும். பில்கள் தொழிற்சாலையின் சொந்த கன்சோலில் உருவாக்கப்பட்டு வெளியிடப்படுகின்றன; வழங்குநரின் தொலைபேசியில் உள்ள கணக்கு பற்றிய கேள்விக்கு அலுவலகம் பதிலளிக்க இந்தத் திரை உள்ளது.',
   'bills.readOnlyNoticeRecords':
@@ -1018,7 +1018,7 @@ export const ta: Record<TranslationKey, string> = {
 
   'bills.generate': 'பில்களை உருவாக்கு',
 
-  'bills.detailTitle': 'கொழுந்து கணக்கு · {{code}}',
+  'bills.detailTitle': 'கொழுந்துக் கணக்கு · {{code}}',
   'bills.detailSubtitle': '{{name}} · {{month}}',
   'bills.backToMonth': '{{month}} க்குத் திரும்பு',
   'bills.published': 'வெளியிடப்பட்டது',
@@ -1432,7 +1432,7 @@ export const ta: Record<TranslationKey, string> = {
   'config.section.factory': 'தொழிற்சாலை',
   'config.sectionHint.factory': 'பெயர், பதிவு, தொடர்பு',
   'config.sectionDescription.factory':
-    'அச்சிடப்பட்ட கொழுந்து கணக்கிலும் செயலியின் உதவித் திரைகளிலும் தோன்றுவது.',
+    'அச்சிடப்பட்ட கொழுந்துக் கணக்கிலும் செயலியின் உதவித் திரைகளிலும் தோன்றுவது.',
   'config.section.features': 'வசதிகள்',
   'config.sectionHint.features': 'இந்தத் தொழிற்சாலை வழங்குவது',
   'config.sectionDescription.features':
@@ -1457,7 +1457,7 @@ export const ta: Record<TranslationKey, string> = {
   'config.factory.name': 'தொழிற்சாலையின் பெயர்',
   'config.factory.nameHint': 'ஒவ்வொரு கணக்கிலும் செயலியிலும் தோன்றுகிறது.',
   'config.factory.regNo': 'பதிவு இலக்கம்',
-  'config.factory.regNoHint': 'கொழுந்து கணக்கில் அச்சிடப்படுகிறது.',
+  'config.factory.regNoHint': 'கொழுந்துக் கணக்கில் அச்சிடப்படுகிறது.',
   'config.factory.telephone': 'தொலைபேசி',
   'config.factory.location': 'இடம்',
   'config.factory.supportEmail': 'அலுவலக மின்னஞ்சல்',
@@ -2123,7 +2123,7 @@ export const ta: Record<TranslationKey, string> = {
   'teaPackets.decide': 'முடிவு செய்',
   'teaPackets.decideTitle': 'இந்தத் தேயிலைப் பொதி கோரிக்கையை முடிவு செய்',
   'teaPackets.decideBody':
-    'மதிப்பு வழங்குநரின் அடுத்த கொழுந்து கணக்கிலிருந்து கழிக்கப்படும். அவர்கள் படிப்பது இந்தக் குறிப்பையே.',
+    'மதிப்பு வழங்குநரின் அடுத்த கொழுந்துக் கணக்கிலிருந்து கழிக்கப்படும். அவர்கள் படிப்பது இந்தக் குறிப்பையே.',
   'teaPackets.approve': 'அங்கீகரி',
   'teaPackets.reject': 'நிராகரி',
   'teaPackets.approved': 'கோரிக்கை அங்கீகரிக்கப்பட்டது',
@@ -2368,7 +2368,7 @@ export const ta: Record<TranslationKey, string> = {
   /* ── Factory records, used when the factory system is not connected (restored from v1) ── */
   'bills.generateFailed': 'பில்கள் உருவாக்கப்படவில்லை',
   'bills.generateHint':
-    'இந்த மாதம் கொழுந்து கொண்டு வந்த ஒவ்வொரு வழங்குநருக்கும் ஒரு கொழுந்து கணக்கை உருவாக்குகிறது. மாதம் வெளியிடப்படும் வரை வழங்குநர்களுக்கு எதுவும் அனுப்பப்படாது.',
+    'இந்த மாதம் கொழுந்து கொண்டு வந்த ஒவ்வொரு வழங்குநருக்கும் ஒரு கொழுந்துக் கணக்கை உருவாக்குகிறது. மாதம் வெளியிடப்படும் வரை வழங்குநர்களுக்கு எதுவும் அனுப்பப்படாது.',
   'bills.generateReadOnly': 'பில்களை உருவாக்குவது கணக்காளர் மட்டுமே.',
   'bills.generated': '{{month}} க்கான பில்கள் உருவாக்கப்பட்டன',
   'bills.generatedDetail': 'பில்கள் {{count}}, செலுத்த வேண்டியது {{payable}}.',

@@ -9,6 +9,7 @@ and `packages/domain` (please `vendor:pull` after each console change).
 | 50 | Staging is not running the latest commits | Now |
 | 45 | Factory records: opening balances next, then leaf and months, other deductions, importing again, the bill engine | High |
 | 48 | "This month so far": `GET /bills/month-to-date` | Medium |
+| 54 | Default pages: copy `static-pages.seed.json` again (Tamil green leaf word) | Small, any time |
 | - | Later: factory sync (Phase 10), balance corrections | Later |
 
 ## 50. Staging is not running the latest commits
@@ -76,6 +77,18 @@ Declare it **before** `GET /bills/:monthKey`, or `month-to-date` is read as a mo
 Rs. 15,000 advance: `totalKgs` is the sum of that month's non-voided deliveries,
 `supplyDays: 11`, `approved.advance: 15000`. After the month ends and before publishing:
 still that month, `monthEnded: true`. After publishing: the next month.
+
+## 54. Default pages: copy the seed again
+
+Tamil green leaf is now one word everywhere, **கொழுந்து** (the account is கொழுந்துக்
+கணக்கு), decided with the factory on 28 October 2026. Our
+`docs/v2/static-pages.seed.json` has it; your
+`apps/api/src/modules/tenant-defaults/static-pages.defaults.json` still says பச்சை இலை in
+six Tamil bodies, and one more body (`pages[0]`, the second translation) already differed
+before this change. Please replace your file with ours as it stands.
+
+**Check:** the two files are equal as JSON, and `grep 'பச்சை இலை'` finds nothing in yours.
+Pages a factory has already edited keep their own text: only the defaults change.
 
 ## Later
 

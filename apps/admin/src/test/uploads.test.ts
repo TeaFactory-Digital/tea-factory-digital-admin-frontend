@@ -51,7 +51,11 @@ const file = (type = 'image/png', size = 1024, name = 'cover.png') =>
   new File([new Uint8Array(size)], name, { type });
 
 beforeEach(() => stubImageDecoding());
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  // Each test spies on the endpoints afresh; vitest 4 reuses a live spy, calls and all.
+  vi.restoreAllMocks();
+});
 
 describe('uploading an image', () => {
   it('signs, PUTs the bytes and confirms, in that order', async () => {

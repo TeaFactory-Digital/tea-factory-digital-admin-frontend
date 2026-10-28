@@ -758,9 +758,9 @@ Worst first: correctness, then plumbing, then polish.
    sign, a renamed placeholder, untranslated English or an em dash. *To close:* somebody
    in the office reads the si and ta screens in place, before the console is
    demonstrated in either language. The fixtures and default pages (mocks.md) were not
-   part of the review. Two words chose themselves and are worth that person's eye:
-   Sinhala ආයාත / අපනයනය for import and export, and Tamil கொழுந்து (the console) against
-   பச்சை இலை (the app) for green leaf.
+   part of the review. Two words were settled on 28 October 2026: Sinhala ආනයනය /
+   අපනයනය for import and export, and Tamil கொழுந்து for green leaf, one word across the
+   console, the app and the website (the account is கொழுந்துக் கணக்கு).
 
 8. **Change-request evidence attachments are shown only if the API sends them**, and it does
    not yet. Whether an attachment is required to approve a bank-details change is open.
