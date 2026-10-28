@@ -1,0 +1,27 @@
+/* User manuals: the handbook style plus screenshots and steps. */
+@import url('../../handbooks/src/handbook.css');
+
+figure { margin: 3mm 0 5mm; page-break-inside: avoid; }
+figure img.screen { width: 100%; border: 1px solid var(--line); border-radius: 4px; display: block; }
+figure img.screen.half { width: 70%; margin: 0 auto; }
+figcaption { font-size: 8.6pt; color: var(--muted); margin-top: 1.5mm; }
+figcaption b { color: var(--ink); }
+
+.phones { display: flex; gap: 5mm; justify-content: center; align-items: flex-start; margin: 3mm 0 5mm; page-break-inside: avoid; }
+.phones figure { margin: 0; width: 47mm; text-align: center; }
+.phones figure img { width: 47mm; border: 1px solid var(--line); border-radius: 7mm; display: block; }
+.phones.two figure { width: 56mm; }
+.phones.two figure img { width: 56mm; }
+.phones figcaption { text-align: center; }
+
+ol.steps { counter-reset: step; list-style: none; padding-left: 0; }
+ol.steps > li { counter-increment: step; position: relative; padding-left: 9mm; margin: 1.6mm 0; }
+ol.steps > li::before {
+  content: counter(step);
+  position: absolute; left: 0; top: 0.2mm;
+  width: 6mm; height: 6mm; border-radius: 50%;
+  background: var(--brand); color: #fff; font-weight: 700; font-size: 8.4pt;
+  display: flex; align-items: center; justify-content: center;
+}
+.ui { font-weight: 700; color: var(--brand); }
+.who { display: inline-block; font-size: 8pt; font-weight: 700; color: var(--blue); background: var(--blue-soft); border-radius: 8px; padding: 0.3mm 2mm; margin-left: 1mm; vertical-align: 2px; }

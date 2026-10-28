@@ -635,7 +635,9 @@ Every refusal guards one failure, a factory locking itself out: `last-admin`,
 **The role matrix shows fourteen of the fifteen capabilities.** Only `payouts`
 (`FACTORY_CONSOLE_CAPABILITIES`) is not rendered, and its stored levels are preserved on
 save. The default matrix (`DEFAULT_ROLE_MATRIX` in `packages/domain/src/rbac.ts`) gives the
-clerk `deliveries: W`, `creditRequests: W` and `billing: W` for the sync-off counter work,
+clerk `deliveries: W`, `creditRequests: W` and `billing: W` for the sync-off counter work
+(and `ratesAndMonthClose: R`, so the clerk can open Rates & month close to import or generate
+the bills),
 the manager `ratesAndMonthClose: A` to publish a month, and both administrators `R` on
 `deliveries`, `ratesAndMonthClose` and `billing`, so the factory administrator sees the
 Factory records menu read-only. Savings withdrawals need `billing: A` (the manager).
@@ -762,7 +764,8 @@ Worst first: correctness, then plumbing, then polish.
    console, the app, its PDF and the website: Sinhala ආනයනය / අපනයනය for import and
    export; Sinhala ඉදිරියට ගෙන යන ණය for Next Month Deb (beside ඉදිරියට ගෙන යන ශේෂය and
    පෙර ණය; the app's screen and PDF had said it two other ways); Tamil கொழுந்து for green
-   leaf (the account is கொழுந்துக் கணக்கு); and Tamil பொதி for a tea packet, the Sri
+   leaf (the account is கொழுந்துக் கணக்கு; on 29 October the bare இலை, "leaf", was replaced
+   too, in the app, the website and the default pages); and Tamil பொதி for a tea packet, the Sri
    Lankan word (தேயிலைப் பொதிகள், no longer பாக்கெட் in the app).
 
 8. **Change-request evidence attachments are shown only if the API sends them**, and it does

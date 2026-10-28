@@ -2320,7 +2320,7 @@ export const en = {
   'bills.generateFailed': 'The bills were not generated',
   'bills.generateHint':
     'Builds one Green Leaf Account per supplier with leaf this month. Nothing is sent to suppliers until the month is published.',
-  'bills.generateReadOnly': 'Only the accountant generates bills.',
+  'bills.generateReadOnly': 'A clerk or a manager generates the bills.',
   'bills.generated': 'Bills generated for {{month}}',
   'bills.generatedDetail': '{{count}} bills, {{payable}} payable.',
   'bills.missingBankWarning':
@@ -2454,7 +2454,7 @@ export const en = {
   'months.rateLocked':
     'This month is published, so the rate is part of the record and cannot be changed.',
   'months.ratePerKgHint': 'From the auction result.',
-  'months.rateReadOnly': 'Only the accountant enters the rate.',
+  'months.rateReadOnly': 'A manager enters the rate.',
   'months.rateSaved': 'Rate saved for {{month}}',
   'months.rateTitle': 'Auction rate',
   'months.resolve': 'Resolve',
@@ -2522,7 +2522,7 @@ export const en = {
   'rates.deduction.proposeFailed': 'Nothing was sent',
   'rates.deduction.proposed': 'Sent for approval',
   'rates.deduction.proposedHint': 'Nothing has changed yet. A manager has to approve it.',
-  'rates.deduction.readOnly': 'Only the accountant can propose a change to these.',
+  'rates.deduction.readOnly': 'A manager proposes a change to these.',
   'rates.deduction.reasonHint': 'At least 10 characters. The approver reads this before deciding.',
   'rates.deduction.reject': 'Reject',
   'rates.deduction.rejectd': 'The change was rejected',

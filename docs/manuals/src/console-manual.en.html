@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin Console User Manual</title>
+<link rel="stylesheet" href="manual.css">
+</head>
+<body>
+
+<section class="cover">
+  <div>
+    <div class="band"></div>
+    <p class="kicker">Tea Factory Digital</p>
+    <h1>Admin Console User Manual</h1>
+    <p class="sub">How the factory office uses the console, task by task: suppliers, deciding requests, the monthly bills, the factory records, the app's content, configuration and users. Step by step, with screenshots and worked examples.</p>
+  </div>
+  <div class="meta">
+    <p><strong>For:</strong> the factory office: clerks, managers, content editors and the factory administrator.</p>
+    <p><strong>Screenshots:</strong> taken from the real console with sample data for Galaboda Tea Factory. Names and figures are examples.</p>
+    <p><strong>As of:</strong> 28 October 2026. The rules behind every screen are in "Admin Console: How It Works".</p>
+  </div>
+</section>
+
+<section class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li>Signing in and finding your way</li>
+    <li>Who does what</li>
+    <li>The dashboard</li>
+    <li>Suppliers</li>
+    <li>Deciding credit requests</li>
+    <li>Recording a request made at the counter</li>
+    <li>Tea packets</li>
+    <li>Change requests</li>
+    <li>Inquiries</li>
+    <li>Bills</li>
+    <li>Leaf intake</li>
+    <li>Rates and month close: calculated bills</li>
+    <li>Rates and month close: imported bills</li>
+    <li>News, banners and fixed pages</li>
+    <li>Notifications</li>
+    <li>Configuration</li>
+    <li>Users and roles</li>
+    <li>Reports, audit log and data status</li>
+    <li>When the console says no</li>
+  </ol>
+</section>
+
+<!-- 1 -->
+<h1>1. Signing in and finding your way</h1>
+<figure><img class="screen half" src="../images/console/01-sign-in.jpg"><figcaption><b>Figure 1.1</b> Sign in. The factory's name and the language buttons are at the top.</figcaption></figure>
+<ol class="steps">
+  <li>Open your factory's console address in a web browser (Chrome or Edge on the office computer).</li>
+  <li>Choose a language: Sinhala, English or Tamil.</li>
+  <li>Type your work email and password and click <span class="ui">Sign in</span>. A new user is given a first password by the administrator and must change it at the first sign-in.</li>
+</ol>
+<figure><img class="screen" src="../images/console/02-dashboard.jpg"><figcaption><b>Figure 1.2</b> The console after signing in: the sidebar on the left, search and the notification bell at the top right.</figcaption></figure>
+<table>
+  <tr><th>Part of the screen</th><th>What it is for</th></tr>
+  <tr><td>Sidebar</td><td>Every module your role may open, in groups: Overview, Queues (with the number waiting), Supplier support, Factory records, Content, Administration</td></tr>
+  <tr><td>Search (Ctrl+K)</td><td>Find a supplier by code or name, or jump to a page by its name</td></tr>
+  <tr><td>Bell</td><td>What is waiting for you, oldest first, and what suppliers just did in the app</td></tr>
+  <tr><td>Your name (bottom left)</td><td>Your profile, appearance, text size and <span class="ui">Sign out</span></td></tr>
+</table>
+<div class="box rule"><span class="label">On a shared office computer</span>
+<p>Always sign out when you leave. Sign-out asks first, so a stray click does not lose your work.</p>
+</div>
+
+<!-- 2 -->
+<h1>2. Who does what</h1>
+<table>
+  <tr><th>Role</th><th>Daily work in the console</th></tr>
+  <tr><td><strong>Clerk</strong></td><td>Supplier records, leaf intake, importing or generating the month's bills, recording requests made at the counter, change requests, replying to inquiries</td></tr>
+  <tr><td><strong>Manager</strong></td><td>Deciding advances, loans, manure and tea packets; rates, month close and publishing bills; approving savings withdrawals; reports</td></tr>
+  <tr><td><strong>Content editor</strong></td><td>News, promo banners, fixed pages (FAQ, terms) in all three languages</td></tr>
+  <tr><td><strong>Factory administrator</strong></td><td>Configuration, users and roles; reads every factory record but changes none</td></tr>
+</table>
+<div class="box stop"><span class="label">The two-person rule</span>
+<p>The person who records a request, enters the month's rate or imports the bills may not approve or publish them. The console does not show that person the approve or publish button; another person must do it.</p>
+</div>
+<div class="box warn"><span class="label">Enter every approval in the factory system too</span>
+<p>The console never writes to the factory's own system. Each approval dialog reminds you: after approving here, enter the same thing in the factory system, because that system prints the slip and pays the money.</p>
+</div>
+
+<!-- 3 -->
+<h1>3. The dashboard</h1>
+<p>The dashboard (Figure 1.2) is the day at a glance:</p>
+<ul>
+  <li><strong>Waiting for you</strong>: everything in the queues (34 in the example, 9 of them past their target time).</li>
+  <li><strong>App adoption</strong>: suppliers signed in to the app against the total (66 of 82, 80%). Click "16 have never installed it" for the list of suppliers to help at the counter.</li>
+  <li><strong>App requests</strong>: the share of requests that came from the app this month (90%).</li>
+  <li><strong>Devices</strong>: phones registered for notifications.</li>
+  <li><strong>Waiting by queue</strong> and <strong>Queues</strong>: each queue with the age of its oldest item. A queue of three that has waited four days needs attention before twenty from this morning.</li>
+  <li><strong>Content</strong>: what is quietly wrong, such as an article missing its Sinhala text or a banner whose dates have passed.</li>
+</ul>
+
+<!-- 4 -->
+<h1>4. Suppliers</h1>
+<figure><img class="screen" src="../images/console/03-suppliers.jpg"><figcaption><b>Figure 4.1</b> The supplier list, with filters for status, collection point, app use and bank details.</figcaption></figure>
+<h2>4.1 Find a supplier</h2>
+<ol class="steps">
+  <li>Click <span class="ui">Suppliers</span>, or press Ctrl+K anywhere.</li>
+  <li>Type a code, name or NIC. Use the filters: <span class="ui">App: any</span> → <span class="ui">Never installed</span> lists suppliers who have not installed the app.</li>
+  <li>Click the row to open the supplier.</li>
+</ol>
+<figure><img class="screen" src="../images/console/04-supplier-overview.jpg"><figcaption><b>Figure 4.2</b> A supplier: the app, bank, savings and collection point at the top, quick actions, then the tabs.</figcaption></figure>
+<table>
+  <tr><th>Tab</th><th>What it shows</th></tr>
+  <tr><td>Overview</td><td>Profile (NIC, phone, addresses) and estate</td></tr>
+  <tr><td>Payout &amp; credit</td><td>How they are paid, bank (masked), savings per kg, credit balances and the savings passbook (Figure 4.3)</td></tr>
+  <tr><td>Requests</td><td>Every advance, loan, manure and tea-packet request with its status (Figure 4.4)</td></tr>
+  <tr><td>Income</td><td>The same graph, list and deductions views the supplier sees in the app</td></tr>
+  <tr><td>Notifications</td><td>Which notifications reach this supplier, and why one does not (no phone, turned off, not sent)</td></tr>
+  <tr><td>Activity</td><td>What the supplier did in the app</td></tr>
+</table>
+<div class="phones two">
+  <figure><img class="screen" src="../images/console/05-supplier-payout-credit.jpg"><figcaption><b>Figure 4.3</b> Payout &amp; credit</figcaption></figure>
+  <figure><img class="screen" src="../images/console/05-supplier-requests.jpg"><figcaption><b>Figure 4.4</b> Requests</figcaption></figure>
+</div>
+<h2>4.2 Show the full bank account number</h2>
+<p>On <span class="ui">Payout &amp; credit</span>, click <span class="ui">Show full number</span>, type the reason (for example "Supplier asked to confirm the account at the counter") and confirm. The reason is recorded in the audit log, and the number is hidden again when you leave.</p>
+<h2>4.3 Reset a supplier's app password <span class="who">Clerk</span></h2>
+<ol class="steps">
+  <li>Open the supplier and click <span class="ui">Reset app password</span> at the top right.</li>
+  <li>Choose how you checked it was them (for example "Book at counter").</li>
+  <li>The console shows a one-time password: give it to the supplier. Their phones are signed out, and the app asks them to choose their own password at the next sign-in. Who issued it, and when, is recorded.</li>
+</ol>
+<p>Beside it, the status button suspends or closes a supplier.</p>
+<h2>4.4 Add a supplier <span class="who">Clerk, sync off</span></h2>
+<div class="phones two">
+  <figure><img class="screen" src="../images/console/03b-add-supplier-dialog.jpg"><figcaption><b>Figure 4.5</b> Add a supplier</figcaption></figure>
+  <figure><img class="screen" src="../images/console/03c-suppliers-import-menu.jpg"><figcaption><b>Figure 4.6</b> Import from file</figcaption></figure>
+</div>
+<ol class="steps">
+  <li>On <span class="ui">Suppliers</span>, click <span class="ui">Add supplier</span>.</li>
+  <li>Type the factory's own <span class="ui">Supplier code</span> (letters and digits; the division in brackets is optional). The number must not already be used anywhere in the factory: 5147 and 5147 (DENIYAYA) are the same supplier.</li>
+  <li>Fill in name, NIC, mobile, collection point and savings per kilo.</li>
+  <li>Choose how they are paid. For bank transfer, choose the bank and branch from the factory's list and type the account number.</li>
+  <li>Click <span class="ui">Add supplier</span>. Then reset their password (4.3) so they can use the app.</li>
+</ol>
+<p>Many at once: <span class="ui">Import from file</span> → <span class="ui">Import suppliers</span> (Figure 4.6), or <span class="ui">Import transport rates</span> for suppliers on their own transport rate. See section 13.3 for how imports work.</p>
+<div class="box warn"><span class="label">Coming</span>
+<p>Opening balances (what each supplier owed or held when the factory started using the console) will appear on the Payout &amp; credit tab when the server supports them.</p>
+</div>
+
+<!-- 5 -->
+<h1>5. Deciding credit requests <span class="who">Manager</span></h1>
+<figure><img class="screen" src="../images/console/10-credit-queue.jpg"><figcaption><b>Figure 5.1</b> Credit queues: advances, loans and manure in one list, oldest first. "Over ceiling" marks a request above the supplier's limit.</figcaption></figure>
+<ol class="steps">
+  <li>Click <span class="ui">Credit queues</span>. Filter by status, facility, or <span class="ui">Over the ceiling only</span>.</li>
+  <li>Click a request to open it (Figure 5.2). Check <strong>What this supplier may draw</strong> and <strong>How this was worked out</strong>: these are exactly the figures the supplier saw in the app.</li>
+  <li>Click <span class="ui">Approve</span> or <span class="ui">Reject</span>.</li>
+  <li>Type the <span class="ui">Decision note</span> (required; the supplier reads it), or click a common note.</li>
+  <li>Confirm. Then <strong>enter the approval in the factory system</strong>, as the dialog reminds you.</li>
+</ol>
+<figure><img class="screen" src="../images/console/11-credit-detail.jpg"><figcaption><b>Figure 5.2</b> A manure request with its working.</figcaption></figure>
+<div class="box example"><span class="label">Example: reading the working (Figure 5.2)</span>
+<div class="calc">Supplier 5063 (DENIYAYA) asks for Dolomite, 498 kg       Rs. 104,605.69
+Closed months of income      7 (6 required)
+Last settled month           September 2026
+Rate per kg that priced it   Rs. 126.75
+Last settled month's leaf    1,500.53 kg
+Ceiling                      126.75 × 1,500.53 = 190,192.1775 → Rs. 190,192.17
+Already drawn                0.00
+Still available              Rs. 190,192.17      → "Within the ceiling"</div>
+<p>The ceiling is cut down to the cent, never rounded up, so the figure shown is one the form accepts.</p>
+</div>
+<div class="phones two">
+  <figure><img class="screen" src="../images/console/11b-credit-approve-dialog.jpg"><figcaption><b>Figure 5.3</b> Approve: the reminder to enter it in the factory system</figcaption></figure>
+  <figure><img class="screen" src="../images/console/11c-credit-reject-dialog.jpg"><figcaption><b>Figure 5.4</b> Reject: the supplier reads the note</figcaption></figure>
+</div>
+<div class="box rule"><span class="label">The console refuses an approval when</span>
+<ul>
+  <li>you recorded the request yourself (two-person rule);</li>
+  <li>the amount is now above the supplier's limit (a month may have been published since they asked);</li>
+  <li>a loan is still owed (for a new loan or an advance), or an advance is still outstanding (for an advance);</li>
+  <li>the supplier is suspended or closed.</li>
+</ul>
+</div>
+
+<!-- 6 -->
+<h1>6. Recording a request made at the counter <span class="who">Clerk, sync off</span></h1>
+<figure><img class="screen half" src="../images/console/10b-walk-in-dialog.jpg"><figcaption><b>Figure 6.1</b> Record a walk-in request.</figcaption></figure>
+<ol class="steps">
+  <li>On <span class="ui">Credit queues</span>, click <span class="ui">Record walk-in request</span>.</li>
+  <li>Type the supplier code or name and choose the type (advance, loan or manure).</li>
+  <li>Type the amount. For a loan or manure choose the repayment period; for manure choose the fertilizer and quantity (the price comes from the factory's catalogue).</li>
+  <li>Type a note of at least 10 characters (for example "Asked at the counter, needs it for school fees").</li>
+  <li>Click <span class="ui">Record request</span>. It joins the queue as pending, and a manager decides it.</li>
+</ol>
+<p>A request over the limit is still recorded as asked, with the limit shown; the manager's approval refuses it. Many at once: <span class="ui">Import from file</span>.</p>
+
+<!-- 7 -->
+<h1>7. Tea packets <span class="who">Manager</span></h1>
+<figure><img class="screen" src="../images/console/12-tea-packets.jpg"><figcaption><b>Figure 7.1</b> Tea packets waiting: packets, weight, how it travels and the value.</figcaption></figure>
+<ol class="steps">
+  <li>Click <span class="ui">Tea packets</span>. Filter <span class="ui">Any delivery</span> → <span class="ui">On the collection vehicle</span> to pack the vehicle orders before it leaves.</li>
+  <li>Click <span class="ui">Decide</span> on a row (Figure 7.2).</li>
+  <li>Type a decision note (for example "Ready for collection from the store from Monday") and click <span class="ui">Approve</span> or <span class="ui">Reject</span>.</li>
+</ol>
+<figure><img class="screen half" src="../images/console/12b-tea-decide-dialog.jpg"><figcaption><b>Figure 7.2</b> Example: supplier 5056 asks for 2 packets (0.8 kg), collected from the store, Rs. 2,400.00 on the next bill's Tea line.</figcaption></figure>
+<p>The price is fixed when you decide. An orange line at the top (Figure 7.1) means the factory has not set its own packet price yet: set it in Configuration → Tea packets.</p>
+
+<!-- 8 -->
+<h1>8. Change requests <span class="who">Clerk or manager</span></h1>
+<figure><img class="screen" src="../images/console/13-change-requests.jpg"><figcaption><b>Figure 8.1</b> Changes suppliers asked for: bank details, payment method, savings rate and address, with the current and requested values side by side.</figcaption></figure>
+<ol class="steps">
+  <li>Click <span class="ui">Change requests</span> and open a row (Figure 8.2).</li>
+  <li>Compare <strong>Active now</strong> with <strong>Requested</strong>; changed rows are marked.</li>
+  <li><strong>For a bank change, check the passbook or bank statement</strong> before approving.</li>
+  <li>Click <span class="ui">Approve</span> or <span class="ui">Reject</span>, type the note (for example "Passbook checked against the NIC at the counter") and confirm (Figure 8.3).</li>
+  <li>Make the same change in the factory system.</li>
+</ol>
+<div class="phones two">
+  <figure><img class="screen" src="../images/console/13b-change-request-detail.jpg"><figcaption><b>Figure 8.2</b> A bank details change</figcaption></figure>
+  <figure><img class="screen" src="../images/console/13c-change-approve-dialog.jpg"><figcaption><b>Figure 8.3</b> Approve this change</figcaption></figure>
+</div>
+<p>Until you approve, the supplier is still paid to the old account, and the app shows the new one as pending. A savings-rate change starts from the next month not yet closed.</p>
+
+<!-- 9 -->
+<h1>9. Inquiries <span class="who">Clerk</span></h1>
+<div class="phones two">
+  <figure><img class="screen" src="../images/console/14-inquiries.jpg"><figcaption><b>Figure 9.1</b> Messages from suppliers</figcaption></figure>
+  <figure><img class="screen" src="../images/console/14b-inquiry-thread.jpg"><figcaption><b>Figure 9.2</b> A conversation</figcaption></figure>
+</div>
+<ol class="steps">
+  <li>Click <span class="ui">Inquiries</span> and open a message.</li>
+  <li>Type a reply (or click a suggested reply) and send it. The supplier reads it in the app and gets a notification.</li>
+  <li>When nothing more is needed, close the inquiry. Closing without replying files a message that needed no answer.</li>
+</ol>
+<p><strong>Office notes</strong> on the right are seen only by the office (for example "Called the supplier, will call back on Monday"). A manager can read inquiries but not answer them (Figure 9.2, bottom).</p>
+
+<!-- 10 -->
+<h1>10. Bills</h1>
+<figure><img class="screen" src="../images/console/08-bills.jpg"><figcaption><b>Figure 10.1</b> The month's Green Leaf Accounts, with the payable total and a month selector.</figcaption></figure>
+<ol class="steps">
+  <li>Click <span class="ui">Bills</span> and choose the month at the top right.</li>
+  <li>Search by code, name or bill number, or use <span class="ui">Show</span> to list, for example, bills with nothing payable or with no bank details.</li>
+  <li>Click a row to open the bill as the supplier sees it (Figure 10.2).</li>
+</ol>
+<figure><img class="screen" src="../images/console/09-bill-detail.jpg"><figcaption><b>Figure 10.2</b> One bill, laid out like the printed slip.</figcaption></figure>
+<div class="box example"><span class="label">Example: supplier 5007, September 2026 (Figure 10.2)</span>
+<div class="calc">979.52 kg × (rate 120.25 + extra 6.50 = 126.75)
+Green leaf amount     117,787.28
+Extra payment           6,366.88
+Coins brought forward       0.11
+Gross amount          124,154.27
+Deductions              2,473.80   (transport 2,448.80 + stamps 25.00)
+Balance amount        121,680.47
+Final balance         121,680.00   coins 0.47 carried to October</div>
+</div>
+<p>The bills screen is for checking and answering suppliers. Bills are made and published on Rates &amp; month close (sections 12 and 13). With the factory sync on, bills arrive from the factory system and are read-only.</p>
+
+<!-- 11 -->
+<h1>11. Leaf intake <span class="who">Clerk, sync off</span></h1>
+<figure><img class="screen" src="../images/console/06-leaf-intake.jpg"><figcaption><b>Figure 11.1</b> One day's weighings: 2,663.85 kg from 39 suppliers in 43 deliveries.</figcaption></figure>
+<ol class="steps">
+  <li>Click <span class="ui">Leaf intake</span>. Choose the <span class="ui">Day</span> and the <span class="ui">Collection point</span>.</li>
+  <li>Enter each weighing: supplier code, then kilos. The totals at the top update as you go, so a mistyped kilo shows before it reaches a bill.</li>
+  <li>To correct a weighing, click <span class="ui">Void</span> on its row and give the reason; then enter the right one. A weighing is never deleted.</li>
+</ol>
+<ul>
+  <li>Enter each supplier's leaf on the day it is weighed: the advance limit in the app is this month's kilos so far.</li>
+  <li>A published month is locked: its leaf can no longer be changed.</li>
+  <li>Importing a day's or month's weighings from the scale's file is <strong>coming</strong>.</li>
+</ul>
+
+<!-- 12 -->
+<h1>12. Rates and month close: calculated bills <span class="who">Clerk and manager</span></h1>
+<p>For a factory whose bills are worked out in the console (Configuration → Bill calculation → "Calculated in this console").</p>
+<figure><img class="screen" src="../images/console/07-rates-month-close.jpg"><figcaption><b>Figure 12.1</b> Rates &amp; month close: the auction rate, the month close checklist, the bill run and the exceptions.</figcaption></figure>
+<ol class="steps">
+  <li><strong>Enter the rate</strong> (manager). When the auction result is known, type the <span class="ui">Rate per kg</span> and any <span class="ui">Extra rate per kg</span>, and click <span class="ui">Save the rate</span>.</li>
+  <li><strong>Resolve the exceptions</strong> at the bottom of the page (for example a supplier with leaf but no bank details), each with a note.</li>
+  <li><strong>Generate the bills</strong> (clerk or manager) with <span class="ui">Generate the bills</span>, then <span class="ui">Review this month's bills</span> on the Bills screen.</li>
+  <li><strong>Publish</strong>: when every step of the checklist is ticked, another manager (not the one who entered the rate) clicks <span class="ui">Publish</span>. The bills appear in the app and each supplier is notified.</li>
+</ol>
+<div class="box warn"><span class="label">Publishing moves the credit limits</span>
+<p>Advance, loan and manure limits are worked out from the last published month, so publishing a month changes every supplier's limits.</p>
+</div>
+<div class="box warn"><span class="label">Coming</span>
+<p>Typing "Other deductions" on a bill, and comparing every calculated bill with the factory's printed slip (with hold and release), will appear here when the server supports them.</p>
+</div>
+
+<!-- 13 -->
+<h1>13. Rates and month close: imported bills <span class="who">Clerk and manager</span></h1>
+<p>For a factory whose own system prints the bills (galaboda): the clerk imports the finished bills, the console keeps them exactly as printed, and a manager publishes them. The clerk sees the page with the rate read-only and without the Publish button.</p>
+<figure><img class="screen" src="../images/console/07d-rates-imported.jpg"><figcaption><b>Figure 13.1</b> Rates &amp; month close for an imported-bills factory: "Import from file" at the top.</figcaption></figure>
+<h2>13.1 Import a month's bills</h2>
+<ol class="steps">
+  <li>In the factory system, export the month's finished bills to Excel, after the slips are printed (about the 10th of the next month).</li>
+  <li>On <span class="ui">Rates &amp; month close</span>, click <span class="ui">Import from file</span>. The dialog lists the columns; required ones are marked * (Figure 13.2). <span class="ui">Download template</span> gives a file with an example row.</li>
+  <li>Choose the file. The console checks every row before saving anything.</li>
+  <li>If a row is wrong, nothing is saved: the list names the row and the problem. Fix the file and import again.</li>
+  <li>When the file is accepted, review the bills on <span class="ui">Bills</span>. A manager who did not import the file publishes the month.</li>
+</ol>
+<figure><img class="screen" src="../images/console/07c-import-finished-bills.jpg"><figcaption><b>Figure 13.2</b> Import finished bills: the column names the file must use.</figcaption></figure>
+<h2>13.2 What the import checks</h2>
+<table>
+  <tr><th>Check</th><th>Example of a refusal</th></tr>
+  <tr><td>Each row adds up to the cent</td><td>Gross is not green leaf + extra + coins brought forward</td></tr>
+  <tr><td>Everything approved in the console is on the slip</td><td>"5708: we approved Rs. 40,000.00 for this month and the slip does not have it." Enter it in the factory system and export again</td></tr>
+  <tr><td>The month has ended and comes in order</td><td>Importing October on 20 October, or a month before the last published one</td></tr>
+  <tr><td>The balance columns are present</td><td>A file without the Loan Balance, Manure Balance or Savings To-date columns</td></tr>
+</table>
+<p>One file per division is fine: each file replaces only the suppliers in it. A division file that arrives after the month is published waits until a manager publishes its bills.</p>
+<h2>13.3 Importing any file</h2>
+<ul>
+  <li>Excel (.xlsx) or CSV, with the column names in the first row.</li>
+  <li>All rows or none: one problem refuses the whole file. Row 2 is the first data row.</li>
+  <li>Figures are refused, never rounded: too many decimals, a minus sign, or 31 February.</li>
+  <li>Up to 5,000 rows per file.</li>
+</ul>
+
+<!-- 14 -->
+<h1>14. News, banners and fixed pages <span class="who">Content editor</span></h1>
+<figure><img class="screen" src="../images/console/15-news.jpg"><figcaption><b>Figure 14.1</b> News: each article's status and which languages are missing.</figcaption></figure>
+<h2>14.1 Write a news article</h2>
+<ol class="steps">
+  <li>Click <span class="ui">News</span> → <span class="ui">New article</span>.</li>
+  <li>Write the title and text in each language tab (Sinhala, English, Tamil). Add a cover image if you have one.</li>
+  <li>Click <span class="ui">Publish</span>, or choose a date and time to publish later.</li>
+</ol>
+<p>A missing translation is allowed: the app shows the English to that reader, and the list marks it (for example "No Sinhala translation"). "Needs updating" means the English changed after that translation was written.</p>
+<figure><img class="screen" src="../images/console/16-banners.jpg"><figcaption><b>Figure 14.2</b> Promo banners: the live window and what the button opens.</figcaption></figure>
+<h2>14.2 Put up a promo banner</h2>
+<ol class="steps">
+  <li><span class="ui">Promo banners</span> → <span class="ui">New banner</span>.</li>
+  <li>Write the headline and button label in each language; upload artwork if you have it.</li>
+  <li>Choose what the button opens (a screen in the app, a website, a phone number or an email) and the start and end dates.</li>
+  <li>Publish. Suppliers see it only between the start and end dates.</li>
+</ol>
+<figure><img class="screen" src="../images/console/16b-fixed-pages.jpg"><figcaption><b>Figure 14.3</b> Fixed pages: FAQ, savings scheme, credit terms, about, terms and privacy, with a preview of what the supplier sees.</figcaption></figure>
+<h2>14.3 Edit a fixed page</h2>
+<p>Choose the page and the language, change the text or add a question, and click <span class="ui">Save</span>. An edit to a live page is live at once. <span class="ui">Restore default text</span> puts the page back to the standard wording.</p>
+
+<!-- 15 -->
+<h1>15. Notifications</h1>
+<figure><img class="screen" src="../images/console/17-notifications.jpg"><figcaption><b>Figure 15.1</b> Notifications sent, and the automatic ones on the right.</figcaption></figure>
+<ul>
+  <li><strong>Automatic</strong> (right): "Account published", "Request decided", "Message answered" and others, each switched on or off for the factory.</li>
+  <li><strong>Write a notification</strong>: a headline to all suppliers, one collection point or one supplier, now or later. A notification cannot be taken back, so the console checks who it will reach before it is sent.</li>
+  <li>The list shows how many phones each one reached and how many had turned that kind off.</li>
+</ul>
+
+<!-- 16 -->
+<h1>16. Configuration <span class="who">Factory administrator</span></h1>
+<figure><img class="screen" src="../images/console/18-configuration.jpg"><figcaption><b>Figure 16.1</b> Configuration: eleven sections on the left; each is saved on its own.</figcaption></figure>
+<ol class="steps">
+  <li>Choose a section on the left and change the fields.</li>
+  <li>Click <span class="ui">Save this section</span> and confirm. <span class="ui">Undo changes</span> puts back what is saved.</li>
+</ol>
+<table>
+  <tr><th>Section</th><th>What you set there</th></tr>
+  <tr><td>The factory</td><td>Name, registration number, telephone, location, email, office hours and the legal footer printed on every bill</td></tr>
+  <tr><td>Features</td><td>Which services the app and console offer: savings, advances, loans, manure, tea packets, news, banners and more</td></tr>
+  <tr><td>Factory system</td><td>Sync on (records come from the factory's own system) or off (the office keeps them here)</td></tr>
+  <tr><td>Collection &amp; savings</td><td>Collection points, the savings amounts suppliers may choose, the fertilizer catalogue with bag size and price</td></tr>
+  <tr><td>Banks &amp; branches</td><td>The banks suppliers choose from</td></tr>
+  <tr><td>Languages &amp; branding</td><td>Languages, colours and logo</td></tr>
+  <tr><td>Notifications</td><td>What may be sent</td></tr>
+  <tr><td>Tea packets</td><td>Pack size, price, packets per month</td></tr>
+  <tr><td>Credit rules</td><td>How each limit is worked out, and the repayment periods offered</td></tr>
+  <tr><td>Bill calculation</td><td>Where the bills come from, paying in Rs. 1, 5 or 10, the next bill number, advance and loan interest</td></tr>
+  <tr><td>Common notes</td><td>The suggested notes under decision and reply boxes</td></tr>
+</table>
+<div class="phones two">
+  <figure><img class="screen" src="../images/console/18c-config-factory-system.jpg"><figcaption><b>Figure 16.2</b> Factory system: sync on or off</figcaption></figure>
+  <figure><img class="screen" src="../images/console/18g-config-bill-calculation.jpg"><figcaption><b>Figure 16.3</b> Bill calculation</figcaption></figure>
+</div>
+<div class="phones two">
+  <figure><img class="screen" src="../images/console/18f-config-credit-rules.jpg"><figcaption><b>Figure 16.4</b> Credit rules</figcaption></figure>
+  <figure><img class="screen" src="../images/console/18e-config-tea-packets.jpg"><figcaption><b>Figure 16.5</b> Tea packets</figcaption></figure>
+</div>
+<div class="box example"><span class="label">Example: a credit rule</span>
+<p>Loan: <span class="ui">Worked out from</span> Average monthly income, <span class="ui">Months to average</span> 6, <span class="ui">Multiply by</span> 3, <span class="ui">Settled months required</span> 6, <span class="ui">Never more than</span> empty. A supplier with an average of Rs. 84,341.08 may borrow up to Rs. 253,023.24. The screen writes the rule out in a sentence under the fields.</p>
+</div>
+<div class="box stop"><span class="label">Changes the console refuses</span>
+<ul>
+  <li>Switching the factory system or the bill source while a month has bills made but not published.</li>
+  <li>Turning off savings, a credit facility or tea packets while money is still held or owed.</li>
+  <li>Removing a collection point that weighings use, or the fallback language.</li>
+</ul>
+</div>
+
+<!-- 17 -->
+<h1>17. Users and roles <span class="who">Factory administrator</span></h1>
+<figure><img class="screen" src="../images/console/19-users-roles.jpg"><figcaption><b>Figure 17.1</b> People: each console user, their role and status.</figcaption></figure>
+<ol class="steps">
+  <li><span class="ui">Users &amp; roles</span> → <span class="ui">Add a user</span>: name, email and role.</li>
+  <li>The console shows a first password once. Give it to the user; they must change it at the first sign-in.</li>
+  <li><span class="ui">Reset password</span>, <span class="ui">Suspend</span> or <span class="ui">Delete</span> from the row. Deleting waits three days and can be undone until then.</li>
+</ol>
+<figure><img class="screen" src="../images/console/19b-roles-matrix.jpg"><figcaption><b>Figure 17.2</b> What each role may do: See, Change or Approve, for each area.</figcaption></figure>
+<p>The console will not let you remove the last administrator, change your own role, or leave nobody able to manage users.</p>
+
+<!-- 18 -->
+<h1>18. Reports, audit log and data status</h1>
+<figure><img class="screen" src="../images/console/20-reports.jpg"><figcaption><b>Figure 18.1</b> Reports → App use: 92% of requests came from the app in the period.</figcaption></figure>
+<div class="phones two">
+  <figure><img class="screen" src="../images/console/20b-reports-credit.jpg"><figcaption><b>Figure 18.2</b> Credit &amp; tea packets</figcaption></figure>
+  <figure><img class="screen" src="../images/console/20c-reports-savings.jpg"><figcaption><b>Figure 18.3</b> Savings held</figcaption></figure>
+</div>
+<ul>
+  <li><strong>App use</strong>: are suppliers moving from the counter to the app.</li>
+  <li><strong>Credit &amp; tea packets</strong>: advances, loans and manure approved, tea packets issued and requests refused, month by month.</li>
+  <li><strong>Savings</strong>: how much the factory holds for suppliers, for how many, paid in and taken out each month.</li>
+  <li><span class="ui">Download CSV</span> under each table.</li>
+</ul>
+<figure><img class="screen" src="../images/console/21-audit.jpg"><figcaption><b>Figure 18.4</b> The audit log: who did what, when, and what changed.</figcaption></figure>
+<p>The audit log cannot be edited. Filter by record type or person, and download it as CSV. <strong>Data status</strong> (from the sync chip at the top, sync on) says how current the figures are before you quote one to a supplier.</p>
+
+<!-- 19 -->
+<h1>19. When the console says no</h1>
+<table>
+  <tr><th>Message (in short)</th><th>What to do</th></tr>
+  <tr><td>You recorded this, someone else must decide</td><td>Ask another manager</td></tr>
+  <tr><td>Over the ceiling</td><td>Reject with a note, or approve a smaller amount within the limit</td></tr>
+  <tr><td>A loan is still owed</td><td>No new loan or advance until it is repaid</td></tr>
+  <tr><td>A request is already pending</td><td>Decide the first one</td></tr>
+  <tr><td>A note is required</td><td>Every rejection, void and hold needs a reason</td></tr>
+  <tr><td>Your role does not allow this</td><td>The page belongs to another role; ask the administrator</td></tr>
+  <tr><td>The month is locked</td><td>It is published; corrections go on next month's bill</td></tr>
+  <tr><td>An earlier month is not published</td><td>Publish months in order</td></tr>
+  <tr><td>Approval missing from the slip</td><td>Enter it in the factory system, export and import the file again</td></tr>
+  <tr><td>Busy, try again</td><td>A month is being published at that moment; nothing was saved, send it again</td></tr>
+</table>
+
+</body>
+</html>

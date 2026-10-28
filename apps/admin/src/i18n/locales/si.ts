@@ -2311,7 +2311,7 @@ export const si: Record<TranslationKey, string> = {
   'bills.generateFailed': 'බිල්පත් සෑදුණේ නැත',
   'bills.generateHint':
     'මේ මාසයේ දළු ඇති සෑම සැපයුම්කරුවෙකු සඳහා එක් දළු ගිණුමක් සාදයි. මාසය ප්‍රකාශයට පත් කරන තුරු සැපයුම්කරුවන්ට කිසිවක් නොයවයි.',
-  'bills.generateReadOnly': 'බිල්පත් සාදන්නේ ගණකාධිකාරී පමණි.',
+  'bills.generateReadOnly': 'බිල්පත් සාදන්නේ ලිපිකරුවෙකු හෝ කළමනාකරුවෙකු ය.',
   'bills.generated': '{{month}} සඳහා බිල්පත් සෑදුවා',
   'bills.generatedDetail': 'බිල්පත් {{count}}ක්, {{payable}} ගෙවිය යුතුයි.',
   'bills.missingBankWarning':
@@ -2446,7 +2446,7 @@ export const si: Record<TranslationKey, string> = {
   'months.rateLocked':
     'මෙම මාසය ප්‍රකාශයට පත් කර ඇති බැවින්, මිල වාර්තාවේ කොටසක් වන අතර එය වෙනස් කළ නොහැක.',
   'months.ratePerKgHint': 'වෙන්දේසි ප්‍රතිඵලයෙන්.',
-  'months.rateReadOnly': 'මිල ඇතුළත් කරන්නේ ගණකාධිකාරී පමණි.',
+  'months.rateReadOnly': 'මිල ඇතුළත් කරන්නේ කළමනාකරුවෙකි.',
   'months.rateSaved': '{{month}} සඳහා මිල සුරැක්කා',
   'months.rateTitle': 'වෙන්දේසි මිල',
   'months.resolve': 'විසඳන්න',
@@ -2516,7 +2516,7 @@ export const si: Record<TranslationKey, string> = {
   'rates.deduction.proposeFailed': 'කිසිවක් යවා නැත',
   'rates.deduction.proposed': 'අනුමැතියට යවන ලදී',
   'rates.deduction.proposedHint': 'තවම කිසිවක් වෙනස් වී නැත. කළමනාකරුවෙකු එය අනුමත කළ යුතුය.',
-  'rates.deduction.readOnly': 'මේවාට වෙනසක් යෝජනා කළ හැක්කේ ගණකාධිකාරීවරයාට පමණි.',
+  'rates.deduction.readOnly': 'මේවාට වෙනසක් යෝජනා කරන්නේ කළමනාකරුවෙකි.',
   'rates.deduction.reasonHint': 'අවම වශයෙන් අකුරු 10ක්. අනුමත කරන්නා තීරණය කිරීමට පෙර මෙය කියවයි.',
   'rates.deduction.reject': 'ප්‍රතික්ෂේප කරන්න',
   'rates.deduction.rejectd': 'වෙනස ප්‍රතික්ෂේප කරන ලදී',

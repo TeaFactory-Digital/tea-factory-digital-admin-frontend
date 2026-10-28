@@ -10,6 +10,7 @@ and `packages/domain` (please `vendor:pull` after each console change).
 | 45 | Factory records: opening balances next, then leaf and months, other deductions, importing again, the bill engine | High |
 | 48 | "This month so far": `GET /bills/month-to-date` | Medium |
 | 54 | Default pages: copy `static-pages.seed.json` again (Tamil green leaf word) | Small, any time |
+| 55 | The clerk reads Rates & month close: `vendor:pull` and one test | Now (small) |
 | - | Later: factory sync (Phase 10), balance corrections | Later |
 
 ## 50. Staging is not running the latest commits
@@ -82,13 +83,51 @@ still that month, `monthEnded: true`. After publishing: the next month.
 
 Tamil green leaf is now one word everywhere, **கொழுந்து** (the account is கொழுந்துக்
 கணக்கு), decided with the factory on 28 October 2026. Our
-`docs/v2/static-pages.seed.json` has it; your
-`apps/api/src/modules/tenant-defaults/static-pages.defaults.json` still says பச்சை இலை in
-six Tamil bodies, and one more body (`pages[0]`, the second translation) already differed
+`docs/v2/static-pages.seed.json` has it (and, since 29 October, the bare இலை is கொழுந்து
+there too); your `apps/api/src/modules/tenant-defaults/static-pages.defaults.json` still says
+பச்சை இலை in six Tamil bodies, and one more body (`pages[0]`, the second translation) already differed
 before this change. Please replace your file with ours as it stands.
 
-**Check:** the two files are equal as JSON, and `grep 'பச்சை இலை'` finds nothing in yours.
+**Check:** the two files are equal as JSON, and neither `grep 'பச்சை இலை'` nor a bare
+`இலை` finds anything in yours.
 Pages a factory has already edited keep their own text: only the defaults change.
+
+## 55. The clerk reads Rates & month close
+
+`DEFAULT_ROLE_MATRIX.clerk.ratesAndMonthClose` is now **`R`** (was `-`), in
+`packages/domain/src/rbac.ts` (28 October 2026). Please `npm run vendor:pull`.
+
+**Why.** The clerk holds `billing: W` to import the finished bills (your `POST
+/admin/imports/bills` gates on exactly that), but the import is on Rates & month close, and
+that screen is built on `GET /admin/months`, which needs `ratesAndMonthClose: read`. With `-`
+the clerk got "Your role does not allow this" and never reached the import, so in practice a
+manager imported, and the two-person rule then needed a **second** manager to publish.
+factory-records.md §3 always put the import on that screen with `billing: W`.
+
+I know your note in `route-declaration.ts` (and `capability.guard.spec.ts`) says widening
+the close for a month picker would grant read on the close "by accident". This is the same
+grant made on purpose: the clerk reads the month list, its rate and checklist, and the
+deduction rates; entering the rate (`W`), proposing deduction rates (`W`) and publishing
+(`A`) stay the manager's.
+
+**What changes on your side:**
+
+- `test/frontend-gaps-10.spec.ts`, "the clerk, who has no rates-and-month-close access,
+  cannot read them": `GET /admin/deduction-rates` as the clerk is now `200`; a proposal
+  (`POST`) as the clerk is still `403`.
+- The comments in `route-declaration.ts`, `capability.guard.spec.ts` and
+  `bills-savings.spec.ts` that say the clerk lacks `ratesAndMonthClose`. `GET
+  /admin/bill-months` on `billing` OR `payouts` stays right for the payouts reader.
+- A factory that saved its own clerk row in the role matrix keeps it; only the default
+  moves.
+
+**Check:** as the clerk: `GET /admin/months` `200`; `PUT /admin/months/:m/rate` `403`;
+`POST /admin/months/:m/publish` `403`; `POST /admin/imports/bills` `200` (or `422` for a
+bad file).
+
+If you would rather keep the clerk out of the close, the other way is to move the import
+and the bill run onto the Bills screen (`billing`); tell me and I will change the console
+back and do that instead.
 
 ## Later
 

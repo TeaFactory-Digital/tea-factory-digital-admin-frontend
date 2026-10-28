@@ -82,7 +82,10 @@ CSV file**.
 
 **Role changes (shared matrix, `packages/domain/src/rbac.ts`):** the clerk is now
 `deliveries: W`, `creditRequests: W` and `billing: W` (all were R): weigh in leaf, record a
-counter request, and import, generate or adjust bills. Deciding a request and publishing a
+counter request, and import, generate or adjust bills. The clerk also has
+`ratesAndMonthClose: R` (28 October 2026; it was `-`), because the import and the bill run
+are on Rates & month close and that screen needs the month list; the rate (`W`) and the
+publish (`A`) stay the manager's. Deciding a request and publishing a
 month stay with the manager (`A`, BR-501 refuses the recorder or importer as approver).
 **Savings withdrawals need `billing: A`**: the clerk's `W` must not let them pay out a
 supplier's savings. **The factory and platform admins read, never write (factory):**

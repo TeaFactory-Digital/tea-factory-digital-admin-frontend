@@ -71,7 +71,7 @@ rather than assumed.
 | --- | --- | --- | --- | --- | --- |
 | `suppliers` | W | R | - | R | R |
 | `deliveries` | W | R | - | R | R |
-| `ratesAndMonthClose` | - | A | - | R | R |
+| `ratesAndMonthClose` | R | A | - | R | R |
 | `billing` | W | A | - | R | R |
 | `payouts` | R | A | - | - | - |
 | `creditRequests` | W | A | - | - | - |
@@ -88,7 +88,11 @@ rather than assumed.
 **The clerk's three `W`s are the sync-off counter work**: `deliveries: W` to weigh in
 the day's leaf, `creditRequests: W` to record a request made at the counter, and
 `billing: W` to import, generate or adjust the month's bills. None of them decides
-anything. Approving a credit request stays `creditRequests: A`, publishing a month stays
+anything. **The clerk also reads `ratesAndMonthClose` (28 October 2026)**: Rates & month
+close is where the finished bills are imported and the bills generated, and the screen is
+built on the month list (`GET /admin/months`, `ratesAndMonthClose: read` on the server), so
+with `-` the clerk's `billing: W` could not be used at all. Entering the rate (`W`) and
+publishing (`A`) stay with the manager. Approving a credit request stays `creditRequests: A`, publishing a month stays
 `ratesAndMonthClose: A`, both with the manager, and BR-501 refuses the person who
 recorded or imported the record as its approver.
 

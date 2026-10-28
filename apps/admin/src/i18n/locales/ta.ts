@@ -2369,7 +2369,7 @@ export const ta: Record<TranslationKey, string> = {
   'bills.generateFailed': 'பில்கள் உருவாக்கப்படவில்லை',
   'bills.generateHint':
     'இந்த மாதம் கொழுந்து கொண்டு வந்த ஒவ்வொரு வழங்குநருக்கும் ஒரு கொழுந்துக் கணக்கை உருவாக்குகிறது. மாதம் வெளியிடப்படும் வரை வழங்குநர்களுக்கு எதுவும் அனுப்பப்படாது.',
-  'bills.generateReadOnly': 'பில்களை உருவாக்குவது கணக்காளர் மட்டுமே.',
+  'bills.generateReadOnly': 'பில்களை எழுதுவினைஞர் அல்லது மேலாளர் உருவாக்குவார்.',
   'bills.generated': '{{month}} க்கான பில்கள் உருவாக்கப்பட்டன',
   'bills.generatedDetail': 'பில்கள் {{count}}, செலுத்த வேண்டியது {{payable}}.',
   'bills.missingBankWarning':
@@ -2507,7 +2507,7 @@ export const ta: Record<TranslationKey, string> = {
   'months.rateLocked':
     'இந்த மாதம் வெளியிடப்பட்டுவிட்டதால், விலை பதிவின் பகுதியாகிவிட்டது, அதை மாற்ற முடியாது.',
   'months.ratePerKgHint': 'ஏல முடிவிலிருந்து.',
-  'months.rateReadOnly': 'விலையை உள்ளிடுவது கணக்காளர் மட்டுமே.',
+  'months.rateReadOnly': 'விலையை மேலாளர் உள்ளிடுவார்.',
   'months.rateSaved': '{{month}} க்கான விலை சேமிக்கப்பட்டது',
   'months.rateTitle': 'ஏல விலை',
   'months.resolve': 'தீர்',
@@ -2577,7 +2577,7 @@ export const ta: Record<TranslationKey, string> = {
   'rates.deduction.proposeFailed': 'எதுவும் அனுப்பப்படவில்லை',
   'rates.deduction.proposed': 'ஒப்புதலுக்கு அனுப்பப்பட்டது',
   'rates.deduction.proposedHint': 'இன்னும் எதுவும் மாறவில்லை. ஒரு மேலாளர் ஒப்புதல் அளிக்க வேண்டும்.',
-  'rates.deduction.readOnly': 'கணக்காளர் மட்டுமே இவற்றில் மாற்றத்தை முன்மொழிய முடியும்.',
+  'rates.deduction.readOnly': 'இவற்றில் மாற்றத்தை மேலாளர் முன்மொழிவார்.',
   'rates.deduction.reasonHint': 'குறைந்தது 10 எழுத்துகள். ஒப்புதல் அளிப்பவர் முடிவெடுப்பதற்கு முன் இதைப் படிப்பார்.',
   'rates.deduction.reject': 'நிராகரி',
   'rates.deduction.rejectd': 'மாற்றம் நிராகரிக்கப்பட்டது',

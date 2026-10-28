@@ -14,11 +14,12 @@
     "resolveJsonModule": true,
     "types": ["node", "vite/client"],
     // The fixture loads the mock handlers, which import the app's own modules.
-    "baseUrl": "..",
+    // No `baseUrl`: TypeScript 6 deprecates it, and `paths` resolve relative to this
+    // file without it, so every entry starts with `../` (as in `apps/admin/tsconfig.json`).
     "paths": {
-      "@/*": ["src/*"],
-      "@tfd/domain": ["../../packages/domain/src/index.ts"],
-      "@tfd/brand": ["../../packages/brand/src/index.ts"]
+      "@/*": ["../src/*"],
+      "@tfd/domain": ["../../../packages/domain/src/index.ts"],
+      "@tfd/brand": ["../../../packages/brand/src/index.ts"]
     }
   },
   "include": ["**/*.ts"]

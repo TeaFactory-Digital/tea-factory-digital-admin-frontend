@@ -21,8 +21,17 @@ describe('grantsFromRoles', () => {
     const grants = grantsFromRoles(['clerk']);
     expect(can(grants, 'changeRequests', 'approve')).toBe(true);
     expect(can(grants, 'inquiries', 'approve')).toBe(true);
-    expect(can(grants, 'ratesAndMonthClose', 'read')).toBe(false);
     expect(can(grants, 'creditAboveThreshold', 'approve')).toBe(false);
+  });
+
+  it('lets a clerk open month close and import bills, but not enter the rate or publish', () => {
+    // Rates & month close is where the finished bills are imported (`billing: W`); the
+    // screen is built on the month list, which needs read.
+    const grants = grantsFromRoles(['clerk']);
+    expect(can(grants, 'ratesAndMonthClose', 'read')).toBe(true);
+    expect(can(grants, 'billing', 'write')).toBe(true);
+    expect(can(grants, 'ratesAndMonthClose', 'write')).toBe(false);
+    expect(can(grants, 'ratesAndMonthClose', 'approve')).toBe(false);
   });
 
   it('does not let a manager edit supplier records', () => {

@@ -88,7 +88,12 @@ export const DEFAULT_ROLE_MATRIX: Record<ConsoleRole, Record<Capability, AccessL
      * not deciding it: `A` stays with the manager (BR-501).
      */
     deliveries: W,
-    ratesAndMonthClose: NONE,
+    /*
+     * `R` so the clerk can open Rates & month close, where the month's bills are imported or
+     * generated (`billing: W` below): the screen is built on the month list, which needs
+     * read. Entering the rate needs `W` and publishing `A`, both the manager's.
+     */
+    ratesAndMonthClose: R,
     /*
      * `W` so the clerk can import the month's finished bills, generate them, and type an
      * other deduction. Publishing stays with the manager (`ratesAndMonthClose: A`, BR-501),

@@ -41,6 +41,19 @@ export default tseslint.config(
     },
   },
 
+  /**
+   * The handbook and manual print scripts: Node, plus the browser for the functions they
+   * hand to `page.evaluate`, which run inside the page being printed.
+   */
+  {
+    files: ['docs/**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: 'module',
+      globals: { ...globals.node, ...globals.browser },
+    },
+  },
+
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
