@@ -6,11 +6,13 @@
  * therefore offers a reload and says plainly that the rest still works.
  */
 
+import { useEffect } from 'react';
 import { useRouteError } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { TriangleAlert } from 'lucide-react';
 import { Logo } from '@/brand/Logo';
 import { Button } from '@/components/ui/Button';
+import { monitoring } from '@/lib/monitoring';
 
 export function RouteErrorBoundary() {
   const { t } = useTranslation();
@@ -20,6 +22,8 @@ export function RouteErrorBoundary() {
   // may carry a supplier's name from a props dump, which would be a PDPA problem
   // in a screenshot pasted into an email (§20.4).
   console.error('[route]', error);
+  // Reported as the error alone, never the props around it (`lib/monitoring.ts`).
+  useEffect(() => monitoring.recordError(error, 'route'), [error]);
 
   return (
     <div

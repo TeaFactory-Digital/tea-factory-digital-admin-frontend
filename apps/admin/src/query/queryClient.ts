@@ -13,11 +13,20 @@
  *    an hour ago is how the `already-decided` error gets hit.
  */
 
-import { QueryClient } from '@tanstack/react-query';
+import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
 import { isApiError, isTransportError } from '@/services/api/errors';
+import { monitoring } from '@/lib/monitoring';
 
 export function createQueryClient(): QueryClient {
   return new QueryClient({
+    // A server failure is reported (by code and status); a refusal the screen explains,
+    // or a dropped connection, is not (`monitoring.recordError`).
+    queryCache: new QueryCache({
+      onError: (error, query) => monitoring.recordError(error, `query ${String(query.queryKey[0])}`),
+    }),
+    mutationCache: new MutationCache({
+      onError: (error) => monitoring.recordError(error, 'mutation'),
+    }),
     defaultOptions: {
       queries: {
         staleTime: 30_000,

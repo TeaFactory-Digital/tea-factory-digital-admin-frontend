@@ -24,7 +24,7 @@ From the workspace root:
 | `npm run preview`       | Serves the built bundle                                                                    |
 | `npm run typecheck`     | `tsc --build --force` across the projects                                                  |
 | `npm run lint`          | ESLint, including the white-label and layering rules                                       |
-| `npm run test`          | Vitest against the MSW fixtures: 582 tests in 79 files (26 October 2026)                   |
+| `npm run test`          | Vitest against the MSW fixtures: 588 tests in 80 files (28 October 2026)                   |
 | `npm run test:watch`    | Vitest in watch mode                                                                       |
 | `npm run e2e`           | Playwright against its own dev server on port 5274, API answered by `e2e/fixtures.ts`. Needs `npx playwright install chromium` once; see Testing |
 | `npm run format`        | Prettier                                                                                   |
@@ -66,6 +66,8 @@ secret if you tried.
 | `VITE_CSRF_COOKIE`        | `tfd_csrf`                          | Double-submit cookie the API sets. Empty switches the header off (local, `COOKIE_MODE=same-site`); staging sets `tfd_csrf` |
 | `VITE_CSRF_HEADER`        | `X-CSRF-Token`                      | Header the cookie's value is echoed back in, on every mutation         |
 | `VITE_API_TIMEOUT_MS`     | `20000`                             | **Do not shorten for a rural network** (§20.1). Staging uses 45000 for the free instance's cold start |
+| `VITE_SENTRY_DSN`         | empty                               | Error reporting (Sentry). Empty: nothing loaded, nothing sent. A public value by Sentry's design |
+| `VITE_SENTRY_ENVIRONMENT` | the build mode                      | How Sentry files the events: `staging`, `production`                   |
 
 Files: `.env.development` (committed, local API) · `.env.staging` (committed, staging API)
 · `.env.example` (documented template) · `.env.local` (git-ignored, your overrides).
@@ -163,7 +165,7 @@ old binaries are in the field, and feature flags are the release valve.
 
 Layered so each layer tests what only it can.
 
-### Vitest: 582 tests in 79 files
+### Vitest: 588 tests in 80 files
 
 Every file runs against the MSW fixtures through the real transport, store and screens
 (`test/setup.ts`); only the server is a stand-in. Counts drift with every change, so
@@ -293,11 +295,30 @@ broadband. What does apply is that the API is shared: `refetchOnWindowFocus` and
 debounced search exist so the office is not competing with the phones on
 publication day (§20.5).
 
+### Error reporting
+
+Sentry (`@sentry/react`), in `lib/monitoring.ts`, **off unless `VITE_SENTRY_DSN` is set**.
+With a DSN, the SDK loads on its own chunk (`sentrySdk`, about 30 kB gzipped, only the
+four functions used) after the first render has started; without one, nothing is loaded.
+
+- **What is sent:** uncaught errors and unhandled rejections (Sentry's own handlers), a
+  route that failed to render (`RouteErrorBoundary`), and a query or mutation the
+  **server failed** (`5xx`), as `ApiError <code> <status>`. A refusal the screen explains
+  (`4xx`) and a dropped connection are not sent. Each event carries the tenant id, the
+  environment and the signed-in user's internal id.
+- **What is never sent** (§20.4): a server's message (it may quote the request back), a
+  query string (a search is somebody's name), cookies, headers, bodies, click
+  breadcrumbs (a row's accessible name is a supplier's name), the console's log. No
+  performance tracing and no session replay.
+- **To switch on:** create a Sentry project (one for the console), set
+  `VITE_SENTRY_DSN` and `VITE_SENTRY_ENVIRONMENT` in Vercel for each environment, and
+  redeploy. `monitoring.test.ts` holds the rules above.
+
+The app reports to Firebase Crashlytics instead, on the factory's Firebase project (the
+mobile repo's operations.md §19.4).
+
 ### Not built yet
 
-- **Error reporting.** `sentryDsn` is a placeholder in the mobile config and there
-  is no SDK behind it on either side. A console error currently reaches
-  `console.error` and nowhere else.
-- **Analytics.** §19.4 is greenfield. The console's own instrumentation is not
-  started; the KPIs that need a `channel` column are a backend concern first
-  (§19.3).
+- **Analytics in the console.** The office's own usage is not instrumented; the KPIs
+  that need a `channel` column are a backend concern first (§19.3). The app's analytics
+  are built (Firebase, mobile repo).

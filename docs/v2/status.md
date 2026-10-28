@@ -15,7 +15,7 @@ the next slice.
 | **Console** | Every module in [Modules](#modules) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
 | **Backend** | `tea-factory-digital-backend`, shipped up to `671627d`; staging is not yet running `068faf3` or later (BACKEND-TODO #50). BACKEND-TODO **#1 to #44, #46, #47, #49 and #51 are done**; **#45** (factory records without the factory system) is partly done (step 1, the bills import with the month reads and publish, is live, late bills waiting for a manager included; replacing a waiting one is R18); **#48**, **#50** and **#53** (a `vendor:pull`) are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
-| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **582 tests in 79 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
+| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **588 tests in 80 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
 ### Built against the mock and tested
 
@@ -762,7 +762,10 @@ Worst first: correctness, then plumbing, then polish.
 8. **Change-request evidence attachments are shown only if the API sends them**, and it does
    not yet. Whether an attachment is required to approve a bank-details change is open.
 
-9. **No error reporting.** A console error reaches `console.error` and nowhere else.
+9. **Error reporting waits for a Sentry project.** It is built (`lib/monitoring.ts`, 28
+   October 2026) and switched on by `VITE_SENTRY_DSN`; until a DSN is set nothing is loaded
+   and a console error reaches `console.error` only. *To close:* create the Sentry project
+   and set the DSN in Vercel for staging and production (operations.md, Error reporting).
 
 10. **No screen-reader pass.** The semantics are built in (real tables, `aria-sort`,
     `role="alert"`, accessible names, a global focus ring), but nobody has driven NVDA or

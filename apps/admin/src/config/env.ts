@@ -71,6 +71,15 @@ export const env = {
 
   apiTimeoutMs: int(raw.VITE_API_TIMEOUT_MS, 20000),
 
+  /**
+   * Error reporting (Sentry). A DSN is a public value by Sentry's design: it lets a browser
+   * send events and nothing else. Empty, nothing is loaded and nothing is sent
+   * (`lib/monitoring.ts`).
+   */
+  sentryDsn: String(raw.VITE_SENTRY_DSN ?? ''),
+  /** `staging`, `production`: how Sentry files the event. Defaults to the build mode. */
+  sentryEnvironment: String(raw.VITE_SENTRY_ENVIRONMENT || raw.MODE || 'development'),
+
   isDev: Boolean(raw.DEV),
   isProd: Boolean(raw.PROD),
 } as const;

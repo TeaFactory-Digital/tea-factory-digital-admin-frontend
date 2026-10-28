@@ -7,7 +7,8 @@ import { createRoot } from 'react-dom/client';
 import { applyTheme, brandForTenant, createTheme } from '@tfd/brand';
 import { assertEnvUsable } from '@/config/env';
 import { tenantId } from '@/config/tenant';
-import { connectAuthToTransport } from '@/auth/authStore';
+import { connectAuthToTransport, useAuthStore } from '@/auth/authStore';
+import { monitoring } from '@/lib/monitoring';
 import { App } from '@/app/App';
 import '@/i18n';
 import '@/styles/theme.css';
@@ -35,6 +36,15 @@ applyTheme(document.documentElement, createTheme('light', brandForTenant(tenantI
 
 /** 3. Let the transport read and refresh the session (see `authStore`). */
 connectAuthToTransport();
+
+/**
+ * Error reporting, when this build has a DSN (`lib/monitoring.ts`); otherwise nothing is
+ * loaded. Not awaited: the console must not wait on a reporting service to render.
+ */
+void monitoring.start({ tenant: tenantId });
+useAuthStore.subscribe((state, previous) => {
+  if (state.user?.id !== previous.user?.id) monitoring.setUser(state.user?.id ?? null);
+});
 
 /**
  * 4. Render.
