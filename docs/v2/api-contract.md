@@ -1521,7 +1521,8 @@ the importer): savings posted, withdrawals settled, each supplier notified.
 factory-records.md §5a). While late bills wait, the next month's publish is
 `409 earlier-month-unpublished` (`details.monthKey` that month), switching the sync or the
 bill source is refused with that month in `details.months`, and a waiting bill may be
-replaced by sending it again (R18; only a supplier with a published bill is `month-locked`).
+replaced by sending it again (R18, built in `76b50f2`; only a supplier with a published
+bill is `month-locked`, and the month still counts one waiting bill).
 A publish queued behind another manager's publish of the same month answers
 `already-published`.
 
@@ -3146,7 +3147,7 @@ The console hides each of these until it lands, in one place:
       (backend `12eea12`)
 - [x] Late bills wait for a manager other than their importer (R15, §10.5; backend
       `671627d`), blocking the next month's publish and both switches
-- [ ] A waiting late bill replaced by sending it again (R18)
+- [x] A waiting late bill replaced by sending it again (R18; backend `76b50f2`)
 - [ ] Opening balances (§5.8) and the `openingBalances` import
 - [ ] Leaf and months: the rest of §9 and §10, and the `deliveries` and `monthlyRates` imports
 - [ ] Other deductions: `PUT /admin/bills/{id}/adjustment` and the `billAdjustments` import

@@ -440,7 +440,8 @@ notified; `already-published` only when none are left; `four-eyes-violation` for
 importer; the audit's `after.lateBills` is how many went out).
 
 - **While they wait:** a late bill found wrong is **replaced by sending it again** (factory,
-  R18). The **next month cannot be published** (`409 earlier-month-unpublished`,
+  R18; built `76b50f2`): the new row supersedes it and the month still counts one waiting
+  bill. The **next month cannot be published** (`409 earlier-month-unpublished`,
   `details.monthKey` the month with the waiting bills): its month-end balances would
   otherwise be worked out over the next month's postings, so the office publishes the late
   bills first. They also **block switching the sync or the bill source**

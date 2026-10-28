@@ -347,7 +347,7 @@ open; where the console or the API has not caught up, the row says so.
 | 12 | **A calculated bill that does not match the printed slip is held**: the rest of the month is published, the held bill is fixed and released on its own, and that supplier's next bill waits behind it |
 | 13 | **Importing a file again skips what is already there**; a supplier already in the console is left as they are. Built in the console; not on the API yet (`IMPORT_SKIP_ON_SERVER`) |
 | 14 | **Galaboda's slip** carries only what was approved by the month's last day; a blank balance is 0 |
-| 15 | **Imported months**: a division file that arrives after the month is published waits for a manager to publish its bills, and **whoever imported a month's bills cannot publish them**. Both are built (backend `671627d`). While late bills wait, the next month cannot be published, and a waiting bill may be replaced by sending it again (R18) |
+| 15 | **Imported months**: a division file that arrives after the month is published waits for a manager to publish its bills, and **whoever imported a month's bills cannot publish them**. Both are built (backend `671627d`). While late bills wait, the next month cannot be published, and a waiting bill may be replaced by sending it again (R18, built `76b50f2`) |
 | 16 | **The sync starts off.** A factory keeps its records in the new console until its own system is connected and the sync is switched on deliberately |
 | 17 | **The factory administrator can see the factory's records** (leaf, rates, bills) but not change them; entering, approving and publishing stay with the clerk and the manager |
 | 18 | **A full bank account number may be revealed by anyone who can open the supplier's record** (clerk, manager, both administrators), as built: each reveal asks for a reason and is audited (api-contract.md §5.4). Kept as it is (26 October 2026) |
@@ -491,7 +491,7 @@ deliberately: that is the default. The contract is
   compared with the factory's printed slips, a bill that differs being held and later
   released in order. Then reviewed and published, four-eyes, which also covers whoever
   imported the month's bills; a late division file's bills wait for a manager (built
-  `671627d`; replacing a waiting one is R18). Payment in units
+  `671627d`; a waiting one is replaced by sending it again, `76b50f2`). Payment in units
   of Rs. 1, 5 or 10 (`paymentUnit`, plus `loanInterest.recovery` for how loan interest is
   taken); bill numbers are the year of the bill's month and a serial that never resets
   (`factoryBillNumber`).
