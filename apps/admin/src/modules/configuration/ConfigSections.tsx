@@ -396,10 +396,10 @@ export function OperationsSection(props: SectionProps) {
         </Field>
       </div>
 
-      {/* The half of §21.9 that is still open, said where somebody would expect the console
-          to start paying interest by itself. */}
-      <InfoTip label={t('tip.interestNotApplied')} text={t('tip.interestNotApplied')}>
-        {t('config.interestNotApplied')}
+      {/* How the rate is applied (decided 29 October 2026, `savingsInterestFor`), said where
+          somebody setting it would look. */}
+      <InfoTip label={t('tip.interestRule')} text={t('tip.interestRule')}>
+        {t('config.interestRule')}
       </InfoTip>
 
       <SectionFooter

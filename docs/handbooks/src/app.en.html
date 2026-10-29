@@ -95,6 +95,7 @@
   <li><strong>"Ask about this bill"</strong> opens an inquiry about that month.</li>
   <li><strong>The labels are the slip's:</strong> "Loan (instalment 3)" for the loan line (the PDF prints the slip's "Loans / Advance 3"), and "Other deductions" with the office's reason under it.</li>
   <li><strong>Loan balance</strong> is the loan still owed; <strong>Loan interest</strong> is this month's interest in rupees.</li>
+  <li><strong>No signal:</strong> the app shows the copy saved on the phone (kept up to seven days). If it cannot reach the factory, the Account tab, Income and Savings show a <strong>"Saved copy"</strong> notice with the date and time the figures were saved, and a Retry. Credit limits and the tea packet allowance are never shown from a saved copy.</li>
 </ul>
 
 <!-- 5 -->
@@ -272,7 +273,7 @@ With 1% inside the instalment: deducts 5,000, loan balance 45,500</div>
   <li><strong>Savings per kg</strong> is chosen from the factory's amounts. "No savings" (0) means the supplier is not saving.</li>
   <li><strong>Changing the amount</strong> is a request to the factory: only approval changes it, one request at a time, and it starts from the next month not yet closed.</li>
   <li><strong>Withdrawals</strong> are recorded by the office and approved by the manager, in the factory's withdrawal month (April by default). They are paid on the next bill, after the balance.</li>
-  <li>Whether savings earn interest is the factory's decision; the app shows none until the factory posts it.</li>
+  <li><strong>Interest</strong>, where the factory pays it: simple, on each month's lowest balance (the balance at the start of the month, or after a withdrawal paid that month), at the factory's yearly rate ÷ 12. It is added once a year, as one line in the savings list, with the month before the withdrawal month, so it can be taken out in April. Example at 6%: Rs. 20,000 all year earns Rs. 1,200.00.</li>
 </ul>
 <div class="box example"><span class="label">Example</span>
 <p>Rs. 10 a kg, 509.5 kg in July: Rs. 5,095 saved. Previous 21,970 + 5,095 = 27,065 to date.</p>
@@ -361,12 +362,13 @@ With 1% inside the instalment: deducts 5,000, loan balance 45,500</div>
 <!-- 22 -->
 <h1>22. What works today and what is coming</h1>
 <table>
-  <tr><th>Area</th><th>Status (28 October 2026)</th></tr>
+  <tr><th>Area</th><th>Status (29 October 2026)</th></tr>
   <tr><td>Sign-in, PIN, fingerprint, auto-lock, bill, PDF, income history, credit and tea packet requests, savings, profile and change requests, inquiries, news, banners, notifications, settings</td><td><span class="tag now">Working</span></td></tr>
   <tr><td>Bills from galaboda's imported slips</td><td><span class="tag now">Working</span></td></tr>
   <tr><td>"This month so far"</td><td><span class="tag soon">Coming</span>: waiting for the server</td></tr>
   <tr><td>Daily leaf weight notification</td><td><span class="tag soon">Later</span></td></tr>
-  <tr><td>Attachments on inquiries</td><td><span class="tag soon">Not decided</span></td></tr>
+  <tr><td>"Saved copy" notice with no signal</td><td><span class="tag now">Working</span></td></tr>
+  <tr><td>Attachments on inquiries, evidence on a bank-detail change</td><td><span class="tag soon">Not wanted</span>: decided 29 October 2026</td></tr>
 </table>
 
 <!-- 23 -->

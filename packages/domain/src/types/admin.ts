@@ -13,6 +13,7 @@ import type {
   CreditFacility,
   GreenLeafBill,
   Inquiry,
+  InquiryMessage,
   NotificationCategory,
   PaymentMethod,
   RequestStatus,
@@ -196,11 +197,14 @@ export type SupplierStatus = 'active' | 'suspended' | 'closed';
  * A payload that carried the real number and expected the console to hide it
  * would not be a security control.
  */
-export interface AdminSupplier extends Supplier {
+export interface AdminSupplier extends Omit<Supplier, 'collectionPoint'> {
   status: SupplierStatus;
   /** NIC: a search key in the office, never shown to other suppliers. */
   nic: string;
-  /** Division / weighing point this supplier delivers to. */
+  /**
+   * Division / weighing point this supplier delivers to, by name. (The app's `Supplier`
+   * carries it as `{ id, name }` from `GET /profile`; the console's grids use the name.)
+   */
   collectionPoint: string;
   /**
    * The supplier's own transport rate per kilo, over their collection point's. `null` or
@@ -836,15 +840,6 @@ export interface InquiryNote {
   id: string;
   body: string;
   authorName: string;
-  createdAt: string;
-}
-
-/** One message in an inquiry's conversation, oldest first (BACKEND-TODO #25). */
-export interface InquiryMessage {
-  id: string;
-  author: 'supplier' | 'office';
-  authorName: string | null;
-  body: string;
   createdAt: string;
 }
 

@@ -68,6 +68,11 @@ export interface Supplier {
   savingsPerKg: number;
   /** Index into the bundled default avatar set. */
   avatarId?: number;
+  /**
+   * Where this supplier's leaf is weighed in, as the factory has it (`GET /profile`).
+   * Read only: the office sets it. `null` when the factory has not assigned one.
+   */
+  collectionPoint?: { id: string; name: string } | null;
 }
 
 /** One day's leaf supply within a month (sparse: null = no supply that day). */
@@ -257,6 +262,11 @@ export interface LoanRequest {
    * alone, which is what the console did before.
    */
   repaymentMonths?: number;
+  /**
+   * The same choice under the name the supplier app's wire uses (`GET /loans`): the API
+   * maps `repaymentMonths` to it. `null` or absent for a credit with no term chosen.
+   */
+  installmentMonths?: number | null;
 }
 
 /** Fertilizer taken on credit. */
@@ -271,6 +281,8 @@ export interface ManureRequest {
   note?: string;
   /** Accounts the supplier chose to repay over. See `LoanRequest.repaymentMonths`. */
   repaymentMonths?: number;
+  /** The app's wire name for it (`GET /manure-requests`). See `LoanRequest.installmentMonths`. */
+  installmentMonths?: number | null;
 }
 
 /** The three credit facilities, as a discriminator. */
@@ -376,6 +388,19 @@ export interface Inquiry {
   status: RequestStatus;
   createdAt: string;
   reply?: string;
+  /** When the office last replied. */
+  repliedAt?: string | null;
+  /** The whole conversation, oldest first, from an API that keeps one (BACKEND-TODO #25). */
+  messages?: InquiryMessage[];
+}
+
+/** One message in an inquiry's conversation, oldest first (BACKEND-TODO #25). */
+export interface InquiryMessage {
+  id: string;
+  author: 'supplier' | 'office';
+  authorName: string | null;
+  body: string;
+  createdAt: string;
 }
 
 /**

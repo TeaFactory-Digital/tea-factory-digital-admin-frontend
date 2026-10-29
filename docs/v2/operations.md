@@ -28,7 +28,7 @@ From the workspace root:
 | `npm run test:watch`    | Vitest in watch mode                                                                       |
 | `npm run e2e`           | Playwright against its own dev server on port 5274, API answered by `e2e/fixtures.ts`. Needs `npx playwright install chromium` once; see Testing |
 | `npm run format`        | Prettier                                                                                   |
-| `npm run domain:drift`  | Does the backend's copy of `@tfd/domain` match this one? Line endings ignored; defaults to the sibling `../tea-factory-digital-backend` checkout; see CI |
+| `npm run domain:drift`  | Do the backend's and the app's copies of `@tfd/domain` match this one? Line endings ignored; defaults to the sibling `../tea-factory-digital-backend` and `../tea-factory-digital-mobile-frontend` checkouts (a missing default is skipped; `node scripts/domain-drift.mjs <backend> <app>` names them); see CI |
 
 **First run:** start the API (`npm run setup`, then `npm run dev`, in
 `tea-factory-digital-backend`), then `npm run dev` here. `.env.development` is committed,
@@ -245,7 +245,9 @@ packages Vite 7 and jsdom now pull in, so the unit tests and e2e failed there). 
   runs `vendor:pull`. It runs only once the repository variable `BACKEND_REPO`
   (`owner/name`) is set, with the secret `BACKEND_READ_TOKEN` (read-only) when that
   repository is private. The backend's own nightly `upstream-drift` job asks the same
-  question from its side.
+  question from its side, and so does the app's CI (`vendor:upstream`, when its
+  `ADMIN_REPO` variable is set). CI clones only the backend, so the app's half of
+  `domain:drift` runs locally.
 
 ---
 

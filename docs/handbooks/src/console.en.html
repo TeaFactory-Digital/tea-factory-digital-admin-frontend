@@ -561,7 +561,7 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
   <li><strong>Paid on the next bill</strong>, added after the balance amount (it is the supplier's own money, not leaf income). The balance does not fall until that bill is published.</li>
   <li>A supplier with no leaf that month still gets a bill, so the withdrawal has something to be paid on.</li>
   <li>A withdrawal waits for the rate: it is not paid on an account with no figures.</li>
-  <li><strong>Interest</strong> on savings: the rate is recorded (0% by default) but never applied by the console. When the factory decides how it is worked out, the accountant posts it.</li>
+  <li><strong>Interest</strong> on savings (decided 29 October 2026): simple, on each month's lowest balance (the balance at the start of the month, or after a withdrawal paid that month), at the yearly rate in Configuration ÷ 12 (0% unless set). The year runs to the month before the withdrawal month (April to March) and is credited once, as one Interest line in the passbook with that month, so it can be taken out in the withdrawal month. Example at 6%: Rs. 20,000 all year earns Rs. 1,200.00; in a month where 15,000 is taken out of 20,000 and 2,000 saved, that month earns on 7,000: Rs. 35.00. The server will post it when that month is published; until then the accountant posts the figure.</li>
 </ul>
 <div class="box example"><span class="label">Example</span>
 <p>Balance Rs. 27,065 in April; the manager approves a Rs. 10,000 withdrawal. Available for another request: 17,065. On the April bill: balance amount 50,004.20 + withdrawal 10,000 = payable 60,004.20, paid 60,000 (tens), coins 4.20. Savings to date = previous + this month − 10,000.</p>

@@ -11,6 +11,7 @@ and `packages/domain` (please `vendor:pull` after each console change).
 | 48 | "This month so far": `GET /bills/month-to-date` | Medium |
 | 54 | Default pages: `npm run vendor:pages` once more (the bare Tamil இலை) | Small, any time |
 | 55 | The clerk reads Rates & month close: `vendor:pull` and one test | Now (small) |
+| 56 | Savings interest: post the year's `interest` entry when the month before the withdrawal month is published | Medium |
 | - | Later: factory sync (Phase 10), balance corrections | Later |
 
 ## 50. Staging is not running the latest commits
@@ -99,6 +100,22 @@ factory: one word for green leaf everywhere). Your copy is from before that comm
 `ADMIN_ERROR_CODES` (`packages/domain/src/types/admin.ts`), the two codes you added in
 `5b58f81`, so the console and the API name them from one list.
 
+The same pull also brings the **supplier-facing types the app now reads from the package**
+(29 October 2026: the app vendors `@tfd/domain` too, in place of its own copies). Nothing
+here changes the wire; the types now say what your API already sends:
+
+- `Supplier.collectionPoint?: { id, name } | null` (what `GET /profile` answers);
+  `AdminSupplier` keeps its `collectionPoint` as the name string.
+- `LoanRequest.installmentMonths` and `ManureRequest.installmentMonths`
+  (`number | null`, optional): the app's name for the term, which the API maps
+  `repaymentMonths` to.
+- `Inquiry.repliedAt?` and `Inquiry.messages?: InquiryMessage[]`.
+- `InquiryMessage` moved from `types/admin.ts` to `types/app.ts` (same shape, still
+  exported from the root), so the app and the console read one definition.
+
+`npm run domain:drift` in the console names the three files that differ from your copy
+today: `rbac.ts`, `types/admin.ts`, `types/app.ts`.
+
 **Why.** The clerk holds `billing: W` to import the finished bills (your `POST
 /admin/imports/bills` gates on exactly that), but the import is on Rates & month close, and
 that screen is built on `GET /admin/months`, which needs `ratesAndMonthClose: read`. With `-`
@@ -130,6 +147,53 @@ bad file).
 If you would rather keep the clerk out of the close, the other way is to move the import
 and the bill run onto the Bills screen (`billing`); tell me and I will change the console
 back and do that instead.
+
+## 56. Savings interest: credit it once a year
+
+**Decided by the factory on 29 October 2026** (it was §21.9, "the rate is stored and nothing
+is posted"):
+
+- **Simple interest.** A month earns `base × annualInterestRate ÷ 100 ÷ 12`; nothing earned in
+  a year earns interest in that year.
+- **On the month's lowest balance**: the lower of the balance before the month's ledger
+  entries and after them, never below zero. Contributions arrive with the month's bill, after
+  the month, so an ordinary month earns on its opening balance; in the month a withdrawal is
+  paid, on the balance after it.
+- **Credited once a year, in time for the withdrawal month.** The year is the twelve months
+  ending the month **before** `savings.withdrawalMonth` (April: April to March), posted with
+  that month, so it is in the balance a supplier may take out in April.
+
+The arithmetic is in the shared package, so please `npm run vendor:pull` (same pull as #55):
+`interestYear(policy, creditYear)` gives the months, and `savingsInterestFor(entries, year,
+rate)` gives each month's opening, closing, base, rate and interest, and the total, each month
+rounded to the cent. Tests: `apps/admin/src/test/savingsInterest.test.ts` in the console repo
+(20,000 all year at 6% is 1,200.00; 20,000 less a 15,000 withdrawal with 2,000 saved earns 35.00
+that month).
+
+**What it needs on your side:**
+
+- When the month `toMonthKey` is **published** (or its imported bills are), for each supplier
+  with a savings ledger, post one `SavingsEntrySource` `interest` entry with `monthKey =
+  toMonthKey`, `amount = total`, and a note naming the year and rate ("Interest 2026-04 to
+  2027-03"). None when the total is 0 (the default rate is 0%).
+- **Once only.** A month published again (a replaced import, R18) must not post a second
+  entry: key it on supplier + `toMonthKey`, and recompute in place if the month's entries
+  changed. `savingsInterestFor` ignores `interest` entries inside the year, so working it out
+  again gives the same figure.
+- **The rate in force each month.** `annualInterestRate` is one value in `client_config`
+  today. Please keep its changes with the month they apply from and pass
+  `savingsInterestFor` a function; until there is a history, the rate at posting time is
+  used for the whole year, which is right only while nobody changes it mid-year.
+- **Imported factories.** If a factory's own system already credits interest on its slips,
+  the imported ledger has it and posting ours would pay it twice. Galaboda's slips show no
+  interest line today; a factory that does is configured with rate 0 here.
+- Audit: an `interest` posting is the system's, under the publishing user's month close.
+- The app needs nothing new: the entry is a ledger row and moves the balance it already
+  shows.
+
+**Check:** a supplier at 20,000 from March 2026 with the rate at 6%: publishing March 2027
+posts one entry of 1,200.00 with `monthKey 2027-03`; publishing March 2027 again posts
+nothing new; at 0% nothing is posted.
 
 ## Later
 

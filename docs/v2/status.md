@@ -13,7 +13,7 @@ the next slice.
 | | |
 | --- | --- |
 | **Console** | Every module in [Modules](#modules) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
-| **Backend** | `tea-factory-digital-backend`, shipped up to `5b58f81`; staging is not yet running `068faf3` or later (BACKEND-TODO #50, being deployed). BACKEND-TODO **#1 to #44, #46, #47, #49 and #51 to #53 are done**, and **#54** is built with one more copy to make; **#45** (factory records without the factory system) is partly done (the bills import with the month reads and publish, late bills included, and opening balances, `5b58f81`, are live; leaf and months are next); **#48**, **#50** and **#55** are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
+| **Backend** | `tea-factory-digital-backend`, shipped up to `5b58f81`; staging is not yet running `068faf3` or later (BACKEND-TODO #50, being deployed). BACKEND-TODO **#1 to #44, #46, #47, #49 and #51 to #53 are done**, and **#54** is built with one more copy to make; **#45** (factory records without the factory system) is partly done (the bills import with the month reads and publish, late bills included, and opening balances, `5b58f81`, are live; leaf and months are next); **#48**, **#50**, **#55** and **#56** (savings interest) are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
 | **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **588 tests in 80 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
@@ -728,13 +728,13 @@ Worst first: correctness, then plumbing, then polish.
    [Hidden in the console](#hidden-in-the-console-until-the-backend-ships-it) says what is
    hidden.
 
-3. **`@tfd/domain` is shared with the backend but copied into the app.** The backend
-   vendors it (`vendor:pull`), so the two cannot drift silently, and this repository's CI
-   (`domain-drift`, or `npm run domain:drift` locally) says when the backend's copy is
-   behind. The mobile app keeps its
-   own types and ports of the shared rules (`creditCeilingFromRule`, `bannerTarget()`),
-   and drift there is found by reading the two side by side. *To close:* merge the repos,
-   or a CI check that diffs the exported symbol lists.
+3. **`@tfd/domain` is vendored by the backend and the app.** *Closed 29 October 2026.*
+   Both copy `packages/domain/src` (`npm run vendor:pull`) and fail their own CI on a
+   local edit (`vendor:check`). The app imports its types, the credit rules, the banner
+   resolver and the page points from it, no longer keeping its own. `npm run domain:drift`
+   here compares both copies with this one and names who has a pull to do; the app's
+   CI asks the same of this repository (`vendor:upstream`). What is left is the pull
+   itself: a change here reaches the API and the app only when each pulls it.
 
 4. **Nothing is pushed.** The API's sender is a no-op until it is built; M13 records what
    it would send and what it would reach. When it lands it brings a per-device delivery
@@ -772,8 +772,10 @@ Worst first: correctness, then plumbing, then polish.
    too, in the app, the website and the default pages); and Tamil பொதி for a tea packet, the Sri
    Lankan word (தேயிலைப் பொதிகள், no longer பாக்கெட் in the app).
 
-8. **Change-request evidence attachments are shown only if the API sends them**, and it does
-   not yet. Whether an attachment is required to approve a bank-details change is open.
+8. **No evidence attachment on a change request, by decision** (29 October 2026). A
+   bank-detail change is approved on the details alone, and inquiries stay text only.
+   The Evidence card on the change-request screen stays hidden while `attachments` is
+   empty, which it always is; nothing on either side uploads one.
 
 9. **Error reporting waits for a Sentry project.** It is built (`lib/monitoring.ts`, 28
    October 2026) and switched on by `VITE_SENTRY_DSN`; until a DSN is set nothing is loaded
@@ -796,7 +798,6 @@ Numbering follows `status.md` §21 in the mobile repo.
 | § | Question | Effect today |
 | --- | --- | --- |
 | 21.6 | **Approval thresholds**: above what amount must someone above the manager approve? | `canApproveAmount(…, null)` treats "not configured" as "the base capability suffices", so the answer becomes configuration |
-| 21.9 | **Savings interest basis**: closing balance or the year's minimum, simple or compound? | The rate is stored (0% by default) and nothing is posted |
 | 21.12 | **Retention**: for bills, payout records, delivery data | M17's retention policy, and §20.4. Settled whatever the answer: no hard deletes anywhere, and the audit log survives an erasure request ([api-contract.md §8](./api-contract.md#8-m17-audit-get-adminaudit)) |
 | 21.18 | **Inquiry statuses**: is Resolved/Closed the right pair? | Built with both; `INQUIRY_STATUSES` is data, so a third is a row |
 | 21.24 | **Notifications**: should a bill publication push to every supplier, and is `content: approve` the right gate on free text? | Built as configuration (one switch per category); the factory has not confirmed the settings |

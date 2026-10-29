@@ -150,8 +150,9 @@ export function ChangeRequestDetailScreen() {
             </Card>
           ) : null}
 
-          {/* Only when something is attached: the API does not send attachments yet,
-              and an empty card on every request is noise. */}
+          {/* Only when something is attached, which nothing does: the factory decided on
+              29 October 2026 that a change is approved on its details alone (status.md
+              gap 8). An empty card on every request is noise. */}
           {request.attachments.length > 0 ? (
             <Card>
               <CardHeader title={t('changeRequests.detail.evidence')} />

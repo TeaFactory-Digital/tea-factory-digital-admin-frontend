@@ -553,6 +553,11 @@ From 9 to 22 October 2026:
     one may be replaced by sending it again (R18); four-eyes covers the importer as well as
     the rate's enterer; savings withdrawals pending at cut-over are settled or cancelled
     before it.
+16. **Savings interest (29 October 2026):** simple; on each month's lowest balance (the
+    balance at its start, or after a withdrawal paid that month); credited once a year with
+    the month before the withdrawal month, so it can be taken out in that month. The rate is
+    `savings.annualInterestRate` (0% unless set). `savingsInterestFor` in `packages/domain`;
+    the API posts it (BACKEND-TODO #56), and until then the accountant posts the figure.
 
 ## 9. Checks
 

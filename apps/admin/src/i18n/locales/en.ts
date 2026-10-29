@@ -61,7 +61,7 @@ export const en = {
   'tip.oneTimePassword': 'One-time password',
   'tip.passwordChange': 'How to change your password',
   'tip.aboutScreen': 'About this screen',
-  'tip.interestNotApplied': 'Interest is not applied automatically',
+  'tip.interestRule': 'How interest is worked out',
   'tip.openQuestion': 'Not decided yet',
   'tip.savedHere': 'Saved on this computer',
   'tip.usersDelete': 'How deleting works',
@@ -1491,10 +1491,9 @@ export const en = {
   'config.withdrawalMonthHint':
     'Suppliers may ask for their savings back during this month each year.',
   'config.interestRate': 'Interest paid (% a year)',
-  'config.interestRateHint':
-    'Recorded so the office can quote it. Leave at 0 if the factory pays none.',
-  'config.interestNotApplied':
-    'The console does not work interest out by itself. Nobody has said whether it is paid on the closing balance or on the lowest balance of the year, and those pay different amounts, so when the factory decides, the accountant records the figure as an entry in the passbook (§21.9).',
+  'config.interestRateHint': 'A year\'s rate. Leave at 0 if the factory pays none.',
+  'config.interestRule':
+    'Simple interest on each month\'s lowest balance (the balance at the start of the month, or after a withdrawal paid that month), at this rate ÷ 12. The year\'s interest is credited to the passbook once, with the accounts for the month before the withdrawal month, so it can be taken out in that month. Until the server posts it, the accountant records the figure as an Interest entry.',
   'config.manureProducts': 'Fertilizer a supplier may ask for',
   'config.manureProductsHint':
     'Name, kilos in a bag, and what one bag costs. A request is priced from this list. The office never types an amount, so a supplier can check what they were charged against it.',

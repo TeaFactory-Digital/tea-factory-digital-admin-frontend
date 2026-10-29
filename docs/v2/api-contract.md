@@ -1987,9 +1987,11 @@ that bill's `deductions.savings` to the cent.
 `AdminSupplier.savingsBalance` (§5.2) must equal the ledger's closing balance. Two
 figures for one balance is exactly the inconsistency AC-01 is about.
 
-`SavingsEntrySource` already includes `withdrawal` and `interest`, which nothing produces
-yet: §21.9 (may a supplier withdraw, on what notice, is interest paid) is unanswered.
-The vocabulary is there so the answer **adds endpoints rather than migrating a money
+`SavingsEntrySource` includes `withdrawal` (a withdrawal paid on a bill) and `interest`.
+An `interest` entry is the year's savings interest, one per supplier, with the month before
+the withdrawal month (`savingsInterestFor` in `packages/domain`: simple, on each month's
+lowest balance; decided 29 October 2026, BACKEND-TODO #56). Neither needed a change to the
+ledger: the vocabulary was there so the answer **added rows rather than migrating a money
 table**.
 
 ---

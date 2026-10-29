@@ -8,12 +8,11 @@
  *
  *  - **The month is configuration**, defaulting to April. A factory that pays out at the
  *    start of the school year rather than at Aluth Avurudu changes a row, not a build.
- *  - **The rate is configuration**, defaulting to `0`. It is *stored and shown and never
- *    acted on*: nobody has said whether interest is simple or compound, or whether it is
- *    paid on the closing balance or the year's minimum, and those give materially
- *    different money. So the console posts no interest of its own. When the factory decides,
- *    the accountant posts an `interest` entry with the figure they decided, and the ledger
- *    already has that word in its vocabulary.
+ *  - **The rate is configuration**, defaulting to `0`. How it is applied was decided on
+ *    29 October 2026: simple interest on each month's lowest balance, credited once a year
+ *    in time for the withdrawal month (`savingsInterestFor`, below). The API posts it as an
+ *    `interest` entry, a word the ledger already has; until it does, the accountant posts
+ *    the figure this function gives.
  *
  * **A withdrawal is paid on the next bill** (the factory's choice), which is why nothing in
  * this file moves money. It records an *intention*, checked against the balance and the
@@ -31,6 +30,7 @@
  */
 
 import { round2 } from './money';
+import type { SavingsEntrySource } from './types/admin';
 
 /* ────────────────────────────── the policy ────────────────────────────── */
 
@@ -43,9 +43,9 @@ export interface SavingsPolicy {
    */
   withdrawalMonth: number;
   /**
-   * Annual interest, as a percentage. `0` by default, and **the console never applies it**;
-   * see the note at the top of this file. It is here so a factory can record what it
-   * pays, and so the screen can show a supplier's expectation, not so anything accrues.
+   * Annual interest, as a percentage. `0` by default. Applied by `savingsInterestFor`:
+   * simple, on each month's lowest balance, credited once a year before the withdrawal
+   * month.
    */
   annualInterestRate: number;
 }
@@ -194,4 +194,104 @@ export function pendingWithdrawalTotal(withdrawals: readonly SavingsWithdrawal[]
       .filter((one) => one.status === 'pending')
       .reduce((sum, one) => sum + one.amount, 0),
   );
+}
+
+/* ────────────────────────────── interest ────────────────────────────── */
+
+/** `"2026-04"` moved by `by` months: `shiftMonthKey('2026-01', -1)` is `"2025-12"`. */
+function shiftMonthKey(monthKey: string, by: number): string {
+  const index = Number(monthKey.slice(0, 4)) * 12 + Number(monthKey.slice(5, 7)) - 1 + by;
+  return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, '0')}`;
+}
+
+/**
+ * The twelve months one year's interest is for, and the month it is credited with.
+ *
+ * **Decided 29 October 2026: credited in time for the withdrawal month.** The year runs to
+ * the month **before** the withdrawal month and is posted with that month, when its bills
+ * are published (the first days of the withdrawal month), so the interest is in the balance
+ * a supplier may take out. With April: April 2026 to March 2027, credited with March 2027,
+ * withdrawable in April 2027.
+ *
+ * `creditYear` is the year of the withdrawal window the interest is for.
+ */
+export function interestYear(
+  policy: Pick<SavingsPolicy, 'withdrawalMonth'>,
+  creditYear: number,
+): { fromMonthKey: string; toMonthKey: string } {
+  const window = `${creditYear}-${String(policy.withdrawalMonth).padStart(2, '0')}`;
+  const toMonthKey = shiftMonthKey(window, -1);
+  return { fromMonthKey: shiftMonthKey(toMonthKey, -11), toMonthKey };
+}
+
+/** One month of a year's interest, so the passbook can show its working. */
+export interface SavingsInterestMonth {
+  monthKey: string;
+  /** Balance before the month's entries. */
+  opening: number;
+  /** Balance after them: the month's contribution and any withdrawal paid on its bill. */
+  closing: number;
+  /** The lower of the two, never below zero: what earned interest. */
+  base: number;
+  /** Percentage a year in force that month. */
+  annualRate: number;
+  /** `base × annualRate ÷ 100 ÷ 12`, to the cent. */
+  interest: number;
+}
+
+export interface SavingsInterestYearResult {
+  fromMonthKey: string;
+  toMonthKey: string;
+  months: SavingsInterestMonth[];
+  /** The sum of the months: the `interest` entry to post with `toMonthKey`. */
+  total: number;
+}
+
+/** A ledger movement as this needs it: the app's row, or the console's with its source. */
+export interface SavingsInterestEntry {
+  monthKey: string;
+  amount: number;
+  source?: SavingsEntrySource;
+}
+
+/**
+ * One supplier's interest for one year. **Decided by the factory on 29 October 2026:**
+ *
+ *  - **Simple.** A month earns `base × rate ÷ 12`; nothing earned in the year earns interest
+ *    in that year. Once credited it is the supplier's money like any other (they may
+ *    withdraw it), so it is in the balance from the next year on.
+ *  - **On the month's lowest balance.** The lower of the balance before the month's entries
+ *    and after them. Contributions are posted when the month's bill is published, after the
+ *    month, so in an ordinary month that is the opening balance: the money that sat in the
+ *    account all month. In the month a withdrawal is paid it is the balance after it, so
+ *    money taken out earns nothing that month. Never below zero.
+ *  - **Credited once a year** for the months `interestYear` gives.
+ *
+ * Each month is rounded to the cent and the total is their sum, so the working adds up on
+ * paper. `annualRate` is a percentage, or a function giving the rate in force in a month,
+ * for a factory that changed it during the year. An `interest` entry inside the year is
+ * left out, so working it out again after it was posted gives the same answer.
+ */
+export function savingsInterestFor(
+  entries: readonly SavingsInterestEntry[],
+  year: { fromMonthKey: string; toMonthKey: string },
+  annualRate: number | ((monthKey: string) => number),
+): SavingsInterestYearResult {
+  const rateFor = typeof annualRate === 'function' ? annualRate : () => annualRate;
+  const counted = entries.filter(
+    (one) =>
+      !(one.source === 'interest' && one.monthKey >= year.fromMonthKey && one.monthKey <= year.toMonthKey),
+  );
+  const before = (monthKey: string) =>
+    round2(counted.filter((one) => one.monthKey < monthKey).reduce((sum, one) => sum + one.amount, 0));
+
+  const months: SavingsInterestMonth[] = [];
+  for (let monthKey = year.fromMonthKey; monthKey <= year.toMonthKey; monthKey = shiftMonthKey(monthKey, 1)) {
+    const opening = before(monthKey);
+    const closing = before(shiftMonthKey(monthKey, 1));
+    const base = Math.max(0, Math.min(opening, closing));
+    const rate = rateFor(monthKey);
+    months.push({ monthKey, opening, closing, base, annualRate: rate, interest: round2((base * rate) / 100 / 12) });
+  }
+  return { ...year, months, total: round2(months.reduce((sum, one) => sum + one.interest, 0)) };
 }
