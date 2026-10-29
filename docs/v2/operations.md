@@ -16,7 +16,7 @@ From the workspace root:
 
 | Command                 | What it does                                                                               |
 | ----------------------- | ------------------------------------------------------------------------------------------ |
-| `npm install`           | Installs everything. Node ≥ 22.11                                                          |
+| `npm install`           | Installs everything. Node ≥ 22.12                                                          |
 | `npm run dev`           | Vite dev server on **http://localhost:5273**, against the local API (`.env.development`)  |
 | `npm run dev:staging`   | The same dev server against the deployed staging API (`.env.staging`)                     |
 | `npm run build`         | Production bundle into `apps/admin/dist`                                                   |
@@ -230,7 +230,8 @@ gets reported.
 ## CI
 
 GitHub Actions, `.github/workflows/ci.yml`, on every push to `main` and every pull
-request, on Node 22.11 (the `engines` floor). Three jobs:
+request, on Node 22.12 (the `engines` floor; 22.11 cannot `require()` the ES-only
+packages Vite 7 and jsdom now pull in, so the unit tests and e2e failed there). Three jobs:
 
 - **`verify`**, five steps in this order, each failing faster than the next:
   `npm ci`, `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`.
