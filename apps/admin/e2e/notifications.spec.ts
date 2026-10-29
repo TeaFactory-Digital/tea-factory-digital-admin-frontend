@@ -100,10 +100,12 @@ test('works out who a message reaches before it can be sent', async ({ page }) =
  * anywhere" would also pass on a screen whose content simply fitted:
  *
  *  1. **`main` does not scroll**, which is the property being bought.
- *  2. **The settings column does**, which proves the first one is a layout rule rather
- *     than a short page. The triggers card is a form of eight rows plus a paragraph, and
- *     it overflows at this viewport: before the fix that overflow went to `main` and
- *     took the log off screen with it.
+ *  2. **The settings column is its own scroller**, which proves the first one is a layout
+ *     rule rather than a short page: it is `overflow-y: auto` and its box ends inside
+ *     `main` however tall its content is. Before the fix its overflow went to `main` and
+ *     took the log off screen with it. (This used to assert that the column *did* overflow
+ *     at 1366×768, which depends on the fonts: on Linux CI they are smaller, the triggers
+ *     card fitted, and the test failed with the layout correct.)
  *
  * The log's own overflow is deliberately **not** asserted: the fixture has three sends, so
  * its `DataTable` scroller does not need a scrollbar at 1366×768 and demanding one would
@@ -126,7 +128,8 @@ test('scrolls each column on its own rather than the whole page', async ({ page 
   // The settings column reads down on its own, so reaching a toggle never moves the list.
   const settings = page.locator('main#main .lg\\:overflow-y-auto').first();
   await expect(settings).toBeVisible();
-  expect(await settings.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeGreaterThan(0);
+  expect(await settings.evaluate((el) => getComputedStyle(el).overflowY)).toBe('auto');
+  const settingsBox = await settings.boundingBox();
 
   // And the log stays inside the window rather than hanging below the fold.
   const card = page.locator('table[aria-label="Notifications"] >> xpath=ancestor::*[contains(@class,"flex-1")][1]');
@@ -134,4 +137,7 @@ test('scrolls each column on its own rather than the whole page', async ({ page 
   const mainBox = await main.boundingBox();
   expect(cardBox).not.toBeNull();
   expect(cardBox!.y + cardBox!.height).toBeLessThanOrEqual(mainBox!.y + mainBox!.height + 1);
+  // The settings column is bounded the same way, so its overflow scrolls inside it.
+  expect(settingsBox).not.toBeNull();
+  expect(settingsBox!.y + settingsBox!.height).toBeLessThanOrEqual(mainBox!.y + mainBox!.height + 1);
 });
