@@ -195,8 +195,12 @@ export function FeaturesSection(props: SectionProps) {
    * the bundled default was still in force. Iterating the declared set fixes both, and
    * fixes the order: declaration order rather than whatever order the JSON arrived in.
    */
-  // Hidden, and never sent, until the API stores it (`serverReady.ts`).
-  const names = FEATURE_FLAG_NAMES.filter((name) => MONTH_TO_DATE_ON_SERVER || name !== 'enableMonthToDate');
+  // Hidden, and never sent, until the API stores it (`serverReady.ts`). `enableProfileTab` is
+  // hidden for good: the app has no Profile tab (29 October 2026), so the switch would change
+  // nothing; its stored value is still sent back unchanged.
+  const names = FEATURE_FLAG_NAMES.filter(
+    (name) => name !== 'enableProfileTab' && (MONTH_TO_DATE_ON_SERVER || name !== 'enableMonthToDate'),
+  );
   const sent = MONTH_TO_DATE_ON_SERVER
     ? draft
     : (Object.fromEntries(Object.entries(draft).filter(([name]) => name !== 'enableMonthToDate')) as typeof draft);

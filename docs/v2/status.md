@@ -559,7 +559,7 @@ the console read.
 | Section | What it holds |
 | --- | --- |
 | The factory | Name, telephone, registration number, location, support email and office hours. These print on every bill |
-| Features | The feature flags (fifteen). Some remove a console module **and** an app screen (`enableManure` → M7), the rest only an app screen. `enableMonthToDate` is neither shown nor sent until `GET /bills/month-to-date` ships (`MONTH_TO_DATE_ON_SERVER`) |
+| Features | The feature flags (fifteen; fourteen shown, because `enableProfileTab` is hidden: the app has no Profile tab since 29 October 2026). Some remove a console module **and** an app screen (`enableManure` → M7), the rest only an app screen. `enableMonthToDate` is neither shown nor sent until `GET /bills/month-to-date` ships (`MONTH_TO_DATE_ON_SERVER`) |
 | **Factory system** | The sync switch (on / off), with what appears or disappears before Save and a second confirmation |
 | Collection & savings | Collection points, savings rates per kg, the fertilizer (manure) catalogue with bag size and price |
 | Banks & branches | The factory's bank and branch list ([bank-catalogue.md](./bank-catalogue.md)) |

@@ -199,7 +199,7 @@ the app's flag set.** Nothing more, nothing less.
 | `enableOnboarding` | - | The onboarding screens |
 | `enableBiometricLogin` | - | Fingerprint / face sign-in |
 | `enableDarkModeToggle` | - | The dark-mode switch |
-| `enableProfileTab` | - | The profile tab |
+| `enableProfileTab` | - | Nothing: the app has no Profile tab (29 October 2026). Hidden in Configuration → Features; the stored value is kept |
 | `enableAutoLock` | - | `useAutoLock` |
 | `enableMonthToDate` | - (M14 shows its switch only once `MONTH_TO_DATE_ON_SERVER` is true) | "This month so far" on the Account tab: `MonthToDateCard`, compact, with a day strip (off by default; BACKEND-TODO #48) |
 
