@@ -29,7 +29,7 @@ import {
   MessageSquare,
   Smartphone,
 } from 'lucide-react';
-import { QUEUE_SLA_HOURS, type InquiryMessage } from '@tfd/domain';
+import { QUEUE_SLA_HOURS, inquiryCountsTowardsSla, isInquiryClosed, type InquiryMessage, type InquiryStatus } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -45,7 +45,13 @@ import { InquiryAssignmentCard, InquiryNotesCard } from './InquiryOfficeCards';
 import { useNotificationTriggers } from '@/modules/notifications/hooks';
 import { useInquiry, useInquiryAudit } from './hooks';
 
-const STATUS_TONES = { open: 'warning', resolved: 'success', closed: 'neutral' } as const;
+const STATUS_TONES = {
+  open: 'warning',
+  escalated: 'error',
+  awaitingSupplier: 'info',
+  resolved: 'success',
+  closed: 'neutral',
+} as const satisfies Record<InquiryStatus, string>;
 
 export function InquiryDetailScreen() {
   const { t } = useTranslation();
@@ -79,12 +85,13 @@ export function InquiryDetailScreen() {
     );
   }
 
-  const open = inquiry.status === 'open';
+  // Still the office's to act on: open, escalated, or waiting on the supplier.
+  const open = !isInquiryClosed(inquiry.status);
   const answerable = isAnswerable(inquiry);
   // Built by the repository from the question and the answer when the API sends no thread.
   const thread = inquiry.messages ?? [];
   const rows = toRows(thread);
-  const late = open && inquiry.ageHours > QUEUE_SLA_HOURS.inquiries;
+  const late = inquiryCountsTowardsSla(inquiry.status) && inquiry.ageHours > QUEUE_SLA_HOURS.inquiries;
   const fromApp = inquiry.channel === 'app';
 
   return (

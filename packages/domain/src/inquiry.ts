@@ -21,8 +21,25 @@ import type { RequestStatus } from './types/app';
  * answer changes one line rather than every consumer.
  */
 export function inquiryStatusForApp(status: InquiryStatus): RequestStatus {
-  if (status === 'open') return 'pending';
+  // Escalated and waiting for the supplier are both still open: the supplier's message
+  // is not finished with. Which of the two is the office's business; that the office is
+  // waiting on *them* is told separately (`Inquiry.awaitingReply`).
+  if (!isInquiryClosed(status)) return 'pending';
   return status === 'resolved' ? 'approved' : 'rejected';
+}
+
+/** The office asked the supplier something and is waiting for the answer. */
+export function inquiryAwaitsSupplier(status: InquiryStatus): boolean {
+  return status === 'awaitingSupplier';
+}
+
+/**
+ * Is the office the one keeping the supplier waiting? Open and escalated messages count
+ * against the two-day target (`QUEUE_SLA_HOURS.inquiries`); one waiting on the supplier
+ * does not, and neither does a finished one.
+ */
+export function inquiryCountsTowardsSla(status: InquiryStatus): boolean {
+  return status === 'open' || status === 'escalated';
 }
 
 /**
@@ -33,5 +50,5 @@ export function inquiryStatusForApp(status: InquiryStatus): RequestStatus {
  * silently lets a closed message be replied to.
  */
 export function isInquiryClosed(status: InquiryStatus): boolean {
-  return status !== 'open';
+  return status === 'resolved' || status === 'closed';
 }

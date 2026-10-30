@@ -248,6 +248,51 @@ export function CreditRulesSection(props: SectionProps) {
                   />
                 )}
               </Field>
+              {/* Who approves, by amount (Q6): the clerk up to the first, the owner above the second. */}
+              <Field
+                label={t('config.creditRules.clerkApprovesUpTo')}
+                hint={t('config.creditRules.clerkApprovesUpToHint')}
+              >
+                {({ id, describedBy }) => (
+                  <Input
+                    id={id}
+                    className="numeric"
+                    type="number"
+                    min={0}
+                    step={1000}
+                    placeholder={t('config.creditRules.approvalNotSet')}
+                    aria-describedby={describedBy}
+                    disabled={props.readOnly}
+                    value={rule.clerkApprovesUpTo ?? ''}
+                    onChange={(event) =>
+                      // Empty: this tier is not used (Q6), not a limit of 0.
+                      set(facility, { clerkApprovesUpTo: event.target.value === '' ? null : Number(event.target.value) })
+                    }
+                  />
+                )}
+              </Field>
+              <Field
+                label={t('config.creditRules.ownerApprovesAbove')}
+                hint={t('config.creditRules.ownerApprovesAboveHint')}
+              >
+                {({ id, describedBy }) => (
+                  <Input
+                    id={id}
+                    className="numeric"
+                    type="number"
+                    min={0}
+                    step={1000}
+                    placeholder={t('config.creditRules.approvalNotSet')}
+                    aria-describedby={describedBy}
+                    disabled={props.readOnly}
+                    value={rule.ownerApprovesAbove ?? ''}
+                    onChange={(event) =>
+                      // Empty: this tier is not used (Q6), not a limit of 0.
+                      set(facility, { ownerApprovesAbove: event.target.value === '' ? null : Number(event.target.value) })
+                    }
+                  />
+                )}
+              </Field>
             </div>
 
             {/**

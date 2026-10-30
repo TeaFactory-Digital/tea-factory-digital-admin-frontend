@@ -9,6 +9,8 @@
 
 import {
   closeInquirySchema,
+  escalateInquirySchema,
+  type EscalateInquiryBody,
   inquiryReplySchema,
   type AdminInquiry,
   type CloseInquiryBody,
@@ -126,6 +128,12 @@ export const inquiryRepository = {
     const parsed = inquiryReplySchema.safeParse(body);
     if (!parsed.success) refuse(parsed.error.flatten());
     return inquiryEndpoints.reply(id, body);
+  },
+
+  escalate: async (id: string, body: EscalateInquiryBody): Promise<StatusAck<InquiryStatus>> => {
+    const parsed = escalateInquirySchema.safeParse(body);
+    if (!parsed.success) refuse(parsed.error.flatten());
+    return inquiryEndpoints.escalate(id, body);
   },
 
   close: async (id: string, body: CloseInquiryBody): Promise<StatusAck<InquiryStatus>> => {

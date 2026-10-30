@@ -98,6 +98,7 @@ const BY_CODE: Record<string, string> = {
   'cut-over-month': 'error.cutOverMonth',
   'withdrawal-pending': 'error.withdrawalPending',
   'correction-invalid': 'error.correctionInvalid',
+  'approval-above-limit': 'error.approvalAboveLimit',
   'negative': 'error.negative',
   'unknown-supplier': 'error.unknownSupplier',
   'no-bill': 'error.noBill',

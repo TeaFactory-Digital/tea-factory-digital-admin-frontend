@@ -17,6 +17,7 @@
  *    because the console can be lied to about who created a record.
  */
 
+import type { ApprovalTier } from './creditRules';
 import type {
   AccessLevel,
   Capability,
@@ -119,7 +120,11 @@ export const DEFAULT_ROLE_MATRIX: Record<ConsoleRole, Record<Capability, AccessL
     billing: A,
     payouts: A,
     creditRequests: A,
-    creditAboveThreshold: A,
+    /**
+     * `NONE` since Q6 (30 October 2026): above the factory's owner threshold a request goes
+     * to the factory administrator, the owner. With no threshold set nothing is above it.
+     */
+    creditAboveThreshold: NONE,
     changeRequests: A,
     inquiries: R,
     content: R,
@@ -157,8 +162,10 @@ export const DEFAULT_ROLE_MATRIX: Record<ConsoleRole, Record<Capability, AccessL
     ratesAndMonthClose: R,
     billing: R,
     payouts: NONE,
-    creditRequests: NONE,
-    creditAboveThreshold: NONE,
+    /** `R` so the owner sees the request they are asked to decide (Q6). */
+    creditRequests: R,
+    /** The owner decides what is above the factory's owner threshold (Q6). */
+    creditAboveThreshold: A,
     changeRequests: NONE,
     inquiries: NONE,
     content: A,
@@ -256,6 +263,21 @@ export function isSelfApproval(
  * so it is a parameter here rather than a constant. Pass `null` while the
  * factory has not set one; the function then requires only the base capability.
  */
+/**
+ * May these grants decide (approve or reject) a request of this amount (Q6)?
+ *
+ *  - `clerk` tier: `creditRequests: W` is enough, so the counter settles small requests;
+ *  - `manager` tier: `creditRequests: A`, as every decision was before;
+ *  - `owner` tier: `creditAboveThreshold: A`, the factory administrator by default.
+ *
+ * The recorder of a walk-in may still never decide it (BR-501, checked separately).
+ */
+export function canDecideCredit(grants: CapabilityGrants | undefined, tier: ApprovalTier): boolean {
+  if (tier === 'owner') return can(grants, 'creditAboveThreshold', 'approve');
+  if (tier === 'clerk') return can(grants, 'creditRequests', 'write');
+  return can(grants, 'creditRequests', 'approve');
+}
+
 export function canApproveAmount(
   grants: CapabilityGrants | undefined,
   amount: number,

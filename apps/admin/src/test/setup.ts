@@ -6,6 +6,7 @@ import '@/i18n';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 import { server } from '@/services/mocks/server';
 import { resetMockState } from '@/services/mocks/handlers';
+import { configure as configureTestingLibrary } from '@testing-library/react';
 
 /**
  * The same MSW handlers the browser uses, in Node.
@@ -41,3 +42,10 @@ afterEach(() => {
 });
 
 afterAll(() => server.close());
+
+// Coverage instrumentation slows every render: give `findBy…` and `waitFor` the time the
+// plain run does not need (`npm run test:coverage` sets COVERAGE).
+if (process.env.COVERAGE) {
+  configureTestingLibrary({ asyncUtilTimeout: 10_000 });
+}
+

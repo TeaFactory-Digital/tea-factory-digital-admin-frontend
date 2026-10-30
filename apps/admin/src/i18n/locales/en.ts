@@ -709,6 +709,7 @@ export const en = {
 
   'credit.managerDecides':
     'A manager decides credit requests. You can read this one and everything behind it, but the approval is not yours to give.',
+  'credit.ownerDecides': 'A request of this amount is decided by the factory administrator, the owner (above the owner threshold in Configuration).',
   'credit.fourEyes.body':
     'You raised this request on the supplier’s behalf, so someone else has to decide it. Credit is money, and money takes four eyes.',
   'credit.overCeiling.title': 'More than they may draw',
@@ -724,9 +725,13 @@ export const en = {
   'inquiries.searchPlaceholder': 'Search supplier, subject or message',
   'inquiries.column.subject': 'Message',
   'inquiries.status.open': 'Open',
+  'inquiries.status.escalated': 'Escalated',
+  'inquiries.status.awaitingSupplier': 'Waiting for the supplier',
   'inquiries.status.resolved': 'Answered',
   'inquiries.status.closed': 'Closed',
   'inquiries.filter.open': 'Open',
+  'inquiries.filter.escalated': 'Escalated',
+  'inquiries.filter.awaitingSupplier': 'Waiting for the supplier',
   'inquiries.filter.resolved': 'Answered',
   'inquiries.filter.closed': 'Closed unanswered',
   'inquiries.empty': 'Nothing waiting',
@@ -798,6 +803,15 @@ export const en = {
   'inquiries.closureNoteHelp': 'Only the office sees this. At least 10 characters.',
   'inquiries.closurePlaceholder': 'e.g. Duplicate of the message answered on the 4th.',
   'inquiries.replied': 'Answered. The supplier sees it next time they open the app.',
+  'inquiries.askedSupplier': 'Sent. The message waits for the supplier\'s answer, and opens again when they reply.',
+  'inquiries.awaitSupplierLabel': 'This asks the supplier something: wait for their answer',
+  'inquiries.awaitingSupplierNotice': 'Waiting for the supplier to answer the office\'s question. Their reply opens it again; until then it does not count against the two-day target.',
+  'inquiries.escalate': 'Pass to the manager',
+  'inquiries.escalateTitle': 'Pass to the manager',
+  'inquiries.escalateBody': 'For a message the counter cannot settle. It stays open, marked Escalated, with your reason; the supplier still sees it as waiting.',
+  'inquiries.escalateHint': 'At least 10 characters. Seen only by the office.',
+  'inquiries.escalated': 'Passed to the manager.',
+  'inquiries.escalatedTitle': 'Passed to the manager:',
   'inquiries.closed': 'Closed. No answer was sent.',
   'inquiries.alreadyAnswered.title': 'Already answered',
   'inquiries.alreadyAnswered.body':
@@ -1913,6 +1927,7 @@ export const en = {
   'error.cutOverMonth.different': 'This factory\'s opening balances are as at {{month}}. To use another month, save every supplier\'s opening balances again in it.',
   'error.withdrawalPending': 'A savings withdrawal from before that month is still waiting for this supplier. Settle or cancel it first, then enter the opening savings.',
   'error.correctionInvalid': 'The correction was refused: check the amount, the month (it must have a published bill), the reason, and that no balance goes below 0.',
+  'error.approvalAboveLimit': 'A request of this amount is decided by someone else: the manager, or above the owner threshold the owner.',
   'error.negative': 'Enter an amount of 0 or more.',
   'error.unknownSupplier': 'No supplier has this code.',
   'error.noBill': 'There is no bill for this supplier in that month.',
@@ -2012,6 +2027,11 @@ export const en = {
     '0 offers it to a supplier in their first month, which is right for an advance, and rarely right for a loan.',
   'config.creditRules.maxAmount': 'Never more than (LKR)',
   'config.creditRules.maxAmountHint': 'Leave empty for no cap. Applied after the multiplier.',
+  'config.creditRules.clerkApprovesUpTo': 'A clerk may approve up to (LKR)',
+  'config.creditRules.clerkApprovesUpToHint': 'Requests up to this amount are decided at the counter. Empty: every decision is the manager\'s.',
+  'config.creditRules.ownerApprovesAbove': 'The owner approves above (LKR)',
+  'config.creditRules.ownerApprovesAboveHint': 'Requests above this amount go to the factory administrator, the owner. Empty: the manager decides every amount.',
+  'config.creditRules.approvalNotSet': 'Not used',
   'config.creditRules.noCap': 'No cap',
   'config.creditRules.installments': 'Repayment terms',
   'config.creditRules.installmentsHint':
@@ -2031,6 +2051,7 @@ export const en = {
   'config.impact.creditRule.negative-max': 'A cap has to be more than zero, or empty for no cap.',
   'config.impact.creditRule.bad-installments':
     'Offer at least one repayment term. To stop offering this facility, switch it off under Features instead.',
+  'config.impact.creditRule.bad-approval-limits': 'the clerk\'s limit and the owner\'s threshold must be 0 or more, and the clerk\'s no higher than the owner\'s',
 
   /* ───────── Replication from the factory's own system (v2) ───────── */
   'shell.syncStale':
@@ -2729,6 +2750,13 @@ export const en = {
   'corrections.down.manure': 'They owe less for fertilizer',
   'corrections.up.savings': 'They hold more in savings',
   'corrections.down.savings': 'They hold less in savings',
+  'corrections.kind': 'How',
+  'corrections.kind.correction': 'A mistake put right',
+  'corrections.kind.writeOff': 'Written off: it will not be recovered',
+  'corrections.kind.fromSavings': 'Paid from their savings',
+  'corrections.effectWriteOff': 'The balance comes down now, recorded as written off. For a supplier who has stopped supplying and will not repay.',
+  'corrections.effectFromSavings': 'Their savings go down by this amount and the balance by the same. Their passbook shows it with your reason.',
+  'corrections.problem.savings-short': 'Their savings are {{savings}}: not enough to pay this. Pay what the savings cover, and write off the rest.',
   'corrections.amount': 'Amount (LKR)',
   'corrections.amountInvalid': 'Enter an amount above 0',
   'corrections.month': 'Month it corrects',
@@ -2852,6 +2880,7 @@ export const en = {
   'records.reviewBills': 'Review this month’s bills',
   'audit.action.supplierOpeningBalances': 'Entered opening balances',
   'audit.action.supplierCorrection': 'Posted a correction',
+  'audit.action.inquiryEscalate': 'Passed an inquiry to the manager',
   'audit.action.billAdjust': 'Changed a bill’s other deductions',
   'records.import.title.printedBalances': 'Import printed slip balances',
   'records.import.intro.printedBalances': 'One row per supplier: the month, the supplier code and the Balance printed on the factory system’s slip. Each is compared with our bill.',

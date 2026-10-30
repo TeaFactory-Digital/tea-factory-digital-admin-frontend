@@ -112,6 +112,13 @@ export type CreditDecisionInput = z.infer<typeof creditDecisionSchema>;
  */
 export const inquiryReplySchema = z.object({
   body: requiredString('validation.replyRequired', 4000).min(20, 'validation.replyTooShort'),
+  /** The reply asks the supplier something: wait for their answer (§21.18). */
+  awaitSupplier: z.boolean().optional(),
+});
+
+/** Passing an inquiry up to the manager: the reason, kept for the office (§21.18). */
+export const escalateInquirySchema = z.object({
+  note: requiredString('validation.reasonRequired', 1000).min(10, 'validation.noteTooShort'),
 });
 
 export type InquiryReplyInput = z.infer<typeof inquiryReplySchema>;

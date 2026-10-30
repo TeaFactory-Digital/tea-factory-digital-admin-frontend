@@ -91,7 +91,8 @@ describe('resolveGrants', () => {
   });
 
   it('works with no server grants at all', () => {
-    const grants = resolveGrants(['manager']);
+    // The owner tier is the factory administrator's since Q6 (30 October 2026).
+    const grants = resolveGrants(['factoryAdmin']);
     expect(can(grants, 'creditAboveThreshold', 'approve')).toBe(true);
   });
 
@@ -130,9 +131,9 @@ describe('canApproveAmount (§21.6)', () => {
     expect(canApproveAmount(clerk, 100, 50_000)).toBe(false);
   });
 
-  it('lets a manager approve below and above the threshold', () => {
+  it('lets a manager approve below the owner threshold, and not above it (Q6)', () => {
     expect(canApproveAmount(manager, 10_000, 50_000)).toBe(true);
-    expect(canApproveAmount(manager, 90_000, 50_000)).toBe(true);
+    expect(canApproveAmount(manager, 90_000, 50_000)).toBe(false);
   });
 
   it('requires only the base capability while the factory has set no threshold', () => {

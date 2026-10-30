@@ -722,6 +722,7 @@ export const ta: Record<TranslationKey, string> = {
 
   'credit.managerDecides':
     'கடன் கோரிக்கைகளைத் தீர்மானிப்பது மேலாளர். இதையும் இதற்குப் பின்னால் உள்ள அனைத்தையும் நீங்கள் படிக்கலாம், ஆனால் அங்கீகாரம் வழங்குவது உங்கள் வேலை அல்ல.',
+  'credit.ownerDecides': 'இந்தத் தொகைக் கோரிக்கையைத் தொழிற்சாலை நிர்வாகி, உரிமையாளர் தீர்மானிப்பார் (அமைப்புகளிலுள்ள உரிமையாளர் வரம்புக்கு மேல்).',
   'credit.fourEyes.body':
     'இந்தக் கோரிக்கையை வழங்குநருக்காக நீங்கள் சமர்ப்பித்ததால், அதை வேறு ஒருவர் தீர்மானிக்க வேண்டும். கடன் என்பது பணம், பணம் தொடர்பானதை இருவர் சரிபார்க்க வேண்டும்.',
   'credit.overCeiling.title': 'பெறக்கூடியதைவிட அதிகம்',
@@ -737,9 +738,13 @@ export const ta: Record<TranslationKey, string> = {
   'inquiries.searchPlaceholder': 'வழங்குநர், தலைப்பு அல்லது செய்தியைத் தேடவும்',
   'inquiries.column.subject': 'செய்தி',
   'inquiries.status.open': 'திறந்தது',
+  'inquiries.status.escalated': 'மேலே அனுப்பப்பட்டது',
+  'inquiries.status.awaitingSupplier': 'வழங்குநரின் பதிலுக்காகக் காத்திருக்கிறது',
   'inquiries.status.resolved': 'பதில் அளிக்கப்பட்டது',
   'inquiries.status.closed': 'மூடப்பட்டது',
   'inquiries.filter.open': 'திறந்தவை',
+  'inquiries.filter.escalated': 'மேலே அனுப்பப்பட்டது',
+  'inquiries.filter.awaitingSupplier': 'வழங்குநரின் பதிலுக்காகக் காத்திருக்கிறது',
   'inquiries.filter.resolved': 'பதில் அளிக்கப்பட்டவை',
   'inquiries.filter.closed': 'பதிலின்றி மூடப்பட்டவை',
   'inquiries.empty': 'காத்திருப்பது எதுவும் இல்லை',
@@ -812,6 +817,15 @@ export const ta: Record<TranslationKey, string> = {
   'inquiries.closurePlaceholder': 'எ.கா: 4ஆம் திகதி பதில் அளிக்கப்பட்ட செய்தியின் நகல்.',
   'inquiries.replied':
     'பதில் அளிக்கப்பட்டது. வழங்குநர் அடுத்த முறை செயலியைத் திறக்கும்போது அதைப் பார்ப்பார்.',
+  'inquiries.askedSupplier': 'அனுப்பப்பட்டது. செய்தி வழங்குநரின் பதிலுக்காகக் காத்திருக்கும், அவர் பதிலளித்ததும் மீண்டும் திறக்கும்.',
+  'inquiries.awaitSupplierLabel': 'இது வழங்குநரிடம் ஏதோ கேட்கிறது: அவரது பதிலுக்காகக் காத்திருக்கவும்',
+  'inquiries.awaitingSupplierNotice': 'அலுவலகத்தின் கேள்விக்கு வழங்குநரின் பதிலுக்காகக் காத்திருக்கிறது. அவரது பதில் இதை மீண்டும் திறக்கும்; அதுவரை இது இரண்டு நாள் இலக்கில் கணக்கிடப்படாது.',
+  'inquiries.escalate': 'மேலாளருக்கு அனுப்பு',
+  'inquiries.escalateTitle': 'மேலாளருக்கு அனுப்பு',
+  'inquiries.escalateBody': 'கவுண்டரில் தீர்க்க முடியாத செய்திக்கு. இது உங்கள் காரணத்துடன் "மேலே அனுப்பப்பட்டது" எனத் திறந்தே இருக்கும்; வழங்குநருக்கு இன்னும் காத்திருப்பதாகவே தெரியும்.',
+  'inquiries.escalateHint': 'குறைந்தது 10 எழுத்துகள். அலுவலகத்துக்கு மட்டுமே தெரியும்.',
+  'inquiries.escalated': 'மேலாளருக்கு அனுப்பப்பட்டது.',
+  'inquiries.escalatedTitle': 'மேலாளருக்கு அனுப்பிய காரணம்:',
   'inquiries.closed': 'மூடப்பட்டது. பதில் அனுப்பப்படவில்லை.',
   'inquiries.alreadyAnswered.title': 'ஏற்கெனவே பதில் அளிக்கப்பட்டது',
   'inquiries.alreadyAnswered.body':
@@ -1947,6 +1961,7 @@ export const ta: Record<TranslationKey, string> = {
   'error.cutOverMonth.different': 'இந்தத் தொழிற்சாலையின் தொடக்க மீதிகள் {{month}} மாதத்தின்படி உள்ளன. வேறு மாதத்தைப் பயன்படுத்த, எல்லா வழங்குநர்களின் தொடக்க மீதிகளையும் அந்த மாதத்தில் மீண்டும் சேமிக்கவும்.',
   'error.withdrawalPending': 'இந்த வழங்குநருக்கு அந்த மாதத்துக்கு முன் கேட்கப்பட்ட சேமிப்பு எடுப்பு இன்னும் காத்திருக்கிறது. முதலில் அதைத் தீர்க்கவும் அல்லது இரத்துச் செய்யவும், பின்னர் தொடக்கச் சேமிப்பு மீதியை உள்ளிடவும்.',
   'error.correctionInvalid': 'திருத்தம் மறுக்கப்பட்டது: தொகை, மாதம் (அதற்கு வெளியிடப்பட்ட பில் இருக்க வேண்டும்), காரணம், எந்த நிலுவையும் 0 க்குக் கீழே போகவில்லை என்பதைச் சரிபார்க்கவும்.',
+  'error.approvalAboveLimit': 'இந்தத் தொகைக் கோரிக்கையை வேறொருவர் தீர்மானிப்பார்: மேலாளர், அல்லது உரிமையாளர் வரம்புக்கு மேல் என்றால் உரிமையாளர்.',
   'error.negative': '0 அல்லது அதற்கு மேற்பட்ட தொகையை உள்ளிடவும்.',
   'error.unknownSupplier': 'இந்த இலக்கத்துடன் வழங்குநர் இல்லை.',
   'error.noBill': 'அந்த மாதத்தில் இந்த வழங்குநருக்கு பில் இல்லை.',
@@ -2055,6 +2070,11 @@ export const ta: Record<TranslationKey, string> = {
   'config.creditRules.maxAmount': 'அதிகபட்சம் (ரூ.)',
   'config.creditRules.maxAmountHint':
     'வரம்பு இல்லையெனில் காலியாக விடவும். பெருக்கலுக்குப் பிறகு பயன்படுத்தப்படும்.',
+  'config.creditRules.clerkApprovesUpTo': 'எழுதுவினைஞர் அனுமதிக்கக்கூடிய உச்சம் (ரூ.)',
+  'config.creditRules.clerkApprovesUpToHint': 'இந்தத் தொகை வரையான கோரிக்கைகள் கவுண்டரில் தீர்மானிக்கப்படும். வெறுமை: ஒவ்வொரு தீர்மானமும் மேலாளருடையது.',
+  'config.creditRules.ownerApprovesAbove': 'இதற்கு மேல் உரிமையாளர் அனுமதிப்பார் (ரூ.)',
+  'config.creditRules.ownerApprovesAboveHint': 'இந்தத் தொகைக்கு மேலான கோரிக்கைகள் தொழிற்சாலை நிர்வாகி, உரிமையாளரிடம் செல்லும். வெறுமை: ஒவ்வொரு தொகையையும் மேலாளர் தீர்மானிப்பார்.',
+  'config.creditRules.approvalNotSet': 'பயன்படுத்தப்படவில்லை',
   'config.creditRules.noCap': 'வரம்பு இல்லை',
   'config.creditRules.installments': 'திருப்பிச் செலுத்தும் தவணைகள்',
   'config.creditRules.installmentsHint':
@@ -2078,6 +2098,7 @@ export const ta: Record<TranslationKey, string> = {
     'வரம்பு பூஜ்ஜியத்தை விட அதிகமாக இருக்க வேண்டும், அல்லது காலியாக இருக்க வேண்டும்.',
   'config.impact.creditRule.bad-installments':
     'குறைந்தது ஒரு திருப்பிச் செலுத்தும் தவணையையாவது வழங்கவும். இந்த வசதியை நிறுத்த, அதற்குப் பதிலாக “வசதிகள்” பகுதியில் நிறுத்தவும்.',
+  'config.impact.creditRule.bad-approval-limits': 'எழுதுவினைஞரின் வரம்பும் உரிமையாளரின் வரம்பும் 0 அல்லது அதிகமாக இருக்க வேண்டும், எழுதுவினைஞரின் வரம்பு உரிமையாளரின் வரம்பை விட அதிகமாக இருக்கக்கூடாது',
 
   /* ───────── தொழிற்சாலை அமைப்பிலிருந்து நகலெடுத்தல் (v2) ───────── */
   'shell.syncStale':
@@ -2784,6 +2805,13 @@ export const ta: Record<TranslationKey, string> = {
   'corrections.down.manure': 'உரத்துக்குக் குறைவாகச் செலுத்த வேண்டும்',
   'corrections.up.savings': 'சேமிப்பில் அதிகம் உள்ளது',
   'corrections.down.savings': 'சேமிப்பில் குறைவாக உள்ளது',
+  'corrections.kind': 'எப்படி',
+  'corrections.kind.correction': 'தவறு திருத்தம்',
+  'corrections.kind.writeOff': 'தள்ளுபடி: அது வசூலிக்கப்படாது',
+  'corrections.kind.fromSavings': 'அவரது சேமிப்பிலிருந்து செலுத்தப்பட்டது',
+  'corrections.effectWriteOff': 'நிலுவை இப்போதே குறையும், தள்ளுபடியாகப் பதிவுசெய்யப்படும். வழங்கலை நிறுத்திய, திருப்பிச் செலுத்தாத வழங்குநருக்கு.',
+  'corrections.effectFromSavings': 'அவரது சேமிப்பு இந்தத் தொகையால் குறையும், நிலுவையும் அதே அளவு குறையும். அவரது சேமிப்புப் புத்தகத்தில் உங்கள் காரணத்துடன் தெரியும்.',
+  'corrections.problem.savings-short': 'அவரது சேமிப்பு {{savings}}: இதைச் செலுத்தப் போதாது. சேமிப்பு ஈடுசெய்வதைச் செலுத்தி, மீதியைத் தள்ளுபடி செய்யவும்.',
   'corrections.amount': 'தொகை (ரூ.)',
   'corrections.amountInvalid': '0 ஐ விட அதிகமான தொகையை உள்ளிடவும்',
   'corrections.month': 'திருத்தும் மாதம்',
@@ -2907,6 +2935,7 @@ export const ta: Record<TranslationKey, string> = {
   'records.reviewBills': 'இந்த மாத பில்களைச் சரிபார்க்கவும்',
   'audit.action.supplierOpeningBalances': 'தொடக்க மீதிகளை உள்ளிட்டார்',
   'audit.action.supplierCorrection': 'திருத்தத்தைப் பதிவுசெய்தார்',
+  'audit.action.inquiryEscalate': 'விசாரணையை மேலாளருக்கு அனுப்பினார்',
   'audit.action.billAdjust': 'ஒரு பில்லின் பிற கழிவுகளை மாற்றினார்',
   'records.import.title.printedBalances': 'அச்சிடப்பட்ட சீட்டு இருப்புகளை இறக்குமதி செய்',
   'records.import.intro.printedBalances': 'ஒரு வழங்குநருக்கு ஒரு வரிசை: மாதம், வழங்குநர் இலக்கம், தொழிற்சாலை அமைப்பின் சீட்டில் அச்சிடப்பட்ட Balance. ஒவ்வொன்றும் எங்கள் பில்லுடன் ஒப்பிடப்படும்.',

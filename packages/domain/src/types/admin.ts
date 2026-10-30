@@ -858,6 +858,10 @@ export interface AdminInquiry extends Omit<Inquiry, 'status' | 'reply'> {
   closedByName: string | null;
   /** Why it was closed unanswered. Mandatory on close, `null` otherwise. */
   closureNote: string | null;
+  /** Passed up to the manager, and why (§21.18). Absent on an older server. */
+  escalatedAt?: string | null;
+  escalatedByName?: string | null;
+  escalationNote?: string | null;
   ageHours: number;
   /**
    * The conversation, oldest first; the first message is the original question. Built
@@ -885,6 +889,16 @@ export interface InquiryQuery extends PageQuery {
 /** The answer the supplier reads. Minimum length enforced for the same reason a note's is. */
 export interface InquiryReplyBody {
   body: string;
+  /**
+   * The reply asks the supplier something: the inquiry goes to `awaitingSupplier`
+   * instead of `resolved`, and the supplier's next message opens it again (§21.18).
+   */
+  awaitSupplier?: boolean;
+}
+
+/** Passing an inquiry up to the manager: why, kept for the office (§21.18). */
+export interface EscalateInquiryBody {
+  note: string;
 }
 
 /** Closing unanswered takes a reason, because "closed" with no why is a lost message. */
@@ -2456,6 +2470,8 @@ export const ADMIN_ERROR_CODES = [
   'withdrawal-pending',
   /** A correction after a published bill (C5) that `correctionProblems` refuses: `details.problems`. */
   'correction-invalid',
+  /** Deciding a credit request above this role's tier (Q6): `details.needs` is `manager` or `owner`. */
+  'approval-above-limit',
   'unknown-supplier',
   'no-bill',
   'import-invalid',

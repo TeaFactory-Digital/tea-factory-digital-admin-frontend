@@ -1,4 +1,4 @@
-import type { AdminInquiry } from '@tfd/domain';
+import { isInquiryClosed, type AdminInquiry } from '@tfd/domain';
 
 /**
  * May the office still write on this?
@@ -8,5 +8,5 @@ import type { AdminInquiry } from '@tfd/domain';
  * the button would be offering a refusal.
  */
 export function isAnswerable(inquiry: AdminInquiry): boolean {
-  return inquiry.status === 'open' || (inquiry.status === 'resolved' && inquiry.threaded === true);
+  return !isInquiryClosed(inquiry.status) || (inquiry.status === 'resolved' && inquiry.threaded === true);
 }

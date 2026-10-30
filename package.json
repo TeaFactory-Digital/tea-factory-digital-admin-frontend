@@ -16,6 +16,7 @@
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx,css,md,json}\"",
     "test": "vitest run --root apps/admin",
+    "test:coverage": "COVERAGE=1 vitest run --root apps/admin --coverage --testTimeout=30000",
     "test:watch": "vitest --root apps/admin",
     "e2e": "playwright test --config apps/admin/playwright.config.ts",
     "domain:drift": "node scripts/domain-drift.mjs",

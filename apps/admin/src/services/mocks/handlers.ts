@@ -45,6 +45,8 @@ import {
   type OpeningBalancesRecord,
   correctionProblems,
   correctionTotal,
+  approvalTierFor,
+  canDecideCredit,
   type BillCorrection,
   type NewSupplierCorrection,
   type SupplierCorrection,
@@ -2318,6 +2320,7 @@ function postCorrection(supplier: AdminSupplier, body: NewSupplierCorrection, by
     id: `cor-${nextId()}`,
     supplierId: supplier.id,
     target: body.target,
+    kind: body.kind ?? 'correction',
     amount: round2(body.amount),
     correctsMonthKey: body.correctsMonthKey,
     reason: body.reason.trim(),
@@ -2351,6 +2354,24 @@ function postCorrection(supplier: AdminSupplier, body: NewSupplierCorrection, by
       ...state.suppliers[index]!,
       creditBalances: { ...balances, [body.target]: round2(balances[body.target] + created.amount) },
     };
+    // Paid from their own savings (Q7): the passbook goes down by what the debt did.
+    if (body.kind === 'fromSavings') {
+      const monthKey = colomboMonthKey(now);
+      const balance = round2((supplier.savingsBalance ?? savingsBalanceOf(supplier.id)) + created.amount);
+      state.savingsLedger.push({
+        id: `sav-${nextId()}`,
+        supplierId: supplier.id,
+        monthKey,
+        month: slipMonthLabel(monthKey),
+        amount: created.amount,
+        balance,
+        source: 'adjustment',
+        billId: null,
+        recordedAt: created.createdAt,
+        note: created.reason,
+      });
+      state.suppliers[index] = { ...state.suppliers[index]!, savingsBalance: balance };
+    }
   }
   return created;
 }
@@ -6397,7 +6418,9 @@ export const handlers: HttpHandler[] = [
   ...(['approve', 'reject'] as const).map((verb) =>
     http.post(`*/admin/credit-requests/:id/${verb}`, async ({ request, params }) => {
       await delay(LATENCY_MS);
-      const auth = authorize(request, 'creditRequests', 'approve');
+      // Reading gets in; who may decide is by amount (Q6, `canDecideCredit` below): the
+      // owner decides with `creditAboveThreshold`, and reads the queue only.
+      const auth = authorize(request, 'creditRequests', 'read');
       if ('response' in auth) return auth.response;
       const busy = recordsBusy();
       if (busy) return busy;
@@ -6409,6 +6432,16 @@ export const handlers: HttpHandler[] = [
 
       const gate = featureGate(request, CREDIT_FACILITY_FLAGS[before.facility]);
       if (gate) return gate;
+
+      const tier = approvalTierFor(before.amount, creditRulesOf(request)[before.facility]);
+      if (!canDecideCredit(auth.user.grants, tier)) {
+        return fail({
+          status: 403,
+          code: 'approval-above-limit',
+          message: `A request of this amount is decided by the ${tier}.`,
+          details: { needs: tier, amount: before.amount },
+        });
+      }
 
       const body = (await request.json()) as { note?: string; ceilingSeen?: number };
       const note = body.note?.trim() ?? '';
@@ -8089,8 +8122,10 @@ export const handlers: HttpHandler[] = [
     if (index < 0) return fail({ status: 404, code: '404', message: 'No such inquiry.' });
 
     const before = state.inquiries[index]!;
-    const { body } = (await request.json()) as { body?: string };
+    const { body, awaitSupplier } = (await request.json()) as { body?: string; awaitSupplier?: boolean };
     const text = body?.trim() ?? '';
+    // A reply that asks the supplier something waits for their answer (§21.18).
+    const nextStatus = awaitSupplier ? ('awaitingSupplier' as const) : ('resolved' as const);
 
     if (text.length < 20) {
       return fail({
@@ -8113,7 +8148,7 @@ export const handlers: HttpHandler[] = [
 
     const after: AdminInquiry = {
       ...before,
-      status: 'resolved',
+      status: nextStatus,
       reply: {
         body: text,
         repliedById: auth.user.id,
@@ -8130,7 +8165,7 @@ export const handlers: HttpHandler[] = [
       entity: 'inquiry',
       entityId: before.id,
       before: { status: before.status },
-      after: { status: 'resolved' },
+      after: { status: nextStatus },
     });
 
     /**
@@ -8152,7 +8187,49 @@ export const handlers: HttpHandler[] = [
     );
 
     void after;
-    return HttpResponse.json({ id: before.id, status: 'resolved' });
+    return HttpResponse.json({ id: before.id, status: nextStatus });
+  }),
+
+  /** Passing it up to the manager (§21.18): still open, with the reason kept for the office. */
+  http.post('*/admin/inquiries/:id/escalate', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const gate = featureGate(request, 'enableInquiry');
+    if (gate) return gate;
+    const auth = authorize(request, 'inquiries', 'approve');
+    if ('response' in auth) return auth.response;
+    const index = state.inquiries.findIndex((r) => r.id === params.id);
+    if (index < 0) return fail({ status: 404, code: '404', message: 'No such inquiry.' });
+    const before = state.inquiries[index]!;
+    const { note } = (await request.json()) as { note?: string };
+    const reason = note?.trim() ?? '';
+    if (reason.length < 10) {
+      return fail({ status: 422, code: 'note-required', message: 'Say why it goes to the manager.' });
+    }
+    if (isInquiryClosed(before.status)) {
+      return fail({
+        status: 409,
+        code: 'already-decided',
+        message: `This inquiry was already ${before.status}.`,
+        details: { repliedByName: before.reply?.repliedByName ?? null },
+      });
+    }
+    state.inquiries[index] = {
+      ...before,
+      status: 'escalated',
+      escalatedAt: new Date().toISOString(),
+      escalatedByName: auth.user.name,
+      escalationNote: reason,
+    };
+    record({
+      actorId: auth.user.id,
+      actorName: auth.user.name,
+      action: 'inquiry.escalate',
+      entity: 'inquiry',
+      entityId: before.id,
+      before: { status: before.status },
+      after: { status: 'escalated', note: reason },
+    });
+    return HttpResponse.json({ id: before.id, status: 'escalated' });
   }),
 
   /** Closing unanswered: a duplicate, a test message, something for the weighing point. */

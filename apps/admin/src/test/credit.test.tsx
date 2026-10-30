@@ -416,9 +416,9 @@ describe('M7 permissions (§12.1)', () => {
   });
 
   it('lets a clerk read the queue and refuses them the decision', async () => {
-    // `creditRequests: R` for the clerk, `A` for the manager alone. Easy to get wrong,
-    // because the clerk *approves* change requests and inquiries outright: credit is
-    // the queue they only prepare, because it is the one with money in it (BR-501).
+    // With no clerk limit set (Q6), every decision is the manager's: the clerk reads the
+    // queue and prepares it. Easy to get wrong, because the clerk *approves* change
+    // requests and inquiries outright: credit is the one with money in it (BR-501).
     await signInAs(CLERK);
     await expect(creditRepository.list()).resolves.toBeTruthy();
 
@@ -429,7 +429,7 @@ describe('M7 permissions (§12.1)', () => {
         { note: NOTE, ceilingSeen: eligibilityOf(request).ceiling },
         { amount: request.amount, available: eligibilityOf(request).available },
       ),
-    ).rejects.toMatchObject({ code: 'forbidden' });
+    ).rejects.toMatchObject({ code: 'approval-above-limit', details: { needs: 'manager' } });
   });
 });
 

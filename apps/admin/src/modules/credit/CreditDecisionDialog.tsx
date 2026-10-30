@@ -24,8 +24,9 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, X } from 'lucide-react';
 import type { AdminCreditRequest, CreditEligibility } from '@tfd/domain';
-import { isSelfApproval } from '@tfd/domain';
-import { useCan, useCurrentUser } from '@/auth/authStore';
+import { DEFAULT_CREDIT_RULES, approvalTierFor, canDecideCredit, isSelfApproval } from '@tfd/domain';
+import { useAuthStore, useCurrentUser } from '@/auth/authStore';
+import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { useNoteSuggestions } from '@/components/useNoteSuggestions';
 import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Button } from '@/components/ui/Button';
@@ -49,7 +50,12 @@ const SUGGESTIONS: Record<CreditVerb, readonly string[]> = {
 export function CreditDecisionActions({ request }: { request: AdminCreditRequest }) {
   const { t } = useTranslation();
   const user = useCurrentUser();
-  const mayDecide = useCan('creditRequests', 'approve');
+  const grants = useAuthStore((s) => s.grants);
+  const { config } = useRuntimeConfig();
+  // Who decides is by amount (Q6): the clerk up to the factory's limit, the manager, then
+  // the owner above the owner threshold. Without limits set, the manager as before.
+  const tier = approvalTierFor(request.amount, (config.creditRules ?? DEFAULT_CREDIT_RULES)[request.facility]);
+  const mayDecide = canDecideCredit(grants, tier);
   const [verb, setVerb] = useState<CreditVerb | null>(null);
 
   const selfRaised = isSelfApproval(user, request.createdById);
@@ -71,7 +77,7 @@ export function CreditDecisionActions({ request }: { request: AdminCreditRequest
   if (!mayDecide) {
     return (
       <Notice tone="info">
-        <span>{t('credit.managerDecides')}</span>
+        <span>{t(tier === 'owner' ? 'credit.ownerDecides' : 'credit.managerDecides')}</span>
       </Notice>
     );
   }

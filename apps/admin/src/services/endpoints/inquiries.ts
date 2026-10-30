@@ -15,6 +15,7 @@
 import type {
   AdminInquiry,
   CloseInquiryBody,
+  EscalateInquiryBody,
   InquiryQuery,
   InquiryReplyBody,
   InquiryStatus,
@@ -71,6 +72,12 @@ export const inquiryEndpoints = {
    * rather than a silent loss. Sending `closureNote` today is refused, which is the
    * behaviour worth having.
    */
+  /** Pass it up to the manager (§21.18): `escalated`, still open. `409 already-decided` once finished. */
+  escalate: (id: string, body: EscalateInquiryBody) =>
+    apiClient
+      .post<StatusAck<InquiryStatus>>(`/admin/inquiries/${id}/escalate`, body)
+      .then((response) => response.data),
+
   close: (id: string, body: CloseInquiryBody) =>
     apiClient
       .post<StatusAck<InquiryStatus>>(`/admin/inquiries/${id}/close`, body)

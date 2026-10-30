@@ -18,12 +18,14 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Eye, Send, X } from 'lucide-react';
+import { ArrowUpCircle, Eye, Send, X } from 'lucide-react';
 import type { AdminInquiry } from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
 import { useNoteSuggestions } from '@/components/useNoteSuggestions';
 import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Button } from '@/components/ui/Button';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { Label } from '@/components/ui/Label';
 import { Dialog } from '@/components/ui/Dialog';
 import { Field, Textarea } from '@/components/ui/Field';
 import { Notice } from '@/components/ui/states';
@@ -69,6 +71,9 @@ function ReplyComposer({ inquiry }: { inquiry: AdminInquiry }) {
   const toast = useToast();
   const [text, setText] = useState('');
   const [closing, setClosing] = useState(false);
+  const [escalating, setEscalating] = useState(false);
+  // The reply asks the supplier something: wait for their answer instead of resolving.
+  const [awaitSupplier, setAwaitSupplier] = useState(false);
   const answer = useAnswerInquiry(inquiry.id);
 
   const length = text.trim().length;
@@ -84,11 +89,12 @@ function ReplyComposer({ inquiry }: { inquiry: AdminInquiry }) {
 
   function send() {
     answer.mutate(
-      { verb: 'reply', body: { body: text.trim() } },
+      { verb: 'reply', body: { body: text.trim(), ...(awaitSupplier ? { awaitSupplier: true } : {}) } },
       {
         onSuccess: () => {
-          toast.success(t('inquiries.replied'));
+          toast.success(t(awaitSupplier ? 'inquiries.askedSupplier' : 'inquiries.replied'));
           setText('');
+          setAwaitSupplier(false);
         },
         // On failure the text stays: a reply is often several sentences.
       },
@@ -97,6 +103,18 @@ function ReplyComposer({ inquiry }: { inquiry: AdminInquiry }) {
 
   return (
     <div className="flex flex-col gap-sm">
+      {/* Passed up, and why: the reason the manager reads first. */}
+      {inquiry.status === 'escalated' ? (
+        <Notice tone="warning">
+          <span>
+            <strong className="font-semibold">{t('inquiries.escalatedTitle')}</strong>{' '}
+            {inquiry.escalationNote ?? ''}
+            {inquiry.escalatedByName ? ` (${inquiry.escalatedByName})` : ''}
+          </span>
+        </Notice>
+      ) : inquiry.status === 'awaitingSupplier' ? (
+        <Notice tone="info">{t('inquiries.awaitingSupplierNotice')}</Notice>
+      ) : null}
       <DecisionNoteField
         label={t('inquiries.replyLabel')}
         hint={t('inquiries.replyHelp')}
@@ -118,14 +136,30 @@ function ReplyComposer({ inquiry }: { inquiry: AdminInquiry }) {
         </Notice>
       ) : null}
 
+      <Label className="flex items-center gap-xs text-body-small text-text-primary">
+        <Checkbox checked={awaitSupplier} onCheckedChange={(checked) => setAwaitSupplier(checked === true)} />
+        {t('inquiries.awaitSupplierLabel')}
+      </Label>
+
       <div className="flex flex-wrap items-center justify-between gap-sm">
-        <Button
-          variant="ghost"
-          iconLeft={<X className="size-icon-sm" aria-hidden />}
-          onClick={() => setClosing(true)}
-        >
-          {t('inquiries.close')}
-        </Button>
+        <div className="flex flex-wrap items-center gap-xs">
+          <Button
+            variant="ghost"
+            iconLeft={<X className="size-icon-sm" aria-hidden />}
+            onClick={() => setClosing(true)}
+          >
+            {t('inquiries.close')}
+          </Button>
+          {inquiry.status !== 'escalated' && inquiry.status !== 'resolved' ? (
+            <Button
+              variant="ghost"
+              iconLeft={<ArrowUpCircle className="size-icon-sm" aria-hidden />}
+              onClick={() => setEscalating(true)}
+            >
+              {t('inquiries.escalate')}
+            </Button>
+          ) : null}
+        </div>
         <div className="flex items-center gap-md">
           <span
             aria-live="polite"
@@ -148,6 +182,7 @@ function ReplyComposer({ inquiry }: { inquiry: AdminInquiry }) {
       </div>
 
       {closing ? <CloseDialog inquiry={inquiry} onClose={() => setClosing(false)} /> : null}
+      {escalating ? <EscalateDialog inquiry={inquiry} onClose={() => setEscalating(false)} /> : null}
     </div>
   );
 }
@@ -210,6 +245,69 @@ function CloseDialog({ inquiry, onClose }: { inquiry: AdminInquiry; onClose: () 
             rows={3}
             value={text}
             placeholder={t('inquiries.closurePlaceholder')}
+            aria-describedby={describedBy}
+            invalid={invalid}
+            required={required}
+            onChange={(event) => setText(event.target.value)}
+          />
+        )}
+      </Field>
+    </Dialog>
+  );
+}
+
+/** Pass it up to the manager: a reason the office keeps, never sent to the supplier. */
+function EscalateDialog({ inquiry, onClose }: { inquiry: AdminInquiry; onClose: () => void }) {
+  const { t } = useTranslation();
+  const toast = useToast();
+  const [text, setText] = useState('');
+  const answer = useAnswerInquiry(inquiry.id);
+  const tooShort = text.trim().length < MIN_CLOSURE_NOTE;
+  const blocking = isBlockingError(answer.error);
+
+  function submit() {
+    answer.mutate(
+      { verb: 'escalate', body: { note: text.trim() } },
+      {
+        onSuccess: () => {
+          toast.success(t('inquiries.escalated'));
+          onClose();
+        },
+      },
+    );
+  }
+
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      title={t('inquiries.escalateTitle')}
+      description={t('inquiries.escalateBody')}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            {t('common.cancel')}
+          </Button>
+          <Button variant="primary" loading={answer.isPending} disabled={tooShort || blocking} onClick={submit}>
+            {t('inquiries.escalate')}
+          </Button>
+        </>
+      }
+    >
+      <Field
+        label={t('common.reason')}
+        required
+        hint={t('inquiries.escalateHint')}
+        error={answer.error && !blocking ? t(errorMessageKey(answer.error)) : undefined}
+      >
+        {({ id, describedBy, invalid, required }) => (
+          <Textarea
+            id={id}
+            autoFocus
+            rows={3}
+            value={text}
             aria-describedby={describedBy}
             invalid={invalid}
             required={required}

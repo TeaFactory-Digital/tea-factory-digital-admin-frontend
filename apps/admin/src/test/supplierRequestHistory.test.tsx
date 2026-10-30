@@ -93,10 +93,10 @@ describe('who sees the Requests tab', () => {
     expect(await screen.findByRole('tab', { name: /requests/i })).toBeInTheDocument();
   });
 
-  it('is not offered to a factory administrator, whom the queues refuse', async () => {
+  it('is offered to the factory administrator, who decides above the owner threshold (Q6)', async () => {
     await signInAs('factoryadmin@galabodatea.lk');
     renderDetail();
     expect(await screen.findByRole('tab', { name: /overview/i })).toBeInTheDocument();
-    expect(screen.queryByRole('tab', { name: /requests/i })).not.toBeInTheDocument();
+    expect(await screen.findByRole('tab', { name: /requests/i })).toBeInTheDocument();
   });
 });

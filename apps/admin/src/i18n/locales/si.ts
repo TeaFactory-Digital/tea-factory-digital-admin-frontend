@@ -714,6 +714,7 @@ export const si: Record<TranslationKey, string> = {
 
   'credit.managerDecides':
     'ණය ඉල්ලීම් තීරණය කරන්නේ කළමනාකරුවෙකි. ඔබට මෙය සහ එය පිටුපස ඇති සියල්ල කියවිය හැක, නමුත් අනුමැතිය දීම ඔබේ කාර්යයක් නොවේ.',
+  'credit.ownerDecides': 'මෙම මුදලේ ඉල්ලීමක් තීරණය කරන්නේ කර්මාන්තශාලා පරිපාලක, අයිතිකරු (සැකසුම්හි අයිතිකරු සීමාවට වැඩි).',
   'credit.fourEyes.body':
     'ඔබ මෙම ඉල්ලීම සැපයුම්කරු වෙනුවෙන් ඉදිරිපත් කළ බැවින්, එය තීරණය කළ යුත්තේ වෙනත් අයෙකි. ණය යනු මුදල් වන අතර, මුදල් සම්බන්ධ තීරණයකට දෙදෙනෙකුගේ පරීක්ෂාව අවශ්‍යයි.',
   'credit.overCeiling.title': 'ලබා ගත හැකි ප්‍රමාණයට වඩා වැඩි',
@@ -729,9 +730,13 @@ export const si: Record<TranslationKey, string> = {
   'inquiries.searchPlaceholder': 'සැපයුම්කරු, මාතෘකාව හෝ පණිවිඩය සොයන්න',
   'inquiries.column.subject': 'පණිවිඩය',
   'inquiries.status.open': 'විවෘත',
+  'inquiries.status.escalated': 'ඉහළට යැවූ',
+  'inquiries.status.awaitingSupplier': 'සැපයුම්කරුගේ පිළිතුර බලාපොරොත්තුවෙන්',
   'inquiries.status.resolved': 'පිළිතුරු දුන්නා',
   'inquiries.status.closed': 'වසා ඇත',
   'inquiries.filter.open': 'විවෘත',
+  'inquiries.filter.escalated': 'ඉහළට යැවූ',
+  'inquiries.filter.awaitingSupplier': 'සැපයුම්කරුගේ පිළිතුර බලාපොරොත්තුවෙන්',
   'inquiries.filter.resolved': 'පිළිතුරු දුන්',
   'inquiries.filter.closed': 'පිළිතුරු නොදී වසා ඇති',
   'inquiries.empty': 'බලා සිටින කිසිවක් නැත',
@@ -802,6 +807,15 @@ export const si: Record<TranslationKey, string> = {
   'inquiries.closureNoteHelp': 'මෙය දකින්නේ කාර්යාලය පමණි. අවම අකුරු 10ක්.',
   'inquiries.closurePlaceholder': 'උදා: 4 වැනි දින පිළිතුරු දුන් පණිවිඩයේ අනුපිටපතක්.',
   'inquiries.replied': 'පිළිතුරු දුන්නා. සැපයුම්කරු ඊළඟ වර යෙදුම විවෘත කරන විට එය දකියි.',
+  'inquiries.askedSupplier': 'යැව්වා. පණිවිඩය සැපයුම්කරුගේ පිළිතුර බලාපොරොත්තුවෙන් පවතී, ඔවුන් පිළිතුරු දුන් විට නැවත විවෘත වේ.',
+  'inquiries.awaitSupplierLabel': 'මෙය සැපයුම්කරුගෙන් යමක් අසයි: ඔවුන්ගේ පිළිතුර බලාපොරොත්තු වන්න',
+  'inquiries.awaitingSupplierNotice': 'කාර්යාලයේ ප්‍රශ්නයට සැපයුම්කරුගේ පිළිතුර බලාපොරොත්තුවෙන්. ඔවුන්ගේ පිළිතුර එය නැවත විවෘත කරයි; එතෙක් එය දින දෙකේ ඉලක්කයට ගණන් නොවේ.',
+  'inquiries.escalate': 'කළමනාකරුට යවන්න',
+  'inquiries.escalateTitle': 'කළමනාකරුට යවන්න',
+  'inquiries.escalateBody': 'කවුන්ටරයේදී විසඳිය නොහැකි පණිවිඩයක් සඳහා. එය ඔබේ හේතුව සමඟ "ඉහළට යැවූ" ලෙස විවෘතව පවතී; සැපයුම්කරුට තවමත් එය බලාපොරොත්තුවෙන් ලෙස පෙනේ.',
+  'inquiries.escalateHint': 'අවම වශයෙන් අකුරු 10ක්. කාර්යාලයට පමණක් පෙනේ.',
+  'inquiries.escalated': 'කළමනාකරුට යැව්වා.',
+  'inquiries.escalatedTitle': 'කළමනාකරුට යැවූ හේතුව:',
   'inquiries.closed': 'වසා ඇත. පිළිතුරක් යවා නැත.',
   'inquiries.alreadyAnswered.title': 'දැනටමත් පිළිතුරු දී ඇත',
   'inquiries.alreadyAnswered.body':
@@ -1908,6 +1922,7 @@ export const si: Record<TranslationKey, string> = {
   'error.cutOverMonth.different': 'මෙම කර්මාන්තශාලාවේ ආරම්භක ශේෂ {{month}} අනුවයි. වෙනත් මාසයක් භාවිත කිරීමට, සෑම සැපයුම්කරුවෙකුගේම ආරම්භක ශේෂ එම මාසයට නැවත සුරකින්න.',
   'error.withdrawalPending': 'මෙම සැපයුම්කරුට එම මාසයට පෙර ඉල්ලූ ඉතිරිකිරීම් ආපසු ගැනීමක් තවම බලාපොරොත්තුවෙන් පවතී. පළමුව එය නිරවුල් කරන්න හෝ අවලංගු කරන්න, ඉන්පසු ආරම්භක ඉතිරිකිරීම් ශේෂය ඇතුළත් කරන්න.',
   'error.correctionInvalid': 'නිවැරදි කිරීම ප්‍රතික්ෂේප විය: මුදල, මාසය (එයට ප්‍රකාශිත බිල්පතක් තිබිය යුතුය), හේතුව, සහ කිසිදු ශේෂයක් 0ට අඩු නොවන බව පරීක්ෂා කරන්න.',
+  'error.approvalAboveLimit': 'මෙම මුදලේ ඉල්ලීමක් වෙනත් අයෙකු තීරණය කරයි: කළමනාකරු, නැතහොත් අයිතිකරු සීමාවට වැඩි නම් අයිතිකරු.',
   'error.negative': '0 හෝ ඊට වැඩි මුදලක් ඇතුළත් කරන්න.',
   'error.unknownSupplier': 'මෙම අංකයෙන් සැපයුම්කරුවෙකු නැත.',
   'error.noBill': 'එම මාසයේ මෙම සැපයුම්කරුට බිල්පතක් නැත.',
@@ -2008,6 +2023,11 @@ export const si: Record<TranslationKey, string> = {
     '0 නම් සැපයුම්කරුගේ පළමු මාසයේ සිටම ලබා දේ. අත්තිකාරමකට එය නිවැරදියි, ණයකට නිවැරදි වන්නේ කලාතුරකිනි.',
   'config.creditRules.maxAmount': 'උපරිමය (රු.)',
   'config.creditRules.maxAmountHint': 'සීමාවක් නොමැති නම් හිස්ව තබන්න. ගුණ කිරීමෙන් පසුව යෙදේ.',
+  'config.creditRules.clerkApprovesUpTo': 'ලිපිකරුට අනුමත කළ හැකි උපරිමය (රු.)',
+  'config.creditRules.clerkApprovesUpToHint': 'මෙම මුදල දක්වා ඉල්ලීම් කවුන්ටරයේදී තීරණය වේ. හිස්: සෑම තීරණයක්ම කළමනාකරුගේ.',
+  'config.creditRules.ownerApprovesAbove': 'මීට වැඩි නම් අයිතිකරු අනුමත කරයි (රු.)',
+  'config.creditRules.ownerApprovesAboveHint': 'මෙම මුදලට වැඩි ඉල්ලීම් කර්මාන්තශාලා පරිපාලක, අයිතිකරු වෙත යයි. හිස්: සෑම මුදලක්ම කළමනාකරු තීරණය කරයි.',
+  'config.creditRules.approvalNotSet': 'භාවිත නොවේ',
   'config.creditRules.noCap': 'සීමාවක් නැත',
   'config.creditRules.installments': 'ආපසු ගෙවීමේ වාරික',
   'config.creditRules.installmentsHint':
@@ -2028,6 +2048,7 @@ export const si: Record<TranslationKey, string> = {
     'සීමාවක් ශුන්‍යයට වඩා වැඩි විය යුතුය, නැතහොත් හිස්ව තබන්න.',
   'config.impact.creditRule.bad-installments':
     'අවම වශයෙන් එක් වාරික කාලයක්වත් ලබා දෙන්න. මෙම පහසුකම නැවැත්වීමට, ඒ වෙනුවට "විශේෂාංග" යටතේ අක්‍රිය කරන්න.',
+  'config.impact.creditRule.bad-approval-limits': 'ලිපිකරුගේ සීමාව සහ අයිතිකරුගේ සීමාව 0 හෝ වැඩි විය යුතු අතර, ලිපිකරුගේ සීමාව අයිතිකරුගේ සීමාවට වඩා වැඩි නොවිය යුතුය',
 
   /* ───────── කර්මාන්තශාලා පද්ධතියෙන් අනුකරණය (v2) ───────── */
   'shell.syncStale':
@@ -2723,6 +2744,13 @@ export const si: Record<TranslationKey, string> = {
   'corrections.down.manure': 'ඔවුන් පොහොර සඳහා අඩුවෙන් ගෙවිය යුතුය',
   'corrections.up.savings': 'ඔවුන්ගේ ඉතිරිකිරීම් වැඩිය',
   'corrections.down.savings': 'ඔවුන්ගේ ඉතිරිකිරීම් අඩුය',
+  'corrections.kind': 'කෙසේද',
+  'corrections.kind.correction': 'වැරැද්දක් නිවැරදි කිරීම',
+  'corrections.kind.writeOff': 'කපා හැරීම: එය අය කරගත නොහැක',
+  'corrections.kind.fromSavings': 'ඔවුන්ගේ ඉතිරිකිරීම්වලින් ගෙවීම',
+  'corrections.effectWriteOff': 'ශේෂය දැන් අඩු වන අතර, කපා හැරීමක් ලෙස සටහන් වේ. සැපයුම නැවැත්වූ, ආපසු නොගෙවන සැපයුම්කරුවෙකු සඳහා.',
+  'corrections.effectFromSavings': 'ඔවුන්ගේ ඉතිරිකිරීම් මෙම මුදලින් අඩු වන අතර ශේෂයද එපමණින්ම අඩු වේ. ඔවුන්ගේ ඉතිරිකිරීම් පොතේ ඔබේ හේතුව සමඟ එය පෙනේ.',
+  'corrections.problem.savings-short': 'ඔවුන්ගේ ඉතිරිකිරීම් {{savings}}: මෙය ගෙවීමට ප්‍රමාණවත් නැත. ඉතිරිකිරීම්වලින් හැකි ප්‍රමාණය ගෙවා, ඉතිරිය කපා හරින්න.',
   'corrections.amount': 'මුදල (රු.)',
   'corrections.amountInvalid': '0ට වැඩි මුදලක් ඇතුළත් කරන්න',
   'corrections.month': 'නිවැරදි කරන මාසය',
@@ -2846,6 +2874,7 @@ export const si: Record<TranslationKey, string> = {
   'records.reviewBills': 'මෙම මාසයේ බිල්පත් පරීක්ෂා කරන්න',
   'audit.action.supplierOpeningBalances': 'ආරම්භක ශේෂ ඇතුළත් කළා',
   'audit.action.supplierCorrection': 'නිවැරදි කිරීමක් සටහන් කළා',
+  'audit.action.inquiryEscalate': 'විමසීමක් කළමනාකරුට යැව්වා',
   'audit.action.billAdjust': 'බිල්පතක වෙනත් අඩුකිරීම් වෙනස් කළා',
   'records.import.title.printedBalances': 'මුද්‍රිත පත්‍රිකා ශේෂ ආනයනය කරන්න',
   'records.import.intro.printedBalances': 'එක් සැපයුම්කරුවෙකුට එක් පේළියක්: මාසය, සැපයුම්කරු අංකය සහ කර්මාන්තශාලා පද්ධතියේ පත්‍රිකාවේ මුද්‍රණය වූ ශේෂය (Balance). එක් එක් අගය අපේ බිල්පත සමඟ සසඳයි.',

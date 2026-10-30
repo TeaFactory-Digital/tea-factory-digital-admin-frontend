@@ -415,6 +415,12 @@ export interface Inquiry {
   repliedAt?: string | null;
   /** The whole conversation, oldest first, from an API that keeps one (BACKEND-TODO #25). */
   messages?: InquiryMessage[];
+  /**
+   * The office asked the supplier something and is waiting for their answer (§21.18,
+   * the console's `awaitingSupplier`). `status` stays `pending`; the app says "waiting
+   * for your reply". Absent on an older server.
+   */
+  awaitingReply?: boolean;
 }
 
 /** One message in an inquiry's conversation, oldest first (BACKEND-TODO #25). */

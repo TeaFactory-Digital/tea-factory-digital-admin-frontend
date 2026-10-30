@@ -67,6 +67,15 @@ describe('the rules', () => {
     expect(correctionProblems({ ...ok, target: 'savings', amount: -1200 }, facts)).toEqual(['below-zero']);
   });
 
+  it('writes off or pays from savings only a loan or fertilizer balance coming down', () => {
+    const loanDown = { ...ok, target: 'loan' as const, amount: -1000 };
+    expect(correctionProblems({ ...loanDown, kind: 'writeOff' }, facts)).toEqual([]);
+    expect(correctionProblems({ ...loanDown, kind: 'fromSavings' }, facts)).toEqual([]);
+    expect(correctionProblems({ ...loanDown, kind: 'fromSavings', amount: -1500 }, facts)).toEqual(['savings-short']);
+    expect(correctionProblems({ ...ok, kind: 'writeOff' }, facts)).toEqual(['kind-not-allowed']);
+    expect(correctionProblems({ ...loanDown, amount: 500, kind: 'writeOff' }, facts)).toEqual(['kind-not-allowed']);
+  });
+
   it('leaves a payment to the factory system where the bills are imported', () => {
     expect(correctionProblems(ok, { ...facts, billSource: 'imported' })).toEqual(['payment-bills-imported']);
   });
@@ -109,6 +118,30 @@ describe('posting one', () => {
       factoryRecordRepository.createCorrection(supplierId, { ...body, amount: -1_000_000_000, reason: 'More than the whole loan' }),
     ).rejects.toMatchObject({ code: 'correction-invalid', details: { problems: ['below-zero'] } });
     expect((await factoryRecordRepository.corrections(supplierId)).items.map((one) => one.amount)).toEqual([-500, 500]);
+  }, 20_000);
+
+  it('pays a loan from the supplier\'s savings: both come down by the same amount', async () => {
+    await setSyncOff();
+    const { supplierId, monthKey } = await publishedSupplier();
+    await signInAs(MANAGER);
+    // A loan to pay first, then 300 of it from savings.
+    await factoryRecordRepository.createCorrection(supplierId, {
+      target: 'loan', amount: 300, correctsMonthKey: monthKey, reason: 'Loan owed for the test, entered first',
+    });
+    await factoryRecordRepository.createCorrection(supplierId, {
+      target: 'savings', amount: 300, correctsMonthKey: monthKey, reason: 'Savings held for the test, entered first',
+    });
+    const paid = await factoryRecordRepository.createCorrection(supplierId, {
+      target: 'loan', kind: 'fromSavings', amount: -300, correctsMonthKey: monthKey,
+      reason: 'Stopped supplying; loan paid from savings',
+    });
+    expect(paid).toMatchObject({ kind: 'fromSavings', amount: -300, status: 'applied' });
+    await expect(
+      factoryRecordRepository.createCorrection(supplierId, {
+        target: 'loan', kind: 'fromSavings', amount: -1_000_000_000, correctsMonthKey: monthKey,
+        reason: 'More than the savings hold',
+      }),
+    ).rejects.toMatchObject({ code: 'correction-invalid' });
   }, 20_000);
 
   it('puts a payment correction on the next bill, and marks it applied when that bill is published', async () => {

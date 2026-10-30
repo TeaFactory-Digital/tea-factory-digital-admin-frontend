@@ -15,6 +15,14 @@
  * Only the manager (`billing: A`). A correction is never deleted: a wrong one is corrected by
  * another, the other way. Every one is in the audit trail.
  *
+ * **A debt that will not be recovered** (Q7, decided 30 October 2026) goes through the same
+ * door, for a loan or fertilizer balance, two ways, both the manager's:
+ *
+ *  - `writeOff`: the balance is written off (a `writeOff` entry in the credit ledger),
+ *    for a supplier who has stopped supplying and will not repay;
+ *  - `fromSavings`: the balance is paid from the supplier's own savings (the savings go
+ *    down and the debt by the same amount), which the factory may do before writing off.
+ *
  * Not for the factory's own system's figures: where the bills are **imported**, a payment
  * correction belongs in that system and arrives on its next slip (`payment-bills-imported`),
  * and a balance corrected here is put back to the slip's figure by the next import unless
@@ -40,8 +48,17 @@ export const BALANCE_CORRECTION_TARGETS: readonly CorrectionTarget[] = ['loan', 
  *  - `loan`, `manure`: `+` they owe more, `-` they owe less;
  *  - `savings`: `+` they hold more, `-` they hold less.
  */
+/** How a loan or fertilizer balance comes down: a mistake, a write-off, or from savings. */
+export const CORRECTION_KINDS = ['correction', 'writeOff', 'fromSavings'] as const;
+export type CorrectionKind = (typeof CORRECTION_KINDS)[number];
+
 export interface NewSupplierCorrection {
   target: CorrectionTarget;
+  /**
+   * `correction` (the default) puts a mistake right. `writeOff` and `fromSavings` only
+   * reduce a `loan` or `manure` balance (`amount` below 0).
+   */
+  kind?: CorrectionKind;
   amount: number;
   /** The published month the mistake was on, `YYYY-MM`. */
   correctsMonthKey: string;
@@ -80,7 +97,11 @@ export type CorrectionProblem =
   | 'reason-short'
   | 'month-not-published'
   | 'below-zero'
-  | 'payment-bills-imported';
+  | 'payment-bills-imported'
+  /** `writeOff` or `fromSavings` on something other than a loan or fertilizer balance, or upwards. */
+  | 'kind-not-allowed'
+  /** `fromSavings` for more than the supplier holds. */
+  | 'savings-short';
 
 export interface CorrectionFacts {
   /** Months with a published bill for the supplier. */
@@ -107,6 +128,14 @@ export function correctionProblems(input: NewSupplierCorrection, facts: Correcti
     if (facts.billSource === 'imported') problems.push('payment-bills-imported');
   } else if (Number.isFinite(amount) && round2(facts.balances[input.target] + amount) < 0) {
     problems.push('below-zero');
+  }
+  const kind = input.kind ?? 'correction';
+  if (kind !== 'correction') {
+    if ((input.target !== 'loan' && input.target !== 'manure') || !(amount < 0)) {
+      problems.push('kind-not-allowed');
+    } else if (kind === 'fromSavings' && round2(facts.balances.savings + amount) < 0) {
+      problems.push('savings-short');
+    }
   }
   return problems;
 }

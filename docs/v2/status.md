@@ -13,7 +13,7 @@ the next slice.
 | | |
 | --- | --- |
 | **Console** | Every module in [Modules](#modules) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
-| **Backend** | `tea-factory-digital-backend`, shipped up to `5b58f81`; staging is not yet running `068faf3` or later (BACKEND-TODO #50, being deployed). BACKEND-TODO **#1 to #44, #46, #47, #49 and #51 to #53 are done**, and **#54** is built with one more copy to make; **#45** (factory records without the factory system) is partly done (the bills import with the month reads and publish, late bills included, and opening balances, `5b58f81`, are live; leaf and months are next); **#48**, **#50**, **#55**, **#56** (savings interest), **#57** (corrections) **#58** (each day's collection point) and **#59** (records kept five years) are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
+| **Backend** | `tea-factory-digital-backend`, shipped up to `5b58f81`; staging is not yet running `068faf3` or later (BACKEND-TODO #50, being deployed). BACKEND-TODO **#1 to #44, #46, #47, #49 and #51 to #53 are done**, and **#54** is built with one more copy to make; **#45** (factory records without the factory system) is partly done (the bills import with the month reads and publish, late bills included, and opening balances, `5b58f81`, are live; leaf and months are next); **#48**, **#50**, **#55**, **#56** (savings interest), **#57** (corrections) **#58** (each day's collection point), **#59** (records kept five years), **#60** (inquiry states), **#61** (approval tiers) and **#62** (write-off and pay from savings) are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
 | **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **588 tests in 80 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
@@ -753,29 +753,10 @@ Worst first: correctness, then plumbing, then polish.
    tab (a balance moves at once, a payment lands on the next bill as a "Correction" line with
    the reason). Hidden by `CORRECTIONS_ON_SERVER` until the backend ships the endpoints.
 
-7. **The Sinhala and Tamil labels still need a native speaker's reading in place.** On
-   26 October 2026 every label was read against the English and 665 were corrected (323
-   Sinhala, 342 Tamil). Among them:
-   - meanings turned round: Tamil "take down" read as delete, and "Undo changes" as
-     "redo"; Sinhala "against" read as "opposed to", and "settled" as "balanced";
-   - English left in about 100 newer Sinhala labels;
-   - one word per term, the same as the app's where the app has one: Sinhala දළු,
-     ඇතුළු වන්න, ඉතිරිකිරීම්, විමසීම්, බලාපොරොත්තුවෙන්; Tamil வழங்குநர் (not
-     three names for the supplier), கொழுந்து, தேயிலைப் பொதி, திகதி, and the Sri
-     Lankan month spellings.
-
-   `stringTables.test.ts` now fails on a letter of the other script, a broken vowel
-   sign, a renamed placeholder, untranslated English or an em dash. *To close:* somebody
-   in the office reads the si and ta screens in place, before the console is
-   demonstrated in either language. The fixtures and default pages (mocks.md) were not
-   part of the review. Four words were settled on 28 October 2026, each one word across the
-   console, the app, its PDF and the website: Sinhala ආනයනය / අපනයනය for import and
-   export; Sinhala ඉදිරියට ගෙන යන ණය for Next Month Deb (beside ඉදිරියට ගෙන යන ශේෂය and
-   පෙර ණය; the app's screen and PDF had said it two other ways); Tamil கொழுந்து for green
-   leaf (the account is கொழுந்துக் கணக்கு; on 29 October the bare இலை, "leaf", was replaced
-   too, in the app, the website and the default pages); and Tamil பொதி for a tea packet, the Sri
-   Lankan word (தேயிலைப் பொதிகள், no longer பாக்கெட் in the app).
-
+7. **The Sinhala and Tamil labels: signed off.** The factory confirmed on 30 October 2026
+   that the native-speaker reading is done (Q39). `stringTables.test.ts` still fails on a
+   letter of the other script, a broken vowel sign, a renamed placeholder, untranslated
+   English or an em dash, so a new label cannot slip back. Kept so the history is found.
 8. **No evidence attachment on a change request, by decision** (29 October 2026). A
    bank-detail change is approved on the details alone, and inquiries stay text only.
    The Evidence card on the change-request screen stays hidden while `attachments` is
@@ -804,12 +785,34 @@ Numbering follows `status.md` §21 in the mobile repo.
 
 | § | Question | Effect today |
 | --- | --- | --- |
-| 21.6 | **Approval thresholds**: above what amount must someone above the manager approve? | `canApproveAmount(…, null)` treats "not configured" as "the base capability suffices", so the answer becomes configuration |
-| 21.18 | **Inquiry statuses**: is Resolved/Closed the right pair? | Built with both; `INQUIRY_STATUSES` is data, so a third is a row |
 | 21.24 | **Notifications**: should a bill publication push to every supplier, and is `content: approve` the right gate on free text? | Built as configuration (one switch per category); the factory has not confirmed the settings |
 | - | **Gross or net leaf?** Does the weighing point record one figure, or a gross weight and a sack/water deduction? | One net `kgs` per weighing in the console and on the wire. The backend already books `grossKg` + `deductionKg` (0) and derives `kgs`, so a two-figure answer is no migration on the server; it would still change `Delivery` in every client that reads it |
 | - | **What is a plausible weighing?** | The leaf grid questions a figure over 150 kg that is also 3× the session's mean (`OUTLIER_KG_MULTIPLE`, `OUTLIER_KG_FLOOR_KG`). A guess until the factory gives a number |
 | - | **How far back may leaf be entered?** | Any date in an unpublished month; the publish lock is the only guard |
+
+### Answered by the factory, 30 October 2026
+
+| § | Answer | Where it is |
+| --- | --- | --- |
+| 21.5 | One waiting request per facility, as built | `409 request-pending` (BR-312) |
+| 21.6 | A clerk approves up to a limit, the manager in between, the owner (factory administrator) above a threshold; per facility, set in Configuration → Credit rules | `approvalTierFor`, `canDecideCredit`; `creditAboveThreshold` moved from the manager to the factory administrator; BACKEND-TODO #61 |
+| 21.7 | The manager writes off a loan or fertilizer balance, or pays it from the supplier's savings | Corrections, kinds `writeOff` and `fromSavings`; BACKEND-TODO #62 |
+| 21.12 | Records kept five years; then a closed supplier's personal details are removed and the figures kept | `retention.ts`; BACKEND-TODO #59 |
+| 21.13 | No point picker for a supplier at several points | Each day's point shown only (#58) |
+| 21.14 | Each estate its own supplier number; no joint accounts; on a death or a transfer the number stays with its records five years and is never reused | `supplier-code-taken` already refuses any number on the roll |
+| 21.17 | No payout files: the factory's own system pays | Not built, by decision |
+| 21.18 | Two more inquiry states: `escalated`, `awaitingSupplier` | `INQUIRY_STATUSES`, the Escalate action, "waiting for the supplier" on a reply; BACKEND-TODO #60 |
+| 21.19 | The legal footer stays configuration, per factory | Configuration → Factory |
+| 21.20 | An advance decided within 24 hours, an inquiry answered within two days | `QUEUE_SLA_HOURS` (`inquiries: 48`) |
+| 21.22 | The supplier chooses the app's language; the first password is handed over at the office or the collection point | Nothing to build |
+| 21.25 | Between factories: credit rules, deductions and colours vary | Configuration already holds all three |
+| 21.31 | One universal-link domain per factory | The app's client config |
+| 21.35 | No over-the-air updates for now | Not built, by decision |
+| 21.36 | A 50 MB limit on the phone's saved data | The app's cache |
+| 21.37, 21.41 | No encryption of the saved data, no root detection, no screenshot block (suppliers share bill screenshots) | Not built, by decision |
+| 21.38 | Dependency licences: approved for commercial use | - |
+| 21.39 | Sinhala and Tamil: the native-speaker sign-off is done | Gap 7 |
+| 21.40 | 70% test coverage for the logic, in the console and the app | `npm run test:coverage` in both, in CI |
 
 ---
 

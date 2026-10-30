@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { AdminInquiry, InquiryStatus } from '@tfd/domain';
-import { QUEUE_SLA_HOURS } from '@tfd/domain';
+import { QUEUE_SLA_HOURS, inquiryCountsTowardsSla } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { GRID_CARD } from '@/components/ui/layout';
@@ -31,7 +31,13 @@ import { useDebounced } from '@/lib/useDebounced';
 import { formatAge } from '@/lib/format';
 import { useInquiries } from './hooks';
 
-const STATUS_TONES = { open: 'warning', resolved: 'success', closed: 'neutral' } as const;
+const STATUS_TONES = {
+  open: 'warning',
+  escalated: 'error',
+  awaitingSupplier: 'info',
+  resolved: 'success',
+  closed: 'neutral',
+} as const satisfies Record<InquiryStatus, string>;
 
 export function InquiriesScreen() {
   const { t } = useTranslation();
@@ -126,15 +132,21 @@ export function InquiriesScreen() {
         cell: (info) => {
           const hours = info.getValue<number>();
           const row = info.row.original;
-          if (row.status !== 'open') {
+          // The age only where the office is the one keeping the supplier waiting.
+          if (!inquiryCountsTowardsSla(row.status)) {
             return (
               <Badge tone={STATUS_TONES[row.status]}>{t(`inquiries.status.${row.status}`)}</Badge>
             );
           }
           return (
-            <Badge tone={hours > QUEUE_SLA_HOURS.inquiries ? 'error' : 'neutral'}>
-              {formatAge(hours)}
-            </Badge>
+            <span className="flex flex-wrap items-center gap-xs">
+              <Badge tone={hours > QUEUE_SLA_HOURS.inquiries ? 'error' : 'neutral'}>
+                {formatAge(hours)}
+              </Badge>
+              {row.status === 'escalated' ? (
+                <Badge tone={STATUS_TONES.escalated}>{t('inquiries.status.escalated')}</Badge>
+              ) : null}
+            </span>
           );
         },
       },
@@ -182,6 +194,8 @@ export function InquiriesScreen() {
             fullWidth={false}
           >
             <option value="open">{t('inquiries.filter.open')}</option>
+            <option value="escalated">{t('inquiries.filter.escalated')}</option>
+            <option value="awaitingSupplier">{t('inquiries.filter.awaitingSupplier')}</option>
             <option value="resolved">{t('inquiries.filter.resolved')}</option>
             <option value="closed">{t('inquiries.filter.closed')}</option>
           </Select>

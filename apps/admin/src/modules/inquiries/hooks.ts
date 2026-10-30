@@ -10,7 +10,7 @@
 
 import { useCan } from '@/auth/authStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CloseInquiryBody, InquiryQuery, InquiryReplyBody } from '@tfd/domain';
+import type { CloseInquiryBody, EscalateInquiryBody, InquiryQuery, InquiryReplyBody } from '@tfd/domain';
 import { inquiryRepository } from '@/services/repositories/inquiryRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { qk } from '@/query/queryKeys';
@@ -51,11 +51,15 @@ export function useAnswerInquiry(id: string) {
   return useMutation({
     mutationFn: (
       variables:
-        { verb: 'reply'; body: InquiryReplyBody } | { verb: 'close'; body: CloseInquiryBody },
+        | { verb: 'reply'; body: InquiryReplyBody }
+        | { verb: 'close'; body: CloseInquiryBody }
+        | { verb: 'escalate'; body: EscalateInquiryBody },
     ) =>
       variables.verb === 'reply'
         ? inquiryRepository.reply(id, variables.body)
-        : inquiryRepository.close(id, variables.body),
+        : variables.verb === 'escalate'
+          ? inquiryRepository.escalate(id, variables.body)
+          : inquiryRepository.close(id, variables.body),
 
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: qk.inquiries.detail(id) });

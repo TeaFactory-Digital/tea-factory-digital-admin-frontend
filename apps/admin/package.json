@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --build --force",
     "test": "vitest run",
+    "test:coverage": "COVERAGE=1 vitest run --coverage --testTimeout=30000",
     "test:watch": "vitest",
     "dev:staging": "vite --mode staging"
   },
@@ -53,6 +54,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.1.0",
+    "@vitest/coverage-v8": "4.1.12",
     "jsdom": "^27.0.0",
     "msw": "^2.11.6",
     "tailwindcss": "^4.1.16",

@@ -217,20 +217,23 @@ export const CREDIT_FACILITY_FLAGS = {
  * unanswerable, which is the one number §19.3's channel-shift KPI needs.
  *
  * Statuses are **data**, so an answer that adds `escalated` adds a row here rather
- * than a migration.
+ * than a migration, and it did (30 October 2026, §21.18): two more states that are still
+ * open, `escalated` (passed up to the manager) and `awaitingSupplier` (the office asked
+ * the supplier something and waits for the answer; the supplier's reply opens it again).
  */
-export const INQUIRY_STATUSES = ['open', 'resolved', 'closed'] as const;
+export const INQUIRY_STATUSES = ['open', 'escalated', 'awaitingSupplier', 'resolved', 'closed'] as const;
 
 export type InquiryStatus = (typeof INQUIRY_STATUSES)[number];
 
 /**
  * The §14.4 service-level target per queue, in hours.
  *
- * Only the change-request figure is specified (three working days), and the other
- * three are **this console's guess**, sized by how much a supplier is waiting on:
- * an advance is cash against leaf already in the shed, so a day is already slow; an
- * inquiry is a question, so a working day is the promise; a loan is underwritten
- * against six months of history and nobody expects it the same afternoon.
+ * **Agreed by the factory on 30 October 2026** for the two a supplier waits on most: an
+ * advance is decided within **24 hours** (cash against leaf already in the shed), and an
+ * inquiry is answered within **two days**. The change-request figure is §14.4's (three
+ * working days); loans, fertilizer and tea packets stay at this console's defaults, sized
+ * the same way: a loan is underwritten against six months of history, and fertilizer and
+ * packets are stock leaving a store.
  *
  * Offline defaults, like every other policy number here. Once `GET /config` serves
  * them the console must display the served figure: a queue colouring red at a
@@ -247,7 +250,8 @@ export const QUEUE_SLA_HOURS = {
    * storekeeper to have it ready, not on a decision about their creditworthiness.
    */
   teaPacketRequests: 72,
-  inquiries: 24,
+  /** Two days: the factory's answer (§21.20). */
+  inquiries: 48,
 } as const;
 
 /* ─────────────────────── M13 Notifications ─────────────────────── */

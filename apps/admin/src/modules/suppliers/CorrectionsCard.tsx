@@ -13,6 +13,7 @@ import { Plus } from 'lucide-react';
 import {
   CORRECTION_TARGETS,
   correctionProblems,
+  type CorrectionKind,
   round2,
   type CorrectionTarget,
   type SupplierCorrection,
@@ -28,7 +29,7 @@ import { Select } from '@/components/ui/Select';
 import { ErrorState, Spinner } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
-import { formatDate, formatMonthKey, formatSignedAmount } from '@/lib/format';
+import { formatDate, formatMoney, formatMonthKey, formatSignedAmount } from '@/lib/format';
 import { useCreateCorrection, useSupplierCorrections } from '@/modules/records/hooks';
 
 export interface CorrectionBalances {
@@ -93,7 +94,9 @@ function CorrectionRow({ item }: { item: SupplierCorrection }) {
     <li className="flex flex-col gap-xxs py-sm">
       <div className="flex flex-wrap items-center justify-between gap-sm">
         <span className="text-body-small font-medium text-text-primary">
-          {t(`corrections.target.${item.target}`)} · {t('corrections.forMonth', { month: formatMonthKey(item.correctsMonthKey) })}
+          {t(`corrections.target.${item.target}`)}
+          {item.kind && item.kind !== 'correction' ? ` · ${t(`corrections.kind.${item.kind}`)}` : ''} ·{' '}
+          {t('corrections.forMonth', { month: formatMonthKey(item.correctsMonthKey) })}
         </span>
         <span className="numeric text-body-small font-medium text-text-primary">{formatSignedAmount(item.amount)}</span>
       </div>
@@ -130,6 +133,10 @@ function CorrectionDialog({
   const targets = CORRECTION_TARGETS.filter((target) => target !== 'payment' || data.billSource === 'calculated');
   const [target, setTarget] = useState<CorrectionTarget>(targets[0]!);
   const [direction, setDirection] = useState<'up' | 'down'>('up');
+  // How a loan or fertilizer balance comes down (Q7): a mistake, written off, or from savings.
+  const [kind, setKind] = useState<CorrectionKind>('correction');
+  const offersKinds = (target === 'loan' || target === 'manure') && direction === 'down';
+  const effectiveKind: CorrectionKind = offersKinds ? kind : 'correction';
   const [amount, setAmount] = useState('');
   const [month, setMonth] = useState(data.publishedMonthKeys[0] ?? '');
   const [reason, setReason] = useState('');
@@ -137,7 +144,13 @@ function CorrectionDialog({
   const value = Number(amount);
   const amountOk = amount.trim() !== '' && Number.isFinite(value) && value > 0;
   const signed = amountOk ? round2(direction === 'up' ? value : -value) : 0;
-  const input = { target, amount: signed, correctsMonthKey: month, reason };
+  const input = {
+    target,
+    amount: signed,
+    correctsMonthKey: month,
+    reason,
+    ...(effectiveKind !== 'correction' ? { kind: effectiveKind } : {}),
+  };
   const problems = correctionProblems(input, {
     publishedMonthKeys: data.publishedMonthKeys,
     balances,
@@ -195,6 +208,17 @@ function CorrectionDialog({
             </Select>
           )}
         </Field>
+        {offersKinds ? (
+          <Field label={t('corrections.kind')} required className="sm:col-span-2">
+            {({ id }) => (
+              <Select id={id} value={kind} onChange={(event) => setKind(event.target.value as CorrectionKind)}>
+                <option value="correction">{t('corrections.kind.correction')}</option>
+                <option value="writeOff">{t('corrections.kind.writeOff')}</option>
+                <option value="fromSavings">{t('corrections.kind.fromSavings')}</option>
+              </Select>
+            )}
+          </Field>
+        ) : null}
         <Field
           label={t('corrections.amount')}
           required
@@ -235,8 +259,21 @@ function CorrectionDialog({
       </div>
 
       <p className="mt-md text-body-small text-text-secondary">
-        {t(target === 'payment' ? 'corrections.effectPayment' : 'corrections.effectBalance')}
+        {t(
+          target === 'payment'
+            ? 'corrections.effectPayment'
+            : effectiveKind === 'writeOff'
+              ? 'corrections.effectWriteOff'
+              : effectiveKind === 'fromSavings'
+                ? 'corrections.effectFromSavings'
+                : 'corrections.effectBalance',
+        )}
       </p>
+      {problems.includes('savings-short') ? (
+        <p role="alert" className="mt-sm text-body-small text-error">
+          {t('corrections.problem.savings-short', { savings: formatMoney(balances.savings) })}
+        </p>
+      ) : null}
       {problems.includes('below-zero') ? (
         <p role="alert" className="mt-sm text-body-small text-error">
           {t('corrections.problem.below-zero')}

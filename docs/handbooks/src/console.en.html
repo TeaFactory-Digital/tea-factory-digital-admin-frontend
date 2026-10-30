@@ -345,6 +345,7 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
   <li><strong>A payment</strong> goes on the supplier's next bill as a line "Correction (month)" with the reason under it: added when they were paid too little, taken off when they were paid too much. It is added after the balance, so the nine deductions still add up. If it takes more than the month pays, the rest is next month's debt.</li>
   <li>It cannot be deleted. A wrong correction is put right with another one, the other way. Every one is in the audit trail.</li>
   <li>Where bills are imported, a payment is corrected in the factory's own system. A balance corrected here goes back to the slip's figure at the next import unless the factory's system makes the same correction.</li>
+  <li><strong>A debt that will not be recovered:</strong> for a loan or fertilizer balance coming down, choose how: a mistake put right, <strong>written off</strong> (the supplier has stopped supplying and will not repay), or <strong>paid from their savings</strong> (the savings and the debt come down by the same amount; not more than the savings hold).</li>
 </ul>
 <div class="box example"><span class="label">Example</span>
 <p>July: 3.6 kg weighed on 14 July was missed, Rs. 250 a kg, so the supplier was paid Rs. 900 too little. The manager posts "Payment, paid too little, 900, July 2026". The August bill shows "Correction (July 2026) +900.00" with the reason, and pays Rs. 900 more.</p>
@@ -408,6 +409,9 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
   <tr><td>Blocked by</td><td>An advance not yet deducted, or any loan still owed</td><td>Any loan still owed</td><td>A balance already at the limit</td></tr>
   <tr><td>Repaid</td><td>In full on the same month's bill</td><td>Over 3 to 12 bills, the supplier's choice</td><td>Over 1 to 6 bills, the supplier's choice</td></tr>
 </table>
+<div class="box rule"><span class="label">Who approves (Configuration → Credit rules)</span>
+<p>Per kind of credit, two optional amounts: a <strong>clerk</strong> may approve up to the first; the <strong>manager</strong> approves above it; above the second, the <strong>factory administrator (the owner)</strong> must. Left empty, the manager decides every amount, as before. Example: clerk up to Rs. 5,000, owner above Rs. 100,000.</p>
+</div>
 <div class="box rule"><span class="label">Rules for every credit request</span>
 <ul>
   <li><strong>Settled months only.</strong> The month in progress has no rate, so it never prices a limit, counts as history or enters an average. "Income" means the bill's gross amount.</li>
@@ -607,6 +611,7 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
   <li>Each inquiry is a conversation. <strong>Reply</strong> writes something the supplier reads; <strong>close</strong> files it. Once closed, the supplier cannot write more in it.</li>
   <li>Answering is the clerk's job; the manager can read the queue.</li>
   <li>Suggested replies come from Configuration → Common notes.</li>
+  <li>Two more states: <strong>Escalated</strong> (passed to the manager with a reason) and <strong>Waiting for the supplier</strong> (the reply asks them something; their answer opens it again). The supplier sees both as waiting, and the second says "waiting for your reply". Targets: an inquiry answered within <strong>two days</strong>, an advance decided within <strong>24 hours</strong>; a message waiting on the supplier does not count.</li>
 </ul>
 <h2>19.2 News</h2>
 <ul>

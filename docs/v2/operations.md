@@ -24,7 +24,8 @@ From the workspace root:
 | `npm run preview`       | Serves the built bundle                                                                    |
 | `npm run typecheck`     | `tsc --build --force` across the projects                                                  |
 | `npm run lint`          | ESLint, including the white-label and layering rules                                       |
-| `npm run test`          | Vitest against the MSW fixtures: 588 tests in 80 files (28 October 2026)                   |
+| `npm run test`          | Vitest against the MSW fixtures: 631 tests in 87 files (30 October 2026)                   |
+| `npm run test:coverage` | The same with coverage: the logic (packages, `services`, `lib`) at 70% or more on all four measures (84, 76, 85, 87 on 30 October 2026); CI runs it |
 | `npm run test:watch`    | Vitest in watch mode                                                                       |
 | `npm run e2e`           | Playwright against its own dev server on port 5274, API answered by `e2e/fixtures.ts`. Needs `npx playwright install chromium` once; see Testing |
 | `npm run format`        | Prettier                                                                                   |
@@ -238,7 +239,7 @@ request, on Node 22.12 (the `engines` floor; 22.11 cannot `require()` the ES-onl
 packages Vite 7 and jsdom now pull in, so the unit tests and e2e failed there). Three jobs:
 
 - **`verify`**, five steps in this order, each failing faster than the next:
-  `npm ci`, `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`.
+  `npm ci`, `npm run typecheck`, `npm run lint`, `npm run test:coverage` (fails under 70%), `npm run build`.
 - **`e2e`**: `npx playwright install --with-deps chromium`, then `npm run e2e`. The
   Playwright config sets `forbidOnly` and one retry under `CI` and reports in GitHub
   format; on a failure the traces are uploaded (`playwright-traces`, kept 7 days).

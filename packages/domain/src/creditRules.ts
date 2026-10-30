@@ -103,9 +103,29 @@ export interface CreditRule {
    * keeps the terms it had before this field existed.
    */
   installmentOptions?: number[];
+  /**
+   * Who approves, by amount (Q6, decided 30 October 2026): a clerk may approve a request
+   * **up to** `clerkApprovesUpTo`; the manager approves the rest; **above**
+   * `ownerApprovesAbove`, the factory's administrator (the owner) must. Each `null` or
+   * absent: that tier is not used, so a factory that sets neither keeps every decision
+   * with the manager, as before. Read through `approvalTierFor`.
+   */
+  clerkApprovesUpTo?: number | null;
+  ownerApprovesAbove?: number | null;
 }
 
 export type CreditRules = Record<CreditFacility, CreditRule>;
+
+/** Who must approve a request of this amount under this rule. */
+export type ApprovalTier = 'clerk' | 'manager' | 'owner';
+
+export function approvalTierFor(amount: number, rule: Pick<CreditRule, 'clerkApprovesUpTo' | 'ownerApprovesAbove'>): ApprovalTier {
+  const owner = rule.ownerApprovesAbove ?? null;
+  if (owner !== null && amount > owner) return 'owner';
+  const clerk = rule.clerkApprovesUpTo ?? null;
+  if (clerk !== null && amount <= clerk) return 'clerk';
+  return 'manager';
+}
 
 /**
  * The rules a factory runs on before it sets its own: **exactly the behaviour that
@@ -188,7 +208,9 @@ export type CreditRuleProblem =
   | 'bad-average-months'
   | 'negative-multiplier'
   | 'negative-max'
-  | 'bad-installments';
+  | 'bad-installments'
+  /** A clerk limit or an owner threshold below 0, or the clerk's above the owner's. */
+  | 'bad-approval-limits';
 
 /**
  * What is wrong with a rule the office is about to save.
@@ -231,6 +253,16 @@ export function creditRuleProblems(rule: CreditRule): CreditRuleProblem[] {
       terms.some((months) => !Number.isInteger(months) || months < 1) ||
       terms.some((months, index) => index > 0 && months <= terms[index - 1]!);
     if (bad) problems.push('bad-installments');
+  }
+
+  const clerk = rule.clerkApprovesUpTo ?? null;
+  const owner = rule.ownerApprovesAbove ?? null;
+  if (
+    (clerk !== null && !(clerk >= 0)) ||
+    (owner !== null && !(owner >= 0)) ||
+    (clerk !== null && owner !== null && clerk > owner)
+  ) {
+    problems.push('bad-approval-limits');
   }
 
   return problems;

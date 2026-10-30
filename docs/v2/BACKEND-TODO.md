@@ -15,6 +15,9 @@ and `packages/domain` (please `vendor:pull` after each console change).
 | 57 | Corrections after a published bill (C5): `GET`/`POST /admin/suppliers/:id/corrections`, the bill's `corrections` lines | Medium |
 | 58 | Each day's collection point on the bill and "This month so far" (`DailySupply.points`) | Small |
 | 59 | Records kept five years (Q12): nothing deleted sooner; the job after five years | Small now, the job later |
+| 60 | Inquiry states `escalated` and `awaitingSupplier` (Q18) | Small |
+| 61 | Who approves credit, by amount (Q6): clerk, manager, owner | Medium |
+| 62 | Write off a loan or fertilizer balance, or pay it from savings (Q7) | Small, with #57 |
 | - | Later: factory sync (Phase 10) | Later |
 
 ## 50. Staging is not running the latest commits
@@ -284,10 +287,62 @@ ledgers, credit and tea-packet requests, change requests and inquiries. Shared r
   five years.
 - The audit log is kept at least as long as the records it describes.
 
-**Later, once the factory answers one more question:** a scheduled job for records past
-`isPastRetention` (by month, Asia/Colombo). The question is what it does: delete them, or
-remove the personal details (name, NIC, phone, bank account) of suppliers whose accounts
-are closed and keep the figures for the factory's history. Until then the job does nothing.
+**After five years** (answered the same day): a scheduled job, monthly, for records past
+`isPastRetention` (Asia/Colombo). For a supplier whose account is **closed**, remove the
+personal details (`PERSONAL_FIELDS_REMOVED_AFTER_RETENTION`: name, NIC, telephone,
+address, bank account) and keep the figures as the factory's history; delete nothing. A
+supplier still supplying keeps everything. The supplier number stays with its records and
+is never given to anyone else (Q14).
+
+## 60. Inquiry states: `escalated` and `awaitingSupplier` (Q18)
+
+Decided 30 October 2026. `INQUIRY_STATUSES` is now `open, escalated, awaitingSupplier,
+resolved, closed` (your column is TEXT with a CHECK: one row). Rules in `inquiry.ts`:
+`isInquiryClosed` (resolved, closed), `inquiryStatusForApp` (the three open ones are
+`pending`), `inquiryAwaitsSupplier`, `inquiryCountsTowardsSla` (open and escalated).
+
+- `POST /admin/inquiries/:id/escalate` `{ note }` (10+ characters, `inquiries: A`):
+  `escalated`, still answerable; store `escalatedAt`, `escalatedByName`, `escalationNote`
+  and serve them on the inquiry; audit `inquiry.escalate`. `409 already-decided` once
+  resolved or closed.
+- `POST /admin/inquiries/:id/reply` takes `awaitSupplier?: boolean`: when true the status
+  is `awaitingSupplier`, not `resolved` (the push still fires: the office wrote to them).
+- The supplier's next message on a thread (`POST /inquiries/:id/messages`) moves an
+  `awaitingSupplier` inquiry back to `open`.
+- The supplier's `Inquiry` gets `awaitingReply: true` while `awaitingSupplier`; the app says
+  "waiting for your reply".
+- The list filter takes the two new values.
+
+## 61. Who approves credit, by amount (Q6)
+
+Decided 30 October 2026. Per facility in `creditRules` (`creditRules.ts`):
+`clerkApprovesUpTo` and `ownerApprovesAbove`, each optional (`null` or absent: that tier is
+unused, so a factory that sets neither keeps every decision with the manager).
+`approvalTierFor(amount, rule)` gives `clerk | manager | owner`, and `canDecideCredit(grants,
+tier)` who may decide it: the clerk tier with `creditRequests: W`, the manager tier with
+`creditRequests: A`, the owner tier with `creditAboveThreshold: A`.
+
+- `POST /admin/credit-requests/:id/approve` and `/reject`: let in on `creditRequests: R`,
+  then refuse with `403 approval-above-limit` (`details.needs`, `details.amount`) when
+  `canDecideCredit` is false. BR-501 (the recorder never decides) still applies.
+- The role matrix (`rbac.ts`, `vendor:pull`): `creditAboveThreshold` moves from the
+  **manager** to the **factory administrator** (the owner), who also gets `creditRequests:
+  R` to see the request. A factory that saved its own matrix keeps it.
+- `creditRuleProblems` adds `bad-approval-limits` (negative, or the clerk's above the
+  owner's); the config patch already refuses on `creditRuleProblems`.
+
+## 62. Write off, or pay from savings (Q7)
+
+Decided 30 October 2026: the **manager** writes off a loan or fertilizer balance a supplier
+will not repay, and may first pay it from the supplier's own savings. Same endpoint as #57
+(`POST /admin/suppliers/:id/corrections`), with `kind`:
+
+- `writeOff`: a `CreditTxn` of kind `writeOff` (your enum has it) for `amount` (below 0).
+- `fromSavings`: a `SavingsEntry` (`adjustment`, the reason as note) and a `CreditTxn`
+  `repayment`, both for `amount`, in one transaction under the ledger lock.
+- Refusals from `correctionProblems`: `kind-not-allowed` (not a loan or fertilizer balance,
+  or not downwards), `savings-short` (more than the savings hold).
+- `SupplierCorrection.kind` is served on the list.
 
 ## Later
 
