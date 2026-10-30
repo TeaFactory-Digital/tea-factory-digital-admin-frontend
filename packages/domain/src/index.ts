@@ -25,6 +25,7 @@ export * from './teaPackets';
 export * from './notifications';
 export * from './savings';
 export * from './corrections';
+export * from './retention';
 export * from './supplierCredentials';
 export * from './deductionRates';
 export * from './payoutExport';

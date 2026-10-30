@@ -566,6 +566,11 @@ From 9 to 22 October 2026:
     taken off (paid too much). Never deleted: a wrong one is corrected by another. Where bills
     are imported, a payment correction is the factory system's; a balance one warns that the
     next import resets it to the slip. `corrections.ts` in `packages/domain`; BACKEND-TODO #57.
+18. **Records kept five years (30 October 2026, Q12):** bills, payout records, deliveries,
+    the savings and credit ledgers, requests, change requests and inquiries, five years
+    after the end of their month (`retention.ts` in `packages/domain`). Nothing is deleted
+    sooner; an account-deletion request removes the app account only. After five years:
+    BACKEND-TODO #59.
 
 ## 9. Checks
 

@@ -14,6 +14,7 @@ and `packages/domain` (please `vendor:pull` after each console change).
 | 56 | Savings interest: post the year's `interest` entry when the month before the withdrawal month is published | Medium |
 | 57 | Corrections after a published bill (C5): `GET`/`POST /admin/suppliers/:id/corrections`, the bill's `corrections` lines | Medium |
 | 58 | Each day's collection point on the bill and "This month so far" (`DailySupply.points`) | Small |
+| 59 | Records kept five years (Q12): nothing deleted sooner; the job after five years | Small now, the job later |
 | - | Later: factory sync (Phase 10) | Later |
 
 ## 50. Staging is not running the latest commits
@@ -267,6 +268,26 @@ leaf rows behind it sends `null`, and the screens then say nothing about points.
 
 **Nothing breaks without it:** the field is optional, and both screens leave the line out
 when no day names a point.
+
+## 59. Records kept five years (Q12)
+
+**Decided 30 October 2026:** the factory keeps its records **five years** after the end of
+the month they belong to: bills, payout records, deliveries, the savings and credit
+ledgers, credit and tea-packet requests, change requests and inquiries. Shared rule:
+`RECORD_RETENTION_YEARS`, `retainedThroughMonthKey(monthKey)` and `isPastRetention` in
+`packages/domain/src/retention.ts` (please `vendor:pull`).
+
+**Now:**
+- Nothing in that list is deleted before its five years, by any path. An account-deletion
+  request (`POST /profile/deletion-request`) removes the app account (sign-in, devices,
+  preferences) only; the app already tells the supplier the factory keeps the records for
+  five years.
+- The audit log is kept at least as long as the records it describes.
+
+**Later, once the factory answers one more question:** a scheduled job for records past
+`isPastRetention` (by month, Asia/Colombo). The question is what it does: delete them, or
+remove the personal details (name, NIC, phone, bank account) of suppliers whose accounts
+are closed and keep the figures for the factory's history. Until then the job does nothing.
 
 ## Later
 
