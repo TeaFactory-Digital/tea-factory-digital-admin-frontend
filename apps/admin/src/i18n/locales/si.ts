@@ -1069,6 +1069,8 @@ export const si: Record<TranslationKey, string> = {
 
   'bills.dailySupply': 'දෛනික සැපයුම',
   'bills.dailySupplyDetail': 'දින {{days}}ක දළු, මුළු {{kgs}}.',
+  'bills.weighedAt': 'කිරුවේ: {{points}}.',
+  'bills.pointDays': '{{point}} (දින {{count}})',
 
   'bills.correctionsDraft':
     'මාසය ප්‍රකාශයට පත් කරන තුරු මෙහි කිසිවක් සැපයුම්කරුට නොයවයි. එතෙක්, වැරදි අගයක් එහි මූලාශ්‍රයේ නිවැරදි කරන්න (දළු එකතු කිරීමේ දළු භාරයක්, නැතහොත් මිල සහ මාසය අවසන් කිරීමේ මිල), ඉන්පසු නැවත සාදන්න.',

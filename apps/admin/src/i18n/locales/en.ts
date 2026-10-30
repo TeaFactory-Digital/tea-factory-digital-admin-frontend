@@ -1066,6 +1066,8 @@ export const en = {
 
   'bills.dailySupply': 'Daily supply',
   'bills.dailySupplyDetail': 'Leaf on {{days}} days, {{kgs}} in total.',
+  'bills.weighedAt': 'Weighed at {{points}}.',
+  'bills.pointDays': '{{point}} (days: {{count}})',
 
   'bills.correctionsDraft':
     'Nothing here is sent to the supplier until the month is published. Until then, fix a wrong figure at its source (a delivery in Leaf collection, or the rate in Rates & month close) and re-generate.',

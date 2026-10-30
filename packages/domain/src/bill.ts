@@ -33,7 +33,7 @@
  */
 
 import { round2, sumDeductionLines } from './money';
-import type { BillDeductions } from './types/app';
+import type { BillDeductions, DailySupply } from './types/app';
 
 /** The nine itemized lines, before their total is derived from them. */
 export type DeductionLines = Omit<BillDeductions, 'total'>;
@@ -239,4 +239,20 @@ export function factoryBillNumber(year: number, serial: number): string {
  */
 export function billNumberFor(monthKey: string, sequence: number): string {
   return `GL/${monthKey}/${String(sequence).padStart(4, '0')}`;
+}
+
+/**
+ * Where a month's leaf was weighed (Q13): each collection point with the number of days
+ * leaf went in there, most days first, then by name. Empty when no day names a point.
+ * A day weighed at two points counts for both.
+ */
+export function collectionPointDays(days: readonly DailySupply[]): Array<{ point: string; days: number }> {
+  const counts = new Map<string, number>();
+  for (const day of days) {
+    if (day.kgs === null) continue;
+    for (const point of new Set(day.points ?? [])) counts.set(point, (counts.get(point) ?? 0) + 1);
+  }
+  return [...counts]
+    .map(([point, count]) => ({ point, days: count }))
+    .sort((a, b) => b.days - a.days || a.point.localeCompare(b.point));
 }

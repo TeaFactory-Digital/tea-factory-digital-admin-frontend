@@ -1780,13 +1780,17 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
      * office would have to explain (BR-102).
      */
     const perDay = new Map<number, number>();
+    // And where each day's leaf went in (Q13), as the API will send it.
+    const pointsPerDay = new Map<number, Set<string>>();
     for (const row of deliveries) {
       const day = Number(row.date.slice(8, 10));
       perDay.set(day, roundKg((perDay.get(day) ?? 0) + row.kgs));
+      pointsPerDay.set(day, (pointsPerDay.get(day) ?? new Set<string>()).add(row.collectionPoint));
     }
     const dailySupply = Array.from({ length: dayCount }, (_, i) => ({
       day: i + 1,
       kgs: perDay.get(i + 1) ?? null,
+      points: pointsPerDay.has(i + 1) ? [...pointsPerDay.get(i + 1)!].sort() : null,
     }));
 
     // Computed the same way `computeBillAmounts` will, purely so the credit

@@ -79,6 +79,12 @@ export interface Supplier {
 export interface DailySupply {
   day: number;
   kgs: number | null;
+  /**
+   * The collection points the day's leaf was weighed at, by name (Q13): usually one, two
+   * for a supplier who weighed in at two. Absent or `null` where the source does not say
+   * (an older server, a slip with no point), which the screens leave unsaid.
+   */
+  points?: string[] | null;
 }
 
 /** Itemized deductions on a Green Leaf Account. Sum must equal `total` (BR-107). */

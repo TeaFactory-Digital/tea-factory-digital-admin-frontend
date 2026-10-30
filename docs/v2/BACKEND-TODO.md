@@ -13,6 +13,7 @@ and `packages/domain` (please `vendor:pull` after each console change).
 | 55 | The clerk reads Rates & month close: `vendor:pull` and one test | Now (small) |
 | 56 | Savings interest: post the year's `interest` entry when the month before the withdrawal month is published | Medium |
 | 57 | Corrections after a published bill (C5): `GET`/`POST /admin/suppliers/:id/corrections`, the bill's `corrections` lines | Medium |
+| 58 | Each day's collection point on the bill and "This month so far" (`DailySupply.points`) | Small |
 | - | Later: factory sync (Phase 10) | Later |
 
 ## 50. Staging is not running the latest commits
@@ -246,6 +247,26 @@ balance back to the slip's figure unless the factory's system makes the same cor
 A clerk gets `403`; a loan `+500` moves the balance at once and `-1,000,000,000` is
 `below-zero`; a payment `+900` is on the next generated bill (`deductions.total` unchanged) and
 `applied` with that bill once the month is published.
+
+## 58. Each day's collection point (`DailySupply.points`)
+
+The app and the console now show where a month's leaf went in, under the day grid:
+"Weighed at MAKADURA (days: 16), KANDEWATTA (days: 2)." (Q13, 30 October 2026). Please
+`npm run vendor:pull`: `DailySupply` (`types/app.ts`) has an optional
+`points?: string[] | null`, and `collectionPointDays` in `bill.ts` turns a month's days
+into that line.
+
+**What it needs:** on every `dailySupply` you serve (a bill, `GET /bills/current`,
+`/bills/:monthKey`, and "This month so far" when #48 lands), each day with leaf carries the
+**names** of the collection points its non-voided deliveries were weighed at, sorted, no
+duplicates: `{ day: 14, kgs: 42.5, points: ["MAKADURA"] }`. A day with no leaf keeps
+`kgs: null` and needs no points. `bill_daily_supply` has no point today: either a
+`points text[]` column filled when the bill is generated or imported (from the month's
+deliveries), or a join on the deliveries when the bill is read. An imported slip with no
+leaf rows behind it sends `null`, and the screens then say nothing about points.
+
+**Nothing breaks without it:** the field is optional, and both screens leave the line out
+when no day names a point.
 
 ## Later
 

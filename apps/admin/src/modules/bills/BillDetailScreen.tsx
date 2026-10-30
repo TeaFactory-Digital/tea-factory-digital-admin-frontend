@@ -28,7 +28,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Lock, TriangleAlert } from 'lucide-react';
-import { DEDUCTION_CATEGORIES, type AdminBill } from '@tfd/domain';
+import { DEDUCTION_CATEGORIES, collectionPointDays, type AdminBill } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader, DetailRow } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -458,6 +458,7 @@ function Figure({ label, value, strong }: { label: string; value: string; strong
 function DailySupplyCard({ bill }: { bill: AdminBill }) {
   const { t } = useTranslation();
   const days = bill.dailySupply.filter((day) => day.kgs !== null).length;
+  const points = collectionPointDays(bill.dailySupply);
 
   return (
     <Card>
@@ -473,6 +474,8 @@ function DailySupplyCard({ bill }: { bill: AdminBill }) {
           {bill.dailySupply.map((day) => (
             <li
               key={day.day}
+              // The point(s) the day's leaf went in at, on hover (Q13).
+              title={day.points?.length ? day.points.join(', ') : undefined}
               className={
                 day.kgs === null
                   ? 'flex flex-col rounded-sm bg-surface-variant px-xs py-xxs text-caption text-text-secondary'
@@ -488,6 +491,14 @@ function DailySupplyCard({ bill }: { bill: AdminBill }) {
             </li>
           ))}
         </ol>
+        {/* Where the month's leaf went in (Q13), when the source says. */}
+        {points.length > 0 ? (
+          <p className="mt-sm text-body-small text-text-secondary">
+            {t('bills.weighedAt', {
+              points: points.map((one) => t('bills.pointDays', { point: one.point, count: one.days })).join(', '),
+            })}
+          </p>
+        ) : null}
       </CardBody>
     </Card>
   );
