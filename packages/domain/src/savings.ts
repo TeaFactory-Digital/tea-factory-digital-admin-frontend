@@ -11,8 +11,9 @@
  *  - **The rate is configuration**, defaulting to `0`. How it is applied was decided on
  *    29 October 2026: simple interest on each month's lowest balance, credited once a year
  *    in time for the withdrawal month (`savingsInterestFor`, below). The API posts it as an
- *    `interest` entry, a word the ledger already has; until it does, the accountant posts
- *    the figure this function gives.
+ *    `interest` entry, a word the ledger already has, **only where the bills are calculated
+ *    here** (R28, 30 October 2026): where they are imported, the factory's own system pays
+ *    the interest and the slip's To-date carries it.
  *
  * **A withdrawal is paid on the next bill** (the factory's choice), which is why nothing in
  * this file moves money. It records an *intention*, checked against the balance and the

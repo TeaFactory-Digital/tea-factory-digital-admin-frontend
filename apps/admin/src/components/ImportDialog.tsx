@@ -184,7 +184,10 @@ export function ImportDialog({
         // `approval-missing` names the rupees we approved that the slip lacks, when sent.
         problem.code === 'approval-missing' && problem.amount === undefined
           ? t('records.import.problem.approval-missing-plain')
-          : t(`records.import.problem.${problem.code}`, {
+          : // A date after today (backend ADR-040): `not-allowed` on the date says why.
+            problem.code === 'not-allowed' && problem.column === 'date'
+            ? t('records.import.problem.future-date')
+            : t(`records.import.problem.${problem.code}`, {
               amount: problem.amount === undefined ? '' : formatMoney(problem.amount),
               defaultValue: t('records.import.problem.other', { code: problem.code }),
             }),

@@ -1,17 +1,15 @@
 # Backend to-do
 
-Only the work still open (29 October 2026). Finished work is taken out; git history keeps it.
+Only the work still open (30 October 2026). Finished work is taken out; git history keeps it.
 The rules for every item are in [`factory-records.md`](./factory-records.md) (the console)
 and `packages/domain` (please `vendor:pull` after each console change).
 
 | # | What | Priority |
 |---|------|----------|
 | 50 | Staging is not running the latest commits | Now |
-| 45 | Factory records: leaf and months next, then other deductions, importing again, the bill engine | High |
+| 45 | Factory records: other deductions next, then the bill engine | High |
 | 48 | "This month so far": `GET /bills/month-to-date` | Medium |
-| 54 | Default pages: `npm run vendor:pages` once more (the bare Tamil இலை) | Small, any time |
-| 55 | The clerk reads Rates & month close: `vendor:pull` and one test | Now (small) |
-| 56 | Savings interest: post the year's `interest` entry when the month before the withdrawal month is published | Medium |
+| 56 | Savings interest: calculated bills only, with the bill engine (R28 answered) | With #45's bill engine |
 | 57 | Corrections after a published bill (C5): `GET`/`POST /admin/suppliers/:id/corrections`, the bill's `corrections` lines | Medium |
 | 58 | Each day's collection point on the bill and "This month so far" (`DailySupply.points`) | Small |
 | 59 | Records kept five years (Q12): nothing deleted sooner; the job after five years | Small now, the job later |
@@ -37,31 +35,35 @@ credit requests in the console while the sync is off. **Contract:** factory-reco
 **In this order:**
 
 Built: the bills import, the month reads and publish, with late bills waiting for a manager
-(R15, `671627d`) and a waiting one replaced by sending it again (R18, `76b50f2`); and
-opening balances with the one cut-over month (`5b58f81`, ADR-039). Checked on the console
-side 29 October: the console's card and import are switched on, `cut-over-month` (each
-`details.reason`, naming `details.asOfMonth`) and `withdrawal-pending` are explained in
-en/si/ta, and the console's mock keeps the same rules.
+(R15, `671627d`) and a waiting one replaced by sending it again (R18, `76b50f2`); opening
+balances with the one cut-over month (`5b58f81`, ADR-039); and **leaf and months** with
+importing again (`e4a9f40`, ADR-040). Checked on the console side 30 October: `deliveries` and
+`monthlyRates` imports and the import preview are switched on, an exception id is
+URL-encoded on resolve, `rate-differs` and the wider `records-busy` have their text, the leaf
+calendar offers no day after today, and the mock follows R23 to R26.
 
-1. **Leaf and months** (next): the leaf and month endpoints in factory-records §4.1
-   (`/admin/deliveries`, `/admin/deliveries/summary`, the rate, exceptions), and the
-   `deliveries` and `monthlyRates` imports.
-2. **Other deductions:** `PUT /admin/bills/:id/adjustment` and the `billAdjustments` import.
-3. **The bill engine** (factory-records §5), last: galaboda imports its bills, so no factory
+1. **Other deductions** (next): `PUT /admin/bills/:id/adjustment` and the `billAdjustments`
+   import.
+2. **The bill engine** (factory-records §5), last: galaboda imports its bills, so no factory
    needs it yet. With it, **the printed-slip check and hold** (§5, "Comparing with the printed
    slips", steps 1 to 8): `GET /admin/months/:monthKey/slip-comparison`,
    `PUT /admin/bills/:id/printed`, `POST /admin/bills/:id/hold` and `/release`, the
    `printedBalances` import, `409 bills-mismatch` on the publish, the automatic hold of a
    supplier's next bill (`heldForMonth`), and releases in order (`409 earlier-bill-held`).
-   You have agreed to relax the month lock for a held supplier's leaf only.
+   You have agreed to relax the month lock for a held supplier's leaf only. Savings interest
+   (#56) and payment corrections on the next bill (#57) come with it.
 
-**Alongside, any time:**
+**Your questions R23 to R28 (answered 30 October):**
 
-- **Importing a file again** (factory-records §4.2, "A file can be imported again"): `dryRun`
-  and `duplicates` on `POST /admin/imports/:kind`, `skipped` in the answer. The `suppliers`
-  import is live, so this changes it: an existing code is **skipped** (`supplier-exists`),
-  no longer `supplier-code-taken` for the whole file. Leaf is matched on date, supplier,
-  kilos and collection point **by count** (`leafRecordKey`, `matchRecorded`).
+- **R23 to R26:** as you built them. `missingBankDetails` for bank transfer only; a suspended
+  supplier's leaf is taken and named by the month's exceptions; 0 kg, over 5,000 kg and a rate
+  of 0 are refused; `rate-differs` with the slips' rate; the outlier against the month's
+  average at the weighing's collection point. The console's mock and texts now match.
+- **R27** (leaf entered here, then the sync switched on): already decided in factory-records
+  §2: the sync's records **replace** ours for the same supplier and day. Phase 10.
+- **R28** (interest in a factory that imports its bills): **interest comes from the factory's
+  own slips** there; we post none, and the slip's To-date carries it. We post interest only
+  for **calculated** bills, so #56 waits for the bill engine. See #56.
 
 **Check:** the list in factory-records §9.
 
@@ -87,74 +89,12 @@ Rs. 15,000 advance: `totalKgs` is the sum of that month's non-voided deliveries,
 `supplyDays: 11`, `approved.advance: 15000`. After the month ends and before publishing:
 still that month, `monthEnded: true`. After publishing: the next month.
 
-## 54. Default pages: one more `vendor:pages`
-
-Built in `41221c0`: the defaults are copied from our `docs/v2/static-pages.seed.json`, and
-`vendor:drift` reports the file when it differs. Thank you. One more copy is needed: since
-`db22632` the **bare இலை** ("leaf") in the six Tamil bodies is கொழுந்து too (decided with the
-factory: one word for green leaf everywhere). Your copy is from before that commit. Please
-`npm run vendor:pages`.
-
-**Check:** `npm run vendor:drift` is clean, and a bare `இலை` finds nothing in your
-`static-pages.defaults.json`. Pages a factory has already edited keep their own text.
-
-## 55. The clerk reads Rates & month close
-
-`DEFAULT_ROLE_MATRIX.clerk.ratesAndMonthClose` is now **`R`** (was `-`), in
-`packages/domain/src/rbac.ts` (28 October 2026, committed in `db22632`). Please
-`npm run vendor:pull`. The same pull brings `cut-over-month` and `withdrawal-pending` into
-`ADMIN_ERROR_CODES` (`packages/domain/src/types/admin.ts`), the two codes you added in
-`5b58f81`, so the console and the API name them from one list.
-
-The same pull also brings the **supplier-facing types the app now reads from the package**
-(29 October 2026: the app vendors `@tfd/domain` too, in place of its own copies). Nothing
-here changes the wire; the types now say what your API already sends:
-
-- `Supplier.collectionPoint?: { id, name } | null` (what `GET /profile` answers);
-  `AdminSupplier` keeps its `collectionPoint` as the name string.
-- `LoanRequest.installmentMonths` and `ManureRequest.installmentMonths`
-  (`number | null`, optional): the app's name for the term, which the API maps
-  `repaymentMonths` to.
-- `Inquiry.repliedAt?` and `Inquiry.messages?: InquiryMessage[]`.
-- `InquiryMessage` moved from `types/admin.ts` to `types/app.ts` (same shape, still
-  exported from the root), so the app and the console read one definition.
-
-`npm run domain:drift` in the console names the three files that differ from your copy
-today: `rbac.ts`, `types/admin.ts`, `types/app.ts`.
-
-**Why.** The clerk holds `billing: W` to import the finished bills (your `POST
-/admin/imports/bills` gates on exactly that), but the import is on Rates & month close, and
-that screen is built on `GET /admin/months`, which needs `ratesAndMonthClose: read`. With `-`
-the clerk got "Your role does not allow this" and never reached the import, so in practice a
-manager imported, and the two-person rule then needed a **second** manager to publish.
-factory-records.md §3 always put the import on that screen with `billing: W`.
-
-I know your note in `route-declaration.ts` (and `capability.guard.spec.ts`) says widening
-the close for a month picker would grant read on the close "by accident". This is the same
-grant made on purpose: the clerk reads the month list, its rate and checklist, and the
-deduction rates; entering the rate (`W`), proposing deduction rates (`W`) and publishing
-(`A`) stay the manager's.
-
-**What changes on your side:**
-
-- `test/frontend-gaps-10.spec.ts`, "the clerk, who has no rates-and-month-close access,
-  cannot read them": `GET /admin/deduction-rates` as the clerk is now `200`; a proposal
-  (`POST`) as the clerk is still `403`.
-- The comments in `route-declaration.ts`, `capability.guard.spec.ts` and
-  `bills-savings.spec.ts` that say the clerk lacks `ratesAndMonthClose`. `GET
-  /admin/bill-months` on `billing` OR `payouts` stays right for the payouts reader.
-- A factory that saved its own clerk row in the role matrix keeps it; only the default
-  moves.
-
-**Check:** as the clerk: `GET /admin/months` `200`; `PUT /admin/months/:m/rate` `403`;
-`POST /admin/months/:m/publish` `403`; `POST /admin/imports/bills` `200` (or `422` for a
-bad file).
-
-If you would rather keep the clerk out of the close, the other way is to move the import
-and the bill run onto the Bills screen (`billing`); tell me and I will change the console
-back and do that instead.
-
 ## 56. Savings interest: credit it once a year
+
+**Scope (R28, answered 30 October 2026):** only for a factory whose bills are **calculated**
+here (`billSettings.source: 'calculated'`), posted by the bill engine's publish. Where the
+bills are **imported**, the factory's own system pays the interest and the slip's To-date
+carries it; post nothing (`savings.annualInterestRate` is then for display only).
 
 **Decided by the factory on 29 October 2026** (it was §21.9, "the rate is stored and nothing
 is posted"):

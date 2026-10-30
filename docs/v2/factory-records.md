@@ -557,7 +557,8 @@ From 9 to 22 October 2026:
     balance at its start, or after a withdrawal paid that month); credited once a year with
     the month before the withdrawal month, so it can be taken out in that month. The rate is
     `savings.annualInterestRate` (0% unless set). `savingsInterestFor` in `packages/domain`;
-    the API posts it (BACKEND-TODO #56), and until then the accountant posts the figure.
+    the API posts it for calculated bills only, with the bill engine (BACKEND-TODO #56); where
+    the bills are imported the factory's own system pays it and the slip carries it (R28).
 17. **Corrections after a published bill (C5, built 30 October 2026):** a manager only
     (`billing: A`) posts one on the supplier's Money tab, with a reason of 10+ characters, for a
     month with a published bill. A loan, fertilizer or savings balance moves at once (an

@@ -1031,7 +1031,6 @@ const monthKeys = Object.keys(mockMonths).sort().reverse();
 function makeMonthExceptions(): MonthException[] {
   const monthKey = currentMonthKey;
   const out: MonthException[] = [];
-  let sequence = 0;
 
   const push = (
     type: MonthExceptionType,
@@ -1041,9 +1040,9 @@ function makeMonthExceptions(): MonthException[] {
     supplier?: { supplierCode: string; name: string },
     resolved?: { byName: string; note: string },
   ) => {
-    sequence += 1;
     out.push({
-      id: `exc-${sequence}`,
+      // As the API names them (ADR-040): the cause is the id, `<type>:<entityId>`.
+      id: `${type}:${entityId}`,
       monthKey,
       type,
       entity,
@@ -1062,13 +1061,14 @@ function makeMonthExceptions(): MonthException[] {
   const deliveringIds = new Set(
     mockDeliveries.filter((row) => row.monthKey === monthKey && !row.voidedAt).map((row) => row.supplierId),
   );
+  // Only for bank transfer (R23): a supplier paid in cash or by cheque needs no account.
   for (const supplier of mockSuppliers) {
-    if (!supplier.hasBankDetails && deliveringIds.has(supplier.id)) {
+    if (supplier.paymentMethod === 'bankTransfer' && !supplier.hasBankDetails && deliveringIds.has(supplier.id)) {
       push(
         'missingBankDetails',
         'supplier',
         supplier.id,
-        `${supplier.paymentMethod === 'cash' ? 'Paid in cash' : 'No account on file'}: cannot be included in a payout run.`,
+        'Paid by bank transfer with no account on file: cannot be included in a payout run.',
         supplier,
       );
     }
@@ -1103,15 +1103,20 @@ function makeMonthExceptions(): MonthException[] {
   // 4. A weighing far outside its day's spread. Not a refusal at entry (the grid
   //    asks and the clerk may confirm), so the month close asks once more, when
   //    there is time to check the slip.
+  // Against the month's average **at the weighing's collection point** (R26): one big
+  // estate's point should not make every weighing elsewhere look small.
   const month = mockDeliveries.filter((row) => row.monthKey === monthKey && !row.voidedAt);
-  const meanKgs = month.length === 0 ? 0 : summariseKgs(month).meanKgs;
+  const meanAt = new Map<string, number>();
+  for (const point of new Set(month.map((row) => row.collectionPoint))) {
+    meanAt.set(point, summariseKgs(month.filter((row) => row.collectionPoint === point)).meanKgs);
+  }
   for (const row of month) {
-    if (isOutlierKg(row.kgs, meanKgs) && row.kgs > OUTLIER_KG_FLOOR_KG) {
+    if (isOutlierKg(row.kgs, meanAt.get(row.collectionPoint) ?? 0) && row.kgs > OUTLIER_KG_FLOOR_KG) {
       push(
         'outlierDelivery',
         'delivery',
         row.id,
-        `${row.kgs} kg on ${row.date}: more than three times the month's average.`,
+        `${row.kgs} kg on ${row.date}: more than three times the month's average at ${row.collectionPoint}.`,
         { supplierCode: row.supplierCode, name: row.supplierName },
       );
     }

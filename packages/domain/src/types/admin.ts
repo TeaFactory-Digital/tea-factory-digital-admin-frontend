@@ -2470,6 +2470,11 @@ export const ADMIN_ERROR_CODES = [
   'withdrawal-pending',
   /** A correction after a published bill (C5) that `correctionProblems` refuses: `details.problems`. */
   'correction-invalid',
+  /**
+   * A rate typed for an importing factory's month that already has its slips: the slips'
+   * rate is the month's (`details` names it; backend ADR-040).
+   */
+  'rate-differs',
   /** Deciding a credit request above this role's tier (Q6): `details.needs` is `manager` or `owner`. */
   'approval-above-limit',
   'unknown-supplier',

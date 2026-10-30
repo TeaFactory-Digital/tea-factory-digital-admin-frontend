@@ -153,6 +153,7 @@ import {
   teaPacketRequestProblems,
   availableToWithdraw,
   colomboMonthKey,
+  colomboDayOf,
   isWithdrawalWindowOpen,
   pendingWithdrawalTotal,
   withdrawalProblems,
@@ -2453,6 +2454,9 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
       }
       case 'deliveries': {
         if (code && !supplier) push('supplierCode', 'unknown-supplier');
+        // A day after today (Colombo) is refused, as the API does (ADR-040). A suspended
+        // supplier's leaf is taken: the month's exceptions name them (R24).
+        if (row.date && row.date > colomboDayOf(mockNow())) push('date', 'not-allowed');
         if (row.date && lockedFor(monthKeyOf(row.date), supplier?.id)) push('date', 'month-locked');
         if (row.collectionPoint && !points.includes(row.collectionPoint)) {
           push('collectionPoint', 'unknown-collection-point');
@@ -4837,7 +4841,7 @@ export const handlers: HttpHandler[] = [
 
     const { note } = (await request.json()) as { note?: string };
     const index = state.monthExceptions.findIndex(
-      (e) => e.id === params.id && e.monthKey === params.monthKey,
+      (e) => e.id === decodeURIComponent(String(params.id)) && e.monthKey === params.monthKey,
     );
     if (index < 0) return fail({ status: 404, code: '404', message: 'No such exception.' });
 

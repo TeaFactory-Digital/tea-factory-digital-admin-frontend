@@ -391,12 +391,14 @@ export const IMPORT_COLUMNS: Record<ImportKind, readonly ImportColumn[]> = {
   deliveries: [
     { key: 'date', type: 'date', required: true, example: '2026-10-08' },
     { key: 'supplierCode', type: 'text', required: true, example: '5147' },
-    { key: 'kg', type: 'number', required: true, example: '24.5' },
+    // More than 0 and at most 5,000 kg, as the API refuses (R24): 0 is a typo, not a weighing.
+    { key: 'kg', type: 'number', required: true, min: 0.01, max: 5000, example: '24.5' },
     { key: 'collectionPoint', type: 'text', required: false, example: 'DENIYAYA' },
   ],
   monthlyRates: [
     { key: 'month', type: 'month', required: true, example: '2026-09' },
-    { key: 'ratePerKg', type: 'number', required: true, example: '118.75' },
+    // A rate of 0 is refused (R24): no month's leaf is worth nothing.
+    { key: 'ratePerKg', type: 'number', required: true, min: 0.01, example: '118.75' },
     { key: 'extraRatePerKg', type: 'number', required: false, example: '6' },
   ],
   openingBalances: [

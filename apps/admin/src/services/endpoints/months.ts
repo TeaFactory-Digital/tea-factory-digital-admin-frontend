@@ -57,7 +57,8 @@ export const monthEndpoints = {
   /** `422 note-required`: resolving without a reason is not resolving. */
   resolveException: (monthKey: string, id: string, note: string) =>
     apiClient
-      .post<MonthException>(`/admin/months/${monthKey}/exceptions/${id}/resolve`, { note })
+      // An exception id is `<type>:<entityId>` (ADR-040): the `:` must be encoded.
+      .post<MonthException>(`/admin/months/${monthKey}/exceptions/${encodeURIComponent(id)}/resolve`, { note })
       .then((response) => response.data),
 
   /**

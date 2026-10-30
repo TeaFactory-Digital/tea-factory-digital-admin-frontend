@@ -9,8 +9,7 @@
 import type { ImportKind } from '@tfd/domain';
 
 export const IMPORT_KINDS_NOT_ON_SERVER: ReadonlySet<ImportKind> = new Set<ImportKind>([
-  'deliveries',
-  'monthlyRates',
+  // `deliveries` and `monthlyRates` shipped with #45 step 3 (backend e4a9f40, 30 October 2026).
   'billAdjustments',
   'printedBalances',
 ]);
@@ -46,4 +45,4 @@ export const MONTH_TO_DATE_ON_SERVER = false;
  * import dialog asks for no preview (an API that ignored `dryRun` would save the file) and
  * a supplier code already on the roll still refuses the whole file.
  */
-export const IMPORT_SKIP_ON_SERVER = false;
+export const IMPORT_SKIP_ON_SERVER = true;

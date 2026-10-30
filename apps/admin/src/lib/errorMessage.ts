@@ -121,6 +121,7 @@ const BY_CODE: Record<string, string> = {
   'earlier-month-unpublished': 'error.earlierMonthUnpublished',
   'approval-missing': 'error.approvalMissing',
   'records-busy': 'error.recordsBusy',
+  'rate-differs': 'error.rateDiffers',
   '403': 'error.forbidden',
   '404': 'error.notFound',
 };

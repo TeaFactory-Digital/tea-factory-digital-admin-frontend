@@ -24,7 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { Ban, Lock } from 'lucide-react';
-import type { Delivery, DeliveryQuery } from '@tfd/domain';
+import { colomboDayOf, type Delivery, type DeliveryQuery } from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { Badge } from '@/components/ui/Badge';
@@ -215,12 +215,13 @@ export function DeliveriesScreen() {
         <div className="flex shrink-0 flex-wrap items-end gap-sm border-b border-divider p-md">
           <label className="flex flex-col gap-xs text-label text-text-primary">
             {t('deliveries.date')}
-            {/* No `disabledDates`: a factory that weighs past midnight enters
-                yesterday's sheet in the morning, and a future date is refused by the
-                month check rather than by the control. */}
+            {/* Past dates stay open: a factory that weighs past midnight enters
+                yesterday's sheet in the morning. A day after today (Colombo) is refused
+                by the server (`422 invalid`, ADR-040), so the calendar does not offer it. */}
             <DatePicker
               value={date}
               onChange={(next) => setParam('date', next || null)}
+              disabledDates={{ after: new Date(`${colomboDayOf(new Date())}T12:00:00`) }}
             />
           </label>
 
