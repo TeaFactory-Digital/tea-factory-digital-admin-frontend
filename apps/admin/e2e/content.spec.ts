@@ -45,13 +45,13 @@ test('shows a live article’s missing translation on the tab that has it', asyn
   await expect(grid.locator('tbody tr').first()).toBeVisible({ timeout: 15_000 });
 
   await grid.locator('tbody tr').first().click();
-  await expect(page.getByRole('tablist', { name: /languages/i })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('radiogroup', { name: /languages/i })).toBeVisible({ timeout: 15_000 });
 
   // The gap, stated as what it costs rather than that it exists.
   await expect(page.getByText(/suppliers reading in those languages/i)).toBeVisible();
 
   // And on the tab itself, for a screen reader as well as by colour.
-  const sinhala = page.getByRole('tab', { name: /sinhala/i });
+  const sinhala = page.getByRole('radio', { name: /sinhala/i });
   await expect(sinhala).toContainText(/not written yet/i);
 
   // Switching to it previews the fallback, and says so.
@@ -66,9 +66,9 @@ test('renders Sinhala and Tamil copy as script, not as a fallback', async ({ pag
 
   // The fully-translated article: the fixture's first row is the August rate.
   await page.getByRole('table', { name: /^news$/i }).getByText(/august green leaf rate/i).click();
-  await expect(page.getByRole('tablist', { name: /languages/i })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('radiogroup', { name: /languages/i })).toBeVisible({ timeout: 15_000 });
 
-  await page.getByRole('tab', { name: /sinhala/i }).click();
+  await page.getByRole('radio', { name: /sinhala/i }).click();
   // No fallback banner: this one is genuinely translated.
   await expect(page.getByText(/is shown the english version/i)).toHaveCount(0);
   // And the preview declares its language, which is what makes the base stylesheet's

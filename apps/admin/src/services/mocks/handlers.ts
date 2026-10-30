@@ -43,6 +43,11 @@ import {
   type NewSupplier,
   type OpeningBalances,
   type OpeningBalancesRecord,
+  correctionProblems,
+  correctionTotal,
+  type BillCorrection,
+  type NewSupplierCorrection,
+  type SupplierCorrection,
   type WalkInCreditRequest,
   type BillAdjustment,
   type ImportKind,
@@ -242,6 +247,10 @@ const state = {
   activityReadUpTo: new Map<string, string>(),
   /** Opening balances entered here while the factory-system sync is off. */
   openingBalances: new Map<string, OpeningBalancesRecord>(),
+  /** A composed send's copy per language, by send id. */
+  notificationCopies: new Map<string, Array<{ lang: string; title: string; body: string }>>(),
+  /** C5: corrections after a published bill, oldest first. */
+  corrections: [] as SupplierCorrection[],
   /**
    * The console's own users, mutable.
    *
@@ -2279,6 +2288,88 @@ function addWalkInRequest(
   return created;
 }
 
+/* ─────────────────────────── C5 Corrections ─────────────────────────── */
+
+/** The months with a published bill for the supplier, newest first: what may be corrected. */
+function publishedMonthKeysOf(supplierId: string): string[] {
+  return [
+    ...new Set(
+      state.bills
+        .filter((bill) => bill.supplierId === supplierId && bill.publishedAt !== null)
+        .map((bill) => bill.monthKey),
+    ),
+  ].sort((a, b) => b.localeCompare(a));
+}
+
+/** The payment corrections waiting for the supplier's next bill, as that bill's lines. */
+function pendingCorrectionLines(supplierId: string): BillCorrection[] {
+  return state.corrections
+    .filter((one) => one.supplierId === supplierId && one.target === 'payment' && one.status === 'pending')
+    .map((one) => ({ correctsMonthKey: one.correctsMonthKey, amount: one.amount, reason: one.reason }));
+}
+
+/**
+ * A balance correction moves its ledger at once; a payment one waits for the next bill.
+ * The savings entry is an `adjustment` in the current month, like any other office posting.
+ */
+function postCorrection(supplier: AdminSupplier, body: NewSupplierCorrection, byName: string): SupplierCorrection {
+  const now = mockNow();
+  const created: SupplierCorrection = {
+    id: `cor-${nextId()}`,
+    supplierId: supplier.id,
+    target: body.target,
+    amount: round2(body.amount),
+    correctsMonthKey: body.correctsMonthKey,
+    reason: body.reason.trim(),
+    createdAt: now.toISOString(),
+    createdByName: byName,
+    status: body.target === 'payment' ? 'pending' : 'applied',
+    appliedBillId: null,
+    appliedMonthKey: null,
+  };
+  state.corrections.push(created);
+  const index = state.suppliers.findIndex((one) => one.id === supplier.id);
+  if (body.target === 'savings') {
+    const monthKey = colomboMonthKey(now);
+    const balance = round2((supplier.savingsBalance ?? savingsBalanceOf(supplier.id)) + created.amount);
+    state.savingsLedger.push({
+      id: `sav-${nextId()}`,
+      supplierId: supplier.id,
+      monthKey,
+      month: slipMonthLabel(monthKey),
+      amount: created.amount,
+      balance,
+      source: 'adjustment',
+      billId: null,
+      recordedAt: created.createdAt,
+      note: created.reason,
+    });
+    if (index >= 0) state.suppliers[index] = { ...state.suppliers[index]!, savingsBalance: balance };
+  } else if (body.target !== 'payment' && index >= 0) {
+    const balances = state.suppliers[index]!.creditBalances;
+    state.suppliers[index] = {
+      ...state.suppliers[index]!,
+      creditBalances: { ...balances, [body.target]: round2(balances[body.target] + created.amount) },
+    };
+  }
+  return created;
+}
+
+/** On publish: the payment corrections a published bill carried are paid or taken. */
+function applyCorrectionsFor(monthKey: string, only: (bill: AdminBill) => boolean = () => true): void {
+  for (const bill of state.bills.filter((one) => one.monthKey === monthKey && one.publishedAt && only(one))) {
+    if (!(bill.corrections ?? []).length) continue;
+    state.corrections = state.corrections.map((one) =>
+      one.supplierId === bill.supplierId &&
+      one.target === 'payment' &&
+      one.status === 'pending' &&
+      one.createdAt <= bill.generatedAt
+        ? { ...one, status: 'applied', appliedBillId: bill.id, appliedMonthKey: monthKey }
+        : one,
+    );
+  }
+}
+
 /** The typed line changes; everything derived from it is recalculated, never patched. */
 function adjustBill(bill: AdminBill, body: BillAdjustment, paymentUnit?: number): void {
   const { total: _total, ...lines } = bill.deductions;
@@ -2288,6 +2379,7 @@ function adjustBill(bill: AdminBill, body: BillAdjustment, paymentUnit?: number)
     extraRatePerKg: bill.extraRatePerKg,
     coinsBroughtForward: bill.coinsBroughtForward,
     savingsWithdrawal: bill.savingsWithdrawal ?? 0,
+    correction: correctionTotal(bill.corrections),
     deductions: { ...lines, otherCards: round2(body.otherCards) },
     paymentUnit,
   });
@@ -4556,6 +4648,8 @@ export const handlers: HttpHandler[] = [
           pendingWithdrawalTotal(pendingWithdrawalsFor(supplier.id)),
         ]),
       ),
+      // C5: payment corrections waiting for this supplier's next bill.
+      corrections: new Map(state.suppliers.map((supplier) => [supplier.id, pendingCorrectionLines(supplier.id)])),
     });
     const bills = heldOnly ? generated.filter((bill) => heldOnly.has(bill.supplierId)) : generated;
 
@@ -4823,6 +4917,7 @@ export const handlers: HttpHandler[] = [
       const only = (bill: AdminBill) => ids.has(bill.id);
       postSavingsFor(monthKey, publishedAt, only);
       settleWithdrawalsFor(monthKey, publishedAt, only);
+      applyCorrectionsFor(monthKey, only);
       for (const bill of late) {
         fireAutomatic(
           request,
@@ -4996,6 +5091,7 @@ export const handlers: HttpHandler[] = [
     const credited = postSavingsFor(monthKey, publishedAt, notHeld);
     // And the other direction (§21.9): withdrawals this month's accounts paid out.
     settleWithdrawalsFor(monthKey, publishedAt, notHeld);
+    applyCorrectionsFor(monthKey, notHeld);
 
     /**
      * M13, if this factory has the trigger on.
@@ -6797,7 +6893,9 @@ export const handlers: HttpHandler[] = [
       reachableDevices: row.reachableDevices,
       suppressedDevices: row.suppressedDevices,
       suppliersWithoutDevice: 0,
-      translations: [{ lang: EDITORIAL_FALLBACK_LANGUAGE, title: row.title, body: row.body }],
+      translations: state.notificationCopies.get(row.id) ?? [
+        { lang: EDITORIAL_FALLBACK_LANGUAGE, title: row.title, body: row.body },
+      ],
     }));
     return HttpResponse.json(paginate(served, url));
   }),
@@ -6893,6 +6991,11 @@ export const handlers: HttpHandler[] = [
       failureReason: null,
     };
     state.notificationSends = [send, ...state.notificationSends];
+    // Every language it was written in, as the API keeps them (the inbox picks by `?lang=`).
+    state.notificationCopies.set(
+      send.id,
+      body.translations.map((one) => ({ lang: one.lang, title: one.title.trim(), body: one.body.trim() })),
+    );
 
     recordBy(auth, 'notification.send', 'notification', send.id, {
       after: {
@@ -8274,6 +8377,53 @@ export const handlers: HttpHandler[] = [
     return HttpResponse.json(saved);
   }),
 
+  http.get('*/admin/suppliers/:id/corrections', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'suppliers');
+    if ('response' in auth) return auth.response;
+    const id = String(params.id);
+    if (!state.suppliers.some((one) => one.id === id)) {
+      return fail({ status: 404, code: 'not-found', message: 'No such supplier.' });
+    }
+    return HttpResponse.json({
+      items: state.corrections.filter((one) => one.supplierId === id).reverse(),
+      publishedMonthKeys: publishedMonthKeysOf(id),
+      billSource: billSourceOf(tenantConfig(request).billSettings),
+    });
+  }),
+
+  /** C5: the manager only (`billing: A`); the rules are `correctionProblems`. */
+  http.post('*/admin/suppliers/:id/corrections', async ({ request, params }) => {
+    await delay(LATENCY_MS);
+    const auth = authorize(request, 'billing', 'approve');
+    if ('response' in auth) return auth.response;
+    const syncOn = refuseWhileSyncOn(request);
+    if (syncOn) return syncOn;
+    const supplier = state.suppliers.find((one) => one.id === String(params.id));
+    if (!supplier) return fail({ status: 404, code: 'not-found', message: 'No such supplier.' });
+    const body = (await request.json()) as NewSupplierCorrection;
+    const problems = correctionProblems(body, {
+      publishedMonthKeys: publishedMonthKeysOf(supplier.id),
+      balances: {
+        loan: supplier.creditBalances.loan,
+        manure: supplier.creditBalances.manure,
+        savings: supplier.savingsBalance ?? savingsBalanceOf(supplier.id),
+      },
+      billSource: billSourceOf(tenantConfig(request).billSettings),
+    });
+    if (problems.length > 0) {
+      return fail({
+        status: 422,
+        code: 'correction-invalid',
+        message: 'The correction cannot be posted.',
+        details: { problems },
+      });
+    }
+    const created = postCorrection(supplier, body, auth.user.name);
+    recordBy(auth, 'supplier.correction', 'supplier', supplier.id, { after: created });
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
   /** The notification bell: supplier actions this user may see, newest first. */
   http.get('*/admin/activity', async ({ request }) => {
     await delay(LATENCY_MS);
@@ -8505,6 +8655,7 @@ export const handlers: HttpHandler[] = [
       const only = (one: AdminBill) => one.id === bill.id;
       postSavingsFor(bill.monthKey, publishedAt, only);
       settleWithdrawalsFor(bill.monthKey, publishedAt, only);
+      applyCorrectionsFor(bill.monthKey, only);
       fireAutomatic(
         request,
         'billPublished',
@@ -8703,6 +8854,7 @@ export function resetMockState(): void {
   importedBy.clear();
   // Maps outlive a reassignment of the arrays below, so they are emptied explicitly.
   state.openingBalances.clear();
+  state.notificationCopies.clear();
   state.activityReadUpTo.clear();
   state.suppliers = mockSuppliers.map((s) => ({ ...s }));
   state.changeRequests = mockChangeRequests.map((r) => ({ ...r }));
@@ -8746,6 +8898,7 @@ export function resetMockState(): void {
   state.teaPacketRequests = mockTeaPacketRequests.map((request) => ({ ...request }));
   state.users = mockUsers.map((user) => ({ ...user, roles: [...user.roles] }));
   state.savingsWithdrawals = [];
+  state.corrections = [];
   state.deductionRates = null;
   state.deductionRateChanges = [];
   state.roleMatrix = null;

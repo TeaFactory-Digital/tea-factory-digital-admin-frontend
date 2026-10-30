@@ -12,8 +12,11 @@ import type {
   ImportResult,
   ImportRow,
   NewSupplier,
+  NewSupplierCorrection,
   OpeningBalances,
   OpeningBalancesRecord,
+  SupplierCorrection,
+  SupplierCorrections,
   SupplierTransportRate,
   WalkInCreditRequest,
 } from '@tfd/domain';
@@ -46,6 +49,21 @@ export const factoryRecordEndpoints = {
   saveOpeningBalances: (supplierId: string, body: OpeningBalances & { note: string }) =>
     apiClient
       .put<OpeningBalancesRecord>(`/admin/suppliers/${supplierId}/opening-balances`, body)
+      .then((response) => response.data),
+
+  /** The supplier's corrections, newest first, with the months that may be corrected (C5). */
+  corrections: (supplierId: string) =>
+    apiClient
+      .get<SupplierCorrections>(`/admin/suppliers/${supplierId}/corrections`)
+      .then((response) => response.data),
+
+  /**
+   * Post one (`billing: A`). `422 correction-invalid` with `details.problems`
+   * (`correctionProblems`); `409 factory-sync-on` while the factory's own system is the source.
+   */
+  createCorrection: (supplierId: string, body: NewSupplierCorrection) =>
+    apiClient
+      .post<SupplierCorrection>(`/admin/suppliers/${supplierId}/corrections`, body)
       .then((response) => response.data),
 
   /** The supplier's own transport rate; `null` puts them back on the point's. */

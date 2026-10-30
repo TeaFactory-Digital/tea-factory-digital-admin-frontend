@@ -100,6 +100,14 @@ export function NotificationsScreen() {
             <span className="flex max-w-card flex-col">
               <span className="font-medium text-text-primary">{row.title}</span>
               <span className="line-clamp-1 text-caption text-text-secondary">{row.body}</span>
+              {/* Written in more than the fallback: say which, so a gap is visible here too. */}
+              {(row.languages?.length ?? 0) > 1 ? (
+                <span className="text-caption text-text-secondary">
+                  {t('notifications.writtenIn', {
+                    languages: row.languages!.map((one) => t(`content.language.${one}`)).join(', '),
+                  })}
+                </span>
+              ) : null}
             </span>
           );
         },
@@ -293,7 +301,7 @@ export function NotificationsScreen() {
               the office is not tempted to write an article into a push. */}
           <p className="text-caption text-text-secondary">
             {t('notifications.useNewsHint')}{' '}
-            <Link to="/news" className="text-primary underline-offset-2 hover:underline">
+            <Link to="/news" className="text-primary underline underline-offset-2">
               {t('nav.news')}
             </Link>
           </p>

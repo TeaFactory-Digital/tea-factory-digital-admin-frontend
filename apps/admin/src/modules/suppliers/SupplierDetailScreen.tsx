@@ -48,7 +48,8 @@ import { ErrorState, Notice, Skeleton } from '@/components/ui/states';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
 import { OpeningBalancesCard } from './OpeningBalancesCard';
-import { OPENING_BALANCES_ON_SERVER } from '@/lib/serverReady';
+import { CORRECTIONS_ON_SERVER, OPENING_BALANCES_ON_SERVER } from '@/lib/serverReady';
+import { CorrectionsCard } from './CorrectionsCard';
 import { TransportRateCard } from './TransportRateCard';
 import { InfoTip } from '@/components/ui/Tooltip';
 import { useToast } from '@/components/ui/Toast';
@@ -372,6 +373,18 @@ export function SupplierDetailScreen() {
           {/* Only while the office keeps the factory's records here: the balances this
               console's first bill starts from. */}
           {keepsRecords && OPENING_BALANCES_ON_SERVER ? <OpeningBalancesCard supplierId={supplier.id} /> : null}
+          {/* C5: a balance or a payment found wrong after a published bill, corrected forward. */}
+          {keepsRecords && CORRECTIONS_ON_SERVER ? (
+            <CorrectionsCard
+              supplierId={supplier.id}
+              // Unknown when the API sends none: the form then leaves "below zero" to it.
+              balances={{
+                loan: supplier.creditBalances?.loan ?? Number.POSITIVE_INFINITY,
+                manure: supplier.creditBalances?.manure ?? Number.POSITIVE_INFINITY,
+                savings: supplier.savingsBalance ?? Number.POSITIVE_INFINITY,
+              }}
+            />
+          ) : null}
           {/* The transport rate this console's bill charges them, and where it comes from. */}
           {keepsRecords ? (
             <TransportRateCard

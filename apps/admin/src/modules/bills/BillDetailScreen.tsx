@@ -33,7 +33,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader, DetailRow } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, Spinner } from '@/components/ui/states';
-import { formatAmount, formatDateTime, formatKg, formatMoney, formatMonthKey } from '@/lib/format';
+import { formatAmount, formatDateTime, formatKg, formatMoney, formatMonthKey, formatSignedAmount } from '@/lib/format';
 import { billIsBalanced } from '@/services/repositories/billRepository';
 import { useBill } from './hooks';
 import { useCan } from '@/auth/authStore';
@@ -296,6 +296,17 @@ export function BillDetailScreen() {
                   numeric
                 />
               ) : null}
+              {/* C5: an earlier month paid too little (+) or too much (-), with the reason. */}
+              {(data.corrections ?? []).map((line, index) => (
+                <div key={`${line.correctsMonthKey}-${index}`}>
+                  <DetailRow
+                    label={t('bills.correction', { month: formatMonthKey(line.correctsMonthKey) })}
+                    value={formatSignedAmount(line.amount)}
+                    numeric
+                  />
+                  <p className="pb-xs text-caption text-text-secondary">{line.reason}</p>
+                </div>
+              ))}
               <DetailRow
                 label={t('bills.coinsCarriedForward')}
                 value={formatAmount(data.coinsCarriedForward)}

@@ -57,6 +57,11 @@ export interface BillFacts {
    * question, and a bill that decided it for itself would be a second answer.
    */
   savingsWithdrawal: number;
+  /**
+   * The net of the corrections carried by this bill (C5, `corrections.ts`): `+` paid to the
+   * supplier for an earlier month they were paid too little on, `-` taken back. Absent: `0`.
+   */
+  correction?: number;
   deductions: DeductionLines;
   /**
    * What the payment is rounded down to: `1` pays whole rupees, `10` pays in tens as the
@@ -145,13 +150,13 @@ export function computeBillAmounts(facts: BillFacts): BillAmounts {
   const grossAmount = round2(greenLeafAmount + extraPayment + facts.coinsBroughtForward);
   const balanceAmount = round2(grossAmount - deductions.total);
   /**
-   * The withdrawal joins **after** the balance.
+   * The withdrawal joins **after** the balance, and so does a correction.
    *
    * `balanceAmount` is the slip's "Balance Amount", and a supplier's own savings coming
    * back is not part of what the leaf earned. Keeping it out of that figure is what lets
    * the slip print a balance a supplier can check against their kilos.
    */
-  const payable = round2(balanceAmount + facts.savingsWithdrawal);
+  const payable = round2(balanceAmount + facts.savingsWithdrawal + (facts.correction ?? 0));
 
   /**
    * An account that owes more than it earned pays nothing and carries the

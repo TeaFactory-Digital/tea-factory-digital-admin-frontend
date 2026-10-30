@@ -13,7 +13,7 @@ the next slice.
 | | |
 | --- | --- |
 | **Console** | Every module in [Modules](#modules) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
-| **Backend** | `tea-factory-digital-backend`, shipped up to `5b58f81`; staging is not yet running `068faf3` or later (BACKEND-TODO #50, being deployed). BACKEND-TODO **#1 to #44, #46, #47, #49 and #51 to #53 are done**, and **#54** is built with one more copy to make; **#45** (factory records without the factory system) is partly done (the bills import with the month reads and publish, late bills included, and opening balances, `5b58f81`, are live; leaf and months are next); **#48**, **#50**, **#55** and **#56** (savings interest) are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
+| **Backend** | `tea-factory-digital-backend`, shipped up to `5b58f81`; staging is not yet running `068faf3` or later (BACKEND-TODO #50, being deployed). BACKEND-TODO **#1 to #44, #46, #47, #49 and #51 to #53 are done**, and **#54** is built with one more copy to make; **#45** (factory records without the factory system) is partly done (the bills import with the month reads and publish, late bills included, and opening balances, `5b58f81`, are live; leaf and months are next); **#48**, **#50**, **#55**, **#56** (savings interest) and **#57** (corrections) are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
 | **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **588 tests in 80 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
@@ -741,13 +741,17 @@ Worst first: correctness, then plumbing, then polish.
    result arriving later, which `NotificationSend.status` (`queued`, `failed`) is ready
    for and nothing sets yet.
 
-5. **A composed notification is English-only.** Articles are authored in three languages
-   and fall back (AC-08); a push is not. Doing it properly means the composer grows the
-   same language strip M11 has, and the send picks per device.
+5. **A composed notification picks its language per supplier in the inbox only.** Since 30
+   October 2026 the composer has the language strip M11 has: English required, Sinhala and
+   Tamil optional, the gaps marked and named before the send, all languages sent as
+   `translations`. The API keeps them and the app's inbox answers in the supplier's language
+   (`?lang=`, the fallback otherwise). What is left is the push itself: the sender (gap 4)
+   must pick each device's language the same way (`notificationCopyFor`).
 
-6. **A balance found wrong after the first published bill has no correction entry.**
-   Decided (C5): a manager posts a correction with a note, applied on the next bill. Not
-   built.
+6. **Corrections after a published bill wait for the API** (C5, BACKEND-TODO #57). Built
+   in the console and the app on 30 October 2026: the manager posts one on the supplier's Money
+   tab (a balance moves at once, a payment lands on the next bill as a "Correction" line with
+   the reason). Hidden by `CORRECTIONS_ON_SERVER` until the backend ships the endpoints.
 
 7. **The Sinhala and Tamil labels still need a native speaker's reading in place.** On
    26 October 2026 every label was read against the English and 665 were corrected (323
@@ -782,9 +786,12 @@ Worst first: correctness, then plumbing, then polish.
    and a console error reaches `console.error` only. *To close:* create the Sentry project
    and set the DSN in Vercel for staging and production (operations.md, Error reporting).
 
-10. **No screen-reader pass.** The semantics are built in (real tables, `aria-sort`,
-    `role="alert"`, accessible names, a global focus ring), but nobody has driven NVDA or
-    VoiceOver over it.
+10. **The screen-reader pass is still a person's to do.** The automated half is done: axe runs
+    against WCAG 2.2 A and AA on every screen, light and dark, as the administrator and the
+    manager (`e2e/accessibility.spec.ts`); its first run's 79 findings were fixed on 30 October
+    2026 (contrast kept at AA for any factory's colours, radio groups for choices that are not
+    tabs, the sidebar mark's name, one `h1` per screen). Nobody has yet driven NVDA or
+    VoiceOver over it: the checklist is [accessibility.md](./accessibility.md) §2.
 
 11. **Reports read live records.** §19.5 asks for a read replica; the reports are single
     passes over live records, so moving them is a connection string, not a rewrite.
@@ -823,5 +830,4 @@ Numbering follows `status.md` §21 in the mobile repo.
    from `serverReady.ts` as it ships.
 2. **The push sender** (gap 4): every notification setting in the console is a control
    over nothing until it exists.
-3. **The CI symbol diff** between `@tfd/domain` and the app's types (gap 3).
-4. **The factory-system sync** (gap 1), when a factory with a reachable system signs up.
+3. **The factory-system sync** (gap 1), when a factory with a reachable system signs up.

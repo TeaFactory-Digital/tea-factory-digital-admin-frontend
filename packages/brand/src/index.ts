@@ -11,6 +11,7 @@ export * from './colors';
 export * from './tokens';
 export * from './types';
 export * from './createTheme';
+export * from './contrast';
 export * from './css';
 export * from './tenant';
 export * from './clients';

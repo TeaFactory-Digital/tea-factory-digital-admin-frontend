@@ -23,7 +23,7 @@
 import { useTranslation } from 'react-i18next';
 import { CircleAlert, Clock, Star } from 'lucide-react';
 import { EDITORIAL_FALLBACK_LANGUAGE, type LanguageCode } from '@tfd/domain';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import { Segmented } from '@/components/ui/Segmented';
 
 type LanguageState = 'written' | 'missing' | 'stale' | 'fallbackMissing';
 
@@ -60,13 +60,16 @@ export function LanguageStrip({
   const { t } = useTranslation();
 
   return (
-    <Tabs value={active} onValueChange={(value) => onSelect(value as LanguageCode)}>
-      <TabsList aria-label={t('content.languages')}>
-        {languages.map((lang) => {
-          const state = languageStateOf(lang, missing, stale);
-
-          return (
-            <TabsTrigger key={lang} value={lang} className="gap-xs">
+    <Segmented
+      label={t('content.languages')}
+      value={active}
+      onValueChange={onSelect}
+      options={languages.map((lang) => {
+        const state = languageStateOf(lang, missing, stale);
+        return {
+          value: lang,
+          label: (
+            <>
               <span>{t(`content.language.${lang}`)}</span>
 
               {lang === EDITORIAL_FALLBACK_LANGUAGE ? (
@@ -90,10 +93,10 @@ export function LanguageStrip({
                   <span className="sr-only">{t('content.state.stale')}</span>
                 </span>
               ) : null}
-            </TabsTrigger>
-          );
-        })}
-      </TabsList>
-    </Tabs>
+            </>
+          ),
+        };
+      })}
+    />
   );
 }

@@ -147,6 +147,16 @@ export interface MonthToDate {
   approved: { advance: number; loan: number; manure: number; teaPackets: number };
 }
 
+/** One "Correction" line on a bill (C5; the rules are in `corrections.ts`). */
+export interface BillCorrection {
+  /** The earlier published month it corrects, `YYYY-MM`. */
+  correctsMonthKey: string;
+  /** `+` paid to the supplier, `-` taken back. */
+  amount: number;
+  /** The office's reason, shown under the line. */
+  reason: string;
+}
+
 export interface GreenLeafBill {
   id: string;
   factory: FactoryInfo;
@@ -200,6 +210,13 @@ export interface GreenLeafBill {
    * Only bills calculated in the console (factory-system sync off) carry it.
    */
   otherCardsNote?: string | null;
+  /**
+   * "Correction" lines (C5): an earlier month the supplier was paid too little (`+`, added)
+   * or too much (`-`, taken off) on, with the month and the office's reason. Added after the
+   * balance, like `savingsWithdrawal`, so BR-107 still holds for the nine lines. Absent or
+   * empty on most bills.
+   */
+  corrections?: BillCorrection[] | null;
 
   balanceAmount: number | null;
   coinsCarriedForward: number;

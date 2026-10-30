@@ -289,7 +289,7 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
   <tr><td>Transport rate: the supplier's own, the point's, or the factory's set differently</td><td>Transport line moves</td><td>Align the rates; a change applies from the next bill made</td></tr>
   <tr><td>Stamps, instalment caps or interest set differently</td><td>Those lines move</td><td>Align Configuration and deduction rates with the factory system</td></tr>
   <tr><td>Payment unit different (Rs. 1, 5 or 10)</td><td>Paid amount and coins differ by a few rupees</td><td>Set the same unit as the factory</td></tr>
-  <tr><td>Opening balances wrong (debt, loan, manure, savings, months left)</td><td>The first bill and every one after it</td><td>Correct them before any bill is published for the supplier (they lock after)</td></tr>
+  <tr><td>Opening balances wrong (debt, loan, manure, savings, months left)</td><td>The first bill and every one after it</td><td>Correct them before any bill is published for the supplier (they lock after); after that, a manager posts a correction (7.6)</td></tr>
   <tr><td>A savings-rate change applied in a different month</td><td>Savings line moves</td><td>A change applies from the next unclosed month only</td></tr>
   <tr><td>Other deductions typed here and not there</td><td>Other deductions line</td><td>Type the same amount in both</td></tr>
   <tr><td>Sync on, sync not running</td><td>The console is behind the factory system</td><td>See the sync status page; the factory's IT team</td></tr>
@@ -335,6 +335,19 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
 </ul>
 <div class="box example"><span class="label">Example</span>
 <p>Factory rate Rs. 2.50, Makadura point Rs. 4.00. A supplier delivers 300 kg at Makadura and 100 kg at the factory: 300 × 4.00 + 100 × 2.50 = Rs. 1,450.00. With their own rate of Rs. 3.00: 400 × 3.00 = Rs. 1,200.00 wherever it was weighed.</p>
+</div>
+
+<h2>7.6 Corrections after a published bill</h2>
+<p>A published bill is never changed. A mistake found later is corrected <strong>forward</strong>, on the supplier's Money tab, under <strong>Corrections</strong>.</p>
+<ul>
+  <li><strong>Only the manager</strong> can post one. A reason of at least 10 characters, and the month it corrects (a month with a published bill).</li>
+  <li><strong>A balance</strong> (loan, fertilizer, savings) changes at once. It can never go below 0.</li>
+  <li><strong>A payment</strong> goes on the supplier's next bill as a line "Correction (month)" with the reason under it: added when they were paid too little, taken off when they were paid too much. It is added after the balance, so the nine deductions still add up. If it takes more than the month pays, the rest is next month's debt.</li>
+  <li>It cannot be deleted. A wrong correction is put right with another one, the other way. Every one is in the audit trail.</li>
+  <li>Where bills are imported, a payment is corrected in the factory's own system. A balance corrected here goes back to the slip's figure at the next import unless the factory's system makes the same correction.</li>
+</ul>
+<div class="box example"><span class="label">Example</span>
+<p>July: 3.6 kg weighed on 14 July was missed, Rs. 250 a kg, so the supplier was paid Rs. 900 too little. The manager posts "Payment, paid too little, 900, July 2026". The August bill shows "Correction (July 2026) +900.00" with the reason, and pays Rs. 900 more.</p>
 </div>
 
 <!-- 8 -->
@@ -613,6 +626,7 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
   <li>Automatic: "your account is ready" on publish, "your request was decided", "the office replied". News is sent from the Notifications screen.</li>
   <li>Each supplier chooses which kinds they receive. The supplier page explains why a notification does or does not reach them (no device, the factory does not send that kind, opted out, nothing sent).</li>
   <li>A push cannot be taken back, so every check runs before sending.</li>
+  <li><strong>In each language:</strong> a written notification has a tab per factory language. English is required; Sinhala and Tamil are optional, and a supplier whose app is in a language left empty gets the English. A tab with nothing in it is marked, and the confirmation names those languages before sending. Write both the title and the message in a language, or neither.</li>
 </ul>
 
 <!-- 20 -->

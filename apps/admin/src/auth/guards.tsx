@@ -73,7 +73,7 @@ export function RequireCapability({
   const allowed = useCan(capability, level);
 
   if (!allowed) {
-    return <EmptyState title={t('error.forbidden')} />;
+    return <GuardState title={t('error.forbidden')} />;
   }
   return <>{children}</>;
 }
@@ -90,7 +90,7 @@ export function RequireFlag({ flag, children }: PropsWithChildren<{ flag: Featur
   const flags = useFeatureFlags();
 
   if (!flags[flag]) {
-    return <EmptyState title={t('error.featureDisabled')} />;
+    return <GuardState title={t('error.featureDisabled')} />;
   }
   return <>{children}</>;
 }
@@ -113,7 +113,7 @@ export function RequireAnyFlag({
   const flags = useFeatureFlags();
 
   if (!needed.some((flag) => flags[flag])) {
-    return <EmptyState title={t('error.featureDisabled')} />;
+    return <GuardState title={t('error.featureDisabled')} />;
   }
   return <>{children}</>;
 }
@@ -129,8 +129,22 @@ export function RequireFactoryRecords({ children }: PropsWithChildren) {
   const { t } = useTranslation();
   if (!useKeepsFactoryRecords()) {
     return (
-      <EmptyState title={t('records.syncOnTitle')} body={t('records.syncOnBody')} />
+      <GuardState title={t('records.syncOnTitle')} body={t('records.syncOnBody')} />
     );
   }
   return <>{children}</>;
+}
+
+/**
+ * A screen this person cannot use, said as the screen: its own `h1`, so a screen-reader
+ * user who jumps to the heading learns where they are and why it is empty (the axe audit
+ * found these screens with no heading at all).
+ */
+function GuardState({ title, body }: { title: string; body?: string }) {
+  return (
+    <>
+      <h1 className="sr-only">{title}</h1>
+      <EmptyState title={title} body={body} />
+    </>
+  );
 }

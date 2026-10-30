@@ -30,6 +30,7 @@
  * about the factory.
  */
 
+import { EDITORIAL_FALLBACK_LANGUAGE, type LanguageCode } from './constants';
 import type { NotificationCategory, RegisteredDevice } from './types/app';
 
 /**
@@ -167,4 +168,55 @@ export function describeAudience(audience: NotificationAudience): {
     default:
       return { key: 'notifications.audience.allSuppliers', params: {} };
   }
+}
+
+/* ───────────────────────── copy in more than one language ───────────────────────── */
+
+/** One language's copy of a composed notification. */
+export interface NotificationCopy {
+  title: string;
+  body: string;
+}
+
+/** `written` when both the title and the message carry something once trimmed. */
+function isWrittenCopy(copy: NotificationCopy | undefined): boolean {
+  return Boolean(copy && copy.title.trim() && copy.body.trim());
+}
+
+/**
+ * The factory's languages a composed message has **no** copy in (the fallback excepted,
+ * which is required anyway). A supplier reading in one of these gets the fallback.
+ */
+export function missingNotificationLanguages(
+  translations: Partial<Record<LanguageCode, NotificationCopy>> | undefined,
+  languages: readonly LanguageCode[],
+): LanguageCode[] {
+  return languages.filter((lang) => lang !== EDITORIAL_FALLBACK_LANGUAGE && !isWrittenCopy(translations?.[lang]));
+}
+
+/**
+ * Languages with a title and no message, or the reverse: refused, because the phone would
+ * show half a notification in one language and nothing would say so.
+ */
+export function halfWrittenNotificationLanguages(
+  translations: Partial<Record<LanguageCode, NotificationCopy>> | undefined,
+): LanguageCode[] {
+  return (Object.entries(translations ?? {}) as Array<[LanguageCode, NotificationCopy]>)
+    .filter(([, copy]) => Boolean(copy.title.trim()) !== Boolean(copy.body.trim()))
+    .map(([lang]) => lang);
+}
+
+/**
+ * What a supplier reading in `lang` receives: their language's copy where it was written,
+ * the fallback's otherwise. The API's inbox answers the same way (`GET /notifications?lang=`).
+ */
+export function notificationCopyFor(
+  fallback: NotificationCopy,
+  translations: Partial<Record<LanguageCode, NotificationCopy>> | undefined,
+  lang: LanguageCode,
+): NotificationCopy & { usedFallback: boolean } {
+  const own = translations?.[lang];
+  return isWrittenCopy(own)
+    ? { title: own!.title.trim(), body: own!.body.trim(), usedFallback: false }
+    : { title: fallback.title.trim(), body: fallback.body.trim(), usedFallback: lang !== EDITORIAL_FALLBACK_LANGUAGE };
 }

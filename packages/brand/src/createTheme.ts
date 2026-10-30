@@ -1,4 +1,5 @@
 import { baseColors, type ColorSchemeName } from './colors';
+import { readablePalette } from './contrast';
 import { iconSizes, radius, spacing, typography } from './tokens';
 import type { Theme, ThemeOverride } from './types';
 
@@ -18,7 +19,8 @@ export function createTheme(scheme: ColorSchemeName, override?: ThemeOverride): 
   return {
     scheme,
     dark: scheme === 'dark',
-    colors: { ...baseColors[scheme], ...colorOverride },
+    // The factory's colours, moved only as far as AA contrast needs (`contrast.ts`).
+    colors: readablePalette({ ...baseColors[scheme], ...colorOverride }, scheme),
     spacing: { ...spacing, ...override?.spacing },
     radius: { ...radius, ...override?.radius },
     iconSizes: { ...iconSizes, ...override?.iconSizes },

@@ -31,7 +31,7 @@ import { DataTable } from '@/components/ui/DataTable';
 import { SearchInput, Select } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/states';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import { Segmented } from '@/components/ui/Segmented';
 import { useDebounced } from '@/lib/useDebounced';
 import { formatDateTime, formatDate } from '@/lib/format';
 import { RoleMatrixView } from './RoleMatrixView';
@@ -272,18 +272,12 @@ export function UsersScreen() {
         }
       />
 
-      <Tabs
+      <Segmented
+        label={t('users.views')}
         value={view}
         onValueChange={(value) => setParam('view', value === 'users' ? null : (value as View))}
-      >
-        <TabsList aria-label={t('users.views')}>
-          {(['users', 'roles'] as View[]).map((one) => (
-            <TabsTrigger key={one} value={one}>
-              {t(`users.view.${one}`)}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+        options={(['users', 'roles'] as View[]).map((one) => ({ value: one, label: t(`users.view.${one}`) }))}
+      />
 
       {view === 'roles' ? (
         <RoleMatrixView />

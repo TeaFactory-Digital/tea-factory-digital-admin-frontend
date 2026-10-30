@@ -1945,6 +1945,11 @@ export interface NotificationSend {
   sentAt: string | null;
   /** Why it failed, when it did. */
   failureReason: string | null;
+  /**
+   * The languages it was written in, fallback first. `title` and `body` above are the
+   * fallback's; a supplier whose app is in another written language got that copy.
+   */
+  languages?: LanguageCode[];
 }
 
 export interface NotificationQuery extends PageQuery {
@@ -1955,8 +1960,14 @@ export interface NotificationQuery extends PageQuery {
 /** What the office is about to send. `audience` decides who. */
 export interface ComposeNotificationBody {
   category: NotificationCategory;
+  /** The fallback language's copy (`EDITORIAL_FALLBACK_LANGUAGE`): required. */
   title: string;
   body: string;
+  /**
+   * The same message in the factory's other languages, each optional. A supplier whose app
+   * is in a language left out here gets the fallback (`notificationCopyFor`).
+   */
+  translations?: Partial<Record<LanguageCode, { title: string; body: string }>>;
   audience: NotificationAudience;
 }
 
@@ -2443,6 +2454,8 @@ export const ADMIN_ERROR_CODES = [
   'cut-over-month',
   /** Opening balances while a savings withdrawal from before the cut-over is pending. */
   'withdrawal-pending',
+  /** A correction after a published bill (C5) that `correctionProblems` refuses: `details.problems`. */
+  'correction-invalid',
   'unknown-supplier',
   'no-bill',
   'import-invalid',

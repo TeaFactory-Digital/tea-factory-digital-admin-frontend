@@ -14,6 +14,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { createTheme } from '@tfd/brand';
 import {
   DEFAULT_SAVINGS_POLICY,
   FEATURE_FLAG_NAMES,
@@ -435,6 +436,9 @@ export function AppearanceSection(props: SectionProps) {
   const [defaultLang, setDefaultLang] = useState(props.config.localization.defaultLanguage);
   const [branding, setBranding] = useState(props.config.branding);
   const [colors, setColors] = useState(props.config.theme?.colors?.light ?? {});
+  const readablePrimary = colors.primary
+    ? createTheme('light', { colors: { light: { primary: colors.primary } } }).colors.primary
+    : null;
 
   useEffect(() => {
     setContent(props.config.localization.contentLanguages);
@@ -541,7 +545,16 @@ export function AppearanceSection(props: SectionProps) {
           exposing forty tokens would be handing an office a design system to maintain. */}
       <div className="grid gap-md md:grid-cols-2">
         {(['primary', 'secondary'] as const).map((token) => (
-          <Field key={token} label={t(`config.colour.${token}`)}>
+          <Field
+            key={token}
+            label={t(`config.colour.${token}`)}
+            hint={
+              // The colour text is drawn in, when it is not quite the one typed (`readablePalette`).
+              token === 'primary' && readablePrimary && colors.primary && readablePrimary !== colors.primary.toUpperCase()
+                ? t('config.colour.adjusted', { value: readablePrimary })
+                : undefined
+            }
+          >
             {({ id }) => (
               <div className="flex items-center gap-sm">
                 <input

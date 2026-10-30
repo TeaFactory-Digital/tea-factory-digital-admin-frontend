@@ -12,6 +12,7 @@ import type {
   ImportKind,
   ImportRow,
   NewSupplier,
+  NewSupplierCorrection,
   OpeningBalances,
   SupplierTransportRate,
   WalkInCreditRequest,
@@ -89,6 +90,24 @@ export function useSaveOpeningBalances(supplierId: string) {
     mutationFn: (body: OpeningBalances & { note: string }) =>
       factoryRecordRepository.saveOpeningBalances(supplierId, body),
     onSuccess: () => refresh([qk.suppliers.openingBalances(supplierId), qk.suppliers.detail(supplierId)]),
+  });
+}
+
+export function useSupplierCorrections(supplierId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.suppliers.corrections(supplierId),
+    queryFn: () => factoryRecordRepository.corrections(supplierId),
+    enabled,
+  });
+}
+
+/** A balance moves at once, so the supplier's figures and the savings passbook refresh too. */
+export function useCreateCorrection(supplierId: string) {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: (body: NewSupplierCorrection) => factoryRecordRepository.createCorrection(supplierId, body),
+    onSuccess: () =>
+      refresh([qk.suppliers.corrections(supplierId), qk.suppliers.detail(supplierId), qk.savings.all, qk.bills.all]),
   });
 }
 

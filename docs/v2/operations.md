@@ -203,6 +203,10 @@ five viewports down to 1152×640 and asserts the first row is **inside the viewp
 exists because a list collapsing to zero pixels got past the rest of the suite: the rows
 were in the DOM, so `toBeVisible()` passed while a human saw nothing.
 
+`accessibility.spec.ts` runs axe against WCAG 2.2 A and AA on every screen, light and dark,
+as the administrator and the manager, and checks one `h1` per screen
+([accessibility.md](./accessibility.md)). A new screen joins its `SCREENS` list.
+
 The rest cover sign-in, a reload keeping the session, the brand bridge painting, a
 reduced-feature tenant losing its queues, and a handful of behaviours per module
 (`money`, `content`, `notifications`, `administration`, `queues`) that only exist once a

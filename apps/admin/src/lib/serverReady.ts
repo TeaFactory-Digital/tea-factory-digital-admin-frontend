@@ -18,6 +18,12 @@ export const IMPORT_KINDS_NOT_ON_SERVER: ReadonlySet<ImportKind> = new Set<Impor
 /** Saving opening balances (`PUT /admin/suppliers/:id/opening-balances`). */
 export const OPENING_BALANCES_ON_SERVER = true;
 
+/**
+ * Corrections after a published bill (C5, BACKEND-TODO #57): `GET` and `POST
+ * /admin/suppliers/:id/corrections`, and the bill's `corrections` lines.
+ */
+export const CORRECTIONS_ON_SERVER = false;
+
 /** Typing other deductions on a bill (`PUT /admin/bills/:id/adjustment`). */
 export const OTHER_DEDUCTIONS_ON_SERVER = false;
 

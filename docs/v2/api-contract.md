@@ -3082,7 +3082,7 @@ end when you get there:
 | **The reports beyond three** | §20.1's list is served, so it grows without a console release, but more reports need §19.1's warehouse shape. App use, credit given and savings held are the three this console owes |
 | **The payout file** | Not called (§12). `payoutExport.ts` is the shared serialiser and §21.17's answer (layout as configuration) still stands for whoever builds payouts |
 | **Switching the sync back on** | Phase 10 (factory-records.md §2): suppliers entered here matched to the factory system's by the bare number, the sync's records replacing ours for the same supplier, day or month |
-| **A correction after the first published bill** | Later: a manager posts a correction entry with a note, applied on the next bill (BACKEND-TODO, decision C5) |
+| **A correction after the first published bill** | Built in the console and the app (C5): `GET`/`POST /admin/suppliers/:id/corrections`, `GreenLeafBill.corrections`, `correctionProblems` in `packages/domain`. The API is BACKEND-TODO #57 |
 
 The bill PDF is rendered by the app from the published `GreenLeafBill`, so it needs no
 endpoint; it shows `otherCardsNote` and the loan's instalment number like the screen does.

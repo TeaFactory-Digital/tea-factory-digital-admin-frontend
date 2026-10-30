@@ -12,7 +12,8 @@ and `packages/domain` (please `vendor:pull` after each console change).
 | 54 | Default pages: `npm run vendor:pages` once more (the bare Tamil இலை) | Small, any time |
 | 55 | The clerk reads Rates & month close: `vendor:pull` and one test | Now (small) |
 | 56 | Savings interest: post the year's `interest` entry when the month before the withdrawal month is published | Medium |
-| - | Later: factory sync (Phase 10), balance corrections | Later |
+| 57 | Corrections after a published bill (C5): `GET`/`POST /admin/suppliers/:id/corrections`, the bill's `corrections` lines | Medium |
+| - | Later: factory sync (Phase 10) | Later |
 
 ## 50. Staging is not running the latest commits
 
@@ -195,6 +196,57 @@ that month).
 posts one entry of 1,200.00 with `monthKey 2027-03`; publishing March 2027 again posts
 nothing new; at 0% nothing is posted.
 
+## 57. Corrections after a published bill (C5)
+
+**Decided:** a balance or a payment found wrong after a bill was published is corrected
+**forward** by a manager, with a reason; the published bill is never edited. Built in the
+console and the app on 30 October 2026 (hidden in the console by `CORRECTIONS_ON_SERVER` until
+you ship it). The rules are shared: please `npm run vendor:pull` (`packages/domain/src/corrections.ts`,
+`bill.ts`, `types/app.ts`).
+
+**Endpoints:**
+
+- `GET /admin/suppliers/:id/corrections` (`suppliers: R`) answers `SupplierCorrections`:
+  `items` newest first, `publishedMonthKeys` (the months with a published bill for the
+  supplier, newest first), `billSource`.
+- `POST /admin/suppliers/:id/corrections` (`billing: A`, the manager) with
+  `NewSupplierCorrection` `{ target, amount, correctsMonthKey, reason }` answers `201
+  SupplierCorrection`. `amount` is signed as the supplier sees it (`payment +` paid too little,
+  `loan`/`manure +` owes more, `savings +` holds more). Refusals: `422 correction-invalid` with
+  `details.problems` from `correctionProblems` (`amount-zero`, `reason-short` (under 10
+  characters), `month-not-published`, `below-zero`, `payment-bills-imported`); `409
+  factory-sync-on` while the sync is on. Audit `supplier.correction` with the record as `after`.
+
+**What each target does:**
+
+- `loan`, `manure`: a `CreditTxn` of kind `adjustment` now, with the reason as its note;
+  `status: 'applied'`. Under the ledger lock, like opening balances.
+- `savings`: a `SavingsEntry` with source `adjustment` in the current Colombo month, with the
+  reason as its note; `status: 'applied'`.
+- `payment`: your existing `BillAdjustment` table fits it (`correctsMonthKey`, signed
+  `amount`, `reason`, `appliedBillId`; `appliesToMonthKey` = the supplier's next unpublished
+  month). `status: 'pending'` until the bill carrying it is published, then `applied` with
+  `appliedBillId` and `appliedMonthKey`. A supplier with a pending payment correction gets a
+  bill in the next run even with no leaf, as for a savings withdrawal.
+
+**On the bill:** `GreenLeafBill.corrections: BillCorrection[] | null` (`{ correctsMonthKey,
+amount, reason }`), and `computeBillAmounts({ ..., correction: correctionTotal(lines) })`: it
+joins **after** the balance, like `savingsWithdrawal`, so BR-107 holds for the nine lines and
+`balanceAmount` stays the slip's figure. Taken back beyond what the month pays, the rest is
+`nextMonthDeb`. Re-generating a draft keeps the lines (they are read again from the pending
+corrections). The app shows each as "Correction (<month>)" with the reason, on screen and in
+the PDF.
+
+**Imported bills:** `payment-bills-imported` refuses a payment correction where
+`billSettings.source` is `imported` (the factory's own system pays it on its next slip). A
+balance correction is allowed there, and the console warns that the next import puts the
+balance back to the slip's figure unless the factory's system makes the same correction.
+
+**Check:** `apps/admin/src/test/corrections.test.tsx` in the console repo, against the mock.
+A clerk gets `403`; a loan `+500` moves the balance at once and `-1,000,000,000` is
+`below-zero`; a payment `+900` is on the next generated bill (`deductions.total` unchanged) and
+`applied` with that bill once the month is published.
+
 ## Later
 
 - **Factory sync (Phase 10):** the request to the factory team asks for every line of the
@@ -204,10 +256,13 @@ nothing new; at 0% nothing is posted.
   own `paymentMethod`, and `grossAmount` including the coins brought forward. Map them onto
   `BillRow` and store them as received. Switching a factory from records kept here back to
   the sync ("the sync's records replace ours") waits for this too.
-- **A balance found wrong after the first published bill (C5):** a manager posts a correction
-  entry with a note, applied on the next bill.
 - **Past months (A9):** imported as published history, with no balance change and no
   notification.
+- **The push sender (FCM/APNs):** a composed notification now arrives with copy in every
+  language the office wrote (30 October 2026; your `translations` already store them and the
+  inbox already answers by `?lang=`). The sender should pick each device's language the same
+  way, its own copy or the fallback (`notificationCopyFor` in `notifications.ts`, after
+  `vendor:pull`).
 
 ## When you ship one, tell me
 

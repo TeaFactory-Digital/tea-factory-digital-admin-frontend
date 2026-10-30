@@ -72,7 +72,7 @@ import { NAVIGATION, queuesOf } from '@/layout/navigation';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import { Segmented } from '@/components/ui/Segmented';
 import { ErrorState, Skeleton } from '@/components/ui/states';
 import { InfoTip } from '@/components/ui/Tooltip';
 import { StatCard } from '@/components/charts/StatCard';
@@ -316,15 +316,15 @@ function AdoptionTrendCard({ trend, className }: { trend: Trend; className?: str
         }
         actions={
           charted ? (
-            <Tabs value={range} onValueChange={(value) => setRange(value as Range)}>
-              <TabsList aria-label={t('dashboard.trendRange')}>
-                {RANGES.map((value) => (
-                  <TabsTrigger key={value} value={value} className="px-sm">
-                    {t('dashboard.trendMonths', { count: Number(value) })}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
+            <Segmented
+              label={t('dashboard.trendRange')}
+              value={range}
+              onValueChange={(value) => setRange(value as Range)}
+              options={RANGES.map((value) => ({
+                value,
+                label: t('dashboard.trendMonths', { count: Number(value) }),
+              }))}
+            />
           ) : null
         }
       />

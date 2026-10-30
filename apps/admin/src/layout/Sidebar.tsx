@@ -74,7 +74,6 @@ export function Sidebar({ summary }: { summary?: DashboardView }) {
        */}
       <Link
         to="/"
-        aria-label={t('nav.dashboard')}
         className="flex shrink-0 items-center gap-sm rounded-md p-xs transition-colors hover:bg-surface-variant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <Logo showName={false} />
@@ -85,6 +84,9 @@ export function Sidebar({ summary }: { summary?: DashboardView }) {
           <span className="truncate text-caption text-text-secondary">
             {factory.location || t('shell.consoleName')}
           </span>
+          {/* Where it goes, after the words it shows: a spoken name has to start with the
+              visible one (WCAG 2.5.3), so voice control can say what it sees. */}
+          <span className="sr-only">{t('nav.dashboard')}</span>
         </span>
       </Link>
 

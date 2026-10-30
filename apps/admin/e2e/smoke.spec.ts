@@ -60,15 +60,17 @@ test('applies the tenant brand as CSS custom properties', async ({ page }) => {
 
   // The whole white-label mechanism in one assertion: Tailwind's `--color-primary`
   // resolves through `--brand-color-primary`, which is written at runtime from the
-  // tenant's config. If this is Galaboda's green, the bridge works end to end.
+  // tenant's config. If this is Galaboda's green, the bridge works end to end. Its
+  // #2E8B57, a shade darker for AA text contrast (`readablePalette`): still their green.
   const primary = await page.evaluate(() =>
     getComputedStyle(document.documentElement).getPropertyValue('--brand-color-primary').trim(),
   );
-  expect(primary.toUpperCase()).toBe('#2E8B57');
+  expect(primary.toUpperCase()).toBe('#2A8050');
 
   // And a different tenant repaints without a rebuild. `hillcountry` has no bundled
   // fallback, so it first paints the neutral base and then its own green once the
-  // served `GET /config` lands: the colour comes from the server, not the bundle.
+  // served `GET /config` lands: the colour comes from the server, not the bundle. #1B5E20
+  // already reads at AA, so it arrives untouched.
   await page.goto('/sign-in?tenant=hillcountry');
   await expect
     .poll(async () =>

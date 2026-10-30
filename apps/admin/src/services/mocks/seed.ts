@@ -88,6 +88,8 @@ import {
   monthsOfHistory,
   colomboDayOf,
   computeBillAmounts,
+  correctionTotal,
+  type BillCorrection,
   grantsFromRoles,
   isOutlierKg,
   isWritten,
@@ -1701,6 +1703,8 @@ interface BillGenerationContext {
    * generated for a month nobody asked in simply carries `0`.
    */
   savingsWithdrawals?: Map<string, number>;
+  /** C5: payment corrections waiting for each supplier's next bill. Absent: none. */
+  corrections?: Map<string, BillCorrection[]>;
   /** The factory's approved deduction rates (§21.10). Defaulted for a run before any were set. */
   deductionRates?: DeductionRates;
   /** Interest a month on an advance still owed (Configuration). Absent: none. */
@@ -1753,7 +1757,10 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
   const suppliers = context.suppliers
     .filter(
       (supplier) =>
-        bySupplier.has(supplier.id) || (context.savingsWithdrawals?.get(supplier.id) ?? 0) > 0,
+        bySupplier.has(supplier.id) ||
+        (context.savingsWithdrawals?.get(supplier.id) ?? 0) > 0 ||
+        // A correction is paid or taken on the next bill, so it needs one too.
+        (context.corrections?.get(supplier.id)?.length ?? 0) > 0,
     )
     .sort((a, b) => a.supplierCode.localeCompare(b.supplierCode));
 
@@ -1825,6 +1832,7 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
      * by anybody who records one on the savings screen during the window.
      */
     const savingsWithdrawal = round2(context.savingsWithdrawals?.get(supplier.id) ?? 0);
+    const corrections = context.corrections?.get(supplier.id) ?? [];
 
     const amounts = computeBillAmounts({
       totalKgs,
@@ -1832,6 +1840,7 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
       extraRatePerKg: context.rate?.extraRatePerKg ?? null,
       coinsBroughtForward,
       savingsWithdrawal,
+      correction: correctionTotal(corrections),
       deductions,
       paymentUnit: context.paymentUnit,
     });
@@ -1869,6 +1878,7 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
       grossAmount: amounts.grossAmount,
 
       deductions: amounts.deductions,
+      corrections: corrections.length > 0 ? corrections : null,
       loanInstalmentNo:
         amounts.deductions.loansAdvance > 0
           ? (context.loanInstalmentsBefore?.get(supplier.id) ?? 0) + 1

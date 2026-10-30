@@ -97,6 +97,7 @@ const BY_CODE: Record<string, string> = {
   'opening-balances-locked': 'error.openingBalancesLocked',
   'cut-over-month': 'error.cutOverMonth',
   'withdrawal-pending': 'error.withdrawalPending',
+  'correction-invalid': 'error.correctionInvalid',
   'negative': 'error.negative',
   'unknown-supplier': 'error.unknownSupplier',
   'no-bill': 'error.noBill',

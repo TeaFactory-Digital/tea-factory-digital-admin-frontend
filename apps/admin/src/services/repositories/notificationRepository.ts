@@ -15,8 +15,11 @@
 import {
   EDITORIAL_FALLBACK_LANGUAGE,
   composeNotificationSchema,
+  halfWrittenNotificationLanguages,
   isRecognizedCategory,
   type ComposeNotificationBody,
+  type LanguageCode,
+  type NotificationCopy,
   type NotificationAudience,
   type NotificationCategory,
   type NotificationQuery,
@@ -64,6 +67,7 @@ function toNotificationSend(row: ServedNotificationSend): NotificationSend {
     createdAt: row.createdAt,
     sentAt: row.sentAt,
     failureReason: row.failureReason ?? null,
+    languages: (row.translations ?? []).map((one) => one.lang as LanguageCode),
   };
 }
 
@@ -142,13 +146,25 @@ export const notificationRepository = {
     }
 
     const valid = parsed.data as ComposeNotificationBody;
+    const half = halfWrittenNotificationLanguages(valid.translations);
+    if (half.length > 0) {
+      throw new ApiError({
+        code: 'invalid',
+        message: 'A language has a title without a message, or a message without a title.',
+        details: { languages: half },
+      });
+    }
+    // The fallback language first, then every other language written in full. A supplier
+    // reading in a language left out gets the fallback (the API's inbox, `?lang=`).
+    const others = (Object.entries(valid.translations ?? {}) as Array<[LanguageCode, NotificationCopy]>)
+      .filter(([lang, copy]) => lang !== EDITORIAL_FALLBACK_LANGUAGE && copy.title.trim() && copy.body.trim())
+      .map(([lang, copy]) => ({ lang, title: copy.title.trim(), body: copy.body.trim() }));
     return notificationEndpoints.send({
       category: valid.category,
       audience: await toServedAudience(valid.audience),
-      // One message, written once, filed as the fallback language: every supplier is
-      // shown it whatever their app's language, which is what "the office wrote this" means.
       translations: [
         { lang: EDITORIAL_FALLBACK_LANGUAGE, title: valid.title.trim(), body: valid.body.trim() },
+        ...others,
       ],
     });
   },

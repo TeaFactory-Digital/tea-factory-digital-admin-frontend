@@ -43,7 +43,7 @@ import type { DeductionLines, SupplierMonthSummary } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Select } from '@/components/ui/Select';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import { Segmented } from '@/components/ui/Segmented';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/states';
 import { formatAmount, formatKg, formatMonthKey } from '@/lib/format';
 import { SyncFreshness } from '@/components/SyncFreshness';
@@ -189,15 +189,16 @@ export function SupplierIncomeHistory({ supplierId }: { supplierId: string }) {
             the telephone, which makes it the one that most needs to say how old it is. */}
         <SyncFreshness />
 
-        <Tabs value={view} onValueChange={(value) => setView(value as ViewMode)}>
-          <TabsList aria-label={t('suppliers.income.views')}>
-            <TabsTrigger value="graph">{t('suppliers.income.tab.graph')}</TabsTrigger>
-            <TabsTrigger value="list">{t('suppliers.income.tab.list')}</TabsTrigger>
-            {canReadBills ? (
-              <TabsTrigger value="chart">{t('suppliers.income.tab.chart')}</TabsTrigger>
-            ) : null}
-          </TabsList>
-        </Tabs>
+        <Segmented
+          label={t('suppliers.income.views')}
+          value={view}
+          onValueChange={(value) => setView(value as ViewMode)}
+          options={[
+            { value: 'graph' as ViewMode, label: t('suppliers.income.tab.graph') },
+            { value: 'list' as ViewMode, label: t('suppliers.income.tab.list') },
+            ...(canReadBills ? [{ value: 'chart' as ViewMode, label: t('suppliers.income.tab.chart') }] : []),
+          ]}
+        />
 
         {history.isPending ? (
           <Skeleton className="h-64" />
@@ -205,12 +206,15 @@ export function SupplierIncomeHistory({ supplierId }: { supplierId: string }) {
           <EmptyState title={t('suppliers.income.empty')} body={t('suppliers.income.emptyHint')} />
         ) : view === 'graph' ? (
           <>
-            <Tabs value={metric} onValueChange={(value) => setMetric(value as Metric)}>
-              <TabsList aria-label={t('suppliers.income.metric')}>
-                <TabsTrigger value="earnings">{t('suppliers.income.earnings')}</TabsTrigger>
-                <TabsTrigger value="kgs">{t('suppliers.income.kgs')}</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <Segmented
+              label={t('suppliers.income.metric')}
+              value={metric}
+              onValueChange={(value) => setMetric(value as Metric)}
+              options={[
+                { value: 'earnings' as Metric, label: t('suppliers.income.earnings') },
+                { value: 'kgs' as Metric, label: t('suppliers.income.kgs') },
+              ]}
+            />
 
             {bars.length === 0 ? (
               // Every month of the year is still awaiting its auction result. Saying so

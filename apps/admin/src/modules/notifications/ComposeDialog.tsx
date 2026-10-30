@@ -15,15 +15,25 @@
  * `newsArticle` push opens the feed and a `requestDecided` one opens the request. Picking
  * for the office would send suppliers to the wrong screen, and picking *wrong* sends them
  * nowhere at all: the app drops a category it does not recognize.
+ *
+ * **One message, in each of the factory's languages** (the language strip, as on news and
+ * banners). The fallback language is required; the others are optional, and a supplier
+ * whose app is in a language left empty gets the fallback, which the strip marks on its tab
+ * and the confirmation says before the send.
  */
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Send, TriangleAlert, Users } from 'lucide-react';
 import {
+  EDITORIAL_FALLBACK_LANGUAGE,
   MAX_PUSH_BODY_CHARS,
   MAX_PUSH_TITLE_CHARS,
+  halfWrittenNotificationLanguages,
+  missingNotificationLanguages,
+  type LanguageCode,
   type NotificationAudience,
+  type NotificationCopy,
   type NotificationCategory,
   type NotificationTrigger,
   NOTIFICATION_CATEGORIES,
@@ -42,6 +52,8 @@ import { errorMessageKey } from '@/lib/errorMessage';
 import { formatCount } from '@/lib/format';
 import { useNotificationReach, useSendNotification } from './hooks';
 import { InfoTip } from '@/components/ui/Tooltip';
+import { LanguageStrip } from '@/modules/content/LanguageStrip';
+import { useContentLanguages } from '@/modules/content/hooks';
 
 /** Categories only the system sends; the office cannot compose one. */
 const AUTOMATIC_ONLY = new Set<NotificationCategory>(['leafWeighed']);
@@ -86,9 +98,28 @@ export function ComposeDialog({
   const [category, setCategory] = useState<NotificationCategory | ''>('');
   const [kind, setKind] = useState<NotificationAudience['kind']>('allSuppliers');
   const [point, setPoint] = useState('');
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
+  // The fallback first, then the factory's other languages, in its own order.
+  const contentLanguages = useContentLanguages();
+  const languages = useMemo<LanguageCode[]>(
+    () => [EDITORIAL_FALLBACK_LANGUAGE, ...contentLanguages.filter((lang) => lang !== EDITORIAL_FALLBACK_LANGUAGE)],
+    [contentLanguages],
+  );
+  const [lang, setLang] = useState<LanguageCode>(EDITORIAL_FALLBACK_LANGUAGE);
+  const [copy, setCopy] = useState<Partial<Record<LanguageCode, NotificationCopy>>>({});
   const [confirmingSend, setConfirmingSend] = useState(false);
+  const title = copy[EDITORIAL_FALLBACK_LANGUAGE]?.title ?? '';
+  const body = copy[EDITORIAL_FALLBACK_LANGUAGE]?.body ?? '';
+  const current = copy[lang] ?? { title: '', body: '' };
+  const setCurrent = (patch: Partial<NotificationCopy>) =>
+    setCopy((before) => ({ ...before, [lang]: { ...(before[lang] ?? { title: '', body: '' }), ...patch } }));
+  const others = useMemo(
+    () => Object.fromEntries(Object.entries(copy).filter(([one]) => one !== EDITORIAL_FALLBACK_LANGUAGE)),
+    [copy],
+  ) as Partial<Record<LanguageCode, NotificationCopy>>;
+  const missing = missingNotificationLanguages(others, languages);
+  const half = halfWrittenNotificationLanguages(others);
+  // The strip marks the fallback too while it is still empty: nothing can be sent without it.
+  const missingOnStrip = title.trim() && body.trim() ? missing : [EDITORIAL_FALLBACK_LANGUAGE, ...missing];
 
   // Reset on open, not on mount: a dialog reopened with the last message still in it is
   // one keystroke away from sending it twice.
@@ -97,8 +128,8 @@ export function ComposeDialog({
     setCategory('');
     setKind('allSuppliers');
     setPoint('');
-    setTitle('');
-    setBody('');
+    setLang(EDITORIAL_FALLBACK_LANGUAGE);
+    setCopy({});
   }, [open]);
 
   const audience = useMemo<NotificationAudience>(
@@ -121,7 +152,8 @@ export function ComposeDialog({
     open && Boolean(category) && audienceReady,
   );
 
-  const complete = Boolean(category) && audienceReady && title.trim() && body.trim();
+  const complete =
+    Boolean(category) && audienceReady && title.trim() && body.trim() && half.length === 0;
   const nobody = reach.data?.reachableDevices === 0;
 
   async function submit() {
@@ -136,6 +168,7 @@ export function ComposeDialog({
         category,
         title: title.trim(),
         body: body.trim(),
+        translations: others,
         audience,
       });
       setConfirmingSend(false);
@@ -319,37 +352,55 @@ export function ComposeDialog({
             </div>
           ) : null}
 
+          {/* One tab per language the factory writes in; a gap is marked on its tab. */}
+          {languages.length > 1 ? (
+            <div className="flex flex-col gap-xs">
+              <LanguageStrip languages={languages} active={lang} onSelect={setLang} missing={missingOnStrip} stale={[]} />
+              <p className="text-caption text-text-secondary">
+                {lang === EDITORIAL_FALLBACK_LANGUAGE
+                  ? t('notifications.languageFallbackHint')
+                  : t('notifications.languageOptionalHint', { language: t(`content.language.${lang}`) })}
+              </p>
+            </div>
+          ) : null}
+
           <Field
+            key={`title-${lang}`}
             label={t('notifications.field.title')}
-            required
+            required={lang === EDITORIAL_FALLBACK_LANGUAGE}
             hint={t('notifications.field.titleHint', { max: MAX_PUSH_TITLE_CHARS })}
+            error={half.includes(lang) && !current.title.trim() ? t('notifications.halfWritten') : undefined}
           >
             {({ id, describedBy, required }) => (
               <Input
                 id={id}
+                lang={lang}
                 aria-describedby={describedBy}
                 required={required}
                 maxLength={MAX_PUSH_TITLE_CHARS}
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
+                value={current.title}
+                onChange={(event) => setCurrent({ title: event.target.value })}
               />
             )}
           </Field>
 
           <Field
+            key={`body-${lang}`}
             label={t('notifications.field.body')}
-            required
+            required={lang === EDITORIAL_FALLBACK_LANGUAGE}
             hint={t('notifications.field.bodyHint', { max: MAX_PUSH_BODY_CHARS })}
+            error={half.includes(lang) && !current.body.trim() ? t('notifications.halfWritten') : undefined}
           >
             {({ id, describedBy, required }) => (
               <Textarea
                 id={id}
+                lang={lang}
                 aria-describedby={describedBy}
                 required={required}
                 rows={3}
                 maxLength={MAX_PUSH_BODY_CHARS}
-                value={body}
-                onChange={(event) => setBody(event.target.value)}
+                value={current.body}
+                onChange={(event) => setCurrent({ body: event.target.value })}
               />
             )}
           </Field>
@@ -375,6 +426,15 @@ export function ComposeDialog({
         loading={send.isPending}
       >
         <p className="text-body-small text-text-secondary">{t('notifications.confirmSendHint')}</p>
+        {/* Said before the send: who will read the fallback instead of their own language. */}
+        {missing.length > 0 ? (
+          <p className="mt-sm text-body-small text-warning">
+            {t('notifications.confirmFallback', {
+              languages: missing.map((one) => t(`content.language.${one}`)).join(', '),
+              fallback: t(`content.language.${EDITORIAL_FALLBACK_LANGUAGE}`),
+            })}
+          </p>
+        ) : null}
       </ConfirmDialog>
     </>
   );

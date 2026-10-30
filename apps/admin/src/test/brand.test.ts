@@ -10,6 +10,8 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  adjustForContrast,
+  contrastRatio,
   KNOWN_TOKENS,
   applyTheme,
   brandForTenant,
@@ -137,8 +139,10 @@ describe('themeToCssVars', () => {
     expect(vars['--brand-font-weight-data-cell']).toBe('400');
   });
 
-  it('applies the tenant override over the base palette', () => {
-    expect(vars['--brand-color-primary']).toBe('#2E8B57');
+  it('applies the tenant override over the base palette, moved only as far as AA needs', () => {
+    // Galaboda's #2E8B57 is 4.24:1 with white; the same hue a little darker reaches 4.5.
+    expect(vars['--brand-color-primary']).toBe('#2A8050');
+    expect(contrastRatio('#2A8050', '#FFFFFF')).toBeGreaterThanOrEqual(4.5);
   });
 });
 
@@ -147,7 +151,7 @@ describe('applyTheme', () => {
     const element = document.createElement('div');
     const written = applyTheme(element, createTheme('light'));
     expect(written.length).toBeGreaterThan(50);
-    expect(element.style.getPropertyValue('--brand-color-primary')).toBe('#128C7E');
+    expect(element.style.getPropertyValue('--brand-color-primary')).toBe('#107E71');
     expect(element.dataset.scheme).toBe('light');
   });
 });
@@ -200,5 +204,35 @@ describe('mergeThemeOverrides', () => {
       { colors: { light: { primary: '#333333' } } },
     );
     expect(merged.colors?.light).toEqual({ primary: '#333333', secondary: '#222222' });
+  });
+});
+
+describe('readable whatever the colours (WCAG AA)', () => {
+  const light = createTheme('light').colors;
+
+  it('leaves a colour that already passes alone', () => {
+    expect(adjustForContrast('#1B5E20', ['#FFFFFF'], 'darker')).toBe('#1B5E20');
+  });
+
+  it('keeps every text pairing at 4.5:1 for a pale brand colour, in both schemes', () => {
+    for (const scheme of ['light', 'dark'] as const) {
+      const pale = scheme === 'light' ? '#7FD3A0' : '#0E3B22';
+      const colors = createTheme(scheme, { colors: { [scheme]: { primary: pale } } }).colors;
+      for (const [a, b] of [
+        [colors.primary, colors.primaryContrast],
+        [colors.primary, colors.surface],
+        [colors.primary, colors.background],
+        [colors.primary, colors.primaryMuted],
+        [colors.textSecondary, colors.surface],
+        [colors.textSecondary, colors.primaryMuted],
+      ] as const) {
+        expect(contrastRatio(a, b)).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+
+  it('leaves a value it cannot read (not hex) as it came', () => {
+    expect(adjustForContrast('rgb(120, 200, 160)', ['#FFFFFF'], 'darker')).toBe('rgb(120, 200, 160)');
+    expect(light.primary).toMatch(/^#/);
   });
 });

@@ -464,6 +464,13 @@ export const composeNotificationSchema = z.object({
   category: notificationCategorySchema,
   title: requiredString('validation.required', MAX_PUSH_TITLE_CHARS),
   body: requiredString('validation.required', MAX_PUSH_BODY_CHARS),
+  /** The other languages, each optional; an empty one is left out of the send. */
+  translations: z
+    .partialRecord(
+      languageCodeSchema,
+      z.object({ title: z.string().max(MAX_PUSH_TITLE_CHARS), body: z.string().max(MAX_PUSH_BODY_CHARS) }),
+    )
+    .optional(),
   audience: notificationAudienceSchema,
 });
 

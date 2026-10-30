@@ -2,7 +2,7 @@
   "name": "teafactory-digital-admin",
   "version": "0.1.0",
   "private": true,
-  "description": "Tea Factory Digital \u2014 admin web console. White-label, multi-tenant, runtime-branded.",
+  "description": "Tea Factory Digital: admin web console. White-label, multi-tenant, runtime-branded.",
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -22,6 +22,7 @@
     "dev:staging": "npm run dev:staging --workspace @tfd/admin"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@eslint/js": "^9.39.0",
     "@playwright/test": "^1.56.0",
     "@types/node": "^22.15.0",

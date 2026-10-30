@@ -66,6 +66,11 @@ export function formatAmount(value: number | null | undefined): string {
   return decimal.format(value);
 }
 
+/** An amount with its sign always shown, `+900.00` or `-1,250.00`: a correction either way. */
+export function formatSignedAmount(value: number): string {
+  return `${value > 0 ? '+' : ''}${decimal.format(value)}`;
+}
+
 /** `1,240.50 kg` (`කි.ග්‍රෑ.`, `கிலோ`). */
 export function formatKg(value: number | null | undefined): string {
   if (value === null || value === undefined) return NOT_AVAILABLE;

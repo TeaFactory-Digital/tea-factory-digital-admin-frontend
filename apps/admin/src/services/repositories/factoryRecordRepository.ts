@@ -15,8 +15,11 @@ import type {
   ImportRow,
   ImportRowProblem,
   NewSupplier,
+  NewSupplierCorrection,
   OpeningBalances,
   OpeningBalancesRecord,
+  SupplierCorrection,
+  SupplierCorrections,
   SupplierTransportRate,
   WalkInCreditRequest,
 } from '@tfd/domain';
@@ -77,6 +80,12 @@ export const factoryRecordRepository = {
     supplierId: string,
     body: OpeningBalances & { note: string },
   ): Promise<OpeningBalancesRecord> => factoryRecordEndpoints.saveOpeningBalances(supplierId, body),
+
+  corrections: (supplierId: string): Promise<SupplierCorrections> =>
+    factoryRecordEndpoints.corrections(supplierId),
+
+  createCorrection: (supplierId: string, body: NewSupplierCorrection): Promise<SupplierCorrection> =>
+    factoryRecordEndpoints.createCorrection(supplierId, body),
 
   saveTransportRate: (supplierId: string, body: SupplierTransportRate): Promise<MutationAck> =>
     factoryRecordEndpoints.saveTransportRate(supplierId, body),
