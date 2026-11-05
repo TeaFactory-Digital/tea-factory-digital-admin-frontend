@@ -74,6 +74,14 @@ describe('floor2 / round2', () => {
     expect(floor2(100.999)).toBe(100.99);
   });
 
+  it('keeps a figure already in whole cents', () => {
+    // `20353.51 * 100` is 2035350.9999999998: the headroom on a ceiling of 20,353.51 with
+    // nothing drawn printed 20,353.50.
+    expect(floor2(20_353.51)).toBe(20_353.51);
+    expect(floor2(20_353.51 - 0)).toBe(20_353.51);
+    expect(floor2(126.75 * 160.58)).toBe(20_353.51);
+  });
+
   it('rounds an amount', () => {
     expect(round2(100.995)).toBe(101);
     expect(round2(100.994)).toBe(100.99);

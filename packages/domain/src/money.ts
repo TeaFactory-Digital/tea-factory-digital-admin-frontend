@@ -20,7 +20,9 @@ const FACTOR = 10 ** MONEY_SCALE;
  * maximum, so the number on screen is a number the validator accepts.
  */
 export function floor2(value: number): number {
-  return Math.floor(value * FACTOR) / FACTOR;
+  // `20353.51 * 100` is 2035350.9999999998 in binary: without the nudge a figure already in
+  // whole cents loses one. A millionth of a cent is far below anything money carries.
+  return Math.floor(value * FACTOR + 1e-6) / FACTOR;
 }
 
 /** Round half-up to cents. Use for **amounts**: a payable figure, not a limit. */

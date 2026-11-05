@@ -848,6 +848,16 @@ function colomboInstant(date: string, hour: number, minute: number): string {
   return new Date(`${date}T${hh}:${mm}:00+05:30`).toISOString();
 }
 
+/**
+ * `daysAgo`, but never before this month began: for a record the month's checks must count
+ * as this month's whatever today's date is (the import's approvals check reads crd-13).
+ */
+function daysAgoThisMonth(days: number): string {
+  const at = daysAgo(days);
+  const start = colomboInstant(`${currentMonthKey}-01`, 0, 0);
+  return at < start ? start : at;
+}
+
 const daysSince = (iso: string | null) =>
   iso === null ? Infinity : (NOW.getTime() - new Date(iso).getTime()) / 86_400_000;
 
@@ -2698,7 +2708,7 @@ function seedCreditRequests(): AdminCreditRequest[] {
         note: 'Within the ceiling for the leaf already weighed this month. Paid at the counter.',
         decidedById: 'usr-manager-1',
         decidedByName: 'Ruwan Jayasuriya',
-        decidedAt: daysAgo(6),
+        decidedAt: daysAgoThisMonth(6),
       },
       eligibility: settledEligibility,
       ageHours: 168,

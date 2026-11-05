@@ -170,17 +170,19 @@ describe('a month of imported bills', () => {
 
 describe('the approvals check, and the two races', () => {
   const NOTE = 'Checked against the leaf already weighed this month at the counter.';
-  /** The template slip without its Rs. 40,000 advance, still adding up. */
-  const withoutAdvance = (code: string) => ({
+  /** The template slip with its advance line set to a whole ten rupees, still adding up. */
+  const withAdvance = (code: string, advance: number) => ({
     ...slip(),
     month: currentMonthKey,
     supplierCode: code,
     billNo: '2026300100',
-    advance: '0',
-    totalDeductions: '6418',
-    balanceAmount: '108226.91',
-    finalBalance: '108220',
+    advance: String(advance),
+    totalDeductions: String(6418 + advance),
+    balanceAmount: (108_226.91 - advance).toFixed(2),
+    finalBalance: String(108_220 - advance),
   });
+  /** The template slip without its Rs. 40,000 advance. */
+  const withoutAdvance = (code: string) => withAdvance(code, 0);
 
   it('refuses a slip that lacks what we approved, at the import and again at the publish', async () => {
     await importingFactory();
@@ -195,8 +197,10 @@ describe('the approvals check, and the two races', () => {
     const alreadyApproved = refused.problems[0]!.amount!;
     expect(alreadyApproved).toBeGreaterThan(0);
 
-    // The printed slip, whose Rs. 40,000 advance covers it, goes in.
-    const printed = { ...slip(), month: currentMonthKey, supplierCode: supplier.supplierCode, billNo: '2026300100' };
+    // A slip whose advance line covers it, to the next ten rupees, goes in. Not the template's
+    // Rs. 40,000: crd-1 is a share of this month's leaf, small early in the month, and the
+    // slip must fall short once crd-1 is approved too, whatever today's date.
+    const printed = withAdvance(supplier.supplierCode, Math.ceil(alreadyApproved / 10) * 10);
     await signInAs(CLERK);
     expect(await factoryRecordRepository.importRows('bills', 'a.xlsx', [printed])).toMatchObject({
       saved: 1,
@@ -213,6 +217,7 @@ describe('the approvals check, and the two races', () => {
     );
 
     const approvedNow = Math.round((alreadyApproved + request.amount) * 100) / 100;
+    expect(Number(printed.advance)).toBeLessThan(approvedNow);
 
     // The same printed slip no longer covers both: refused at the import...
     await signInAs(CLERK);
