@@ -45,6 +45,7 @@ import {
   type OpeningBalancesRecord,
   correctionProblems,
   correctionTotal,
+  CORRECTION_REASON_MAX,
   approvalTierFor,
   canDecideCredit,
   type BillCorrection,
@@ -6434,7 +6435,9 @@ export const handlers: HttpHandler[] = [
 
       const before = state.creditRequests[index]!;
 
-      const gate = featureGate(request, CREDIT_FACILITY_FLAGS[before.facility]);
+      // Rejecting stays possible with the facility switched off, so the queue can be cleared
+      // (R36, as the API does); approving does not.
+      const gate = verb === 'approve' ? featureGate(request, CREDIT_FACILITY_FLAGS[before.facility]) : null;
       if (gate) return gate;
 
       const tier = approvalTierFor(before.amount, creditRulesOf(request)[before.facility]);
@@ -8139,9 +8142,9 @@ export const handlers: HttpHandler[] = [
       });
     }
 
-    // Two clerks, one inbox: the same refusal M9 makes, for the same reason. A
-    // second reply would replace the first, and the supplier already read it.
-    if (isInquiryClosed(before.status)) {
+    // Two clerks, one inbox: a closed one takes no reply. A resolved one does (R31, as the
+    // API does): the conversation goes on.
+    if (before.status === 'closed') {
       return fail({
         status: 409,
         code: 'already-decided',
@@ -8470,6 +8473,8 @@ export const handlers: HttpHandler[] = [
       items: state.corrections.filter((one) => one.supplierId === id).reverse(),
       publishedMonthKeys: publishedMonthKeysOf(id),
       billSource: billSourceOf(tenantConfig(request).billSettings),
+      savingsPending: pendingWithdrawalTotal(pendingWithdrawalsFor(id)),
+      supplierStatus: state.suppliers.find((one) => one.id === id)!.status,
     });
   }),
 
@@ -8491,7 +8496,12 @@ export const handlers: HttpHandler[] = [
         savings: supplier.savingsBalance ?? savingsBalanceOf(supplier.id),
       },
       billSource: billSourceOf(tenantConfig(request).billSettings),
+      savingsPending: pendingWithdrawalTotal(pendingWithdrawalsFor(supplier.id)),
+      supplierStatus: supplier.status,
     });
+    if (body.reason && body.reason.length > CORRECTION_REASON_MAX) {
+      return fail({ status: 422, code: 'invalid', message: 'The request was not valid.' });
+    }
     if (problems.length > 0) {
       return fail({
         status: 422,

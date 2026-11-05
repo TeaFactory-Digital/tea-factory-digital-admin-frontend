@@ -126,7 +126,11 @@ export const DEFAULT_ROLE_MATRIX: Record<ConsoleRole, Record<Capability, AccessL
      */
     creditAboveThreshold: NONE,
     changeRequests: A,
-    inquiries: R,
+    /**
+     * `A` since R29 (4 November 2026): escalated inquiries come to the manager, who must be
+     * able to answer and close them.
+     */
+    inquiries: A,
     content: R,
     flagsAndBranding: R,
     usersAndRoles: R,

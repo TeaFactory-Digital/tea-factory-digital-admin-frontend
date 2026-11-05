@@ -156,11 +156,11 @@ describe('M10 refusals', () => {
     });
   });
 
-  it('refuses a second answer to a message somebody else already answered', async () => {
+  it('takes another reply on an answered message: the conversation goes on (R31)', async () => {
     await signInAs(CLERK);
 
-    await expect(inquiryRepository.reply(ANSWERED, { body: REPLY })).rejects.toMatchObject({
-      code: 'already-decided',
+    await expect(inquiryRepository.reply(ANSWERED, { body: REPLY })).resolves.toMatchObject({
+      status: 'resolved',
     });
   });
 
@@ -183,18 +183,12 @@ describe('M10 refusals', () => {
 });
 
 describe('M10 permissions (§12.1)', () => {
-  it('lets the clerk answer and gives the manager read only', async () => {
-    /**
-     * The opposite of every money module, and deliberate: answering a supplier is
-     * counter work, and a manager reading the queue is oversight. Requiring a
-     * manager to release a reply would put a day between a question and its answer
-     * to guard against a risk (money moving) that an inquiry does not carry.
-     */
+  it('lets the clerk answer, and the manager too, to whom escalations go (R29)', async () => {
+    // Answering is counter work; since 4 November 2026 the manager answers as well, because
+    // an escalated message comes to them and a read-only manager could not settle it.
     await signInAs(MANAGER);
     await expect(inquiryRepository.list()).resolves.toBeTruthy();
-    await expect(inquiryRepository.reply(OPEN, { body: REPLY })).rejects.toMatchObject({
-      code: 'forbidden',
-    });
+    await expect(inquiryRepository.reply(OPEN, { body: REPLY })).resolves.toMatchObject({ status: 'resolved' });
   });
 
   it('gives the editor no access to inquiries at all', async () => {
@@ -279,13 +273,11 @@ describe('M10 detail screen, by role', () => {
     expect(screen.getByRole('button', { name: /close unanswered/i })).toBeInTheDocument();
   });
 
-  it('shows a manager the message and says who answers, with no buttons', async () => {
-    // A manager holds `inquiries: R`; both endpoints require `A` and would refuse.
+  it('offers a manager the reply box and the escalation actions (R29)', async () => {
     await signInAs(MANAGER);
     renderDetail(OPEN);
-    expect(await screen.findByText(/your role can read messages/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^reply$/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /close unanswered/i })).not.toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /close unanswered/i })).toBeInTheDocument();
+    expect(screen.queryByText(/your role can read messages/i)).not.toBeInTheDocument();
   });
 
   it('shows the answer the API sends flat (replyBody, repliedByName)', async () => {

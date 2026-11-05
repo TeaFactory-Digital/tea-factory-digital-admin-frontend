@@ -135,6 +135,8 @@ const BY_REASON: Record<string, string> = {
   'bank-details-approval-not-implemented': 'changeRequests.bankNotReady.body',
   // A month published while the file waited: the file is fine, it just has to go again.
   'published-during-import': 'error.publishedDuringImport',
+  // A save that would leave nobody able to decide above an owner figure (ADR-041, Q6).
+  'no-owner-approver': 'error.noOwnerApprover',
 };
 
 const CUT_OVER_REASONS = new Set(['future', 'first-bill-month', 'different']);

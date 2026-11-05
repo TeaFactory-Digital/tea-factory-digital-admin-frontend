@@ -84,8 +84,11 @@ export const factoryRecordRepository = {
   corrections: (supplierId: string): Promise<SupplierCorrections> =>
     factoryRecordEndpoints.corrections(supplierId),
 
-  createCorrection: (supplierId: string, body: NewSupplierCorrection): Promise<SupplierCorrection> =>
-    factoryRecordEndpoints.createCorrection(supplierId, body),
+  createCorrection: (
+    supplierId: string,
+    body: NewSupplierCorrection,
+    idempotencyKey?: string,
+  ): Promise<SupplierCorrection> => factoryRecordEndpoints.createCorrection(supplierId, body, idempotencyKey),
 
   saveTransportRate: (supplierId: string, body: SupplierTransportRate): Promise<MutationAck> =>
     factoryRecordEndpoints.saveTransportRate(supplierId, body),

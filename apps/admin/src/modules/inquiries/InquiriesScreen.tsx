@@ -26,7 +26,7 @@ import { SearchInput, Select } from '@/components/ui/Field';
 import { inquiryRepository } from '@/services/repositories/inquiryRepository';
 import { ExportCsvButton } from '@/components/ExportCsvButton';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { EmptyState } from '@/components/ui/states';
+import { EmptyState, Notice } from '@/components/ui/states';
 import { useDebounced } from '@/lib/useDebounced';
 import { formatAge } from '@/lib/format';
 import { useInquiries } from './hooks';
@@ -64,6 +64,10 @@ export function InquiriesScreen() {
   );
 
   const { data, isPending, error, refetch } = useInquiries(query);
+  // The open list leaves out what was passed to the manager (the API filters on one status),
+  // so it says how many are waiting there, one click away. A count only: one row asked for.
+  const escalated = useInquiries({ status: 'escalated', page: 0, pageSize: 1 });
+  const escalatedCount = status === 'open' ? (escalated.data?.total ?? 0) : 0;
 
   function setParam(key: string, value: string | null) {
     const next = new URLSearchParams(params);
@@ -200,6 +204,20 @@ export function InquiriesScreen() {
             <option value="closed">{t('inquiries.filter.closed')}</option>
           </Select>
         </div>
+
+        {escalatedCount > 0 ? (
+          <div className="shrink-0 px-md pt-sm">
+            <Notice tone="warning">
+              <button
+                type="button"
+                className="text-left font-medium underline underline-offset-2"
+                onClick={() => setParam('status', 'escalated')}
+              >
+                {t('inquiries.escalatedWaiting', { count: escalatedCount })}
+              </button>
+            </Notice>
+          </div>
+        ) : null}
 
         <DataTable
           label={t('inquiries.title')}

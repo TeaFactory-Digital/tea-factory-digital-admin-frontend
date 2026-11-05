@@ -76,6 +76,18 @@ describe('the rules', () => {
     expect(correctionProblems({ ...loanDown, amount: 500, kind: 'writeOff' }, facts)).toEqual(['kind-not-allowed']);
   });
 
+  it('keeps what pending withdrawals need, and writes off no active supplier (R32, R33)', () => {
+    const loanDown = { ...ok, target: 'loan' as const, amount: -800 };
+    // 1,000 held, 500 of it owed to a withdrawal: 500 is free.
+    const pending = { ...facts, savingsPending: 500 };
+    expect(correctionProblems({ ...loanDown, kind: 'fromSavings' }, pending)).toEqual(['savings-short']);
+    expect(correctionProblems({ ...ok, target: 'savings', amount: -600 }, pending)).toEqual(['savings-short']);
+    expect(correctionProblems({ ...loanDown, kind: 'writeOff' }, { ...facts, supplierStatus: 'active' })).toEqual([
+      'supplier-active',
+    ]);
+    expect(correctionProblems({ ...loanDown, kind: 'writeOff' }, { ...facts, supplierStatus: 'closed' })).toEqual([]);
+  });
+
   it('leaves a payment to the factory system where the bills are imported', () => {
     expect(correctionProblems(ok, { ...facts, billSource: 'imported' })).toEqual(['payment-bills-imported']);
   });

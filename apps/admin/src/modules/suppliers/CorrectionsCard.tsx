@@ -13,6 +13,7 @@ import { Plus } from 'lucide-react';
 import {
   CORRECTION_TARGETS,
   correctionProblems,
+  CORRECTION_REASON_MAX,
   type CorrectionKind,
   round2,
   type CorrectionTarget,
@@ -155,12 +156,16 @@ function CorrectionDialog({
     publishedMonthKeys: data.publishedMonthKeys,
     balances,
     billSource: data.billSource,
+    savingsPending: data.savingsPending,
+    supplierStatus: data.supplierStatus,
   });
+  // One key for this form, kept across retries (R34): the API answers a resend with the first.
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
   const ready = amountOk && problems.length === 0;
 
   async function submit() {
     try {
-      await create.mutateAsync({ ...input, reason: reason.trim() });
+      await create.mutateAsync({ body: { ...input, reason: reason.trim() }, idempotencyKey });
       toast.success(t(target === 'payment' ? 'corrections.savedPayment' : 'corrections.savedBalance'));
       onClose();
     } catch (error) {
@@ -253,7 +258,14 @@ function CorrectionDialog({
           className="sm:col-span-2"
         >
           {({ id, describedBy }) => (
-            <Textarea id={id} aria-describedby={describedBy} rows={2} value={reason} onChange={(event) => setReason(event.target.value)} />
+            <Textarea
+              id={id}
+              aria-describedby={describedBy}
+              rows={2}
+              maxLength={CORRECTION_REASON_MAX}
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+            />
           )}
         </Field>
       </div>
@@ -271,7 +283,14 @@ function CorrectionDialog({
       </p>
       {problems.includes('savings-short') ? (
         <p role="alert" className="mt-sm text-body-small text-error">
-          {t('corrections.problem.savings-short', { savings: formatMoney(balances.savings) })}
+          {t('corrections.problem.savings-short', {
+            savings: formatMoney(round2(balances.savings - (data.savingsPending ?? 0))),
+          })}
+        </p>
+      ) : null}
+      {problems.includes('supplier-active') ? (
+        <p role="alert" className="mt-sm text-body-small text-error">
+          {t('corrections.problem.supplier-active')}
         </p>
       ) : null}
       {problems.includes('below-zero') ? (

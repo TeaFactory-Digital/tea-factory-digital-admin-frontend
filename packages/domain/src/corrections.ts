@@ -88,9 +88,15 @@ export interface SupplierCorrections {
   publishedMonthKeys: string[];
   /** Where this factory's bills come from: a payment correction needs them calculated here. */
   billSource: 'imported' | 'calculated';
+  /** Savings withdrawals still to be paid (R32), so the form checks what the server does. */
+  savingsPending?: number;
+  /** The supplier's account status (R33). */
+  supplierStatus?: 'active' | 'suspended' | 'closed';
 }
 
 export const CORRECTION_REASON_MIN = 10;
+/** The API refuses a longer reason with a bare `422 invalid` (ADR-041). */
+export const CORRECTION_REASON_MAX = 1000;
 
 export type CorrectionProblem =
   | 'amount-zero'
@@ -100,8 +106,13 @@ export type CorrectionProblem =
   | 'payment-bills-imported'
   /** `writeOff` or `fromSavings` on something other than a loan or fertilizer balance, or upwards. */
   | 'kind-not-allowed'
-  /** `fromSavings` for more than the supplier holds. */
-  | 'savings-short';
+  /** `fromSavings`, or savings corrected down, past what is free after pending withdrawals. */
+  | 'savings-short'
+  /**
+   * `writeOff` for a supplier still supplying (R33, decided 4 November 2026): a write-off is
+   * for a suspended or closed account; it would otherwise raise an active supplier's ceiling.
+   */
+  | 'supplier-active';
 
 export interface CorrectionFacts {
   /** Months with a published bill for the supplier. */
@@ -109,6 +120,13 @@ export interface CorrectionFacts {
   /** The balances now, for `below-zero`. */
   balances: { loan: number; manure: number; savings: number };
   billSource: 'imported' | 'calculated';
+  /**
+   * Savings withdrawals asked for and not yet paid (R32). They are owed out of the balance, so
+   * a correction may not leave less than they need. Absent: none.
+   */
+  savingsPending?: number;
+  /** The supplier's account status (R33). Absent: not checked. */
+  supplierStatus?: 'active' | 'suspended' | 'closed';
 }
 
 /**
@@ -128,16 +146,24 @@ export function correctionProblems(input: NewSupplierCorrection, facts: Correcti
     if (facts.billSource === 'imported') problems.push('payment-bills-imported');
   } else if (Number.isFinite(amount) && round2(facts.balances[input.target] + amount) < 0) {
     problems.push('below-zero');
+  } else if (input.target === 'savings' && round2(freeSavings(facts) + amount) < 0) {
+    problems.push('savings-short');
   }
   const kind = input.kind ?? 'correction';
   if (kind !== 'correction') {
     if ((input.target !== 'loan' && input.target !== 'manure') || !(amount < 0)) {
       problems.push('kind-not-allowed');
-    } else if (kind === 'fromSavings' && round2(facts.balances.savings + amount) < 0) {
+    } else if (kind === 'fromSavings' && round2(freeSavings(facts) + amount) < 0) {
       problems.push('savings-short');
     }
+    if (kind === 'writeOff' && facts.supplierStatus === 'active') problems.push('supplier-active');
   }
   return problems;
+}
+
+/** The savings a correction may take: the balance less withdrawals still to be paid (R32). */
+function freeSavings(facts: CorrectionFacts): number {
+  return round2(facts.balances.savings - (facts.savingsPending ?? 0));
 }
 
 /** The net of a bill's correction lines: what `computeBillAmounts` adds after the balance. */

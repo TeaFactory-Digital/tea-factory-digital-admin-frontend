@@ -1,6 +1,6 @@
 # Backend to-do
 
-Only the work still open (30 October 2026). Finished work is taken out; git history keeps it.
+Only the work still open (4 November 2026). Finished work is taken out; git history keeps it.
 The rules for every item are in [`factory-records.md`](./factory-records.md) (the console)
 and `packages/domain` (please `vendor:pull` after each console change).
 
@@ -8,14 +8,8 @@ and `packages/domain` (please `vendor:pull` after each console change).
 |---|------|----------|
 | 50 | Staging is not running the latest commits | Now |
 | 45 | Factory records: other deductions next, then the bill engine | High |
-| 48 | "This month so far": `GET /bills/month-to-date` | Medium |
 | 56 | Savings interest: calculated bills only, with the bill engine (R28 answered) | With #45's bill engine |
-| 57 | Corrections after a published bill (C5): `GET`/`POST /admin/suppliers/:id/corrections`, the bill's `corrections` lines | Medium |
-| 58 | Each day's collection point on the bill and "This month so far" (`DailySupply.points`) | Small |
-| 59 | Records kept five years (Q12): nothing deleted sooner; the job after five years | Small now, the job later |
-| 60 | Inquiry states `escalated` and `awaitingSupplier` (Q18) | Small |
-| 61 | Who approves credit, by amount (Q6): clerk, manager, owner | Medium |
-| 62 | Write off a loan or fertilizer balance, or pay it from savings (Q7) | Small, with #57 |
+| 63 | Your R29 to R36, answered: the manager answers inquiries, an escalation survives the supplier's reply, two shared facts for corrections | Small |
 | - | Later: factory sync (Phase 10) | Later |
 
 ## 50. Staging is not running the latest commits
@@ -66,28 +60,6 @@ calendar offers no day after today, and the mock follows R23 to R26.
   for **calculated** bills, so #56 waits for the bill engine. See #56.
 
 **Check:** the list in factory-records §9.
-
-## 48. "This month so far" on the app's Account tab
-
-The flag is done. Left: **`GET /bills/month-to-date`** (supplier realm, own data only).
-Declare it **before** `GET /bills/:monthKey`, or `month-to-date` is read as a month. Answers
-`MonthToDate` (`packages/domain/src/types/app.ts`) or `200 null`:
-
-- `null` when the flag is off (not `403`: the app treats `null` and `404` alike).
-- **Which month (your rule, agreed):** the supplier's oldest month that still has an
-  unpublished or held bill; otherwise the month after the factory's newest published month.
-  `monthEnded` is true once that calendar month is over (Asia/Colombo).
-- `totalKgs`, `supplyDays`, `lastSupplyDate` (`YYYY-MM-DD`) and `dailySupply` (every day of the
-  month, `kgs: null` on a day without leaf) from the **non-voided** deliveries of that month.
-- `approved`: rupees approved in that month by facility (`advance`, `loan`, `manure`,
-  `teaPackets`), 0 for none or a facility switched off. By approval date.
-- `asOf`: when it was computed. **Never a rate, gross or balance**: a draft bill's figures
-  must not reach the app before the publish.
-
-**Check:** flag off: `null`. Flag on, mid-month with 11 days of leaf and an approved
-Rs. 15,000 advance: `totalKgs` is the sum of that month's non-voided deliveries,
-`supplyDays: 11`, `approved.advance: 15000`. After the month ends and before publishing:
-still that month, `monthEnded: true`. After publishing: the next month.
 
 ## 56. Savings interest: credit it once a year
 
@@ -141,148 +113,40 @@ that month).
 posts one entry of 1,200.00 with `monthKey 2027-03`; publishing March 2027 again posts
 nothing new; at 0% nothing is posted.
 
-## 57. Corrections after a published bill (C5)
+## 63. R29 to R36, answered (4 November 2026)
 
-**Decided:** a balance or a payment found wrong after a bill was published is corrected
-**forward** by a manager, with a reason; the published bill is never edited. Built in the
-console and the app on 30 October 2026 (hidden in the console by `CORRECTIONS_ON_SERVER` until
-you ship it). The rules are shared: please `npm run vendor:pull` (`packages/domain/src/corrections.ts`,
-`bill.ts`, `types/app.ts`).
+Console T11 is done on top of `2304045` (corrections and "This month so far" switched on, the
+reason capped at 1,000, `no-owner-approver` explained, `needs: 'clerk'` handled, the bill's
+sparse `dailySupply` drawn as the whole month with `fullMonthDays`, one Idempotency-Key per
+correction form). Please `npm run vendor:pull` (`rbac.ts`, `corrections.ts`, `bill.ts`,
+`types/*`), then:
 
-**Endpoints:**
+- **R29, the manager answers inquiries:** `DEFAULT_ROLE_MATRIX.manager.inquiries` is now
+  **`A`** (was `R`): escalations go to the manager, who replies, closes and escalates like the
+  clerk. A factory that saved its own matrix keeps it.
+- **R30, the supplier's reply:** an `awaitingSupplier` inquiry that had been **escalated**
+  (`escalatedAt` set) goes back to **`escalated`**, not `open`; one never escalated goes to
+  `open`.
+- **R31:** as you built it: a resolved inquiry takes another reply. The mock now does too (only
+  `closed` refuses).
+- **R32, pending withdrawals:** `CorrectionFacts.savingsPending` (withdrawals asked for, not
+  paid). `correctionProblems` refuses with `savings-short` a savings correction downwards, or
+  a `fromSavings`, that would leave less than they need. Please pass it, and serve it on
+  `GET /admin/suppliers/:id/corrections` as `savingsPending` so the form checks the same.
+- **R33, no write-off for an active supplier:** `CorrectionFacts.supplierStatus`;
+  `correctionProblems` adds **`supplier-active`** for `kind: 'writeOff'` while the supplier is
+  `active`. Paying from savings and a plain correction stay allowed. Serve `supplierStatus`
+  on the corrections read too.
+- **R34:** done: the correction form keeps one Idempotency-Key across its retries.
+- **R35:** fine as built: a calculated factory's payment correction waits `pending` for the
+  bill engine.
+- **R36:** as you built it: rejecting with the facility switched off is allowed (the mock now
+  does too); approving is not.
 
-- `GET /admin/suppliers/:id/corrections` (`suppliers: R`) answers `SupplierCorrections`:
-  `items` newest first, `publishedMonthKeys` (the months with a published bill for the
-  supplier, newest first), `billSource`.
-- `POST /admin/suppliers/:id/corrections` (`billing: A`, the manager) with
-  `NewSupplierCorrection` `{ target, amount, correctsMonthKey, reason }` answers `201
-  SupplierCorrection`. `amount` is signed as the supplier sees it (`payment +` paid too little,
-  `loan`/`manure +` owes more, `savings +` holds more). Refusals: `422 correction-invalid` with
-  `details.problems` from `correctionProblems` (`amount-zero`, `reason-short` (under 10
-  characters), `month-not-published`, `below-zero`, `payment-bills-imported`); `409
-  factory-sync-on` while the sync is on. Audit `supplier.correction` with the record as `after`.
-
-**What each target does:**
-
-- `loan`, `manure`: a `CreditTxn` of kind `adjustment` now, with the reason as its note;
-  `status: 'applied'`. Under the ledger lock, like opening balances.
-- `savings`: a `SavingsEntry` with source `adjustment` in the current Colombo month, with the
-  reason as its note; `status: 'applied'`.
-- `payment`: your existing `BillAdjustment` table fits it (`correctsMonthKey`, signed
-  `amount`, `reason`, `appliedBillId`; `appliesToMonthKey` = the supplier's next unpublished
-  month). `status: 'pending'` until the bill carrying it is published, then `applied` with
-  `appliedBillId` and `appliedMonthKey`. A supplier with a pending payment correction gets a
-  bill in the next run even with no leaf, as for a savings withdrawal.
-
-**On the bill:** `GreenLeafBill.corrections: BillCorrection[] | null` (`{ correctsMonthKey,
-amount, reason }`), and `computeBillAmounts({ ..., correction: correctionTotal(lines) })`: it
-joins **after** the balance, like `savingsWithdrawal`, so BR-107 holds for the nine lines and
-`balanceAmount` stays the slip's figure. Taken back beyond what the month pays, the rest is
-`nextMonthDeb`. Re-generating a draft keeps the lines (they are read again from the pending
-corrections). The app shows each as "Correction (<month>)" with the reason, on screen and in
-the PDF.
-
-**Imported bills:** `payment-bills-imported` refuses a payment correction where
-`billSettings.source` is `imported` (the factory's own system pays it on its next slip). A
-balance correction is allowed there, and the console warns that the next import puts the
-balance back to the slip's figure unless the factory's system makes the same correction.
-
-**Check:** `apps/admin/src/test/corrections.test.tsx` in the console repo, against the mock.
-A clerk gets `403`; a loan `+500` moves the balance at once and `-1,000,000,000` is
-`below-zero`; a payment `+900` is on the next generated bill (`deductions.total` unchanged) and
-`applied` with that bill once the month is published.
-
-## 58. Each day's collection point (`DailySupply.points`)
-
-The app and the console now show where a month's leaf went in, under the day grid:
-"Weighed at MAKADURA (days: 16), KANDEWATTA (days: 2)." (Q13, 30 October 2026). Please
-`npm run vendor:pull`: `DailySupply` (`types/app.ts`) has an optional
-`points?: string[] | null`, and `collectionPointDays` in `bill.ts` turns a month's days
-into that line.
-
-**What it needs:** on every `dailySupply` you serve (a bill, `GET /bills/current`,
-`/bills/:monthKey`, and "This month so far" when #48 lands), each day with leaf carries the
-**names** of the collection points its non-voided deliveries were weighed at, sorted, no
-duplicates: `{ day: 14, kgs: 42.5, points: ["MAKADURA"] }`. A day with no leaf keeps
-`kgs: null` and needs no points. `bill_daily_supply` has no point today: either a
-`points text[]` column filled when the bill is generated or imported (from the month's
-deliveries), or a join on the deliveries when the bill is read. An imported slip with no
-leaf rows behind it sends `null`, and the screens then say nothing about points.
-
-**Nothing breaks without it:** the field is optional, and both screens leave the line out
-when no day names a point.
-
-## 59. Records kept five years (Q12)
-
-**Decided 30 October 2026:** the factory keeps its records **five years** after the end of
-the month they belong to: bills, payout records, deliveries, the savings and credit
-ledgers, credit and tea-packet requests, change requests and inquiries. Shared rule:
-`RECORD_RETENTION_YEARS`, `retainedThroughMonthKey(monthKey)` and `isPastRetention` in
-`packages/domain/src/retention.ts` (please `vendor:pull`).
-
-**Now:**
-- Nothing in that list is deleted before its five years, by any path. An account-deletion
-  request (`POST /profile/deletion-request`) removes the app account (sign-in, devices,
-  preferences) only; the app already tells the supplier the factory keeps the records for
-  five years.
-- The audit log is kept at least as long as the records it describes.
-
-**After five years** (answered the same day): a scheduled job, monthly, for records past
-`isPastRetention` (Asia/Colombo). For a supplier whose account is **closed**, remove the
-personal details (`PERSONAL_FIELDS_REMOVED_AFTER_RETENTION`: name, NIC, telephone,
-address, bank account) and keep the figures as the factory's history; delete nothing. A
-supplier still supplying keeps everything. The supplier number stays with its records and
-is never given to anyone else (Q14).
-
-## 60. Inquiry states: `escalated` and `awaitingSupplier` (Q18)
-
-Decided 30 October 2026. `INQUIRY_STATUSES` is now `open, escalated, awaitingSupplier,
-resolved, closed` (your column is TEXT with a CHECK: one row). Rules in `inquiry.ts`:
-`isInquiryClosed` (resolved, closed), `inquiryStatusForApp` (the three open ones are
-`pending`), `inquiryAwaitsSupplier`, `inquiryCountsTowardsSla` (open and escalated).
-
-- `POST /admin/inquiries/:id/escalate` `{ note }` (10+ characters, `inquiries: A`):
-  `escalated`, still answerable; store `escalatedAt`, `escalatedByName`, `escalationNote`
-  and serve them on the inquiry; audit `inquiry.escalate`. `409 already-decided` once
-  resolved or closed.
-- `POST /admin/inquiries/:id/reply` takes `awaitSupplier?: boolean`: when true the status
-  is `awaitingSupplier`, not `resolved` (the push still fires: the office wrote to them).
-- The supplier's next message on a thread (`POST /inquiries/:id/messages`) moves an
-  `awaitingSupplier` inquiry back to `open`.
-- The supplier's `Inquiry` gets `awaitingReply: true` while `awaitingSupplier`; the app says
-  "waiting for your reply".
-- The list filter takes the two new values.
-
-## 61. Who approves credit, by amount (Q6)
-
-Decided 30 October 2026. Per facility in `creditRules` (`creditRules.ts`):
-`clerkApprovesUpTo` and `ownerApprovesAbove`, each optional (`null` or absent: that tier is
-unused, so a factory that sets neither keeps every decision with the manager).
-`approvalTierFor(amount, rule)` gives `clerk | manager | owner`, and `canDecideCredit(grants,
-tier)` who may decide it: the clerk tier with `creditRequests: W`, the manager tier with
-`creditRequests: A`, the owner tier with `creditAboveThreshold: A`.
-
-- `POST /admin/credit-requests/:id/approve` and `/reject`: let in on `creditRequests: R`,
-  then refuse with `403 approval-above-limit` (`details.needs`, `details.amount`) when
-  `canDecideCredit` is false. BR-501 (the recorder never decides) still applies.
-- The role matrix (`rbac.ts`, `vendor:pull`): `creditAboveThreshold` moves from the
-  **manager** to the **factory administrator** (the owner), who also gets `creditRequests:
-  R` to see the request. A factory that saved its own matrix keeps it.
-- `creditRuleProblems` adds `bad-approval-limits` (negative, or the clerk's above the
-  owner's); the config patch already refuses on `creditRuleProblems`.
-
-## 62. Write off, or pay from savings (Q7)
-
-Decided 30 October 2026: the **manager** writes off a loan or fertilizer balance a supplier
-will not repay, and may first pay it from the supplier's own savings. Same endpoint as #57
-(`POST /admin/suppliers/:id/corrections`), with `kind`:
-
-- `writeOff`: a `CreditTxn` of kind `writeOff` (your enum has it) for `amount` (below 0).
-- `fromSavings`: a `SavingsEntry` (`adjustment`, the reason as note) and a `CreditTxn`
-  `repayment`, both for `amount`, in one transaction under the ledger lock.
-- Refusals from `correctionProblems`: `kind-not-allowed` (not a loan or fertilizer balance,
-  or not downwards), `savings-short` (more than the savings hold).
-- `SupplierCorrection.kind` is served on the list.
+**Also:** the inquiry list's default `status=open` leaves out escalated ones, so the console
+now shows "N passed to the manager are not in this list" with a link, from a
+`status=escalated&pageSize=1` count. If you would rather accept a list of statuses
+(`status=open,escalated`), tell me and the default view will use it.
 
 ## Later
 

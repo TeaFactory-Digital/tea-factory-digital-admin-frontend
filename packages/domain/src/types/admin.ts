@@ -2475,7 +2475,10 @@ export const ADMIN_ERROR_CODES = [
    * rate is the month's (`details` names it; backend ADR-040).
    */
   'rate-differs',
-  /** Deciding a credit request above this role's tier (Q6): `details.needs` is `manager` or `owner`. */
+  /**
+   * Deciding a credit request this role may not decide (Q6): `details.needs` is the tier that
+   * may, `owner`, `manager`, or `clerk` when a read-only role meets a clerk-tier request.
+   */
   'approval-above-limit',
   'unknown-supplier',
   'no-bill',

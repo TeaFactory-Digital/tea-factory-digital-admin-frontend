@@ -21,7 +21,7 @@ export const OPENING_BALANCES_ON_SERVER = true;
  * Corrections after a published bill (C5, BACKEND-TODO #57): `GET` and `POST
  * /admin/suppliers/:id/corrections`, and the bill's `corrections` lines.
  */
-export const CORRECTIONS_ON_SERVER = false;
+export const CORRECTIONS_ON_SERVER = true;
 
 /** Typing other deductions on a bill (`PUT /admin/bills/:id/adjustment`). */
 export const OTHER_DEDUCTIONS_ON_SERVER = false;
@@ -37,7 +37,7 @@ export const SLIP_COMPARISON_ON_SERVER = false;
  * The app's `enableMonthToDate` flag in `PATCH /admin/config`, and `GET /bills/month-to-date`
  * behind it. Until then Configuration → Features neither shows nor sends the flag.
  */
-export const MONTH_TO_DATE_ON_SERVER = false;
+export const MONTH_TO_DATE_ON_SERVER = true;
 
 /**
  * Imports that leave out rows already there (`IMPORT_SKIP_KINDS`): `dryRun` and

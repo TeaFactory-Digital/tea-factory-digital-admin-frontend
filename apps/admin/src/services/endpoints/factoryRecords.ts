@@ -61,9 +61,13 @@ export const factoryRecordEndpoints = {
    * Post one (`billing: A`). `422 correction-invalid` with `details.problems`
    * (`correctionProblems`); `409 factory-sync-on` while the factory's own system is the source.
    */
-  createCorrection: (supplierId: string, body: NewSupplierCorrection) =>
+  createCorrection: (supplierId: string, body: NewSupplierCorrection, idempotencyKey?: string) =>
     apiClient
-      .post<SupplierCorrection>(`/admin/suppliers/${supplierId}/corrections`, body)
+      .post<SupplierCorrection>(
+        `/admin/suppliers/${supplierId}/corrections`,
+        body,
+        idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : undefined,
+      )
       .then((response) => response.data),
 
   /** The supplier's own transport rate; `null` puts them back on the point's. */

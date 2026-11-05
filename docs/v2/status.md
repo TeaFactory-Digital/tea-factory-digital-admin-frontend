@@ -13,7 +13,7 @@ the next slice.
 | | |
 | --- | --- |
 | **Console** | Every module in [Modules](#modules) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
-| **Backend** | `tea-factory-digital-backend`, shipped up to `9c8411b`; staging is not yet running `068faf3` or later (BACKEND-TODO #50, being deployed). BACKEND-TODO **#1 to #44, #46, #47, #49 and #51 to #55 are done**; **#45** (factory records without the factory system) is partly done (the bills import with the month reads and publish, late bills included, opening balances, `5b58f81`, and leaf and months with importing again, `e4a9f40`, are live; other deductions are next, then the bill engine); **#48**, **#50**, **#56** (savings interest, calculated bills only), **#57** (corrections) **#58** (each day's collection point), **#59** (records kept five years), **#60** (inquiry states), **#61** (approval tiers) and **#62** (write-off and pay from savings) are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
+| **Backend** | `tea-factory-digital-backend`, shipped up to `2304045`; staging is not yet running `068faf3` or later (BACKEND-TODO #50, being deployed). BACKEND-TODO **#1 to #44, #46 to #49, #51 to #55 and #57 to #62 are done**; **#45** (factory records without the factory system) is partly done (the bills import with the month reads and publish, late bills included, opening balances, `5b58f81`, and leaf and months with importing again, `e4a9f40`, are live; other deductions are next, then the bill engine); **#50**, **#56** (savings interest, calculated bills only, with the bill engine) and **#63** (R29 to R36) are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
 | **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **588 tests in 80 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
@@ -90,11 +90,9 @@ ships:
 
 | Console feature | Waits for |
 | --- | --- |
-| Import → Daily leaf, Monthly rates, Other deductions, Printed slip balances | `POST /admin/imports/{deliveries, monthlyRates, billAdjustments, printedBalances}` (`IMPORT_KINDS_NOT_ON_SERVER`; Finished bills is live since `12eea12`) |
+| Import → Other deductions, Printed slip balances | `POST /admin/imports/{billAdjustments, printedBalances}` (`IMPORT_KINDS_NOT_ON_SERVER`; Finished bills is live since `12eea12`) |
 | Other deductions → Edit on a bill | `PUT /admin/bills/:id/adjustment` (`OTHER_DEDUCTIONS_ON_SERVER`) |
 | Rates & month close: "Compare with printed slips", the checklist step, held badges | `GET .../slip-comparison`, `PUT /admin/bills/:id/printed`, `POST /admin/bills/:id/hold`, `/release` (`SLIP_COMPARISON_ON_SERVER`) |
-| Configuration → Features: "Account tab: this month so far" | `GET /bills/month-to-date` (`MONTH_TO_DATE_ON_SERVER`) |
-| Import dialog: the preview of rows already there, "import them anyway" for leaf | `dryRun`, `duplicates`, `skipped` on `POST /admin/imports/:kind` (`IMPORT_SKIP_ON_SERVER`) |
 
 The Leaf intake grid and Rates & month close stay visible. On Rates & month close the
 month list, the finished-bills import, the checklist and the publish work against the API
@@ -559,7 +557,7 @@ the console read.
 | Section | What it holds |
 | --- | --- |
 | The factory | Name, telephone, registration number, location, support email and office hours. These print on every bill |
-| Features | The feature flags (fifteen; fourteen shown, because `enableProfileTab` is hidden: the app has no Profile tab since 29 October 2026). Some remove a console module **and** an app screen (`enableManure` → M7), the rest only an app screen. `enableMonthToDate` is neither shown nor sent until `GET /bills/month-to-date` ships (`MONTH_TO_DATE_ON_SERVER`) |
+| Features | The feature flags (fifteen; fourteen shown, because `enableProfileTab` is hidden: the app has no Profile tab since 29 October 2026). Some remove a console module **and** an app screen (`enableManure` → M7), the rest only an app screen. `enableMonthToDate` is shown and sent since `GET /bills/month-to-date` shipped (backend `2304045`) |
 | **Factory system** | The sync switch (on / off), with what appears or disappears before Save and a second confirmation |
 | Collection & savings | Collection points, savings rates per kg, the fertilizer (manure) catalogue with bag size and price |
 | Banks & branches | The factory's bank and branch list ([bank-catalogue.md](./bank-catalogue.md)) |
@@ -748,10 +746,12 @@ Worst first: correctness, then plumbing, then polish.
    (`?lang=`, the fallback otherwise). What is left is the push itself: the sender (gap 4)
    must pick each device's language the same way (`notificationCopyFor`).
 
-6. **Corrections after a published bill wait for the API** (C5, BACKEND-TODO #57). Built
+6. **Corrections after a published bill are live** (C5, backend `2304045`). Built
    in the console and the app on 30 October 2026: the manager posts one on the supplier's Money
    tab (a balance moves at once, a payment lands on the next bill as a "Correction" line with
-   the reason). Hidden by `CORRECTIONS_ON_SERVER` until the backend ships the endpoints.
+   the reason). Switched on 4 November 2026. A payment correction waits `pending` until the
+   bill engine (BACKEND-TODO #45) generates a bill to carry it; imported factories correct
+   payments in their own system.
 
 7. **The Sinhala and Tamil labels: signed off.** The factory confirmed on 30 October 2026
    that the native-speaker reading is done (Q39). `stringTables.test.ts` still fails on a

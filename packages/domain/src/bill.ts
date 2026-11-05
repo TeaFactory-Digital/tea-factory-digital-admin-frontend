@@ -256,3 +256,15 @@ export function collectionPointDays(days: readonly DailySupply[]): Array<{ point
     .map(([point, count]) => ({ point, days: count }))
     .sort((a, b) => b.days - a.days || a.point.localeCompare(b.point));
 }
+
+/**
+ * Every day of the month, the missing ones as `kgs: null`, from a list that may hold only the
+ * days with leaf (a bill's, ADR-041) or already every day ("This month so far"). A calendar
+ * reads it, so the 14th is always in the 14th's place.
+ */
+export function fullMonthDays(monthKey: string, days: readonly DailySupply[]): DailySupply[] {
+  const [year, month] = monthKey.split('-').map(Number);
+  const count = new Date(Date.UTC(year!, month!, 0)).getUTCDate();
+  const byDay = new Map(days.map((one) => [one.day, one]));
+  return Array.from({ length: count }, (_, index) => byDay.get(index + 1) ?? { day: index + 1, kgs: null });
+}

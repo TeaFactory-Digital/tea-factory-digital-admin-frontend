@@ -28,7 +28,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Lock, TriangleAlert } from 'lucide-react';
-import { DEDUCTION_CATEGORIES, collectionPointDays, type AdminBill } from '@tfd/domain';
+import { DEDUCTION_CATEGORIES, collectionPointDays, fullMonthDays, type AdminBill } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader, DetailRow } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -471,7 +471,8 @@ function DailySupplyCard({ bill }: { bill: AdminBill }) {
       />
       <CardBody>
         <ol className="grid grid-cols-[repeat(auto-fill,minmax(4.5rem,1fr))] gap-xs">
-          {bill.dailySupply.map((day) => (
+          {/* The bill sends only the days with leaf: drawn as the whole month. */}
+          {fullMonthDays(bill.monthKey, bill.dailySupply).map((day) => (
             <li
               key={day.day}
               // The point(s) the day's leaf went in at, on hover (Q13).

@@ -77,7 +77,11 @@ export function CreditDecisionActions({ request }: { request: AdminCreditRequest
   if (!mayDecide) {
     return (
       <Notice tone="info">
-        <span>{t(tier === 'owner' ? 'credit.ownerDecides' : 'credit.managerDecides')}</span>
+        <span>
+          {t(
+            tier === 'owner' ? 'credit.ownerDecides' : tier === 'clerk' ? 'credit.counterDecides' : 'credit.managerDecides',
+          )}
+        </span>
       </Notice>
     );
   }

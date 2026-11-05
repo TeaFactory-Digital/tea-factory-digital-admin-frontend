@@ -147,7 +147,10 @@ export interface MonthToDate {
   /** Non-voided deliveries in the month, to two decimals. */
   totalKgs: number;
   supplyDays: number;
-  /** Every day of the month, `kgs: null` on a day without leaf, as on the bill. */
+  /**
+   * Every day of the month, `kgs: null` on a day without leaf. (A bill sends only the days with
+   * leaf; read it through `fullMonthDays`.)
+   */
   dailySupply: DailySupply[];
   /** Rupees approved in the month, by facility; 0 for none or a facility switched off. */
   approved: { advance: number; loan: number; manure: number; teaPackets: number };
@@ -231,6 +234,10 @@ export interface GreenLeafBill {
   carryForward: BillCarryForward;
   savingsSummary: BillSavingsSummary;
 
+  /**
+   * The days **with leaf**, oldest first: the API sends no empty days (ADR-041). A screen
+   * that draws the month as a calendar reads it through `fullMonthDays(monthKey, days)`.
+   */
   dailySupply: DailySupply[];
   paymentMethod: PaymentMethod;
 }

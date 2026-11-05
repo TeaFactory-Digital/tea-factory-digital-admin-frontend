@@ -105,7 +105,8 @@ export function useSupplierCorrections(supplierId: string, enabled: boolean) {
 export function useCreateCorrection(supplierId: string) {
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: (body: NewSupplierCorrection) => factoryRecordRepository.createCorrection(supplierId, body),
+    mutationFn: ({ body, idempotencyKey }: { body: NewSupplierCorrection; idempotencyKey?: string }) =>
+      factoryRecordRepository.createCorrection(supplierId, body, idempotencyKey),
     onSuccess: () =>
       refresh([qk.suppliers.corrections(supplierId), qk.suppliers.detail(supplierId), qk.savings.all, qk.bills.all]),
   });

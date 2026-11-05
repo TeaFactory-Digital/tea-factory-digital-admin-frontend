@@ -45,8 +45,8 @@ const REPLY_SUGGESTIONS = ['received', 'checking', 'visitOffice', 'callOffice', 
 export function InquiryActions({ inquiry }: { inquiry: AdminInquiry }) {
   const { t } = useTranslation();
   /**
-   * `inquiries: A` is what both endpoints require, and only the clerk role holds it; a
-   * manager reads the queue (`R`) and an editor or administrator does not see it at all.
+   * `inquiries: A` is what both endpoints require: the clerk and, since R29 (4 November
+   * 2026), the manager, to whom escalations go. An editor or administrator does not see it.
    * Controls the server will refuse are not offered: the reader is told who answers instead.
    */
   const canAnswer = useCan('inquiries', 'approve');
