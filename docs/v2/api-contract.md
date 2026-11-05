@@ -1317,7 +1317,17 @@ accept:
 ```
 409 month-locked      the month is published (BR-108)      + details.monthKey
 422 batch-too-large   more than 200 rows                   + details.limit, submitted
+422 invalid           a day after today (Colombo)          + details { field: 'date', reason: 'future' }
+422 invalid           more than 30 days back               + details { field: 'date', reason: 'too-old', days: 30 }
 ```
+
+**How far back:** the last 30 days (`LEAF_ENTRY_MAX_AGE_DAYS`, `leafDateProblem`; the
+factory's answer, 5 November 2026). The console still opens an older day to look at, and
+offers no entry grid for it.
+
+**A heavy weighing is asked about, never refused:** over 250 kg
+(`PLAUSIBLE_WEIGHING_MAX_KG`, `isOutlierKg`; the factory's answer, 5 November 2026) the grid
+asks the clerk to confirm, and the month close raises it as an `outlierDelivery`.
 
 **Everything else is a per-row rejection inside a `200`:**
 
@@ -1475,7 +1485,7 @@ each one, and a number on a dashboard cannot be worked through.
 ```
 
 - `type` ∈ `missingBankDetails | inactiveSupplierWithLeaf | pendingChangeRequest |
-  outlierDelivery`. **Derive them from the data** rather than storing a queue: an
+  outlierDelivery` (a weighing over 250 kg, `isOutlierKg`). **Derive them from the data** rather than storing a queue: an
   exception that was fixed at source must stop appearing without anyone
   dismissing it.
 - Query `resolved` (`true` | `false`); omit for both. Order **unresolved first,
@@ -2249,22 +2259,30 @@ later (AC-09).
 
 ## 15. M10 Inquiries
 
-Gate on `enableInquiry`. Authorize on `inquiries`, and this row is unusual: §12.1
-gives **`A` to the clerk and `R` to the manager**. Answering a supplier is counter
-work; a manager reading the queue is oversight. Reads are `R`, both writes are `A`.
+Gate on `enableInquiry`. Authorize on `inquiries`: **`A` to the clerk and the manager**
+(the manager since R29, 4 November 2026, because escalated inquiries come to them). Reads
+are `R`, the writes are `A`.
 
 There is **no four-eyes rule**. BR-501 is about money, and an inquiry moves none.
 
 ### 15.1 `GET /admin/inquiries` → `Paged<AdminInquiry>`
 
-`?status=open|resolved|closed` · `?supplierId=` · `?q=`. Oldest first; default
-`status=open`.
+`?status=` · `?supplierId=` · `?q=`. Oldest first. `status` takes one of the five
+`INQUIRY_STATUSES` (`open`, `escalated`, `awaitingSupplier`, `resolved`, `closed`) or several,
+comma-separated (`status=open,escalated`, backend `66c5ea3`). Absent: `open,escalated`
+(`INQUIRY_OFFICE_STATUSES`, what needs the office), which is what the console's default view
+asks for in one request. An unknown or empty value, or the parameter repeated
+(`status=a&status=b`), is `422 invalid`.
+
+A supplier's answer to an `awaitingSupplier` inquiry returns it to the state the office
+asked from (R30, kept as `inquiries.awaiting_from`): `escalated` if the manager asked,
+`open` otherwise. Not read off `escalatedAt`, which stays set after the manager finishes.
 
 `q` must match the **message body** as well as the supplier and the subject. The
 office searches for what somebody said, and a subject line of "help" is common.
 
 `status` is the console's vocabulary and not the app's. `AdminInquiry.status` is
-`open | resolved | closed`; the app's `Inquiry.status` is
+`open | escalated | awaitingSupplier | resolved | closed`; the app's `Inquiry.status` is
 `pending | approved | rejected`. Map with `inquiryStatusForApp` from `@tfd/domain`
 so one record answers both, and do not invent a second mapping; status.md §21.18 is
 the open question about whether this pair is right at all, and it should change in
@@ -2734,7 +2752,7 @@ Fire from the endpoint that owns the event, not from a job watching the audit lo
 
 | Category | Fires in |
 | --- | --- |
-| `billPublished` | §10.5 publish, after the bills are stamped and savings posted; for late bills (§10.5) and a bill released in a published month (§11.5b), to that supplier only |
+| `billPublished` | §10.5 publish, after the bills are stamped and savings posted: **one send per published bill, to that supplier only**, never to every supplier (the factory's answer to §21.24, 5 November 2026). A held bill's supplier is told when it is released (§11.5b); late bills (§10.5) the same way |
 | `requestDecided` | The approve/reject of §6, §14 and §14a |
 | `newsArticle` | §16.6 publish |
 | `inquiryReplied` | §15's reply |
@@ -3303,7 +3321,7 @@ as the factory's own system printed them), **`printedBalances`** (each printed s
 | `suppliers` | `suppliers: W` | `duplicate`, `unknown-collection-point`, `bank-details-required`, `unknown-bank`. A code already on the roll is **skipped** (`supplier-exists`), left as it is, not refused (see "Importing again") |
 | `openingBalances` | `suppliers: W` | `duplicate`, `unknown-supplier`, `opening-balances-locked`, `cut-over-month` (on `asOfMonth`), `withdrawal-pending`. No note column: the file's name is the note |
 | `transportRates` | `suppliers: W` | `duplicate`, `unknown-supplier` |
-| `deliveries` | `deliveries: W` | `unknown-supplier`, `month-locked`, `unknown-collection-point`. A weighing already recorded is **skipped** (`already-recorded`) unless `duplicates: 'import'` |
+| `deliveries` | `deliveries: W` | `unknown-supplier`, `month-locked`, `unknown-collection-point`; on `date`, `not-allowed` (after today) and `too-old` (more than 30 days back). A weighing already recorded is **skipped** (`already-recorded`) unless `duplicates: 'import'` |
 | `monthlyRates` | `ratesAndMonthClose: W` | `duplicate`, `unknown-month`, `month-locked` |
 | `walkInCredit` | `creditRequests: W` | `unknown-supplier`, `required` (manure without type or quantity), and §14.4's refusals |
 | `billAdjustments` | `billing: W` | `duplicate` (month + code), `unknown-supplier`, `month-locked`, `no-bill`, `required` |

@@ -356,9 +356,11 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
 <ul>
   <li>One day at one collection point. The date and point are in the page address, so "Makadura yesterday" can be shared as a link.</li>
   <li><strong>Open month:</strong> the entry grid is shown. <strong>Published month:</strong> no grid; the month is locked. <strong>Read-only user:</strong> the rows without the grid.</li>
+  <li><strong>The last 30 days only:</strong> leaf can be entered or imported for today and the 30 days before it, never for a day after today. An older day can still be opened to look at, without the grid.</li>
+  <li><strong>A weighing over 250 kg is asked about, never refused:</strong> the grid asks the clerk to press Enter again, and the month close lists it as an unusual weighing to check against the slip. Leaf is recorded as one net figure: the kilos paid for.</li>
   <li>A weighing is never deleted. It is <strong>voided with a reason</strong>; the row stays, marked.</li>
   <li><strong>Exception:</strong> if a supplier's bill for that month is held (section 6.3), their leaf may still be entered or voided after the publish.</li>
-  <li>Import from file: a day's or a month's weighings at once <span class="tag soon">Coming</span>. Importing again skips weighings already recorded (section 23).</li>
+  <li>Import from file: a day's or a month's weighings at once. Importing again skips weighings already recorded (section 23).</li>
   <li>For the advance: enter each supplier's leaf on the day it is weighed. The advance limit is this month's kilos so far, so it is 0 until leaf is recorded.</li>
 </ul>
 
@@ -389,7 +391,7 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
   <li>An approval missing from a slip (imported bills).</li>
   <li><strong>Two-person rule:</strong> the publisher may not be the person who entered the rate or imported a bill of the month. That person sees a warning instead of the button.</li>
 </ol>
-<p>Publishing makes the bills visible in the app, sends each supplier a "your account is ready" notification, posts savings, settles withdrawals and moves every credit limit.</p>
+<p>Publishing makes the bills visible in the app, sends a "your account is ready" notification to each supplier whose bill was published (never to every supplier; a held bill's supplier is told when it is released), posts savings, settles withdrawals and moves every credit limit.</p>
 <h2>9.5 Other deductions (calculated bills) <span class="tag soon">Coming</span></h2>
 <ul>
   <li>The one line typed by hand: an amount of 0 or more, and a reason of at least 3 characters when above 0. The supplier reads the reason under the line.</li>
@@ -609,9 +611,10 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
 <h2>19.1 Inquiries</h2>
 <ul>
   <li>Each inquiry is a conversation. <strong>Reply</strong> writes something the supplier reads; <strong>close</strong> files it. Once closed, the supplier cannot write more in it.</li>
-  <li>Answering is the clerk's job; the manager can read the queue.</li>
+  <li>The clerk and the manager both answer; escalated inquiries come to the manager.</li>
+  <li>The list opens on open and escalated inquiries together; each state can also be picked on its own.</li>
   <li>Suggested replies come from Configuration → Common notes.</li>
-  <li>Two more states: <strong>Escalated</strong> (passed to the manager with a reason) and <strong>Waiting for the supplier</strong> (the reply asks them something; their answer opens it again). The supplier sees both as waiting, and the second says "waiting for your reply". Targets: an inquiry answered within <strong>two days</strong>, an advance decided within <strong>24 hours</strong>; a message waiting on the supplier does not count.</li>
+  <li>Two more states: <strong>Escalated</strong> (passed to the manager with a reason) and <strong>Waiting for the supplier</strong> (the reply asks them something; their answer brings it back to where it was: escalated if the manager asked, open otherwise). The supplier sees both as waiting, and the second says "waiting for your reply". Targets: an inquiry answered within <strong>two days</strong>, an advance decided within <strong>24 hours</strong>; a message waiting on the supplier does not count.</li>
 </ul>
 <h2>19.2 News</h2>
 <ul>
@@ -673,10 +676,10 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
   <tr><td>Daily leaf (sync off)</td><td>W</td><td>R</td><td>-</td><td>R</td><td>R</td></tr>
   <tr><td>Rates, month close, publish</td><td>R</td><td>A</td><td>-</td><td>R</td><td>R</td></tr>
   <tr><td>Bills: import, generate, other deductions (savings withdrawals need A)</td><td>W</td><td>A</td><td>-</td><td>R</td><td>R</td></tr>
-  <tr><td>Advance, loan, manure, tea-packet requests</td><td>W</td><td>A</td><td>-</td><td>-</td><td>-</td></tr>
-  <tr><td>Credit above the threshold</td><td>-</td><td>A</td><td>-</td><td>-</td><td>-</td></tr>
+  <tr><td>Advance, loan, manure, tea-packet requests</td><td>W</td><td>A</td><td>-</td><td>R</td><td>-</td></tr>
+  <tr><td>Credit above the threshold</td><td>-</td><td>-</td><td>-</td><td>A</td><td>-</td></tr>
   <tr><td>Change requests</td><td>A</td><td>A</td><td>-</td><td>-</td><td>-</td></tr>
-  <tr><td>Inquiries</td><td>A</td><td>R</td><td>-</td><td>-</td><td>-</td></tr>
+  <tr><td>Inquiries</td><td>A</td><td>A</td><td>-</td><td>-</td><td>-</td></tr>
   <tr><td>News and pages</td><td>R</td><td>R</td><td>W</td><td>A</td><td>-</td></tr>
   <tr><td>Configuration, switches, branding</td><td>R</td><td>R</td><td>-</td><td>W</td><td>W</td></tr>
   <tr><td>Console users and roles</td><td>-</td><td>R</td><td>-</td><td>W</td><td>W</td></tr>
@@ -686,7 +689,7 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
 <div class="box rule"><span class="label">Rules above the table</span>
 <ul>
   <li><strong>Two people on money:</strong> whoever records a request, imports a bill or enters a rate may not approve or publish it. A second clerk is not a substitute for a manager.</li>
-  <li>A clerk can record a request at the counter but never decide it.</li>
+  <li>A clerk can record a request at the counter, and decide one only up to the factory's clerk limit (section 10), never one they recorded.</li>
   <li>The factory admin sees every factory record but cannot change any.</li>
   <li>A new user's first password is shown once and must be changed at first sign-in. Deleting a user waits three days and can be undone until then.</li>
   <li>The console refuses changes that would lock the factory out: removing the last admin, a user changing their own role, a table that leaves nobody able to manage users.</li>

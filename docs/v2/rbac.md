@@ -74,10 +74,10 @@ rather than assumed.
 | `ratesAndMonthClose` | R | A | - | R | R |
 | `billing` | W | A | - | R | R |
 | `payouts` | R | A | - | - | - |
-| `creditRequests` | W | A | - | - | - |
-| `creditAboveThreshold` | - | A | - | - | - |
+| `creditRequests` | W | A | - | R | - |
+| `creditAboveThreshold` | - | - | - | A | - |
 | `changeRequests` | A | A | - | - | - |
-| `inquiries` | A | R | - | - | - |
+| `inquiries` | A | A | - | - | - |
 | `content` | R | R | W | A | - |
 | `flagsAndBranding` | R | R | - | W | W |
 | `usersAndRoles` | - | R | - | W | W |
@@ -128,8 +128,13 @@ splits are load-bearing and merging them breaks something:
   reaches every supplier at once. Legitimate at a small factory, but a choice, not a
   tidy-up.
 
-`creditAboveThreshold` is a third split of the same kind, inside the manager row rather
-than between two roles: above the threshold, approval **escalates rather than widens**.
+`creditAboveThreshold` is a third split of the same kind: above the factory's owner
+threshold, approval **escalates rather than widens**, to the factory administrator (§21.6,
+moved from the manager on 30 October 2026). The factory administrator reads the credit
+queue (`creditRequests: R`) so they can find what waits for them.
+
+`inquiries` is `A` for the manager as well as the clerk since R29 (4 November 2026):
+escalated inquiries come to the manager, who must be able to answer and close them.
 
 ### Three rows that catch people out
 

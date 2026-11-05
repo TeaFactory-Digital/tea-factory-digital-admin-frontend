@@ -252,7 +252,7 @@ edited here. Audit `bill.adjust`.
 | Kind | Server-only checks (problem `code`) | What it saves |
 |---|---|---|
 | `suppliers` | `duplicate` in file, an existing code **skipped** (`supplier-exists`, not refused), `unknown-collection-point`, `bank-details-required`, `unknown-bank`, `bank-not-in-catalogue` | Suppliers, as Add supplier |
-| `deliveries` | `unknown-supplier`, `month-locked`, `unknown-collection-point`; a weighing already recorded **skipped** (`already-recorded`) | Deliveries, `source: 'scaleFile'`; point defaults to the supplier's |
+| `deliveries` | `unknown-supplier`, `month-locked`, `unknown-collection-point`; on `date`, `not-allowed` (after today) and `too-old` (more than 30 days back); a weighing already recorded **skipped** (`already-recorded`) | Deliveries, `source: 'scaleFile'`; point defaults to the supplier's |
 | `monthlyRates` | `duplicate`, `unknown-month`, `month-locked` | The month's rate, moving the stage to `rateEntered` |
 | `openingBalances` | `duplicate`, `unknown-supplier`, `opening-balances-locked`, `cut-over-month` (on `asOfMonth`), `withdrawal-pending` | Opening balances |
 | `walkInCredit` | `unknown-supplier`, manure without type or quantity (`required`), and the walk-in refusals above | Pending office requests |
@@ -580,6 +580,12 @@ From 9 to 22 October 2026:
 21. **Suppliers (30 October 2026, Q14):** each estate its own number; no joint accounts; on
     a death or a transfer of land the number stays with its records five years and is never
     reused. No payout files (Q17): the factory's own system pays.
+22. **Leaf (5 November 2026):** one **net** figure per weighing (what is paid for), not a
+    gross weight and a deduction; entered or imported for **the last 30 days** only
+    (`LEAF_ENTRY_MAX_AGE_DAYS`) and never a day after today; a weighing over **250 kg** is
+    asked about on the grid and raised at the month close, never refused
+    (`PLAUSIBLE_WEIGHING_MAX_KG`). A bill publication tells **each supplier whose bill was
+    published**, never every supplier (BACKEND-TODO #64).
 
 ## 9. Checks
 
