@@ -7,7 +7,7 @@ and `packages/domain` (please `vendor:pull` after each console change).
 | # | What | Priority |
 |---|------|----------|
 | 50 | Staging is not running the latest commits | Now |
-| 64 | Two answers from the factory: "your account is ready" to each supplier whose bill was published, and leaf no more than 30 days back | Small |
+| 64 | Three answers from the factory: "your account is ready" to each supplier whose bill was published, leaf no more than 30 days back, and an unusual weighing is one over 250 kg | Small |
 | 45 | Factory records: other deductions next, then the bill engine | High |
 | 56 | Savings interest: calculated bills only, with the bill engine (R28 answered) | With #45's bill engine |
 | - | Later: factory sync (Phase 10) | Later |
@@ -21,9 +21,10 @@ later (`12eea12`, `671627d`, `76b50f2`); migrations `20261023010000`, `202610240
 `20261026010000` are not applied there. Once it answers `factorySync: { enabled: false }`
 and 15 flags, tell me, and the bills import and publish get tried against it.
 
-## 64. Two answers from the factory (5 November 2026)
+## 64. Three answers from the factory (5 November 2026)
 
-Please `npm run vendor:pull` (`leafCollection.ts`, `notifications.ts`, `types/admin.ts`), then:
+Please `npm run vendor:pull` (`constants.ts`, `leafCollection.ts`, `notifications.ts`,
+`types/admin.ts`), then:
 
 - **§21.24, who a published bill tells:** only the suppliers **whose bill was published**,
   one send each; never every supplier. On a normal publish `months.service.ts` fires one
@@ -40,9 +41,18 @@ Please `npm run vendor:pull` (`leafCollection.ts`, `notifications.ts`, `types/ad
   after today stays `not-allowed`). The publish lock is checked as before. The console shows
   an older day read-only and has the texts.
 
+- **An unusual weighing is one over 250 kg:** `PLAUSIBLE_WEIGHING_MAX_KG = 250`;
+  `isOutlierKg(kgs)` is now `kgs > 250`, whatever the month's average (the second parameter
+  is ignored and optional, so `month-exceptions.ts` compiles as it is). The per-point mean in
+  `deriveExceptions` is no longer needed, and the `outlierDelivery` detail should say
+  "more than 250 kg" instead of "more than three times the point's average".
+  `OUTLIER_KG_MULTIPLE` and `OUTLIER_KG_FLOOR_KG` are gone. Leaf stays **one net figure**
+  per weighing (also answered): nothing to change.
+
 **Check:** on 5 November 2026, leaf for 6 October is taken and 5 October is refused
 (`too-old`), by the grid and by a file; publishing a month with 40 bills, 2 of them held,
-fires 38 `billPublished`, each with its supplier.
+fires 38 `billPublished`, each with its supplier; a 251 kg weighing is an `outlierDelivery`
+and a 250 kg one is not.
 
 ## 45. Factory records without the factory system
 

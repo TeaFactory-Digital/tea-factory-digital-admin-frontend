@@ -148,19 +148,15 @@ export const MAX_DELIVERY_KG = 5000;
 export const MAX_DELIVERY_BATCH_ROWS = 200;
 
 /**
- * When to *ask* about a kilo figure rather than refuse it.
+ * When to *ask* about a kilo figure rather than refuse it: the heaviest weighing the factory
+ * calls plausible. **Decided by the factory on 5 November 2026:** 250 kg. Anything heavier is
+ * questioned on the leaf grid and raised as an `outlierDelivery` at the month close; it is
+ * never refused (the hard limit is 5,000 kg, `MAX_DELIVERY_KG`).
  *
- * A running total only catches a mistyped kilo if somebody reads it, so the grid
- * flags a row that is both more than `OUTLIER_KG_MULTIPLE` times the session's
- * mean **and** above `OUTLIER_KG_FLOOR_KG`. The floor is what stops the first two
- * rows of a session flagging each other.
- *
- * Both are offline defaults. What counts as a plausible delivery is tenant
- * policy (an estate route and a smallholder route disagree by an order of
- * magnitude), and the factory has not been asked yet (docs/status.md).
+ * Until then the grid asked about a figure over 150 kg that was also three times the
+ * session's mean, a guess that let a 280 kg weighing through a session averaging 100.
  */
-export const OUTLIER_KG_MULTIPLE = 3;
-export const OUTLIER_KG_FLOOR_KG = 150;
+export const PLAUSIBLE_WEIGHING_MAX_KG = 250;
 
 /* ───────────────────────── M6 Payouts · M8 Savings ───────────────────────── */
 

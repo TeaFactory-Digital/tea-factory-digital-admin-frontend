@@ -2413,7 +2413,7 @@ export const en = {
     '{{month}} is published, so nothing more can be recorded or voided in it. Bills and payouts are built from the leaf as it stands.',
   'deliveries.tooOld': 'This day is more than {{days}} days ago, so leaf can no longer be entered for it. Its rows can still be looked at.',
   'deliveries.outlierConfirm':
-    '{{kgs}} is far more than the rest of this session. Press Enter again to record it as typed.',
+    '{{kgs}} is more than {{limit}}, the heaviest weighing the factory expects. Press Enter again to record it as typed.',
   'deliveries.pickPointToEnter':
     'Pick a collection point to start recording: a delivery is filed against the point where it was weighed.',
   'deliveries.removeRow': 'Remove',

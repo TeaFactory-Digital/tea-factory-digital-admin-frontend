@@ -20,8 +20,7 @@
 import {
   FACTORY_TIME_ZONE,
   KG_SCALE,
-  OUTLIER_KG_FLOOR_KG,
-  OUTLIER_KG_MULTIPLE,
+  PLAUSIBLE_WEIGHING_MAX_KG,
 } from './constants';
 
 const KG_FACTOR = 10 ** KG_SCALE;
@@ -91,10 +90,10 @@ export function summariseKgs(rows: readonly KgRow[]): CollectionTotals {
  * **question, not a refusal**: a genuinely heavy load must still be enterable,
  * so the grid asks the clerk to confirm rather than rejecting the figure.
  */
-export function isOutlierKg(kgs: number, meanKgs: number): boolean {
-  if (kgs <= OUTLIER_KG_FLOOR_KG) return false;
-  if (meanKgs <= 0) return false;
-  return kgs > meanKgs * OUTLIER_KG_MULTIPLE;
+export function isOutlierKg(kgs: number, _meanKgs?: number): boolean {
+  // Over the factory's figure, whatever the rest of the session or month weighed. The mean is
+  // no longer read; the parameter stays so a caller that still passes it compiles.
+  return kgs > PLAUSIBLE_WEIGHING_MAX_KG;
 }
 
 /**

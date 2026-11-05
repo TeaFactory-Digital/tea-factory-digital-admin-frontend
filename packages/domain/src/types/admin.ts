@@ -1108,7 +1108,7 @@ export type MonthExceptionType =
   | 'inactiveSupplierWithLeaf'
   /** A change request still open, whose outcome would change this month's bill. */
   | 'pendingChangeRequest'
-  /** A weighing far outside the day's spread: `1250` typed for `125.0`. */
+  /** A weighing over `PLAUSIBLE_WEIGHING_MAX_KG` (250 kg): `1250` typed for `125.0`. */
   | 'outlierDelivery';
 
 export interface MonthException {

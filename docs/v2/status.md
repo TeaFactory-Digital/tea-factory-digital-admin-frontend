@@ -15,7 +15,7 @@ the next slice.
 | **Console** | Every module in [Modules](#modules) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
 | **Backend** | `tea-factory-digital-backend`, shipped up to `66c5ea3`; staging is not yet running `068faf3` or later (BACKEND-TODO #50, being deployed). BACKEND-TODO **#1 to #44, #46 to #49, #51 to #55 and #57 to #63 are done**; **#45** (factory records without the factory system) is partly done (the bills import with the month reads and publish, late bills included, opening balances, `5b58f81`, and leaf and months with importing again, `e4a9f40`, are live; other deductions are next, then the bill engine); **#50** and **#56** (savings interest, calculated bills only, with the bill engine) are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
-| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **642 tests in 88 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
+| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **643 tests in 88 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
 ### Built against the mock and tested
 
@@ -796,8 +796,6 @@ Numbering follows `status.md` §21 in the mobile repo.
 | § | Question | Effect today |
 | --- | --- | --- |
 | 21.24 | **Notifications**: is `content: approve` the right gate on free text? (Who a bill publication tells is answered below.) | Built as configuration (one switch per category) |
-| - | **Gross or net leaf?** Does the weighing point record one figure, or a gross weight and a sack/water deduction? | One net `kgs` per weighing in the console and on the wire. The backend already books `grossKg` + `deductionKg` (0) and derives `kgs`, so a two-figure answer is no migration on the server; it would still change `Delivery` in every client that reads it |
-| - | **What is a plausible weighing?** | The leaf grid questions a figure over 150 kg that is also 3× the session's mean (`OUTLIER_KG_MULTIPLE`, `OUTLIER_KG_FLOOR_KG`). A guess until the factory gives a number |
 
 ### Answered by the factory, 5 November 2026
 
@@ -805,6 +803,8 @@ Numbering follows `status.md` §21 in the mobile repo.
 | --- | --- | --- |
 | 21.24 | A bill publication notifies **only the suppliers whose bill was published**, one send each; never every supplier. A held bill's supplier is told when it is released | The mock's publish and release; BACKEND-TODO #64 |
 | - | Leaf may be entered or imported for **the last 30 days** (and never a day after today) | `LEAF_ENTRY_MAX_AGE_DAYS`, `leafDateProblem`; an older day can still be looked at in Leaf intake; BACKEND-TODO #64 |
+| - | The weighing point records **one net figure** (what is paid for, e.g. 24.5 kg), not a gross weight and a deduction | As built: one `kgs` per weighing; nothing to change |
+| - | A plausible weighing is **up to 250 kg**; anything heavier is questioned on the leaf grid (never refused) and raised at the month close | `PLAUSIBLE_WEIGHING_MAX_KG`, `isOutlierKg`; replaces the guess (over 150 kg and three times the session's mean); BACKEND-TODO #64 |
 
 ### Answered by the factory, 30 October 2026
 

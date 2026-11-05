@@ -33,6 +33,7 @@ import {
   MAX_DELIVERY_KG,
   isExactKg,
   isOutlierKg,
+  PLAUSIBLE_WEIGHING_MAX_KG,
   roundKg,
   summariseKgs,
   type DeliveryRejection,
@@ -144,7 +145,7 @@ export function EntrySession({ date, collectionPoint, onCommitted }: EntrySessio
     // The mean is the session's own, so the first few rows set the scale the rest
     // are judged against: which is what makes it useful at one collection point
     // on one day rather than against a factory-wide average.
-    if (isOutlierKg(kgs, totals.meanKgs) && !confirmingOutlier) {
+    if (isOutlierKg(kgs) && !confirmingOutlier) {
       setConfirmingOutlier(true);
       setError(null);
       return;
@@ -299,7 +300,10 @@ export function EntrySession({ date, collectionPoint, onCommitted }: EntrySessio
       {confirmingOutlier ? (
         <p role="alert" className="flex items-start gap-xs rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
           <TriangleAlert className="mt-xxs size-icon-sm shrink-0" aria-hidden />
-          {t('deliveries.outlierConfirm', { kgs: formatKg(roundKg(Number(kgText))) })}
+          {t('deliveries.outlierConfirm', {
+            kgs: formatKg(roundKg(Number(kgText))),
+            limit: formatKg(PLAUSIBLE_WEIGHING_MAX_KG),
+          })}
         </p>
       ) : null}
 

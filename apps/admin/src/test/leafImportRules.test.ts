@@ -4,7 +4,7 @@
  * `<type>:<entityId>` and travel URL-encoded.
  */
 import { afterEach, describe, expect, it } from 'vitest';
-import { LEAF_ENTRY_MAX_AGE_DAYS, colomboDayOf, earliestLeafDay, importRowProblems, leafDateProblem } from '@tfd/domain';
+import { LEAF_ENTRY_MAX_AGE_DAYS, PLAUSIBLE_WEIGHING_MAX_KG, colomboDayOf, isOutlierKg, earliestLeafDay, importRowProblems, leafDateProblem } from '@tfd/domain';
 import { deliveryRepository } from '@/services/repositories/deliveryRepository';
 import { errorMessageKey, errorMessageValues } from '@/lib/errorMessage';
 import { factoryRecordRepository } from '@/services/repositories/factoryRecordRepository';
@@ -85,5 +85,16 @@ describe('30 days back, no further (the factory, 5 November 2026)', () => {
     expect(refusal).toMatchObject({ code: 'invalid', details: { field: 'date', reason: 'too-old' } });
     expect(errorMessageKey(refusal)).toBe('error.leafTooOld');
     expect(errorMessageValues(refusal)).toMatchObject({ days: '30' });
+  });
+});
+
+describe('an unusual weighing (the factory, 5 November 2026)', () => {
+  it('is one over 250 kg, whatever the rest weighed', () => {
+    expect(PLAUSIBLE_WEIGHING_MAX_KG).toBe(250);
+    expect(isOutlierKg(250)).toBe(false);
+    expect(isOutlierKg(250.01)).toBe(true);
+    // The old guess let this through (under three times a mean of 100).
+    expect(isOutlierKg(280, 100)).toBe(true);
+    expect(isOutlierKg(1250)).toBe(true);
   });
 });

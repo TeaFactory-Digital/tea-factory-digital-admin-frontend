@@ -77,7 +77,7 @@ import {
   type CreditRules,
   EDITORIAL_FALLBACK_LANGUAGE,
   NOTIFICATION_CATEGORIES,
-  OUTLIER_KG_FLOOR_KG,
+  PLAUSIBLE_WEIGHING_MAX_KG,
   QUEUE_SLA_HOURS,
   REQUIRED_MONTHS_OF_HISTORY,
   SRI_LANKA_BANKS,
@@ -1110,23 +1110,17 @@ function makeMonthExceptions(): MonthException[] {
     );
   }
 
-  // 4. A weighing far outside its day's spread. Not a refusal at entry (the grid
-  //    asks and the clerk may confirm), so the month close asks once more, when
-  //    there is time to check the slip.
-  // Against the month's average **at the weighing's collection point** (R26): one big
-  // estate's point should not make every weighing elsewhere look small.
+  // 4. A weighing over the factory's plausible figure (250 kg, 5 November 2026). Not a
+  //    refusal at entry (the grid asks and the clerk may confirm), so the month close asks
+  //    once more, when there is time to check the slip.
   const month = mockDeliveries.filter((row) => row.monthKey === monthKey && !row.voidedAt);
-  const meanAt = new Map<string, number>();
-  for (const point of new Set(month.map((row) => row.collectionPoint))) {
-    meanAt.set(point, summariseKgs(month.filter((row) => row.collectionPoint === point)).meanKgs);
-  }
   for (const row of month) {
-    if (isOutlierKg(row.kgs, meanAt.get(row.collectionPoint) ?? 0) && row.kgs > OUTLIER_KG_FLOOR_KG) {
+    if (isOutlierKg(row.kgs)) {
       push(
         'outlierDelivery',
         'delivery',
         row.id,
-        `${row.kgs} kg on ${row.date}: more than three times the month's average at ${row.collectionPoint}.`,
+        `${row.kgs} kg on ${row.date} at ${row.collectionPoint}: more than ${PLAUSIBLE_WEIGHING_MAX_KG} kg.`,
         { supplierCode: row.supplierCode, name: row.supplierName },
       );
     }
