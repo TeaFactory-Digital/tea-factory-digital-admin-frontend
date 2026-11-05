@@ -126,3 +126,27 @@ const colomboDayFormat = new Intl.DateTimeFormat('en-CA', {
 export function colomboDayOf(instant: Date): string {
   return colomboDayFormat.format(instant);
 }
+
+/**
+ * How far back leaf may be entered or imported, in days before today (Colombo). **Decided by
+ * the factory on 5 November 2026:** 30. Before that the publish lock was the only guard, so a
+ * weighing could be typed against any unpublished month, however old.
+ */
+export const LEAF_ENTRY_MAX_AGE_DAYS = 30;
+
+/** The earliest day leaf may be entered for, `YYYY-MM-DD`: today less `LEAF_ENTRY_MAX_AGE_DAYS`. */
+export function earliestLeafDay(today: string): string {
+  const [year, month, day] = today.split('-').map(Number);
+  return new Date(Date.UTC(year!, month! - 1, day! - LEAF_ENTRY_MAX_AGE_DAYS)).toISOString().slice(0, 10);
+}
+
+/**
+ * Why leaf cannot be entered for `date`, or `null` when it can. `today` is the Colombo day
+ * (`colomboDayOf(new Date())`). The API refuses either with `422 invalid`,
+ * `details: { field: 'date', reason }`; the publish lock is checked separately.
+ */
+export function leafDateProblem(date: string, today: string): 'future' | 'too-old' | null {
+  if (date > today) return 'future';
+  if (date < earliestLeafDay(today)) return 'too-old';
+  return null;
+}

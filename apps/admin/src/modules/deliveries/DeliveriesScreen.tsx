@@ -24,7 +24,13 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { Ban, Lock } from 'lucide-react';
-import { colomboDayOf, type Delivery, type DeliveryQuery } from '@tfd/domain';
+import {
+  LEAF_ENTRY_MAX_AGE_DAYS,
+  colomboDayOf,
+  leafDateProblem,
+  type Delivery,
+  type DeliveryQuery,
+} from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { Badge } from '@/components/ui/Badge';
@@ -56,6 +62,9 @@ export function DeliveriesScreen() {
    * laptop still set to UTC would otherwise open yesterday's sheet after 18:30.
    */
   const date = params.get('date') ?? colomboToday();
+  // More than 30 days back (the factory's answer, 5 November 2026): the day can be looked
+  // at, not entered. The server refuses it with `422 invalid` (`reason: 'too-old'`).
+  const tooOld = leafDateProblem(date, colomboToday()) === 'too-old';
   const point = params.get('collectionPoint') ?? '';
   const page = Number(params.get('page') ?? 0);
   const includeVoided = params.get('includeVoided') === 'true';
@@ -209,15 +218,21 @@ export function DeliveriesScreen() {
           <Lock className="mt-xxs size-icon-sm shrink-0" aria-hidden />
           {t('deliveries.monthLocked', { month: formatMonthKey(day.monthKey) })}
         </Notice>
+      ) : canWrite && tooOld ? (
+        <Notice tone="warning">
+          <Lock className="mt-xxs size-icon-sm shrink-0" aria-hidden />
+          {t('deliveries.tooOld', { days: LEAF_ENTRY_MAX_AGE_DAYS })}
+        </Notice>
       ) : null}
 
       <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-end gap-sm border-b border-divider p-md">
           <label className="flex flex-col gap-xs text-label text-text-primary">
             {t('deliveries.date')}
-            {/* Past dates stay open: a factory that weighs past midnight enters
-                yesterday's sheet in the morning. A day after today (Colombo) is refused
-                by the server (`422 invalid`, ADR-040), so the calendar does not offer it. */}
+            {/* Past dates stay open to look at: a factory that weighs past midnight enters
+                yesterday's sheet in the morning, and an older day is still read here (entry
+                stops at 30 days back, above). A day after today (Colombo) is refused by the
+                server (`422 invalid`, ADR-040), so the calendar does not offer it. */}
             <DatePicker
               value={date}
               onChange={(next) => setParam('date', next || null)}
@@ -259,7 +274,7 @@ export function DeliveriesScreen() {
          * and "all points" is a filter, not a place. Asking for one is better than
          * defaulting, which would file a day's leaf against the wrong shed.
          */}
-        {canWrite && !day?.locked ? (
+        {canWrite && !day?.locked && !tooOld ? (
           point ? (
             <div className="shrink-0 border-b border-divider bg-surface-variant">
               <EntrySession key={`${date}-${point}`} date={date} collectionPoint={point} />

@@ -21,13 +21,12 @@
  *
  * ---
  *
- * **§21.24 is unanswered, and this module is what makes that survivable.** The factory
- * has not said whether the office composes every send or whether `billPublished` fires
- * off the publish step. Rather than guess, both paths exist and *which triggers fire* is
- * per-tenant data, so the answer, when it comes, is a row in a config table rather than
- * a rewrite. `NOTIFICATION_EVENTS` below is the honest part: it names the console event
- * each category would hang off, which is a fact about the system rather than a policy
- * about the factory.
+ * **§21.24, answered by the factory on 5 November 2026:** `billPublished` fires off the
+ * publish step, and **only to the suppliers whose bill was published**, one send each (a
+ * held bill's supplier is told when it is released). Never to every supplier. *Which
+ * triggers fire* stays per-tenant data, so a factory can still switch it off.
+ * `NOTIFICATION_EVENTS` below names the console event each category hangs off, which is a
+ * fact about the system rather than a policy about the factory.
  */
 
 import { EDITORIAL_FALLBACK_LANGUAGE, type LanguageCode } from './constants';

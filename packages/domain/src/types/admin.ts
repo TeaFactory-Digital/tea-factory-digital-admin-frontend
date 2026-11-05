@@ -1902,10 +1902,9 @@ export interface ContentPreview {
 /**
  * Whether this factory fires a category automatically, and off what.
  *
- * **This record is the answer to §21.24, deferred honestly.** The factory has not said
- * whether the office composes every send or whether "your bill is ready" fires off the
- * publish step, so both paths exist and *which triggers are on* is per-tenant data. When
- * the answer comes it is a row, not a rewrite.
+ * *Which triggers are on* is per-tenant data. §21.24, answered 5 November 2026: "your bill
+ * is ready" fires off the publish step, to each supplier whose bill was published, never to
+ * every supplier.
  *
  * `event` is a fact rather than a policy: `billPublished` can only mean the moment a
  * month is published, because that is the moment a bill becomes something a supplier can

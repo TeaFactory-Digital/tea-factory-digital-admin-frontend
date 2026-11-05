@@ -8,6 +8,7 @@
  */
 
 import { isApiError } from '@/services/api/errors';
+import { LEAF_ENTRY_MAX_AGE_DAYS } from '@tfd/domain';
 
 const BY_CODE: Record<string, string> = {
   network: 'error.network',
@@ -137,6 +138,8 @@ const BY_REASON: Record<string, string> = {
   'published-during-import': 'error.publishedDuringImport',
   // A save that would leave nobody able to decide above an owner figure (ADR-041, Q6).
   'no-owner-approver': 'error.noOwnerApprover',
+  // Leaf for a day more than 30 days back (the factory's answer, 5 November 2026).
+  'too-old': 'error.leafTooOld',
 };
 
 const CUT_OVER_REASONS = new Set(['future', 'first-bill-month', 'different']);
@@ -185,7 +188,19 @@ export function errorMessageValues(error: unknown): Record<string, string> {
       : typeof details?.asOfMonth === 'string'
         ? details.asOfMonth
         : '';
-  return { ...(months ? { months } : {}), ...(count ? { count } : {}), ...(month ? { month } : {}) };
+  // `too-old` on leaf: how many days back may be entered, the server's figure or the shared one.
+  const days =
+    errorReason(error) === 'too-old'
+      ? String(typeof (details as { days?: unknown } | undefined)?.days === 'number'
+          ? (details as { days: number }).days
+          : LEAF_ENTRY_MAX_AGE_DAYS)
+      : '';
+  return {
+    ...(months ? { months } : {}),
+    ...(count ? { count } : {}),
+    ...(month ? { month } : {}),
+    ...(days ? { days } : {}),
+  };
 }
 
 /**

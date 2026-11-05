@@ -2411,6 +2411,7 @@ export const en = {
   'deliveries.kgs': 'Kilos',
   'deliveries.monthLocked':
     '{{month}} is published, so nothing more can be recorded or voided in it. Bills and payouts are built from the leaf as it stands.',
+  'deliveries.tooOld': 'This day is more than {{days}} days ago, so leaf can no longer be entered for it. Its rows can still be looked at.',
   'deliveries.outlierConfirm':
     '{{kgs}} is far more than the rest of this session. Press Enter again to record it as typed.',
   'deliveries.pickPointToEnter':
@@ -2661,6 +2662,7 @@ export const en = {
   'records.import.problem.month-out-of-order': 'a month before the newest published one; months are imported in order',
   'records.import.problem.must-be-positive': 'must be more than 0',
   'records.import.problem.future-date': 'a day after today: leaf can only be entered for today or earlier',
+  'records.import.problem.too-old': 'more than {{days}} days ago: leaf can only be entered for the last {{days}} days',
   'records.import.problem.unknown-collection-point': 'no collection point with this name',
   'records.import.problem.opening-balances-locked': 'a bill has already been published for this supplier',
   'records.import.problem.cut-over-month': 'not the factory\'s cut-over month: the opening balances and the first bills here are all for that one month',
@@ -2898,6 +2900,7 @@ export const en = {
   'error.recordsBusy': 'The month was busy at that moment (being published, or its leaf, rate or exceptions being changed), so nothing was saved. Sending it again is safe.',
   'error.noOwnerApprover': 'Nobody would be left who can decide above the owner figure. Give another active user the owner\'s right first, or clear the owner figure in Credit rules.',
   'error.rateDiffers': 'This month\'s bills came from the factory\'s own slips, and their rate is the month\'s. Correct it in the factory\'s system and import the slips again.',
+  'error.leafTooOld': 'Leaf can only be entered for the last {{days}} days. Nothing was saved.',
   'error.publishedDuringImport': 'The month was published while the file was on its way. Nothing was saved: send the same file again.',
   'error.earlierMonthUnpublished': '{{month}} still has unpublished bills. Publish it first; months are published in order.',
   'error.approvalMissing': 'Something approved for this month is no longer on its slip. Import the corrected file again, then publish.',

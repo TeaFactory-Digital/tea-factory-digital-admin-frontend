@@ -15,7 +15,7 @@ the next slice.
 | **Console** | Every module in [Modules](#modules) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
 | **Backend** | `tea-factory-digital-backend`, shipped up to `66c5ea3`; staging is not yet running `068faf3` or later (BACKEND-TODO #50, being deployed). BACKEND-TODO **#1 to #44, #46 to #49, #51 to #55 and #57 to #63 are done**; **#45** (factory records without the factory system) is partly done (the bills import with the month reads and publish, late bills included, opening balances, `5b58f81`, and leaf and months with importing again, `e4a9f40`, are live; other deductions are next, then the bill engine); **#50** and **#56** (savings interest, calculated bills only, with the bill engine) are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
-| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **640 tests in 88 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
+| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **642 tests in 88 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
 ### Built against the mock and tested
 
@@ -543,6 +543,10 @@ console with no undo and no delivery report, so every safeguard is a *pre*-check
 `unknown-category`, per-device consent, `no-recipients` on a composed send only,
 `push-not-configured`.
 
+"Your account is ready" goes **to each supplier whose bill was published**, one send each,
+never to every supplier (the factory, 5 November 2026); a held bill's supplier is told when
+it is released.
+
 The reach panel is the module: three numbers rather than one, because *reaches 3, 11 opted
 out* is a circular that belongs on the noticeboard.
 
@@ -725,9 +729,10 @@ Worst first: correctness, then plumbing, then polish.
 2. **BACKEND-TODO #45 is not finished.** A sync-off factory can add suppliers, set
    transport rates, record walk-ins, and import and publish its finished bills against the
    real API (a late division file's bills wait for a manager, R15, and a waiting one is
-   replaced by sending it again, R18), and enter opening balances (one at a time or from a file, `5b58f81`), but it cannot yet enter leaf, enter a rate by hand, generate
-   bills and compare them with the printed slips, type other deductions, run the remaining
-   imports or import a file again (skipping what is already there). The table under
+   replaced by sending it again, R18), and enter opening balances (one at a time or from a file, `5b58f81`), enter and import leaf and monthly rates and import a file again, skipping
+   what is already there (`e4a9f40`). It cannot yet generate bills and compare them with the
+   printed slips, type other deductions, or run the last two imports (other deductions,
+   printed slip balances). The table under
    [Hidden in the console](#hidden-in-the-console-until-the-backend-ships-it) says what is
    hidden.
 
@@ -790,10 +795,16 @@ Numbering follows `status.md` §21 in the mobile repo.
 
 | § | Question | Effect today |
 | --- | --- | --- |
-| 21.24 | **Notifications**: should a bill publication push to every supplier, and is `content: approve` the right gate on free text? | Built as configuration (one switch per category); the factory has not confirmed the settings |
+| 21.24 | **Notifications**: is `content: approve` the right gate on free text? (Who a bill publication tells is answered below.) | Built as configuration (one switch per category) |
 | - | **Gross or net leaf?** Does the weighing point record one figure, or a gross weight and a sack/water deduction? | One net `kgs` per weighing in the console and on the wire. The backend already books `grossKg` + `deductionKg` (0) and derives `kgs`, so a two-figure answer is no migration on the server; it would still change `Delivery` in every client that reads it |
 | - | **What is a plausible weighing?** | The leaf grid questions a figure over 150 kg that is also 3× the session's mean (`OUTLIER_KG_MULTIPLE`, `OUTLIER_KG_FLOOR_KG`). A guess until the factory gives a number |
-| - | **How far back may leaf be entered?** | Any date in an unpublished month; the publish lock is the only guard |
+
+### Answered by the factory, 5 November 2026
+
+| § | Answer | Where it is |
+| --- | --- | --- |
+| 21.24 | A bill publication notifies **only the suppliers whose bill was published**, one send each; never every supplier. A held bill's supplier is told when it is released | The mock's publish and release; BACKEND-TODO #64 |
+| - | Leaf may be entered or imported for **the last 30 days** (and never a day after today) | `LEAF_ENTRY_MAX_AGE_DAYS`, `leafDateProblem`; an older day can still be looked at in Leaf intake; BACKEND-TODO #64 |
 
 ### Answered by the factory, 30 October 2026
 

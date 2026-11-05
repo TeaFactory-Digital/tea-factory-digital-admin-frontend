@@ -299,7 +299,7 @@ describe('M13 automatic triggers', () => {
 
   afterEach(clearFactorySync);
 
-  it('fires billPublished when a month is published, once', async () => {
+  it('fires billPublished when a month is published, once per supplier whose bill went out', async () => {
     // A synced factory: its bills are not compared with printed slips before the publish.
     await setFactorySync(true);
     // The month is closed by the factory's own system, which holds `ratesAndMonthClose: W`
@@ -335,14 +335,25 @@ describe('M13 automatic triggers', () => {
     await signInAs(ADMIN);
     const after = await sendsFor('billPublished');
 
-    expect(after.length).toBe(before.length + 1);
-    const fired = after[0]!;
-    expect(fired.origin).toBe('automatic');
-    // Nobody pressed anything, so nobody is credited.
-    expect(fired.createdById).toBeNull();
-    expect(fired.entity).toBe('monthlyRate');
-    expect(fired.entityId).toBe(open.monthKey);
-    expect(fired.reachableDevices).toBeGreaterThan(0);
+    // §21.24, the factory's answer (5 November 2026): each supplier whose bill was published,
+    // one send each, and never one send to every supplier.
+    // Every bill of the month but a held one went out.
+    const published = (await billRepository.list({ monthKey: open.monthKey, pageSize: 1000 })).items.filter(
+      (bill) => !bill.held,
+    );
+    const fired = after.slice(0, after.length - before.length);
+    expect(published.length).toBeGreaterThan(1);
+    expect(fired).toHaveLength(published.length);
+    for (const send of fired) {
+      expect(send.origin).toBe('automatic');
+      // Nobody pressed anything, so nobody is credited.
+      expect(send.createdById).toBeNull();
+      expect(send.entity).toBe('bill');
+      expect(send.audience?.kind).toBe('supplier');
+    }
+    const told = fired.map((send) => (send.audience as { supplierId: string } | null)?.supplierId).sort();
+    expect(told).toEqual(published.map((bill) => bill.supplierId).sort());
+    expect(fired.reduce((sum, send) => sum + send.reachableDevices, 0)).toBeGreaterThan(0);
   }, 40_000);
 
   it('does not fire a trigger the factory has turned off', async () => {

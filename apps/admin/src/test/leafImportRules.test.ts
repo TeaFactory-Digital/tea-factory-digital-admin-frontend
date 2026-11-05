@@ -4,7 +4,9 @@
  * `<type>:<entityId>` and travel URL-encoded.
  */
 import { afterEach, describe, expect, it } from 'vitest';
-import { importRowProblems } from '@tfd/domain';
+import { LEAF_ENTRY_MAX_AGE_DAYS, colomboDayOf, earliestLeafDay, importRowProblems, leafDateProblem } from '@tfd/domain';
+import { deliveryRepository } from '@/services/repositories/deliveryRepository';
+import { errorMessageKey, errorMessageValues } from '@/lib/errorMessage';
 import { factoryRecordRepository } from '@/services/repositories/factoryRecordRepository';
 import { monthRepository } from '@/services/repositories/monthRepository';
 import { signInAs } from './render';
@@ -51,5 +53,37 @@ describe('the server', () => {
     expect(first.id).toBe(`${first.type}:${first.entityId}`);
     const resolved = await monthRepository.resolveException(month.monthKey, first.id, 'Checked against the slip and accepted.');
     expect(resolved.resolvedAt).not.toBeNull();
+  });
+});
+
+describe('30 days back, no further (the factory, 5 November 2026)', () => {
+  it('counts back from today, across a month and a year', () => {
+    expect(LEAF_ENTRY_MAX_AGE_DAYS).toBe(30);
+    expect(earliestLeafDay('2026-11-05')).toBe('2026-10-06');
+    expect(earliestLeafDay('2026-01-10')).toBe('2025-12-11');
+    expect(leafDateProblem('2026-10-06', '2026-11-05')).toBeNull();
+    expect(leafDateProblem('2026-10-05', '2026-11-05')).toBe('too-old');
+    expect(leafDateProblem('2026-11-06', '2026-11-05')).toBe('future');
+  });
+
+  it('refuses older leaf in a file, and on the session grid, with its own reason', async () => {
+    await setFactorySync(false);
+    await signInAs('clerk@galabodatea.lk');
+    const today = colomboDayOf(new Date());
+    const [year, month, day] = today.split('-').map(Number);
+    const old = new Date(Date.UTC(year!, month! - 1, day! - 31)).toISOString().slice(0, 10);
+
+    const result = await factoryRecordRepository.importRows('deliveries', 'leaf.csv', [
+      { date: old, supplierCode: '5147', kg: '20' },
+    ]);
+    expect(result.problems).toEqual(expect.arrayContaining([expect.objectContaining({ column: 'date', code: 'too-old' })]));
+
+    await signInAs('factory-system@galabodatea.lk');
+    const refusal = await deliveryRepository
+      .commit({ date: old, collectionPoint: 'MAKADURA', batchId: 'test-too-old', rows: [{ supplierId: 'sup-1', kgs: 20 }] })
+      .catch((error: unknown) => error);
+    expect(refusal).toMatchObject({ code: 'invalid', details: { field: 'date', reason: 'too-old' } });
+    expect(errorMessageKey(refusal)).toBe('error.leafTooOld');
+    expect(errorMessageValues(refusal)).toMatchObject({ days: '30' });
   });
 });

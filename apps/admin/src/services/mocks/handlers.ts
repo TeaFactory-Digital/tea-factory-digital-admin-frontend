@@ -192,6 +192,8 @@ import {
   summariseKgs,
   INQUIRY_OFFICE_STATUSES,
   INQUIRY_STATUSES,
+  LEAF_ENTRY_MAX_AGE_DAYS,
+  leafDateProblem,
   type InquiryStatus,
 } from '@tfd/domain';
 import {
@@ -2458,9 +2460,12 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
       }
       case 'deliveries': {
         if (code && !supplier) push('supplierCode', 'unknown-supplier');
-        // A day after today (Colombo) is refused, as the API does (ADR-040). A suspended
-        // supplier's leaf is taken: the month's exceptions name them (R24).
-        if (row.date && row.date > colomboDayOf(mockNow())) push('date', 'not-allowed');
+        // A day after today (Colombo) is refused, as the API does (ADR-040), and so is one
+        // more than 30 days back (5 November 2026). A suspended supplier's leaf is taken:
+        // the month's exceptions name them (R24).
+        const dateProblem = row.date ? leafDateProblem(row.date, colomboDayOf(mockNow())) : null;
+        if (dateProblem === 'future') push('date', 'not-allowed');
+        if (dateProblem === 'too-old') push('date', 'too-old');
         if (row.date && lockedFor(monthKeyOf(row.date), supplier?.id)) push('date', 'month-locked');
         if (row.collectionPoint && !points.includes(row.collectionPoint)) {
           push('collectionPoint', 'unknown-collection-point');
@@ -4297,6 +4302,22 @@ export const handlers: HttpHandler[] = [
     const replay = state.batches.get(batch.batchId);
     if (replay) return HttpResponse.json(replay);
 
+    // A day after today (ADR-040), or more than 30 days back (the factory's answer,
+    // 5 November 2026): `422 invalid`, as the API does.
+    const dateProblem = leafDateProblem(batch.date, colomboDayOf(mockNow()));
+    if (dateProblem) {
+      return fail({
+        status: 422,
+        code: 'invalid',
+        message: dateProblem === 'future' ? 'Leaf cannot be entered for a day after today.' : 'That day is too far back.',
+        details: {
+          field: 'date',
+          reason: dateProblem,
+          ...(dateProblem === 'too-old' ? { days: LEAF_ENTRY_MAX_AGE_DAYS } : {}),
+        },
+      });
+    }
+
     // A published month takes leaf only for suppliers whose bill is held: correcting a
     // weighing is how a held bill is brought into line with the printed slip.
     if (lockedMonth(monthKey) && !batch.rows.every((row) => !lockedFor(monthKey, row.supplierId))) {
@@ -5130,13 +5151,24 @@ export const handlers: HttpHandler[] = [
      * supplier can open, so it is the moment the notification means anything. It cannot
      * throw and cannot block: a push that failed must never roll back an irreversible
      * publish, and `fireAutomatic` records the outcome in the send log instead.
+     *
+     * **Only the suppliers whose bill this publish released** (the factory's answer to
+     * §21.24, 5 November 2026), one send each: a supplier with no bill this month, or whose
+     * bill is held, is told nothing until there is a bill to open.
      */
-    fireAutomatic(request, 'billPublished', {
-      title: `Your ${monthKey} account is ready`,
-      body: 'The Green Leaf Account has been published. Open the app to see your kilos and your balance.',
-      entity: 'monthlyRate',
-      entityId: monthKey,
-    });
+    for (const bill of state.bills.filter((one) => one.monthKey === monthKey && one.publishedAt === publishedAt)) {
+      fireAutomatic(
+        request,
+        'billPublished',
+        {
+          title: `Your ${monthKey} account is ready`,
+          body: 'The Green Leaf Account has been published. Open the app to see your kilos and your balance.',
+          entity: 'bill',
+          entityId: bill.id,
+        },
+        { kind: 'supplier', supplierId: bill.supplierId },
+      );
+    }
 
     recordBy(auth, 'month.publish', 'monthlyRate', monthKey, {
       before: { stage: 'billsGenerated' },

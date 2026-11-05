@@ -25,6 +25,7 @@ import { CheckCircle2, Download, FileSpreadsheet, RotateCcw, Upload } from 'luci
 import {
   IMPORT_COLUMNS,
   IMPORT_SKIP_KINDS,
+  LEAF_ENTRY_MAX_AGE_DAYS,
   importRowProblems,
   missingImportColumns,
   importTemplateCsv,
@@ -189,6 +190,7 @@ export function ImportDialog({
             ? t('records.import.problem.future-date')
             : t(`records.import.problem.${problem.code}`, {
               amount: problem.amount === undefined ? '' : formatMoney(problem.amount),
+              days: LEAF_ENTRY_MAX_AGE_DAYS,
               defaultValue: t('records.import.problem.other', { code: problem.code }),
             }),
     });

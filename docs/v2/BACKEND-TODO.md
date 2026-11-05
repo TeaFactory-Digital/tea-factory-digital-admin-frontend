@@ -7,6 +7,7 @@ and `packages/domain` (please `vendor:pull` after each console change).
 | # | What | Priority |
 |---|------|----------|
 | 50 | Staging is not running the latest commits | Now |
+| 64 | Two answers from the factory: "your account is ready" to each supplier whose bill was published, and leaf no more than 30 days back | Small |
 | 45 | Factory records: other deductions next, then the bill engine | High |
 | 56 | Savings interest: calculated bills only, with the bill engine (R28 answered) | With #45's bill engine |
 | - | Later: factory sync (Phase 10) | Later |
@@ -19,6 +20,29 @@ still answers `factorySync: null` and **14 flags**, so staging is not yet on `06
 later (`12eea12`, `671627d`, `76b50f2`); migrations `20261023010000`, `20261024010000` and
 `20261026010000` are not applied there. Once it answers `factorySync: { enabled: false }`
 and 15 flags, tell me, and the bills import and publish get tried against it.
+
+## 64. Two answers from the factory (5 November 2026)
+
+Please `npm run vendor:pull` (`leafCollection.ts`, `notifications.ts`, `types/admin.ts`), then:
+
+- **§21.24, who a published bill tells:** only the suppliers **whose bill was published**,
+  one send each; never every supplier. On a normal publish `months.service.ts` fires one
+  `billPublished` for the month (`month.publish:${monthKey}`, with a bill count); please fire
+  one per published bill instead, as the late-bills path already does
+  (`month.publish:${monthKey}:${supplierId}`, with the `supplierId`), so the relay has each
+  supplier when Phase 7 turns it on. A held bill's supplier is told when it is released. The
+  mock does this now.
+- **Leaf no more than 30 days back:** `LEAF_ENTRY_MAX_AGE_DAYS = 30` and
+  `leafDateProblem(date, today)` in `leafCollection.ts`. `POST /admin/deliveries` refuses a
+  day before `earliestLeafDay(today)` (Colombo) with `422 invalid`,
+  `details: { field: 'date', reason: 'too-old', days: 30 }`, beside the `reason: 'future'` you
+  have. The `deliveries` import marks such a row `{ column: 'date', code: 'too-old' }` (a day
+  after today stays `not-allowed`). The publish lock is checked as before. The console shows
+  an older day read-only and has the texts.
+
+**Check:** on 5 November 2026, leaf for 6 October is taken and 5 October is refused
+(`too-old`), by the grid and by a file; publishing a month with 40 bills, 2 of them held,
+fires 38 `billPublished`, each with its supplier.
 
 ## 45. Factory records without the factory system
 
@@ -138,11 +162,9 @@ the same PR) and the feature appears:
 
 | Console feature | Waits for | Line in `serverReady.ts` |
 |---|---|---|
-| Import → Daily leaf, Monthly rates, Other deductions, Printed slip balances | `POST /admin/imports/{deliveries, monthlyRates, billAdjustments, printedBalances}` | `IMPORT_KINDS_NOT_ON_SERVER` (one entry each; Finished bills is live) |
+| Import → Other deductions, Printed slip balances | `POST /admin/imports/{billAdjustments, printedBalances}` | `IMPORT_KINDS_NOT_ON_SERVER` (one entry each; the other imports are live) |
 | "Other deductions" → Edit on a bill | `PUT /admin/bills/:id/adjustment` | `OTHER_DEDUCTIONS_ON_SERVER = false` |
 | Rates & month close: "Compare with printed slips", the checklist step, held badges | `slip-comparison`, `printed`, `hold`, `release` | `SLIP_COMPARISON_ON_SERVER = false` |
-| Configuration → Features: "Account tab: this month so far" | `GET /bills/month-to-date` | `MONTH_TO_DATE_ON_SERVER = false` |
-| Import dialog: which rows are already there, and "import them anyway" for leaf | `dryRun`, `duplicates`, `skipped` | `IMPORT_SKIP_ON_SERVER = false` |
 
-The leaf intake grid and Rates & month close stay visible; they call the leaf and month
-endpoints and start working as those land.
+The leaf intake grid and Rates & month close are live (`e4a9f40`); only the rows above are
+still hidden.
