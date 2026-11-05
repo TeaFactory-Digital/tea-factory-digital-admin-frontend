@@ -8,6 +8,7 @@
  */
 
 import {
+  INQUIRY_OFFICE_STATUSES,
   closeInquirySchema,
   escalateInquirySchema,
   type EscalateInquiryBody,
@@ -106,9 +107,17 @@ function toAdminInquiry(served: ServedInquiry): AdminInquiry {
 }
 
 export const inquiryRepository = {
-  /** Open first and oldest first: the message that has waited longest is the one to answer. */
+  /**
+   * Oldest first: the message that has waited longest is the one to answer. By default what
+   * needs the office, open and escalated together, in one request.
+   */
   list: async (query: InquiryQuery = {}): Promise<Paged<AdminInquiry>> => {
-    const page = await inquiryEndpoints.list({ page: 0, pageSize: 25, status: 'open', ...query });
+    const page = await inquiryEndpoints.list({
+      page: 0,
+      pageSize: 25,
+      ...query,
+      status: query.status ?? INQUIRY_OFFICE_STATUSES,
+    });
     return { ...page, items: page.items.map((row) => toAdminInquiry(row as ServedInquiry)) };
   },
 

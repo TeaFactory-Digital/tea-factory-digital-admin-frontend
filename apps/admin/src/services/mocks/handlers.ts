@@ -190,6 +190,9 @@ import {
   round2,
   roundKg,
   summariseKgs,
+  INQUIRY_OFFICE_STATUSES,
+  INQUIRY_STATUSES,
+  type InquiryStatus,
 } from '@tfd/domain';
 import {
   MOCK_PASSWORD,
@@ -8049,12 +8052,32 @@ export const handlers: HttpHandler[] = [
     if ('response' in auth) return auth.response;
 
     const url = new URL(request.url);
-    const status = url.searchParams.get('status');
+    /*
+     * One state or several, comma-separated, as the API (backend `66c5ea3`). Absent: what
+     * needs the office, open and escalated. An unknown or empty value, or `status` repeated,
+     * is `422 invalid`, never an empty page.
+     */
+    const named = url.searchParams.getAll('status');
+    const parts = named.length === 1 ? [...new Set(named[0]!.split(',').map((one) => one.trim()))] : [];
+    if (
+      named.length > 1 ||
+      (named.length === 1 &&
+        !parts.every((one) => (INQUIRY_STATUSES as readonly string[]).includes(one)))
+    ) {
+      return fail({
+        status: 422,
+        code: 'invalid',
+        message: 'That status is not one an inquiry has.',
+        details: { field: 'status' },
+      });
+    }
+    const statuses: readonly InquiryStatus[] =
+      named.length === 1 ? (parts as InquiryStatus[]) : INQUIRY_OFFICE_STATUSES;
     const supplierId = url.searchParams.get('supplierId');
     const q = url.searchParams.get('q')?.trim().toLowerCase();
 
     let rows = state.inquiries.map(withInquiryAge);
-    if (status) rows = rows.filter((r) => r.status === status);
+    rows = rows.filter((r) => statuses.includes(r.status));
     if (supplierId) rows = rows.filter((r) => r.supplierId === supplierId);
     if (q) {
       rows = rows.filter(

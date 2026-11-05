@@ -34,12 +34,19 @@ export function inquiryAwaitsSupplier(status: InquiryStatus): boolean {
 }
 
 /**
+ * The states that need the office: open, and passed up to the manager. The inquiry list's
+ * default view asks for both in one request (`status=open,escalated`, backend `66c5ea3`),
+ * which is also what the API answers when no status is named.
+ */
+export const INQUIRY_OFFICE_STATUSES = ['open', 'escalated'] as const satisfies readonly InquiryStatus[];
+
+/**
  * Is the office the one keeping the supplier waiting? Open and escalated messages count
  * against the two-day target (`QUEUE_SLA_HOURS.inquiries`); one waiting on the supplier
  * does not, and neither does a finished one.
  */
 export function inquiryCountsTowardsSla(status: InquiryStatus): boolean {
-  return status === 'open' || status === 'escalated';
+  return (INQUIRY_OFFICE_STATUSES as readonly InquiryStatus[]).includes(status);
 }
 
 /**

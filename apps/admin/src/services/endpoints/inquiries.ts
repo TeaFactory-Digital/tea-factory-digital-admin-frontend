@@ -30,9 +30,19 @@ export const inquiryEndpoints = {
   get: (id: string) =>
     apiClient.get<AdminInquiry>(`/admin/inquiries/${id}`).then((response) => response.data),
 
+  /**
+   * Several states go as one comma-separated `status` (`open,escalated`): the API refuses
+   * the parameter repeated (`status=a&status=b`) with `422 invalid`, which is how an array
+   * left to axios would be sent.
+   */
   list: (query: InquiryQuery) =>
     apiClient
-      .get<Paged<AdminInquiry>>('/admin/inquiries', { params: toQueueParams(query) })
+      .get<Paged<AdminInquiry>>('/admin/inquiries', {
+        params: toQueueParams({
+          ...query,
+          status: Array.isArray(query.status) ? query.status.join(',') : query.status,
+        }),
+      })
       .then((response) => response.data),
 
   /** One inquiry, by id. Absent for a while (gap **G-06**), so the repository swept the list. */

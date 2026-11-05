@@ -220,6 +220,9 @@ export const CREDIT_FACILITY_FLAGS = {
  * than a migration, and it did (30 October 2026, §21.18): two more states that are still
  * open, `escalated` (passed up to the manager) and `awaitingSupplier` (the office asked
  * the supplier something and waits for the answer; the supplier's reply opens it again).
+ * The reply returns it to the state the office asked **from** (R30, backend `66c5ea3`, kept
+ * as `inquiries.awaiting_from`): `escalated` if the manager asked, `open` otherwise. Not read
+ * off `escalatedAt`, which stays set after the manager has finished.
  */
 export const INQUIRY_STATUSES = ['open', 'escalated', 'awaitingSupplier', 'resolved', 'closed'] as const;
 

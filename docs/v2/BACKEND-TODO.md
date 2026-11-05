@@ -1,6 +1,6 @@
 # Backend to-do
 
-Only the work still open (4 November 2026). Finished work is taken out; git history keeps it.
+Only the work still open (5 November 2026). Finished work is taken out; git history keeps it.
 The rules for every item are in [`factory-records.md`](./factory-records.md) (the console)
 and `packages/domain` (please `vendor:pull` after each console change).
 
@@ -9,7 +9,6 @@ and `packages/domain` (please `vendor:pull` after each console change).
 | 50 | Staging is not running the latest commits | Now |
 | 45 | Factory records: other deductions next, then the bill engine | High |
 | 56 | Savings interest: calculated bills only, with the bill engine (R28 answered) | With #45's bill engine |
-| 63 | Your R29 to R36, answered: the manager answers inquiries, an escalation survives the supplier's reply, two shared facts for corrections | Small |
 | - | Later: factory sync (Phase 10) | Later |
 
 ## 50. Staging is not running the latest commits
@@ -113,40 +112,6 @@ that month).
 posts one entry of 1,200.00 with `monthKey 2027-03`; publishing March 2027 again posts
 nothing new; at 0% nothing is posted.
 
-## 63. R29 to R36, answered (4 November 2026)
-
-Console T11 is done on top of `2304045` (corrections and "This month so far" switched on, the
-reason capped at 1,000, `no-owner-approver` explained, `needs: 'clerk'` handled, the bill's
-sparse `dailySupply` drawn as the whole month with `fullMonthDays`, one Idempotency-Key per
-correction form). Please `npm run vendor:pull` (`rbac.ts`, `corrections.ts`, `bill.ts`,
-`types/*`), then:
-
-- **R29, the manager answers inquiries:** `DEFAULT_ROLE_MATRIX.manager.inquiries` is now
-  **`A`** (was `R`): escalations go to the manager, who replies, closes and escalates like the
-  clerk. A factory that saved its own matrix keeps it.
-- **R30, the supplier's reply:** an `awaitingSupplier` inquiry that had been **escalated**
-  (`escalatedAt` set) goes back to **`escalated`**, not `open`; one never escalated goes to
-  `open`.
-- **R31:** as you built it: a resolved inquiry takes another reply. The mock now does too (only
-  `closed` refuses).
-- **R32, pending withdrawals:** `CorrectionFacts.savingsPending` (withdrawals asked for, not
-  paid). `correctionProblems` refuses with `savings-short` a savings correction downwards, or
-  a `fromSavings`, that would leave less than they need. Please pass it, and serve it on
-  `GET /admin/suppliers/:id/corrections` as `savingsPending` so the form checks the same.
-- **R33, no write-off for an active supplier:** `CorrectionFacts.supplierStatus`;
-  `correctionProblems` adds **`supplier-active`** for `kind: 'writeOff'` while the supplier is
-  `active`. Paying from savings and a plain correction stay allowed. Serve `supplierStatus`
-  on the corrections read too.
-- **R34:** done: the correction form keeps one Idempotency-Key across its retries.
-- **R35:** fine as built: a calculated factory's payment correction waits `pending` for the
-  bill engine.
-- **R36:** as you built it: rejecting with the facility switched off is allowed (the mock now
-  does too); approving is not.
-
-**Also:** the inquiry list's default `status=open` leaves out escalated ones, so the console
-now shows "N passed to the manager are not in this list" with a link, from a
-`status=escalated&pageSize=1` count. If you would rather accept a list of statuses
-(`status=open,escalated`), tell me and the default view will use it.
 
 ## Later
 

@@ -12,6 +12,7 @@ import {
   isInquiryClosed,
 } from '@tfd/domain';
 import { inquiryRepository } from '@/services/repositories/inquiryRepository';
+import { apiClient } from '@/services/api/client';
 import { signInAs, signOut } from './render';
 
 const CLERK = 'clerk@galabodatea.lk';
@@ -57,5 +58,31 @@ describe('the office', () => {
     const ack = await inquiryRepository.reply('inq-1', { body: REPLY, awaitSupplier: true });
     expect(ack.status).toBe('awaitingSupplier');
     expect((await inquiryRepository.get('inq-1')).status).toBe('awaitingSupplier');
+  });
+});
+
+describe('the list (backend 66c5ea3: several statuses)', () => {
+  it('shows open and escalated together by default, in one request', async () => {
+    await signInAs(CLERK);
+    await inquiryRepository.escalate('inq-1', { note: 'The weight dispute needs the manager to check.' });
+    const page = await inquiryRepository.list();
+    const statuses = new Set(page.items.map((row) => row.status));
+    expect(statuses.has('escalated')).toBe(true);
+    expect([...statuses].every((one) => one === 'open' || one === 'escalated')).toBe(true);
+    // One state named still means that state alone.
+    const open = await inquiryRepository.list({ status: 'open' });
+    expect(open.items.every((row) => row.status === 'open')).toBe(true);
+    expect(open.items.some((row) => row.id === 'inq-1')).toBe(false);
+  });
+
+  it('refuses an unknown, an empty or a repeated status with 422 invalid, as the API does', async () => {
+    await signInAs(CLERK);
+    for (const params of [
+      new URLSearchParams('status=open,pending'),
+      new URLSearchParams('status='),
+      new URLSearchParams('status=open&status=escalated'),
+    ]) {
+      await expect(apiClient.get('/admin/inquiries', { params })).rejects.toMatchObject({ code: 'invalid' });
+    }
   });
 });

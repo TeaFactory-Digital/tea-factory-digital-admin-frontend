@@ -8,8 +8,9 @@
  * decides whether this is answered now or after lunch: a row showing only a
  * supplier code and a date would make every message look the same.
  *
- * Oldest first within a status, like every other inbox. The default filter is
- * `open`, because the answered ones are a record and the open ones are work.
+ * Oldest first within a status, like every other inbox. The default view is what needs
+ * the office, open and escalated together (`status=open,escalated`, one request): the
+ * answered ones are a record and these are work, and an escalated one is the hardest of it.
  */
 
 import { useMemo, useState } from 'react';
@@ -17,7 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { AdminInquiry, InquiryStatus } from '@tfd/domain';
-import { QUEUE_SLA_HOURS, inquiryCountsTowardsSla } from '@tfd/domain';
+import { INQUIRY_OFFICE_STATUSES, INQUIRY_STATUSES, QUEUE_SLA_HOURS, inquiryCountsTowardsSla } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { GRID_CARD } from '@/components/ui/layout';
@@ -26,7 +27,7 @@ import { SearchInput, Select } from '@/components/ui/Field';
 import { inquiryRepository } from '@/services/repositories/inquiryRepository';
 import { ExportCsvButton } from '@/components/ExportCsvButton';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { EmptyState, Notice } from '@/components/ui/states';
+import { EmptyState } from '@/components/ui/states';
 import { useDebounced } from '@/lib/useDebounced';
 import { formatAge } from '@/lib/format';
 import { useInquiries } from './hooks';
@@ -47,14 +48,16 @@ export function InquiriesScreen() {
   const [searchText, setSearchText] = useState(params.get('q') ?? '');
   const debouncedSearch = useDebounced(searchText, 250);
 
-  const status = (params.get('status') as InquiryStatus | null) ?? 'open';
+  // No `status` in the address: the default view. One state named: that state alone.
+  const named = params.get('status');
+  const status = INQUIRY_STATUSES.find((one) => one === named) ?? null;
   const supplierId = params.get('supplierId');
   const page = Number(params.get('page') ?? 0);
   // Oldest waiting first, always: the server orders the queue and takes no sort parameter.
 
   const query = useMemo(
     () => ({
-      status,
+      status: status ?? INQUIRY_OFFICE_STATUSES,
       supplierId: supplierId ?? undefined,
       q: debouncedSearch || undefined,
       page,
@@ -64,10 +67,6 @@ export function InquiriesScreen() {
   );
 
   const { data, isPending, error, refetch } = useInquiries(query);
-  // The open list leaves out what was passed to the manager (the API filters on one status),
-  // so it says how many are waiting there, one click away. A count only: one row asked for.
-  const escalated = useInquiries({ status: 'escalated', page: 0, pageSize: 1 });
-  const escalatedCount = status === 'open' ? (escalated.data?.total ?? 0) : 0;
 
   function setParam(key: string, value: string | null) {
     const next = new URLSearchParams(params);
@@ -193,10 +192,11 @@ export function InquiriesScreen() {
 
           <Select
             aria-label={t('common.status')}
-            value={status}
-            onChange={(event) => setParam('status', event.target.value)}
+            value={status ?? ''}
+            onChange={(event) => setParam('status', event.target.value || null)}
             fullWidth={false}
           >
+            <option value="">{t('inquiries.filter.office')}</option>
             <option value="open">{t('inquiries.filter.open')}</option>
             <option value="escalated">{t('inquiries.filter.escalated')}</option>
             <option value="awaitingSupplier">{t('inquiries.filter.awaitingSupplier')}</option>
@@ -204,20 +204,6 @@ export function InquiriesScreen() {
             <option value="closed">{t('inquiries.filter.closed')}</option>
           </Select>
         </div>
-
-        {escalatedCount > 0 ? (
-          <div className="shrink-0 px-md pt-sm">
-            <Notice tone="warning">
-              <button
-                type="button"
-                className="text-left font-medium underline underline-offset-2"
-                onClick={() => setParam('status', 'escalated')}
-              >
-                {t('inquiries.escalatedWaiting', { count: escalatedCount })}
-              </button>
-            </Notice>
-          </div>
-        ) : null}
 
         <DataTable
           label={t('inquiries.title')}
@@ -231,8 +217,8 @@ export function InquiriesScreen() {
           onPageChange={(next) => setParam('page', String(next))}
           emptyState={
             <EmptyState
-              title={status === 'open' ? t('inquiries.empty') : t('common.noResults')}
-              body={status === 'open' ? t('inquiries.emptyHint') : t('common.noResultsHint')}
+              title={status === null ? t('inquiries.empty') : t('common.noResults')}
+              body={status === null ? t('inquiries.emptyHint') : t('common.noResultsHint')}
             />
           }
         />

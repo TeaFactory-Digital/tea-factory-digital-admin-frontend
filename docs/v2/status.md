@@ -13,9 +13,9 @@ the next slice.
 | | |
 | --- | --- |
 | **Console** | Every module in [Modules](#modules) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
-| **Backend** | `tea-factory-digital-backend`, shipped up to `2304045`; staging is not yet running `068faf3` or later (BACKEND-TODO #50, being deployed). BACKEND-TODO **#1 to #44, #46 to #49, #51 to #55 and #57 to #62 are done**; **#45** (factory records without the factory system) is partly done (the bills import with the month reads and publish, late bills included, opening balances, `5b58f81`, and leaf and months with importing again, `e4a9f40`, are live; other deductions are next, then the bill engine); **#50**, **#56** (savings interest, calculated bills only, with the bill engine) and **#63** (R29 to R36) are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
+| **Backend** | `tea-factory-digital-backend`, shipped up to `66c5ea3`; staging is not yet running `068faf3` or later (BACKEND-TODO #50, being deployed). BACKEND-TODO **#1 to #44, #46 to #49, #51 to #55 and #57 to #63 are done**; **#45** (factory records without the factory system) is partly done (the bills import with the month reads and publish, late bills included, opening balances, `5b58f81`, and leaf and months with importing again, `e4a9f40`, are live; other deductions are next, then the bill engine); **#50** and **#56** (savings interest, calculated bills only, with the bill engine) are open. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
-| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **588 tests in 80 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
+| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **640 tests in 88 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
 ### Built against the mock and tested
 
@@ -457,8 +457,13 @@ width and the first line sits under it. Reply suggestions from the factory's com
 closing files a message that needed no answer. *How many suppliers we actually answered* is
 the number §19.3's channel-shift KPI wants.
 
-§12.1 is unusual and stays: `A` for the **clerk**, `R` for the manager. Answering a supplier
-is counter work; a manager reading the queue is oversight.
+`A` for the **clerk**, and for the **manager** too since R29 (4 November 2026): escalated
+messages come to the manager, who must be able to answer and close them.
+
+The list opens on **Open and escalated**, one request (`status=open,escalated`, backend
+`66c5ea3`); an escalated row carries its badge beside the age. Each state can be picked
+alone. A supplier's answer to a message waiting on them returns it to the state the office
+asked from (R30): `escalated` if the manager asked, `open` otherwise.
 
 ### M11 News
 

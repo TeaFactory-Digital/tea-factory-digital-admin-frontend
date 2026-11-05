@@ -881,7 +881,12 @@ export interface AdminInquiry extends Omit<Inquiry, 'status' | 'reply'> {
 }
 
 export interface InquiryQuery extends PageQuery {
-  status?: InquiryStatus;
+  /**
+   * One state or several, sent comma-separated (`open,escalated`). Absent: the API answers
+   * `INQUIRY_OFFICE_STATUSES`. An unknown or empty value, or the parameter repeated, is
+   * `422 invalid`.
+   */
+  status?: InquiryStatus | readonly InquiryStatus[];
   supplierId?: string;
   q?: string;
 }
