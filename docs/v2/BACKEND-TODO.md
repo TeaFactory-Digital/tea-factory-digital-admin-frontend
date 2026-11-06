@@ -1,25 +1,53 @@
 # Backend to-do
 
-Only the work still open (5 November 2026). Finished work is taken out; git history keeps it.
+Only the work still open (6 November 2026). Finished work is taken out; git history keeps it.
 The rules for every item are in [`factory-records.md`](./factory-records.md) (the console)
 and `packages/domain` (please `vendor:pull` after each console change).
 
+## Must do first
+
+Two things before any item below, because everything else is tested on top of them.
+
+1. **`npm run vendor:pull`.** Your copy of `@tfd/domain` is behind the console in **6 files**
+   (`npm run domain:drift` in the console, 6 November 2026). Until you pull, the console and
+   the API answer the same question differently:
+
+   | File | What changed | What goes wrong without it |
+   |---|---|---|
+   | `money.ts` | `floor2` adds a tiny epsilon before flooring (`Math.floor(value * 100 + 1e-6) / 100`) | **Money.** Floating point: `floor2(0.29)` is 0.28 in your copy and 0.29 in the console and the app (likewise 1.15 and 4.35), so a ceiling can be a cent apart: a supplier is offered a figure the approval calls over the ceiling, or `stale-eligibility` fires on a figure nobody changed |
+   | `constants.ts`, `leafCollection.ts` | `PLAUSIBLE_WEIGHING_MAX_KG = 250`, `isOutlierKg(kgs)` is `kgs > 250`; `LEAF_ENTRY_MAX_AGE_DAYS = 30`, `earliestLeafDay`, `leafDateProblem` | The console refuses leaf older than 30 days and flags weighings over 250 kg; the API still takes the old leaf and flags by the 3x-average rule (#64) |
+   | `inquiry.ts` | `INQUIRY_OFFICE_STATUSES` (`open`, `escalated`), used by `inquiryCountsTowardsSla` | The two-day target counted on a different list than the console's |
+   | `types/admin.ts` | `InquiryQuery.status` takes one status **or a list** | The console's inquiry filter sends a list your query does not read |
+   | `notifications.ts` | The per-supplier `billPublished` event (#64) | One push for the whole month instead of one per published bill |
+
+2. **#50, deploy staging.** Checked again on **6 November 2026** (read only): `GET /config` for
+   galaboda still answers `factorySync: null`, so staging has none of the work since
+   23 October. Nine migrations are waiting, in order: `20261023010000` (month to date flag,
+   optional bank codes), `20261024010000` (factory sync defaults off), `20261026010000`
+   (imported bills), `20261028010000` (opening balances), `20261029010000` (leaf and months),
+   `20261031010000` (daily supply points), `20261031020000` (inquiry states),
+   `20261031030000` (corrections and retention), `20261105010000` (inquiry awaiting from).
+   Until they run, nothing built since then (imports, opening balances, leaf and months,
+   corrections, credit tiers, inquiry states, "This month so far", the day's collection
+   points) can be tried against a real server.
+
 | # | What | Priority |
 |---|------|----------|
-| 50 | Staging is not running the latest commits | Now |
+| - | `npm run vendor:pull` (6 files, above) | **Must, first** |
+| 50 | Staging is not running the latest commits (above) | **Must, first** |
 | 64 | Three answers from the factory: "your account is ready" to each supplier whose bill was published, leaf no more than 30 days back, and an unusual weighing is one over 250 kg | Small |
 | 45 | Factory records: other deductions next, then the bill engine | High |
 | 56 | Savings interest: calculated bills only, with the bill engine (R28 answered) | With #45's bill engine |
-| - | Later: factory sync (Phase 10) | Later |
+| 65 | A production environment: no production API exists yet | Before the first store release |
+| 66 | Universal-link files on each factory's domain | Before the first store release |
+| - | Later: factory sync (Phase 10), the push sender, the five-year job (#59), a reporting replica | Later |
 
 ## 50. Staging is not running the latest commits
 
-**In progress on your side** (your note of 27 October: the deploy and the three
-migrations). Checked again on 28 October 2026 (read only): `GET /config` for galaboda
-still answers `factorySync: null` and **14 flags**, so staging is not yet on `068faf3` or
-later (`12eea12`, `671627d`, `76b50f2`); migrations `20261023010000`, `20261024010000` and
-`20261026010000` are not applied there. Once it answers `factorySync: { enabled: false }`
-and 15 flags, tell me, and the bills import and publish get tried against it.
+**In progress on your side** (your note of 27 October). Still not deployed on 6 November 2026:
+see **Must do first** above for the nine migrations. Once `GET /config` answers
+`factorySync: { enabled: false }`, tell me, and the bills import, publish, corrections and
+the new inquiry states get tried against it.
 
 ## 64. Three answers from the factory (5 November 2026)
 
@@ -147,6 +175,34 @@ posts one entry of 1,200.00 with `monthKey 2027-03`; publishing March 2027 again
 nothing new; at 0% nothing is posted.
 
 
+## 65. A production environment
+
+There is **no production API yet** (6 November 2026): only staging, a free instance that
+sleeps. The app's release build carries a placeholder origin
+(`https://production-api-not-set.invalid/v1`) and **refuses to start** on it, so no store
+build can ship until this exists.
+
+- A production deployment of the API with its own database, the migrations applied, and the
+  factory's tenant (galaboda) seeded as staging is.
+- Always on (no sleeping): the app's budget is **15 s** per request, against staging's 45 s.
+- Its origin (`https://<host>/v1`) to me: it goes in the app's client config (`api.baseUrl`)
+  and the console's production `VITE_API_BASE_URL` on Vercel.
+- Backups and the five-year record list (#59) apply from the first day.
+
+## 66. Universal-link files on each factory's domain
+
+Decided 30 October 2026 (Q31): **one link domain per factory** (galaboda:
+`app.teafactory.lk`). A notification or a shared link opens the app only if that domain serves:
+
+- `/.well-known/assetlinks.json` for Android (package name and the release signing
+  certificate's SHA-256);
+- `/.well-known/apple-app-site-association` for iOS (`applinks` with the team ID and bundle
+  ID; served as `application/json`, no redirect).
+
+Without them a link opens in the browser instead. Wherever the domain is hosted (with the API
+or separately), the two files are part of each factory's setup. I will send the package
+name, bundle ID and certificate fingerprints when the store accounts exist.
+
 ## Later
 
 - **Factory sync (Phase 10):** the request to the factory team asks for every line of the
@@ -158,6 +214,14 @@ nothing new; at 0% nothing is posted.
   the sync ("the sync's records replace ours") waits for this too.
 - **Past months (A9):** imported as published history, with no balance change and no
   notification.
+- **The five-year job (#59):** nothing on the record list is deleted (`REVOKE DELETE`, done in
+  `20261031030000`). Still to build, before the first records turn five in 2031: a monthly job
+  that, for a supplier whose account is **closed**, removes the personal details
+  (`PERSONAL_FIELDS_REMOVED_AFTER_RETENTION`: name, NIC, telephone, address, bank account)
+  from records past `isPastRetention`, and keeps the figures.
+- **A reporting replica (M16):** the reports are single passes over live records. When the
+  data grows, point them at a read replica or a nightly copy, so a month close does not
+  compete with a report.
 - **The push sender (FCM/APNs):** a composed notification now arrives with copy in every
   language the office wrote (30 October 2026; your `translations` already store them and the
   inbox already answers by `?lang=`). The sender should pick each device's language the same

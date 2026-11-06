@@ -576,7 +576,8 @@ From 9 to 22 October 2026:
     factory's limit, the manager in between, the factory administrator (the owner) above
     the owner threshold; per facility, in Configuration → Credit rules (#61).
 20. **Bad debt (30 October 2026, Q7):** the manager writes off a loan or fertilizer balance,
-    or pays it from the supplier's savings, as a correction (#62).
+    or pays it from the supplier's savings, as a correction (#62). **No waiting period**
+    for either: not "six months since the supplier's last leaf" (answered 6 November 2026).
 21. **Suppliers (30 October 2026, Q14):** each estate its own number; no joint accounts; on
     a death or a transfer of land the number stays with its records five years and is never
     reused. No payout files (Q17): the factory's own system pays.

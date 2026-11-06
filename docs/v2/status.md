@@ -812,7 +812,7 @@ Numbering follows `status.md` §21 in the mobile repo.
 | --- | --- | --- |
 | 21.5 | One waiting request per facility, as built | `409 request-pending` (BR-312) |
 | 21.6 | A clerk approves up to a limit, the manager in between, the owner (factory administrator) above a threshold; per facility, set in Configuration → Credit rules | `approvalTierFor`, `canDecideCredit`; `creditAboveThreshold` moved from the manager to the factory administrator; BACKEND-TODO #61 |
-| 21.7 | The manager writes off a loan or fertilizer balance, or pays it from the supplier's savings | Corrections, kinds `writeOff` and `fromSavings`; BACKEND-TODO #62 |
+| 21.7 | The manager writes off a loan or fertilizer balance, or pays it from the supplier's savings; no waiting period for either (not "six months since the last leaf", answered 6 November 2026) | Corrections, kinds `writeOff` and `fromSavings` |
 | 21.12 | Records kept five years; then a closed supplier's personal details are removed and the figures kept | `retention.ts`; BACKEND-TODO #59 |
 | 21.13 | No point picker for a supplier at several points | Each day's point shown only (#58) |
 | 21.14 | Each estate its own supplier number; no joint accounts; on a death or a transfer the number stays with its records five years and is never reused | `supplier-code-taken` already refuses any number on the roll |
