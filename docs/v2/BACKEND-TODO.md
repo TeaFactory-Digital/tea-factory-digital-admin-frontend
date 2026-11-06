@@ -6,36 +6,22 @@ and `packages/domain` (please `vendor:pull` after each console change).
 
 ## Must do first
 
-Two things before any item below, because everything else is tested on top of them.
-
-1. **`npm run vendor:pull`.** Your copy of `@tfd/domain` is behind the console in **6 files**
-   (`npm run domain:drift` in the console, 6 November 2026). Until you pull, the console and
-   the API answer the same question differently:
-
-   | File | What changed | What goes wrong without it |
-   |---|---|---|
-   | `money.ts` | `floor2` adds a tiny epsilon before flooring (`Math.floor(value * 100 + 1e-6) / 100`) | **Money.** Floating point: `floor2(0.29)` is 0.28 in your copy and 0.29 in the console and the app (likewise 1.15 and 4.35), so a ceiling can be a cent apart: a supplier is offered a figure the approval calls over the ceiling, or `stale-eligibility` fires on a figure nobody changed |
-   | `constants.ts`, `leafCollection.ts` | `PLAUSIBLE_WEIGHING_MAX_KG = 250`, `isOutlierKg(kgs)` is `kgs > 250`; `LEAF_ENTRY_MAX_AGE_DAYS = 30`, `earliestLeafDay`, `leafDateProblem` | The console refuses leaf older than 30 days and flags weighings over 250 kg; the API still takes the old leaf and flags by the 3x-average rule (#64) |
-   | `inquiry.ts` | `INQUIRY_OFFICE_STATUSES` (`open`, `escalated`), used by `inquiryCountsTowardsSla` | The two-day target counted on a different list than the console's |
-   | `types/admin.ts` | `InquiryQuery.status` takes one status **or a list** | The console's inquiry filter sends a list your query does not read |
-   | `notifications.ts` | The per-supplier `billPublished` event (#64) | One push for the whole month instead of one per published bill |
-
-2. **#50, deploy staging.** Checked again on **6 November 2026** (read only): `GET /config` for
-   galaboda still answers `factorySync: null`, so staging has none of the work since
-   23 October. Nine migrations are waiting, in order: `20261023010000` (month to date flag,
-   optional bank codes), `20261024010000` (factory sync defaults off), `20261026010000`
-   (imported bills), `20261028010000` (opening balances), `20261029010000` (leaf and months),
-   `20261031010000` (daily supply points), `20261031020000` (inquiry states),
-   `20261031030000` (corrections and retention), `20261105010000` (inquiry awaiting from).
-   Until they run, nothing built since then (imports, opening balances, leaf and months,
-   corrections, credit tiers, inquiry states, "This month so far", the day's collection
-   points) can be tried against a real server.
+**#50, deploy staging.** Checked again on **6 November 2026** (read only): `GET /config` for
+galaboda still answers `factorySync: null`, so staging has none of the work since
+23 October. Nine migrations are waiting, in order: `20261023010000` (month to date flag,
+optional bank codes), `20261024010000` (factory sync defaults off), `20261026010000`
+(imported bills), `20261028010000` (opening balances), `20261029010000` (leaf and months),
+`20261031010000` (daily supply points), `20261031020000` (inquiry states),
+`20261031030000` (corrections and retention), `20261105010000` (inquiry awaiting from).
+Run them in order from `apps/api`, with the `datasource` line checked first, then deploy
+`main` (now `8e5597c`, which includes #64) and set galaboda's bill source to "Imported".
+Until then, nothing built since 23 October (imports, opening balances, leaf and months,
+corrections, credit tiers, inquiry states, "This month so far", the day's collection
+points, the 30-day leaf rule, the 250 kg check) can be tried against a real server.
 
 | # | What | Priority |
 |---|------|----------|
-| - | `npm run vendor:pull` (6 files, above) | **Must, first** |
 | 50 | Staging is not running the latest commits (above) | **Must, first** |
-| 64 | Three answers from the factory: "your account is ready" to each supplier whose bill was published, leaf no more than 30 days back, and an unusual weighing is one over 250 kg | Small |
 | 45 | Factory records: other deductions next, then the bill engine | High |
 | 56 | Savings interest: calculated bills only, with the bill engine (R28 answered) | With #45's bill engine |
 | 65 | A production environment: no production API exists yet | Before the first store release |
@@ -48,39 +34,6 @@ Two things before any item below, because everything else is tested on top of th
 see **Must do first** above for the nine migrations. Once `GET /config` answers
 `factorySync: { enabled: false }`, tell me, and the bills import, publish, corrections and
 the new inquiry states get tried against it.
-
-## 64. Three answers from the factory (5 November 2026)
-
-Please `npm run vendor:pull` (`constants.ts`, `leafCollection.ts`, `notifications.ts`,
-`types/admin.ts`), then:
-
-- **§21.24, who a published bill tells:** only the suppliers **whose bill was published**,
-  one send each; never every supplier. On a normal publish `months.service.ts` fires one
-  `billPublished` for the month (`month.publish:${monthKey}`, with a bill count); please fire
-  one per published bill instead, as the late-bills path already does
-  (`month.publish:${monthKey}:${supplierId}`, with the `supplierId`), so the relay has each
-  supplier when Phase 7 turns it on. A held bill's supplier is told when it is released. The
-  mock does this now.
-- **Leaf no more than 30 days back:** `LEAF_ENTRY_MAX_AGE_DAYS = 30` and
-  `leafDateProblem(date, today)` in `leafCollection.ts`. `POST /admin/deliveries` refuses a
-  day before `earliestLeafDay(today)` (Colombo) with `422 invalid`,
-  `details: { field: 'date', reason: 'too-old', days: 30 }`, beside the `reason: 'future'` you
-  have. The `deliveries` import marks such a row `{ column: 'date', code: 'too-old' }` (a day
-  after today stays `not-allowed`). The publish lock is checked as before. The console shows
-  an older day read-only and has the texts.
-
-- **An unusual weighing is one over 250 kg:** `PLAUSIBLE_WEIGHING_MAX_KG = 250`;
-  `isOutlierKg(kgs)` is now `kgs > 250`, whatever the month's average (the second parameter
-  is ignored and optional, so `month-exceptions.ts` compiles as it is). The per-point mean in
-  `deriveExceptions` is no longer needed, and the `outlierDelivery` detail should say
-  "more than 250 kg" instead of "more than three times the point's average".
-  `OUTLIER_KG_MULTIPLE` and `OUTLIER_KG_FLOOR_KG` are gone. Leaf stays **one net figure**
-  per weighing (also answered): nothing to change.
-
-**Check:** on 5 November 2026, leaf for 6 October is taken and 5 October is refused
-(`too-old`), by the grid and by a file; publishing a month with 40 bills, 2 of them held,
-fires 38 `billPublished`, each with its supplier; a 251 kg weighing is an `outlierDelivery`
-and a 250 kg one is not.
 
 ## 45. Factory records without the factory system
 

@@ -801,10 +801,10 @@ Numbering follows `status.md` §21 in the mobile repo.
 
 | § | Answer | Where it is |
 | --- | --- | --- |
-| 21.24 | A bill publication notifies **only the suppliers whose bill was published**, one send each; never every supplier. A held bill's supplier is told when it is released | The mock's publish and release; BACKEND-TODO #64 |
-| - | Leaf may be entered or imported for **the last 30 days** (and never a day after today) | `LEAF_ENTRY_MAX_AGE_DAYS`, `leafDateProblem`; an older day can still be looked at in Leaf intake; BACKEND-TODO #64 |
+| 21.24 | A bill publication notifies **only the suppliers whose bill was published**, one send each; never every supplier. A held bill's supplier is told when it is released | The mock's publish and release; API in backend `8e5597c` (#64) |
+| - | Leaf may be entered or imported for **the last 30 days** (and never a day after today) | `LEAF_ENTRY_MAX_AGE_DAYS`, `leafDateProblem`; an older day can still be looked at in Leaf intake; API in backend `8e5597c` (#64, `too-old`) |
 | - | The weighing point records **one net figure** (what is paid for, e.g. 24.5 kg), not a gross weight and a deduction | As built: one `kgs` per weighing; nothing to change |
-| - | A plausible weighing is **up to 250 kg**; anything heavier is questioned on the leaf grid (never refused) and raised at the month close | `PLAUSIBLE_WEIGHING_MAX_KG`, `isOutlierKg`; replaces the guess (over 150 kg and three times the session's mean); BACKEND-TODO #64 |
+| - | A plausible weighing is **up to 250 kg**; anything heavier is questioned on the leaf grid (never refused) and raised at the month close | `PLAUSIBLE_WEIGHING_MAX_KG`, `isOutlierKg`; replaces the guess (over 150 kg and three times the session's mean); API in backend `8e5597c` (#64) |
 
 ### Answered by the factory, 30 October 2026
 

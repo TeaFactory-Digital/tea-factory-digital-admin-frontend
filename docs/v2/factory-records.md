@@ -586,7 +586,7 @@ From 9 to 22 October 2026:
     (`LEAF_ENTRY_MAX_AGE_DAYS`) and never a day after today; a weighing over **250 kg** is
     asked about on the grid and raised at the month close, never refused
     (`PLAUSIBLE_WEIGHING_MAX_KG`). A bill publication tells **each supplier whose bill was
-    published**, never every supplier (BACKEND-TODO #64).
+    published**, never every supplier (built in the API, backend `8e5597c`).
 
 ## 9. Checks
 
