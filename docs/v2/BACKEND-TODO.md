@@ -6,34 +6,41 @@ and `packages/domain` (please `vendor:pull` after each console change).
 
 ## Must do first
 
-**#50, deploy staging.** Checked again on **6 November 2026** (read only): `GET /config` for
-galaboda still answers `factorySync: null`, so staging has none of the work since
-23 October. Nine migrations are waiting, in order: `20261023010000` (month to date flag,
-optional bank codes), `20261024010000` (factory sync defaults off), `20261026010000`
-(imported bills), `20261028010000` (opening balances), `20261029010000` (leaf and months),
-`20261031010000` (daily supply points), `20261031020000` (inquiry states),
-`20261031030000` (corrections and retention), `20261105010000` (inquiry awaiting from).
-Run them in order from `apps/api`, with the `datasource` line checked first, then deploy
-`main` (now `8e5597c`, which includes #64) and set galaboda's bill source to "Imported".
-Until then, nothing built since 23 October (imports, opening balances, leaf and months,
-corrections, credit tiers, inquiry states, "This month so far", the day's collection
-points, the 30-day leaf rule, the 250 kg check) can be tried against a real server.
+**#50, run the staging migrations. Staging is broken now.** Checked on **6 November 2026**
+(read only): staging runs the **new code** (`/bills/month-to-date` and `/admin/months` answer
+`401`, not `404`), but its database has **none of the nine migrations** (`GET /config` still
+answers `factorySync: null`). The new code reads tables and columns that are not there, so
+the supplier app's Account tab gets **`500 internal`** from `GET /bills/current` on every
+open. Nine migrations are waiting, in order: `20261023010000` (month to date flag, optional
+bank codes), `20261024010000` (factory sync defaults off), `20261026010000` (imported bills),
+`20261028010000` (opening balances), `20261029010000` (leaf and months), `20261031010000`
+(daily supply points), `20261031020000` (inquiry states), `20261031030000` (corrections and
+retention), `20261105010000` (inquiry awaiting from). Run them in order from `apps/api`, with
+the `datasource` line checked first, then confirm `main` (`8e5597c`) is what is deployed and
+set galaboda's bill source to "Imported". **Please also stop the code running ahead of
+the database:** `render.yaml` sets no `autoDeploy`, so Render deploys every push to `main`,
+while on `plan: free` the migrations are run by hand (no `preDeployCommand`). Either set
+`autoDeploy: false` and deploy by hand after migrating, or migrate staging before each push
+that adds a migration.
+
+**Check:** signed in as supplier 5708, `GET /bills/current` answers `200`; `GET /config`
+answers `factorySync: { enabled: false }`.
 
 | # | What | Priority |
 |---|------|----------|
-| 50 | Staging is not running the latest commits (above) | **Must, first** |
+| 50 | Staging runs new code on an old database: the app's Account tab fails with 500 (above) | **Must, first, now** |
 | 45 | Factory records: other deductions next, then the bill engine | High |
 | 56 | Savings interest: calculated bills only, with the bill engine (R28 answered) | With #45's bill engine |
 | 65 | A production environment: no production API exists yet | Before the first store release |
 | 66 | Universal-link files on each factory's domain | Before the first store release |
 | - | Later: factory sync (Phase 10), the push sender, the five-year job (#59), a reporting replica | Later |
 
-## 50. Staging is not running the latest commits
+## 50. Staging runs new code on an old database
 
-**In progress on your side** (your note of 27 October). Still not deployed on 6 November 2026:
-see **Must do first** above for the nine migrations. Once `GET /config` answers
-`factorySync: { enabled: false }`, tell me, and the bills import, publish, corrections and
-the new inquiry states get tried against it.
+See **Must do first** above. The supplier app's Account tab shows "Something went wrong"
+(`500 internal` from `GET /bills/current`) until the nine migrations run. Once
+`GET /config` answers `factorySync: { enabled: false }`, tell me, and the bills import,
+publish, corrections and the new inquiry states get tried against it.
 
 ## 45. Factory records without the factory system
 
