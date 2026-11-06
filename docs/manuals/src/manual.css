@@ -25,3 +25,5 @@ ol.steps > li::before {
 }
 .ui { font-weight: 700; color: var(--brand); }
 .who { display: inline-block; font-size: 8pt; font-weight: 700; color: var(--blue); background: var(--blue-soft); border-radius: 8px; padding: 0.3mm 2mm; margin-left: 1mm; vertical-align: 2px; }
+
+.cover .meta a { color: var(--brand); word-break: break-all; text-decoration: none; }

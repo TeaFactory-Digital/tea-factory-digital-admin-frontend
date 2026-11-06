@@ -9,6 +9,19 @@ rules behind each screen are in [`../handbooks/`](../handbooks/).
 | `app-manual.en.pdf`, `app-manual.si.pdf`, `app-manual.ta.pdf` | Supplier App User Manual |
 | `console-manual.en.pdf`, `console-manual.si.pdf`, `console-manual.ta.pdf` | Admin Console User Manual |
 
+## Printed posters
+
+Two A3 posters for the factory notice board, made from the same app screenshots: "get
+started in 4 steps" (get the app, sign in with the supplier number, choose your own
+password, set a PIN) and "what you can do in the app". Sinhala, English and Tamil, in
+Figma: [Supplier banners (A3)](https://www.figma.com/design/K0wFjrwm7KC1NH3MRA1k16/Supplier-banners--A3----Tea-Factory-Digital?node-id=2-2).
+Before printing, replace the sample QR code and the factory telephone placeholder
+("0XX XXX XXXX") with the factory's own; export each frame at 3x for print.
+
+The Supplier App manuals link to it from their cover page.
+
+## Screenshots
+
 Each language has its own screenshots, taken with the app and the console in that language
 (`images/app-si/`, `images/console-ta/` and so on). Sample records (names, news titles,
 inquiry text) stay in English: they are data, not labels.
