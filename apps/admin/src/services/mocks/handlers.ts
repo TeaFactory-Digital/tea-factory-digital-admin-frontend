@@ -2501,13 +2501,19 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
       }
       case 'billAdjustments': {
         if (!code || !row.month) return;
-        const key = `${row.month}:${code}`;
-        if (seen.has(key)) push('supplierCode', 'duplicate');
-        seen.add(key);
         if (!supplier) return push('supplierCode', 'unknown-supplier');
+        // Twice for one supplier and month by who it is, as the API does: `708` is `0708`.
+        const key = `${row.month}:${supplier.id}`;
+        if (seen.has(key)) return push('supplierCode', 'duplicate');
+        seen.add(key);
         if (lockedFor(row.month, supplier.id)) return push('month', 'month-locked');
-        if (!state.bills.some((bill) => bill.supplierId === supplier.id && bill.monthKey === row.month)) {
-          push('supplierCode', 'no-bill');
+        // Only a calculated bill takes other deductions (backend b6c10d6).
+        if (
+          !state.bills.some(
+            (bill) => bill.supplierId === supplier.id && bill.monthKey === row.month && bill.source !== 'imported',
+          )
+        ) {
+          return push('supplierCode', 'no-bill');
         }
         if (num(row.otherCards) > 0 && (row.otherCardsNote ?? '').trim().length < 3) {
           push('otherCardsNote', 'required');
@@ -8829,6 +8835,10 @@ export const handlers: HttpHandler[] = [
 
     const bill = state.bills.find((one) => one.id === params.id);
     if (!bill) return fail({ status: 404, code: 'not-found', message: 'No such bill.' });
+    // An imported or synced bill's line is the factory's own (backend b6c10d6).
+    if (bill.source === 'imported') {
+      return fail({ status: 409, code: 'wrong-bill-source', message: "An imported bill's figures are the factory's." });
+    }
     if (bill.publishedAt || lockedFor(bill.monthKey, bill.supplierId)) {
       return fail({ status: 409, code: 'month-locked', message: 'The month is published.' });
     }
@@ -8875,6 +8885,13 @@ export const handlers: HttpHandler[] = [
         code: 'month-locked',
         message: 'The month was published while this file waited. Send it again.',
         details: { reason: 'published-during-import', monthKey: rows?.[0]?.month ?? null },
+      });
+    }
+    if (kind === 'billAdjustments' && billSourceOf(tenantConfig(request).billSettings) !== 'calculated') {
+      return fail({
+        status: 409,
+        code: 'wrong-bill-source',
+        message: "This factory's bills are imported; their other deductions are on the factory's slips.",
       });
     }
     if (kind === 'bills' && billSourceOf(tenantConfig(request).billSettings) !== 'imported') {

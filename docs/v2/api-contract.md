@@ -3153,9 +3153,9 @@ ticked.
 
 The console hides each of these until it lands, in one place:
 `apps/admin/src/lib/serverReady.ts`. Remove the line when the endpoint ships. Today it holds
-`IMPORT_KINDS_NOT_ON_SERVER` (`deliveries`, `monthlyRates`, `billAdjustments`,
-`printedBalances`), `OTHER_DEDUCTIONS_ON_SERVER`, `SLIP_COMPARISON_ON_SERVER`, `MONTH_TO_DATE_ON_SERVER` and
-`IMPORT_SKIP_ON_SERVER`, all `false`.
+`IMPORT_KINDS_NOT_ON_SERVER` (`printedBalances`) and `SLIP_COMPARISON_ON_SERVER = false`;
+`OTHER_DEDUCTIONS_ON_SERVER`, `MONTH_TO_DATE_ON_SERVER`, `IMPORT_SKIP_ON_SERVER`,
+`CORRECTIONS_ON_SERVER` and `OPENING_BALANCES_ON_SERVER` are on.
 
 - [x] `PATCH /admin/config` accepting `billSettings.source` and `loanInterest.recovery`,
       with `409 bill-source-blocked` (backend `970be6f`)
@@ -3172,8 +3172,10 @@ The console hides each of these until it lands, in one place:
 - [x] A waiting late bill replaced by sending it again (R18; backend `76b50f2`)
 - [x] Opening balances (§5.8) and the `openingBalances` import, with the one cut-over
       month (`cut-over-month`) and `withdrawal-pending` (backend `5b58f81`, ADR-039)
-- [ ] Leaf and months: the rest of §9 and §10, and the `deliveries` and `monthlyRates` imports
-- [ ] Other deductions: `PUT /admin/bills/{id}/adjustment` and the `billAdjustments` import
+- [x] Leaf and months: the rest of §9 and §10, and the `deliveries` and `monthlyRates` imports
+      (backend `e4a9f40`)
+- [x] Other deductions: `PUT /admin/bills/{id}/adjustment` and the `billAdjustments` import
+      (backend `b6c10d6`; `409 wrong-bill-source` for an imported bill or an importing factory)
 - [ ] The bill engine (§11.5, factory-records.md §5), last: galaboda imports its bills. With
       it the printed-slip comparison (§11.5b), the `printedBalances` import, and
       `carryForward.loanBalance` filled from the loan, never the advance
@@ -3324,7 +3326,7 @@ as the factory's own system printed them), **`printedBalances`** (each printed s
 | `deliveries` | `deliveries: W` | `unknown-supplier`, `month-locked`, `unknown-collection-point`; on `date`, `not-allowed` (after today) and `too-old` (more than 30 days back). A weighing already recorded is **skipped** (`already-recorded`) unless `duplicates: 'import'` |
 | `monthlyRates` | `ratesAndMonthClose: W` | `duplicate`, `unknown-month`, `month-locked` |
 | `walkInCredit` | `creditRequests: W` | `unknown-supplier`, `required` (manure without type or quantity), and §14.4's refusals |
-| `billAdjustments` | `billing: W` | `duplicate` (month + code), `unknown-supplier`, `month-locked`, `no-bill`, `required` |
+| `billAdjustments` | `billing: W` | `409 wrong-bill-source` before a row where the bills are imported; then `unknown-supplier` / `ambiguous-supplier`, `duplicate` (month + supplier, so `708` is `0708`), `month-locked`, `no-bill` (no calculated bill), `negative`, `required` |
 | `bills` | `billing: W` | `missing-column` (row 1), `unknown-supplier` / `ambiguous-supplier`, `duplicate` (month + code), `month-not-ended`, `month-out-of-order`, `month-locked` (supplier already billed in a published month), `rate-differs` (between rows of the file, or with the month's stored rate), `bill-no-taken`, `too-large` / `must-be-positive` (`loanInstalmentNo` 1 to 360; `ratePerKg` above 0), and the approvals check `approval-missing` with the rupees in `amount` (factory-records.md §5a). The import creates the month; a top-level `409 month-locked` with `details.reason: 'published-during-import'` means send the file again |
 | `printedBalances` | `billing: W` | `409 wrong-bill-source` unless the bills are calculated here; `duplicate` (month + code), `unknown-supplier`, `no-bill`, `month-locked` (the bill is published) |
 

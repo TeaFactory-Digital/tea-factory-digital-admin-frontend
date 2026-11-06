@@ -9,8 +9,8 @@
 import type { ImportKind } from '@tfd/domain';
 
 export const IMPORT_KINDS_NOT_ON_SERVER: ReadonlySet<ImportKind> = new Set<ImportKind>([
-  // `deliveries` and `monthlyRates` shipped with #45 step 3 (backend e4a9f40, 30 October 2026).
-  'billAdjustments',
+  // `deliveries` and `monthlyRates` shipped with #45 step 3 (backend e4a9f40, 30 October 2026),
+  // `billAdjustments` with #45 step 4 (backend b6c10d6, 6 November 2026).
   'printedBalances',
 ]);
 
@@ -23,8 +23,11 @@ export const OPENING_BALANCES_ON_SERVER = true;
  */
 export const CORRECTIONS_ON_SERVER = true;
 
-/** Typing other deductions on a bill (`PUT /admin/bills/:id/adjustment`). */
-export const OTHER_DEDUCTIONS_ON_SERVER = false;
+/**
+ * Typing other deductions on a calculated bill (`PUT /admin/bills/:id/adjustment`): backend
+ * b6c10d6, 6 November 2026. An imported or synced bill answers `409 wrong-bill-source`.
+ */
+export const OTHER_DEDUCTIONS_ON_SERVER = true;
 
 /**
  * Comparing calculated bills with the factory's printed slips, and holding the ones that

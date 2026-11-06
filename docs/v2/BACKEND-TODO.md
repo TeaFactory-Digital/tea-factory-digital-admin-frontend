@@ -8,15 +8,15 @@ and `packages/domain` (please `vendor:pull` after each console change).
 
 **#50, run the staging migrations. Staging is broken now.** Checked on **6 November 2026**
 (read only): staging runs the **new code** (`/bills/month-to-date` and `/admin/months` answer
-`401`, not `404`), but its database has **none of the nine migrations** (`GET /config` still
+`401`, not `404`), but its database has **none of the ten migrations** (`GET /config` still
 answers `factorySync: null`). The new code reads tables and columns that are not there, so
 the supplier app's Account tab gets **`500 internal`** from `GET /bills/current` on every
-open. Nine migrations are waiting, in order: `20261023010000` (month to date flag, optional
+open. Ten migrations are waiting, in order: `20261023010000` (month to date flag, optional
 bank codes), `20261024010000` (factory sync defaults off), `20261026010000` (imported bills),
 `20261028010000` (opening balances), `20261029010000` (leaf and months), `20261031010000`
 (daily supply points), `20261031020000` (inquiry states), `20261031030000` (corrections and
-retention), `20261105010000` (inquiry awaiting from). Run them in order from `apps/api`, with
-the `datasource` line checked first, then confirm `main` (`8e5597c`) is what is deployed and
+retention), `20261105010000` (inquiry awaiting from), `20261106010000` (bill lines immutable). Run them in order from `apps/api`, with
+the `datasource` line checked first, then confirm `main` (`b6c10d6`) is what is deployed and
 set galaboda's bill source to "Imported". **Please also stop the code running ahead of
 the database:** `render.yaml` sets no `autoDeploy`, so Render deploys every push to `main`,
 while on `plan: free` the migrations are run by hand (no `preDeployCommand`). Either set
@@ -29,7 +29,7 @@ answers `factorySync: { enabled: false }`.
 | # | What | Priority |
 |---|------|----------|
 | 50 | Staging runs new code on an old database: the app's Account tab fails with 500 (above) | **Must, first, now** |
-| 45 | Factory records: other deductions next, then the bill engine | High |
+| 45 | Factory records: the bill engine next (with #56), then the printed-slip check, hold and release | High |
 | 56 | Savings interest: calculated bills only, with the bill engine (R28 answered) | With #45's bill engine |
 | 65 | A production environment: no production API exists yet | Before the first store release |
 | 66 | Universal-link files on each factory's domain | Before the first store release |
@@ -38,7 +38,7 @@ answers `factorySync: { enabled: false }`.
 ## 50. Staging runs new code on an old database
 
 See **Must do first** above. The supplier app's Account tab shows "Something went wrong"
-(`500 internal` from `GET /bills/current`) until the nine migrations run. Once
+(`500 internal` from `GET /bills/current`) until the ten migrations run. Once
 `GET /config` answers `factorySync: { enabled: false }`, tell me, and the bills import,
 publish, corrections and the new inquiry states get tried against it.
 
@@ -57,10 +57,14 @@ importing again (`e4a9f40`, ADR-040). Checked on the console side 30 October: `d
 URL-encoded on resolve, `rate-differs` and the wider `records-busy` have their text, the leaf
 calendar offers no day after today, and the mock follows R23 to R26.
 
-1. **Other deductions** (next): `PUT /admin/bills/:id/adjustment` and the `billAdjustments`
-   import.
-2. **The bill engine** (factory-records §5), last: galaboda imports its bills, so no factory
-   needs it yet. With it, **the printed-slip check and hold** (§5, "Comparing with the printed
+Other deductions are live (`b6c10d6`, 6 November): the console has `OTHER_DEDUCTIONS_ON_SERVER`
+on and the `billAdjustments` import offered, and the mock now refuses an imported bill and an
+importing factory with `409 wrong-bill-source` and finds a duplicate by the supplier
+(`708` is `0708`), as yours does.
+
+1. **The bill engine** (factory-records §5), next: galaboda imports its bills, so no factory
+   needs it yet. Savings interest (#56) is worked out inside it. Then **the printed-slip check
+   and hold**, which need calculated bills (§5, "Comparing with the printed
    slips", steps 1 to 8): `GET /admin/months/:monthKey/slip-comparison`,
    `PUT /admin/bills/:id/printed`, `POST /admin/bills/:id/hold` and `/release`, the
    `printedBalances` import, `409 bills-mismatch` on the publish, the automatic hold of a
@@ -160,8 +164,20 @@ Decided 30 October 2026 (Q31): **one link domain per factory** (galaboda:
   ID; served as `application/json`, no redirect).
 
 Without them a link opens in the browser instead. Wherever the domain is hosted (with the API
-or separately), the two files are part of each factory's setup. I will send the package
-name, bundle ID and certificate fingerprints when the store accounts exist.
+or separately), the two files are part of each factory's setup.
+
+What you asked for (6 November):
+
+| | Value |
+|---|---|
+| Android package name | `com.teafactorydigital.mobile` |
+| iOS bundle ID | `com.teafactorydigital.mobile` |
+| Apple team ID | `MP32X3M4H8` in the Xcode project today; to be confirmed as the store account's team |
+| SHA-256 fingerprints | Not yet: release builds are still signed with the debug key. The one to use is Google Play's **app signing** key (Play Console → App integrity), once the app is there |
+| Where `app.teafactory.lk` is hosted | Not decided yet |
+
+On the app side, iOS still needs the Associated Domains entitlement (`applinks:app.teafactory.lk`);
+Android's verified intent filter is in.
 
 ## Later
 
@@ -196,8 +212,7 @@ the same PR) and the feature appears:
 
 | Console feature | Waits for | Line in `serverReady.ts` |
 |---|---|---|
-| Import → Other deductions, Printed slip balances | `POST /admin/imports/{billAdjustments, printedBalances}` | `IMPORT_KINDS_NOT_ON_SERVER` (one entry each; the other imports are live) |
-| "Other deductions" → Edit on a bill | `PUT /admin/bills/:id/adjustment` | `OTHER_DEDUCTIONS_ON_SERVER = false` |
+| Import → Printed slip balances | `POST /admin/imports/printedBalances` | `IMPORT_KINDS_NOT_ON_SERVER` (the other imports are live) |
 | Rates & month close: "Compare with printed slips", the checklist step, held badges | `slip-comparison`, `printed`, `hold`, `release` | `SLIP_COMPARISON_ON_SERVER = false` |
 
 The leaf intake grid and Rates & month close are live (`e4a9f40`); only the rows above are
