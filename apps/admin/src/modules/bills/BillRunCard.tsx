@@ -28,6 +28,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatCount, formatDateTime, formatKg, formatMoney, formatMonthKey } from '@/lib/format';
+import { BILL_ENGINE_ON_SERVER } from '@/lib/serverReady';
 import { isApiError } from '@/services/api/errors';
 import { useGenerateBills } from './hooks';
 
@@ -139,7 +140,13 @@ export function BillRunCard({
           </p>
         ) : null}
 
-        {!open ? (
+        {/* No engine on the server yet: say so rather than offer a button that answers 404. */}
+        {!BILL_ENGINE_ON_SERVER ? (
+          <p className="flex items-start gap-xs rounded-md bg-surface-variant px-md py-sm text-body-small text-text-secondary">
+            <TriangleAlert className="mt-xxs size-icon-sm shrink-0" aria-hidden />
+            {t('bills.engineNotReady')}
+          </p>
+        ) : !open ? (
           <>
             <p className="flex items-start gap-xs rounded-md bg-surface-variant px-md py-sm text-body-small text-text-secondary">
               <Lock className="mt-xxs size-icon-sm shrink-0" aria-hidden />

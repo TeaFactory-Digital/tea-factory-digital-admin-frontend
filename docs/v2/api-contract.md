@@ -3153,7 +3153,8 @@ ticked.
 
 The console hides each of these until it lands, in one place:
 `apps/admin/src/lib/serverReady.ts`. Remove the line when the endpoint ships. Today it holds
-`IMPORT_KINDS_NOT_ON_SERVER` (`printedBalances`) and `SLIP_COMPARISON_ON_SERVER = false`;
+`IMPORT_KINDS_NOT_ON_SERVER` (`printedBalances`), `BILL_ENGINE_ON_SERVER = false` (the Generate
+button, and "Calculated" in Configuration) and `SLIP_COMPARISON_ON_SERVER = false`;
 `OTHER_DEDUCTIONS_ON_SERVER`, `MONTH_TO_DATE_ON_SERVER`, `IMPORT_SKIP_ON_SERVER`,
 `CORRECTIONS_ON_SERVER` and `OPENING_BALANCES_ON_SERVER` are on.
 

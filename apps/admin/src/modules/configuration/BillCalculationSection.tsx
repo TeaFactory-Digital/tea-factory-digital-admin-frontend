@@ -31,6 +31,7 @@ import { Notice } from '@/components/ui/states';
 import { formatAmount } from '@/lib/format';
 import { InfoTip } from '@/components/ui/Tooltip';
 import { cn } from '@/lib/cn';
+import { BILL_ENGINE_ON_SERVER } from '@/lib/serverReady';
 import { SectionFooter, type SectionProps } from './SectionFooter';
 
 /** The balance the interest example is worked on. */
@@ -108,10 +109,22 @@ export function BillCalculationSection(props: SectionProps) {
             onChange={(event) => setSource(event.target.value as BillSource)}
           >
             <option value="imported">{t('config.bill.sourceImported')}</option>
-            <option value="calculated">{t('config.bill.sourceCalculated')}</option>
+            {/* Not offered until the API calculates bills; a factory already on it keeps it. */}
+            <option value="calculated" disabled={!BILL_ENGINE_ON_SERVER && savedSource !== 'calculated'}>
+              {BILL_ENGINE_ON_SERVER
+                ? t('config.bill.sourceCalculated')
+                : t('config.bill.sourceCalculatedSoon')}
+            </option>
           </Select>
         )}
       </Field>
+      {BILL_ENGINE_ON_SERVER ? null : (
+        <Notice tone="info">
+          {savedSource === 'calculated'
+            ? t('config.bill.calculatedNotReadyChosen')
+            : t('config.bill.calculatedNotReady')}
+        </Notice>
+      )}
 
       {/* Rounding and bill numbers are this console's only when it calculates the bills;
           an imported bill keeps the factory's own. */}

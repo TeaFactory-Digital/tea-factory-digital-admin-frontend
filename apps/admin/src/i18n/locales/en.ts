@@ -2358,6 +2358,8 @@ export const en = {
   'bills.generateHint':
     'Builds one Green Leaf Account per supplier with leaf this month. Nothing is sent to suppliers until the month is published.',
   'bills.generateReadOnly': 'A clerk or a manager generates the bills.',
+  'bills.engineNotReady':
+    'Bills cannot be calculated in this console yet. Until they can, set “Where the bills come from” in Configuration → Bill calculation to “Imported from the factory’s own system” and import the factory’s bills.',
   'bills.generated': 'Bills generated for {{month}}',
   'bills.generatedDetail': '{{count}} bills, {{payable}} payable.',
   'bills.missingBankWarning':
@@ -2856,6 +2858,11 @@ export const en = {
   'config.bill.source': 'Where the bills come from',
   'config.bill.sourceImported': 'Imported from the factory’s own system',
   'config.bill.sourceCalculated': 'Calculated in this console',
+  'config.bill.sourceCalculatedSoon': 'Calculated in this console (coming soon)',
+  'config.bill.calculatedNotReady':
+    'Calculating the bills here is not ready yet. Until it is, import the factory’s own bills.',
+  'config.bill.calculatedNotReadyChosen':
+    'Calculating the bills here is not ready yet, so no bill can be made this way. Until it is, choose “Imported from the factory’s own system” and import the factory’s bills.',
   'config.bill.sourceHint.imported': 'Each month, import the finished bills the factory’s system printed. They are kept exactly as printed.',
   'config.bill.sourceHint.calculated': 'Each month, generate the bills here from the leaf, the rate and the deduction rates.',
   'config.bill.paymentUnit': 'Pay the balance in',

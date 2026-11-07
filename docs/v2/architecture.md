@@ -20,7 +20,7 @@ the factory-records work. What changed is what sits inside them:
   (the shared month picker).
 - **`lib/serverReady.ts`** is the one place that hides a feature the backend has not built
   yet (BACKEND-TODO #45, #48): `IMPORT_KINDS_NOT_ON_SERVER`, `OPENING_BALANCES_ON_SERVER`,
-  `OTHER_DEDUCTIONS_ON_SERVER`, `SLIP_COMPARISON_ON_SERVER`, `MONTH_TO_DATE_ON_SERVER`,
+  `OTHER_DEDUCTIONS_ON_SERVER`, `BILL_ENGINE_ON_SERVER`, `SLIP_COMPARISON_ON_SERVER`, `MONTH_TO_DATE_ON_SERVER`,
   `IMPORT_SKIP_ON_SERVER`. Remove a line the day
   its endpoint ships; the mock implements all of them, so tests reach them regardless.
 - **`lib/importFile.ts`** reads an Excel (`.xlsx`) or CSV file into rows of text keyed by

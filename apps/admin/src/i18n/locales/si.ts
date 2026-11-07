@@ -2349,6 +2349,8 @@ export const si: Record<TranslationKey, string> = {
   'bills.generateHint':
     'මේ මාසයේ දළු ඇති සෑම සැපයුම්කරුවෙකු සඳහා එක් දළු ගිණුමක් සාදයි. මාසය ප්‍රකාශයට පත් කරන තුරු සැපයුම්කරුවන්ට කිසිවක් නොයවයි.',
   'bills.generateReadOnly': 'බිල්පත් සාදන්නේ ලිපිකරුවෙකු හෝ කළමනාකරුවෙකු ය.',
+  'bills.engineNotReady':
+    'මෙම කොන්සෝලයේ බිල්පත් ගණනය කිරීම තවම සූදානම් නැත. එතෙක් වින්‍යාසය → බිල්පත් ගණනය තුළ “බිල්පත් ලැබෙන්නේ කොහෙන්ද” “කර්මාන්තශාලාවේම පද්ධතියෙන් ආනයනය කරයි” ලෙස සකසා කර්මාන්තශාලාවේ බිල්පත් ආනයනය කරන්න.',
   'bills.generated': '{{month}} සඳහා බිල්පත් සෑදුවා',
   'bills.generatedDetail': 'බිල්පත් {{count}}ක්, {{payable}} ගෙවිය යුතුයි.',
   'bills.missingBankWarning':
@@ -2850,6 +2852,11 @@ export const si: Record<TranslationKey, string> = {
   'config.bill.source': 'බිල්පත් ලැබෙන්නේ කොහෙන්ද',
   'config.bill.sourceImported': 'කර්මාන්තශාලාවේම පද්ධතියෙන් ආනයනය කරයි',
   'config.bill.sourceCalculated': 'මෙම කොන්සෝලයේ ගණනය කරයි',
+  'config.bill.sourceCalculatedSoon': 'මෙම කොන්සෝලයේ ගණනය කරයි (ඉක්මනින්)',
+  'config.bill.calculatedNotReady':
+    'මෙහි බිල්පත් ගණනය කිරීම තවම සූදානම් නැත. එතෙක් කර්මාන්තශාලාවේම බිල්පත් ආනයනය කරන්න.',
+  'config.bill.calculatedNotReadyChosen':
+    'මෙහි බිල්පත් ගණනය කිරීම තවම සූදානම් නැති නිසා මේ ක්‍රමයට බිල්පතක් සෑදිය නොහැක. එතෙක් “කර්මාන්තශාලාවේම පද්ධතියෙන් ආනයනය කරයි” තෝරා කර්මාන්තශාලාවේ බිල්පත් ආනයනය කරන්න.',
   'config.bill.sourceHint.imported': 'සෑම මාසයකම, කර්මාන්තශාලා පද්ධතිය මුද්‍රණය කළ සම්පූර්ණ බිල්පත් ආනයනය කරන්න. ඒවා මුද්‍රණය වූ ලෙසම තබා ගනී.',
   'config.bill.sourceHint.calculated': 'සෑම මාසයකම, දළු, මිල සහ අඩුකිරීම් අනුපාත වලින් මෙහි බිල්පත් සාදන්න.',
   'config.bill.paymentUnit': 'ශේෂය ගෙවන්නේ',
