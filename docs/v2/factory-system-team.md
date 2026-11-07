@@ -586,7 +586,7 @@ calculation → "Where the bills come from"):
   factory whose own system still prints its bills but cannot export them
   (factory-records.md §5). Each calculated bill is compared with the factory's printed
   slip before the month is published; one that differs is held, and released later in
-  order. No factory needs this yet, so it is built last.
+  order. A factory may choose this or imported bills at any time, so both are supported.
 
 Nothing in this document is asked of a factory that keeps its records in the console.
 

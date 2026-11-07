@@ -6,19 +6,13 @@ and `packages/domain` (please `vendor:pull` after each console change).
 
 ## Next
 
-Two notes on staging, neither yours to build:
-
-- Galaboda's bill source is still unset (`billSettings: null`); the factory sets it to
-  "Imported" in the console (Configuration, "Where the bills come from"). Until then
-  `billSourceOf` reads it as `calculated` on both sides, so the bills import answers
-  `409 wrong-bill-source`.
-- `render.yaml` has no `autoDeploy`, so a push that adds a migration goes live before it is
-  migrated. Please migrate staging before such a push, or set `autoDeploy: false` and deploy
-  by hand.
+Staging: galaboda's bill source is set to "Imported" (7 November). `render.yaml` has no
+`autoDeploy`, so a push that adds a migration goes live before it is migrated: please migrate
+staging before such a push, or set `autoDeploy: false` and deploy by hand.
 
 | # | What | Priority |
 |---|------|----------|
-| 45 | Factory records: the bill engine next (with #56), then the printed-slip check, hold and release | High |
+| 45 | Factory records: the bill engine (with #56), then the printed-slip check, hold and release. Galaboda may choose either way, so both must work | **High, first** |
 | 56 | Savings interest: calculated bills only, with the bill engine | With #45's bill engine |
 | 65 | A production environment: no production API exists yet | Before the first store release |
 | 66 | Universal-link files on each factory's domain: waits for the Play signing SHA-256 and the host | Before the first store release |
@@ -32,8 +26,9 @@ credit requests in the console while the sync is off. **Contract:** factory-reco
 **Still to build, in this order:**
 
 1. **The bill engine** (factory-records §5): `POST /admin/months/:monthKey/bills/generate`,
-   calculating each bill with `computeBillAmounts` from the shared package. Galaboda imports
-   its bills, so no factory needs it yet. Savings interest (#56) and payment corrections on
+   calculating each bill with `computeBillAmounts` from the shared package. **Both ways must
+   work:** galaboda imports today but may choose calculated bills at any time (decided
+   7 November), so this is the top item. Savings interest (#56) and payment corrections on
    the next bill (#57) are worked out inside it.
 2. **The printed-slip check and hold** (§5, "Comparing with the printed slips", steps 1 to
    8): `GET /admin/months/:monthKey/slip-comparison`, `PUT /admin/bills/:id/printed`,

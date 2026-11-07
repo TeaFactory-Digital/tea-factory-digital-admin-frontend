@@ -273,8 +273,9 @@ month, the paper slip and the app's, and **they must agree to the rupee**. The o
 enters every approval in that system (§1), and our calculation follows the printed slip
 (below); the factory's accountant compares one month of our bills with theirs before going
 live, and any difference is a defect in one of the two inputs (a leaf weighing, a rate, an
-approval not entered in one of the systems). **No
-factory needs this yet** (galaboda imports), so it is built last.
+approval not entered in one of the systems). **A factory may choose either way at any
+time** (galaboda imports today, decided 7 November 2026), so both must work; until the API
+calculates bills the console offers "Calculated" as coming soon (`BILL_ENGINE_ON_SERVER`).
 
 `computeBillAmounts` (`packages/domain/src/bill.ts`) is the calculation; do not write a
 second one. **It reads exactly like the factory's printed slip** (galaboda, July 2026,

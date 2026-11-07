@@ -97,7 +97,7 @@ The Leaf intake grid and Rates & month close stay visible. On Rates & month clos
 month list, the finished-bills import, the checklist and the publish work against the API
 for imported months (`12eea12`); entering a rate, the exceptions queue (not shown for an
 imported month, which has none) and the leaf calls start working as those endpoints land. Still to come on the backend: the bill
-engine, then the printed-slip check (no factory needs it yet: galaboda imports its bills).
+engine, then the printed-slip check: galaboda imports today but may choose calculated bills at any time, so both ways must work.
 "Where the bills come from" and "How the loan interest is taken" shipped in `970be6f`, so
 the console shows and sends both.
 
