@@ -6,9 +6,8 @@ and `packages/domain` (please `vendor:pull` after each console change).
 
 ## Next
 
-Staging: galaboda's bill source is set to "Imported" (7 November). `render.yaml` has no
-`autoDeploy`, so a push that adds a migration goes live before it is migrated: please migrate
-staging before such a push, or set `autoDeploy: false` and deploy by hand.
+Staging: galaboda's bill source is set to "Imported" (7 November), and staging deploys by
+hand after migrating (`autoDeploy: false`, `5ae415a`).
 
 | # | What | Priority |
 |---|------|----------|
@@ -36,6 +35,16 @@ credit requests in the console while the sync is off. **Contract:** factory-reco
    `409 bills-mismatch` on the publish, the automatic hold of a supplier's next bill
    (`heldForMonth`), and releases in order (`409 earlier-bill-held`). The month lock is
    relaxed for a held supplier's leaf only, as agreed.
+
+**Your open points on the design (10 November):** answered in factory-records §5, "Decided
+10 November 2026". Different from your defaults: **several manure plans add their
+instalments together**; the unpaid interest under `withinInstalment` is **carried, not added
+to the loan** (§5: interest never earns interest); a dropped supplier's edits are **kept and
+return** with their leaf; the first calculated bill takes the **last imported bill's Coins
+C/F**. A factory that switches from imported bills has its balances on its last imported
+bill, so it needs opening balances only for what that bill does not carry. Please send the
+error code for "switching back to imported is blocked while corrections are pending" so the
+console can explain it.
 
 **Check:** the list in factory-records §9.
 

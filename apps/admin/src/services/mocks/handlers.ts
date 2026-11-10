@@ -4669,7 +4669,6 @@ export const handlers: HttpHandler[] = [
       // generation, so a withdrawal recorded after a draft run appears when it is re-run.
       // §21.10: the factory's approved rates, and each supplier's chosen repayment period.
       deductionRates: activeDeductionRates(),
-      advanceInterest: config.advanceInterest,
       loanInterest: config.loanInterest,
       paymentUnit: settings?.paymentUnit,
       billNoFor,
@@ -4682,17 +4681,23 @@ export const handlers: HttpHandler[] = [
               .map((facility) => {
                 // The plan is priced off what was **borrowed**, so the instalment is fixed
                 // and the debt actually clears; see `creditInstalment`.
-                const approved = state.creditRequests.find(
+                const approved = state.creditRequests.filter(
                   (one) =>
                     one.supplierId === supplier.id &&
                     one.facility === facility &&
                     one.status === 'approved' &&
                     one.repaymentMonths,
                 );
-                return [
-                  facility,
-                  approved ? { amount: approved.amount, months: approved.repaymentMonths! } : null,
-                ];
+                if (approved.length === 0) return [facility, null];
+                // Several manure plans at once: each plan's instalment, added together
+                // (decided 10 November 2026). The balance still caps the sum.
+                if (facility === 'manure' && approved.length > 1) {
+                  const monthly = approved.reduce((sum, one) => sum + one.amount / one.repaymentMonths!, 0);
+                  return [facility, { amount: monthly, months: 1 }];
+                }
+                // Other facilities: the plan approved most recently.
+                const latest = approved.reduce((a, b) => (b.createdAt > a.createdAt ? b : a));
+                return [facility, { amount: latest.amount, months: latest.repaymentMonths! }];
               })
               .filter(([, plan]) => plan),
           ),

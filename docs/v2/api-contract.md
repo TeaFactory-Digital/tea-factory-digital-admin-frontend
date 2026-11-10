@@ -1636,7 +1636,7 @@ The full slip: the app's `GreenLeafBill` plus `supplierId`, `source`, `runId`,
 | `GreenLeafBill.otherCardsNote?` | Why `deductions.otherCards` was charged, in the office's words, shown under the line. The line is labelled **"Other deductions"** in the console and the app |
 | `grossAmount` | Green leaf + extra payment + **coins brought forward**, so `balanceAmount` is the slip's "Balance Amount" |
 | `carryForward.loanBalance` | The **loan** still owed after this month's instalment (the slip's "Loan Balance"). An advance never carries a balance: it is taken back in full on its month's bill, and any shortfall is `nextMonthDeb` |
-| `carryForward.loanInterest` | **This month's interest charge, in rupees**: the loan's (`config.loanInterest`), plus advance interest (`config.advanceInterest`) only when the account could not cover its advance. Applied, not just displayed |
+| `carryForward.loanInterest` | **This month's interest charge, in rupees**: the loan's (`config.loanInterest`). An advance bears none (decided 10 November 2026). Applied, not just displayed |
 | `SlipCheck` fields | Calculated bills only (§11.5b): `printedFinalBalance` (the printed slip's "Balance", `null` until entered), `heldAt`, `heldByName`, `holdReason`, and `heldForMonth` (held automatically because the supplier's bill for that earlier month is held) |
 
 Three invariants the console renders and therefore depends on:

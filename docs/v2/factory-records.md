@@ -134,8 +134,8 @@ months; the late bills of §5a are still to come).
 Config and shapes on existing routes (`GET /config`, `GET /admin/config`,
 `PATCH /admin/config`; each block saved whole):
 
-- **`config.advanceInterest?: { monthlyRatePercent }`**: absent means 0; refuse with
-  `advanceInterestProblem` (0 to 10).
+- **`config.advanceInterest`**: no longer used (10 November 2026: an advance bears no
+  interest). The console neither shows nor sends it; the API may keep accepting it.
 - **`config.loanInterest?: { monthlyRatePercent, recovery? }`** (`LoanInterestSetting`):
   absent means 0%; `recovery` is `onTop` (default) or `withinInstalment` (§5).
 - **`config.billSettings?: { paymentUnit: 1 | 5 | 10, nextBillSerial?, source? }`**: absent
@@ -300,12 +300,12 @@ Its inputs, per supplier and month:
 | Kilos | Non-voided deliveries in the month |
 | Gross | kilos × (rate + extra rate) + coins brought forward |
 | Transport | Per weighing: `transportChargeFor(rates, kgsByPoint, supplier.transportPerKg)`: the supplier's own rate, else the weighing's collection point rate, else the factory rate |
-| Stamps | Approved deduction rates (`/admin/deduction-rates`) |
+| Stamps | Approved deduction rates (`/admin/deduction-rates`); none on a bill without leaf |
 | Savings | kilos × the supplier's savings per kg |
 | Tea packets | Approved tea-packet requests |
 | Advance | Taken back **in full** on its month's bill, even past the gross (`DEFAULT_DEDUCTION_RATES.instalmentShares.advance = 1`). An advance never carries a balance |
 | Loan (`loansAdvance`, the slip's "Loans / Advance") | `loanRecovery(loan owed at the start of the month, planned instalment, config.loanInterest)`: the planned instalment, with the month's interest **on top** (`onTop`) or **inside** it (`withinInstalment`). `loanInstalmentNo` = 1 + the loan instalments on the bills just before this month |
-| Manure | Instalments under the manure cap |
+| Manure | Instalments under the manure cap: with several plans open, each plan's instalment added together |
 | Previous debts | Last bill's unpaid balance, or `previousDebt` from opening balances for the first |
 | Coins brought forward | Last bill's coins carried forward |
 | Other deductions | The office's typed line (§4.2) |
@@ -317,7 +317,7 @@ Carried forward:
 | Next Month Deb | `carryForward.nextMonthDeb` | What the account could not cover |
 | Loan Balance | `carryForward.loanBalance` | The **loan** still owed: owed at the start − principal repaid (`loanRecovery`) |
 | Manure Balance | `carryForward.manureBalance` | Manure still owed |
-| Loan Interest | `carryForward.loanInterest` | **This month's charge**, in rupees: the loan's interest (`loanRecovery`), plus advance interest (`advanceInterestFor`, `config.advanceInterest`) only when the account could not cover the advance. Interest is never worked on unpaid interest |
+| Loan Interest | `carryForward.loanInterest` | **This month's charge**, in rupees: the loan's interest (`loanRecovery`). An advance bears none, since it is taken in full. Interest is never worked on unpaid interest |
 
 Example, 1% a month: a Rs. 50,000 loan over 10 months has Rs. 500 interest. `onTop` deducts
 Rs. 5,500 and leaves `loanBalance` 45,000; `withinInstalment` deducts Rs. 5,000 and leaves
@@ -329,6 +329,25 @@ six digits growing to seven (`2026210869`). The serial **never resets**: after
 `2026210869` comes `2027210870`. A re-generated month keeps each supplier's number. Without
 it, `GL/YYYY-MM/NNNN`. Hand out serials in the same transaction as the bills, so two runs
 cannot take the same number.
+
+**Decided 10 November 2026** (the bill engine's open points):
+
+| Point | Rule |
+|---|---|
+| Advance interest | **Never.** The advance is taken in full, even past the gross, so nothing is left to bear interest; Configuration no longer asks for a rate |
+| A month without leaf | **No bill and no charge**: no instalment, no interest, no stamps. A bill for a savings withdrawal or a correction alone charges none of them either |
+| Several manure plans | **Each plan's instalment, added together**, under the manure cap and the balance |
+| A loan approved during the month | Recovered, with its interest, on that month's bill |
+| `withinInstalment`, instalment below the interest | The unpaid interest is **carried to the next bill**, never added to the loan, so it earns no interest |
+| A supplier dropped on regeneration | Their bill is superseded; their other deductions, printed figure and hold are kept against supplier and month, and return if their leaf does |
+| A held bill recalculated after the publish | The month's own rate; the current settings |
+| Savings interest | Posted at a held bill's release; for a factory that switched mid-year, the whole year from the ledger |
+| Coins brought forward on the first calculated bill | The last bill's Coins C/F, imported or calculated; 0 when there is none |
+| Bill numbers | Our own running serial; a regenerated month keeps each supplier's number |
+| Release | No four-eyes beyond `ratesAndMonthClose: A` |
+| Printed figures | Whole rupees only; anything else refused |
+| Publishing before the printed-slip check exists | Allowed on staging; no factory goes live on calculated bills until the check ships |
+| Savings to date | Less a withdrawal paid on the bill |
 
 Generate → review on the bills screen → **compare with the printed slips** → publish
 (four-eyes). Publishing makes the bills visible in the app and fires `billPublished`.

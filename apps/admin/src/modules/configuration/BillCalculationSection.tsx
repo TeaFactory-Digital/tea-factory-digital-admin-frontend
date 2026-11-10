@@ -1,7 +1,8 @@
 /**
  * How the bills calculated here are paid, numbered and charged, so they read like the
  * factory's own printed slip: the payment rounded to the factory's unit, the factory's own
- * bill numbers continuing from its last paper bill, and the interest on an advance.
+ * bill numbers continuing from its last paper bill, and the interest on a loan. An advance
+ * bears none: it is taken back in full on its month's bill (decided 10 November 2026).
  *
  * With the sync on the factory system's bills carry their own figures, so the section says
  * these are not used rather than hiding: an administrator about to switch the sync off
@@ -15,7 +16,6 @@ import {
   DEFAULT_BILL_SETTINGS,
   MAX_ADVANCE_INTEREST_PERCENT,
   PAYMENT_UNITS,
-  advanceInterestFor,
   advanceInterestProblem,
   billSettingsProblem,
   billSourceOf,
@@ -34,15 +34,12 @@ import { cn } from '@/lib/cn';
 import { BILL_ENGINE_ON_SERVER } from '@/lib/serverReady';
 import { SectionFooter, type SectionProps } from './SectionFooter';
 
-/** The balance the interest example is worked on. */
-const EXAMPLE_BALANCE = 10000;
 /** The amount the rounding example is worked on: the galaboda slip's own balance. */
 const EXAMPLE_PAYABLE = 68226.91;
 
 export function BillCalculationSection(props: SectionProps) {
   const { t } = useTranslation();
   const savedSettings = props.config.billSettings ?? DEFAULT_BILL_SETTINGS;
-  const savedRate = (props.config.advanceInterest ?? DEFAULT_ADVANCE_INTEREST).monthlyRatePercent;
   // A loan bears no interest unless the factory sets a rate here.
   const savedLoanRate = (props.config.loanInterest ?? DEFAULT_ADVANCE_INTEREST).monthlyRatePercent;
 
@@ -53,13 +50,11 @@ export function BillCalculationSection(props: SectionProps) {
   const [source, setSource] = useState<BillSource>(savedSource);
   const [unit, setUnit] = useState(savedSettings.paymentUnit);
   const [serial, setSerial] = useState(savedSettings.nextBillSerial?.toString() ?? '');
-  const [rate, setRate] = useState(String(savedRate));
   const [loanRate, setLoanRate] = useState(String(savedLoanRate));
   useEffect(() => {
     setSource(savedSource);
     setUnit(savedSettings.paymentUnit);
     setSerial(savedSettings.nextBillSerial?.toString() ?? '');
-    setRate(String(savedRate));
     setLoanRate(String(savedLoanRate));
     setRecovery(savedRecovery);
   }, [
@@ -67,7 +62,6 @@ export function BillCalculationSection(props: SectionProps) {
     savedSource,
     savedSettings.paymentUnit,
     savedSettings.nextBillSerial,
-    savedRate,
     savedLoanRate,
   ]);
 
@@ -77,17 +71,14 @@ export function BillCalculationSection(props: SectionProps) {
     source,
     ...(nextBillSerial === undefined ? {} : { nextBillSerial }),
   };
-  const monthlyRatePercent = rate.trim() === '' ? Number.NaN : Number(rate);
   const loanRatePercent = loanRate.trim() === '' ? Number.NaN : Number(loanRate);
 
   const settingsProblem = billSettingsProblem(settings);
-  const rateProblem = advanceInterestProblem({ monthlyRatePercent });
   const loanRateProblem = advanceInterestProblem({ monthlyRatePercent: loanRatePercent });
   const dirty =
     source !== savedSource ||
     unit !== savedSettings.paymentUnit ||
     nextBillSerial !== savedSettings.nextBillSerial ||
-    monthlyRatePercent !== savedRate ||
     loanRatePercent !== savedLoanRate ||
     recovery !== savedRecovery;
 
@@ -185,32 +176,6 @@ export function BillCalculationSection(props: SectionProps) {
 
       <div className="grid gap-md border-t border-divider pt-md sm:grid-cols-2">
         <Field
-          label={t('config.interest.monthlyRate')}
-          hint={t('config.interest.monthlyRateHint')}
-          error={
-            rateProblem
-              ? t('config.interest.outOfRange', { max: MAX_ADVANCE_INTEREST_PERCENT })
-              : undefined
-          }
-        >
-          {({ id, describedBy, invalid }) => (
-            <Input
-              id={id}
-              aria-describedby={describedBy}
-              invalid={invalid}
-              className="numeric"
-              type="number"
-              min={0}
-              max={MAX_ADVANCE_INTEREST_PERCENT}
-              step={0.25}
-              disabled={props.readOnly}
-              value={rate}
-              onChange={(event) => setRate(event.target.value)}
-            />
-          )}
-        </Field>
-
-        <Field
           label={t('config.interest.loanRate')}
           hint={t('config.interest.loanRateHint')}
           error={
@@ -272,36 +237,24 @@ export function BillCalculationSection(props: SectionProps) {
         </fieldset>
       ) : null}
 
-      {rateProblem ? null : (
-        <p className="text-caption text-text-secondary">
-          {monthlyRatePercent > 0
-            ? t('config.interest.example', {
-                balance: formatAmount(EXAMPLE_BALANCE),
-                interest: formatAmount(advanceInterestFor(EXAMPLE_BALANCE, { monthlyRatePercent })),
-              })
-            : t('config.interest.none')}
-        </p>
-      )}
       <p className="text-caption text-text-secondary">{t('config.interest.how')}</p>
 
       <SectionFooter
         {...props}
         patch={{
           billSettings: settings,
-          advanceInterest: { monthlyRatePercent },
           loanInterest: {
             monthlyRatePercent: loanRatePercent,
             recovery,
           },
         }}
         dirty={
-          dirty && settingsProblem === null && rateProblem === null && loanRateProblem === null
+          dirty && settingsProblem === null && loanRateProblem === null
         }
         onRevert={() => {
           setSource(savedSource);
           setUnit(savedSettings.paymentUnit);
           setSerial(savedSettings.nextBillSerial?.toString() ?? '');
-          setRate(String(savedRate));
           setLoanRate(String(savedLoanRate));
           setRecovery(savedRecovery);
         }}

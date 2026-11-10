@@ -67,11 +67,9 @@ import type {
 } from '@tfd/domain';
 import {
   DEFAULT_DEDUCTION_RATES,
-  advanceInterestFor,
   loanRecovery,
   type LoanInterestSetting,
   transportChargeFor,
-  type AdvanceInterestSetting,
   DEFAULT_TEA_PACKET_POLICY,
   creditInstalment,
   type CreditRules,
@@ -1670,18 +1668,27 @@ function deductionLinesFor(
   const instalment = (facility: CreditFacility, balance: number) =>
     creditInstalment(balance, grossAmount, rates.instalmentShares[facility], plans[facility]);
 
+  /**
+   * A month without leaf charges nothing (decided 10 November 2026): no instalment, no
+   * interest, no stamps. Such a bill exists only to pay a savings withdrawal or a
+   * correction; the debt it brings forward is still shown.
+   */
+  const leaf = totalKgs > 0;
+
   return {
     transportCharges: round2(totalKgs * rates.transportPerKg),
     // Made tea issued against the account. The supplier asks for this from the app
     // (§21.10) and that request type is not built, so the figure is still the fixture's.
-    tea: index % 5 === 0 ? 450 : 0,
+    tea: leaf && index % 5 === 0 ? 450 : 0,
     savings: savingsDeductionFor(totalKgs, supplier.savingsPerKg),
     loansAdvance: instalment('loan', supplier.creditBalances.loan),
-    advance: instalment('advance', supplier.creditBalances.advance),
+    // Taken back **in full** on its month's bill, even past the gross (§5): an advance never
+    // carries a balance, so it never bears interest.
+    advance: leaf ? round2(Math.max(0, supplier.creditBalances.advance)) : 0,
     manure: instalment('manure', supplier.creditBalances.manure),
     // The one line nobody has explained. Still invented, and still §21.10.
-    otherCards: index % 7 === 0 ? 260 : 0,
-    stamps: rates.stamps,
+    otherCards: leaf && index % 7 === 0 ? 260 : 0,
+    stamps: leaf ? rates.stamps : 0,
     previousDebts,
   };
 }
@@ -1716,8 +1723,6 @@ interface BillGenerationContext {
   corrections?: Map<string, BillCorrection[]>;
   /** The factory's approved deduction rates (§21.10). Defaulted for a run before any were set. */
   deductionRates?: DeductionRates;
-  /** Interest a month on an advance still owed (Configuration). Absent: none. */
-  advanceInterest?: AdvanceInterestSetting;
   /** Interest a month on a loan, and how it is recovered (Configuration). Absent: none. */
   loanInterest?: LoanInterestSetting;
   /** Pay in whole units of this many rupees (Configuration). Absent: 1. */
@@ -1834,7 +1839,11 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
     };
     // The loan line: the planned instalment, with the month's interest on top of it or
     // inside it, as the factory configured (`loanRecovery`).
-    const loan = loanRecovery(supplier.creditBalances.loan, lines.loansAdvance, context.loanInterest);
+    // No leaf, no charge: not even the month's interest (decided 10 November 2026).
+    const loan =
+      totalKgs > 0
+        ? loanRecovery(supplier.creditBalances.loan, lines.loansAdvance, context.loanInterest)
+        : { interest: 0, deducted: 0, principalRepaid: 0 };
     const deductions = { ...lines, loansAdvance: loan.deducted };
 
     /**
@@ -1908,19 +1917,15 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
         manureBalance: round2(
           Math.max(0, supplier.creditBalances.manure - amounts.deductions.manure),
         ),
-        // The slip's one "Loan Interest" line, this month's charge: the loan's, plus an
-        // advance's only when the account could not cover the advance.
-        loanInterest: round2(
-          advanceInterestFor(
-            round2(Math.max(0, supplier.creditBalances.advance - amounts.deductions.advance)),
-            context.advanceInterest,
-          ) + loan.interest,
-        ),
+        // The slip's one "Loan Interest" line, this month's charge: the loan's only. An
+        // advance is taken in full, so it bears none (decided 10 November 2026).
+        loanInterest: loan.interest,
       },
       savingsSummary: {
         thisMonth: amounts.deductions.savings,
         previous: savingsPrevious,
-        toDate: round2(savingsPrevious + amounts.deductions.savings),
+        // A withdrawal paid on this bill leaves the savings with it.
+        toDate: round2(savingsPrevious + amounts.deductions.savings - savingsWithdrawal),
       },
 
       dailySupply,

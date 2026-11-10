@@ -457,7 +457,8 @@ The handlers implement every endpoint in factory-records.md §4.1, with the rule
 - **Config blocks:** `factorySync`, `billSettings` (`paymentUnit`, `nextBillSerial`,
   `source`), `advanceInterest`, `loanInterest`, and `transportByPoint` on the deduction
   rates. A calculated bill goes through `computeBillAmounts`, `transportChargeFor`,
-  `loanRecovery` and `advanceInterestFor` from `@tfd/domain`, never a second calculation.
+  and `loanRecovery` from `@tfd/domain`, never a second calculation. An advance bears no
+  interest (10 November 2026).
 - **The activity feed** behind the bell: `GET /admin/activity` derived from supplier
   actions, and `POST /admin/activity/read` keeping one read mark per user.
 

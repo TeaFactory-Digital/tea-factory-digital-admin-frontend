@@ -586,8 +586,8 @@ the console read.
   month, simple interest, never on interest. `onTop`: Rs. 50,000 over 10 months at 1%
   deducts 5,500 and the loan falls 5,000; `withinInstalment`: deducts 5,000 and the loan
   falls 4,500.
-- **Advance interest** (`config.advanceInterest`): only when an account could not cover its
-  advance.
+- **Advance interest**: none (decided 10 November 2026): the advance is taken in full, and
+  Configuration no longer asks for a rate.
 - "Where the bills come from" and "How the loan interest is taken": changing the source is
   refused while a month has generated but unpublished bills (`409 bill-source-blocked`). A
   save sends both; the API keeps what is stored for a field left out.
