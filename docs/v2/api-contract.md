@@ -540,7 +540,7 @@ Notes for the implementer:
   | Block | Absent means | Shape |
   | --- | --- | --- |
   | `factorySync` | **Off** (`isFactorySyncEnabled` is `enabled === true`; `null` is off too) | `{ enabled }`. Off: the office keeps the records in the console. Store `{ enabled: false }` for a new factory, never `null`; it is switched on deliberately once the factory's own system is connected |
-  | `advanceInterest` | 0% | `{ monthlyRatePercent }`, 0 to 10 (`advanceInterestProblem`). Charged only when an account could not cover its advance |
+  | `advanceInterest` | 0% | `{ monthlyRatePercent }`, 0 to 10 (`advanceInterestProblem`). **Not used since 10 November 2026**: an advance is taken in full and bears no interest; the console no longer sends it |
   | `loanInterest` | 0% | `LoanInterestSetting`: `{ monthlyRatePercent, recovery? }`, the same range; `recovery` is `onTop` (default) or `withinInstalment` |
   | `billSettings` | `{ paymentUnit: 1 }`, `GL/YYYY-MM/NNNN` numbers, `source: 'calculated'` | `{ paymentUnit: 1 \| 5 \| 10, nextBillSerial?, source? }`, `source` read through `billSourceOf` |
 
@@ -3153,8 +3153,8 @@ ticked.
 
 The console hides each of these until it lands, in one place:
 `apps/admin/src/lib/serverReady.ts`. Remove the line when the endpoint ships. Today it holds
-`IMPORT_KINDS_NOT_ON_SERVER` (`printedBalances`), `BILL_ENGINE_ON_SERVER = false` (the Generate
-button, and "Calculated" in Configuration) and `SLIP_COMPARISON_ON_SERVER = false`;
+`IMPORT_KINDS_NOT_ON_SERVER` (`printedBalances`) and `SLIP_COMPARISON_ON_SERVER = false`;
+`BILL_ENGINE_ON_SERVER` (backend 221a1c0),
 `OTHER_DEDUCTIONS_ON_SERVER`, `MONTH_TO_DATE_ON_SERVER`, `IMPORT_SKIP_ON_SERVER`,
 `CORRECTIONS_ON_SERVER` and `OPENING_BALANCES_ON_SERVER` are on.
 

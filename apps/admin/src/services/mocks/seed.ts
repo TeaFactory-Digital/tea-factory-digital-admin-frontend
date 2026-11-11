@@ -1843,7 +1843,7 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
     const loan =
       totalKgs > 0
         ? loanRecovery(supplier.creditBalances.loan, lines.loansAdvance, context.loanInterest)
-        : { interest: 0, deducted: 0, principalRepaid: 0 };
+        : { interest: 0, deducted: 0, principalRepaid: 0, interestCarried: 0 };
     const deductions = { ...lines, loansAdvance: loan.deducted };
 
     /**

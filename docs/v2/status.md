@@ -13,7 +13,7 @@ the next slice.
 | | |
 | --- | --- |
 | **Console** | Every module in [Modules](#modules) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
-| **Backend** | `tea-factory-digital-backend`, shipped up to `ae74688`; staging has all eleven migrations since 7 November, so the `500`s from the unmigrated database should be gone, to be confirmed in the app as 5708 and in the console (galaboda's bill source is still to be set to "Imported"). BACKEND-TODO **#1 to #44, #46 to #55 and #57 to #63 are done**; **#45** (factory records without the factory system) is partly done (the bills import with the month reads and publish, late bills included, opening balances, `5b58f81`, leaf and months with importing again, `e4a9f40`, and other deductions, `b6c10d6`, are live; the bill engine is next); **#56** (savings interest, calculated bills only, with the bill engine) is open, with #65 (production) and #66 (link files). See [BACKEND-TODO.md](./BACKEND-TODO.md) |
+| **Backend** | `tea-factory-digital-backend`, shipped up to `221a1c0`; staging is migrated through `20261111010000` and deploys by hand after migrating; galaboda's bill source is "Imported". BACKEND-TODO **#1 to #44 and #46 to #63 are done** (#56 savings interest and #57 payment corrections came inside the bill engine); **#45** (factory records without the factory system) is nearly done: the bills import, opening balances, leaf and months, other deductions and **the bill engine** (generate and publish calculated bills, `221a1c0`, ADR-042) are live; the printed-slip check, hold and release (commit B) is next. Open besides: #65 (production) and #66 (link files). See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
 | **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **643 tests in 88 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
@@ -47,7 +47,7 @@ and implemented by the mock with the same rules the API must keep:
   supplier fits (`ambiguous-supplier` otherwise).
 - **Other deductions** on a calculated bill, with a reason, kept across a re-generation.
 - **Walk-in credit requests** and their import; four-eyes on the decision.
-- **Loan interest** (`onTop` or `withinInstalment`) and **advance interest**.
+- **Loan interest** (`onTop` or `withinInstalment`; an advance bears none since 10 November 2026).
 - The credit rules: an advance is deducted in full in its month (default advance cap
   **100%**); an open loan blocks a new loan and an advance (`loan-outstanding`).
 - The **notification bell** with the supplier activity feed, read per user.
@@ -97,7 +97,7 @@ The Leaf intake grid and Rates & month close stay visible. On Rates & month clos
 month list, the finished-bills import, the checklist and the publish work against the API
 for imported months (`12eea12`); entering a rate, the exceptions queue (not shown for an
 imported month, which has none) and the leaf calls start working as those endpoints land. Still to come on the backend: the bill
-engine, then the printed-slip check: galaboda imports today but may choose calculated bills at any time, so both ways must work.
+engine (live, `221a1c0`), then the printed-slip check: galaboda imports today but may choose calculated bills at any time, so both ways must work.
 "Where the bills come from" and "How the loan interest is taken" shipped in `970be6f`, so
 the console shows and sends both.
 
@@ -572,7 +572,7 @@ the console read.
 | Notifications | The push block: categories and topic |
 | Tea packets | Pack size, price, the per-request cap |
 | Credit rules | The ceiling rule per facility and the repayment periods offered |
-| **Bill calculation** | Where the bills come from (`imported` / `calculated`); pay in Rs. 1 / 5 / 10 and the next bill serial (calculated bills); advance interest; loan interest (% a month, 0% by default) and how it is taken (`onTop` or `withinInstalment`) |
+| **Bill calculation** | Where the bills come from (`imported` / `calculated`); pay in Rs. 1 / 5 / 10 and the next bill serial (calculated bills); loan interest (% a month, 0% by default) and how it is taken (`onTop` or `withinInstalment`) |
 | Common notes | The note suggestions shown as chips under the note boxes (decision dialogs, inquiry replies) |
 
 #### Bill calculation

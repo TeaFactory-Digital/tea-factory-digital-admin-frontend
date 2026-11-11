@@ -26,7 +26,7 @@ import { useCan } from '@/auth/authStore';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
-import { errorMessageKey } from '@/lib/errorMessage';
+import { errorMessageKey, errorMessageValues } from '@/lib/errorMessage';
 import { formatCount, formatDateTime, formatKg, formatMoney, formatMonthKey } from '@/lib/format';
 import { BILL_ENGINE_ON_SERVER } from '@/lib/serverReady';
 import { isApiError } from '@/services/api/errors';
@@ -70,7 +70,7 @@ export function BillRunCard({
         }),
       );
     } catch (cause) {
-      toast.error(t('bills.generateFailed'), t(errorMessageKey(cause)));
+      toast.error(t('bills.generateFailed'), t(errorMessageKey(cause), errorMessageValues(cause)));
     }
   }
 
@@ -94,7 +94,7 @@ export function BillRunCard({
       <CardBody className="flex flex-col gap-md">
         {otherError ? (
           <p role="alert" className="text-body-small text-error">
-            {t(errorMessageKey(otherError))}
+            {t(errorMessageKey(otherError), errorMessageValues(otherError))}
           </p>
         ) : null}
 
@@ -129,7 +129,14 @@ export function BillRunCard({
             {run.stale ? (
               <p className="flex items-start gap-xs rounded-md bg-error-muted px-md py-sm text-body-small text-error">
                 <TriangleAlert className="mt-xxs size-icon-sm shrink-0" aria-hidden />
-                {t('bills.staleWarning', { kgs: formatKg(run.totalKgs) })}
+                {/* A calculated run names whose bill would change, and the cause may be an
+                    approval rather than leaf. */}
+                {run.reasons?.includes('figures')
+                  ? t('bills.staleFigures', {
+                      count: run.staleSuppliers?.length ?? 0,
+                      suppliers: (run.staleSuppliers ?? []).join(', '),
+                    })
+                  : t('bills.staleWarning', { kgs: formatKg(run.totalKgs) })}
               </p>
             ) : null}
           </>

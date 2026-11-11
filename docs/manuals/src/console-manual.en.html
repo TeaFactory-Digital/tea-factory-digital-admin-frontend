@@ -277,11 +277,16 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
   <li><strong>Generate the bills</strong> (clerk or manager) with <span class="ui">Generate the bills</span>, then <span class="ui">Review this month's bills</span> on the Bills screen.</li>
   <li><strong>Publish</strong>: when every step of the checklist is ticked, another manager (not the one who entered the rate) clicks <span class="ui">Publish</span>. The bills appear in the app and each supplier is notified.</li>
 </ol>
+<ul>
+  <li>Months are made and published in order. A month can be published only after its last day.</li>
+  <li>The factory's first calculated month needs every supplier's opening balances first.</li>
+  <li>If the bills are out of date (a weighing, a rate or an approval changed), the page names the suppliers: generate again before publishing.</li>
+</ul>
 <div class="box warn"><span class="label">Publishing moves the credit limits</span>
 <p>Advance, loan and manure limits are worked out from the last published month, so publishing a month changes every supplier's limits.</p>
 </div>
 <div class="box warn"><span class="label">Coming</span>
-<p>Typing "Other deductions" on a bill, and comparing every calculated bill with the factory's printed slip (with hold and release), will appear here when the server supports them.</p>
+<p>Comparing every calculated bill with the factory's printed slip (with hold and release) will appear here when the server supports it. Until then, do not run a factory on calculated bills for real.</p>
 </div>
 
 <!-- 13 -->
@@ -364,7 +369,7 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
   <tr><td>Notifications</td><td>What may be sent</td></tr>
   <tr><td>Tea packets</td><td>Pack size, price, packets per month</td></tr>
   <tr><td>Credit rules</td><td>How each limit is worked out, and the repayment periods offered</td></tr>
-  <tr><td>Bill calculation</td><td>Where the bills come from, paying in Rs. 1, 5 or 10, the next bill number, advance and loan interest</td></tr>
+  <tr><td>Bill calculation</td><td>Where the bills come from, paying in Rs. 1, 5 or 10, the next bill number, loan interest (an advance bears none)</td></tr>
   <tr><td>Common notes</td><td>The suggested notes under decision and reply boxes</td></tr>
 </table>
 <div class="phones two">
@@ -425,6 +430,7 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
   <tr><td>Your role does not allow this</td><td>The page belongs to another role; ask the administrator</td></tr>
   <tr><td>The month is locked</td><td>It is published; corrections go on next month's bill</td></tr>
   <tr><td>An earlier month is not published</td><td>Publish months in order</td></tr>
+  <tr><td>The month has not ended</td><td>Publish calculated bills after the month's last day</td></tr>
   <tr><td>Approval missing from the slip</td><td>Enter it in the factory system, export and import the file again</td></tr>
   <tr><td>Busy, try again</td><td>A month is being published at that moment; nothing was saved, send it again</td></tr>
 </table>

@@ -128,7 +128,7 @@ Paid          68,220.00  (in tens)     coins carried 6.91 → August</div>
   <tr><td>Advance</td><td>An advance taken this month, deducted in full</td></tr>
   <tr><td>Manure</td><td>This month's fertilizer instalment</td></tr>
   <tr><td>Other deductions</td><td>Small amounts the office typed, with a reason</td></tr>
-  <tr><td>Stamps</td><td>Revenue stamp duty</td></tr>
+  <tr><td>Stamps</td><td>Revenue stamp duty (none on a bill without leaf)</td></tr>
   <tr><td>Previous debts</td><td>What last month could not cover</td></tr>
 </table>
 <p>The total is always the sum of the nine lines. On the screen, tap Total deductions to open the lines that have an amount this month.</p>
@@ -218,7 +218,7 @@ Paid          68,220.00  (in tens)     coins carried 6.91 → August</div>
   <li><strong>No history needed.</strong></li>
   <li><strong>Deducted in full on this month's bill</strong>, even if it is more than the month earned; the rest becomes next month's debt.</li>
   <li><strong>Not offered</strong> while an earlier advance is not yet deducted, or while any loan is owed.</li>
-  <li>The screen's "Interest (advance and loan)" row is the newest bill's interest charge, mostly the loan's.</li>
+  <li>The screen's "Loan interest" row is the newest bill's loan interest. An advance bears no interest.</li>
 </ul>
 <div class="box example"><span class="label">Example</span>
 <p>September rate Rs. 200 a kg; 300 kg supplied so far in October. Limit: Rs. 60,000. The supplier asks for Rs. 40,000; once approved, it comes off the October bill in full.</p>
@@ -231,7 +231,8 @@ Paid          68,220.00  (in tens)     coins carried 6.91 → August</div>
   <li><strong>Limit</strong> = 3 × the average gross of the last 6 settled months (default), capped where the factory sets a maximum.</li>
   <li><strong>The supplier chooses the term</strong>: 3 to 12 monthly bills (default), as a row of choices. The amount per bill is shown under the choice as the amount is typed, so the supplier sees whether it is affordable.</li>
   <li>Each bill deducts the same instalment, numbered ("Loan (instalment 3)"), but never more than the factory's share of that month's gross; in a poor month the loan simply runs longer.</li>
-  <li><strong>Interest</strong> is the factory's: 0% unless set. Simple interest on the loan owed at the start of the month, taken on top of the instalment or inside it.</li>
+  <li><strong>Interest</strong> is the factory's: 0% unless set. Simple interest on the loan owed at the start of the month, taken on top of the instalment or inside it. Inside it, interest an instalment cannot cover in a poor month is taken from the next bill, never added to the loan.</li>
+  <li>A month without leaf takes no instalment and no interest.</li>
   <li><strong>While a loan is owed</strong>, neither a new loan nor an advance can be asked for. Manure is not affected.</li>
 </ul>
 <div class="box example"><span class="label">Example</span>
@@ -249,6 +250,7 @@ With 1% inside the instalment: deducts 5,000, loan balance 45,500</div>
   <li>The supplier picks the <strong>type from the factory's list</strong>, the <strong>quantity in kilos</strong> (25 to 400 in steps of 25, or any other figure), the <strong>term</strong> (1 to 6 bills by default) and delivery notes.</li>
   <li><strong>No amount is typed.</strong> The factory prices it from its own list, by the bag, rounded up to whole bags.</li>
   <li>A type the factory has not priced cannot be sent.</li>
+  <li>With several manure credits running, each one's instalment is added together on the bill, never more than the factory's share of the gross or what is owed.</li>
 </ul>
 <div class="box example"><span class="label">Example</span>
 <p>Urea in 50 kg bags at Rs. 9,000. The supplier asks for 60 kg: the store issues 2 bags, Rs. 18,000, recovered over the term chosen.</p>

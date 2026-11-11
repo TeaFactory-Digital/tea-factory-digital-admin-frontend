@@ -131,7 +131,7 @@
   <tr><td><strong>B. Sync off, bills imported</strong> (galaboda)</td><td>The factory's own system prints them; the office imports the finished bills</td><td>Export the finished bills to Excel, Import → Finished bills, review, publish</td><td>Exactly the printed slip, stored as printed, never recalculated</td></tr>
   <tr><td><strong>C. Sync off, bills calculated</strong></td><td>The console, from leaf, rate and deduction rates</td><td>Enter leaf, enter the rate, generate, type other deductions, compare with the printed slips, publish</td><td>Calculated here; must equal the printed slip to the rupee before it is published</td></tr>
 </table>
-<p>Which of B and C a factory uses is set in <strong>Configuration → Bill calculation → Where the bills come from</strong>. It cannot be changed while a month has bills made but not published.</p>
+<p>Which of B and C a factory uses is set in <strong>Configuration → Bill calculation → Where the bills come from</strong>. It cannot be changed while a month has bills made but not published, nor back to imported while payment corrections wait for a calculated bill.</p>
 <div class="box example"><span class="label">Why mode C still compares with paper</span>
 <p>A factory whose system cannot export bills still prints a paper slip for every supplier. The supplier then holds two bills for the month: the paper one and the app's. They must agree to the rupee, or the office spends the month on the telephone.</p>
 </div>
@@ -184,7 +184,7 @@ Coins carried fwd  = payable − paid   (paid on next month's bill)</div>
   <tr><td>Advance</td><td>Cash given against this month's leaf</td><td>Deducted in full in the same month (section 11)</td></tr>
   <tr><td>Manure</td><td>Fertilizer instalment</td><td>Section 13</td></tr>
   <tr><td>Other deductions</td><td>Small amounts the office types, with a reason the supplier reads</td><td>Typed on the bill before publishing (section 9.5)</td></tr>
-  <tr><td>Stamps</td><td>Revenue stamp duty</td><td>The factory's approved stamp amount</td></tr>
+  <tr><td>Stamps</td><td>Revenue stamp duty</td><td>The factory's approved stamp amount; none on a bill without leaf</td></tr>
   <tr><td>Previous debts</td><td>What last month could not cover</td><td>Last bill's Next Month Deb, or the opening balance for the first bill</td></tr>
 </table>
 <div class="box rule"><span class="label">The lines are the truth</span>
@@ -264,7 +264,7 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
 <p>An imported bill is never edited in the console. A correction is made in the factory system and the month imported again.</p>
 
 <h2>6.3 Mode C: sync off, bills calculated</h2>
-<p>The console works the bill out from what the office entered. The factory system still prints its own slip, so before publishing, <strong>every bill is compared with its printed slip</strong>:</p>
+<p>The console works the bill out from what the office entered. Making and publishing these bills works today; the comparison with the printed slips below is <span class="tag soon">Coming</span>, and no factory works this way for real before it. The factory system still prints its own slip, so before publishing, <strong>every bill is compared with its printed slip</strong>:</p>
 <ol>
   <li>The office enters each printed slip's <strong>Balance</strong> (the amount paid), one at a time or from a file (Import → Printed slip balances). It is kept even if the bills are made again.</li>
   <li>Each bill is <strong>match</strong> (equal to the rupee), <strong>mismatch</strong>, or <strong>missing</strong> (no printed figure yet).</li>
@@ -383,16 +383,18 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
 <p>Publish checks, in this order, and refuses with the first that fails:</p>
 <ol>
   <li>Already published (and nothing late waiting).</li>
-  <li>An earlier month still has unpublished bills: months are published in order.</li>
+  <li>An earlier month still has unpublished bills, or leaf with no bills: months are published in order.</li>
+  <li>A calculated month that has not ended yet: what is approved in its last days must reach its bills.</li>
   <li>The rate is missing.</li>
   <li>Exceptions still open (calculated bills).</li>
-  <li>Bills missing or out of date (leaf changed after they were made).</li>
+  <li>Bills missing or out of date: making them again would change them (a weighing, a rate or an approval changed since). The message names the suppliers.</li>
   <li>A bill differs from its printed slip and is not held (calculated bills).</li>
   <li>An approval missing from a slip (imported bills).</li>
   <li><strong>Two-person rule:</strong> the publisher may not be the person who entered the rate or imported a bill of the month. That person sees a warning instead of the button.</li>
 </ol>
+<p>Calculated bills are also <strong>made</strong> month by month: a month before the newest published one is refused, and the factory's first calculated month needs opening balances (or an earlier bill of ours).</p>
 <p>Publishing makes the bills visible in the app, sends a "your account is ready" notification to each supplier whose bill was published (never to every supplier; a held bill's supplier is told when it is released), posts savings, settles withdrawals and moves every credit limit.</p>
-<h2>9.5 Other deductions (calculated bills) <span class="tag soon">Coming</span></h2>
+<h2>9.5 Other deductions (calculated bills)</h2>
 <ul>
   <li>The one line typed by hand: an amount of 0 or more, and a reason of at least 3 characters when above 0. The supplier reads the reason under the line.</li>
   <li>Only before publishing (or on a held bill). The bill is recalculated, never patched.</li>
@@ -438,7 +440,7 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
   <li><strong>No history needed</strong>: a supplier in their first month can take an advance.</li>
   <li><strong>Blocked</strong> while an advance already taken has not yet been deducted, and while <strong>any loan is still owed</strong>.</li>
   <li><strong>Closed within its month:</strong> deducted in full on that month's bill, even past the gross. It never carries a balance. Whatever the account cannot cover is Next Month Deb.</li>
-  <li><strong>Advance interest</strong> (Configuration → Bill calculation, 0 to 10% a month, 0 unless set) is charged <strong>only</strong> on the part of an advance the account could not cover.</li>
+  <li><strong>No interest on an advance</strong> (decided 10 November 2026): it is taken in full, so nothing is left to bear interest. What the account cannot cover is ordinary Next Month Deb.</li>
 </ul>
 <div class="box example"><span class="label">Example</span>
 <div class="calc">Last settled month (September) rate     Rs. 200.00 per kg
@@ -449,8 +451,7 @@ Supplier takes Rs. 40,000 on 18 October.
 October bill: gross 70,000, advance 40,000 deducted in full.
 
 If October's gross were only 30,000:
-  balance −10,000 (plus other lines) → paid 0, Next Month Deb 10,000
-  with advance interest 2% a month: interest 2% × 10,000 = Rs. 200</div>
+  balance −10,000 (plus other lines) → paid 0, Next Month Deb 10,000, no interest</div>
 </div>
 
 <!-- 12 -->
@@ -462,6 +463,8 @@ If October's gross were only 30,000:
   <li><strong>An open loan blocks a new loan and an advance</strong> until it is repaid. Manure is not affected. A supplier repaying a 10-month loan gets neither for those months.</li>
   <li><strong>Each bill deducts a fixed instalment</strong> = amount borrowed ÷ months chosen, never more than the loan cap (20% of gross by default) and never more than is still owed. The slip shows its number: "Loans / Advance 3" is the third instalment.</li>
   <li><strong>Loan Balance</strong> on the slip is the loan still owed after this bill.</li>
+  <li><strong>A loan approved during the month</strong> is recovered, with its interest, on that month's bill.</li>
+  <li><strong>A month without leaf</strong> takes no instalment and charges no interest.</li>
 </ul>
 <h2>12.1 Loan interest</h2>
 <ul>
@@ -469,6 +472,7 @@ If October's gross were only 30,000:
   <li><strong>Simple interest on the loan owed at the start of the month</strong>, never on unpaid interest.</li>
   <li>The factory chooses how it is taken: <strong>on top</strong> of the instalment (the default), or <strong>inside</strong> it.</li>
   <li>The month's charge in rupees is the slip's "Loan Interest" line.</li>
+  <li><strong>Inside the instalment, in a poor month:</strong> if the instalment (capped by the gross) is smaller than the interest, the interest it cannot cover is taken from the next bill. It is never added to the loan, so it never earns interest.</li>
 </ul>
 <div class="box example"><span class="label">Example: Rs. 50,000 over 10 months at 1% a month</span>
 <table>
@@ -496,6 +500,7 @@ Only 4 settled months?  → limit 0, "not enough history"</div>
   <li>A fertilizer the catalogue does not price is refused, so nothing is issued free.</li>
   <li><strong>Term:</strong> 1 to 6 monthly bills (default), the supplier's choice, under the manure cap (15% of gross by default).</li>
   <li>Approval usually comes days before the fertilizer is collected from the store.</li>
+  <li><strong>Several plans at once:</strong> each plan's instalment is added together, under the cap and what is owed. A plan already repaid no longer counts.</li>
 </ul>
 <div class="box example"><span class="label">Example</span>
 <div class="calc">Catalogue: Urea, 50 kg bag, Rs. 9,000 a bag
@@ -512,7 +517,7 @@ Term 3 months → about Rs. 6,000 a bill, but never more than 15% of that bill's
   <li><strong>The cap:</strong> the facility's share of this month's gross (loan 20%, manure 15% by default), so one poor month is not swallowed by a repayment agreed in a good one.</li>
   <li><strong>What is still owed.</strong> The last instalment is whatever is left.</li>
 </ol>
-<p>If the gross is 0, nothing is taken that month. A credit approved before the app asked for a term falls back to the cap alone.</p>
+<p>A month without leaf takes nothing: no instalment, no interest and no stamps. A credit approved before the app asked for a term falls back to the cap alone.</p>
 <div class="box example"><span class="label">Example</span>
 <div class="calc">Loan Rs. 120,000 over 10 months → planned 12,000
 Month with gross 80,000: cap 20% = 16,000 → takes 12,000
@@ -578,9 +583,9 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
   <li><strong>Only in the factory's withdrawal month</strong>, April by default (changeable), in Colombo time.</li>
   <li><strong>Available</strong> = balance − withdrawals already pending, so the same savings cannot be asked for twice.</li>
   <li><strong>Paid on the next bill</strong>, added after the balance amount (it is the supplier's own money, not leaf income). The balance does not fall until that bill is published.</li>
-  <li>A supplier with no leaf that month still gets a bill, so the withdrawal has something to be paid on.</li>
+  <li>A supplier with no leaf that month still gets a bill, so the withdrawal has something to be paid on. That bill takes no stamps and no instalments.</li>
   <li>A withdrawal waits for the rate: it is not paid on an account with no figures.</li>
-  <li><strong>Interest</strong> on savings (decided 29 October 2026): simple, on each month's lowest balance (the balance at the start of the month, or after a withdrawal paid that month), at the yearly rate in Configuration ÷ 12 (0% unless set). The year runs to the month before the withdrawal month (April to March) and is credited once, as one Interest line in the passbook with that month, so it can be taken out in the withdrawal month. Example at 6%: Rs. 20,000 all year earns Rs. 1,200.00; in a month where 15,000 is taken out of 20,000 and 2,000 saved, that month earns on 7,000: Rs. 35.00. The server will post it when that month is published; until then the accountant posts the figure.</li>
+  <li><strong>Interest</strong> on savings (decided 29 October 2026): simple, on each month's lowest balance (the balance at the start of the month, or after a withdrawal paid that month), at the yearly rate in Configuration ÷ 12 (0% unless set). The year runs to the month before the withdrawal month (April to March) and is credited once, as one Interest line in the passbook with that month, so it can be taken out in the withdrawal month. Example at 6%: Rs. 20,000 all year earns Rs. 1,200.00; in a month where 15,000 is taken out of 20,000 and 2,000 saved, that month earns on 7,000: Rs. 35.00. For calculated bills the server posts it when that month is published; where the bills are imported, the factory's own slip carries it.</li>
 </ul>
 <div class="box example"><span class="label">Example</span>
 <p>Balance Rs. 27,065 in April; the manager approves a Rs. 10,000 withdrawal. Available for another request: 17,065. On the April bill: balance amount 50,004.20 + withdrawal 10,000 = payable 60,004.20, paid 60,000 (tens), coins 4.20. Savings to date = previous + this month − 10,000.</p>
@@ -651,7 +656,7 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
   <tr><td>Notifications</td><td>Kinds of notification sent</td></tr>
   <tr><td>Tea packets</td><td>Pack size, price, monthly cap</td></tr>
   <tr><td>Credit rules</td><td>Section 15.2</td></tr>
-  <tr><td>Bill calculation</td><td>Where bills come from; payment unit Rs. 1/5/10; next bill serial; advance interest; loan interest and how it is taken</td></tr>
+  <tr><td>Bill calculation</td><td>Where bills come from; payment unit Rs. 1/5/10; next bill serial; loan interest and how it is taken (an advance bears none)</td></tr>
   <tr><td>Common notes</td><td>Suggested notes for decisions and replies</td></tr>
 </table>
 <h2>20.1 Feature switches</h2>
@@ -718,7 +723,7 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
   <li>A template with an example row can be downloaded for each kind.</li>
 </ul>
 </div>
-<h2>23.1 Importing the same file again <span class="tag soon">Coming</span></h2>
+<h2>23.1 Importing the same file again</h2>
 <ul>
   <li><strong>Leaf:</strong> a weighing already recorded (same date, supplier, kilos and collection point) is skipped, counted one for one. The same file twice adds nothing; two real 20 kg weighings against one recorded saves the second. "Import them anyway" is for a file that really holds a second weighing.</li>
   <li><strong>Suppliers:</strong> a code already on the roll is skipped and left as it is, not updated. The rest of the file is added.</li>
@@ -728,11 +733,11 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
 <table>
   <tr><th>File</th><th>Saves</th><th>Typical refusals</th></tr>
   <tr><td>Suppliers</td><td>New suppliers</td><td>Duplicate in the file, unknown collection point or bank, bank details missing</td></tr>
-  <tr><td>Daily leaf <span class="tag soon">Coming</span></td><td>Weighings</td><td>Unknown supplier, month published</td></tr>
-  <tr><td>Monthly rates <span class="tag soon">Coming</span></td><td>The month's rate</td><td>Month published</td></tr>
+  <tr><td>Daily leaf</td><td>Weighings</td><td>Unknown supplier, month published</td></tr>
+  <tr><td>Monthly rates</td><td>The month's rate</td><td>Month published</td></tr>
   <tr><td>Opening balances</td><td>Opening balances</td><td>Locked, not the cut-over month, a savings withdrawal still pending</td></tr>
   <tr><td>Walk-in requests</td><td>Pending office requests</td><td>As in section 15.1</td></tr>
-  <tr><td>Other deductions <span class="tag soon">Coming</span></td><td>Other deductions with reasons</td><td>No bill, month published, reason missing</td></tr>
+  <tr><td>Other deductions</td><td>Other deductions with reasons</td><td>No bill, month published, reason missing</td></tr>
   <tr><td>Transport rates</td><td>Suppliers' own rates (empty = back to the point's)</td><td>Unknown supplier</td></tr>
   <tr><td>Finished bills</td><td>A month's bills as printed</td><td>Section 6.2</td></tr>
   <tr><td>Printed slip balances <span class="tag soon">Coming</span></td><td>Each slip's paid amount, for comparison</td><td>No bill, month published</td></tr>
@@ -741,19 +746,21 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
 
 <!-- 24 -->
 <h1>24. What works today and what is coming</h1>
-<p>As of 29 October 2026. The console hides each unfinished feature until the server supports it, so the office never meets an error page.</p>
+<p>As of 11 November 2026. The console hides each unfinished feature until the server supports it, so the office never meets an error page.</p>
 <table>
   <tr><th>Area</th><th>Status</th></tr>
   <tr><td>App management: queues, change requests, inquiries, news, banners, pages, notifications, configuration, users, reports, audit</td><td><span class="tag now">Working</span></td></tr>
   <tr><td>Factory system switch, Add supplier, supplier import, transport rates, walk-in requests</td><td><span class="tag now">Working</span></td></tr>
   <tr><td>Imported bills: Import → Finished bills, all checks, publish, late division files</td><td><span class="tag now">Working</span> (galaboda)</td></tr>
   <tr><td>Opening balances</td><td><span class="tag now">Working</span></td></tr>
-  <tr><td>Leaf intake and rate entry on the server, leaf and rate imports</td><td><span class="tag soon">Coming</span></td></tr>
-  <tr><td>Other deductions</td><td><span class="tag soon">Coming</span></td></tr>
-  <tr><td>Importing a file again with skipping</td><td><span class="tag soon">Coming</span></td></tr>
-  <tr><td>Calculated bills with the printed-slip check, hold and release</td><td><span class="tag soon">Last</span>: no factory needs it yet</td></tr>
-  <tr><td>App "This month so far"</td><td><span class="tag soon">Coming</span></td></tr>
-  <tr><td>Later: factory sync, correcting a balance found wrong after the first bill, importing past months as history</td><td><span class="tag soon">Later</span></td></tr>
+  <tr><td>Leaf intake and rate entry on the server, leaf and rate imports</td><td><span class="tag now">Working</span></td></tr>
+  <tr><td>Other deductions</td><td><span class="tag now">Working</span></td></tr>
+  <tr><td>Importing a file again with skipping</td><td><span class="tag now">Working</span></td></tr>
+  <tr><td>Correcting a balance found wrong after the first bill</td><td><span class="tag now">Working</span></td></tr>
+  <tr><td>App "This month so far"</td><td><span class="tag now">Working</span></td></tr>
+  <tr><td>Calculated bills: making and publishing them</td><td><span class="tag now">Working</span></td></tr>
+  <tr><td>Calculated bills: the printed-slip check, hold and release</td><td><span class="tag soon">Coming</span>: needed before any factory works this way for real</td></tr>
+  <tr><td>Later: factory sync, importing past months as history</td><td><span class="tag soon">Later</span></td></tr>
 </table>
 
 <!-- 25 -->

@@ -31,11 +31,11 @@ export const OTHER_DEDUCTIONS_ON_SERVER = true;
 
 /**
  * The bill engine (#45, factory-records §5): `POST /admin/months/:monthKey/bills/generate`
- * for a factory whose bills are calculated here. Until it ships, Configuration does not offer
- * "Calculated in this console" to a factory not already on it, and the month close shows no
- * Generate button, which would answer `404`.
+ * and publishing a calculated month. Live since backend 221a1c0 (11 November 2026, ADR-042).
+ * Off, Configuration does not offer "Calculated in this console" to a factory not already on
+ * it, and the month close shows no Generate button.
  */
-export const BILL_ENGINE_ON_SERVER = false;
+export const BILL_ENGINE_ON_SERVER = true;
 
 /**
  * Comparing calculated bills with the factory's printed slips, and holding the ones that

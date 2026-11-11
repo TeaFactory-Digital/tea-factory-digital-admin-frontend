@@ -165,14 +165,43 @@ describe('the rules the console and the API share', () => {
       interest: 500,
       deducted: 5500,
       principalRepaid: 5000,
+      interestCarried: 0,
     });
     expect(loanRecovery(50000, 5000, { monthlyRatePercent: 1, recovery: 'withinInstalment' })).toEqual({
       interest: 500,
       deducted: 5000,
       principalRepaid: 4500,
+      interestCarried: 0,
     });
     // No rate: the instalment, nothing more.
-    expect(loanRecovery(50000, 5000, undefined)).toEqual({ interest: 0, deducted: 5000, principalRepaid: 5000 });
+    expect(loanRecovery(50000, 5000, undefined)).toEqual({
+      interest: 0,
+      deducted: 5000,
+      principalRepaid: 5000,
+      interestCarried: 0,
+    });
+  });
+
+  it('carries the interest an instalment cannot cover to the next bill, never into the loan', () => {
+    const within = { monthlyRatePercent: 1, recovery: 'withinInstalment' } as const;
+    // A month with little leaf: the instalment is capped at Rs. 300, the interest is Rs. 500.
+    const thin = loanRecovery(50000, 300, within);
+    expect(thin).toEqual({ interest: 500, deducted: 300, principalRepaid: 0, interestCarried: 200 });
+    // Next month: the loan is still Rs. 50,000 (no interest on the Rs. 200), and the Rs. 200
+    // is taken from the instalment before the principal.
+    expect(loanRecovery(50000, 5000, within, thin.interestCarried)).toEqual({
+      interest: 500,
+      deducted: 5000,
+      principalRepaid: 4300,
+      interestCarried: 0,
+    });
+    // On top, whatever was carried is deducted with this month's interest.
+    expect(loanRecovery(50000, 5000, { monthlyRatePercent: 1, recovery: 'onTop' }, 200)).toEqual({
+      interest: 500,
+      deducted: 5700,
+      principalRepaid: 5000,
+      interestCarried: 0,
+    });
   });
 
   it('writes a template whose example row survives a comma', () => {

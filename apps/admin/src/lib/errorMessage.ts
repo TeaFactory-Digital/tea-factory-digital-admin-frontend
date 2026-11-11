@@ -54,6 +54,8 @@ const BY_CODE: Record<string, string> = {
   // than rendering this string.
   'bills-missing': 'error.billsMissing',
   'bills-stale': 'error.billsStale',
+  // Publishing a calculated month before its last day is over (backend 221a1c0).
+  'month-not-ended': 'error.monthNotEnded',
   'bills-unbalanced': 'error.billsUnbalanced',
   // M6. Each of these is money that would otherwise have moved on the wrong basis.
   'month-not-published': 'error.monthNotPublished',
@@ -142,7 +144,20 @@ const BY_REASON: Record<string, string> = {
   'too-old': 'error.leafTooOld',
 };
 
-const CUT_OVER_REASONS = new Set(['future', 'first-bill-month', 'different']);
+const CUT_OVER_REASONS = new Set(['future', 'first-bill-month', 'different', 'required']);
+
+/**
+ * A code whose meaning depends on its reason (the bill engine, backend 221a1c0): the key is
+ * `code:reason`, checked after `BY_REASON` and before the code alone.
+ */
+const BY_CODE_AND_REASON: Record<string, string> = {
+  // Before the newest published month or the cut-over: never generated again.
+  'month-locked:behind': 'error.monthLocked.behind',
+  // Switching back to imported bills while payment corrections wait for a calculated bill.
+  'bill-source-blocked:payment-corrections-pending': 'error.billSourceBlocked.correctionsPending',
+  // A calculated month: generating again would change these suppliers' bills.
+  'bills-stale:figures': 'error.billsStale.figures',
+};
 
 /** `details.reason`, when the server sent one. */
 export function errorReason(error: unknown): string | undefined {
@@ -165,6 +180,9 @@ export function errorMessageKey(error: unknown): string {
   if (error.code === 'cut-over-month' && reason && CUT_OVER_REASONS.has(reason)) {
     return `error.cutOverMonth.${reason}`;
   }
+  if (reason && BY_CODE_AND_REASON[`${error.code}:${reason}`]) {
+    return BY_CODE_AND_REASON[`${error.code}:${reason}`]!;
+  }
   return BY_CODE[error.code] ?? 'error.unknown';
 }
 
@@ -175,7 +193,7 @@ export function errorMessageKey(error: unknown): string {
 export function errorMessageValues(error: unknown): Record<string, string> {
   if (!isApiError(error)) return {};
   const details = error.details as
-    | { months?: unknown; count?: unknown; monthKey?: unknown; asOfMonth?: unknown }
+    | { months?: unknown; count?: unknown; monthKey?: unknown; asOfMonth?: unknown; suppliers?: unknown }
     | undefined;
   const months = Array.isArray(details?.months) ? details.months.map(String).join(', ') : '';
   // `bills-mismatch`: how many bills still disagree with their printed slip.
@@ -195,8 +213,13 @@ export function errorMessageValues(error: unknown): Record<string, string> {
           ? (details as { days: number }).days
           : LEAF_ENTRY_MAX_AGE_DAYS)
       : '';
+  // `bills-stale` on a calculated month: the supplier codes whose bill would change (at most 10).
+  const suppliers = Array.isArray(details?.suppliers)
+    ? details.suppliers.filter((one): one is string => typeof one === 'string').join(', ')
+    : '';
   return {
     ...(months ? { months } : {}),
+    ...(suppliers ? { suppliers } : {}),
     ...(count ? { count } : {}),
     ...(month ? { month } : {}),
     ...(days ? { days } : {}),

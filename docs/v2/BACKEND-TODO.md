@@ -1,6 +1,6 @@
 # Backend to-do
 
-Only the work still open (7 November 2026). Finished work is taken out; git history keeps it.
+Only the work still open (11 November 2026). Finished work is taken out; git history keeps it.
 The rules for every item are in [`factory-records.md`](./factory-records.md) (the console)
 and `packages/domain` (please `vendor:pull` after each console change).
 
@@ -11,8 +11,7 @@ hand after migrating (`autoDeploy: false`, `5ae415a`).
 
 | # | What | Priority |
 |---|------|----------|
-| 45 | Factory records: the bill engine (with #56), then the printed-slip check, hold and release. Galaboda may choose either way, so both must work | **High, first** |
-| 56 | Savings interest: calculated bills only, with the bill engine | With #45's bill engine |
+| 45 | Factory records: the printed-slip check, hold and release (commit B). Galaboda may choose either way, so both must work | **High, first** |
 | 65 | A production environment: no production API exists yet | Before the first store release |
 | 66 | Universal-link files on each factory's domain: waits for the Play signing SHA-256 and the host | Before the first store release |
 | - | Later: factory sync (Phase 10), the push sender, the five-year job (#59), a reporting replica | Later |
@@ -22,29 +21,28 @@ hand after migrating (`autoDeploy: false`, `5ae415a`).
 The office keeps suppliers, daily leaf, monthly rates, bills, opening balances and counter
 credit requests in the console while the sync is off. **Contract:** factory-records.md.
 
-**Still to build, in this order:**
+**Still to build:** **the printed-slip check and hold** (commit B; §5, "Comparing with the
+printed slips", steps 1 to 8): `GET /admin/months/:monthKey/slip-comparison`,
+`PUT /admin/bills/:id/printed`, `POST /admin/bills/:id/hold` and `/release`, the
+`printedBalances` import, `409 bills-mismatch` on the publish, the automatic hold of a
+supplier's next bill (`heldForMonth`), and releases in order (`409 earlier-bill-held`). The
+month lock is relaxed for a held supplier's leaf only, as agreed. No factory goes live on
+calculated bills until this ships.
 
-1. **The bill engine** (factory-records §5): `POST /admin/months/:monthKey/bills/generate`,
-   calculating each bill with `computeBillAmounts` from the shared package. **Both ways must
-   work:** galaboda imports today but may choose calculated bills at any time (decided
-   7 November), so this is the top item. Savings interest (#56) and payment corrections on
-   the next bill (#57) are worked out inside it.
-2. **The printed-slip check and hold** (§5, "Comparing with the printed slips", steps 1 to
-   8): `GET /admin/months/:monthKey/slip-comparison`, `PUT /admin/bills/:id/printed`,
-   `POST /admin/bills/:id/hold` and `/release`, the `printedBalances` import,
-   `409 bills-mismatch` on the publish, the automatic hold of a supplier's next bill
-   (`heldForMonth`), and releases in order (`409 earlier-bill-held`). The month lock is
-   relaxed for a held supplier's leaf only, as agreed.
+**From your T14 (bill engine commit A, 221a1c0), done on the console side:**
+`BILL_ENGINE_ON_SERVER` is on; the new refusals have text in three languages
+(`month-not-ended`, `cut-over-month` `required`, `month-locked` `behind`,
+`bill-source-blocked` `payment-corrections-pending` with its count, `bills-stale` `figures`
+naming the suppliers, and the wider `earlier-month-unpublished`); the bill run card names
+`staleSuppliers`. Two things for you:
 
-**Your open points on the design (10 November):** answered in factory-records §5, "Decided
-10 November 2026". Different from your defaults: **several manure plans add their
-instalments together**; the unpaid interest under `withinInstalment` is **carried, not added
-to the loan** (§5: interest never earns interest); a dropped supplier's edits are **kept and
-return** with their leaf; the first calculated bill takes the **last imported bill's Coins
-C/F**. A factory that switches from imported bills has its balances on its last imported
-bill, so it needs opening balances only for what that bill does not carry. Please send the
-error code for "switching back to imported is blocked while corrections are pending" so the
-console can explain it.
+- **Please `vendor:pull`:** `loanRecovery` now takes `interestBroughtForward` and returns
+  `interestCarried` (T14.5): under `withinInstalment`, the interest the instalment cannot
+  cover. Store it per supplier with the bill and pass it back on the next one; it is never
+  added to the loan. `BillRun` gains `reasons` and `staleSuppliers`.
+- **T14.8, a manure plan already repaid:** it does **not** count. Only plans with something
+  still owed add their instalments; once the manure recovered since a plan was approved
+  covers it (oldest plan first), it drops out.
 
 **Check:** the list in factory-records §9.
 
@@ -168,5 +166,4 @@ the same PR) and the feature appears:
 | Console feature | Waits for | Line in `serverReady.ts` |
 |---|---|---|
 | Import → Printed slip balances | `POST /admin/imports/printedBalances` | `IMPORT_KINDS_NOT_ON_SERVER` (the other imports are live) |
-| Rates & month close: **Generate the bills**; Configuration offers "Calculated in this console" (shown as coming soon, not selectable, until then) | `POST /admin/months/:monthKey/bills/generate` (the bill engine) | `BILL_ENGINE_ON_SERVER = false` |
 | Rates & month close: "Compare with printed slips", the checklist step, held badges | `slip-comparison`, `printed`, `hold`, `release` | `SLIP_COMPARISON_ON_SERVER = false` |

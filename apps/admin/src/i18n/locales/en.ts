@@ -1927,6 +1927,7 @@ export const en = {
   'error.cutOverMonth.future': 'That month has not started yet. Choose the month of the first bills here.',
   'error.cutOverMonth.first-bill-month': 'This factory\'s first bills here are for {{month}}, so the opening balances are as at {{month}}.',
   'error.cutOverMonth.different': 'This factory\'s opening balances are as at {{month}}. To use another month, save every supplier\'s opening balances again in it.',
+  'error.cutOverMonth.required': 'This factory has no bills here yet and no opening balances. Enter the suppliers\' opening balances first, so the first bills start from the right figures.',
   'error.withdrawalPending': 'A savings withdrawal from before that month is still waiting for this supplier. Settle or cancel it first, then enter the opening savings.',
   'error.correctionInvalid': 'The correction was refused: check the amount, the month (it must have a published bill), the reason, and that no balance goes below 0.',
   'error.approvalAboveLimit': 'A request of this amount is decided by someone else: the manager, or above the owner threshold the owner.',
@@ -1945,6 +1946,7 @@ export const en = {
   'error.loanOutstanding': 'A loan is still owed. A new loan can be given only once it is repaid.',
   'error.wrongBillSource': 'This factory’s bills come the other way. Change “Where the bills come from” in Configuration → Bill calculation.',
   'error.billSourceBlocked': 'Bills are generated but not published for: {{months}}. Publish them first, then change where the bills come from.',
+  'error.billSourceBlocked.correctionsPending': '{{count}} payment corrections are waiting for a calculated bill. Let them go out on a bill, or cancel them, before changing where the bills come from.',
   'factoryReminder.title': 'Enter this in the factory system too.',
   'factoryReminder.advance': 'After approving, record this advance of Rs. {{amount}} for supplier {{code}} in the factory’s own system. That system prints the bill, so it will not deduct the advance unless it is entered there.',
   'factoryReminder.loan': 'After approving, record this loan of Rs. {{amount}} for supplier {{code}} in the factory’s own system, repaid over {{months}} months. That system prints the bill, so it will not deduct the instalments unless the loan and its period are entered there.',
@@ -1952,6 +1954,7 @@ export const en = {
   'factoryReminder.teaPackets': 'If you approve, record these {{packets}} tea packets (Rs. {{amount}}) for supplier {{code}} in the factory’s own system too, so the bill deducts them.',
   'factoryReminder.change': 'After approving, update supplier {{code}}’s {{type}} in the factory’s own system too, so payments and the next bill use the new details.',
   'error.monthLocked': 'That month is published, so its figures can no longer be changed.',
+  'error.monthLocked.behind': '{{month}} is before the newest published month or the cut-over month, so its bills cannot be generated.',
   'error.alreadyVoided': 'This delivery was already voided.',
   'error.invalidBatch':
     'One of the lines is not something the factory can record. Check the kilos.',
@@ -1961,6 +1964,9 @@ export const en = {
   'error.billsMissing': 'The bills for that month have not been generated yet.',
   'error.billsStale':
     'The leaf has changed since the bills were generated. Re-generate them before publishing.',
+  'error.billsStale.figures':
+    'Generating again would change the bills of {{count}} suppliers ({{suppliers}}): a weighing, a rate or an approval has changed since. Generate the bills again before publishing.',
+  'error.monthNotEnded': '{{month}} has not ended yet. Publish its bills after its last day, so everything approved that month is on them.',
   'error.billsUnbalanced':
     'Some bills have deduction lines that do not add up to their total. Tell the factory administrator. Nothing has been generated.',
   'error.monthNotPublished':
@@ -2384,6 +2390,8 @@ export const en = {
   'bills.runTitle': 'Bill run',
   'bills.staleWarning':
     'The leaf has changed since these bills were generated ({{kgs}} at the time). Re-generate before publishing: the month cannot close on figures that no longer match.',
+  'bills.staleFigures':
+    'Generating again would change {{count}} bills ({{suppliers}}): a weighing, a rate or an approval has changed since this run. Generate again before publishing.',
   'deliveries.addRow': 'Add line',
   'deliveries.allPoints': 'All collection points',
   'deliveries.column.kgs': 'Kilos',
@@ -2905,7 +2913,7 @@ export const en = {
   'error.rateDiffers': 'This month\'s bills came from the factory\'s own slips, and their rate is the month\'s. Correct it in the factory\'s system and import the slips again.',
   'error.leafTooOld': 'Leaf can only be entered for the last {{days}} days. Nothing was saved.',
   'error.publishedDuringImport': 'The month was published while the file was on its way. Nothing was saved: send the same file again.',
-  'error.earlierMonthUnpublished': '{{month}} still has unpublished bills. Publish it first; months are published in order.',
+  'error.earlierMonthUnpublished': '{{month}} is not published yet: it has leaf or bills still waiting. Publish it first; months are generated and published in order.',
   'error.approvalMissing': 'Something approved for this month is no longer on its slip. Import the corrected file again, then publish.',
   'months.step.slips': 'Matches the printed slips',
   'months.step.slipsOpen': '{{count}} bills do not match the factory’s printed slips, or have no printed figure. Fix or hold them.',

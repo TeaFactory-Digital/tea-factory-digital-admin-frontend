@@ -355,7 +355,7 @@ of the row:
 | Notifications | `push` |
 | Tea packets | `teaPackets` |
 | Credit rules | `creditRules` |
-| Bill calculation | `billSettings` (where the bills come from, pay in Rs. 1 / 5 / 10, the next bill serial), `advanceInterest`, `loanInterest` (rate and how it is taken) |
+| Bill calculation | `billSettings` (where the bills come from, pay in Rs. 1 / 5 / 10, the next bill serial), `loanInterest` (rate and how it is taken). `advanceInterest` is no longer offered: an advance bears no interest |
 | Common notes | `noteSuggestions` |
 
 That completeness is the criterion: one field still requiring a developer would make AC-12

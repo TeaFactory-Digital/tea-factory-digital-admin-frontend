@@ -93,18 +93,44 @@ export interface LoanInterestSetting extends AdvanceInterestSetting {
 /**
  * One month of a loan on the bill. The interest is worked on the loan **owed at the start
  * of the month** (Rs. 50,000 at 1% is Rs. 500), never on unpaid interest.
+ *
+ * **Interest an instalment cannot cover** (decided 10 November 2026). Under
+ * `withinInstalment` the interest is taken out of the instalment first; when the instalment
+ * is smaller (a month with little leaf, capped by the gross), what is left of the interest is
+ * `interestCarried`: owed on the **next** bill, passed back here as `interestBroughtForward`,
+ * and never added to the loan, so it never earns interest itself. Under `onTop` all of it is
+ * deducted, so nothing is carried.
+ *
+ * - `interest`: this month's new charge (the slip's "Loan Interest").
+ * - `deducted`: the "Loans / Advance" line.
+ * - `principalRepaid`: how far the loan falls.
+ * - `interestCarried`: owed on the next bill.
  */
 export function loanRecovery(
   owedAtStart: number,
   plannedInstalment: number,
   setting: LoanInterestSetting | undefined,
-): { interest: number; deducted: number; principalRepaid: number } {
+  interestBroughtForward = 0,
+): { interest: number; deducted: number; principalRepaid: number; interestCarried: number } {
   const interest = advanceInterestFor(owedAtStart, setting);
+  const broughtForward = round2(Math.max(0, interestBroughtForward));
   const instalment = round2(Math.max(0, Math.min(plannedInstalment, owedAtStart)));
   if ((setting?.recovery ?? 'onTop') === 'withinInstalment') {
-    return { interest, deducted: instalment, principalRepaid: round2(Math.max(0, instalment - interest)) };
+    const due = round2(interest + broughtForward);
+    const covered = Math.min(instalment, due);
+    return {
+      interest,
+      deducted: instalment,
+      principalRepaid: round2(instalment - covered),
+      interestCarried: round2(due - covered),
+    };
   }
-  return { interest, deducted: round2(instalment + interest), principalRepaid: instalment };
+  return {
+    interest,
+    deducted: round2(instalment + interest + broughtForward),
+    principalRepaid: instalment,
+    interestCarried: 0,
+  };
 }
 
 /* ─────────────────────── comparing with the printed slip ─────────────────────── */

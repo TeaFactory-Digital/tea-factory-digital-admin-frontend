@@ -274,8 +274,10 @@ enters every approval in that system (§1), and our calculation follows the prin
 (below); the factory's accountant compares one month of our bills with theirs before going
 live, and any difference is a defect in one of the two inputs (a leaf weighing, a rate, an
 approval not entered in one of the systems). **A factory may choose either way at any
-time** (galaboda imports today, decided 7 November 2026), so both must work; until the API
-calculates bills the console offers "Calculated" as coming soon (`BILL_ENGINE_ON_SERVER`).
+time** (galaboda imports today, decided 7 November 2026), so both must work. Generating
+and publishing calculated bills is live (backend 221a1c0, `BILL_ENGINE_ON_SERVER`); the
+printed-slip check below is still to come, and no factory goes live on calculated bills
+before it.
 
 `computeBillAmounts` (`packages/domain/src/bill.ts`) is the calculation; do not write a
 second one. **It reads exactly like the factory's printed slip** (galaboda, July 2026,
@@ -336,9 +338,9 @@ cannot take the same number.
 |---|---|
 | Advance interest | **Never.** The advance is taken in full, even past the gross, so nothing is left to bear interest; Configuration no longer asks for a rate |
 | A month without leaf | **No bill and no charge**: no instalment, no interest, no stamps. A bill for a savings withdrawal or a correction alone charges none of them either |
-| Several manure plans | **Each plan's instalment, added together**, under the manure cap and the balance |
+| Several manure plans | **Each plan's instalment, added together**, under the manure cap and the balance. A plan already repaid (oldest first) no longer counts |
 | A loan approved during the month | Recovered, with its interest, on that month's bill |
-| `withinInstalment`, instalment below the interest | The unpaid interest is **carried to the next bill**, never added to the loan, so it earns no interest |
+| `withinInstalment`, instalment below the interest | The unpaid interest is **carried to the next bill**, never added to the loan, so it earns no interest: `loanRecovery`'s `interestCarried`, passed back as `interestBroughtForward` |
 | A supplier dropped on regeneration | Their bill is superseded; their other deductions, printed figure and hold are kept against supplier and month, and return if their leaf does |
 | A held bill recalculated after the publish | The month's own rate; the current settings |
 | Savings interest | Posted at a held bill's release; for a factory that switched mid-year, the whole year from the ledger |

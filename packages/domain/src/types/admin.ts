@@ -1259,8 +1259,15 @@ export interface BillRun {
    * delivery voided after generation leaves a bill that is quietly wrong. Before
    * the publish the fix is to re-run; after it, the month is immutable and there is
    * nothing to be stale against.
+   *
+   * On a **calculated** run (backend 221a1c0) it is the engine's own comparison:
+   * generating again would give a different bill, for leaf or for an approval.
    */
   stale: boolean;
+  /** Why it is stale. A calculated run says `figures`. Absent from an older server. */
+  reasons?: Array<'kgs' | 'pendingWithdrawals' | 'deductionRates' | 'figures'>;
+  /** On a calculated run: the supplier codes whose bill would change. */
+  staleSuppliers?: string[];
 }
 
 /**
