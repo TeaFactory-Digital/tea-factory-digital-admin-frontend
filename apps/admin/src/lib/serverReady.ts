@@ -9,9 +9,9 @@
 import type { ImportKind } from '@tfd/domain';
 
 export const IMPORT_KINDS_NOT_ON_SERVER: ReadonlySet<ImportKind> = new Set<ImportKind>([
-  // `deliveries` and `monthlyRates` shipped with #45 step 3 (backend e4a9f40, 30 October 2026),
-  // `billAdjustments` with #45 step 4 (backend b6c10d6, 6 November 2026).
-  'printedBalances',
+  // Empty: `deliveries` and `monthlyRates` shipped with #45 step 3 (backend e4a9f40),
+  // `billAdjustments` with step 4 (b6c10d6), `printedBalances` with commit B (e164e2f,
+  // 12 November 2026).
 ]);
 
 /** Saving opening balances (`PUT /admin/suppliers/:id/opening-balances`). */
@@ -41,8 +41,9 @@ export const BILL_ENGINE_ON_SERVER = true;
  * Comparing calculated bills with the factory's printed slips, and holding the ones that
  * differ: `GET /admin/months/:monthKey/slip-comparison`, `PUT /admin/bills/:id/printed`,
  * `POST /admin/bills/:id/hold` and `/release`, and `409 bills-mismatch` on the publish.
+ * Live since backend e164e2f (commit B, 12 November 2026).
  */
-export const SLIP_COMPARISON_ON_SERVER = false;
+export const SLIP_COMPARISON_ON_SERVER = true;
 
 /**
  * The app's `enableMonthToDate` flag in `PATCH /admin/config`, and `GET /bills/month-to-date`

@@ -13,7 +13,7 @@ the next slice.
 | | |
 | --- | --- |
 | **Console** | Every module in [Modules](#modules) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
-| **Backend** | `tea-factory-digital-backend`, shipped up to `221a1c0`; staging is migrated through `20261111010000` and deploys by hand after migrating; galaboda's bill source is "Imported". BACKEND-TODO **#1 to #44 and #46 to #63 are done** (#56 savings interest and #57 payment corrections came inside the bill engine); **#45** (factory records without the factory system) is nearly done: the bills import, opening balances, leaf and months, other deductions and **the bill engine** (generate and publish calculated bills, `221a1c0`, ADR-042) are live; the printed-slip check, hold and release (commit B) is next. Open besides: #65 (production) and #66 (link files). See [BACKEND-TODO.md](./BACKEND-TODO.md) |
+| **Backend** | `tea-factory-digital-backend`, shipped up to `e164e2f`; staging is migrated through `20261112020000` and deploys by hand after migrating; galaboda's bill source is "Imported". BACKEND-TODO **#1 to #64 are done except #59's five-year job**: **#45** (factory records without the factory system) is complete with the bill engine (`221a1c0`, ADR-042), carried loan interest and repaid manure plans (`52afb75`) and the printed-slip check, hold and release (`e164e2f`). Open: the answers to T15 (a held month's 30-day exemption, month to date on the current month, `loanRecovery` clearing a loan), #66 (link files, waiting on the Play SHA-256 and the host); #65 (production) is on hold until there are real clients. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
 | **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **643 tests in 88 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
@@ -97,7 +97,7 @@ The Leaf intake grid and Rates & month close stay visible. On Rates & month clos
 month list, the finished-bills import, the checklist and the publish work against the API
 for imported months (`12eea12`); entering a rate, the exceptions queue (not shown for an
 imported month, which has none) and the leaf calls start working as those endpoints land. Still to come on the backend: the bill
-engine (live, `221a1c0`), then the printed-slip check: galaboda imports today but may choose calculated bills at any time, so both ways must work.
+engine (live, `221a1c0`) and the printed-slip check (live, `e164e2f`): galaboda imports today but may choose calculated bills at any time, and both ways now work.
 "Where the bills come from" and "How the loan interest is taken" shipped in `970be6f`, so
 the console shows and sends both.
 

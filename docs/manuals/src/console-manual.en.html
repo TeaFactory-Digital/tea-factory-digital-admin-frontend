@@ -261,9 +261,9 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
 </ol>
 <ul>
   <li>Enter each supplier's leaf on the day it is weighed: the advance limit in the app is this month's kilos so far.</li>
-  <li>A published month is locked: its leaf can no longer be changed.</li>
+  <li>A published month is locked: its leaf can no longer be changed, except for a supplier whose bill is held (section 12.1). The page names them.</li>
   <li>To bring in a day's or a month's weighings from the scale's file, use <span class="ui">Import from file</span>. Importing the same file again skips the weighings already recorded.</li>
-  <li>Leaf can be entered for today and the 30 days before it only. An older day still opens, to look at its weighings, without the entry grid.</li>
+  <li>Leaf can be entered for today and the 30 days before it only (a supplier whose bill is held: any day of that month). An older day still opens, to look at its weighings, without the entry grid.</li>
   <li>A weighing over 250 kg makes the console ask before recording it: check the figure, and press Enter again if it is right.</li>
 </ul>
 
@@ -285,9 +285,16 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
 <div class="box warn"><span class="label">Publishing moves the credit limits</span>
 <p>Advance, loan and manure limits are worked out from the last published month, so publishing a month changes every supplier's limits.</p>
 </div>
-<div class="box warn"><span class="label">Coming</span>
-<p>Comparing every calculated bill with the factory's printed slip (with hold and release) will appear here when the server supports it. Until then, do not run a factory on calculated bills for real.</p>
-</div>
+<h2>12.1 Compare with the printed slips</h2>
+<p>The factory's system still prints a slip for every supplier, so each calculated bill must equal its slip before the month is published.</p>
+<ol class="steps">
+  <li>After generating, open the <span class="ui">Compare with printed slips</span> card. For each slip, click <span class="ui">Enter printed</span> and type its Balance in whole rupees, or bring them all in with <span class="ui">Import from file</span> (Printed slip balances).</li>
+  <li>Each bill shows <span class="ui">Matches</span>, <span class="ui">Does not match</span> or <span class="ui">No printed figure</span>.</li>
+  <li>Fix a difference at its cause (a weighing, the rate, an approval entered in one system only) and generate again. Or click <span class="ui">Hold</span> and give a reason of at least 10 characters.</li>
+  <li>Publish. Held bills are left out; the rest appear in the app.</li>
+  <li>When a held bill matches, a manager clicks <span class="ui">Release</span>. After the publish, this publishes that one bill and tells the supplier.</li>
+</ol>
+<p>A held supplier's leaf for that month can still be corrected on Leaf intake, for any day of the month. Their next month's bill is held automatically until the earlier one is released.</p>
 
 <!-- 13 -->
 <h1>13. Rates and month close: imported bills <span class="who">Clerk and manager</span></h1>

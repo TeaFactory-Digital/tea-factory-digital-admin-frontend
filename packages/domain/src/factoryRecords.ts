@@ -114,9 +114,12 @@ export function loanRecovery(
 ): { interest: number; deducted: number; principalRepaid: number; interestCarried: number } {
   const interest = advanceInterestFor(owedAtStart, setting);
   const broughtForward = round2(Math.max(0, interestBroughtForward));
-  const instalment = round2(Math.max(0, Math.min(plannedInstalment, owedAtStart)));
   if ((setting?.recovery ?? 'onTop') === 'withinInstalment') {
     const due = round2(interest + broughtForward);
+    // Capped at what clears the loan **and** the interest due, so the last instalment ends
+    // it (not 10, then 0.10, for ever), and interest still carried after the principal is
+    // repaid is taken on the next bill, within the planned instalment (T15.10, T14.5).
+    const instalment = round2(Math.max(0, Math.min(plannedInstalment, owedAtStart + due)));
     const covered = Math.min(instalment, due);
     return {
       interest,
@@ -125,6 +128,7 @@ export function loanRecovery(
       interestCarried: round2(due - covered),
     };
   }
+  const instalment = round2(Math.max(0, Math.min(plannedInstalment, owedAtStart)));
   return {
     interest,
     deducted: round2(instalment + interest + broughtForward),
@@ -510,7 +514,8 @@ export const IMPORT_COLUMNS: Record<ImportKind, readonly ImportColumn[]> = {
   printedBalances: [
     { key: 'month', type: 'month', required: true, example: '2026-07' },
     { key: 'supplierCode', type: 'text', required: true, example: '5708' },
-    { key: 'finalBalance', type: 'number', required: true, example: '68220' },
+    // Whole rupees only (decided 10 November 2026): a slip's Balance is paid in whole units.
+    { key: 'finalBalance', type: 'number', required: true, decimals: 0, example: '68220' },
   ],
 };
 

@@ -485,8 +485,8 @@ Notes for the implementer:
   **`enableMonthToDate`** (off by default, and `false` in every seed) gates the app's
   "This month so far" on the Account tab: `GET /bills/month-to-date` in the supplier realm
   answers `MonthToDate` (`packages/domain/src/types/app.ts`), or `200 null` while the flag is
-  off. Its month is the supplier's oldest month with an unpublished or held bill, else the
-  month after the factory's newest published month; it carries leaf and approvals, never a
+  off. Its month is the supplier's oldest month with an unpublished bill (a held bill does not
+  count, decided 17 November 2026), else the month after the factory's newest published month; it carries leaf and approvals, never a
   rate, gross or balance. Until that endpoint ships, Configuration neither shows nor sends
   the flag (`MONTH_TO_DATE_ON_SERVER`, §22).
 - **`creditRules` is how much a supplier may borrow, and it is served on the *public*
@@ -1755,8 +1755,12 @@ before the month is published. Each bill is `match`, `mismatch` or `missing`
   before the earlier release is `bills-stale`.
 - Many printed figures at once: the `printedBalances` import (§25). Audit `bill.printed`
   (before and after), `bill.hold`, `bill.release`.
-- **Not on the API yet** (it comes with the bill engine): the console hides all of it behind
-  `SLIP_COMPARISON_ON_SERVER` (§22).
+- **Live** since backend e164e2f (12 November 2026): `SLIP_COMPARISON_ON_SERVER` is on (§22).
+  A printed figure is whole rupees (`422 invalid { field: 'finalBalance', reason:
+  'whole-rupees' }`; `too-many-decimals` in the file); a short hold reason is `422 invalid
+  { field: 'reason', minLength: 10 }`; every slip route answers `factory-sync-on` before
+  `wrong-bill-source`; a stale release is `409 bills-stale { suppliers, count, reason:
+  'figures' }`.
 
 ---
 
@@ -3152,11 +3156,11 @@ ticked.
 ### Factory records (sync off), in BACKEND-TODO #45's order
 
 The console hides each of these until it lands, in one place:
-`apps/admin/src/lib/serverReady.ts`. Remove the line when the endpoint ships. Today it holds
-`IMPORT_KINDS_NOT_ON_SERVER` (`printedBalances`) and `SLIP_COMPARISON_ON_SERVER = false`;
-`BILL_ENGINE_ON_SERVER` (backend 221a1c0),
+`apps/admin/src/lib/serverReady.ts`. Remove the line when the endpoint ships. Since backend
+e164e2f every line is on (`SLIP_COMPARISON_ON_SERVER`, `BILL_ENGINE_ON_SERVER`,
 `OTHER_DEDUCTIONS_ON_SERVER`, `MONTH_TO_DATE_ON_SERVER`, `IMPORT_SKIP_ON_SERVER`,
-`CORRECTIONS_ON_SERVER` and `OPENING_BALANCES_ON_SERVER` are on.
+`CORRECTIONS_ON_SERVER`, `OPENING_BALANCES_ON_SERVER`) and `IMPORT_KINDS_NOT_ON_SERVER` is
+empty.
 
 - [x] `PATCH /admin/config` accepting `billSettings.source` and `loanInterest.recovery`,
       with `409 bill-source-blocked` (backend `970be6f`)
@@ -3386,7 +3390,5 @@ problem (a weighing in a month since published); the shared row checks still app
 - `dryRun: true` checks the file and answers what **would** happen (`saved`, `skipped`,
   `problems`) without saving anything, echoing `dryRun: true`. The import dialog asks this
   first.
-- **Not on the API yet** (BACKEND-TODO #45): the console sends no `dryRun` or
-  `duplicates` until `IMPORT_SKIP_ON_SERVER` (§22), since an API that ignored `dryRun`
-  would save the file, and meanwhile a supplier code already on the roll still refuses the
-  whole file with `supplier-code-taken`.
+- **Live** since backend e4a9f40: `IMPORT_SKIP_ON_SERVER` is on (§22), so the console sends
+  `dryRun` and `duplicates`.

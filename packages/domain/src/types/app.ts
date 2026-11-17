@@ -132,8 +132,10 @@ export interface BillSavingsSummary {
  * month whose bill is **next**, before that bill is published. Behind the app flag
  * `enableMonthToDate`; `null` when it is off or there is nothing to show.
  *
- * The month is the supplier's oldest month that still has an unpublished or held bill;
- * otherwise the month after the factory's newest published month. So a finished month stays
+ * The month is the supplier's oldest month that still has an unpublished bill (a **held**
+ * bill does not count: the card moves on to the current month and the held month simply has
+ * no bill until it is released, decided 17 November 2026); otherwise the month after the
+ * factory's newest published month. So a finished month stays
  * here, complete, until its bill is out, and a supplier with no leaf (so no bill) in a month
  * moves on once the factory publishes it. No money: the rate is set after the auction.
  */

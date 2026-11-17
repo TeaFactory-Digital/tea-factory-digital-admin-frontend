@@ -13,7 +13,10 @@
  *  - **Open**: the month accepts entries, and the session grid is offered.
  *  - **Locked**: the month is published, so the server would refuse (BR-108).
  *    The grid is not rendered at all; a disabled form that fails on submit is a
- *    worse way to say the same thing.
+ *    worse way to say the same thing. **Except for held bills** (factory-records §5,
+ *    step 6): a supplier whose bill was held back from the publish can still have
+ *    leaf entered and voided, with no 30-day limit, so the screen names them and
+ *    offers the grid and Void for them.
  *  - **Read-only user**: `deliveries: R` (clerk, manager). They see the day and
  *    its rows, and no entry grid, because §12.1 gives writing to the weigher and
  *    the accountant.
@@ -50,6 +53,7 @@ import { ImportMenu } from '@/components/ImportMenu';
 import { EntrySession } from './EntrySession';
 import { VoidDeliveryDialog } from './VoidDeliveryDialog';
 import { useDaySummary, useDeliveries } from './hooks';
+import { useComparesWithSlips, useSlipComparison } from '@/modules/bills/hooks';
 
 export function DeliveriesScreen() {
   const { t } = useTranslation();
@@ -62,9 +66,6 @@ export function DeliveriesScreen() {
    * laptop still set to UTC would otherwise open yesterday's sheet after 18:30.
    */
   const date = params.get('date') ?? colomboToday();
-  // More than 30 days back (the factory's answer, 5 November 2026): the day can be looked
-  // at, not entered. The server refuses it with `422 invalid` (`reason: 'too-old'`).
-  const tooOld = leafDateProblem(date, colomboToday()) === 'too-old';
   const point = params.get('collectionPoint') ?? '';
   const page = Number(params.get('page') ?? 0);
   const includeVoided = params.get('includeVoided') === 'true';
@@ -87,6 +88,24 @@ export function DeliveriesScreen() {
 
   const { data, isPending, error, refetch } = useDeliveries(query);
   const { data: day } = useDaySummary(date, point || undefined);
+
+  /**
+   * A published month still open for its held bills: who they are, from the slip
+   * comparison (only where bills are calculated and compared).
+   */
+  const comparesWithSlips = useComparesWithSlips();
+  const slips = useSlipComparison(day?.monthKey ?? '', comparesWithSlips && Boolean(day?.locked));
+  const heldCodes = useMemo(
+    () => (slips.data?.rows ?? []).filter((row) => row.held).map((row) => row.supplierCode),
+    [slips.data],
+  );
+  const heldOnly = Boolean(day?.locked) && heldCodes.length > 0;
+  const locked = Boolean(day?.locked) && !heldOnly;
+
+  // More than 30 days back (the factory's answer, 5 November 2026): the day can be looked
+  // at, not entered. The server refuses it with `422 invalid` (`reason: 'too-old'`). A held
+  // supplier's month has no such limit (decided 17 November 2026).
+  const tooOld = leafDateProblem(date, colomboToday(), { held: heldOnly }) === 'too-old';
 
   function setParam(key: string, value: string | null) {
     const next = new URLSearchParams(params);
@@ -164,7 +183,8 @@ export function DeliveriesScreen() {
         cell: (info) => {
           const row = info.row.original;
           if (!row.voidedAt) {
-            return canWrite && !day?.locked ? (
+            const open = !day?.locked || heldCodes.includes(row.supplierCode);
+            return canWrite && open ? (
               <Button
                 size="sm"
                 variant="ghost"
@@ -184,7 +204,7 @@ export function DeliveriesScreen() {
         },
       },
     ],
-    [t, canWrite, day?.locked],
+    [t, canWrite, day?.locked, heldCodes],
   );
 
   return (
@@ -213,7 +233,12 @@ export function DeliveriesScreen() {
 
       {/* Locked is stated once, at the top, rather than on every control it
           disables: and it names the month, because the fix is picking another day. */}
-      {day?.locked ? (
+      {heldOnly && day ? (
+        <Notice tone="info">
+          <Lock className="mt-xxs size-icon-sm shrink-0" aria-hidden />
+          {t('deliveries.heldOnly', { month: formatMonthKey(day.monthKey), suppliers: heldCodes.join(', ') })}
+        </Notice>
+      ) : locked && day ? (
         <Notice tone="warning">
           <Lock className="mt-xxs size-icon-sm shrink-0" aria-hidden />
           {t('deliveries.monthLocked', { month: formatMonthKey(day.monthKey) })}
@@ -274,7 +299,7 @@ export function DeliveriesScreen() {
          * and "all points" is a filter, not a place. Asking for one is better than
          * defaulting, which would file a day's leaf against the wrong shed.
          */}
-        {canWrite && !day?.locked && !tooOld ? (
+        {canWrite && !locked && !tooOld ? (
           point ? (
             <div className="shrink-0 border-b border-divider bg-surface-variant">
               <EntrySession key={`${date}-${point}`} date={date} collectionPoint={point} />

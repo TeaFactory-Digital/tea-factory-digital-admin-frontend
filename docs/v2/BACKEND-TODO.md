@@ -1,107 +1,59 @@
 # Backend to-do
 
-Only the work still open (11 November 2026). Finished work is taken out; git history keeps it.
+Only the work still open (17 November 2026). Finished work is taken out; git history keeps it.
 The rules for every item are in [`factory-records.md`](./factory-records.md) (the console)
 and `packages/domain` (please `vendor:pull` after each console change).
 
 ## Next
 
-Staging: galaboda's bill source is set to "Imported" (7 November), and staging deploys by
-hand after migrating (`autoDeploy: false`, `5ae415a`).
+#45 is built: the bill engine (221a1c0), the carried interest and repaid manure plans
+(52afb75) and the printed-slip check, hold and release (e164e2f). The console has
+`SLIP_COMPARISON_ON_SERVER` on and the `printedBalances` import offered. Staging deploys by
+hand after migrating (`autoDeploy: false`); galaboda's bill source is "Imported".
 
 | # | What | Priority |
 |---|------|----------|
-| 45 | Factory records: the printed-slip check, hold and release (commit B). Galaboda may choose either way, so both must work | **High, first** |
-| 65 | A production environment: no production API exists yet | Before the first store release |
+| T15 | Answers to your T15 questions: two small changes (below) | **Next** |
+| 65 | A production environment | **On hold** (your note, 12 November): until there are real clients; staging is the only environment |
 | 66 | Universal-link files on each factory's domain: waits for the Play signing SHA-256 and the host | Before the first store release |
 | - | Later: factory sync (Phase 10), the push sender, the five-year job (#59), a reporting replica | Later |
 
-## 45. Factory records without the factory system
+## T15. Your questions on commit B (answered 17 November)
 
-The office keeps suppliers, daily leaf, monthly rates, bills, opening balances and counter
-credit requests in the console while the sync is off. **Contract:** factory-records.md.
+**Please `vendor:pull`** first: the shared package changed for two of them.
 
-**Still to build:** **the printed-slip check and hold** (commit B; §5, "Comparing with the
-printed slips", steps 1 to 8): `GET /admin/months/:monthKey/slip-comparison`,
-`PUT /admin/bills/:id/printed`, `POST /admin/bills/:id/hold` and `/release`, the
-`printedBalances` import, `409 bills-mismatch` on the publish, the automatic hold of a
-supplier's next bill (`heldForMonth`), and releases in order (`409 earlier-bill-held`). The
-month lock is relaxed for a held supplier's leaf only, as agreed. No factory goes live on
-calculated bills until this ships.
-
-**From your T14 (bill engine commit A, 221a1c0), done on the console side:**
-`BILL_ENGINE_ON_SERVER` is on; the new refusals have text in three languages
-(`month-not-ended`, `cut-over-month` `required`, `month-locked` `behind`,
-`bill-source-blocked` `payment-corrections-pending` with its count, `bills-stale` `figures`
-naming the suppliers, and the wider `earlier-month-unpublished`); the bill run card names
-`staleSuppliers`. Two things for you:
-
-- **Please `vendor:pull`:** `loanRecovery` now takes `interestBroughtForward` and returns
-  `interestCarried` (T14.5): under `withinInstalment`, the interest the instalment cannot
-  cover. Store it per supplier with the bill and pass it back on the next one; it is never
-  added to the loan. `BillRun` gains `reasons` and `staleSuppliers`.
-- **T14.8, a manure plan already repaid:** it does **not** count. Only plans with something
-  still owed add their instalments; once the manure recovered since a plan was approved
-  covers it (oldest plan first), it drops out.
-
-**Check:** the list in factory-records §9.
-
-## 56. Savings interest: credit it once a year
-
-**Scope:** only for a factory whose bills are **calculated**
-here (`billSettings.source: 'calculated'`), posted by the bill engine's publish. Where the
-bills are **imported**, the factory's own system pays the interest and the slip's To-date
-carries it; post nothing (`savings.annualInterestRate` is then for display only).
-
-**Decided by the factory:**
-
-- **Simple interest.** A month earns `base × annualInterestRate ÷ 100 ÷ 12`; nothing earned in
-  a year earns interest in that year.
-- **On the month's lowest balance**: the lower of the balance before the month's ledger
-  entries and after them, never below zero. Contributions arrive with the month's bill, after
-  the month, so an ordinary month earns on its opening balance; in the month a withdrawal is
-  paid, on the balance after it.
-- **Credited once a year, in time for the withdrawal month.** The year is the twelve months
-  ending the month **before** `savings.withdrawalMonth` (April: April to March), posted with
-  that month, so it is in the balance a supplier may take out in April.
-
-The arithmetic is in the shared package (already in your vendored copy):
-`interestYear(policy, creditYear)` gives the months, and `savingsInterestFor(entries, year,
-rate)` gives each month's opening, closing, base, rate and interest, and the total, each month
-rounded to the cent. Tests: `apps/admin/src/test/savingsInterest.test.ts` in the console repo
-(20,000 all year at 6% is 1,200.00; 20,000 less a 15,000 withdrawal with 2,000 saved earns 35.00
-that month).
-
-**What it needs on your side:**
-
-- When the month `toMonthKey` is **published** (or its imported bills are), for each supplier
-  with a savings ledger, post one `SavingsEntrySource` `interest` entry with `monthKey =
-  toMonthKey`, `amount = total`, and a note naming the year and rate ("Interest 2026-04 to
-  2027-03"). None when the total is 0 (the default rate is 0%).
-- **Once only.** A month published again (a replaced import, R18) must not post a second
-  entry: key it on supplier + `toMonthKey`, and recompute in place if the month's entries
-  changed. `savingsInterestFor` ignores `interest` entries inside the year, so working it out
-  again gives the same figure.
-- **The rate in force each month.** `annualInterestRate` is one value in `client_config`
-  today. Please keep its changes with the month they apply from and pass
-  `savingsInterestFor` a function; until there is a history, the rate at posting time is
-  used for the whole year, which is right only while nobody changes it mid-year.
-- **Imported factories.** If a factory's own system already credits interest on its slips,
-  the imported ledger has it and posting ours would pay it twice. Galaboda's slips show no
-  interest line today; a factory that does is configured with rate 0 here.
-- Audit: an `interest` posting is the system's, under the publishing user's month close.
-- The app needs nothing new: the entry is a ledger row and moves the balance it already
-  shows.
-
-**Check:** a supplier at 20,000 from March 2026 with the rate at 6%: publishing March 2027
-posts one entry of 1,200.00 with `monthKey 2027-03`; publishing March 2027 again posts
-nothing new; at 0% nothing is posted.
-
+1. **A held supplier's month has no 30-day limit** (T15.8, the factory's decision). Leaf for a
+   supplier whose bill for that month is held may be entered for any day of the month,
+   however long ago: `leafDateProblem(date, today, { held: true })` no longer answers
+   `too-old`. A day after today is still refused. Please pass `held` on `POST
+   /admin/deliveries` (every row's supplier held in that month) and on the `deliveries`
+   import row by row. The console's leaf screen now names the held suppliers on a
+   published day and offers them the grid and Void.
+2. **Month to date moves on** (T15.9, the factory's decision). A **held** bill no longer
+   keeps `GET /bills/month-to-date` on its month: the month is the supplier's oldest month
+   with an **unpublished** bill (held ones skipped), else the month after the factory's
+   newest published month. The held month just has no bill ("No bill is available yet")
+   until it is released. The `MonthToDate` comment in `types/app.ts` says so (vendor:pull).
+3. **`loanRecovery` clears a loan** (T15.10 and the T14.5 follow-up, changed in the shared
+   package): under `withinInstalment` the instalment is now capped at what is owed **plus
+   the interest due**, so the last instalment ends the loan (Rs. 1,000 at 1% deducts 1,010
+   and repays all 1,000). Interest still carried after the principal is repaid is taken on
+   the next bill, within the planned instalment (`loanRecovery(0, plan, setting, carried)`
+   deducts it). So keep calling it while either the loan or the carried interest is above 0.
+   `onTop` is unchanged.
+4. **T15.7, a held bill kept on recalculation with no leaf left:** agreed, keep it. It
+   charges nothing (a month without leaf), and it stays open so the leaf can be entered.
+5. **T15.11, `MonthSummary.open` false with held bills:** fine. The close screen opens a held
+   row by `row.held` and shows release by `counts.held`, never by `open`.
+6. **T15.2 to T15.6:** the console and its mock now match: whole rupees on the printed
+   figure (`decimals: 0` on `printedBalances.finalBalance`, `whole-rupees` on the form),
+   `factory-sync-on` before `wrong-bill-source` on every slip route, a stale release with
+   `suppliers`/`count`/`reason: figures`, and `AdminBill.loanInterestCarried` in the type.
 
 ## 65. A production environment
 
-There is **no production API yet** (6 November 2026): only staging, a free instance that
-sleeps. The app's release build carries a placeholder origin
+**On hold** until there are real clients (your note, 12 November 2026). There is no
+production API: only staging, a free instance that sleeps. The app's release build carries a placeholder origin
 (`https://production-api-not-set.invalid/v1`) and **refuses to start** on it, so no store
 build can ship until this exists.
 
@@ -160,10 +112,5 @@ Android's verified intent filter is in.
 ## When you ship one, tell me
 
 The console hides each unfinished feature in one file, `apps/admin/src/lib/serverReady.ts`,
-so the office never meets a `404`. When an item above ships, tell me (or change the line in
-the same PR) and the feature appears:
-
-| Console feature | Waits for | Line in `serverReady.ts` |
-|---|---|---|
-| Import → Printed slip balances | `POST /admin/imports/printedBalances` | `IMPORT_KINDS_NOT_ON_SERVER` (the other imports are live) |
-| Rates & month close: "Compare with printed slips", the checklist step, held badges | `slip-comparison`, `printed`, `hold`, `release` | `SLIP_COMPARISON_ON_SERVER = false` |
+so the office never meets a `404`. Since e164e2f every line there is on and no import kind
+is held back. When a new endpoint ships, tell me (or change the line in the same PR).

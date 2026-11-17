@@ -2421,6 +2421,7 @@ export const en = {
   'deliveries.kgs': 'Kilos',
   'deliveries.monthLocked':
     '{{month}} is published, so nothing more can be recorded or voided in it. Bills and payouts are built from the leaf as it stands.',
+  'deliveries.heldOnly': '{{month}} is published. Leaf can still be entered or voided only for the suppliers whose bill is held: {{suppliers}}. Any day of the month, however long ago.',
   'deliveries.tooOld': 'This day is more than {{days}} days ago, so leaf can no longer be entered for it. Its rows can still be looked at.',
   'deliveries.outlierConfirm':
     '{{kgs}} is more than {{limit}}, the heaviest weighing the factory expects. Press Enter again to record it as typed.',
@@ -2948,7 +2949,7 @@ export const en = {
   'slips.printedBody': 'Our bill pays {{ours}}. Type the Balance exactly as printed on the factory system’s slip.',
   'slips.printedLabel': 'Balance on the printed slip (Rs.)',
   'slips.printedHint': 'Leave empty to clear it.',
-  'slips.printedInvalid': 'Enter an amount of 0 or more.',
+  'slips.printedInvalid': 'Enter whole rupees, 0 or more: the printed Balance has no cents.',
   'slips.printedSaved': 'Printed balance saved for {{code}}',
   'slips.holdTitle': 'Hold the bill of {{code}} {{name}}',
   'slips.holdBody': 'A held bill is left out of the publish: the supplier does not see it in the app until it is fixed and released. The rest of the month publishes as usual.',

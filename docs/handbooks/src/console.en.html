@@ -264,14 +264,14 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
 <p>An imported bill is never edited in the console. A correction is made in the factory system and the month imported again.</p>
 
 <h2>6.3 Mode C: sync off, bills calculated</h2>
-<p>The console works the bill out from what the office entered. Making and publishing these bills works today; the comparison with the printed slips below is <span class="tag soon">Coming</span>, and no factory works this way for real before it. The factory system still prints its own slip, so before publishing, <strong>every bill is compared with its printed slip</strong>:</p>
+<p>The console works the bill out from what the office entered. Making and publishing these bills, and the comparison with the printed slips below, work today. The factory system still prints its own slip, so before publishing, <strong>every bill is compared with its printed slip</strong>:</p>
 <ol>
   <li>The office enters each printed slip's <strong>Balance</strong> (the amount paid), one at a time or from a file (Import → Printed slip balances). It is kept even if the bills are made again.</li>
   <li>Each bill is <strong>match</strong> (equal to the rupee), <strong>mismatch</strong>, or <strong>missing</strong> (no printed figure yet).</li>
   <li><strong>A difference is fixed at its cause</strong> (table below), in whichever system is wrong. Then make the bills again and compare again.</li>
   <li><strong>Or the bill is held</strong>, with a reason of at least 10 characters. Publish is refused while any bill is mismatch or missing and not held.</li>
   <li><strong>Publish leaves held bills out.</strong> The rest of the month is published. A held bill is not shown in the app, its savings are not posted and it is not paid.</li>
-  <li><strong>A held bill stays open</strong>: that supplier's leaf for the month can still be corrected and other deductions edited. Making the bills again on a published month recalculates only the held ones.</li>
+  <li><strong>A held bill stays open</strong>: that supplier's leaf for the month can still be corrected (any day of the month, with no 30-day limit) and other deductions edited. Making the bills again on a published month recalculates only the held ones.</li>
   <li><strong>Release</strong> (manager): only when the bill now matches and its kilos equal the supplier's leaf. After the publish, release publishes that one bill and notifies that supplier.</li>
   <li><strong>The next month does not wait.</strong> It is published for everyone, but that supplier's next bill is held automatically, because its coins, debt and loan balance come from the held one. Release the earlier one first, recalculate the later, compare, release.</li>
 </ol>
@@ -359,7 +359,7 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
   <li><strong>The last 30 days only:</strong> leaf can be entered or imported for today and the 30 days before it, never for a day after today. An older day can still be opened to look at, without the grid.</li>
   <li><strong>A weighing over 250 kg is asked about, never refused:</strong> the grid asks the clerk to press Enter again, and the month close lists it as an unusual weighing to check against the slip. Leaf is recorded as one net figure: the kilos paid for.</li>
   <li>A weighing is never deleted. It is <strong>voided with a reason</strong>; the row stays, marked.</li>
-  <li><strong>Exception:</strong> if a supplier's bill for that month is held (section 6.3), their leaf may still be entered or voided after the publish.</li>
+  <li><strong>Exception:</strong> if a supplier's bill for that month is held (section 6.3), their leaf may still be entered or voided after the publish, for any day of that month (the 30-day limit does not apply). The screen names the held suppliers.</li>
   <li>Import from file: a day's or a month's weighings at once. Importing again skips weighings already recorded (section 23).</li>
   <li>For the advance: enter each supplier's leaf on the day it is weighed. The advance limit is this month's kilos so far, so it is 0 until leaf is recorded.</li>
 </ul>
@@ -473,6 +473,7 @@ If October's gross were only 30,000:
   <li>The factory chooses how it is taken: <strong>on top</strong> of the instalment (the default), or <strong>inside</strong> it.</li>
   <li>The month's charge in rupees is the slip's "Loan Interest" line.</li>
   <li><strong>Inside the instalment, in a poor month:</strong> if the instalment (capped by the gross) is smaller than the interest, the interest it cannot cover is taken from the next bill. It is never added to the loan, so it never earns interest.</li>
+  <li><strong>The last instalment clears the loan:</strong> inside the instalment, it takes the interest due and all that is left of the loan. Interest still carried after that is taken on the next bill.</li>
 </ul>
 <div class="box example"><span class="label">Example: Rs. 50,000 over 10 months at 1% a month</span>
 <table>
@@ -740,13 +741,13 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
   <tr><td>Other deductions</td><td>Other deductions with reasons</td><td>No bill, month published, reason missing</td></tr>
   <tr><td>Transport rates</td><td>Suppliers' own rates (empty = back to the point's)</td><td>Unknown supplier</td></tr>
   <tr><td>Finished bills</td><td>A month's bills as printed</td><td>Section 6.2</td></tr>
-  <tr><td>Printed slip balances <span class="tag soon">Coming</span></td><td>Each slip's paid amount, for comparison</td><td>No bill, month published</td></tr>
+  <tr><td>Printed slip balances</td><td>Each slip's paid amount, for comparison</td><td>No bill, month published</td></tr>
 </table>
 <p>A file whose month was published while it waited is refused with "send the same file again". A decision that meets a publish in progress says "busy, try again"; nothing is saved.</p>
 
 <!-- 24 -->
 <h1>24. What works today and what is coming</h1>
-<p>As of 11 November 2026. The console hides each unfinished feature until the server supports it, so the office never meets an error page.</p>
+<p>As of 17 November 2026. The console hides each unfinished feature until the server supports it, so the office never meets an error page.</p>
 <table>
   <tr><th>Area</th><th>Status</th></tr>
   <tr><td>App management: queues, change requests, inquiries, news, banners, pages, notifications, configuration, users, reports, audit</td><td><span class="tag now">Working</span></td></tr>
@@ -759,7 +760,7 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
   <tr><td>Correcting a balance found wrong after the first bill</td><td><span class="tag now">Working</span></td></tr>
   <tr><td>App "This month so far"</td><td><span class="tag now">Working</span></td></tr>
   <tr><td>Calculated bills: making and publishing them</td><td><span class="tag now">Working</span></td></tr>
-  <tr><td>Calculated bills: the printed-slip check, hold and release</td><td><span class="tag soon">Coming</span>: needed before any factory works this way for real</td></tr>
+  <tr><td>Calculated bills: the printed-slip check, hold and release</td><td><span class="tag now">Working</span></td></tr>
   <tr><td>Later: factory sync, importing past months as history</td><td><span class="tag soon">Later</span></td></tr>
 </table>
 

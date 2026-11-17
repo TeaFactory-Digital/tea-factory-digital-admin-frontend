@@ -143,9 +143,17 @@ export function earliestLeafDay(today: string): string {
  * Why leaf cannot be entered for `date`, or `null` when it can. `today` is the Colombo day
  * (`colomboDayOf(new Date())`). The API refuses either with `422 invalid`,
  * `details: { field: 'date', reason }`; the publish lock is checked separately.
+ *
+ * `held`: the leaf is for a supplier whose bill for that month is **held** (factory-records
+ * §5, step 6). Their month has no 30-day limit (decided 17 November 2026): correcting a
+ * weighing is how a held bill is brought into line with the printed slip, however long ago.
  */
-export function leafDateProblem(date: string, today: string): 'future' | 'too-old' | null {
+export function leafDateProblem(
+  date: string,
+  today: string,
+  options: { held?: boolean } = {},
+): 'future' | 'too-old' | null {
   if (date > today) return 'future';
-  if (date < earliestLeafDay(today)) return 'too-old';
+  if (!options.held && date < earliestLeafDay(today)) return 'too-old';
   return null;
 }

@@ -2463,7 +2463,9 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
         // A day after today (Colombo) is refused, as the API does (ADR-040), and so is one
         // more than 30 days back (5 November 2026). A suspended supplier's leaf is taken:
         // the month's exceptions name them (R24).
-        const dateProblem = row.date ? leafDateProblem(row.date, colomboDayOf(mockNow())) : null;
+        // A held supplier's month has no 30-day limit (decided 17 November 2026).
+        const held = Boolean(row.date && supplier && heldBill(monthKeyOf(row.date), supplier.id));
+        const dateProblem = row.date ? leafDateProblem(row.date, colomboDayOf(mockNow()), { held }) : null;
         if (dateProblem === 'future') push('date', 'not-allowed');
         if (dateProblem === 'too-old') push('date', 'too-old');
         if (row.date && lockedFor(monthKeyOf(row.date), supplier?.id)) push('date', 'month-locked');
@@ -4310,7 +4312,11 @@ export const handlers: HttpHandler[] = [
 
     // A day after today (ADR-040), or more than 30 days back (the factory's answer,
     // 5 November 2026): `422 invalid`, as the API does.
-    const dateProblem = leafDateProblem(batch.date, colomboDayOf(mockNow()));
+    // A held supplier's month has no 30-day limit (decided 17 November 2026): a batch of
+    // only held suppliers in a published month may go back as far as it needs to.
+    const allHeld =
+      batch.rows.length > 0 && batch.rows.every((row) => Boolean(row.supplierId && heldBill(monthKey, row.supplierId)));
+    const dateProblem = leafDateProblem(batch.date, colomboDayOf(mockNow()), { held: allHeld });
     if (dateProblem) {
       return fail({
         status: 422,
@@ -8670,6 +8676,9 @@ export const handlers: HttpHandler[] = [
     await delay(LATENCY_MS);
     const auth = authorize(request, 'billing');
     if ('response' in auth) return auth.response;
+    // The sync gate first, as every write here (T15.4, ADR-033).
+    const syncOn = refuseWhileSyncOn(request);
+    if (syncOn) return syncOn;
     if (!comparesWithSlips(request)) {
       return fail({
         status: 409,
@@ -8687,6 +8696,9 @@ export const handlers: HttpHandler[] = [
     await delay(LATENCY_MS);
     const auth = authorize(request, 'billing', 'write');
     if ('response' in auth) return auth.response;
+    // The sync gate first, as every write here (T15.4, ADR-033).
+    const syncOn = refuseWhileSyncOn(request);
+    if (syncOn) return syncOn;
     if (!comparesWithSlips(request)) {
       return fail({
         status: 409,
@@ -8704,6 +8716,15 @@ export const handlers: HttpHandler[] = [
     if (value !== null && !(typeof value === 'number' && Number.isFinite(value) && value >= 0)) {
       return fail({ status: 422, code: 'invalid', message: 'Enter the Balance printed on the slip.' });
     }
+    // Whole rupees only (decided 10 November 2026): refused, never rounded (T15.3).
+    if (value !== null && !Number.isInteger(value)) {
+      return fail({
+        status: 422,
+        code: 'invalid',
+        message: 'A printed Balance is in whole rupees.',
+        details: { field: 'finalBalance', reason: 'whole-rupees' },
+      });
+    }
     const before = bill.printedFinalBalance ?? null;
     bill.printedFinalBalance = value === null ? null : round2(value);
     recordBy(auth, 'bill.printed', 'bill', bill.id, {
@@ -8718,6 +8739,9 @@ export const handlers: HttpHandler[] = [
     await delay(LATENCY_MS);
     const auth = authorize(request, 'billing', 'write');
     if ('response' in auth) return auth.response;
+    // The sync gate first, as every write here (T15.4, ADR-033).
+    const syncOn = refuseWhileSyncOn(request);
+    if (syncOn) return syncOn;
     if (!comparesWithSlips(request)) {
       return fail({
         status: 409,
@@ -8732,7 +8756,12 @@ export const handlers: HttpHandler[] = [
     }
     const { reason } = (await request.json().catch(() => ({}))) as { reason?: string };
     if (!reason || reason.trim().length < HOLD_REASON_MIN) {
-      return fail({ status: 422, code: 'invalid', message: 'Say why the bill is held.' });
+      return fail({
+        status: 422,
+        code: 'invalid',
+        message: 'Say why the bill is held.',
+        details: { field: 'reason', minLength: HOLD_REASON_MIN },
+      });
     }
     bill.heldAt = new Date().toISOString();
     bill.heldByName = auth.user.name;
@@ -8750,6 +8779,8 @@ export const handlers: HttpHandler[] = [
     await delay(LATENCY_MS);
     const auth = authorize(request, 'ratesAndMonthClose', 'approve');
     if ('response' in auth) return auth.response;
+    const syncOn = refuseWhileSyncOn(request);
+    if (syncOn) return syncOn;
     const bill = state.bills.find((one) => one.id === params.id);
     if (!bill) return fail({ status: 404, code: 'not-found', message: 'No such bill.' });
     if (!bill.heldAt || bill.publishedAt) {
@@ -8775,7 +8806,7 @@ export const handlers: HttpHandler[] = [
         status: 409,
         code: 'bills-stale',
         message: 'The previous bill was released after this one was calculated. Re-generate it first.',
-        details: { previousMonthKey: previous.monthKey },
+        details: { suppliers: [bill.supplierCode], count: 1, reason: 'figures' },
       });
     }
     // Leaf corrected after the bill was calculated: recalculate before comparing.
@@ -8789,7 +8820,7 @@ export const handlers: HttpHandler[] = [
         status: 409,
         code: 'bills-stale',
         message: 'The leaf has changed since this bill was calculated. Re-generate it first.',
-        details: { billKgs: bill.totalKgs, liveKgs },
+        details: { suppliers: [bill.supplierCode], count: 1, reason: 'figures' },
       });
     }
     if (compareWithSlip(bill.finalBalance, bill.printedFinalBalance) !== 'match') {

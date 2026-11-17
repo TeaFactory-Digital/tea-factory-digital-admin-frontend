@@ -275,9 +275,8 @@ enters every approval in that system (§1), and our calculation follows the prin
 live, and any difference is a defect in one of the two inputs (a leaf weighing, a rate, an
 approval not entered in one of the systems). **A factory may choose either way at any
 time** (galaboda imports today, decided 7 November 2026), so both must work. Generating
-and publishing calculated bills is live (backend 221a1c0, `BILL_ENGINE_ON_SERVER`); the
-printed-slip check below is still to come, and no factory goes live on calculated bills
-before it.
+and publishing calculated bills is live (backend 221a1c0, `BILL_ENGINE_ON_SERVER`), and so
+is the printed-slip check, hold and release below (e164e2f, `SLIP_COMPARISON_ON_SERVER`).
 
 `computeBillAmounts` (`packages/domain/src/bill.ts`) is the calculation; do not write a
 second one. **It reads exactly like the factory's printed slip** (galaboda, July 2026,
@@ -348,8 +347,18 @@ cannot take the same number.
 | Bill numbers | Our own running serial; a regenerated month keeps each supplier's number |
 | Release | No four-eyes beyond `ratesAndMonthClose: A` |
 | Printed figures | Whole rupees only; anything else refused |
-| Publishing before the printed-slip check exists | Allowed on staging; no factory goes live on calculated bills until the check ships |
+| Publishing before the printed-slip check exists | Moot: the check shipped with e164e2f |
 | Savings to date | Less a withdrawal paid on the bill |
+
+**Decided 17 November 2026** (commit B's questions, T15):
+
+| Point | Rule |
+|---|---|
+| A held supplier's month and the 30-day leaf limit | **Exempt**: leaf for any day of that month (`leafDateProblem(..., { held: true })`) |
+| Month to date for a held supplier | **The current month**, never the held one; the held month has no bill until released |
+| `withinInstalment` near the end of a loan | The instalment is capped at what is owed **plus the interest due**, so the last one clears the loan; interest still carried after the principal is repaid is taken on the next bill, within the planned instalment |
+| A held bill with all its leaf voided, on recalculation | Kept (it charges nothing), so its leaf can be entered again |
+| `MonthSummary.open` with held bills | `false`; the console opens held rows by `row.held` and release by `counts.held` |
 
 Generate → review on the bills screen → **compare with the printed slips** → publish
 (four-eyes). Publishing makes the bills visible in the app and fires `billPublished`.
@@ -381,7 +390,9 @@ Only for `source: 'calculated'` with the sync off; any other factory answers
    not posted and their withdrawals not settled; a payout run does not pay them. **The app
    must not return a held bill**; the app then says "No bill is available yet".
 6. **A held bill stays open after the publish.** Its supplier's leaf for that month may be
-   entered or voided, its other deductions edited, and `generate` on the published month
+   entered or voided (any day of the month: **no 30-day limit** for a held supplier's month,
+   decided 17 November 2026; the leaf screen names the held suppliers on a published day),
+   its other deductions edited, and `generate` on the published month
    recalculates **only the held bills** (every published bill stays exactly as it was).
 7. **Release** (`POST /admin/bills/:id/release`, `ratesAndMonthClose: A`) needs the bill to
    match now (`409 bill-still-mismatched`), and its kilos to equal the supplier's live leaf

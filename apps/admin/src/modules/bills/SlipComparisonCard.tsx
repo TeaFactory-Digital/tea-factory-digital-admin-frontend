@@ -204,7 +204,8 @@ function PrintedDialog({ row, onClose }: { row: SlipComparisonRow; onClose: () =
   const save = useSetPrinted();
   const [value, setValue] = useState(row.printed === null ? '' : String(row.printed));
   const amount = value.trim() === '' ? null : Number(value);
-  const invalid = amount !== null && !(Number.isFinite(amount) && amount >= 0);
+  // Whole rupees, 0 or more (decided 10 November 2026; the server says `whole-rupees`).
+  const invalid = amount !== null && !(Number.isInteger(amount) && amount >= 0);
 
   async function submit() {
     try {

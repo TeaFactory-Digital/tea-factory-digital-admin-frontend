@@ -1192,6 +1192,12 @@ export interface AdminBill extends GreenLeafBill, SlipCheck {
   publishedAt: string | null;
   /** Payable, but nowhere to pay it. A payout run holds these lines rather than dropping them. */
   hasBankDetails: boolean;
+  /**
+   * On a calculated bill: the loan interest an instalment could not cover under
+   * `withinInstalment`, owed on the next bill (`loanRecovery`'s `interestCarried`, backend
+   * 52afb75). It explains a difference with the printed slip. Absent elsewhere.
+   */
+  loanInterestCarried?: number | null;
 }
 
 /**
