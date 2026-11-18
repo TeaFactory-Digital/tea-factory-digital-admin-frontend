@@ -114,4 +114,26 @@ describe('the bill engine, as the factory decided it', () => {
     })!;
     expect(bill.deductions.manure).toBe(2000);
   });
+
+  it('clears a loan with its last instalment under withinInstalment (backend 1e5401b)', () => {
+    const supplier = supplierWith({ loan: 1000 });
+    const bill = billFor(supplier, leaf(supplier.id, 400), {
+      loanInterest: { monthlyRatePercent: 1, recovery: 'withinInstalment' },
+      loanInstalmentsBefore: new Map([[supplier.id, 9]]),
+    })!;
+    // Not capped at the Rs. 1,000 balance: the Rs. 10 interest and all of the loan.
+    expect(bill.deductions.loansAdvance).toBe(1010);
+    expect(bill.carryForward.loanBalance).toBe(0);
+    expect(bill.loanInstalmentNo).toBe(10);
+  });
+
+  it('numbers a bill only when it repays some of the loan', () => {
+    const repaid = supplierWith({ loan: 0 });
+    expect(billFor(repaid, leaf(repaid.id, 400))!.loanInstalmentNo).toBeNull();
+    // An overpaid loan counts as nothing owed.
+    const overpaid = supplierWith({ loan: -50 });
+    const bill = billFor(overpaid, leaf(overpaid.id, 400))!;
+    expect(bill.deductions.loansAdvance).toBe(0);
+    expect(bill.loanInstalmentNo).toBeNull();
+  });
 });

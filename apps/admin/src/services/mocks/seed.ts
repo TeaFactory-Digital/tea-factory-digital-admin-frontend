@@ -1681,7 +1681,20 @@ function deductionLinesFor(
     // (§21.10) and that request type is not built, so the figure is still the fixture's.
     tea: leaf && index % 5 === 0 ? 450 : 0,
     savings: savingsDeductionFor(totalKgs, supplier.savingsPerKg),
-    loansAdvance: instalment('loan', supplier.creditBalances.loan),
+    // The plan's instalment under the gross share, **not** capped at the balance:
+    // `loanRecovery` caps it at what is owed plus the interest due, so the last instalment
+    // clears the loan (backend 1e5401b). An overpaid (negative) loan counts as 0.
+    loansAdvance:
+      supplier.creditBalances.loan > 0 && grossAmount > 0
+        ? round2(
+            Math.min(
+              grossAmount * rates.instalmentShares.loan,
+              plans.loan && plans.loan.months > 0 && plans.loan.amount > 0
+                ? plans.loan.amount / plans.loan.months
+                : Number.POSITIVE_INFINITY,
+            ),
+          )
+        : 0,
     // Taken back **in full** on its month's bill, even past the gross (§5): an advance never
     // carries a balance, so it never bears interest.
     advance: leaf ? round2(Math.max(0, supplier.creditBalances.advance)) : 0,
@@ -1842,7 +1855,7 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
     // No leaf, no charge: not even the month's interest (decided 10 November 2026).
     const loan =
       totalKgs > 0
-        ? loanRecovery(supplier.creditBalances.loan, lines.loansAdvance, context.loanInterest)
+        ? loanRecovery(Math.max(0, supplier.creditBalances.loan), lines.loansAdvance, context.loanInterest)
         : { interest: 0, deducted: 0, principalRepaid: 0, interestCarried: 0 };
     const deductions = { ...lines, loansAdvance: loan.deducted };
 
@@ -1901,10 +1914,10 @@ export function generateBills(context: BillGenerationContext): AdminBill[] {
 
       deductions: amounts.deductions,
       corrections: corrections.length > 0 ? corrections : null,
+      // Numbered only when the bill repays some of the loan: a bill that takes only interest
+      // carried after the loan is repaid is not an instalment (decided 18 November 2026).
       loanInstalmentNo:
-        amounts.deductions.loansAdvance > 0
-          ? (context.loanInstalmentsBefore?.get(supplier.id) ?? 0) + 1
-          : null,
+        loan.principalRepaid > 0 ? (context.loanInstalmentsBefore?.get(supplier.id) ?? 0) + 1 : null,
 
       balanceAmount: amounts.balanceAmount,
       coinsCarriedForward: amounts.coinsCarriedForward,

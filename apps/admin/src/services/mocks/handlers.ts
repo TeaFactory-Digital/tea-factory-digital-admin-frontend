@@ -4649,9 +4649,13 @@ export const handlers: HttpHandler[] = [
       const earlier = state.bills
         .filter((one) => one.supplierId === supplier.id && one.monthKey < monthKey)
         .sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+      // A bill without leaf (one that only pays a withdrawal or a correction) is skipped:
+      // it neither counts nor restarts the run (decided 18 November 2026). A bill with leaf
+      // and no instalment ends it.
       let count = 0;
       for (const bill of earlier) {
-        if (bill.deductions.loansAdvance > 0) count += 1;
+        if (bill.totalKgs === 0) continue;
+        if (bill.loanInstalmentNo !== null && bill.loanInstalmentNo !== undefined) count += 1;
         else break;
       }
       loanInstalmentsBefore.set(supplier.id, count);

@@ -1,54 +1,35 @@
 # Backend to-do
 
-Only the work still open (17 November 2026). Finished work is taken out; git history keeps it.
+Only the work still open (18 November 2026). Finished work is taken out; git history keeps it.
 The rules for every item are in [`factory-records.md`](./factory-records.md) (the console)
 and `packages/domain` (please `vendor:pull` after each console change).
 
 ## Next
 
-#45 is built: the bill engine (221a1c0), the carried interest and repaid manure plans
-(52afb75) and the printed-slip check, hold and release (e164e2f). The console has
-`SLIP_COMPARISON_ON_SERVER` on and the `printedBalances` import offered. Staging deploys by
-hand after migrating (`autoDeploy: false`); galaboda's bill source is "Imported".
+#45 is built and its T15 answers are in (1e5401b): held months take leaf for any past day,
+month to date skips held bills, and `loanRecovery` clears a loan. Staging deploys by hand
+after migrating (`autoDeploy: false`); galaboda's bill source is "Imported".
 
 | # | What | Priority |
 |---|------|----------|
-| T15 | Answers to your T15 questions: two small changes (below) | **Next** |
+| T16 | The loan instalment number (your question on 1e5401b): two small fixes (below) | **Next** |
 | 65 | A production environment | **On hold** (your note, 12 November): until there are real clients; staging is the only environment |
 | 66 | Universal-link files on each factory's domain: waits for the Play signing SHA-256 and the host | Before the first store release |
 | - | Later: factory sync (Phase 10), the push sender, the five-year job (#59), a reporting replica | Later |
 
-## T15. Your questions on commit B (answered 17 November)
+## T16. The loan instalment number (answered 18 November)
 
-**Please `vendor:pull`** first: the shared package changed for two of them.
+1. **A bill that repays none of the loan has no number.** A bill that only takes interest
+   carried after the loan is repaid is not an instalment: `loanInstalmentNo` is `null`, so
+   a 10-month plan never prints "Loans / Advance 11". Number a bill only when its
+   `principalRepaid` is above 0.
+2. **A bill without leaf is skipped, not a break.** A bill that only pays a withdrawal or a
+   correction neither counts nor restarts the count: the next bill with an instalment
+   carries on from the last number. Only a bill **with** leaf and no instalment ends the
+   run (a new loan then starts at 1).
 
-1. **A held supplier's month has no 30-day limit** (T15.8, the factory's decision). Leaf for a
-   supplier whose bill for that month is held may be entered for any day of the month,
-   however long ago: `leafDateProblem(date, today, { held: true })` no longer answers
-   `too-old`. A day after today is still refused. Please pass `held` on `POST
-   /admin/deliveries` (every row's supplier held in that month) and on the `deliveries`
-   import row by row. The console's leaf screen now names the held suppliers on a
-   published day and offers them the grid and Void.
-2. **Month to date moves on** (T15.9, the factory's decision). A **held** bill no longer
-   keeps `GET /bills/month-to-date` on its month: the month is the supplier's oldest month
-   with an **unpublished** bill (held ones skipped), else the month after the factory's
-   newest published month. The held month just has no bill ("No bill is available yet")
-   until it is released. The `MonthToDate` comment in `types/app.ts` says so (vendor:pull).
-3. **`loanRecovery` clears a loan** (T15.10 and the T14.5 follow-up, changed in the shared
-   package): under `withinInstalment` the instalment is now capped at what is owed **plus
-   the interest due**, so the last instalment ends the loan (Rs. 1,000 at 1% deducts 1,010
-   and repays all 1,000). Interest still carried after the principal is repaid is taken on
-   the next bill, within the planned instalment (`loanRecovery(0, plan, setting, carried)`
-   deducts it). So keep calling it while either the loan or the carried interest is above 0.
-   `onTop` is unchanged.
-4. **T15.7, a held bill kept on recalculation with no leaf left:** agreed, keep it. It
-   charges nothing (a month without leaf), and it stays open so the leaf can be entered.
-5. **T15.11, `MonthSummary.open` false with held bills:** fine. The close screen opens a held
-   row by `row.held` and shows release by `counts.held`, never by `open`.
-6. **T15.2 to T15.6:** the console and its mock now match: whole rupees on the printed
-   figure (`decimals: 0` on `printedBalances.finalBalance`, `whole-rupees` on the form),
-   `factory-sync-on` before `wrong-bill-source` on every slip route, a stale release with
-   `suppliers`/`count`/`reason: figures`, and `AdminBill.loanInterestCarried` in the type.
+The console's mock does both now, and also passes the plan's instalment uncapped by the
+balance, as yours does (an overpaid loan counts as 0). factory-records §5 has the rules.
 
 ## 65. A production environment
 

@@ -305,7 +305,7 @@ Its inputs, per supplier and month:
 | Savings | kilos × the supplier's savings per kg |
 | Tea packets | Approved tea-packet requests |
 | Advance | Taken back **in full** on its month's bill, even past the gross (`DEFAULT_DEDUCTION_RATES.instalmentShares.advance = 1`). An advance never carries a balance |
-| Loan (`loansAdvance`, the slip's "Loans / Advance") | `loanRecovery(loan owed at the start of the month, planned instalment, config.loanInterest)`: the planned instalment, with the month's interest **on top** (`onTop`) or **inside** it (`withinInstalment`). `loanInstalmentNo` = 1 + the loan instalments on the bills just before this month |
+| Loan (`loansAdvance`, the slip's "Loans / Advance") | `loanRecovery(loan owed at the start of the month, planned instalment, config.loanInterest)`: the planned instalment, with the month's interest **on top** (`onTop`) or **inside** it (`withinInstalment`). `loanInstalmentNo` = 1 + the loan instalments on the bills just before this month, skipping a bill without leaf (it neither counts nor restarts the run); a bill that repays none of the loan (only interest carried after it is repaid) has no number. The planned instalment goes in under the gross share, **not** capped at the balance: `loanRecovery` caps it (1e5401b) |
 | Manure | Instalments under the manure cap: with several plans open, each plan's instalment added together |
 | Previous debts | Last bill's unpaid balance, or `previousDebt` from opening balances for the first |
 | Coins brought forward | Last bill's coins carried forward |
@@ -359,6 +359,13 @@ cannot take the same number.
 | `withinInstalment` near the end of a loan | The instalment is capped at what is owed **plus the interest due**, so the last one clears the loan; interest still carried after the principal is repaid is taken on the next bill, within the planned instalment |
 | A held bill with all its leaf voided, on recalculation | Kept (it charges nothing), so its leaf can be entered again |
 | `MonthSummary.open` with held bills | `false`; the console opens held rows by `row.held` and release by `counts.held` |
+
+**Decided 18 November 2026** (the instalment number, after 1e5401b):
+
+| Point | Rule |
+|---|---|
+| A bill that only takes interest carried after the loan is repaid | **No number**: it is not an instalment, so a 10-month plan never prints "Loans / Advance 11" |
+| A bill without leaf (only a withdrawal or a correction) | **Skipped**: it is not counted and does not restart the count; the next bill with an instalment carries on from the last number |
 
 Generate → review on the bills screen → **compare with the printed slips** → publish
 (four-eyes). Publishing makes the bills visible in the app and fires `billPublished`.
