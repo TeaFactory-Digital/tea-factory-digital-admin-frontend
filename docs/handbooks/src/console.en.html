@@ -266,7 +266,7 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
 <h2>6.3 Mode C: sync off, bills calculated</h2>
 <p>The console works the bill out from what the office entered. Making and publishing these bills, and the comparison with the printed slips below, work today. The factory system still prints its own slip, so before publishing, <strong>every bill is compared with its printed slip</strong>:</p>
 <ol>
-  <li>The office enters each printed slip's <strong>Balance</strong> (the amount paid), one at a time or from a file (Import → Printed slip balances). Whole rupees only: a figure with cents is refused, never rounded. It is kept even if the bills are made again.</li>
+  <li>The office enters each printed slip's <strong>Balance</strong> (the amount paid), typed in each row (Enter saves and moves to the next slip) or from a file (Import → Printed slip balances). Whole rupees only: a figure with cents is refused, never rounded. It is kept even if the bills are made again.</li>
   <li>Each bill is <strong>match</strong> (equal to the rupee), <strong>mismatch</strong>, or <strong>missing</strong> (no printed figure yet).</li>
   <li><strong>A difference is fixed at its cause</strong> (table below), in whichever system is wrong. Then make the bills again and compare again.</li>
   <li><strong>Or the bill is held</strong>, with a reason of at least 10 characters. Publish is refused while any bill is mismatch or missing and not held.</li>
@@ -354,7 +354,8 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
 <!-- 8 -->
 <h1>8. Leaf intake (sync off)</h1>
 <ul>
-  <li>One day at one collection point. The date and point are in the page address, so "Makadura yesterday" can be shared as a link.</li>
+  <li>One day at a time. Each line carries its own collection point (the supplier's, by default, changeable on the line), so one sheet takes a day's leaf from every point; it is recorded as one batch per point. The date and the point filter are in the page address, so "Makadura yesterday" can be shared as a link.</li>
+  <li><strong>Few keystrokes:</strong> supplier code, Enter, kilos, Enter; lines can be corrected in place, pasted from Excel (code, kilos, point), and recorded together with Ctrl+Enter.</li>
   <li><strong>Open month:</strong> the entry grid is shown. <strong>Published month:</strong> no grid; the month is locked. <strong>Read-only user:</strong> the rows without the grid.</li>
   <li><strong>The last 30 days only:</strong> leaf can be entered or imported for today and the 30 days before it, never for a day after today. An older day can still be opened to look at, without the grid.</li>
   <li><strong>A weighing over 250 kg is asked about, never refused:</strong> the grid asks the clerk to press Enter again, and the month close lists it as an unusual weighing to check against the slip. Leaf is recorded as one net figure: the kilos paid for.</li>

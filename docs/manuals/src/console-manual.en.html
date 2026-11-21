@@ -259,16 +259,18 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
 
 <!-- 11 -->
 <h1>11. Leaf intake <span class="who">Clerk, sync off</span></h1>
-<figure><img class="screen" src="../images/console/06-leaf-intake.jpg"><figcaption><b>Figure 11.1</b> One day's weighings: 2,663.85 kg from 39 suppliers in 43 deliveries.</figcaption></figure>
+<figure><img class="screen" src="../images/console/06-leaf-intake.jpg"><figcaption><b>Figure 11.1</b> The weighing sheet: two lines not recorded yet, at two collection points, above the day's recorded weighings.</figcaption></figure>
 <ol class="steps">
-  <li>Click <span class="ui">Leaf intake</span>. Choose the <span class="ui">Day</span> and the <span class="ui">Collection point</span>.</li>
-  <li>Enter each weighing: supplier code, then kilos. The totals at the top update as you go, so a mistyped kilo shows before it reaches a bill.</li>
-  <li>Click <span class="ui">Record … lines</span> when the session is done. Nothing is recorded until then; a line the console refuses stays in the grid with its reason, to fix and record again.</li>
+  <li>Click <span class="ui">Leaf intake</span> and choose the <span class="ui">Day</span>.</li>
+  <li>For each weighing, type the supplier code and press Enter, type the kilos and press Enter. The line is added and the cursor is back in the supplier box for the next one. The <span class="ui">Collection point</span> fills in from the supplier; change it if the leaf was weighed somewhere else. One sheet can hold several collection points.</li>
+  <li>Check the lines under <span class="ui">Not recorded yet</span>: the totals, per point, are beside the button. A point or a kilo figure can be corrected on its line.</li>
+  <li>Click <span class="ui">Record … lines</span>, or press Ctrl+Enter. Nothing is recorded until then; a line the console refuses stays on the sheet with its reason, to fix and record again.</li>
   <li>To correct a weighing, click <span class="ui">Void</span> on its row and give the reason; then enter the right one. A weighing is never deleted.</li>
 </ol>
 <ul>
   <li>Enter each supplier's leaf on the day it is weighed: the advance limit in the app is this month's kilos so far.</li>
   <li>A published month is locked: its leaf can no longer be changed, except for a supplier whose bill is held (section 12.1). The page names them.</li>
+  <li>Many lines at once: copy rows from Excel (supplier code, kilos, and optionally the point) and paste them into the supplier box. Lines that cannot be matched are listed and left out.</li>
   <li>To bring in a day's or a month's weighings from the scale's file, use <span class="ui">Import from file</span>. Importing the same file again skips the weighings already recorded.</li>
   <li>Leaf can be entered for today and the 30 days before it only (a supplier whose bill is held: any day of that month). An older day still opens, to look at its weighings, without the entry grid.</li>
   <li>A weighing over 250 kg makes the console ask before recording it: check the figure, and press Enter again if it is right.</li>
@@ -301,7 +303,7 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
 <h2>12.1 Compare with the printed slips</h2>
 <p>The factory's system still prints a slip for every supplier, so each calculated bill must equal its slip before the month is published.</p>
 <ol class="steps">
-  <li>After generating, open the <span class="ui">Compare with printed slips</span> card. For each slip, click <span class="ui">Enter printed</span> and type its Balance in whole rupees, or bring them all in with <span class="ui">Import from file</span> → <span class="ui">Import printed slip balances</span>.</li>
+  <li>After generating, open the <span class="ui">Compare with printed slips</span> card. Type each slip's Balance in whole rupees in its row and press Enter: it is saved and the next slip's box is ready, or bring them all in with <span class="ui">Import from file</span> → <span class="ui">Import printed slip balances</span>.</li>
   <li>Each bill shows <span class="ui">Matches</span>, <span class="ui">Does not match</span> or <span class="ui">No printed figure</span>.</li>
   <li>Fix a difference at its cause (a weighing, the rate, an approval entered in one system only) and generate again. Or click <span class="ui">Hold</span> and give a reason of at least 10 characters. After the publish, a fixed held bill is recalculated with <span class="ui">Recalculate held bills (…)</span>.</li>
   <li>Publish. Held bills are left out; the rest appear in the app.</li>

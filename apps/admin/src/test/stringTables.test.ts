@@ -38,7 +38,8 @@ const placeholders = (value: string) =>
   [...value.matchAll(/\{\{\s*([\w.]+)\s*\}\}/g)].map((match) => match[1]).sort();
 
 /** Entries that are the same in every language on purpose: names, and lines that are only placeholders. */
-const SAME_EVERYWHERE = new Set(['suppliers.push.platform.ios', 'suppliers.push.platform.android']);
+// A keyboard shortcut is the same in every language.
+const SAME_EVERYWHERE = new Set(['suppliers.push.platform.ios', 'suppliers.push.platform.android', 'deliveries.commitShortcut']);
 
 /** Entries offered more values than they use: `format.date` is given the month long and short, and English takes the short one. */
 const PLACEHOLDER_CHOICE = new Set(['format.date']);

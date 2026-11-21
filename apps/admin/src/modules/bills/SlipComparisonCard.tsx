@@ -12,7 +12,7 @@
  * it is released, which in a month already published publishes that one bill.
  */
 
-import { useState, type ReactNode } from 'react';
+import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, PauseCircle, TriangleAlert } from 'lucide-react';
@@ -36,7 +36,6 @@ export function SlipComparisonCard({ monthKey, monthOpen }: { monthKey: string; 
   const comparison = useSlipComparison(monthKey, true);
   const canWrite = useCan('billing', 'write');
   const canRelease = useCan('ratesAndMonthClose', 'approve');
-  const [printing, setPrinting] = useState<SlipComparisonRow | null>(null);
   const [holding, setHolding] = useState<SlipComparisonRow | null>(null);
   const [releasing, setReleasing] = useState<SlipComparisonRow | null>(null);
 
@@ -73,6 +72,9 @@ export function SlipComparisonCard({ monthKey, monthOpen }: { monthKey: string; 
                 <PauseCircle className="mt-xxs size-icon-sm shrink-0" aria-hidden />
                 {t('slips.heldAfterPublish', { count: data.counts.held })}
               </Notice>
+            ) : null}
+            {canWrite && data.rows.some((row) => monthOpen || row.held) ? (
+              <p className="text-caption text-text-secondary">{t('slips.howToEnter')}</p>
             ) : null}
             {data.rows.length === 0 ? (
               <p className="flex items-start gap-xs text-body-small text-success">
@@ -118,8 +120,16 @@ export function SlipComparisonCard({ monthKey, monthOpen }: { monthKey: string; 
                           <td className="numeric px-md py-sm text-right text-text-primary">
                             {row.ours === null ? '-' : formatMoney(row.ours)}
                           </td>
-                          <td className="numeric px-md py-sm text-right text-text-primary">
-                            {row.printed === null ? '-' : formatMoney(row.printed)}
+                          <td className="numeric px-md py-xs text-right text-text-primary">
+                            {/* Typed in place: Enter saves and moves to the next slip, so a stack
+                                of printed slips goes in without a dialog per bill. */}
+                            {canWrite && editable ? (
+                              <PrintedCell row={row} nextBillId={data.rows[index + 1]?.billId} />
+                            ) : row.printed === null ? (
+                              '-'
+                            ) : (
+                              formatMoney(row.printed)
+                            )}
                           </td>
                           <td
                             className={cn(
@@ -141,11 +151,6 @@ export function SlipComparisonCard({ monthKey, monthOpen }: { monthKey: string; 
                           </td>
                           <td className="px-md py-sm">
                             <div className="flex flex-wrap justify-end gap-xs">
-                              {canWrite && editable ? (
-                                <Button size="sm" variant="ghost" onClick={() => setPrinting(row)}>
-                                  {t('slips.enterPrinted')}
-                                </Button>
-                              ) : null}
                               {canWrite && monthOpen && !row.held ? (
                                 <Button size="sm" variant="secondary" onClick={() => setHolding(row)}>
                                   {t('slips.hold')}
@@ -170,7 +175,6 @@ export function SlipComparisonCard({ monthKey, monthOpen }: { monthKey: string; 
         )}
       </CardBody>
 
-      {printing ? <PrintedDialog row={printing} onClose={() => setPrinting(null)} /> : null}
       {holding ? <HoldDialog row={holding} onClose={() => setHolding(null)} /> : null}
       {releasing ? (
         <ReleaseDialog row={releasing} monthOpen={monthOpen} onClose={() => setReleasing(null)} />
@@ -198,63 +202,63 @@ function Th({ children, right }: { children: ReactNode; right?: boolean }) {
   );
 }
 
-function PrintedDialog({ row, onClose }: { row: SlipComparisonRow; onClose: () => void }) {
+/**
+ * One printed slip's Balance, typed in its row. Enter (or leaving the field) saves it when
+ * it changed, and Enter moves the caret to the next slip's field. Whole rupees, 0 or more
+ * (decided 10 November 2026); empty clears it. A row that now matches leaves the list, so
+ * the next field is found by its bill, not its position.
+ */
+function PrintedCell({ row, nextBillId }: { row: SlipComparisonRow; nextBillId?: string }) {
   const { t } = useTranslation();
   const toast = useToast();
   const save = useSetPrinted();
-  const [value, setValue] = useState(row.printed === null ? '' : String(row.printed));
-  const amount = value.trim() === '' ? null : Number(value);
-  // Whole rupees, 0 or more (decided 10 November 2026; the server says `whole-rupees`).
+  const saved = row.printed === null ? '' : String(row.printed);
+  const [value, setValue] = useState(saved);
+  const amount = value.trim() === '' ? null : Number(value.replace(/,/g, ''));
   const invalid = amount !== null && !(Number.isInteger(amount) && amount >= 0);
 
-  async function submit() {
+  async function commit(moveOn: boolean) {
+    const focusNext = () => {
+      if (!moveOn || !nextBillId) return;
+      document.querySelector<HTMLInputElement>(`input[data-printed-bill="${nextBillId}"]`)?.focus();
+    };
+    if (invalid || value === saved) {
+      if (!invalid) focusNext();
+      return;
+    }
     try {
       await save.mutateAsync([row.billId, amount]);
-      toast.success(t('slips.printedSaved', { code: row.supplierCode }));
-      onClose();
+      focusNext();
     } catch (error) {
       toast.error(t('slips.failed'), t(errorMessageKey(error), errorMessageValues(error)));
     }
   }
 
+  function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      void commit(true);
+    } else if (event.key === 'Escape') {
+      setValue(saved);
+    }
+  }
+
   return (
-    <Dialog
-      open
-      onOpenChange={(next) => {
-        if (!next) onClose();
-      }}
-      title={t('slips.printedTitle', { code: row.supplierCode, name: row.supplierName })}
-      description={t('slips.printedBody', { ours: row.ours === null ? '-' : formatMoney(row.ours) })}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            {t('common.cancel')}
-          </Button>
-          <Button variant="primary" disabled={invalid} loading={save.isPending} onClick={() => void submit()}>
-            {t('common.save')}
-          </Button>
-        </>
-      }
-    >
-      <Field
-        label={t('slips.printedLabel')}
-        hint={t('slips.printedHint')}
-        error={invalid ? t('slips.printedInvalid') : undefined}
-      >
-        {({ id, describedBy, invalid: fieldInvalid }) => (
-          <Input
-            id={id}
-            aria-describedby={describedBy}
-            invalid={fieldInvalid}
-            inputMode="decimal"
-            className="numeric"
-            autoFocus
-            value={value}
-            onChange={(event) => setValue(event.target.value)}
-          />
-        )}
-      </Field>
-    </Dialog>
+    <Input
+      data-printed-bill={row.billId}
+      aria-label={t('slips.printedFor', { code: row.supplierCode })}
+      title={invalid ? t('slips.printedInvalid') : undefined}
+      invalid={invalid}
+      inputMode="numeric"
+      autoComplete="off"
+      className="numeric ml-auto w-32 text-right"
+      placeholder="-"
+      disabled={save.isPending}
+      value={value}
+      onChange={(event) => setValue(event.target.value)}
+      onKeyDown={onKeyDown}
+      onBlur={() => void commit(false)}
+    />
   );
 }
 

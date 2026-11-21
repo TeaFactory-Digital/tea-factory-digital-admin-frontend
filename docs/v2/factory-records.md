@@ -72,7 +72,7 @@ CSV file**.
 | Factory records → **Leaf intake** (`/deliveries`) | Session grid (v1, restored) | **Import from file** | `deliveries: W` |
 | Factory records → **Rates & month close** (`/rates`) | Rate card (v1, restored) | **Import → Monthly rates** | `ratesAndMonthClose: W` |
 | Same screen, bills **calculated** | **Generate bills**, then **Review this month's bills**, then Publish | | `billing: W` / `ratesAndMonthClose: A` |
-| Same screen, bills **calculated** | **Compare with printed slips** card: each slip's Balance against ours; **Enter printed**, **Hold**, **Release** (§5, "Comparing with the printed slips") | **Import → Printed slip balances** | `billing: W` (enter, hold) / `ratesAndMonthClose: A` (release) |
+| Same screen, bills **calculated** | **Compare with printed slips** card: each slip's Balance against ours, **typed in its row** (Enter saves and moves to the next slip); **Hold**, **Release** (§5, "Comparing with the printed slips") | **Import → Printed slip balances** | `billing: W` (enter, hold) / `ratesAndMonthClose: A` (release) |
 | Same screen, bills **imported** | **Review this month's bills**, then Publish | **Import → Finished bills** | `billing: W` / `ratesAndMonthClose: A` |
 | Same screen | Deduction rates card: transport per kg (factory-wide **and per collection point**), stamps, instalment caps | | `ratesAndMonthClose: W` propose, `A` approve |
 | Bill detail (calculated bills only) | **Other deductions → Edit** (before publishing) | **Import → Other deductions** | `billing: W` |

@@ -65,8 +65,8 @@ describe('a held supplier in a published month', () => {
         timeout: 10_000,
       }),
     ).toHaveTextContent(bill.supplierCode);
-    // The entry grid is offered (it asks for a collection point first), not the lock.
-    expect(screen.getByText(/Pick a collection point to start recording/)).toBeInTheDocument();
+    // The weighing sheet is offered, not the lock.
+    expect(screen.getByText(/Supplier number, Tab, kilos, Enter/)).toBeInTheDocument();
   }, 20_000);
 });
 

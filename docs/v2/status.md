@@ -15,7 +15,7 @@ the next slice.
 | **Console** | Every module in [Modules](#modules) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
 | **Backend** | `tea-factory-digital-backend`, shipped up to `fb687f7`; staging is migrated through `20261112020000` and deploys by hand after migrating; galaboda's bill source is "Imported". BACKEND-TODO **#1 to #64 are done except #59's five-year job**: **#45** (factory records without the factory system) is complete with the bill engine (`221a1c0`, ADR-042), carried loan interest and repaid manure plans (`52afb75`) and the printed-slip check, hold and release (`e164e2f`). The T15 answers (`1e5401b`) and the loan instalment number (`fb687f7`) are built. Open: T17 (two confirmations), #66 (link files, waiting on the Play SHA-256 and the host); #65 (production) is on hold until there are real clients. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
-| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls: **674 tests in 96 files** (21 November 2026). Playwright: **34 tests in 8 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
+| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls: **677 tests in 97 files** (21 November 2026). Playwright: **34 tests in 8 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
 ### Built against the mock and tested
 
@@ -294,10 +294,13 @@ sidebar row.
 
 ### M3 Leaf intake (sync off)
 
-*One day at one collection point.* Sidebar: Factory records → **Leaf intake**.
+*One day; each line at its own collection point.* Sidebar: Factory records → **Leaf intake**.
 
-- The date and the point are the primary controls and live in the URL, so "look at Makadura
-  yesterday" is a link.
+- The date and the point filter live in the URL, so "look at Makadura yesterday" is a link.
+- **The weighing sheet** (`EntrySession`, rebuilt 21 November 2026): supplier, Enter, kilos,
+  Enter; each line carries its own point (the supplier's by default, changeable on the line),
+  so one sheet takes every point and is recorded as one batch per point; lines are corrected
+  in place, pasted from Excel, and recorded with Ctrl+Enter.
 - **Open** month: the session grid is offered for entry (`EntrySession`). **Locked**
   (published) month: no grid at all (BR-108), **except for held bills**: a banner names the
   suppliers whose bill for that month is held, and the grid and Void stay open for them, with
@@ -321,7 +324,7 @@ sidebar row.
 | **Exceptions queue** | The month's exceptions, each resolved with a note | `ratesAndMonthClose: W` |
 | **Deduction rates** | Transport per kg (factory-wide **and per collection point**), stamps, instalment caps. Proposed by one person, approved by another, because a change re-prices every account | `ratesAndMonthClose: W` propose, `A` approve |
 | **Bill run** (`BillRunCard`, calculated bills only) | Generate the month's bills, then **Review this month's bills** on M5 | `billing: W` |
-| **Compare with printed slips** (`SlipComparisonCard`, calculated bills only) | Each bill's Balance against the printed slip; **Enter printed**, **Hold** (a reason), **Release**. A held bill stays out of the publish; the supplier's next month's bill is held automatically and released after it. Live since backend e164e2f | `billing: W` (enter, hold) / `ratesAndMonthClose: A` (release) |
+| **Compare with printed slips** (`SlipComparisonCard`, calculated bills only) | Each bill's Balance against the printed slip, typed in its row (Enter saves and moves to the next slip); **Hold** (a reason), **Release**. A held bill stays out of the publish; the supplier's next month's bill is held automatically and released after it. Live since backend e164e2f | `billing: W` (enter, hold) / `ratesAndMonthClose: A` (release) |
 | **Import** | Monthly rates; Finished bills (imported) or Other deductions and Printed slip balances (calculated) | `ratesAndMonthClose: W` / `billing: W` |
 
 With **no months yet** (a new importing factory) the screen shows an empty state with the

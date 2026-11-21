@@ -295,21 +295,20 @@ export function DeliveriesScreen() {
         </div>
 
         {/**
-         * The entry grid needs a point: a delivery records **where it was weighed**,
-         * and "all points" is a filter, not a place. Asking for one is better than
-         * defaulting, which would file a day's leaf against the wrong shed.
+         * The weighing sheet. Each line carries its own point (the supplier's, by
+         * default), so one sheet takes a day's leaf from every shed; the point filter
+         * above only narrows the recorded rows below. Keyed by the date, so changing the
+         * filter keeps the lines not yet recorded.
          */}
         {canWrite && !locked && !tooOld ? (
-          point ? (
-            <div className="shrink-0 border-b border-divider bg-surface-variant">
-              <EntrySession key={`${date}-${point}`} date={date} collectionPoint={point} />
-            </div>
-          ) : (
-            <p className="shrink-0 border-b border-divider bg-surface-variant px-md py-sm text-body-small text-text-secondary">
-              {t('deliveries.pickPointToEnter')}
-            </p>
-          )
+          <div className="shrink-0 border-b border-divider bg-surface-variant">
+            <EntrySession key={date} date={date} defaultPoint={point || undefined} />
+          </div>
         ) : null}
+
+        <h2 className="shrink-0 px-md pt-sm text-label text-text-secondary">
+          {t('deliveries.recordedTitle')}
+        </h2>
 
         <DataTable
           label={t('deliveries.title')}

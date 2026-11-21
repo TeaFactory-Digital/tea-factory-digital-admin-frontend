@@ -4,7 +4,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { compareWithSlip, slipComparisonBlocks, type SlipComparisonRow } from '@tfd/domain';
 import { MonthCloseScreen } from '@/modules/months/MonthCloseScreen';
@@ -235,4 +236,38 @@ describe('a factory that calculates its bills here', () => {
     expect(within(row).getByRole('button', { name: 'Hold' })).toBeInTheDocument();
     expect(await screen.findByText('Matches the printed slips')).toBeInTheDocument();
   }, 20_000);
+
+  it('takes printed Balances typed in the table, Enter moving to the next slip', async () => {
+    const user = userEvent.setup();
+    await setSyncOff();
+    const { monthKey, bills } = await readyMonth();
+    await signInAs(CLERK);
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/months" element={<MonthCloseScreen />} />
+      </Routes>,
+      { route: `/months?month=${monthKey}` },
+    );
+
+    // Every bill starts without a printed figure, so each has a box in its row.
+    const firstBill = bills.find((one) => one.finalBalance !== null)!;
+    const first = await screen.findByLabelText(`Printed Balance for ${firstBill.supplierCode}`, undefined, { timeout: 10_000 });
+    await user.click(first);
+    await user.type(first, `${firstBill.finalBalance}{Enter}`);
+
+    await waitFor(async () => {
+      const row = (await billRepository.slipComparison(monthKey)).rows.find((one) => one.billId === firstBill.id);
+      // It matches now, so it has left the list of bills that need attention.
+      expect(row).toBeUndefined();
+    });
+    // The caret went on to the next slip's box.
+    await waitFor(() => expect((document.activeElement as HTMLInputElement | null)?.dataset.printedBill).toBeTruthy());
+    expect((document.activeElement as HTMLInputElement).dataset.printedBill).not.toBe(firstBill.id);
+
+    // Cents are refused before anything is sent.
+    const box = document.activeElement as HTMLInputElement;
+    await user.type(box, '100.50');
+    expect(box).toHaveAttribute('aria-invalid', 'true');
+  }, 30_000);
 });
