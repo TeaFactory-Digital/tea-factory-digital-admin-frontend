@@ -1321,6 +1321,11 @@ accept:
 422 invalid           more than 30 days back               + details { field: 'date', reason: 'too-old', days: 30 }
 ```
 
+A published month still takes leaf for a supplier whose bill for it is **held**, and that
+month has **no 30-day limit** (`leafDateProblem(date, today, { held: true })`, decided 17
+November 2026; backend 1e5401b). A session mixing held and other suppliers is refused whole,
+like `month-locked`.
+
 **How far back:** the last 30 days (`LEAF_ENTRY_MAX_AGE_DAYS`, `leafDateProblem`; the
 factory's answer, 5 November 2026). The console still opens an older day to look at, and
 offers no entry grid for it.
@@ -1632,7 +1637,8 @@ The full slip: the app's `GreenLeafBill` plus `supplierId`, `source`, `runId`,
 | Field | Meaning |
 | --- | --- |
 | `AdminBill.source?` | `'calculated'` or `'imported'`; **absent on a synced bill**. An imported bill's figures are the factory's and are never edited here |
-| `GreenLeafBill.loanInstalmentNo?` | Which instalment of the loan `deductions.loansAdvance` is (the slip's "Loans / Advance 3"); `null` or absent when no loan was recovered |
+| `GreenLeafBill.loanInstalmentNo?` | Which instalment of the loan `deductions.loansAdvance` is (the slip's "Loans / Advance 3"); `null` or absent when the bill repays none of the loan (no loan, or only interest carried after it is repaid). A bill without leaf, and a lean month that repays nothing while the loan is owed, are skipped in the count, never a restart; an imported bill counts by its printed number (factory-records §5, decided 18 and 21 November 2026) |
+| `AdminBill.loanInterestCarried?` | Calculated bills: the loan interest an instalment could not cover under `withinInstalment`, owed on the next bill (`loanRecovery`'s `interestCarried`, backend 52afb75). Never added to the loan |
 | `GreenLeafBill.otherCardsNote?` | Why `deductions.otherCards` was charged, in the office's words, shown under the line. The line is labelled **"Other deductions"** in the console and the app |
 | `grossAmount` | Green leaf + extra payment + **coins brought forward**, so `balanceAmount` is the slip's "Balance Amount" |
 | `carryForward.loanBalance` | The **loan** still owed after this month's instalment (the slip's "Loan Balance"). An advance never carries a balance: it is taken back in full on its month's bill, and any shortfall is `nextMonthDeb` |
@@ -3328,7 +3334,7 @@ as the factory's own system printed them), **`printedBalances`** (each printed s
 | `suppliers` | `suppliers: W` | `duplicate`, `unknown-collection-point`, `bank-details-required`, `unknown-bank`. A code already on the roll is **skipped** (`supplier-exists`), left as it is, not refused (see "Importing again") |
 | `openingBalances` | `suppliers: W` | `duplicate`, `unknown-supplier`, `opening-balances-locked`, `cut-over-month` (on `asOfMonth`), `withdrawal-pending`. No note column: the file's name is the note |
 | `transportRates` | `suppliers: W` | `duplicate`, `unknown-supplier` |
-| `deliveries` | `deliveries: W` | `unknown-supplier`, `month-locked`, `unknown-collection-point`; on `date`, `not-allowed` (after today) and `too-old` (more than 30 days back). A weighing already recorded is **skipped** (`already-recorded`) unless `duplicates: 'import'` |
+| `deliveries` | `deliveries: W` | `unknown-supplier`, `month-locked`, `unknown-collection-point`; on `date`, `not-allowed` (after today) and `too-old` (more than 30 days back, except in a held supplier's held month). A weighing already recorded is **skipped** (`already-recorded`) unless `duplicates: 'import'` |
 | `monthlyRates` | `ratesAndMonthClose: W` | `duplicate`, `unknown-month`, `month-locked` |
 | `walkInCredit` | `creditRequests: W` | `unknown-supplier`, `required` (manure without type or quantity), and §14.4's refusals |
 | `billAdjustments` | `billing: W` | `409 wrong-bill-source` before a row where the bills are imported; then `unknown-supplier` / `ambiguous-supplier`, `duplicate` (month + supplier, so `708` is `0708`), `month-locked`, `no-bill` (no calculated bill), `negative`, `required` |

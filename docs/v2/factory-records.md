@@ -149,7 +149,9 @@ Config and shapes on existing routes (`GET /config`, `GET /admin/config`,
   absent means the point's rate.
 - **`AdminBill.source?: 'calculated' | 'imported'`**, absent on a synced bill.
 - **`AdminBill` also carries `SlipCheck`**: `printedFinalBalance?`, `heldAt?`, `heldByName?`,
-  `holdReason?` (§5). **`BillListItem.held?: boolean`**.
+  `holdReason?`, `heldForMonth?` (§5). **`BillListItem.held?: boolean`**.
+- **`AdminBill.loanInterestCarried?: number | null`** (calculated bills): the loan interest an
+  instalment could not cover under `withinInstalment`, owed on the next bill (backend 52afb75).
 - **`GreenLeafBill.loanInstalmentNo?: number | null`** and **`otherCardsNote?`**.
 
 ### 4.2 Rules

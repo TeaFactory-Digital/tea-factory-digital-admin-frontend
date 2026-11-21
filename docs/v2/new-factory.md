@@ -345,7 +345,7 @@ open; where the console or the API has not caught up, the row says so.
 | 10 | **Bill numbers**: the year of the bill's month, and a serial that never resets |
 | 11 | **The office enters each day's leaf** while the sync is off |
 | 12 | **A calculated bill that does not match the printed slip is held**: the rest of the month is published, the held bill is fixed and released on its own, and that supplier's next bill waits behind it |
-| 13 | **Importing a file again skips what is already there**; a supplier already in the console is left as they are. Built in the console; not on the API yet (`IMPORT_SKIP_ON_SERVER`) |
+| 13 | **Importing a file again skips what is already there**; a supplier already in the console is left as they are. Built in the console and on the API (`IMPORT_SKIP_ON_SERVER` is on since backend e4a9f40) |
 | 14 | **Galaboda's slip** carries only what was approved by the month's last day; a blank balance is 0 |
 | 15 | **Imported months**: a division file that arrives after the month is published waits for a manager to publish its bills, and **whoever imported a month's bills cannot publish them**. Both are built (backend `671627d`). While late bills wait, the next month cannot be published, and a waiting bill may be replaced by sending it again (R18, built `76b50f2`) |
 | 16 | **The sync starts off.** A factory keeps its records in the new console until its own system is connected and the sync is switched on deliberately |

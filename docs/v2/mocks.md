@@ -466,7 +466,13 @@ Also in the mock: `409 sync-switch-blocked` and `409 bill-source-blocked` (switc
 generated but unpublished month, `details.months`), `409 loan-outstanding` on a walk-in loan or
 advance and on approving one, the supplier-code match (`ambiguous-supplier`), and,
 for calculated bills, the printed-slip comparison, hold and release (`bills-mismatch`,
-`heldForMonth`, `earlier-bill-held`).
+`heldForMonth`, `earlier-bill-held`), answered as backend e164e2f does: whole rupees on a
+printed figure (`whole-rupees`), `factory-sync-on` before `wrong-bill-source`, a stale release
+with `suppliers`/`count`/`reason: 'figures'`. Also as the API: a held supplier's leaf in a
+published month, with no 30-day limit; a month without leaf charging nothing; several manure
+plans adding their instalments; the loan's planned instalment uncapped by the balance
+(`loanRecovery` caps it); and the instalment number skipping a bill without leaf and a lean
+month, with no number on a bill that repays none of the loan.
 
 **The two race answers**, which a test cannot make happen by itself, are switched on by
 hooks: `setMockPublishInProgress(true)` makes a credit or tea-packet decision and a
