@@ -28,7 +28,7 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyRound, TriangleAlert } from 'lucide-react';
+import { KeyRound, RotateCcw, TriangleAlert } from 'lucide-react';
 import {
   DEFAULT_ROLE_MATRIX,
   RECOVERY_CAPABILITY,
@@ -41,6 +41,8 @@ import {
 } from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Select } from '@/components/ui/Field';
 import { cn } from '@/lib/cn';
@@ -57,6 +59,19 @@ const CAPABILITIES = (Object.keys(DEFAULT_ROLE_MATRIX.clerk) as Capability[]).fi
 );
 const LEVELS: AccessLevel[] = ['none', 'read', 'write', 'approve'];
 
+/**
+ * The roles whose saved row no longer matches the shipped table, hidden rows included. A
+ * factory that saved a role before a capability was added to its default (Leaf collection
+ * for the clerk, #45) keeps the old level, because a saved row replaces the default whole.
+ */
+function rolesOffDefault(matrix: RoleMatrix['matrix']): ConsoleRole[] {
+  return ROLES.filter((role) =>
+    (Object.keys(DEFAULT_ROLE_MATRIX[role]) as Capability[]).some(
+      (capability) => (matrix[role]?.[capability] ?? 'none') !== DEFAULT_ROLE_MATRIX[role][capability],
+    ),
+  );
+}
+
 export function RoleMatrixView() {
   const { t } = useTranslation();
   const toast = useToast();
@@ -65,6 +80,7 @@ export function RoleMatrixView() {
   const query = useRoleMatrix();
   const setGrants = useSetRoleGrants();
   const [pending, setPending] = useState<{ role: ConsoleRole; capability: Capability } | null>(null);
+  const [restoring, setRestoring] = useState(false);
 
   if (query.isPending) {
     return (
@@ -78,6 +94,28 @@ export function RoleMatrixView() {
   }
 
   const { matrix, customised, updatedAt, updatedByName }: RoleMatrix = query.data;
+  const offDefault = rolesOffDefault(matrix);
+  const roleNames = (roles: ConsoleRole[]) => roles.map((role) => t(`users.role.${role}`)).join(', ');
+
+  /**
+   * Every role that has drifted, back to the shipped table, one save per role (the API saves
+   * a role at a time). Each save is checked against the matrix as the earlier ones left it.
+   */
+  async function restoreDefaults() {
+    let current = matrix;
+    const done: ConsoleRole[] = [];
+    try {
+      for (const role of offDefault) {
+        const grants = { ...DEFAULT_ROLE_MATRIX[role] };
+        await setGrants.mutateAsync({ role, grants, currentMatrix: current });
+        current = { ...current, [role]: grants };
+        done.push(role);
+      }
+      toast.success(t('users.matrixRestoreDone', { roles: roleNames(done) }));
+    } catch (cause) {
+      toast.error(t('users.roleSaveFailed'), t(errorMessageKey(cause)));
+    }
+  }
 
   async function change(role: ConsoleRole, capability: Capability, level: AccessLevel) {
     const grants = { ...matrix[role], [capability]: level };
@@ -117,6 +155,17 @@ export function RoleMatrixView() {
             <Badge tone={customised ? 'info' : 'neutral'}>
               {customised ? t('users.matrixCustomised') : t('users.matrixDefault')}
             </Badge>
+            {canEdit && offDefault.length > 0 ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                iconLeft={<RotateCcw className="size-icon-sm" aria-hidden />}
+                disabled={setGrants.isPending}
+                onClick={() => setRestoring(true)}
+              >
+                {t('users.matrixRestore')}
+              </Button>
+            ) : null}
             {updatedAt ? (
               <span className="text-caption text-text-secondary">
                 {t('users.matrixChanged', {
@@ -186,6 +235,7 @@ export function RoleMatrixView() {
                   {ROLES.map((role) => {
                     const level = matrix[role][capability];
                     const busy = pending?.role === role && pending?.capability === capability;
+                    const standard = DEFAULT_ROLE_MATRIX[role][capability];
                     return (
                       <td key={role} className="px-md py-xs align-middle">
                         {canEdit ? (
@@ -210,6 +260,12 @@ export function RoleMatrixView() {
                         ) : (
                           <span className="text-text-primary">{t(`users.level.${level}`)}</span>
                         )}
+                        {/* Where this factory differs from the shipped table, say what it was. */}
+                        {level !== standard ? (
+                          <span className="mt-xxs block text-caption text-warning">
+                            {t('users.matrixStandardLevel', { level: t(`users.level.${standard}`) })}
+                          </span>
+                        ) : null}
                       </td>
                     );
                   })}
@@ -219,6 +275,15 @@ export function RoleMatrixView() {
           </tbody>
         </table>
       </div>
+
+      <ConfirmDialog
+        open={restoring}
+        onOpenChange={setRestoring}
+        title={t('users.matrixRestoreTitle')}
+        description={t('users.matrixRestoreBody', { roles: roleNames(offDefault) })}
+        confirmLabel={t('users.matrixRestore')}
+        onConfirm={restoreDefaults}
+      />
 
       <CardBody className="shrink-0 border-t border-divider">
         <p className="flex items-start gap-xs text-caption text-text-secondary">

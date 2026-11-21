@@ -1769,6 +1769,11 @@ export const en = {
     'No role would be left able to manage users, so nobody could ever change this back. Leave at least one role able to.',
   'users.roleSaved': '{{role}} updated',
   'users.roleSaveFailed': 'Nothing was changed',
+  'users.matrixRestore': 'Restore the standard permissions',
+  'users.matrixRestoreTitle': 'Restore the standard permissions?',
+  'users.matrixRestoreBody': 'These roles go back to the permissions the console ships with: {{roles}}. Every user keeps their roles; only what each role may do changes.',
+  'users.matrixRestoreDone': 'Standard permissions restored: {{roles}}',
+  'users.matrixStandardLevel': 'Standard: {{level}}',
 
   'users.level.none': '-',
   'users.level.read': 'See',

@@ -1765,6 +1765,11 @@ export const si: Record<TranslationKey, string> = {
     'පරිශීලකයන් කළමනාකරණය කළ හැකි කිසිදු භූමිකාවක් ඉතිරි නොවනු ඇත, එබැවින් කිසිවෙකුට කිසිදා මෙය නැවත වෙනස් කළ නොහැක. එය කළ හැකි අවම වශයෙන් එක් භූමිකාවක් ඉතිරි කරන්න.',
   'users.roleSaved': '{{role}} යාවත්කාලීන කළා',
   'users.roleSaveFailed': 'කිසිවක් වෙනස් වූයේ නැත',
+  'users.matrixRestore': 'සම්මත අවසර නැවත දාන්න',
+  'users.matrixRestoreTitle': 'සම්මත අවසර නැවත දාන්නද?',
+  'users.matrixRestoreBody': 'මෙම භූමිකා කොන්සෝලය සමඟ එන අවසරවලට නැවත යයි: {{roles}}. සෑම පරිශීලකයෙකුම තම භූමිකා තබා ගනී; වෙනස් වන්නේ එක් එක් භූමිකාවට කළ හැකි දේ පමණි.',
+  'users.matrixRestoreDone': 'සම්මත අවසර නැවත දැම්මා: {{roles}}',
+  'users.matrixStandardLevel': 'සම්මතය: {{level}}',
 
   'users.level.none': '-',
   'users.level.read': 'බැලීම',
