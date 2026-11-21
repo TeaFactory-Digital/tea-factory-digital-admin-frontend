@@ -14,6 +14,7 @@ import { monthRepository } from '@/services/repositories/monthRepository';
 import { bundledConfig } from '@/config/defaults';
 import type * as ServerReady from '@/lib/serverReady';
 import { renderWithProviders, signInAs, signOut } from './render';
+import { afterMonthEnds } from './clock';
 
 vi.mock('@/lib/serverReady', async (importOriginal) => ({
   ...(await importOriginal<typeof ServerReady>()),
@@ -198,6 +199,7 @@ describe('posting one', () => {
       bills.map((one) => ({ month: month.monthKey, supplierCode: one.supplierCode, finalBalance: String(one.finalBalance ?? 0) })),
     );
     await signInAs(MANAGER);
+    afterMonthEnds(month.monthKey);
     await monthRepository.publish(month.monthKey);
     expect((await factoryRecordRepository.corrections(supplierId)).items[0]).toMatchObject({
       status: 'applied',

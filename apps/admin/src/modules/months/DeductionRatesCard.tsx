@@ -32,7 +32,13 @@ import {
 } from './deductionRateHooks';
 
 const NOTE_MIN = 10;
-const FACILITIES = ['advance', 'loan', 'manure'] as const;
+/**
+ * The facilities whose monthly share is a real cap. Not the advance: it is taken back in full
+ * on its month's bill, even past the gross (decided 10 November 2026; the bill engine ignores
+ * its share), so a field for it would be a setting that changes nothing. Its stored share is
+ * still sent back unchanged, because a proposal spreads the whole `instalmentShares`.
+ */
+const FACILITIES = ['loan', 'manure'] as const;
 
 export function DeductionRatesCard() {
   const { t } = useTranslation();
@@ -188,7 +194,7 @@ export function DeductionRatesCard() {
           {/* A cap, not a schedule: the supplier picks the period, this stops a bad month
               disappearing into a repayment they agreed to when they were plucking well. */}
           <p className="text-caption text-text-secondary">{t('rates.deduction.capsHint')}</p>
-          <div className="grid gap-md md:grid-cols-3">
+          <div className="grid gap-md md:grid-cols-2">
             {FACILITIES.map((facility) =>
               field(
                 t(`credit.facility.${facility}`),

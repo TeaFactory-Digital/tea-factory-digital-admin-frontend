@@ -28,6 +28,7 @@ import { auditRepository } from '@/services/repositories/auditRepository';
 import { isApiError } from '@/services/api/errors';
 import { signInAs, signOut } from './render';
 import { clearFactorySync, setFactorySync } from './factorySync';
+import { afterMonthEnds } from './clock';
 
 const MANAGER = 'manager@galabodatea.lk';
 const FACTORY_SYSTEM = 'factory-system@galabodatea.lk';
@@ -304,6 +305,7 @@ describe('M5 bills', () => {
 
     signOut();
     await signInAs(MANAGER);
+    afterMonthEnds(month.monthKey);
     await monthRepository.publish(month.monthKey);
 
     // Publishing is what makes them the documents suppliers hold.

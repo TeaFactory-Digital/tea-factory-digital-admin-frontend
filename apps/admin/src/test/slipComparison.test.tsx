@@ -16,6 +16,7 @@ import { bundledConfig } from '@/config/defaults';
 import { mockHoldPublishedBill } from '@/services/mocks/handlers';
 import type * as ServerReady from '@/lib/serverReady';
 import { renderWithProviders, signInAs, signOut } from './render';
+import { afterMonthEnds } from './clock';
 
 // The API has not built these yet, so the console hides them; here they are shown.
 vi.mock('@/lib/serverReady', async (importOriginal) => ({
@@ -97,6 +98,7 @@ describe('a factory that calculates its bills here', () => {
     const { monthKey, bills } = await readyMonth();
 
     await signInAs(MANAGER);
+    afterMonthEnds(monthKey);
     const before = await billRepository.slipComparison(monthKey);
     expect(before.counts.missing).toBe(bills.length);
     await expect(monthRepository.publish(monthKey)).rejects.toMatchObject({
@@ -135,6 +137,7 @@ describe('a factory that calculates its bills here', () => {
     await signInAs(CLERK);
     await billRepository.hold(odd.id, 'Society fee of Rs. 50 is only on the printed slip');
     await signInAs(MANAGER);
+    afterMonthEnds(monthKey);
     await monthRepository.publish(monthKey);
 
     // Still mismatched: not released.

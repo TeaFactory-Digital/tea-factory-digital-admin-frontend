@@ -40,6 +40,7 @@ import { isApiError } from '@/services/api/errors';
 import { useAuthStore } from '@/auth/authStore';
 import { signInAs, signOut } from './render';
 import { clearFactorySync, setFactorySync } from './factorySync';
+import { afterMonthEnds } from './clock';
 
 const ADMIN = 'factoryadmin@galabodatea.lk';
 const EDITOR = 'editor@galabodatea.lk';
@@ -329,6 +330,7 @@ describe('M13 automatic triggers', () => {
 
     signOut();
     await signInAs(MANAGER);
+    afterMonthEnds(open.monthKey);
     await monthRepository.publish(open.monthKey);
 
     signOut();

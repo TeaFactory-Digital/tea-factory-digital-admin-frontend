@@ -2555,7 +2555,7 @@ export const en = {
   'rates.deduction.awaitingManager': 'A manager has to approve this before it takes effect.',
   'rates.deduction.caps': 'Most a credit may take in one month (%)',
   'rates.deduction.capsHint':
-    'The supplier chooses how many months to repay over. This is the ceiling that stops a bad plucking month disappearing into a repayment they agreed to when they were doing well.',
+    'The supplier chooses how many months to repay over. This is the ceiling that stops a bad plucking month disappearing into a repayment they agreed to when they were doing well. An advance has no cap: it is always taken back in full on its month’s bill.',
   'rates.deduction.customised': 'Set by this factory',
   'rates.deduction.decideFailed': 'Nothing was changed',
   'rates.deduction.description':

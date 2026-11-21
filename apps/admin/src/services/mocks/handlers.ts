@@ -1464,10 +1464,37 @@ function serialiseBillRun(run: BillRunRecord): BillRun {
   const rows = state.deliveries.filter((row) => row.monthKey === run.monthKey && !row.voidedAt);
   const liveKgs = summariseKgs(rows.map((row) => ({ supplierId: row.supplierId, kgs: row.kgs })));
   const published = stageOf(run.monthKey) === 'published';
+  if (published) return { ...run, stale: false };
+
+  /**
+   * A calculated run is stale bill by bill, as the API's engine answers it (backend
+   * 221a1c0): the suppliers whose bill generating again would change. The mock compares
+   * each supplier's live kilos with their bill's; the API also catches a changed approval.
+   */
+  if (!isImportedMonth(run.monthKey)) {
+    const live = new Map<string, number>();
+    for (const row of rows) live.set(row.supplierId, roundKg((live.get(row.supplierId) ?? 0) + row.kgs));
+    const bills = state.bills.filter((bill) => bill.monthKey === run.monthKey && bill.runId === run.runId);
+    const billed = new Map(bills.map((bill) => [bill.supplierId, bill]));
+    const changed = new Set<string>();
+    for (const bill of bills) {
+      if (Math.abs((live.get(bill.supplierId) ?? 0) - bill.totalKgs) > 0.005) changed.add(bill.supplierCode);
+    }
+    for (const [supplierId] of live) {
+      if (!billed.has(supplierId)) {
+        const code = state.suppliers.find((one) => one.id === supplierId)?.supplierCode;
+        if (code) changed.add(code);
+      }
+    }
+    const staleSuppliers = [...changed].sort();
+    return staleSuppliers.length > 0
+      ? { ...run, stale: true, reasons: ['figures'], staleSuppliers }
+      : { ...run, stale: false };
+  }
 
   return {
     ...run,
-    stale: !published && Math.abs(liveKgs.totalKgs - run.totalKgs) > 0.005,
+    stale: Math.abs(liveKgs.totalKgs - run.totalKgs) > 0.005,
   };
 }
 
@@ -5043,6 +5070,35 @@ export const handlers: HttpHandler[] = [
     }
 
     const imported = isImportedMonth(monthKey);
+    if (!imported) {
+      // A calculated month goes out once its last day is over (backend 221a1c0): what is
+      // approved in its last days must reach its bills. By the factory's calendar.
+      if (monthKey >= colomboMonthKey(mockNow())) {
+        return fail({
+          status: 409,
+          code: 'month-not-ended',
+          message: 'This month has not ended yet.',
+          details: { monthKey },
+        });
+      }
+      // And an earlier open month that still has leaf comes first.
+      const earlierLeaf = Object.values(state.months)
+        .filter(
+          (one) =>
+            one.monthKey < monthKey &&
+            one.stage !== 'published' &&
+            state.deliveries.some((row) => row.monthKey === one.monthKey && !row.voidedAt),
+        )
+        .sort((a, b) => a.monthKey.localeCompare(b.monthKey))[0];
+      if (earlierLeaf) {
+        return fail({
+          status: 409,
+          code: 'earlier-month-unpublished',
+          message: `Publish ${earlierLeaf.monthKey} first.`,
+          details: { monthKey: earlierLeaf.monthKey },
+        });
+      }
+    }
     const open = imported
       ? []
       : state.monthExceptions.filter((e) => e.monthKey === monthKey && e.resolvedAt === null);
@@ -5083,12 +5139,14 @@ export const handlers: HttpHandler[] = [
         details: { monthKey },
       });
     }
-    if (!imported && serialiseBillRun(run).stale) {
+    const runNow = serialiseBillRun(run);
+    if (!imported && runNow.stale) {
+      const suppliers = runNow.staleSuppliers ?? [];
       return fail({
         status: 409,
         code: 'bills-stale',
-        message: 'The leaf has changed since the bills were generated. Re-generate them first.',
-        details: { generatedAt: run.generatedAt, runKgs: run.totalKgs },
+        message: 'Generating again would change some bills. Re-generate them first.',
+        details: { suppliers: suppliers.slice(0, 10), count: suppliers.length, reason: 'figures' },
       });
     }
 
