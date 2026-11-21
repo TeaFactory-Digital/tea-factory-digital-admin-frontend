@@ -2896,7 +2896,7 @@ export const en = {
   'config.interest.loanRate': 'Interest on a loan (% a month)',
   'config.interest.loanRateHint': '0, the default, charges no interest.',
   'config.interest.outOfRange': 'Enter a rate from 0 to {{max}} percent.',
-  'config.interest.how': 'Simple interest on the loan still owed at the start of the month, shown on the bill as Loan Interest; it never earns interest itself. An advance bears no interest: it is taken back in full on its month’s bill. A change applies from the next bill generated, never to a published month.',
+  'config.interest.how': 'Simple interest on the loan owed before the month’s instalment (as at the month’s end, so a loan approved during the month is included), shown on the bill as Loan Interest; it never earns interest itself. An advance bears no interest: it is taken back in full on its month’s bill. A change applies from the next bill generated, never to a published month.',
   'records.picker.placeholder': 'Supplier code or name',
   'records.picker.none': 'No active supplier matches.',
   'records.picker.clear': 'Choose another supplier',

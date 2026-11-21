@@ -71,12 +71,12 @@
 <table>
   <tr><th>Role</th><th>Daily work in the console</th></tr>
   <tr><td><strong>Clerk</strong></td><td>Supplier records, leaf intake, importing or generating the month's bills, recording requests made at the counter, change requests, replying to inquiries</td></tr>
-  <tr><td><strong>Manager</strong></td><td>Deciding advances, loans, manure and tea packets; rates, month close and publishing bills; approving savings withdrawals; reports</td></tr>
-  <tr><td><strong>Content editor</strong></td><td>News, promo banners, fixed pages (FAQ, terms) in all three languages</td></tr>
-  <tr><td><strong>Factory administrator</strong></td><td>Configuration, users and roles; reads every factory record but changes none</td></tr>
+  <tr><td><strong>Manager</strong></td><td>Deciding advances, loans, manure and tea packets; rates, month close and publishing bills; corrections after a bill; reports</td></tr>
+  <tr><td><strong>Content editor</strong></td><td>Writing news, promo banners and fixed pages (FAQ, terms) in all three languages; the factory administrator publishes them</td></tr>
+  <tr><td><strong>Factory administrator</strong></td><td>Configuration, users and roles; publishes news, banners, pages and notifications; decides credit above the owner amount; reads every factory record</td></tr>
 </table>
 <div class="box stop"><span class="label">The two-person rule</span>
-<p>The person who records a request, enters the month's rate or imports the bills may not approve or publish them. The console does not show that person the approve or publish button; another person must do it.</p>
+<p>The person who records a request, enters the month's rate or imports the bills may not approve or publish them. The console does not offer that person the decision on a request they recorded, and shows them the publish button disabled, with the reason; another person must do it.</p>
 </div>
 <div class="box warn"><span class="label">Enter every approval in the factory system too</span>
 <p>The console never writes to the factory's own system. Each approval dialog reminds you: after approving here, enter the same thing in the factory system, because that system prints the slip and pays the money.</p>
@@ -100,7 +100,7 @@
 <h2>4.1 Find a supplier</h2>
 <ol class="steps">
   <li>Click <span class="ui">Suppliers</span>, or press Ctrl+K anywhere.</li>
-  <li>Type a code, name or NIC. Use the filters: <span class="ui">App: any</span> → <span class="ui">Never installed</span> lists suppliers who have not installed the app.</li>
+  <li>Type a code, name or NIC. Use the filters: <span class="ui">App: any</span> → <span class="ui">Has not installed it</span> lists suppliers who have not installed the app.</li>
   <li>Click the row to open the supplier.</li>
 </ol>
 <figure><img class="screen" src="../images/console/04-supplier-overview.jpg"><figcaption><b>Figure 4.2</b> A supplier: the app, bank, savings and collection point at the top, quick actions, then the tabs.</figcaption></figure>
@@ -125,7 +125,7 @@
   <li>Choose how you checked it was them (for example "Book at counter").</li>
   <li>The console shows a one-time password: give it to the supplier. Their phones are signed out, and the app asks them to choose their own password at the next sign-in. Who issued it, and when, is recorded.</li>
 </ol>
-<p>Beside it, the status button suspends or closes a supplier.</p>
+<p>Beside it, <span class="ui">Suspend</span> stops a supplier using the app, and <span class="ui">Reactivate</span> lets a suspended one back in.</p>
 <h2>4.4 Add a supplier <span class="who">Clerk, sync off</span></h2>
 <div class="phones two">
   <figure><img class="screen" src="../images/console/03b-add-supplier-dialog.jpg"><figcaption><b>Figure 4.5</b> Add a supplier</figcaption></figure>
@@ -138,9 +138,12 @@
   <li>Choose how they are paid. For bank transfer, choose the bank and branch from the factory's list and type the account number.</li>
   <li>Click <span class="ui">Add supplier</span>. Then reset their password (4.3) so they can use the app.</li>
 </ol>
-<p>Many at once: <span class="ui">Import from file</span> → <span class="ui">Import suppliers</span> (Figure 4.6), or <span class="ui">Import transport rates</span> for suppliers on their own transport rate. See section 13.3 for how imports work.</p>
+<p>Many at once: <span class="ui">Import from file</span> → <span class="ui">Import suppliers</span> (Figure 4.6), <span class="ui">Import opening balances</span> (below), or <span class="ui">Import transport rates</span> for suppliers on their own transport rate. See section 13.3 for how imports work.</p>
 <div class="box rule"><span class="label">Opening balances</span>
 <p>On the supplier's <span class="ui">Payout &amp; credit</span> tab, the <span class="ui">Opening balances</span> card holds what the supplier owed and held when the factory started keeping records here: advance, loan, manure, tea packets, savings and the unpaid balance, all as at one cut-over month for the whole factory (its first month with bills here), with a note. Many at once: <span class="ui">Import from file</span> on Suppliers. They lock once a bill of ours is published for the supplier.</p>
+</div>
+<div class="box rule"><span class="label">Transport rate and corrections</span>
+<p>Also on <span class="ui">Payout &amp; credit</span>: the <span class="ui">Transport rate</span> card sets what this supplier pays per kilo for transport (<span class="ui">Change</span>; empty means the collection point's rate). The <span class="ui">Corrections</span> card is the manager's: <span class="ui">Post a correction</span> fixes a payment, or a loan, fertilizer or savings balance, after a bill is published, with a reason; a payment lands on the next bill.</p>
 </div>
 
 <!-- 5 -->
@@ -153,6 +156,9 @@
   <li>Type the <span class="ui">Decision note</span> (required; the supplier reads it), or click a common note.</li>
   <li>Confirm. Then <strong>enter the approval in the factory system</strong>, as the dialog reminds you.</li>
 </ol>
+<div class="box rule"><span class="label">Who decides depends on the amount</span>
+<p>In Configuration → Credit rules, each kind of credit can have <span class="ui">A clerk may approve up to (LKR)</span>, so a clerk decides small requests at the counter, and <span class="ui">The owner approves above (LKR)</span>, so large ones go to the factory administrator. Left empty, the manager decides every amount.</p>
+</div>
 <figure><img class="screen" src="../images/console/11-credit-detail.jpg"><figcaption><b>Figure 5.2</b> A manure request with its working.</figcaption></figure>
 <div class="box example"><span class="label">Example: reading the working (Figure 5.2)</span>
 <div class="calc">Supplier 5063 (DENIYAYA) asks for Dolomite, 498 kg       Rs. 104,605.69
@@ -226,7 +232,7 @@ Still available              Rs. 190,192.17      → "Within the ceiling"</div>
 <ol class="steps">
   <li>Click <span class="ui">Inquiries</span> and open a message. The list opens on <span class="ui">Open and escalated</span>; pick another status to see those messages.</li>
   <li>Type a reply (or click a suggested reply) and send it. The supplier reads it in the app and gets a notification.</li>
-  <li>When nothing more is needed, close the inquiry. Closing without replying files a message that needed no answer.</li>
+  <li><span class="ui">Send reply</span> marks the inquiry answered. If your reply asks the supplier something, first tick <span class="ui">This asks the supplier something: wait for their answer</span>. Use <span class="ui">Close unanswered</span> only for a duplicate, a test, or a message meant for somewhere else.</li>
 </ol>
 <p><strong>Office notes</strong> on the right are seen only by the office (for example "Called the supplier, will call back on Monday"). The manager answers too: a message passed to the manager comes to them (Figure 9.2 is the manager's view).</p>
 
@@ -257,6 +263,7 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
 <ol class="steps">
   <li>Click <span class="ui">Leaf intake</span>. Choose the <span class="ui">Day</span> and the <span class="ui">Collection point</span>.</li>
   <li>Enter each weighing: supplier code, then kilos. The totals at the top update as you go, so a mistyped kilo shows before it reaches a bill.</li>
+  <li>Click <span class="ui">Record … lines</span> when the session is done. Nothing is recorded until then; a line the console refuses stays in the grid with its reason, to fix and record again.</li>
   <li>To correct a weighing, click <span class="ui">Void</span> on its row and give the reason; then enter the right one. A weighing is never deleted.</li>
 </ol>
 <ul>
@@ -272,8 +279,8 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
 <p>For a factory whose bills are worked out in the console (Configuration → Bill calculation → "Calculated in this console").</p>
 <figure><img class="screen" src="../images/console/07-rates-month-close.jpg"><figcaption><b>Figure 12.1</b> Rates &amp; month close: the auction rate, the month close checklist, the bill run and the exceptions.</figcaption></figure>
 <ol class="steps">
-  <li><strong>Enter the rate</strong> (manager). When the auction result is known, type the <span class="ui">Rate per kg</span> and any <span class="ui">Extra rate per kg</span>, and click <span class="ui">Save the rate</span>.</li>
-  <li><strong>Resolve the exceptions</strong> at the bottom of the page (for example a supplier with leaf but no bank details), each with a note.</li>
+  <li><strong>Enter the rate</strong> (manager). When the auction result is known, type the <span class="ui">Rate per kg</span> and any <span class="ui">Extra per kg</span>, and click <span class="ui">Save the rate</span>.</li>
+  <li><strong>Resolve the exceptions</strong> (manager) at the bottom of the page (for example a supplier with leaf but no bank details), each with a note.</li>
   <li><strong>Generate the bills</strong> (clerk or manager) with <span class="ui">Generate the bills</span>, then <span class="ui">Review this month's bills</span> on the Bills screen.</li>
   <li><strong>Publish</strong>: when every step of the checklist is ticked, another manager (not the one who entered the rate) clicks <span class="ui">Publish</span>. The bills appear in the app and each supplier is notified.</li>
 </ol>
@@ -285,12 +292,18 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
 <div class="box warn"><span class="label">Publishing moves the credit limits</span>
 <p>Advance, loan and manure limits are worked out from the last published month, so publishing a month changes every supplier's limits.</p>
 </div>
+<div class="box rule"><span class="label">What comes off every account (manager)</span>
+<p>Before the first calculated month, check the <span class="ui">What comes off every account</span> card: transport per kg, transport by collection point, stamps, and the most a credit may take in one month (%). One manager changes a figure and clicks <span class="ui">Send for approval</span>; another manager clicks <span class="ui">Approve</span>.</p>
+</div>
+<div class="box rule"><span class="label">Other deductions (clerk)</span>
+<p>On a bill, click <span class="ui">Edit</span> on the Other deductions line and type the amount and a reason the supplier reads. Many at once: <span class="ui">Import from file</span> → <span class="ui">Import other deductions</span>. Only before the publish, or on a held bill.</p>
+</div>
 <h2>12.1 Compare with the printed slips</h2>
 <p>The factory's system still prints a slip for every supplier, so each calculated bill must equal its slip before the month is published.</p>
 <ol class="steps">
-  <li>After generating, open the <span class="ui">Compare with printed slips</span> card. For each slip, click <span class="ui">Enter printed</span> and type its Balance in whole rupees, or bring them all in with <span class="ui">Import from file</span> (Printed slip balances).</li>
+  <li>After generating, open the <span class="ui">Compare with printed slips</span> card. For each slip, click <span class="ui">Enter printed</span> and type its Balance in whole rupees, or bring them all in with <span class="ui">Import from file</span> → <span class="ui">Import printed slip balances</span>.</li>
   <li>Each bill shows <span class="ui">Matches</span>, <span class="ui">Does not match</span> or <span class="ui">No printed figure</span>.</li>
-  <li>Fix a difference at its cause (a weighing, the rate, an approval entered in one system only) and generate again. Or click <span class="ui">Hold</span> and give a reason of at least 10 characters.</li>
+  <li>Fix a difference at its cause (a weighing, the rate, an approval entered in one system only) and generate again. Or click <span class="ui">Hold</span> and give a reason of at least 10 characters. After the publish, a fixed held bill is recalculated with <span class="ui">Recalculate held bills (…)</span>.</li>
   <li>Publish. Held bills are left out; the rest appear in the app.</li>
   <li>When a held bill matches, a manager clicks <span class="ui">Release</span>. After the publish, this publishes that one bill and tells the supplier.</li>
 </ol>
@@ -327,13 +340,13 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
 </ul>
 
 <!-- 14 -->
-<h1>14. News, banners and fixed pages <span class="who">Content editor</span></h1>
+<h1>14. News, banners and fixed pages <span class="who">Content editor and factory administrator</span></h1>
 <figure><img class="screen" src="../images/console/15-news.jpg"><figcaption><b>Figure 14.1</b> News: each article's status and which languages are missing.</figcaption></figure>
 <h2>14.1 Write a news article</h2>
 <ol class="steps">
   <li>Click <span class="ui">News</span> → <span class="ui">New article</span>.</li>
   <li>Write the title and text in each language tab (Sinhala, English, Tamil). Add a cover image if you have one.</li>
-  <li>Click <span class="ui">Publish</span>, or choose a date and time to publish later.</li>
+  <li>Save it. The factory administrator clicks <span class="ui">Publish</span>, or chooses a date and time to publish later; an editor sees that publishing is the administrator's.</li>
 </ol>
 <p>A missing translation is allowed: the app shows the English to that reader, and the list marks it (for example "No Sinhala translation"). "Needs updating" means the English changed after that translation was written.</p>
 <figure><img class="screen" src="../images/console/16-banners.jpg"><figcaption><b>Figure 14.2</b> Promo banners: the live window and what the button opens.</figcaption></figure>
@@ -342,11 +355,11 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
   <li><span class="ui">Promo banners</span> → <span class="ui">New banner</span>.</li>
   <li>Write the headline and button label in each language; upload artwork if you have it.</li>
   <li>Choose what the button opens (a screen in the app, a website, a phone number or an email) and the start and end dates.</li>
-  <li>Publish. Suppliers see it only between the start and end dates.</li>
+  <li>Save it; the factory administrator publishes it. Suppliers see it only between the start and end dates.</li>
 </ol>
 <figure><img class="screen" src="../images/console/16b-fixed-pages.jpg"><figcaption><b>Figure 14.3</b> Fixed pages: FAQ, savings scheme, credit terms, about, terms and privacy, with a preview of what the supplier sees.</figcaption></figure>
 <h2>14.3 Edit a fixed page</h2>
-<p>Choose the page and the language, change the text or add a question, and click <span class="ui">Save</span>. An edit to a live page is live at once. <span class="ui">Restore default text</span> puts the page back to the standard wording.</p>
+<p>Choose the page and the language, change the text or add a question, and click <span class="ui">Save …</span> for that language. An edit to a live page is live at once. <span class="ui">Restore default text</span> fills the form with the standard wording; check it, then save. Nothing changes in the app until you save.</p>
 
 <!-- 15 -->
 <h1>15. Notifications</h1>
@@ -356,6 +369,7 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
   <li><strong>Write a notification</strong>: a headline to all suppliers, one collection point or one supplier, now or later. A notification cannot be taken back, so the console checks who it will reach before it is sent.</li>
   <li>The list shows how many phones each one reached and how many had turned that kind off.</li>
   <li><strong>In each language:</strong> a written notification has a tab per factory language. English is required; Sinhala and Tamil are optional, and a supplier whose app is in a language left empty gets the English. A tab with nothing in it is marked, and the confirmation names those languages before sending. Write both the title and the message in a language, or neither.</li>
+  <li>Sending a notification and switching the automatic ones are the factory administrator's.</li>
 </ul>
 
 <!-- 16 -->
@@ -409,7 +423,7 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
 <figure><img class="screen" src="../images/console/19b-roles-matrix.jpg"><figcaption><b>Figure 17.2</b> What each role may do: See, Change or Approve, for each area.</figcaption></figure>
 <p>The console will not let you remove the last administrator, change your own role, or leave nobody able to manage users.</p>
 <div class="box rule"><span class="label">A role that cannot do what it should</span>
-<p>A role changed here keeps those levels even when the console's standard table later gives it more. Each cell that differs from the standard shows it underneath ("Standard: Change"). On <span class="ui">What each role may do</span>, click <span class="ui">Restore the standard permissions</span> and confirm: every changed role goes back to the standard, and each user keeps their role. Users see the change the next time they sign in.</p>
+<p>A role changed here keeps those levels even when the console's standard table later gives it more. Each cell that differs from the standard shows it underneath ("Standard: Change"). On <span class="ui">What each role may do</span>, click <span class="ui">Restore the standard permissions</span> and confirm: every changed role goes back to the standard, and each user keeps their role. It takes effect the next time somebody loads a screen.</p>
 </div>
 
 <!-- 18 -->
@@ -426,7 +440,7 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
   <li><span class="ui">Download CSV</span> under each table.</li>
 </ul>
 <figure><img class="screen" src="../images/console/21-audit.jpg"><figcaption><b>Figure 18.4</b> The audit log: who did what, when, and what changed.</figcaption></figure>
-<p>The audit log cannot be edited. Filter by record type or person, and download it as CSV. <strong>Data status</strong> (from the sync chip at the top, sync on) says how current the figures are before you quote one to a supplier.</p>
+<p>The audit log cannot be edited. Filter by record type or by <span class="ui">Who acted</span> (Office, The supplier, Automatic), and download it as CSV. <strong>Data status</strong> (from the sync chip at the top, sync on) says how current the figures are before you quote one to a supplier.</p>
 
 <!-- 19 -->
 <h1>19. When the console says no</h1>
@@ -438,7 +452,7 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
   <tr><td>A request is already pending</td><td>Decide the first one</td></tr>
   <tr><td>A note is required</td><td>Every rejection, void and hold needs a reason</td></tr>
   <tr><td>Your role does not allow this</td><td>The page belongs to another role; ask the administrator</td></tr>
-  <tr><td>The month is locked</td><td>It is published; corrections go on next month's bill</td></tr>
+  <tr><td>The month is locked</td><td>It is published; a manager posts a correction on the supplier's Payout &amp; credit tab (<span class="ui">Post a correction</span>)</td></tr>
   <tr><td>An earlier month is not published</td><td>Publish months in order</td></tr>
   <tr><td>The month has not ended</td><td>Publish calculated bills after the month's last day</td></tr>
   <tr><td>Approval missing from the slip</td><td>Enter it in the factory system, export and import the file again</td></tr>

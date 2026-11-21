@@ -94,8 +94,8 @@ assumed to be solved.
 | `npm run build:staging` | Production bundle pointed at staging                          |
 | `npm run typecheck`  | `tsc --build`, all three projects                                |
 | `npm run lint`       | Includes the white-label and layering rules                      |
-| `npm run test`       | Vitest against the MSW mock, 588 tests in 80 files               |
-| `npm run e2e`        | Playwright, 29 tests in 7 specs, on its own dev server (port 5274) with the API answered by the MSW handlers (`apps/admin/e2e/fixtures.ts`; `npx playwright install chromium` once) |
+| `npm run test`       | Vitest against the MSW mock, 671 tests in 94 files (21 November 2026) |
+| `npm run e2e`        | Playwright, 34 tests in 8 specs, on its own dev server (port 5274) with the API answered by the MSW handlers (`apps/admin/e2e/fixtures.ts`; `npx playwright install chromium` once) |
 | `npm run domain:drift` | Does the backend's copy of `@tfd/domain` match this one (sibling checkout)? |
 
 CI (`.github/workflows/ci.yml`) runs typecheck, lint, the unit tests, the build and the
@@ -174,7 +174,7 @@ Everything is in `docs/v2/`. Start from the row for who you are.
 | Document | Reader | What is in it |
 | --- | --- | --- |
 | [status.md](./docs/v2/status.md) | Anyone reviewing or planning; a front-end developer joining | **What is built, module by module, and what is open**: what the backend has, what the console hides until it ships, the module map and what each module decides (and which screens appear only with the sync off), acceptance criteria, known gaps, open business questions |
-| [BACKEND-TODO.md](./docs/v2/BACKEND-TODO.md) | **The backend developer**, first | The backend's open work only, in order, what the console hides in `lib/serverReady.ts`, and the decisions behind it (what is done is in status.md) |
+| [BACKEND-TODO.md](./docs/v2/BACKEND-TODO.md) | **The backend developer**, first | The backend's open work only, in order, the answers to its questions, and the decisions behind it (what is done is in status.md) |
 | [factory-records.md](./docs/v2/factory-records.md) | The backend developer, then anyone working on sync off | **Sync off**: the switch, the screens, entry and Excel/CSV import, the API, how bills are imported or calculated, credit rules while records are kept here, and what the factory decided |
 | [api-contract.md](./docs/v2/api-contract.md) | The backend developer | Base URL, auth realm, every endpoint with payloads, the error envelope and refusal order, idempotency, and the agreed shapes |
 | [new-factory.md](./docs/v2/new-factory.md) | The platform team, the factory administrator, **the factory's owner and management** | **Adding and running a factory**: who does what, the slug, `npm run db:seed:tenant`, DNS, the console configuration, the factory's records, the per-factory app build; the decisions only the factory can make and those it has taken; the roles in the office; the platform team's side of each mode (consuming the sync, the credit ceiling, the freshness indicator) |
@@ -193,8 +193,7 @@ Everything is in `docs/v2/`. Start from the row for who you are.
 
 **v1 (the seventeen-module console) is in git history, not in the tree.** Recover it with
 `git log -- docs/v1/` and `git show <rev>:docs/v1/<file>`. The same goes for the v2
-documents since merged into the ones above (the old file names, and where each went, are
-in [BACKEND-TODO.md](./docs/v2/BACKEND-TODO.md#docs-merged-in-the-console-repo-update-your-links)).
+documents since merged into the ones above (git history has the old file names).
 
 The product specification, what the console is for and why, lives in the mobile
 repository's `docs/`, and nothing here restates it.

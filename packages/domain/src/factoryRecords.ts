@@ -91,8 +91,9 @@ export interface LoanInterestSetting extends AdvanceInterestSetting {
 }
 
 /**
- * One month of a loan on the bill. The interest is worked on the loan **owed at the start
- * of the month** (Rs. 50,000 at 1% is Rs. 500), never on unpaid interest.
+ * One month of a loan on the bill. The interest is worked on the loan **owed before this
+ * bill's instalment**, as at the month's end (so a loan approved during the month is included;
+ * Rs. 50,000 at 1% is Rs. 500), never on unpaid interest.
  *
  * **Interest an instalment cannot cover** (decided 10 November 2026). Under
  * `withinInstalment` the interest is taken out of the instalment first; when the instalment

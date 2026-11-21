@@ -298,7 +298,7 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
 <!-- 7 -->
 <h1>7. Suppliers</h1>
 <h2>7.1 Every value shown is the active one</h2>
-<p>The supplier page shows what is in force now. A change waiting for approval (bank, payment method, savings rate, address) is shown as pending beside it, never as if applied. The page has six tabs: Overview, Money, Requests, Income, Notifications and Activity.</p>
+<p>The supplier page shows what is in force now. A change waiting for approval (bank, payment method, savings rate, address) is shown as pending beside it, never as if applied. The page has six tabs: Overview, Payout &amp; credit, Requests, Income, Notifications and Activity.</p>
 <h2>7.2 Adding a supplier (sync off)</h2>
 <ul>
   <li><strong>The supplier code is the factory's own code</strong> and the app's sign-in id: letters and digits, with the division in brackets if wanted, for example <strong>5708 (MAKADURA)</strong>.</li>
@@ -338,7 +338,7 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
 </div>
 
 <h2>7.6 Corrections after a published bill</h2>
-<p>A published bill is never changed. A mistake found later is corrected <strong>forward</strong>, on the supplier's Money tab, under <strong>Corrections</strong>.</p>
+<p>A published bill is never changed. A mistake found later is corrected <strong>forward</strong>, on the supplier's Payout &amp; credit tab, under <strong>Corrections</strong>.</p>
 <ul>
   <li><strong>Only the manager</strong> can post one. A reason of at least 10 characters, and the month it corrects (a month with a published bill).</li>
   <li><strong>A balance</strong> (loan, fertilizer, savings) changes at once. It can never go below 0.</li>
@@ -369,14 +369,14 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
 <h2>9.1 The rate card</h2>
 <p>The month's rate per kg and extra rate per kg, entered when the auction result is known. Entering the rate does not publish anything.</p>
 <h2>9.2 Exceptions</h2>
-<p>For calculated bills, things that must be looked at before the close (for example, leaf for a supplier with no bank details, a negative balance, deductions above the gross, a missing rate). Each is resolved with a note. Imported months have no exceptions step: the slip is the record.</p>
+<p>For calculated bills, things that must be looked at before the close (for example, leaf for a bank-transfer supplier with no bank details, leaf for a suspended or closed supplier, a pending change to how a supplier is paid or saves, or a weighing over 250 kg). Each is resolved with a note. Imported months have no exceptions step: the slip is the record.</p>
 <h2>9.3 Deduction rates (two people)</h2>
 <table>
   <tr><th>Rate</th><th>Default until the factory sets its own</th></tr>
   <tr><td>Transport per kg (factory-wide)</td><td>Rs. 2.50</td></tr>
   <tr><td>Transport per collection point</td><td>None: points use the factory rate</td></tr>
   <tr><td>Stamps</td><td>Rs. 25.00</td></tr>
-  <tr><td>Instalment cap: the most of a month's gross one facility may take</td><td>Advance 100%, loan 20%, manure 15%</td></tr>
+  <tr><td>Instalment cap: the most of a month's gross one facility may take</td><td>Loan 20%, manure 15%. The screen also shows an advance cap, but it has no effect: an advance is always taken in full on its month's bill</td></tr>
 </table>
 <p>One person <strong>proposes</strong>, another <strong>approves</strong>, because Rs. 2.50 against Rs. 4.50 a kilo is a different sum on every account and nobody would notice for a month. The screen shows what each change moves from and to.</p>
 <h2>9.4 Publishing a month</h2>
@@ -384,15 +384,15 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
 <ol>
   <li>Already published (and nothing late waiting).</li>
   <li>An earlier month still has unpublished bills, or leaf with no bills: months are published in order.</li>
-  <li>A calculated month that has not ended yet: what is approved in its last days must reach its bills.</li>
   <li>The rate is missing.</li>
+  <li>A calculated month that has not ended yet (what is approved in its last days must reach its bills), or an earlier month that still has leaf waiting.</li>
   <li>Exceptions still open (calculated bills).</li>
   <li>Bills missing or out of date: making them again would change them (a weighing, a rate or an approval changed since). The message names the suppliers.</li>
   <li>A bill differs from its printed slip and is not held (calculated bills).</li>
   <li>An approval missing from a slip (imported bills).</li>
   <li><strong>Two-person rule:</strong> the publisher may not be the person who entered the rate or imported a bill of the month. That person sees a warning instead of the button.</li>
 </ol>
-<p>Calculated bills are also <strong>made</strong> month by month: a month before the newest published one is refused, and the factory's first calculated month needs opening balances (or an earlier bill of ours).</p>
+<p>Calculated bills are also <strong>made</strong> month by month: a month before the newest published one or before the cut-over month is refused, an earlier month with leaf or bills must be published first, and the factory's first calculated month needs opening balances (or an earlier bill of ours).</p>
 <p>Publishing makes the bills visible in the app, sends a "your account is ready" notification to each supplier whose bill was published (never to every supplier; a held bill's supplier is told when it is released), posts savings, settles withdrawals and moves every credit limit.</p>
 <h2>9.5 Other deductions (calculated bills)</h2>
 <ul>
@@ -425,7 +425,7 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
   <li><strong>Checked again at approval.</strong> Between asking and approving, a month may have been published or a loan approved. An approval over the current limit is refused.</li>
   <li><strong>The approver sees exactly what the supplier saw:</strong> the same months, rate × kilos or average, multiplier, cap and limit.</li>
   <li><strong>Rejection needs a note</strong>, which the supplier reads in the app.</li>
-  <li><strong>Two people:</strong> nobody decides a request they recorded. Above the factory's manager threshold (when set), only someone with the higher permission may approve.</li>
+  <li><strong>Two people:</strong> nobody decides a request they recorded. Above the factory's owner amount (when set), only the factory administrator may approve.</li>
   <li><strong>The amount or term may differ</strong> from what was asked; the factory decides.</li>
   <li><strong>Approval also refuses</strong> a suspended or closed supplier, an advance still outstanding, and a loan still owed.</li>
   <li>The supplier may cancel their own request while it is pending. If the office decided first, the cancel is refused.</li>
@@ -461,7 +461,7 @@ If October's gross were only 30,000:
   <li><strong>Limit</strong> = 3 × the average gross of the last 6 settled months (default), capped at a maximum when the factory sets one.</li>
   <li><strong>Term:</strong> the supplier chooses 3 to 12 monthly bills (default); a term outside the factory's list is refused, never rounded.</li>
   <li><strong>An open loan blocks a new loan and an advance</strong> until it is repaid. Manure is not affected. A supplier repaying a 10-month loan gets neither for those months.</li>
-  <li><strong>Each bill deducts a fixed instalment</strong> = amount borrowed ÷ months chosen, never more than the loan cap (20% of gross by default) and never more than is still owed. The slip shows its number: "Loans / Advance 3" is the third instalment. A month without leaf, or a lean month that repays none of the loan while it is owed, is skipped, not counted and not a restart; a bill that only takes interest after the loan is repaid has no number.</li>
+  <li><strong>Each bill deducts a fixed instalment</strong> = amount borrowed ÷ months chosen, never more than the loan cap (20% of gross by default) and never more than is still owed. The slip shows its number: "Loans / Advance 3" is the third instalment. A month without leaf, or a lean month that repays none of the loan while it is owed, is skipped, not counted and not a restart; a bill that only takes interest after the loan is repaid has no number. An imported bill counts by the number printed on its slip, and the first bill calculated here carries on from the last printed number.</li>
   <li><strong>Loan Balance</strong> on the slip is the loan still owed after this bill.</li>
   <li><strong>A loan approved during the month</strong> is recovered, with its interest, on that month's bill.</li>
   <li><strong>A month without leaf</strong> takes no instalment and charges no interest.</li>
@@ -469,7 +469,7 @@ If October's gross were only 30,000:
 <h2>12.1 Loan interest</h2>
 <ul>
   <li>Set in Configuration → Bill calculation, as a percentage a month. <strong>0% unless the factory sets it.</strong></li>
-  <li><strong>Simple interest on the loan owed at the start of the month</strong>, never on unpaid interest.</li>
+  <li><strong>Simple interest on the loan owed before this bill's instalment</strong> (as at the month's end, so a loan approved during the month is included), never on unpaid interest.</li>
   <li>The factory chooses how it is taken: <strong>on top</strong> of the instalment (the default), or <strong>inside</strong> it.</li>
   <li>The month's charge in rupees is the slip's "Loan Interest" line.</li>
   <li><strong>Inside the instalment, in a poor month:</strong> if the instalment (capped by the gross) is smaller than the interest, the interest it cannot cover is taken from the next bill. It is never added to the loan, so it never earns interest.</li>
@@ -661,7 +661,7 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
   <tr><td>Common notes</td><td>Suggested notes for decisions and replies</td></tr>
 </table>
 <h2>20.1 Feature switches</h2>
-<p>Advances, loans, manure, tea packets, savings, payouts, news, promo banners, inquiries, notifications, biometric sign-in, dark mode, auto-lock, onboarding tour and "This month so far". A switch turned off removes the screen from the app <strong>and</strong> the server refuses it.</p>
+<p>Advances, loans, manure, tea packets, savings, news, promo banners, inquiries, notifications, biometric sign-in, dark mode, auto-lock, onboarding tour and "This month so far". A switch turned off removes the screen from the app <strong>and</strong> the server refuses it.</p>
 <h2>20.2 What an edit is refused for</h2>
 <table>
   <tr><th>Change</th><th>Result</th><th>Why</th></tr>
@@ -707,7 +707,7 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
 <h1>22. Dashboard, reports, audit log and sync status</h1>
 <ul>
   <li><strong>Dashboard:</strong> what is waiting, the age of the oldest item in each queue and how many are past their target, app adoption (suppliers signed in, devices), content problems (articles falling back to English, banners whose window closed, pages nobody wrote).</li>
-  <li><strong>Proposed service targets</strong> (to agree with the factory): advance, first response same working day, resolved in 2; loan 2 and 5; manure same day, next distribution; bank change 2 and 5; savings rate 2, before next month close; inquiry 1 and 3.</li>
+  <li><strong>Service targets</strong> (agreed 30 October 2026): advance decided within 24 hours; inquiry answered within 2 days; change requests, fertilizer and tea packets 3 days; loans 5 days.</li>
   <li><strong>Notification bell:</strong> queues waiting, and what suppliers just did (requests sent or cancelled, inquiry replies, account-deletion requests). Read marks are per user.</li>
   <li><strong>Reports:</strong> App use (are suppliers moving from the counter to the app), Credit and tea packets (approved, issued and refused by month), Savings (what the factory holds, for how many, in and out by month; only when savings is on).</li>
   <li><strong>Audit log:</strong> who did what, when, before and after; filter and export; never edited.</li>
@@ -748,7 +748,7 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
 
 <!-- 24 -->
 <h1>24. What works today and what is coming</h1>
-<p>As of 17 November 2026. The console hides each unfinished feature until the server supports it, so the office never meets an error page.</p>
+<p>As of 21 November 2026. The console hides each unfinished feature until the server supports it, so the office never meets an error page.</p>
 <table>
   <tr><th>Area</th><th>Status</th></tr>
   <tr><td>App management: queues, change requests, inquiries, news, banners, pages, notifications, configuration, users, reports, audit</td><td><span class="tag now">Working</span></td></tr>

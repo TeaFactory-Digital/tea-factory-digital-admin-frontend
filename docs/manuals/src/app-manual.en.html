@@ -17,7 +17,7 @@
   <div class="meta">
     <p><strong>For:</strong> suppliers, and the office staff who help them.</p>
     <p><strong>Screenshots:</strong> taken from the real app with sample data for supplier 5708 of Galaboda Tea Factory (July 2026). Your factory's app has its own name, colours and figures.</p>
-    <p><strong>As of:</strong> 28 October 2026. The rules behind every screen are in "Supplier App: How It Works".</p>
+    <p><strong>As of:</strong> 21 November 2026. The rules behind every screen are in "Supplier App: How It Works".</p>
     <p><strong>Posters:</strong> two A3 posters for the factory notice board (getting started, and what the app can do) in Sinhala, English and Tamil, in Figma: <a href="https://www.figma.com/design/K0wFjrwm7KC1NH3MRA1k16/Supplier-banners--A3----Tea-Factory-Digital?node-id=2-2">https://www.figma.com/design/K0wFjrwm7KC1NH3MRA1k16/Supplier-banners--A3----Tea-Factory-Digital?node-id=2-2</a></p>
   </div>
 </section>
@@ -77,7 +77,7 @@
   <li>Tap <span class="ui">Sign in</span>.</li>
 </ol>
 <h2>2.2 The first time: choose your own password</h2>
-<p>The password from the office is not a secret, because it was given to you over a counter or a telephone. The first time you sign in, the app asks you to choose your own: type it twice. If you already chose one at the office, you may keep it; the app asks only once.</p>
+<p>The password from the office is not a secret, because it was given to you over a counter or a telephone. The first time you sign in, the app asks you to choose your own: type it twice and tap <span class="ui">Save new password</span>, or tap <span class="ui">Keep my current password</span>. The app asks only once.</p>
 <h2>2.3 Protect your account with a PIN</h2>
 <p>Next, the app offers a 4-digit PIN (Figure 2.3). With a PIN, coming back to the app asks for the PIN instead of your password. Where your phone has a fingerprint or face unlock, you can use that too. Tap <span class="ui">Set a PIN</span>, or <span class="ui">Skip for now</span> and set it later in Settings.</p>
 <h2>2.4 Forgot your password?</h2>
@@ -120,7 +120,7 @@
   <tr><td>Balance</td><td>Gross less deductions, the coins carried to next month, and the <strong>final balance</strong> you are paid</td></tr>
   <tr><td>Correction</td><td>Only when the office has found a mistake on an earlier bill: the month it corrects, the amount (plus if you were paid too little, minus if too much) and the office's reason</td></tr>
   <tr><td>Carried forward</td><td>Debt carried to next month, the loan still owed, manure still owed, and this month's loan interest in rupees</td></tr>
-  <tr><td>Savings</td><td>This month's savings, the balance before, and your savings to date</td></tr>
+  <tr><td>Savings</td><td>This month's savings, the balance before, and your savings to date (less any withdrawal paid on this bill, shown as "Savings taken back")</td></tr>
   <tr><td>Daily supply</td><td>A bar and a box for every day of the month with the kilos weighed. Days with no leaf are blank</td></tr>
 </table>
 <h2>4.3 Save, share or ask</h2>
@@ -197,7 +197,7 @@ Final balance (paid in tens)                     72,250.00   coins 1.70 to April
   <li><strong>Changed your mind?</strong> A pending request can be cancelled from its row. If the office has already decided, the cancel is refused.</li>
 </ol>
 <div class="box warn"><span class="label">When there is no form</span>
-<p>If you cannot ask right now, the screen shows an orange message saying why instead of the form: a request is already waiting, a loan is still owed, an advance is not yet deducted, not enough months of history, the manure limit is reached, or the factory has not set a price.</p>
+<p>If you cannot ask right now, the screen shows an orange message saying why instead of the form: a request is already waiting, a loan is still owed, an advance is not yet deducted, no settled rate from last month or no leaf yet this month (advance), not enough months of history, the manure limit is reached, or the factory has not set a price.</p>
 </div>
 <div class="box rule"><span class="label">Asking is not getting</span>
 <p>The office may approve a different amount or term. It checks your limit again when it decides.</p>
@@ -220,6 +220,7 @@ Most you can request                202.00 × 247.5 = Rs. 49,995.00</div>
 <ul>
   <li>There is no form while an earlier advance is still owed (Figure 8.3: "You still owe Rs. 15,000.00 on an earlier advance"), or while a loan is owed.</li>
   <li>An advance cannot be spread over months. If the month's leaf does not cover it, the rest is carried to next month as debt.</li>
+  <li>The <span class="ui">Loan interest</span> row on this screen is your newest bill's loan interest; an advance itself bears no interest. (The pictures above show the row's older name.)</li>
 </ul>
 
 <!-- 9 -->
@@ -244,7 +245,8 @@ Asks Rs. 50,000, repay over 10  → "About Rs. 5,000.00 off each account"</div>
 </ol>
 <ul>
   <li>Each bill takes the same instalment, numbered: "Loan (instalment 3)". In a month with little leaf the factory may take less, and the loan simply runs a little longer.</li>
-  <li>Interest, if your factory charges it, is shown on each bill as "Loan interest".</li>
+  <li>Interest, if your factory charges it, is shown on each bill as "Loan interest". The last instalment takes what is owed plus its interest, so it clears the loan.</li>
+  <li>A month with no leaf takes nothing: no instalment, interest or stamps, and it does not count in the numbering.</li>
   <li><strong>While a loan is owed, you cannot ask for a new loan or an advance</strong> (Figure 9.3). Manure is not affected.</li>
 </ul>
 
@@ -269,6 +271,7 @@ Urea is sold in 50 kg bags at Rs. 9,800 a bag
 <p>You do not type a price: the factory prices the request from its own list, in whole bags (60 kg would be 2 bags).</p>
 </div>
 <p>Manure needs 6 settled months of history (Figure 10.3: "You have 4. Keep supplying leaf and this opens up").</p>
+<p>With several manure credits running, their instalments are added together on the bill. A month with no leaf takes no manure instalment.</p>
 
 <!-- 11 -->
 <h1>11. Asking for tea packets</h1>
@@ -293,10 +296,10 @@ Urea is sold in 50 kg bags at Rs. 9,800 a bag
   <figure><img src="../images/app/10-savings-rate.jpg"><figcaption><b>Figure 12.3</b> Savings per kilo</figcaption></figure>
 </div>
 <ul>
-  <li><span class="ui">Savings</span> (side menu) shows your total to date, this month's savings and the balance before, a chart, and every month's contribution with the balance after it. Example: Rs. 173,261.00 + 3,900.00 = Rs. 177,161.00.</li>
+  <li><span class="ui">Savings</span> (side menu) shows your total to date, this month's savings and the balance before, a chart, and every month's contribution with the balance after it. Example: Rs. 173,261.00 + 3,900.00 = Rs. 177,161.00. <span class="ui">About the savings scheme</span> opens the factory's rules.</li>
   <li>Your savings each month = your savings per kilo × your kilos (Rs. 10 × 390 kg = Rs. 3,900).</li>
   <li><strong>To change your savings per kilo:</strong> Settings → <span class="ui">Savings per kilo</span> → <span class="ui">Change amount</span>, choose the new amount, send. Your current amount stays until the factory approves; the change starts from the next month not yet closed. Choosing 0 stops saving.</li>
-  <li><strong>To take savings out:</strong> ask at the office. Withdrawals are allowed in the factory's withdrawal month (usually April) and are paid on your next bill.</li>
+  <li><strong>To take savings out:</strong> ask at the office. Withdrawals are allowed in the factory's withdrawal month (usually April) and are paid on your next bill, where they appear as "Savings taken back" and come off your total to date.</li>
 </ul>
 
 <!-- 13 -->
@@ -326,8 +329,8 @@ Urea is sold in 50 kg bags at Rs. 9,800 a bag
 </div>
 <ol class="steps">
   <li>Side menu → <span class="ui">Contact the factory</span>.</li>
-  <li>Type a <span class="ui">Subject</span> and your <span class="ui">Message</span> (up to 2,000 characters), then tap <span class="ui">Send inquiry</span>.</li>
-  <li>Past inquiries show "Waiting for reply" or "Answered". Tap one to read the office's reply and write back.</li>
+  <li>Type a <span class="ui">Subject</span> and your <span class="ui">Message</span> (the subject up to 160 characters, the message up to 4,000), then tap <span class="ui">Send inquiry</span>.</li>
+  <li>Past inquiries show "Waiting for reply", "Waiting for your reply", "Answered" or "Closed". Tap one to read the office's reply and write back (each reply up to 2,000 characters; a suggested reply under the box fills it with one tap).</li>
 </ol>
 <p>Example (Figure 14.2): "My supply on the 12th does not appear on the bill." The office answered: "Corrected on the next account. Apologies for the delay." Once the office closes a conversation, start a new inquiry for something else.</p>
 
@@ -361,7 +364,8 @@ Urea is sold in 50 kg bags at Rs. 9,800 a bag
   <tr><td>Change password</td><td>Type your current password, then the new one twice, and tap <span class="ui">Update password</span></td></tr>
   <tr><td>Bank details, Savings per kilo</td><td>Sections 12 and 13</td></tr>
   <tr><td>Contact the factory, About the factory, Terms, Privacy, FAQ, Support</td><td>Section 17</td></tr>
-  <tr><td>Log out</td><td>Signs you out of this phone</td></tr>
+  <tr><td>App tour</td><td>Walks you through the app again</td></tr>
+  <tr><td>Log out</td><td>Signs you out of this phone; <span class="ui">Log out &amp; forget me</span> also forgets the saved sign-in</td></tr>
   <tr><td>Delete my account</td><td>Asks the factory to close your app account</td></tr>
 </table>
 
@@ -378,7 +382,8 @@ Urea is sold in 50 kg bags at Rs. 9,800 a bag
 <h1>18. Questions and answers</h1>
 <table>
   <tr><th>Question</th><th>Answer</th></tr>
-  <tr><td>My bill for last month is not showing.</td><td>The office publishes the bills after the auction rate is known, usually in the first two weeks of the next month. Until then you see the previous bill, and "This month so far" says "Month ended, bill being prepared".</td></tr>
+  <tr><td>My bill for last month is not showing.</td><td>The office publishes the bills after the auction rate is known, usually in the first two weeks of the next month. Until then you see the previous bill, and "This month so far" says "Month ended, bill being prepared". If the card has moved on to the new month and last month's bill is still missing, the office is checking it against the printed slip: ask the office.</td></tr>
+  <tr><td>The app says "Please update the app".</td><td>This version is no longer supported. Tap <span class="ui">Update now</span>, or update the app from the Play Store or the App Store.</td></tr>
   <tr><td>The money figures are blank.</td><td>That month's rate is not set yet. Blank is not zero.</td></tr>
   <tr><td>Why was I paid Rs. 70,050 and not Rs. 70,054.40?</td><td>The factory pays in whole tens. The Rs. 4.40 is "Coins carried forward" and is paid on next month's bill.</td></tr>
   <tr><td>Why can't I ask for a loan or an advance?</td><td>Read the orange message on the screen. Most often a loan is still owed, an earlier request is still waiting, or there are not enough settled months yet.</td></tr>

@@ -1,7 +1,7 @@
 # Status
 
-**As of 26 October 2026.** What is built, module by module, what the backend has, what the
-console hides until the backend ships, and what is still open. Read this before planning
+**As of 21 November 2026.** What is built, module by module, what the backend has, what the
+console would hide until the backend ships (nothing, since e164e2f), and what is still open. Read this before planning
 the next slice.
 
 **Anything marked a gap is exactly that.** Nothing here is quietly assumed to be solved.
@@ -15,7 +15,7 @@ the next slice.
 | **Console** | Every module in [Modules](#modules) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
 | **Backend** | `tea-factory-digital-backend`, shipped up to `fb687f7`; staging is migrated through `20261112020000` and deploys by hand after migrating; galaboda's bill source is "Imported". BACKEND-TODO **#1 to #64 are done except #59's five-year job**: **#45** (factory records without the factory system) is complete with the bill engine (`221a1c0`, ADR-042), carried loan interest and repaid manure plans (`52afb75`) and the printed-slip check, hold and release (`e164e2f`). The T15 answers (`1e5401b`) and the loan instalment number (`fb687f7`) are built. Open: T17 (two confirmations), #66 (link files, waiting on the Play SHA-256 and the host); #65 (production) is on hold until there are real clients. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
-| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls, including the ones the backend has not built: **643 tests in 88 files**. Playwright: **29 tests in 7 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
+| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls: **671 tests in 94 files** (21 November 2026). Playwright: **34 tests in 8 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
 ### Built against the mock and tested
 
@@ -55,7 +55,7 @@ and implemented by the mock with the same rules the API must keep:
   requests): the office must also enter the record in the factory's own system.
 - The app flag **`enableMonthToDate`** (fifteen flags in all) in Configuration → Features,
   for the app's "This month so far", which reads `GET /bills/month-to-date` (BACKEND-TODO
-  #48; the flag stays hidden until then).
+  #48, live; the flag is shown and sent).
 - Every new error code and import problem explained in en/si/ta.
 
 ### Done on the backend
@@ -86,18 +86,14 @@ reports.
 ### Hidden in the console until the backend ships it
 
 `apps/admin/src/lib/serverReady.ts`, one line each; remove a line the day its endpoint
-ships:
-
-| Console feature | Waits for |
-| --- | --- |
-| Import → Printed slip balances | `POST /admin/imports/printedBalances` (`IMPORT_KINDS_NOT_ON_SERVER`; Other deductions is live since `b6c10d6`) |
-| Rates & month close: "Compare with printed slips", the checklist step, held badges | `GET .../slip-comparison`, `PUT /admin/bills/:id/printed`, `POST /admin/bills/:id/hold`, `/release` (`SLIP_COMPARISON_ON_SERVER`) |
+ships. **Nothing is hidden since backend e164e2f** (12 November 2026): every flag is on and
+`IMPORT_KINDS_NOT_ON_SERVER` is empty.
 
 The Leaf intake grid and Rates & month close stay visible. On Rates & month close the
 month list, the finished-bills import, the checklist and the publish work against the API
 for imported months (`12eea12`); entering a rate, the exceptions queue (not shown for an
-imported month, which has none) and the leaf calls start working as those endpoints land. Still to come on the backend: the bill
-engine (live, `221a1c0`) and the printed-slip check (live, `e164e2f`): galaboda imports today but may choose calculated bills at any time, and both ways now work.
+imported month, which has none) and the leaf calls work against the API too (`e4a9f40`). The bill
+engine (`221a1c0`) and the printed-slip check (`e164e2f`) are live: galaboda imports today but may choose calculated bills at any time, and both ways now work.
 "Where the bills come from" and "How the loan interest is taken" shipped in `970be6f`, so
 the console shows and sends both.
 
@@ -176,10 +172,9 @@ time: switching is refused while a month has generated but unpublished bills
 | `imported` | The factory's own system prints them; the office imports the finished bills and the console stores them **exactly as printed**. They must equal the factory's final figures (galaboda) | Import → Finished bills, then review and publish |
 | `calculated` (default) | Worked out here from the leaf, the month's rate and the approved deduction rates by `computeBillAmounts` (`packages/domain/src/bill.ts`) | Generate bills (`BillRunCard`), review, type other deductions, publish |
 
-**Features the backend has not built yet are hidden in one place**,
-`apps/admin/src/lib/serverReady.ts`, and listed
-[above](#hidden-in-the-console-until-the-backend-ships-it) and in
-[BACKEND-TODO.md](./BACKEND-TODO.md).
+**Features the backend has not built would be hidden in one place**,
+`apps/admin/src/lib/serverReady.ts` ([above](#hidden-in-the-console-until-the-backend-ships-it));
+since e164e2f nothing is.
 
 ### M1 Dashboard
 
@@ -304,11 +299,12 @@ sidebar row.
 - The date and the point are the primary controls and live in the URL, so "look at Makadura
   yesterday" is a link.
 - **Open** month: the session grid is offered for entry (`EntrySession`). **Locked**
-  (published) month: no grid at all (BR-108). **Read-only user**: the day and its rows, no
+  (published) month: no grid at all (BR-108), **except for held bills**: a banner names the
+  suppliers whose bill for that month is held, and the grid and Void stay open for them, with
+  no 30-day limit (decided 17 November 2026). **Read-only user**: the day and its rows, no
   grid.
 - A weighing can be voided with a reason (`VoidDeliveryDialog`); the row stays, marked.
-- **Import from file**: a day's or a month's weighings at once (kind `deliveries`). Hidden
-  until the backend ships the import. Importing again skips a weighing already recorded
+- **Import from file**: a day's or a month's weighings at once (kind `deliveries`). Importing again skips a weighing already recorded
   (same date, supplier, kilos and point, matched by count), with "import them anyway" for a
   real second weighing (`IMPORT_SKIP_ON_SERVER`).
 - Permission `deliveries: W`, which the clerk now holds.
@@ -325,14 +321,15 @@ sidebar row.
 | **Exceptions queue** | The month's exceptions, each resolved with a note | `ratesAndMonthClose: W` |
 | **Deduction rates** | Transport per kg (factory-wide **and per collection point**), stamps, instalment caps. Proposed by one person, approved by another, because a change re-prices every account | `ratesAndMonthClose: W` propose, `A` approve |
 | **Bill run** (`BillRunCard`, calculated bills only) | Generate the month's bills, then **Review this month's bills** on M5 | `billing: W` |
-| **Compare with printed slips** (`SlipComparisonCard`, calculated bills only) | Each bill's Balance against the printed slip; **Enter printed**, **Hold** (a reason), **Release**. A held bill stays out of the publish; the supplier's next month's bill is held automatically and released after it. **Hidden until the backend ships it** (`SLIP_COMPARISON_ON_SERVER`) | `billing: W` (enter, hold) / `ratesAndMonthClose: A` (release) |
+| **Compare with printed slips** (`SlipComparisonCard`, calculated bills only) | Each bill's Balance against the printed slip; **Enter printed**, **Hold** (a reason), **Release**. A held bill stays out of the publish; the supplier's next month's bill is held automatically and released after it. Live since backend e164e2f | `billing: W` (enter, hold) / `ratesAndMonthClose: A` (release) |
 | **Import** | Monthly rates; Finished bills (imported) or Other deductions and Printed slip balances (calculated) | `ratesAndMonthClose: W` / `billing: W` |
 
 With **no months yet** (a new importing factory) the screen shows an empty state with the
 Import menu: the import creates the month. The publish refuses, in order,
-`already-published`, `earlier-month-unpublished`, `rate-missing`, `exceptions-open`,
-`bills-missing`, `bills-stale`, `bills-mismatch`, `approval-missing` and
-`four-eyes-violation` (api-contract §10.5). Publishing makes the bills visible in the app
+`already-published`, `earlier-month-unpublished`, `rate-missing`, for a calculated month
+`month-not-ended` and `earlier-month-unpublished` (an earlier month with leaf), then
+`exceptions-open`, `bills-missing`, `bills-stale` (naming the suppliers on a calculated month),
+`bills-mismatch`, `approval-missing` and `four-eyes-violation` (api-contract §10.5). Publishing makes the bills visible in the app
 and fires `billPublished`. Generating in an importing factory is `409 wrong-bill-source`.
 
 ### M5 Bills
@@ -589,7 +586,9 @@ the console read.
 - **Advance interest**: none (decided 10 November 2026): the advance is taken in full, and
   Configuration no longer asks for a rate.
 - "Where the bills come from" and "How the loan interest is taken": changing the source is
-  refused while a month has generated but unpublished bills (`409 bill-source-blocked`). A
+  refused while a month has generated but unpublished bills (`409 bill-source-blocked`
+  with `details.months`), and switching back to imported while payment corrections wait
+  (`reason: 'payment-corrections-pending'`, `details.count`). A
   save sends both; the API keeps what is stored for a field left out.
 
 #### Credit rules: how much a supplier may borrow
@@ -702,7 +701,7 @@ Against the mobile repo's `docs/domain-logic.md` §18.3.
 | AC-01 | App and M2 show the same active bank details, savings rate, payment method | ✅ Met: active values only; a pending change renders as pending |
 | AC-02 | Approving changes the app's displayed value; rejecting leaves it and shows the note | ✅ Met, with an integration test on both halves |
 | AC-03 | A bill matches the app's Home screen and the PDF field for field | ✅ **Console and app met**: the slip follows the factory's printed one line for line from the shared `bill.ts`, and the app shows the same lines (Other deductions with its reason, the loan instalment number). With the sync off the bill is produced here (imported exactly as printed, or calculated); with the sync on it comes from the factory's system, which must send every line (`factory-system-team.md` §3) |
-| AC-04 | The month cannot be published with an unresolved exception | ✅ **Met with the sync off**: `exceptions-open` is in the publish's ordered refusals (api-contract §10.5), against the mock for calculated bills. The backend's month reads and publish are live since `12eea12` for imported months, which have no exceptions (A13). With the sync on, the month is closed in the factory's system |
+| AC-04 | The month cannot be published with an unresolved exception | ✅ **Met with the sync off**: `exceptions-open` is in the publish's ordered refusals (api-contract §10.5), against the API for calculated bills since `221a1c0`. The backend's month reads and publish are live since `12eea12` for imported months, which have no exceptions (A13). With the sync on, the month is closed in the factory's system |
 | AC-05 | Credit eligibility matches the app's, byte for byte, including the working | ✅ Every intermediate figure is rendered and the derivation is shared (`leafCredit.ts`); the app's working lines come from the server's figures |
 | AC-06 | Rejecting without a note is impossible | ✅ Met at three layers on every queue, including M18 |
 | AC-07 | A flag off removes the surface **and** the endpoint refuses | ✅ The console hides the surface; the mock and the backend refuse with `403 feature-disabled` |
@@ -726,13 +725,12 @@ Worst first: correctness, then plumbing, then polish.
    headroom twice ([factory-system-team.md §C](./factory-system-team.md#c-who-decides-credit-and-what-each-side-calculates)).
    Switching a factory from records kept here back to the sync also waits for Phase 10.
 
-2. **BACKEND-TODO #45 is not finished.** A sync-off factory can add suppliers, set
-   transport rates, record walk-ins, and import and publish its finished bills against the
-   real API (a late division file's bills wait for a manager, R15, and a waiting one is
-   replaced by sending it again, R18), and enter opening balances (one at a time or from a file, `5b58f81`), enter and import leaf and monthly rates and import a file again, skipping
-   what is already there (`e4a9f40`). It cannot yet generate bills and compare them with the
-   printed slips, type other deductions, or run the last two imports (other deductions,
-   printed slip balances). The table under
+2. **BACKEND-TODO #45 is finished** (21 November 2026). A sync-off factory can add
+   suppliers, set transport rates, record walk-ins, import and publish its finished bills
+   (late division files included), enter opening balances, enter and import leaf and
+   monthly rates (importing again skips what is there), and, where bills are calculated,
+   generate and publish them, type other deductions, and compare them with the printed
+   slips with hold and release (`221a1c0`, `52afb75`, `e164e2f`, `1e5401b`, `fb687f7`). The table under
    [Hidden in the console](#hidden-in-the-console-until-the-backend-ships-it) says what is
    hidden.
 
@@ -760,7 +758,7 @@ Worst first: correctness, then plumbing, then polish.
    in the console and the app on 30 October 2026: the manager posts one on the supplier's Money
    tab (a balance moves at once, a payment lands on the next bill as a "Correction" line with
    the reason). Switched on 4 November 2026. A payment correction waits `pending` until the
-   bill engine (BACKEND-TODO #45) generates a bill to carry it; imported factories correct
+   next calculated bill carries it (the bill engine is live, `221a1c0`); imported factories correct
    payments in their own system.
 
 7. **The Sinhala and Tamil labels: signed off.** The factory confirmed on 30 October 2026

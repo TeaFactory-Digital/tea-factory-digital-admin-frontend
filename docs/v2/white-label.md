@@ -201,7 +201,7 @@ the app's flag set.** Nothing more, nothing less.
 | `enableDarkModeToggle` | - | The dark-mode switch |
 | `enableProfileTab` | - | Nothing: the app has no Profile tab (29 October 2026). Hidden in Configuration → Features; the stored value is kept |
 | `enableAutoLock` | - | `useAutoLock` |
-| `enableMonthToDate` | - (M14 shows its switch only once `MONTH_TO_DATE_ON_SERVER` is true) | "This month so far" on the Account tab: `MonthToDateCard`, compact, with a day strip (off by default; BACKEND-TODO #48) |
+| `enableMonthToDate` | - (M14 shows its switch: `MONTH_TO_DATE_ON_SERVER` is true) | "This month so far" on the Account tab: `MonthToDateCard`, compact, with a day strip (off by default; BACKEND-TODO #48) |
 
 **Six of the fifteen gate nothing this console renders, and that is expected.**
 `enableBiometricLogin` is a phone capability; there is no office equivalent and
@@ -347,7 +347,7 @@ of the row:
 | Section | Blocks of the row |
 | --- | --- |
 | The factory | `factory` (identity, as printed on the bill) |
-| Features | `flags`, **the fifteen** (`enableMonthToDate` neither shown nor sent until `MONTH_TO_DATE_ON_SERVER`) |
+| Features | `flags`, **the fifteen** (all shown and sent; `MONTH_TO_DATE_ON_SERVER` is on) |
 | Factory system | `factorySync`: the sync on or off (absent or `null` reads as off) |
 | Collection & savings | `collectionPoints`, `savings` (rates, withdrawal month, interest), `manureProducts` |
 | Banks & branches | `banks` |

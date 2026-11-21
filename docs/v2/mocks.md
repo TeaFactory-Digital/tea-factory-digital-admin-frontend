@@ -472,7 +472,9 @@ with `suppliers`/`count`/`reason: 'figures'`. Also as the API: a held supplier's
 published month, with no 30-day limit; a month without leaf charging nothing; several manure
 plans adding their instalments; the loan's planned instalment uncapped by the balance
 (`loanRecovery` caps it); and the instalment number skipping a bill without leaf and a lean
-month, with no number on a bill that repays none of the loan.
+month, with no number on a bill that repays none of the loan. Not simulated: `month-not-ended` on a
+calculated publish (tests publish the current month), and a calculated run's `reasons` and
+`staleSuppliers` (the run is stale by kilos only here).
 
 **The two race answers**, which a test cannot make happen by itself, are switched on by
 hooks: `setMockPublishInProgress(true)` makes a credit or tea-packet decision and a

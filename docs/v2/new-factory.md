@@ -495,10 +495,9 @@ deliberately: that is the default. The contract is
   of Rs. 1, 5 or 10 (`paymentUnit`, plus `loanInterest.recovery` for how loan interest is
   taken); bill numbers are the year of the bill's month and a serial that never resets
   (`factoryBillNumber`).
-- **Not on the backend yet.** Features the API has not built are hidden in one place,
-  `apps/admin/src/lib/serverReady.ts`; remove a line the day its endpoint ships
-  (BACKEND-TODO #45 and #48 list them; [status.md](./status.md#hidden-in-the-console-until-the-backend-ships-it)
-  has the table).
+- **Not on the backend yet.** Features the API has not built would be hidden in one place,
+  `apps/admin/src/lib/serverReady.ts`; since backend e164e2f nothing is, every flag is on
+  ([status.md](./status.md#hidden-in-the-console-until-the-backend-ships-it)).
 
 ### 9.5 Other console pieces the office relies on
 

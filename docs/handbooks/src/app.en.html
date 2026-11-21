@@ -67,9 +67,10 @@
 <ul>
   <li><strong>Sign in with the supplier number and a password</strong>: the bare number from "Sup. Code" on the slip (for example 5708), never an email.</li>
   <li><strong>The first password comes from the office.</strong> At the first sign-in the app asks the supplier to choose their own. Keeping the office's password is offered as a real choice, not hidden. The answer is remembered for the account, so it is asked once, not on every phone.</li>
-  <li><strong>Forgot password:</strong> there is no email reset. The app shows the factory's telephone, email and hours; the office issues a new one-time password and ends the supplier's sessions on every phone.</li>
+  <li><strong>Forgot password:</strong> there is no email reset. The app shows the factory's telephone and office hours, with a Call the factory button; the office issues a new one-time password and ends the supplier's sessions on every phone.</li>
   <li><strong>Saved login</strong> is kept only in the phone's secure keychain.</li>
-  <li><strong>App PIN (4 digits)</strong> and <strong>fingerprint or face unlock</strong>: offered once after the first sign-in. Fingerprint or face appears only when the phone has one set up and the factory allows it. It unlocks a saved session; it is not a password to the server.</li>
+  <li><strong>App PIN (4 digits)</strong> and <strong>fingerprint or face unlock</strong>: offered once after the first sign-in. Fingerprint or face appears only when the phone has one set up, the factory allows it and an app PIN is set. It unlocks a saved session; it is not a password to the server.</li>
+  <li><strong>Updates:</strong> when a version is no longer supported, the app shows "Please update the app" with an Update now button and nothing else; when a newer version is out, it says "A new version is available".</li>
   <li><strong>Auto-lock</strong> asks for the PIN after leaving the app: immediately, after 1 minute, after 5 minutes, or never. Only when a PIN is set. Answering a call or the app switcher does not count as leaving.</li>
   <li><strong>Coming back</strong> opens where the supplier left off, behind the lock screen if a PIN is set.</li>
   <li><strong>Session ended:</strong> if the server no longer accepts the sign-in, the app tries once to renew it; if that fails it says "Your session has ended. Please sign in again."</li>
@@ -79,8 +80,8 @@
 <h1>3. Finding your way around</h1>
 <table>
   <tr><th>Where</th><th>What</th></tr>
-  <tr><td>Bottom tabs</td><td>Account (the bill), Income, News, Settings. Profile is not a tab: it opens from Settings and the side menu</td></tr>
-  <tr><td>Side menu (☰ in the header)</td><td>Savings, Request an advance, Request a loan, Request manure, Request tea packets, Inquiry. Each appears only if the factory runs it</td></tr>
+  <tr><td>Bottom tabs</td><td>Account (the bill), Income history, News, Settings. Profile is not a tab: it opens from Settings and the side menu</td></tr>
+  <tr><td>Side menu (☰ in the header)</td><td>Savings, Request an advance, Request a loan, Request manure, Request tea packets, Contact the factory. Each appears only if the factory runs it</td></tr>
   <tr><td>Bell in the header</td><td>Everything the factory has sent, newest first, with unread marked</td></tr>
 </table>
 <p>A first-time tour shows the main screens where the factory turns it on.</p>
@@ -109,7 +110,7 @@ Balance amount     = gross − total of the nine deductions
 Paid               = balance (+ any savings withdrawal), rounded DOWN
                      to the factory's payment unit (Rs. 1, 5 or 10)
 Coins carried fwd  = what is left below the unit, paid next month</div>
-<p>If the balance is below zero, nothing is paid and the shortfall is "Next month deb", which is next month's "Previous debts".</p>
+<p>If the balance is below zero, nothing is paid and the shortfall is "Next month debit", which is next month's "Previous debts". The PDF keeps the slip's wording, "Next Month Deb".</p>
 </div>
 <h2>5.1 The real galaboda slip, July 2026 (supplier 5708)</h2>
 <div class="calc">509.5 kg × Rs. 222 = 113,109.00     extra 509.5 × 3 = 1,528.50
@@ -135,11 +136,11 @@ Paid          68,220.00  (in tens)     coins carried 6.91 → August</div>
 <h2>5.3 Carried forward and savings</h2>
 <table>
   <tr><th>Panel line</th><th>Means</th></tr>
-  <tr><td>Next month deb</td><td>Debt carried into next month</td></tr>
+  <tr><td>Next month debit</td><td>Debt carried into next month</td></tr>
   <tr><td>Loan balance</td><td>The loan still owed</td></tr>
   <tr><td>Manure balance</td><td>Fertilizer still owed</td></tr>
   <tr><td>Loan interest</td><td>This month's interest charge in rupees</td></tr>
-  <tr><td>Savings: previous / this month / to date</td><td>The savings account before, this month's deduction, and the total</td></tr>
+  <tr><td>Savings: previous / this month / to date</td><td>The savings account before, this month's deduction, and the total, less any withdrawal paid on this bill (shown as "Savings taken back")</td></tr>
 </table>
 <h2>5.4 Bill number</h2>
 <p>The factory's number: the year of the bill's month and a serial that never resets, for example 2026210869, then 2027210870 in the new year.</p>
@@ -201,6 +202,7 @@ Paid          68,220.00  (in tens)     coins carried 6.91 → August</div>
   <tr><td>A request is already waiting for the office</td><td>Advance, loan, manure</td></tr>
   <tr><td>A loan is still owed ("You can ask for a new loan or an advance once it is repaid")</td><td>Advance, loan</td></tr>
   <tr><td>An advance taken is not yet deducted</td><td>Advance</td></tr>
+  <tr><td>No settled rate from last month, or no leaf yet this month ("A new advance needs a settled rate from last month and leaf supplied this month.")</td><td>Advance</td></tr>
   <tr><td>Not enough settled months of history</td><td>Loan, manure</td></tr>
   <tr><td>The manure balance has reached the limit</td><td>Manure</td></tr>
   <tr><td>The factory has not set a price</td><td>Tea packets, a fertilizer type</td></tr>
@@ -230,8 +232,8 @@ Paid          68,220.00  (in tens)     coins carried 6.91 → August</div>
   <li><strong>Cash against a record of income.</strong> Needs 6 settled months (the factory may set another number).</li>
   <li><strong>Limit</strong> = 3 × the average gross of the last 6 settled months (default), capped where the factory sets a maximum.</li>
   <li><strong>The supplier chooses the term</strong>: 3 to 12 monthly bills (default), as a row of choices. The amount per bill is shown under the choice as the amount is typed, so the supplier sees whether it is affordable.</li>
-  <li>Each bill deducts the same instalment, numbered ("Loan (instalment 3)"), but never more than the factory's share of that month's gross; in a poor month the loan simply runs longer. A month without leaf is skipped in the numbering, never a restart.</li>
-  <li><strong>Interest</strong> is the factory's: 0% unless set. Simple interest on the loan owed at the start of the month, taken on top of the instalment or inside it. Inside it, interest an instalment cannot cover in a poor month is taken from the next bill, never added to the loan.</li>
+  <li>Each bill deducts the same instalment, numbered ("Loan (instalment 3)"), but never more than the factory's share of that month's gross; in a poor month the loan simply runs longer. A month without leaf, or a lean month that repays none of the loan, is skipped in the numbering, never a restart.</li>
+  <li><strong>Interest</strong> is the factory's: 0% unless set. Simple interest on the loan owed before the month's instalment (as at the month's end, so a loan approved during the month is included), taken on top of the instalment or inside it. Inside it, interest an instalment cannot cover in a poor month is taken from the next bill, never added to the loan. The last instalment takes what is owed plus its interest, so it clears the loan.</li>
   <li>A month without leaf takes no instalment and no interest.</li>
   <li><strong>While a loan is owed</strong>, neither a new loan nor an advance can be asked for. Manure is not affected.</li>
 </ul>
@@ -251,6 +253,7 @@ With 1% inside the instalment: deducts 5,000, loan balance 45,500</div>
   <li><strong>No amount is typed.</strong> The factory prices it from its own list, by the bag, rounded up to whole bags.</li>
   <li>A type the factory has not priced cannot be sent.</li>
   <li>With several manure credits running, each one's instalment is added together on the bill, never more than the factory's share of the gross or what is owed.</li>
+  <li>A month without leaf takes no manure instalment.</li>
 </ul>
 <div class="box example"><span class="label">Example</span>
 <p>Urea in 50 kg bags at Rs. 9,000. The supplier asks for 60 kg: the store issues 2 bags, Rs. 18,000, recovered over the term chosen.</p>
@@ -301,9 +304,9 @@ With 1% inside the instalment: deducts 5,000, loan balance 45,500</div>
 <h1>16. Inquiries</h1>
 <ul>
   <li>Each inquiry is a <strong>conversation</strong>: the supplier's message, the office's replies and follow-ups, in one thread.</li>
-  <li>A message is at most 2,000 characters.</li>
+  <li>A new inquiry has a subject of up to 160 characters and a first message of up to 4,000; each reply in the thread is up to 2,000. Suggested replies under the box fill it with one tap.</li>
   <li>When the office closes it, the message box is replaced by a note; a new inquiry can be started.</li>
-  <li>The list is newest first, with status: waiting, resolved or closed.</li>
+  <li>The list is newest first, with status: Waiting for reply, Waiting for your reply, Answered or Closed.</li>
 </ul>
 
 <!-- 17 -->
@@ -321,13 +324,17 @@ With 1% inside the instalment: deducts 5,000, loan balance 45,500</div>
 <table>
   <tr><th>Setting</th><th>Choices</th></tr>
   <tr><td>Language</td><td>Sinhala (default), English, Tamil</td></tr>
-  <tr><td>Theme</td><td>Light (default) or dark, where the factory allows</td></tr>
+  <tr><td>Theme</td><td>System, Light (default) or Dark, where the factory allows</td></tr>
   <tr><td>Text size</td><td>Small, medium, large</td></tr>
-  <tr><td>Fingerprint / face</td><td>On or off, when the phone supports it and the login is saved</td></tr>
+  <tr><td>Fingerprint / face</td><td>On or off, when the phone supports it and an app PIN is set</td></tr>
   <tr><td>App PIN and auto-lock</td><td>Immediately, 1 minute, 5 minutes, never</td></tr>
   <tr><td>Change password</td><td>Current, new and confirm</td></tr>
   <tr><td>Notifications</td><td>One switch per kind</td></tr>
   <tr><td>Profile and avatar</td><td>Section 15</td></tr>
+  <tr><td>App tour</td><td>Walks through the app again</td></tr>
+  <tr><td>About the factory, Terms &amp; Conditions, Privacy policy, FAQ, Support</td><td>The factory's own pages</td></tr>
+  <tr><td>Log out</td><td>Signs out; "Log out &amp; forget me" also removes the saved sign-in from the phone</td></tr>
+  <tr><td>Delete my account</td><td>Asks the factory to close the app account</td></tr>
 </table>
 
 <!-- 19 -->
@@ -365,7 +372,7 @@ With 1% inside the instalment: deducts 5,000, loan balance 45,500</div>
 <!-- 22 -->
 <h1>22. What works today and what is coming</h1>
 <table>
-  <tr><th>Area</th><th>Status (17 November 2026)</th></tr>
+  <tr><th>Area</th><th>Status (21 November 2026)</th></tr>
   <tr><td>Sign-in, PIN, fingerprint, auto-lock, bill, PDF, income history, credit and tea packet requests, savings, profile and change requests, inquiries, news, banners, notifications, settings</td><td><span class="tag now">Working</span></td></tr>
   <tr><td>Bills from galaboda's imported slips</td><td><span class="tag now">Working</span></td></tr>
   <tr><td>"This month so far"</td><td><span class="tag now">Working</span></td></tr>
@@ -386,7 +393,7 @@ With 1% inside the instalment: deducts 5,000, loan balance 45,500</div>
   <tr><td>Balance amount</td><td>Gross less deductions</td></tr>
   <tr><td>Paid</td><td>The balance rounded down to the factory's payment unit</td></tr>
   <tr><td>Coins brought / carried forward</td><td>The small part below the payment unit, paid next month</td></tr>
-  <tr><td>Next month deb</td><td>What a bill could not cover, carried to next month</td></tr>
+  <tr><td>Next month debit</td><td>What a bill could not cover, carried to next month</td></tr>
   <tr><td>Advance</td><td>Cash against this month's leaf, deducted in full this month</td></tr>
   <tr><td>Loan</td><td>Cash against income history, repaid in instalments</td></tr>
   <tr><td>Manure</td><td>Fertilizer on credit, repaid in instalments</td></tr>

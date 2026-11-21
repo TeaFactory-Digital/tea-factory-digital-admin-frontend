@@ -1,9 +1,9 @@
 # Factory records without the factory system
 
-**Status (29 October 2026):** the console is built against the mock and tested; the backend
-is partly built (the finished-bills import, the month reads and the publish since `12eea12`,
-and opening balances since `5b58f81`; see [BACKEND-TODO.md](./BACKEND-TODO.md) #45 for what is still to build, in
-order, and what the console hides until it lands).
+**Status (21 November 2026):** the console is built and tested, and the backend has all of
+it (#45 complete: the finished-bills import and publish `12eea12`, opening balances `5b58f81`,
+leaf and months `e4a9f40`, other deductions `b6c10d6`, the bill engine `221a1c0`, the
+printed-slip check `e164e2f`, and the follow-ups `52afb75`, `1e5401b`, `fb687f7`).
 **For:** the backend developer. This file is the contract the console was built against.
 
 ## 1. Why
@@ -100,7 +100,7 @@ can see a factory's records for support. Every write on those routes still refus
 All record writes refuse with **`409 factory-sync-on`** while the sync is on, and `403`
 without the permission in §3. The shapes are the domain types named, and the console's mock
 (`apps/admin/src/services/mocks/handlers.ts`) implements each one; copy its rules.
-BACKEND-TODO #45 says which of these are built.
+All of them are built (#45 complete).
 
 | Method and path | Body / answer | Refusals |
 |---|---|---|
@@ -111,12 +111,12 @@ BACKEND-TODO #45 says which of these are built.
 | `GET /admin/months`, `GET /admin/months/:monthKey` | `Paged<MonthSummary>`, `MonthSummary` (with `lateBills`, §5a) | `404` unknown month |
 | `PUT /admin/months/:monthKey/rate` | `MonthlyRateEntry` → `MonthSummary` | `409 month-locked`, `422 invalid-rate` |
 | `GET /admin/months/:monthKey/exceptions`, `POST .../exceptions/:id/resolve` | `Paged<MonthException>`, `{ note }` | `422 note-required` |
-| `POST /admin/months/:monthKey/bills/generate` | `{ monthKey }` → `BillRun`. In a published month, recalculates **only the held bills** (§5) | `409 wrong-bill-source` (first), `409 rate-missing`, `409 month-locked` (published, nothing held) |
-| `POST /admin/months/:monthKey/publish` | `{ monthKey, note? }` → `MonthSummary`. Held bills stay unpublished (§5). On a published month, publishes its late bills (§5a) | `already-published`, `earlier-month-unpublished` (`details.monthKey`, §5a), `rate-missing`, `exceptions-open`, `bills-missing`, `bills-stale`, `bills-mismatch` (calculated bills, §5), `approval-missing` (imported bills, §5a), `four-eyes-violation` |
+| `POST /admin/months/:monthKey/bills/generate` | `{ monthKey }` → `BillRun`. In a published month, recalculates **only the held bills** (§5) | `409 factory-sync-on`, `409 wrong-bill-source`, `409 month-mismatch`, `404`, `409 records-busy`, `409 month-locked` (published, nothing held; or `reason: 'behind'`, before the newest published month or the cut-over), `409 rate-missing`, `409 cut-over-month` (`reason: 'required'`: no bill of ours and no opening balances), `409 earlier-month-unpublished` |
+| `POST /admin/months/:monthKey/publish` | `{ monthKey, note? }` → `MonthSummary`. Held bills stay unpublished (§5). On a published month, publishes its late bills (§5a) | `already-published`, `earlier-month-unpublished` (`details.monthKey`, §5a), `rate-missing`, `month-not-ended` and `earlier-month-unpublished` (an earlier month with leaf; calculated bills), `exceptions-open`, `bills-missing`, `bills-stale`, `bills-mismatch` (calculated bills, §5), `approval-missing` (imported bills, §5a), `four-eyes-violation` |
 | `GET /admin/months/:monthKey/slip-comparison` | `MonthSlipComparison` (`billing: R`) | `409 wrong-bill-source` (not calculated, or sync on), `404` unknown month |
 | `PUT /admin/bills/:id/printed` | `{ finalBalance: number \| null }` → `SlipComparisonRow` (`billing: W`) | `409 wrong-bill-source`, `409 month-locked` (published), `422 invalid` |
 | `POST /admin/bills/:id/hold` | `{ reason }` (10+ characters) → `SlipComparisonRow` (`billing: W`) | `409 wrong-bill-source`, `409 month-locked` (published), `422 invalid` |
-| `POST /admin/bills/:id/release` | → `SlipComparisonRow & { published }` (`ratesAndMonthClose: A`) | `409 bill-not-held`, `409 bills-stale` (leaf moved since the bill was calculated), `409 bill-still-mismatched` |
+| `POST /admin/bills/:id/release` | → `SlipComparisonRow & { published }` (`ratesAndMonthClose: A`) | `409 factory-sync-on`, `409 bill-not-held`, `409 earlier-bill-held` (`details.monthKey`), `409 bills-stale` (`suppliers`, `count`, `reason: 'figures'`), `409 bill-still-mismatched` |
 | `POST /admin/suppliers` | `NewSupplier` → `{ id }` (201) | `409 supplier-code-taken`, `422 unknown-collection-point`, `422 bank-details-required` |
 | `GET /admin/suppliers/:id/opening-balances` | `OpeningBalancesRecord` | `404` none yet |
 | `PUT /admin/suppliers/:id/opening-balances` | `OpeningBalances & { note }` → `OpeningBalancesRecord` | `409 opening-balances-locked`, `422 note-required` |
@@ -129,7 +129,7 @@ Already on the backend and used as they are: `GET /admin/bill-months`, `GET /adm
 `GET /admin/bills/:id`, `GET /admin/months/:monthKey/bill-run`, the four
 `/admin/deduction-rates` routes, credit approve/reject, and since `12eea12` the `bills`
 import, `GET /admin/months`, `GET /admin/months/:monthKey` and the publish (imported
-months; the late bills of §5a are still to come).
+months; the late bills of §5a since `671627d`).
 
 Config and shapes on existing routes (`GET /config`, `GET /admin/config`,
 `PATCH /admin/config`; each block saved whole):
@@ -142,7 +142,8 @@ Config and shapes on existing routes (`GET /config`, `GET /admin/config`,
   means `{ paymentUnit: 1 }`, the `GL/YYYY-MM/NNNN` numbers, and `source: 'calculated'`
   (`billSourceOf`). Refuse with `billSettingsProblem`. Refuse changing `source` while a
   month has generated but unpublished bills: `409 bill-source-blocked` with
-  `details.months`.
+  `details.months`; and refuse switching back to imported while payment corrections wait:
+  `409 bill-source-blocked` with `details: { reason: 'payment-corrections-pending', count }`.
 - **`DeductionRates.transportByPoint?: Record<pointId, number>`** on the four
   `/admin/deduction-rates` routes, proposed and approved with the other rates.
 - **`AdminSupplier.transportPerKg?: number | null`** (and `SupplierDetail`): `null` or
@@ -254,8 +255,8 @@ edited here. Audit `bill.adjust`.
 | Kind | Server-only checks (problem `code`) | What it saves |
 |---|---|---|
 | `suppliers` | `duplicate` in file, an existing code **skipped** (`supplier-exists`, not refused), `unknown-collection-point`, `bank-details-required`, `unknown-bank`, `bank-not-in-catalogue` | Suppliers, as Add supplier |
-| `deliveries` | `unknown-supplier`, `month-locked`, `unknown-collection-point`; on `date`, `not-allowed` (after today) and `too-old` (more than 30 days back); a weighing already recorded **skipped** (`already-recorded`) | Deliveries, `source: 'scaleFile'`; point defaults to the supplier's |
-| `monthlyRates` | `duplicate`, `unknown-month`, `month-locked` | The month's rate, moving the stage to `rateEntered` |
+| `deliveries` | `unknown-supplier`, `month-locked`, `unknown-collection-point`; on `date`, `not-allowed` (after today) and `too-old` (more than 30 days back, except in a held supplier's held month); a weighing already recorded **skipped** (`already-recorded`) | Deliveries, `source: 'scaleFile'`; point defaults to the supplier's |
+| `monthlyRates` | `duplicate`, `unknown-month`, `month-locked`, `rate-differs`, `must-be-positive`, `too-large` | The month's rate, moving the stage to `rateEntered` |
 | `openingBalances` | `duplicate`, `unknown-supplier`, `opening-balances-locked`, `cut-over-month` (on `asOfMonth`), `withdrawal-pending` | Opening balances |
 | `walkInCredit` | `unknown-supplier`, manure without type or quantity (`required`), and the walk-in refusals above | Pending office requests |
 | `billAdjustments` | `duplicate` (month + code), `unknown-supplier`, `month-locked`, `no-bill`, note missing (`required`) | Other deductions, as above |
@@ -307,7 +308,7 @@ Its inputs, per supplier and month:
 | Savings | kilos × the supplier's savings per kg |
 | Tea packets | Approved tea-packet requests |
 | Advance | Taken back **in full** on its month's bill, even past the gross (`DEFAULT_DEDUCTION_RATES.instalmentShares.advance = 1`). An advance never carries a balance |
-| Loan (`loansAdvance`, the slip's "Loans / Advance") | `loanRecovery(loan owed at the start of the month, planned instalment, config.loanInterest)`: the planned instalment, with the month's interest **on top** (`onTop`) or **inside** it (`withinInstalment`). `loanInstalmentNo` = 1 + the loan instalments on the bills just before this month, skipping a bill without leaf and a lean month that repays none of the loan while it is owed (neither counts nor restarts the run); a bill that repays none of the loan (only interest carried after it is repaid) has no number. The planned instalment goes in under the gross share, **not** capped at the balance: `loanRecovery` caps it (1e5401b) |
+| Loan (`loansAdvance`, the slip's "Loans / Advance") | `loanRecovery(loan owed before this bill's instalment, as at the month's end (T(M), ADR-038, so a loan approved during the month is included), planned instalment, config.loanInterest)`: the planned instalment, with the month's interest **on top** (`onTop`) or **inside** it (`withinInstalment`). `loanInstalmentNo` = 1 + the loan instalments on the bills just before this month, skipping a bill without leaf and a lean month that repays none of the loan while it is owed (neither counts nor restarts the run); a bill that repays none of the loan (only interest carried after it is repaid) has no number. The planned instalment goes in under the gross share, **not** capped at the balance: `loanRecovery` caps it (1e5401b) |
 | Manure | Instalments under the manure cap: with several plans open, each plan's instalment added together |
 | Previous debts | Last bill's unpaid balance, or `previousDebt` from opening balances for the first |
 | Coins brought forward | Last bill's coins carried forward |

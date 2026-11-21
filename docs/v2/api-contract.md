@@ -223,8 +223,9 @@ rule, not the mock.
 
 #### Every code the console explains
 
-`ADMIN_ERROR_CODES` in `packages/domain/src/types/admin.ts` is the list, and the console
-has copy for each in en/si/ta. Anything else it renders as a generic failure, so an
+`ADMIN_ERROR_CODES` in `packages/domain/src/types/admin.ts` is the list, plus a few codes
+the backend declares in its own list (`month-not-ended`), and the console has copy for each in
+en/si/ta (`apps/admin/src/lib/errorMessage.ts`, with some codes split by `details.reason`). Anything else it renders as a generic failure, so an
 unknown code is safe but unhelpful.
 
 | Area | Code (status) |
@@ -248,8 +249,10 @@ Codes outside the list that the API also answers, specified in the sections belo
 `unauthenticated`, `tea-packets-refused`, `banner-action-refused`,
 `banner-window-invalid`, `change-pending`, `invalid-rates`, `export-template-invalid`,
 `tea-packet-policy`, `credit-rule`, and the savings codes in §13.5. The import problem
-codes (`duplicate`, `too-short`, `does-not-add-up`, `rate-differs` and the rest) travel
-inside `details.problems` of an `import-invalid`, not as the envelope's `code`; see §25.
+codes (`duplicate`, `too-short`, `does-not-add-up` and the rest) travel inside
+`details.problems` of an `import-invalid`, not as the envelope's `code`; see §25.
+`rate-differs` is both: an import problem, and a top-level `409` on `PUT .../rate` when the
+rate differs from the one the month's slips used.
 
 One code is the console's own and never comes from the server: `invalid-batch`,
 which the repository raises when a weighing session fails validation before it
@@ -487,8 +490,8 @@ Notes for the implementer:
   answers `MonthToDate` (`packages/domain/src/types/app.ts`), or `200 null` while the flag is
   off. Its month is the supplier's oldest month with an unpublished bill (a held bill does not
   count, decided 17 November 2026), else the month after the factory's newest published month; it carries leaf and approvals, never a
-  rate, gross or balance. Until that endpoint ships, Configuration neither shows nor sends
-  the flag (`MONTH_TO_DATE_ON_SERVER`, §22).
+  rate, gross or balance. Live: Configuration shows and sends the flag
+  (`MONTH_TO_DATE_ON_SERVER` is on, §22).
 - **`creditRules` is how much a supplier may borrow, and it is served on the *public*
   payload deliberately.** The app prints the ceiling before a supplier asks for
   anything, and the console's queue checks a request against it; one served rule is
@@ -1465,6 +1468,7 @@ supplier is entitled to see. `extraRatePerKg: 0` is a real answer, not "unset".
 ```
 422 invalid-rate   not money: negative, zero, or more than two decimals
 409 month-locked   the month is published (BR-108)
+409 rate-differs   differs from the rate the month's imported slips used
 404                no records for that month
 ```
 
@@ -1524,8 +1528,10 @@ The refusals **are** the module. In order:
 409 already-published          closed, and no late bills wait  + details.publishedAt, publishedByName
 409 earlier-month-unpublished  an earlier month is unpublished + details.monthKey
 409 rate-missing               no auction rate entered
+409 month-not-ended            calculated: the month's last day is not over + details.monthKey
+409 earlier-month-unpublished  calculated: an earlier open month has leaf or bills + details.monthKey
 409 exceptions-open            unresolved exceptions remain    + details.open   (AC-04; not imported months)
-409 bills-missing / bills-stale                                (below; stale: not imported months)
+409 bills-missing / bills-stale                                (below; stale: not imported months; on a calculated month + details.suppliers, count, reason: 'figures')
 409 bills-mismatch             calculated bills vs printed slips, not held (§11.5b)
 409 approval-missing           imported bills: an approval is not on a slip + details.problems, total
 409 four-eyes-violation        the publisher entered the rate, or imported a bill of the month (BR-501)
@@ -1669,7 +1675,9 @@ bills have not been built" and "they were built and came to nothing" are differe
 answers and the close checklist branches on which one it got.
 
 `stale` is **derived at read time** by comparing the run's kilos with the month's live
-total, never stored. Staleness is a relationship between the run and the delivery rows,
+total, never stored. On a **calculated** run it is the engine's own comparison (generating
+again would give a different bill, for leaf or for an approval), with `reasons: ['figures']`
+and `staleSuppliers` (supplier codes); the bill run card names them (backend 221a1c0). Staleness is a relationship between the run and the delivery rows,
 and a stored flag goes on lying the moment somebody voids a weighing. A published month
 is never stale.
 
@@ -1687,10 +1695,15 @@ approved. A re-run **replaces** the month's bills rather than accumulating besid
 two runs for one open month is two sets of figures nobody can choose between.
 
 ```
+409 factory-sync-on   the sync is on
 409 wrong-bill-source this factory imports its bills
 409 month-mismatch    body.monthKey ≠ the path
-409 month-locked      the month is published and none of its bills is held (BR-108)
+409 records-busy      another write on the month's records is in progress
+409 month-locked      the month is published and none of its bills is held (BR-108);
+                      or details.reason: 'behind', before the newest published month or the cut-over
 409 rate-missing      no auction result to build from
+409 cut-over-month    details.reason: 'required': no bill of ours and no opening balances
+409 earlier-month-unpublished  an earlier month with leaf or bills is not published
 422 bills-unbalanced  a slip's lines disagree with its total  + details.billNos
 ```
 
@@ -1726,7 +1739,8 @@ the month is published. `billing: write`; `409 factory-sync-on` while the sync i
 ```
 
 ```
-409 month-locked    the month is published
+409 wrong-bill-source an imported or synced bill: its line is the factory's
+409 month-locked    the month is published (a held bill is not locked)
 422 negative        otherCards below 0
 422 note-required   otherCardsNote under 3 characters while otherCards is above 0
 ```
@@ -2840,7 +2854,9 @@ of the row is normal, and a save should carry only what its author touched.
 409 sync-switch-blocked         factorySync changed while a month has generated but
                                 unpublished bills                    + details.months
 409 bill-source-blocked         billSettings.source changed, the same condition
-                                                                     + details.months
+                                                                     + details.months;
+                                or back to imported while payment corrections wait
+                                         + details { reason: 'payment-corrections-pending', count }
 422 invalid                     advanceInterest / loanInterest outside 0 to 10, or
                                 billSettings unusable                + details.field, problem
 ```
@@ -3187,11 +3203,11 @@ empty.
       (backend `e4a9f40`)
 - [x] Other deductions: `PUT /admin/bills/{id}/adjustment` and the `billAdjustments` import
       (backend `b6c10d6`; `409 wrong-bill-source` for an imported bill or an importing factory)
-- [ ] The bill engine (§11.5, factory-records.md §5), last: galaboda imports its bills. With
-      it the printed-slip comparison (§11.5b), the `printedBalances` import, and
-      `carryForward.loanBalance` filled from the loan, never the advance
-- [ ] Alongside, any time: importing again (§25: `dryRun`, `duplicates`, `skipped`), and
-      the app's `GET /bills/month-to-date` (§3)
+- [x] The bill engine (§11.5, factory-records.md §5), with the printed-slip comparison
+      (§11.5b), the `printedBalances` import, and `carryForward.loanBalance` filled from the
+      loan, never the advance (221a1c0, e164e2f)
+- [x] Importing again (§25: `dryRun`, `duplicates`, `skipped`), and the app's
+      `GET /bills/month-to-date` (§3)
 
 Point `VITE_API_BASE_URL` at it; the console needs no other change. If a shape differs from this document, the seam that absorbs it is
 `apps/admin/src/services/repositories/` (and `services/api/adapters.ts` for envelopes);
@@ -3295,7 +3311,7 @@ So a comment's gap id still leads somewhere:
 | G-08 | Banners lacked `GET /{id}`, preview, archive | All served (§16a) |
 | G-10 | The role matrix lacked `updatedByName` | Carried (§19.4) |
 | G-12, G-12a | The dashboard's queues, ages and trends | `QueueCount[]` with ages; camel-cased trends; the `bigint` `500` gone (§4) |
-| G-13 | Deliveries, months and bill generation unimplemented | Specified and being built for factories with the sync off (§9, §10, §11.5; BACKEND-TODO #45) |
+| G-13 | Deliveries, months and bill generation unimplemented | **Closed**: built for factories with the sync off (§9, §10, §11.5; BACKEND-TODO #45 complete, 21 November 2026) |
 | G-15 | Reports answered a bare array | `{ reports, months }` (§20.1) |
 | G-16 | `GET /admin/config` omitted `tenantId`, `factory`, `collectionPoints` | The whole `RuntimeConfig` (§18.1) |
 | G-19 | Inquiry close read `closureNote` | `note`, schema strict (§15.3) |
@@ -3335,7 +3351,7 @@ as the factory's own system printed them), **`printedBalances`** (each printed s
 | `openingBalances` | `suppliers: W` | `duplicate`, `unknown-supplier`, `opening-balances-locked`, `cut-over-month` (on `asOfMonth`), `withdrawal-pending`. No note column: the file's name is the note |
 | `transportRates` | `suppliers: W` | `duplicate`, `unknown-supplier` |
 | `deliveries` | `deliveries: W` | `unknown-supplier`, `month-locked`, `unknown-collection-point`; on `date`, `not-allowed` (after today) and `too-old` (more than 30 days back, except in a held supplier's held month). A weighing already recorded is **skipped** (`already-recorded`) unless `duplicates: 'import'` |
-| `monthlyRates` | `ratesAndMonthClose: W` | `duplicate`, `unknown-month`, `month-locked` |
+| `monthlyRates` | `ratesAndMonthClose: W` | `duplicate`, `unknown-month`, `month-locked`, `rate-differs`, `must-be-positive`, `too-large` |
 | `walkInCredit` | `creditRequests: W` | `unknown-supplier`, `required` (manure without type or quantity), and §14.4's refusals |
 | `billAdjustments` | `billing: W` | `409 wrong-bill-source` before a row where the bills are imported; then `unknown-supplier` / `ambiguous-supplier`, `duplicate` (month + supplier, so `708` is `0708`), `month-locked`, `no-bill` (no calculated bill), `negative`, `required` |
 | `bills` | `billing: W` | `missing-column` (row 1), `unknown-supplier` / `ambiguous-supplier`, `duplicate` (month + code), `month-not-ended`, `month-out-of-order`, `month-locked` (supplier already billed in a published month), `rate-differs` (between rows of the file, or with the month's stored rate), `bill-no-taken`, `too-large` / `must-be-positive` (`loanInstalmentNo` 1 to 360; `ratePerKg` above 0), and the approvals check `approval-missing` with the rupees in `amount` (factory-records.md §5a). The import creates the month; a top-level `409 month-locked` with `details.reason: 'published-during-import'` means send the file again |
