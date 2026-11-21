@@ -10,14 +10,14 @@
  * administrator arrives with is comparative: *"who else can approve a credit request?"* is
  * one column read down, and five separate forms make it five screens.
  *
- * **Twelve rows, not fifteen.** `deliveries`, `ratesAndMonthClose` and `payouts` are the
- * factory's own console's, and this build routes nothing behind them; rendered, they are
- * three dropdowns an administrator can set to `approve`, get a success toast for, and
- * change nothing whatsoever by. `FACTORY_CONSOLE_CAPABILITIES` names them, and their
- * stored levels are **preserved rather than dropped**: `change()` spreads the whole
- * `matrix[role]`, so a hidden grant survives an edit to a visible one untouched. Hiding a
- * value the console still sends back is only safe because of that spread; read it before
- * changing how a row saves.
+ * **Every row but `payouts`.** `deliveries` (Leaf intake) and `ratesAndMonthClose` (Rates &
+ * month close) are routed since #45, so they are shown and editable. `payouts` is the one
+ * this build still routes nothing behind; rendered, it would be a dropdown an administrator
+ * could set to `approve`, get a success toast for, and change nothing by.
+ * `FACTORY_CONSOLE_CAPABILITIES` names it, and its stored level is **preserved rather than
+ * dropped**: `change()` spreads the whole `matrix[role]`, so a hidden grant survives an
+ * edit to a visible one untouched. Hiding a value the console still sends back is only
+ * safe because of that spread; read it before changing how a row saves.
  *
  * The refusal is the lockout nobody thinks of. Every user can keep their roles while the roles
  * stop granting `usersAndRoles`, and the factory is locked out without a single user record
