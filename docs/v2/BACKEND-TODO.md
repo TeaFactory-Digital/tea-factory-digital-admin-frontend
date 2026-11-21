@@ -1,35 +1,37 @@
 # Backend to-do
 
-Only the work still open (18 November 2026). Finished work is taken out; git history keeps it.
+Only the work still open (21 November 2026). Finished work is taken out; git history keeps it.
 The rules for every item are in [`factory-records.md`](./factory-records.md) (the console)
 and `packages/domain` (please `vendor:pull` after each console change).
 
 ## Next
 
-#45 is built and its T15 answers are in (1e5401b): held months take leaf for any past day,
-month to date skips held bills, and `loanRecovery` clears a loan. Staging deploys by hand
-after migrating (`autoDeploy: false`); galaboda's bill source is "Imported".
+#45 is built, with its T15 answers (1e5401b) and the loan instalment number (fb687f7).
+Staging is migrated through `20261112020000` and gets fb687f7 with the next manual deploy
+(`autoDeploy: false`); galaboda's bill source is "Imported".
 
 | # | What | Priority |
 |---|------|----------|
-| T16 | The loan instalment number (your question on 1e5401b): two small fixes (below) | **Next** |
+| T17 | Your two questions on fb687f7: both confirmed (below), one line to check | **Next** |
 | 65 | A production environment | **On hold** (your note, 12 November): until there are real clients; staging is the only environment |
 | 66 | Universal-link files on each factory's domain: waits for the Play signing SHA-256 and the host | Before the first store release |
 | - | Later: factory sync (Phase 10), the push sender, the five-year job (#59), a reporting replica | Later |
 
-## T16. The loan instalment number (answered 18 November)
+## T17. The instalment number, your two questions (answered 21 November)
 
-1. **A bill that repays none of the loan has no number.** A bill that only takes interest
-   carried after the loan is repaid is not an instalment: `loanInstalmentNo` is `null`, so
-   a 10-month plan never prints "Loans / Advance 11". Number a bill only when its
-   `principalRepaid` is above 0.
-2. **A bill without leaf is skipped, not a break.** A bill that only pays a withdrawal or a
-   correction neither counts nor restarts the count: the next bill with an instalment
-   carries on from the last number. Only a bill **with** leaf and no instalment ends the
-   run (a new loan then starts at 1).
+1. **T17.2, a lean month mid-loan: skip it**, as you built (6, skip, 7). Rule 2 meant a bill
+   whose loan has **ended**: only a bill with no number **and no loan left** ends the run. A
+   month with leaf that repays no principal while the loan is owed (all interest under
+   `withinInstalment`, or no share of the gross) neither counts nor restarts it.
+2. **T17.4, imported history: read the number printed on the slip.** An imported bill counts
+   by its own printed `loanInstalmentNo`, whatever the factory's system did on interest-only
+   months; an imported bill printed with no number is skipped like an interest-only bill.
+   The first calculated bill after a switch carries on from the last printed number, so the
+   supplier's paper slips and the app's bills stay in one sequence. Please check yours reads
+   it this way.
 
-The console's mock does both now, and also passes the plan's instalment uncapped by the
-balance, as yours does (an overpaid loan counts as 0). factory-records §5 has the rules.
+Also agreed: a loan cleared outside a bill (repaid at the counter, written off) makes the next
+loan start at 1. The console's mock skips a lean month too now; factory-records §5 has all of it.
 
 ## 65. A production environment
 

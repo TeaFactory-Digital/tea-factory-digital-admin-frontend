@@ -4650,12 +4650,15 @@ export const handlers: HttpHandler[] = [
         .filter((one) => one.supplierId === supplier.id && one.monthKey < monthKey)
         .sort((a, b) => b.monthKey.localeCompare(a.monthKey));
       // A bill without leaf (one that only pays a withdrawal or a correction) is skipped:
-      // it neither counts nor restarts the run (decided 18 November 2026). A bill with leaf
-      // and no instalment ends it.
+      // it neither counts nor restarts the run (decided 18 November 2026). So is a lean
+      // month that repays none of the loan while it is still owed (T17.2, 21 November). Only
+      // a bill with no number and no loan left ends the run. An imported bill counts by the
+      // number printed on its slip (T17.4).
       let count = 0;
       for (const bill of earlier) {
         if (bill.totalKgs === 0) continue;
         if (bill.loanInstalmentNo !== null && bill.loanInstalmentNo !== undefined) count += 1;
+        else if (bill.carryForward.loanBalance > 0) continue;
         else break;
       }
       loanInstalmentsBefore.set(supplier.id, count);

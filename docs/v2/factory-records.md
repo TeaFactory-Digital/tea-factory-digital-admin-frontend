@@ -305,7 +305,7 @@ Its inputs, per supplier and month:
 | Savings | kilos × the supplier's savings per kg |
 | Tea packets | Approved tea-packet requests |
 | Advance | Taken back **in full** on its month's bill, even past the gross (`DEFAULT_DEDUCTION_RATES.instalmentShares.advance = 1`). An advance never carries a balance |
-| Loan (`loansAdvance`, the slip's "Loans / Advance") | `loanRecovery(loan owed at the start of the month, planned instalment, config.loanInterest)`: the planned instalment, with the month's interest **on top** (`onTop`) or **inside** it (`withinInstalment`). `loanInstalmentNo` = 1 + the loan instalments on the bills just before this month, skipping a bill without leaf (it neither counts nor restarts the run); a bill that repays none of the loan (only interest carried after it is repaid) has no number. The planned instalment goes in under the gross share, **not** capped at the balance: `loanRecovery` caps it (1e5401b) |
+| Loan (`loansAdvance`, the slip's "Loans / Advance") | `loanRecovery(loan owed at the start of the month, planned instalment, config.loanInterest)`: the planned instalment, with the month's interest **on top** (`onTop`) or **inside** it (`withinInstalment`). `loanInstalmentNo` = 1 + the loan instalments on the bills just before this month, skipping a bill without leaf and a lean month that repays none of the loan while it is owed (neither counts nor restarts the run); a bill that repays none of the loan (only interest carried after it is repaid) has no number. The planned instalment goes in under the gross share, **not** capped at the balance: `loanRecovery` caps it (1e5401b) |
 | Manure | Instalments under the manure cap: with several plans open, each plan's instalment added together |
 | Previous debts | Last bill's unpaid balance, or `previousDebt` from opening balances for the first |
 | Coins brought forward | Last bill's coins carried forward |
@@ -366,6 +366,9 @@ cannot take the same number.
 |---|---|
 | A bill that only takes interest carried after the loan is repaid | **No number**: it is not an instalment, so a 10-month plan never prints "Loans / Advance 11" |
 | A bill without leaf (only a withdrawal or a correction) | **Skipped**: it is not counted and does not restart the count; the next bill with an instalment carries on from the last number |
+| A lean month with leaf that repays none of the loan while it is owed (21 November, T17.2) | **Skipped** the same way (6, skip, 7). Only a bill with no number and no loan left ends the run |
+| A loan cleared outside a bill (repaid at the counter, written off) | The next loan starts at 1 (backend fb687f7) |
+| An imported bill (21 November, T17.4) | Counts by the number **printed on its slip**; one printed without a number is skipped. The first calculated bill carries on from the last printed number |
 
 Generate → review on the bills screen → **compare with the printed slips** → publish
 (four-eyes). Publishing makes the bills visible in the app and fires `billPublished`.
