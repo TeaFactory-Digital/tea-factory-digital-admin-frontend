@@ -166,6 +166,15 @@ the deploy §12.1 says must not be required. `/users?view=roles` edits the matri
 serves it, and `DEFAULT_ROLE_MATRIX` is what a factory that has never customised anything
 happens to be using. `RoleMatrix.customised` says which of the two you are looking at.
 
+**A saved role does not follow the default.** The API stores a factory's row for a role
+whole, so a role saved before a capability joined its default keeps the old level: staging's
+clerk could not enter leaf (21 November 2026) because galaboda's clerk row predates
+`deliveries: W`. The roles screen therefore marks every cell that differs from
+`DEFAULT_ROLE_MATRIX` ("Standard: Change") and offers **Restore the standard permissions**,
+which saves the default row for each role that has drifted, one `PUT /admin/roles/:role` at
+a time, each checked by `matrixKeepsRecovery` against the matrix the earlier saves left
+(`roleMatrixRestore.test.tsx`).
+
 **Editing it has one refusal, and it is the failure nobody predicts.** A matrix in which no
 role grants `usersAndRoles` locks the factory out of its own console, with every user still
 holding the roles they had, and no user record having changed. A guard written per user

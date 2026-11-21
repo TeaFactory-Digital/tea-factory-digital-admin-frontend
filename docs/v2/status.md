@@ -643,7 +643,9 @@ Every refusal guards one failure, a factory locking itself out: `last-admin`,
 
 **The role matrix shows fourteen of the fifteen capabilities.** Only `payouts`
 (`FACTORY_CONSOLE_CAPABILITIES`) is not rendered, and its stored levels are preserved on
-save. The default matrix (`DEFAULT_ROLE_MATRIX` in `packages/domain/src/rbac.ts`) gives the
+save. A cell that differs from the default is marked ("Standard: Change"), and **Restore the
+standard permissions** puts every drifted role back in one confirmed step (added 21 November
+2026, after staging's clerk lost leaf entry to an old saved row). The default matrix (`DEFAULT_ROLE_MATRIX` in `packages/domain/src/rbac.ts`) gives the
 clerk `deliveries: W`, `creditRequests: W` and `billing: W` for the sync-off counter work
 (and `ratesAndMonthClose: R`, so the clerk can open Rates & month close to import or generate
 the bills),
