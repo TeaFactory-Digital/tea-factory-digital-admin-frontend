@@ -471,8 +471,9 @@ printed figure (`whole-rupees`), `factory-sync-on` before `wrong-bill-source`, a
 with `suppliers`/`count`/`reason: 'figures'`. Also as the API: a held supplier's leaf in a
 published month, with no 30-day limit; a month without leaf charging nothing; several manure
 plans adding their instalments; the loan's planned instalment uncapped by the balance
-(`loanRecovery` caps it); and the instalment number skipping a bill without leaf and a lean
-month, with no number on a bill that repays none of the loan. Also as the API: a calculated month's
+(`loanRecovery` caps it); and the instalment number carrying on from the newest numbered bill (an imported slip's
+printed number, leaf or not), skipping a bill without leaf and a lean month, with no number on
+a bill that repays none of the loan. Also as the API: a calculated month's
 publish refuses `month-not-ended` until the month is over (tests move the clock with
 `afterMonthEnds` in `src/test/clock.ts`), then `earlier-month-unpublished` for an earlier open
 month with leaf; and a calculated run is stale bill by bill, with `reasons: ['figures']`,

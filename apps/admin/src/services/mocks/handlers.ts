@@ -4676,17 +4676,19 @@ export const handlers: HttpHandler[] = [
       const earlier = state.bills
         .filter((one) => one.supplierId === supplier.id && one.monthKey < monthKey)
         .sort((a, b) => b.monthKey.localeCompare(a.monthKey));
-      // A bill without leaf (one that only pays a withdrawal or a correction) is skipped:
-      // it neither counts nor restarts the run (decided 18 November 2026). So is a lean
-      // month that repays none of the loan while it is still owed (T17.2, 21 November). Only
-      // a bill with no number and no loan left ends the run. An imported bill counts by the
-      // number printed on its slip (T17.4).
+      // Carries on from the newest numbered bill: its printed number for an imported one,
+      // leaf or not (backend 29824a0), and a calculated one is numbered only when it repays
+      // some principal. Skipped on the way: a bill without leaf, and a lean month that repays
+      // nothing while the loan is owed (T17.2). Only a bill with no number and no loan left
+      // ends the run, and the next loan starts at 1.
       let count = 0;
       for (const bill of earlier) {
-        if (bill.totalKgs === 0) continue;
-        if (bill.loanInstalmentNo !== null && bill.loanInstalmentNo !== undefined) count += 1;
-        else if (bill.carryForward.loanBalance > 0) continue;
-        else break;
+        if (bill.loanInstalmentNo !== null && bill.loanInstalmentNo !== undefined) {
+          count = bill.loanInstalmentNo;
+          break;
+        }
+        if (bill.totalKgs === 0 || bill.carryForward.loanBalance > 0) continue;
+        break;
       }
       loanInstalmentsBefore.set(supplier.id, count);
     }
@@ -9103,6 +9105,13 @@ export function mockHoldPublishedBill(billId: string, reason: string): void {
   bill.heldAt = new Date(Date.now() - 86_400_000).toISOString();
   bill.heldByName = 'Test';
   bill.holdReason = reason;
+}
+
+/** Tests only: rewrite a stored bill, e.g. into an imported slip printed without leaf. */
+export function mockPatchBill(billId: string, patch: Partial<AdminBill>): void {
+  const index = state.bills.findIndex((one) => one.id === billId);
+  if (index < 0) throw new Error(`No mock bill ${billId}`);
+  state.bills[index] = { ...state.bills[index]!, ...patch };
 }
 
 export function mockSupplierRecord(id: string): AdminSupplier {

@@ -371,7 +371,7 @@ cannot take the same number.
 | A bill without leaf (only a withdrawal or a correction) | **Skipped**: it is not counted and does not restart the count; the next bill with an instalment carries on from the last number |
 | A lean month with leaf that repays none of the loan while it is owed (21 November, T17.2) | **Skipped** the same way (6, skip, 7). Only a bill with no number and no loan left ends the run |
 | A loan cleared outside a bill (repaid at the counter, written off) | The next loan starts at 1 (backend fb687f7) |
-| An imported bill (21 November, T17.4) | Counts by the number **printed on its slip**; one printed without a number is skipped. The first calculated bill carries on from the last printed number |
+| An imported bill (21 November, T17.4) | Counts by the number **printed on its slip**, leaf or not (backend 29824a0); one printed without a number is skipped. The first calculated bill carries on from the last printed number |
 
 Generate → review on the bills screen → **compare with the printed slips** → publish
 (four-eyes). Publishing makes the bills visible in the app and fires `billPublished`.
