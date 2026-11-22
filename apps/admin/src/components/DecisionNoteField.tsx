@@ -32,18 +32,11 @@
  * packets, whose dialog carries both buttons).
  */
 
-import { useEffect, useId, useRef } from 'react';
-import { Check, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { useEffect, useRef } from 'react';
 import { Field, Textarea } from '@/components/ui/Field';
-import { toggleNoteSuggestion } from '@/lib/noteSuggestion';
+import { SuggestionGrid, type NoteSuggestion } from './SuggestionGrid';
 
-export interface NoteSuggestion {
-  /** The chip's words. Short: it is a handle, not the note. */
-  label: string;
-  /** What lands in the note. A whole sentence, because the supplier reads it alone. */
-  text: string;
-}
+export type { NoteSuggestion } from './SuggestionGrid';
 
 interface DecisionNoteFieldProps {
   label: string;
@@ -71,7 +64,6 @@ export function DecisionNoteField({
   autoFocus = true,
 }: DecisionNoteFieldProps) {
   const textarea = useRef<HTMLTextAreaElement>(null);
-  const groupId = useId();
 
   /**
    * Set when a chip is clicked, read once the new note is in the DOM.
@@ -107,41 +99,15 @@ export function DecisionNoteField({
             onChange={(event) => onChange(event.target.value)}
           />
 
-          {suggestions.length > 0 ? (
-            <div role="group" aria-labelledby={groupId} className="mt-sm flex flex-wrap items-center gap-xs">
-              <span id={groupId} className="text-caption text-text-secondary">
-                {suggestionsLabel}
-              </span>
-              {suggestions.map((suggestion) => {
-                const picked = value.includes(suggestion.text);
-                return (
-                  <Button
-                    key={suggestion.label}
-                    type="button"
-                    size="sm"
-                    aria-pressed={picked}
-                    // The whole sentence, for anyone who wants to read it before
-                    // committing it. Not the only way to see it: it is in the
-                    // textarea a moment later, and removable from the same chip.
-                    title={suggestion.text}
-                    iconLeft={
-                      picked ? (
-                        <Check className="size-icon-xs" aria-hidden />
-                      ) : (
-                        <Plus className="size-icon-xs" aria-hidden />
-                      )
-                    }
-                    onClick={() => {
-                      returnFocus.current = true;
-                      onChange(toggleNoteSuggestion(value, suggestion.text));
-                    }}
-                  >
-                    {suggestion.label}
-                  </Button>
-                );
-              })}
-            </div>
-          ) : null}
+          <SuggestionGrid
+            value={value}
+            onChange={onChange}
+            suggestions={suggestions}
+            label={suggestionsLabel}
+            onPicked={() => {
+              returnFocus.current = true;
+            }}
+          />
         </>
       )}
     </Field>

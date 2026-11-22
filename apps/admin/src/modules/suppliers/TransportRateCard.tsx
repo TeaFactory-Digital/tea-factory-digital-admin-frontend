@@ -24,6 +24,7 @@ import { errorMessageKey } from '@/lib/errorMessage';
 import { formatAmount } from '@/lib/format';
 import { useDeductionRates } from '@/modules/months/deductionRateHooks';
 import { useSaveTransportRate } from '@/modules/records/hooks';
+import { ReasonChips } from '@/components/ReasonChips';
 
 const NOTE_MIN = 10;
 
@@ -187,6 +188,7 @@ function TransportRateDialog({
             />
           )}
         </Field>
+        <ReasonChips list="suppliers.transportRate" value={note} onChange={setNote} />
       </div>
     </Dialog>
   );

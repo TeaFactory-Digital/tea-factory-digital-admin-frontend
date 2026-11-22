@@ -30,6 +30,7 @@ import {
   useDeductionRates,
   useProposeDeductionRates,
 } from './deductionRateHooks';
+import { ReasonChips } from '@/components/ReasonChips';
 
 const NOTE_MIN = 10;
 /**
@@ -243,6 +244,7 @@ export function DeductionRatesCard() {
                     />
                   )}
                 </Field>
+                <ReasonChips list="rates.decision" value={note} onChange={setNote} />
                 <div className="flex flex-wrap items-center gap-xs">
                   <Button
                     variant="primary"
@@ -285,6 +287,7 @@ export function DeductionRatesCard() {
                 />
               )}
             </Field>
+            <ReasonChips list="rates.proposal" value={reason} onChange={setReason} />
             <div className="flex flex-wrap items-center gap-sm">
               <Button
                 variant="primary"

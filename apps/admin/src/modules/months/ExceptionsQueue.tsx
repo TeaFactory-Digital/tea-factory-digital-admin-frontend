@@ -30,6 +30,7 @@ import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDateTime } from '@/lib/format';
 import { useMonthExceptions, useResolveException } from './hooks';
+import { ReasonChips } from '@/components/ReasonChips';
 
 const MIN_NOTE = 10;
 
@@ -254,6 +255,7 @@ export function ExceptionsQueue({ month }: { month: MonthSummary }) {
               />
             )}
           </Field>
+          <ReasonChips list="months.exception" value={note} onChange={setNote} />
         </div>
       </Dialog>
     </Card>

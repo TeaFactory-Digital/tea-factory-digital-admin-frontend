@@ -19,6 +19,7 @@ import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDateTime } from '@/lib/format';
 import { useAddInquiryNote, useAssignInquiry } from './hooks';
+import { ReasonChips } from '@/components/ReasonChips';
 
 export function InquiryAssignmentCard({ inquiry }: { inquiry: AdminInquiry }) {
   const { t } = useTranslation();
@@ -127,6 +128,7 @@ export function InquiryNotesCard({ inquiry }: { inquiry: AdminInquiry }) {
           aria-label={t('inquiries.notes.add')}
           onChange={(event) => setDraft(event.target.value)}
         />
+        <ReasonChips list="inquiries.note" value={draft} onChange={setDraft} />
         <Button
           size="sm"
           variant="secondary"

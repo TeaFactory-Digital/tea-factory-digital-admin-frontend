@@ -32,6 +32,7 @@ import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDate, formatMoney, formatMonthKey, formatSignedAmount } from '@/lib/format';
 import { useCreateCorrection, useSupplierCorrections } from '@/modules/records/hooks';
+import { ReasonChips } from '@/components/ReasonChips';
 
 export interface CorrectionBalances {
   loan: number;
@@ -268,6 +269,7 @@ function CorrectionDialog({
             />
           )}
         </Field>
+        <ReasonChips list="suppliers.correction" value={reason} onChange={setReason} />
       </div>
 
       <p className="mt-md text-body-small text-text-secondary">

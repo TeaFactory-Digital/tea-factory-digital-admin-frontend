@@ -21,6 +21,7 @@ import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatKg } from '@/lib/format';
 import { useVoidDelivery } from './hooks';
+import { ReasonChips } from '@/components/ReasonChips';
 
 const MIN_REASON = 10;
 
@@ -105,6 +106,7 @@ export function VoidDeliveryDialog({
           />
         )}
       </Field>
+      <ReasonChips list="deliveries.void" value={reason} onChange={setReason} />
     </Dialog>
   );
 }

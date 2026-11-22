@@ -15,6 +15,7 @@ import { Field, Input, Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { useAdjustBill } from '@/modules/records/hooks';
+import { ReasonChips } from '@/components/ReasonChips';
 
 export function OtherChargesDialog({
   billId,
@@ -85,6 +86,7 @@ export function OtherChargesDialog({
             <Textarea id={id} aria-describedby={describedBy} invalid={invalid} rows={2} value={note} placeholder={t('records.otherCharges.notePlaceholder')} onChange={(event) => setNote(event.target.value)} />
           )}
         </Field>
+        <ReasonChips list="bills.otherDeductions" value={note} onChange={setNote} />
       </div>
     </Dialog>
   );

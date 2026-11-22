@@ -39,6 +39,7 @@ import { useComparesWithSlips, useSlipComparison } from '@/modules/bills/hooks';
 import { formatCount, formatDateTime, formatKg, formatMoney, formatMonthKey } from '@/lib/format';
 import { useBillRun } from '@/modules/bills/hooks';
 import { usePublishMonth } from './hooks';
+import { ReasonChips } from '@/components/ReasonChips';
 
 interface Step {
   key: string;
@@ -391,6 +392,7 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
               />
             )}
           </Field>
+          <ReasonChips list="months.publish" value={note} onChange={setNote} />
         </div>
       </Dialog>
     </Card>

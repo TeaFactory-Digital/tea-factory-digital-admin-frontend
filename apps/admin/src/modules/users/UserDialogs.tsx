@@ -37,6 +37,7 @@ import {
   useUserAction,
   type UserAction,
 } from './hooks';
+import { ReasonChips } from '@/components/ReasonChips';
 
 const ROLES = Object.keys(DEFAULT_ROLE_MATRIX) as ConsoleRole[];
 const REASON_MIN = 10;
@@ -374,6 +375,7 @@ export function UserActionDialog({
               />
             )}
           </Field>
+          <ReasonChips list="users.status" value={reason} onChange={setReason} />
         </div>
       </Dialog>
 

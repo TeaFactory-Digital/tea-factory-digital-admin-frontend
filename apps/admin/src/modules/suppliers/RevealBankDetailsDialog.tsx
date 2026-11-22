@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/Button';
 import { Field, Textarea } from '@/components/ui/Field';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { useRevealBankDetails } from './hooks';
+import { ReasonChips } from '@/components/ReasonChips';
 
 const MIN_REASON = 10;
 
@@ -150,6 +151,7 @@ export function RevealBankDetailsDialog({
                 />
               )}
             </Field>
+            <ReasonChips list="suppliers.revealBank" value={reason} onChange={setReason} />
           </div>
         )}
       </Dialog>

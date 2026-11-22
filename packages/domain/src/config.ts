@@ -53,7 +53,23 @@ export type NoteSuggestionKey =
   | 'credit.approve'
   | 'credit.reject'
   | 'teaPackets'
-  | 'inquiries.reply';
+  | 'inquiries.reply'
+  // Every other reason or note box (22 November 2026).
+  | 'deliveries.void'
+  | 'bills.hold'
+  | 'bills.otherDeductions'
+  | 'credit.walkIn'
+  | 'months.exception'
+  | 'months.publish'
+  | 'suppliers.correction'
+  | 'suppliers.openingBalances'
+  | 'suppliers.transportRate'
+  | 'suppliers.revealBank'
+  | 'rates.proposal'
+  | 'rates.decision'
+  | 'users.status'
+  | 'users.resetPassword'
+  | 'inquiries.note';
 
 export const NOTE_SUGGESTION_KEYS: readonly NoteSuggestionKey[] = [
   'changeRequests.approve',
@@ -62,6 +78,21 @@ export const NOTE_SUGGESTION_KEYS: readonly NoteSuggestionKey[] = [
   'credit.reject',
   'teaPackets',
   'inquiries.reply',
+  'deliveries.void',
+  'bills.hold',
+  'bills.otherDeductions',
+  'credit.walkIn',
+  'months.exception',
+  'months.publish',
+  'suppliers.correction',
+  'suppliers.openingBalances',
+  'suppliers.transportRate',
+  'suppliers.revealBank',
+  'rates.proposal',
+  'rates.decision',
+  'users.status',
+  'users.resetPassword',
+  'inquiries.note',
 ];
 
 /** One chip: its short label and the sentence it adds, per language code. */

@@ -20,6 +20,7 @@ import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDate, formatMoney, formatMonthKey } from '@/lib/format';
 import { useOpeningBalances, useSaveOpeningBalances } from '@/modules/records/hooks';
+import { ReasonChips } from '@/components/ReasonChips';
 
 const AMOUNTS = ['advance', 'loan', 'manure', 'teaPackets', 'savings', 'previousDebt'] as const;
 type Amount = (typeof AMOUNTS)[number];
@@ -223,6 +224,7 @@ function OpeningBalancesDialog({
             <Textarea id={id} aria-describedby={describedBy} rows={2} value={note} onChange={(event) => setNote(event.target.value)} />
           )}
         </Field>
+        <ReasonChips list="suppliers.openingBalances" value={note} onChange={setNote} />
       </div>
     </Dialog>
   );

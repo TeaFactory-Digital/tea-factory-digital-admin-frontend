@@ -30,6 +30,7 @@ import { errorMessageKey, errorMessageValues } from '@/lib/errorMessage';
 import { formatCount, formatMoney, formatMonthKey } from '@/lib/format';
 import { cn } from '@/lib/cn';
 import { useHoldBill, useReleaseBill, useSetPrinted, useSlipComparison } from './hooks';
+import { ReasonChips } from '@/components/ReasonChips';
 
 export function SlipComparisonCard({ monthKey, monthOpen }: { monthKey: string; monthOpen: boolean }) {
   const { t } = useTranslation();
@@ -312,6 +313,7 @@ function HoldDialog({ row, onClose }: { row: SlipComparisonRow; onClose: () => v
           />
         )}
       </Field>
+      <ReasonChips list="bills.hold" value={reason} onChange={setReason} />
     </Dialog>
   );
 }

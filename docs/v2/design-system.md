@@ -254,6 +254,15 @@ asked for less of it meant.
   12-column row needs help staying on one line.
 - **The page body never scrolls horizontally**, in any language.
 
+### A reason box offers its sentences
+
+Every box that asks for a note or a reason has a grid of chips under it (`SuggestionGrid`,
+through `DecisionNoteField` or `ReasonChips`): one click adds the sentence, a second takes it
+out, and the box stays free to edit. The chip shows a short label and the whole sentence is
+its tooltip. Each list is the factory's own once saved (Configuration, Common notes), else
+the built-in sentences in the string tables (`reasonChip.<list>.<slug>`). A new reason box
+gets a list too: add its key to `NOTE_SUGGESTION_KEYS` and its slugs to `REASON_CHIPS`.
+
 ### Text must fit in every language
 
 Sinhala and Tamil labels run longer than English ones (a Tamil sidebar label can be a third

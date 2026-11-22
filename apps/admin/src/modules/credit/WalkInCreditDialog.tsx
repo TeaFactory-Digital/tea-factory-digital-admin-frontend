@@ -27,6 +27,7 @@ import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatAmount } from '@/lib/format';
 import { useCreateWalkInCredit } from '@/modules/records/hooks';
+import { ReasonChips } from '@/components/ReasonChips';
 
 const FACILITY_FLAGS = {
   advance: 'enableAdvances',
@@ -183,6 +184,7 @@ export function WalkInCreditDialog({ onClose }: { onClose: () => void }) {
             <Textarea id={id} aria-describedby={describedBy} rows={2} value={note} onChange={(event) => setNote(event.target.value)} />
           )}
         </Field>
+        <ReasonChips list="credit.walkIn" value={note} onChange={setNote} />
       </div>
     </Dialog>
   );

@@ -18,6 +18,7 @@ import { Field, Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { useResetUserPassword } from './hooks';
+import { ReasonChips } from '@/components/ReasonChips';
 
 const REASON_MIN = 10;
 
@@ -94,25 +95,28 @@ export function ResetUserPasswordDialog({
           </p>
         </div>
       ) : (
-        <Field
-          label={t('common.reason')}
-          required
-          hint={t('users.reasonHint', { min: REASON_MIN })}
-        >
-          {({ id, describedBy, invalid, required }) => (
-            <Textarea
-              id={id}
-              aria-describedby={describedBy}
-              invalid={invalid}
-              required={required}
-              autoFocus
-              rows={3}
-              placeholder={t('users.resetPassword.placeholder')}
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-            />
-          )}
-        </Field>
+        <>
+          <Field
+            label={t('common.reason')}
+            required
+            hint={t('users.reasonHint', { min: REASON_MIN })}
+          >
+            {({ id, describedBy, invalid, required }) => (
+              <Textarea
+                id={id}
+                aria-describedby={describedBy}
+                invalid={invalid}
+                required={required}
+                autoFocus
+                rows={3}
+                placeholder={t('users.resetPassword.placeholder')}
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+              />
+            )}
+          </Field>
+          <ReasonChips list="users.resetPassword" value={reason} onChange={setReason} />
+        </>
       )}
     </Dialog>
   );
