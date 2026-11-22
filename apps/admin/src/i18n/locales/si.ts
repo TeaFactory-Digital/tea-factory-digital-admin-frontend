@@ -3160,4 +3160,10 @@ export const si: Record<TranslationKey, string> = {
   'search.action.pendingCredit': 'බලාපොරොත්තුවෙන් ඇති ණය ඉල්ලීම්',
   'search.action.pendingChanges': 'බලාපොරොත්තුවෙන් ඇති වෙනස් කිරීමේ ඉල්ලීම්',
   'search.action.pendingPackets': 'බලාපොරොත්තුවෙන් ඇති තේ පැකට් ඉල්ලීම්',
+  // The glass effect (22 November 2026).
+  'search.results': 'ප්‍රතිඵල',
+  'appearance.glass': 'වීදුරු පෙනුම',
+  'appearance.glass.off': 'අක්‍රියයි',
+  'appearance.glass.on': 'සක්‍රියයි',
+  'appearance.glassHint': 'පැති තීරුව, ඉහළ තීරුව සහ සංවාද ආලෝකය නමන පාවෙන දියර වීදුරු ලෙස. වගු සහ සංඛ්‍යා නොවිනිවිද ලෙසම පවතී. මෙම පරිගණකය මන්දගාමී නම් එය අක්‍රිය කරන්න.',
 } as const;

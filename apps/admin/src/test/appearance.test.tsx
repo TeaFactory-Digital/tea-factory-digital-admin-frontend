@@ -13,7 +13,14 @@
  * That is the decision these guard.
  */
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { AppearanceProvider } from '@/brand/AppearanceProvider';
+import { AppearanceControls } from '@/brand/AppearanceControls';
+import { BrandProvider } from '@/brand/BrandProvider';
+import { Dialog } from '@/components/ui/Dialog';
+import { renderWithProviders } from './render';
 import { createTheme } from '@tfd/brand';
 import {
   DEFAULT_APPEARANCE,
@@ -42,8 +49,8 @@ describe('the appearance preference', () => {
   });
 
   it('survives a reload', () => {
-    persistAppearance({ scheme: 'dark', textSize: 'larger' });
-    expect(readAppearance()).toEqual({ scheme: 'dark', textSize: 'larger' });
+    persistAppearance({ scheme: 'dark', textSize: 'larger', glass: true });
+    expect(readAppearance()).toEqual({ scheme: 'dark', textSize: 'larger', glass: true });
   });
 
   it('falls back per field, so one bad value does not cost both settings', () => {
@@ -54,7 +61,13 @@ describe('the appearance preference', () => {
       JSON.stringify({ scheme: 'dark', textSize: 'enormous' }),
     );
 
-    expect(readAppearance()).toEqual({ scheme: 'dark', textSize: 'normal' });
+    expect(readAppearance()).toEqual({ scheme: 'dark', textSize: 'normal', glass: false });
+  });
+
+  it('reads a preference saved before the glass effect existed as glass off', () => {
+    window.localStorage.setItem('tfd.admin.appearance', JSON.stringify({ scheme: 'dark', textSize: 'large' }));
+    expect(readAppearance()).toEqual({ scheme: 'dark', textSize: 'large', glass: false });
+    expect(DEFAULT_APPEARANCE.glass).toBe(false);
   });
 
   it('reads unparseable storage as the default instead of throwing', () => {
@@ -109,5 +122,46 @@ describe('scaleTypography', () => {
     expect(larger.spacing).toBe(base.spacing);
     expect(larger.radius).toBe(base.radius);
     expect(larger.iconSizes).toBe(base.iconSizes);
+  });
+});
+
+describe('the glass effect', () => {
+  afterEach(() => {
+    delete document.documentElement.dataset.glass;
+  });
+
+  it('is turned on and off from the Appearance controls, as an attribute the CSS keys on', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <AppearanceProvider>
+        <BrandProvider>
+          <AppearanceControls />
+        </BrandProvider>
+      </AppearanceProvider>,
+    );
+    const group = screen.getByRole('radiogroup', { name: 'Glass effect' });
+    expect(within(group).getByRole('radio', { name: 'Off' })).toHaveAttribute('aria-checked', 'true');
+    expect(document.documentElement.dataset.glass).toBeUndefined();
+
+    await user.click(within(group).getByRole('radio', { name: 'On' }));
+    expect(document.documentElement.dataset.glass).toBe('on');
+    // The refraction filter the CSS points at is in the page while the effect is on.
+    expect(document.getElementById('tfd-liquid-glass')).not.toBeNull();
+    expect(readAppearance().glass).toBe(true);
+
+    await user.click(within(group).getByRole('radio', { name: 'Off' }));
+    expect(document.documentElement.dataset.glass).toBeUndefined();
+    expect(document.getElementById('tfd-liquid-glass')).toBeNull();
+  });
+
+  it('marks dialogs as a glass surface, and nothing in a dialog body', () => {
+    renderWithProviders(
+      <Dialog open onOpenChange={() => {}} title="Test">
+        <p>Body</p>
+      </Dialog>,
+    );
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveAttribute('data-glass-surface', 'dialog');
+    expect(dialog.querySelectorAll('[data-glass-surface]')).toHaveLength(0);
   });
 });

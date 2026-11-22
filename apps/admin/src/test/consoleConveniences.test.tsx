@@ -270,7 +270,7 @@ describe('Ctrl+K actions', () => {
       </>,
     );
     await user.keyboard('{Control>}k{/Control}');
-    const box = await screen.findByRole('textbox', { name: /search/i });
+    const box = await screen.findByRole('combobox', { name: /search/i });
     await user.type(box, 'add a');
     await user.click(await screen.findByRole('option', { name: /Add a supplier/ }));
     expect(await screen.findByRole('dialog', { name: 'Add a supplier' }, { timeout: 10_000 })).toBeInTheDocument();

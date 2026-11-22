@@ -3166,6 +3166,12 @@ export const en = {
   'search.action.pendingCredit': 'Credit requests waiting',
   'search.action.pendingChanges': 'Change requests waiting',
   'search.action.pendingPackets': 'Tea packet requests waiting',
+  // The glass effect (22 November 2026).
+  'search.results': 'Results',
+  'appearance.glass': 'Glass effect',
+  'appearance.glass.off': 'Off',
+  'appearance.glass.on': 'On',
+  'appearance.glassHint': 'The sidebar, top bar and dialogs as floating liquid glass that bends the light. Tables and figures stay solid. Turn it off if this computer feels slow.',
 } as const;
 
 export type TranslationKey = keyof typeof en;

@@ -37,6 +37,7 @@ export function AppearanceProvider({ children }: PropsWithChildren) {
       appearance,
       setScheme: (scheme) => update({ ...appearance, scheme }),
       setTextSize: (textSize) => update({ ...appearance, textSize }),
+      setGlass: (glass) => update({ ...appearance, glass }),
     }),
     [appearance, update],
   );

@@ -46,7 +46,10 @@ export function Topbar({ summary }: { summary?: DashboardView }) {
   const labelKey = sectionLabelKey(pathname);
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between gap-md px-gutter">
+    <header
+      data-glass-surface="bar"
+      className="flex h-16 shrink-0 items-center justify-between gap-md px-gutter"
+    >
       <div className="flex min-w-0 items-center gap-md">
         <span className="lg:hidden">
           <Logo showName={false} />

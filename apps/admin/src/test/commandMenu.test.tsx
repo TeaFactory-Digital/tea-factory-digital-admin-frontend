@@ -25,7 +25,7 @@ describe('search from anywhere', () => {
     renderWithProviders(<CommandMenu />);
 
     await user.keyboard('{Control>}k{/Control}');
-    const box = await screen.findByRole('textbox', { name: /search/i });
+    const box = await screen.findByRole('combobox', { name: /search/i });
     await user.type(box, 'a');
     await user.type(box, 'n');
     expect((await screen.findAllByRole('option', { name: /·/ })).length).toBeGreaterThan(0);

@@ -37,6 +37,14 @@ const TEXT_SCALE: Record<TextSize, number> = {
 export interface Appearance {
   scheme: ConsoleScheme;
   textSize: TextSize;
+  /**
+   * The glass effect (22 November 2026): the sidebar, the top bar and dialogs drawn as
+   * frosted glass over a soft wash of the factory's colours. Off by default, because the blur
+   * costs an older office computer real work and because a plain surface is the easiest to
+   * read; grids and cards stay solid either way. The operating system's "reduce
+   * transparency" turns it off whatever this says (`theme.css`).
+   */
+  glass: boolean;
 }
 
 /**
@@ -48,7 +56,7 @@ export interface Appearance {
  * standing at it. Flipping a clerk's screen to dark because a technician set the desktop
  * that way is a preference nobody expressed.
  */
-export const DEFAULT_APPEARANCE: Appearance = { scheme: 'light', textSize: 'normal' };
+export const DEFAULT_APPEARANCE: Appearance = { scheme: 'light', textSize: 'normal', glass: false };
 
 const STORAGE_KEY = 'tfd.admin.appearance';
 
@@ -77,6 +85,7 @@ export function readAppearance(): Appearance {
     return {
       scheme: isScheme(record.scheme) ? record.scheme : DEFAULT_APPEARANCE.scheme,
       textSize: isTextSize(record.textSize) ? record.textSize : DEFAULT_APPEARANCE.textSize,
+      glass: typeof record.glass === 'boolean' ? record.glass : DEFAULT_APPEARANCE.glass,
     };
   } catch {
     // Unreadable storage, or JSON somebody hand-edited. Neither is worth a broken console.

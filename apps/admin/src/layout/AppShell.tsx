@@ -34,10 +34,10 @@ export function AppShell() {
   });
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div data-glass-backdrop className="flex h-screen overflow-hidden bg-background">
       <Sidebar summary={summary} />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div data-glass-column className="relative flex min-w-0 flex-1 flex-col">
         <Topbar summary={summary} />
 
         {/* Impossible to miss and impossible to dismiss. A console silently showing
@@ -47,7 +47,7 @@ export function AppShell() {
             itself: there is no longer a state in which this console serves fixtures,
             so there is nothing to warn about. */}
         {degraded ? (
-          <div className="px-gutter pb-sm">
+          <div data-shell-notice className="px-gutter pb-sm">
             <Notice tone="error">{t('shell.degradedConfig')}</Notice>
           </div>
         ) : null}

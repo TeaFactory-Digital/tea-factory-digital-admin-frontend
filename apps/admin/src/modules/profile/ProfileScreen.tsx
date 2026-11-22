@@ -58,7 +58,7 @@ export function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const user = useCurrentUser();
-  const { appearance, setScheme, setTextSize } = useAppearance();
+  const { appearance, setScheme, setTextSize, setGlass } = useAppearance();
 
   const savedLanguage: LanguageCode = isLanguageCode(i18n.resolvedLanguage)
     ? i18n.resolvedLanguage
@@ -84,7 +84,8 @@ export function ProfileScreen() {
   const dirty =
     draftLanguage !== savedLanguage ||
     draftAppearance.scheme !== appearance.scheme ||
-    draftAppearance.textSize !== appearance.textSize;
+    draftAppearance.textSize !== appearance.textSize ||
+    draftAppearance.glass !== appearance.glass;
 
   function revert() {
     setDraftLanguage(savedLanguage);
@@ -96,6 +97,7 @@ export function ProfileScreen() {
     // means the toast below is already written in the language that was chosen.
     if (draftAppearance.scheme !== appearance.scheme) setScheme(draftAppearance.scheme);
     if (draftAppearance.textSize !== appearance.textSize) setTextSize(draftAppearance.textSize);
+    if (draftAppearance.glass !== appearance.glass) setGlass(draftAppearance.glass);
     if (draftLanguage !== savedLanguage) await setLanguage(draftLanguage);
 
     setConfirming(false);

@@ -3221,4 +3221,10 @@ export const ta: Record<TranslationKey, string> = {
   'search.action.pendingCredit': 'காத்திருக்கும் கடன் கோரிக்கைகள்',
   'search.action.pendingChanges': 'காத்திருக்கும் மாற்றக் கோரிக்கைகள்',
   'search.action.pendingPackets': 'காத்திருக்கும் தேயிலைப் பொதிக் கோரிக்கைகள்',
+  // The glass effect (22 November 2026).
+  'search.results': 'முடிவுகள்',
+  'appearance.glass': 'கண்ணாடித் தோற்றம்',
+  'appearance.glass.off': 'முடக்கு',
+  'appearance.glass.on': 'இயக்கு',
+  'appearance.glassHint': 'பக்கப்பட்டி, மேல் பட்டை மற்றும் உரையாடல்கள் ஒளியை வளைக்கும் மிதக்கும் திரவக் கண்ணாடி போல. அட்டவணைகளும் தொகைகளும் திடமாகவே இருக்கும். இந்தக் கணினி மெதுவாக இருந்தால் அதை முடக்கவும்.',
 } as const;

@@ -115,3 +115,33 @@ for (const scheme of ['light', 'dark'] as const) {
     expect(found).toEqual([]);
   });
 }
+
+/**
+ * The glass effect (22 November 2026): the sidebar, top bar and dialogs see-through over the
+ * factory's colours. Text on them must still pass contrast, light and dark, so the queues and
+ * the search dialog are audited with it on. The scheme is set in the stored preference, the
+ * way a person sets it, since the console does not follow the machine's.
+ */
+for (const scheme of ['light', 'dark'] as const) {
+  test(`glass on, ${scheme}`, async ({ page }) => {
+    test.setTimeout(180_000);
+    await page.addInitScript((value) => {
+      window.localStorage.setItem('tfd.admin.appearance', value);
+    }, JSON.stringify({ scheme, textSize: 'normal', glass: true }));
+    await signIn(page, MANAGER);
+    await expect(page.locator('html')).toHaveAttribute('data-glass', 'on');
+    const found: string[] = [];
+    for (const screen of QUEUES) {
+      await page.goto(screen.path);
+      await expect(page.getByRole('main')).toBeVisible({ timeout: 15_000 });
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(800);
+      found.push(...(await audit(page, `${screen.path} (glass, ${scheme})`)));
+    }
+    await page.keyboard.press('Control+k');
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.waitForTimeout(400);
+    found.push(...(await audit(page, `search dialog (glass, ${scheme})`)));
+    expect(found).toEqual([]);
+  });
+}

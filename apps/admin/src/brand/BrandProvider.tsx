@@ -31,6 +31,7 @@ import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { tenantId } from '@/config/tenant';
 import { BUNDLED_LOGO_URL } from './assets';
 import { scaleTypography } from './appearance';
+import { LiquidGlassFilter } from './LiquidGlassFilter';
 import { useAppearance } from './useAppearance';
 
 /**
@@ -68,6 +69,37 @@ export function BrandProvider({ children }: PropsWithChildren) {
     };
   }, [config.theme, appearance.scheme, appearance.textSize]);
 
+  // The glass effect is a CSS layer keyed on this attribute (`theme.css`), so turning it on
+  // re-renders nothing: the sidebar, top bar and dialogs carry `data-glass-surface` always.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (!appearance.glass) {
+      delete root.dataset.glass;
+      delete root.dataset.glassRefract;
+      return;
+    }
+    root.dataset.glass = 'on';
+    // The refraction filter only where `backdrop-filter: url()` renders: Chromium.
+    if (isChromium()) root.dataset.glassRefract = 'on';
+
+    // The light on the glass follows the pointer, as it follows the tilt of a phone. One
+    // listener, one write per frame, and only while the effect is on.
+    let frame = 0;
+    const onMove = (event: PointerEvent) => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        root.style.setProperty('--glass-light-x', `${Math.round((event.clientX / window.innerWidth) * 100)}%`);
+        root.style.setProperty('--glass-light-y', `${Math.round((event.clientY / window.innerHeight) * 100)}%`);
+      });
+    };
+    window.addEventListener('pointermove', onMove, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [appearance.glass]);
+
   useEffect(() => {
     const name = config.factory.name?.trim();
     document.title = name ? `${name} · Console` : 'Tea Factory Console';
@@ -83,7 +115,19 @@ export function BrandProvider({ children }: PropsWithChildren) {
     link.href = href;
   }, [config.branding.faviconUrl]);
 
-  return <>{children}</>;
+  return (
+    <>
+      {appearance.glass ? <LiquidGlassFilter /> : null}
+      {children}
+    </>
+  );
+}
+
+/** Chrome and Edge, where an SVG filter in `backdrop-filter` is drawn. */
+function isChromium(): boolean {
+  const brands = (navigator as Navigator & { userAgentData?: { brands?: { brand: string }[] } }).userAgentData?.brands;
+  if (brands) return brands.some((one) => one.brand === 'Chromium');
+  return /Chrome\//.test(navigator.userAgent) && !/Firefox\//.test(navigator.userAgent);
 }
 
 function createIconLink(): HTMLLinkElement {

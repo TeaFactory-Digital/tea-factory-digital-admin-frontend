@@ -258,6 +258,7 @@ export function CommandMenu() {
         <RadixDialog.Portal>
           <RadixDialog.Overlay className="fixed inset-0 z-40 bg-overlay backdrop-blur-xs" />
           <RadixDialog.Content
+            data-glass-surface="dialog"
             className="fixed top-[15vh] left-1/2 z-50 w-[calc(100vw-2rem)] max-w-dialog-wide -translate-x-1/2 overflow-hidden rounded-lg border border-border bg-surface shadow-raised"
             aria-describedby={undefined}
           >
@@ -269,6 +270,13 @@ export function CommandMenu() {
                 value={text}
                 onChange={(event) => setText(event.target.value)}
                 onKeyDown={onKeyDown}
+                // A combobox: focus stays in the box, and the highlighted result is announced.
+                role="combobox"
+                aria-expanded
+                aria-controls="command-menu-results"
+                aria-activedescendant={
+                  results.length > 0 ? `command-menu-option-${active}` : undefined
+                }
                 placeholder={
                   canSearchSuppliers ? t('search.placeholder') : t('search.placeholderPages')
                 }
@@ -277,7 +285,15 @@ export function CommandMenu() {
               />
             </div>
 
-            <ul ref={listRef} role="listbox" className="max-h-96 overflow-y-auto p-xs">
+            <ul
+              ref={listRef}
+              id="command-menu-results"
+              role="listbox"
+              aria-label={t('search.results')}
+              // Scrollable, so reachable by keyboard; the arrows in the box above still move the choice.
+              tabIndex={0}
+              className="max-h-96 overflow-y-auto p-xs"
+            >
               {results.length === 0 ? (
                 <li className="px-md py-lg text-center text-body-small text-text-secondary">
                   {suppliers.isFetching ? t('search.searching') : t('search.none')}
@@ -288,6 +304,7 @@ export function CommandMenu() {
                   return (
                     <li
                       key={result.key}
+                      id={`command-menu-option-${index}`}
                       data-index={index}
                       role="option"
                       aria-selected={index === active}

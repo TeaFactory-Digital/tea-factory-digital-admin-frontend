@@ -343,3 +343,192 @@
     line-height: 1.7;
   }
 }
+
+/**
+ * Liquid Glass (22 November 2026), the reader's choice in Profile → Appearance.
+ *
+ * Only three surfaces take it: the sidebar, the top bar and dialogs (`data-glass-surface`).
+ * Cards, grids and every figure stay on solid surfaces, because a number read through glass
+ * is a number read wrong.
+ *
+ * What makes it liquid rather than frosted, each one below:
+ *  - **Floating panes.** The sidebar and top bar lift off the window edges with large
+ *    rounded corners, the top bar as a capsule, and the page scrolls underneath the bar.
+ *  - **Clear, not milky.** Little tint and a light blur, with saturation and brightness
+ *    lifted, so what is behind stays vivid.
+ *  - **A lit rim.** A gradient edge, bright where the light falls and fading round the
+ *    sides, plus an inner glow, so the pane reads as thick glass.
+ *  - **Moving light.** A soft highlight that follows the pointer (`--glass-light-x/y`).
+ *  - **Refraction**, in Chromium: an SVG displacement filter bends what is behind
+ *    (`LiquidGlassFilter`, `data-glass-refract`).
+ *
+ * Every colour is a brand token mixed with transparency, never a literal, so a factory's
+ * palette and the dark scheme carry through. Unlayered, so it outranks the utilities it
+ * replaces while it is on and costs nothing while it is off.
+ */
+:root[data-glass='on'] {
+  --glass-tint: color-mix(in srgb, var(--color-surface) 34%, transparent);
+  --glass-tint-dialog: color-mix(in srgb, var(--color-surface) 74%, transparent);
+  --glass-rim-strong: color-mix(in srgb, var(--color-surface) 95%, transparent);
+  --glass-rim-soft: color-mix(in srgb, var(--color-surface) 25%, transparent);
+  --glass-glow: color-mix(in srgb, var(--color-surface) 55%, transparent);
+  --glass-light: color-mix(in srgb, var(--color-surface) 60%, transparent);
+  --glass-shade: color-mix(in srgb, var(--color-text-primary) 14%, transparent);
+  --glass-shade-near: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+  --glass-wash-1: color-mix(in srgb, var(--color-primary) 38%, transparent);
+  --glass-wash-2: color-mix(in srgb, var(--color-secondary) 30%, transparent);
+  --glass-wash-3: color-mix(in srgb, var(--color-info) 24%, transparent);
+  --glass-optics: blur(8px) saturate(190%) brightness(1.04);
+  --glass-optics-dialog: blur(14px) saturate(180%) brightness(1.06);
+  --glass-light-x: 20%;
+  --glass-light-y: 0%;
+}
+
+:root[data-glass='on'][data-scheme='dark'] {
+  --glass-tint: color-mix(in srgb, var(--color-surface) 50%, transparent);
+  --glass-tint-dialog: color-mix(in srgb, var(--color-surface) 80%, transparent);
+  --glass-rim-strong: color-mix(in srgb, var(--color-text-primary) 42%, transparent);
+  --glass-rim-soft: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+  --glass-glow: color-mix(in srgb, var(--color-text-primary) 7%, transparent);
+  --glass-light: color-mix(in srgb, var(--color-text-primary) 10%, transparent);
+  --glass-shade: color-mix(in srgb, var(--color-background) 70%, transparent);
+  --glass-shade-near: color-mix(in srgb, var(--color-background) 50%, transparent);
+  --glass-wash-1: color-mix(in srgb, var(--color-primary) 34%, transparent);
+  --glass-wash-2: color-mix(in srgb, var(--color-secondary) 26%, transparent);
+  --glass-wash-3: color-mix(in srgb, var(--color-info) 22%, transparent);
+  --glass-optics: blur(9px) saturate(170%) brightness(0.86);
+  --glass-optics-dialog: blur(14px) saturate(160%) brightness(0.9);
+}
+
+/* What the glass sits on: the factory's colours, like a wallpaper behind the panes. */
+:root[data-glass='on'] [data-glass-backdrop] {
+  background:
+    radial-gradient(48rem 36rem at 8% 12%, var(--glass-wash-1), transparent 68%),
+    radial-gradient(44rem 32rem at 92% 6%, var(--glass-wash-2), transparent 66%),
+    radial-gradient(56rem 40rem at 70% 96%, var(--glass-wash-3), transparent 70%),
+    radial-gradient(36rem 28rem at 20% 90%, var(--glass-wash-2), transparent 70%),
+    var(--color-background);
+}
+
+/* The material. */
+:root[data-glass='on'] [data-glass-surface] {
+  isolation: isolate;
+  background-color: var(--glass-tint);
+  background-image: radial-gradient(
+    28rem 18rem at var(--glass-light-x) var(--glass-light-y),
+    var(--glass-light),
+    transparent 70%
+  );
+  -webkit-backdrop-filter: var(--glass-optics);
+  backdrop-filter: var(--glass-optics);
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 1px var(--glass-rim-strong),
+    inset 0 -1px 1px var(--glass-rim-soft),
+    inset 0 0 24px var(--glass-glow),
+    0 2px 6px var(--glass-shade-near),
+    0 16px 48px var(--glass-shade);
+}
+
+/* The lit rim: a gradient border, bright top-left and bottom-right, faint on the sides.
+   Not on dialogs: a long dialog scrolls, and the drawn rim would scroll with it. */
+:root[data-glass='on'] [data-glass-surface]:not([data-glass-surface='dialog'])::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(
+    140deg,
+    var(--glass-rim-strong),
+    var(--glass-rim-soft) 32%,
+    transparent 50%,
+    var(--glass-rim-soft) 68%,
+    var(--glass-rim-strong)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+/* Refraction where the browser draws it (Chromium); elsewhere the plain optics above. */
+:root[data-glass='on'][data-glass-refract='on'] [data-glass-surface] {
+  backdrop-filter: url(#tfd-liquid-glass) var(--glass-optics);
+}
+
+/* Floating panes. */
+/* The sidebar is the one pane in the flow: the rim needs it as its containing block. */
+:root[data-glass='on'] [data-glass-surface='sidebar'] {
+  position: relative;
+}
+
+@media (min-width: 64rem) {
+  :root[data-glass='on'] [data-glass-surface='sidebar'] {
+    margin: 12px 0 12px 12px;
+    border-radius: 28px;
+    border-right-width: 0;
+  }
+}
+
+:root[data-glass='on'] [data-glass-column] > [data-glass-surface='bar'] {
+  position: absolute;
+  top: 12px;
+  left: var(--spacing-gutter);
+  right: var(--spacing-gutter);
+  z-index: 20;
+  height: 3.5rem;
+  border-radius: 9999px;
+  padding-inline: 1.25rem;
+}
+
+/* The page starts below the capsule and scrolls underneath it. */
+:root[data-glass='on'] [data-glass-column] > main {
+  padding-top: 5.25rem;
+}
+
+:root[data-glass='on'] [data-glass-column] > [data-shell-notice] {
+  padding-top: 5.25rem;
+}
+
+:root[data-glass='on'] [data-glass-column]:has(> [data-shell-notice]) > main {
+  padding-top: var(--spacing-xs);
+}
+
+/* A dialog holds a form and its figures: more of the pane, less of what is behind it. */
+:root[data-glass='on'] [data-glass-surface='dialog'] {
+  border-radius: 24px;
+  background-color: var(--glass-tint-dialog);
+  -webkit-backdrop-filter: var(--glass-optics-dialog);
+  backdrop-filter: var(--glass-optics-dialog);
+}
+
+:root[data-glass='on'][data-glass-refract='on'] [data-glass-surface='dialog'] {
+  backdrop-filter: url(#tfd-liquid-glass) var(--glass-optics-dialog);
+}
+
+/* A browser that cannot blur gets the solid surface rather than unreadable see-through. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root[data-glass='on'] [data-glass-surface] {
+    background-color: var(--color-surface);
+  }
+}
+
+/* The operating system's "reduce transparency" wins over the console's own setting. */
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-glass='on'] [data-glass-surface] {
+    background-color: var(--color-surface);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  :root[data-glass='on'] [data-glass-backdrop] {
+    background: var(--color-background);
+  }
+}

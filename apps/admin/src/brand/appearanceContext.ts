@@ -14,6 +14,7 @@ export interface AppearanceValue {
   appearance: Appearance;
   setScheme: (scheme: ConsoleScheme) => void;
   setTextSize: (size: TextSize) => void;
+  setGlass: (glass: boolean) => void;
 }
 
 /**
@@ -25,4 +26,5 @@ export const AppearanceContext = createContext<AppearanceValue>({
   appearance: DEFAULT_APPEARANCE,
   setScheme: () => {},
   setTextSize: () => {},
+  setGlass: () => {},
 });

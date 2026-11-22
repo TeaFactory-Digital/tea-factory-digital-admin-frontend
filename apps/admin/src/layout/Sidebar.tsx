@@ -58,6 +58,7 @@ export function Sidebar({ summary }: { summary?: DashboardView }) {
   return (
     <nav
       aria-label={t('nav.dashboard')}
+      data-glass-surface="sidebar"
       className="hidden w-64 shrink-0 flex-col gap-md border-r border-border bg-background px-md py-lg lg:flex"
     >
       {/**

@@ -20,7 +20,7 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sparkles, Square, Sun } from 'lucide-react';
 import { TEXT_SIZES, type Appearance, type ConsoleScheme, type TextSize } from './appearance';
 import { useAppearance } from './useAppearance';
 import { cn } from '@/lib/cn';
@@ -28,6 +28,12 @@ import { cn } from '@/lib/cn';
 const SCHEMES: Array<{ value: ConsoleScheme; Icon: typeof Sun }> = [
   { value: 'light', Icon: Sun },
   { value: 'dark', Icon: Moon },
+];
+
+/** Glass for the sidebar, the top bar and dialogs (22 November 2026); off by default. */
+const GLASS: Array<{ value: boolean; Icon: typeof Sun }> = [
+  { value: false, Icon: Square },
+  { value: true, Icon: Sparkles },
 ];
 
 /** The step's own size, so the control shows what it does rather than describing it. */
@@ -62,6 +68,8 @@ export function AppearanceControls({ className, value, onChange }: AppearanceCon
     onChange ? onChange({ ...appearance, scheme }) : store.setScheme(scheme);
   const setTextSize = (textSize: TextSize) =>
     onChange ? onChange({ ...appearance, textSize }) : store.setTextSize(textSize);
+  const setGlass = (glass: boolean) =>
+    onChange ? onChange({ ...appearance, glass }) : store.setGlass(glass);
 
   return (
     <div className={cn('flex flex-col gap-sm', className)}>
@@ -126,6 +134,35 @@ export function AppearanceControls({ className, value, onChange }: AppearanceCon
             );
           })}
         </div>
+      </div>
+
+      <div className="flex flex-col gap-xxs">
+        <span className="text-caption text-text-secondary">{t('appearance.glass')}</span>
+        <div role="radiogroup" aria-label={t('appearance.glass')} className="flex gap-xxs">
+          {GLASS.map(({ value, Icon }) => {
+            const active = appearance.glass === value;
+            return (
+              <button
+                key={String(value)}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => setGlass(value)}
+                className={cn(
+                  SEGMENT,
+                  'text-body-small',
+                  active
+                    ? 'bg-primary text-primary-contrast'
+                    : 'text-text-primary hover:bg-surface-variant',
+                )}
+              >
+                <Icon className="size-icon-sm" aria-hidden />
+                {t(value ? 'appearance.glass.on' : 'appearance.glass.off')}
+              </button>
+            );
+          })}
+        </div>
+        <span className="text-caption text-text-secondary">{t('appearance.glassHint')}</span>
       </div>
     </div>
   );

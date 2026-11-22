@@ -370,6 +370,26 @@ and the text size (normal, large, larger), are set on the profile screen (M15,
 `flagsAndBranding` is the factory administrator's alone and a clerk who needs larger type
 must be able to change their own screen. Light is the default.
 
+**The glass effect is the reader's too, and stays off the figures.** Since 22 November 2026
+Profile → Appearance has a third choice, Glass effect (off by default, `Appearance.glass`).
+On, `BrandProvider` sets `data-glass="on"` on `<html>` and a CSS layer at the end of
+`styles/theme.css` turns the surfaces marked `data-glass-surface` (the sidebar, the top
+bar, `Dialog` and the search dialog) into **Liquid Glass** rather than frosted glass: the
+sidebar floats inset with 28 px corners, the top bar becomes an absolutely placed capsule
+over `main` (which starts 5.25 rem down and scrolls underneath it), and the material is
+clear (little tint, an 8 px blur with saturation and brightness lifted), with a gradient rim
+drawn by a masked `::before`, inner glow and depth shadows, a highlight that follows the
+pointer (`--glass-light-x/y`, set once per frame by `BrandProvider`), and in Chromium a
+refraction: `backdrop-filter: url(#tfd-liquid-glass)`, an SVG displacement filter
+(`LiquidGlassFilter`), gated on `data-glass-refract` because other browsers drop the whole
+value. Dialogs take a denser tint and no drawn rim, since a long dialog scrolls. All over a
+wash of the factory's primary, secondary and info colours on the shell
+(`data-glass-backdrop`). Cards, grids and every figure stay solid. Colours are tokens mixed
+with `transparent`, never literals, so a factory's palette and the dark scheme carry through.
+A browser without `backdrop-filter`, and an operating system set to reduce transparency, get
+the solid surface. The accessibility e2e audits the queues and the search dialog with it on,
+light and dark. A new top-level surface that should take it adds `data-glass-surface`.
+
 **No `tailwind-merge`.** Class-conflict resolution by last-wins is a convenience
 that hides a design problem: if a caller needs to override a component's
 background, the component should take a variant. Every primitive here takes
