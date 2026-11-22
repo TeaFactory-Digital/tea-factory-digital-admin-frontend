@@ -10,12 +10,15 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { billAdjustmentProblem } from '@tfd/domain';
 import { Button } from '@/components/ui/Button';
+import { MoneyInput } from '@/components/ui/MoneyInput';
 import { Dialog } from '@/components/ui/Dialog';
-import { Field, Input, Textarea } from '@/components/ui/Field';
+import { Field, Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { useAdjustBill } from '@/modules/records/hooks';
 import { ReasonChips } from '@/components/ReasonChips';
+import { ErrorState, Notice, Spinner } from '@/components/ui/states';
+import { useBill } from './hooks';
 
 export function OtherChargesDialog({
   billId,
@@ -73,7 +76,7 @@ export function OtherChargesDialog({
           error={problem === 'negative' && value !== '' ? t('records.otherCharges.amountInvalid') : undefined}
         >
           {({ id, invalid }) => (
-            <Input id={id} invalid={invalid} inputMode="decimal" className="numeric" autoFocus value={value} onChange={(event) => setValue(event.target.value)} />
+            <MoneyInput id={id} invalid={invalid}  autoFocus value={value} onValueChange={setValue} />
           )}
         </Field>
         <Field
@@ -90,4 +93,45 @@ export function OtherChargesDialog({
       </div>
     </Dialog>
   );
+}
+
+/**
+ * The same dialog opened from a row of the bills list (22 November 2026), so a month's other
+ * deductions are typed down the list without opening each bill. The row carries no figures for
+ * the line, so the bill is read first; a bill imported from the factory's slip is corrected
+ * there and re-imported, and says so instead of opening.
+ */
+export function OtherChargesFromList({ billId, onClose }: { billId: string; onClose: () => void }) {
+  const { t } = useTranslation();
+  const bill = useBill(billId);
+  const data = bill.data;
+  if (bill.error) {
+    return (
+      <Dialog open onOpenChange={(next) => (next ? undefined : onClose())} title={t('records.otherCharges.title')}>
+        <ErrorState error={bill.error} onRetry={() => void bill.refetch()} />
+      </Dialog>
+    );
+  }
+  if (!data) {
+    return (
+      <Dialog open onOpenChange={(next) => (next ? undefined : onClose())} title={t('records.otherCharges.title')}>
+        <Spinner />
+      </Dialog>
+    );
+  }
+  if (data.source === 'imported' || data.publishedAt !== null) {
+    return (
+      <Dialog
+        open
+        onOpenChange={(next) => (next ? undefined : onClose())}
+        title={t('records.otherCharges.title')}
+        footer={<Button onClick={onClose}>{t('common.close')}</Button>}
+      >
+        <Notice tone="info">
+          {data.publishedAt !== null ? t('bills.correctionsPublished') : t('records.otherCharges.imported')}
+        </Notice>
+      </Dialog>
+    );
+  }
+  return <OtherChargesDialog billId={data.id} amount={data.deductions.otherCards} note={data.otherCardsNote} onClose={onClose} />;
 }

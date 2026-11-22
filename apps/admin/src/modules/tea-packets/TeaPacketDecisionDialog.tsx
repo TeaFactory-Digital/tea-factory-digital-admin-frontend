@@ -42,16 +42,19 @@ const MIN_NOTE = 10;
  * buttons and the clerk settles the verb *inside* it, so sentences filtered by a
  * choice that has not been made yet would be sentences nobody sees.
  */
-const SUGGESTIONS = ['ready', 'collect', 'overLimit', 'outOfStock'] as const;
+export const SUGGESTIONS = ['ready', 'collect', 'overLimit', 'outOfStock'] as const;
 
 export function TeaPacketDecisionDialog({
   request,
   policy,
   onClose,
+  onDecided,
 }: {
   request: AdminTeaPacketRequest;
   policy: TeaPacketPolicy;
   onClose: () => void;
+  /** After a decision went through: the queue opens the next request. */
+  onDecided?: () => void;
 }) {
   const { t } = useTranslation();
   const toast = useToast();
@@ -90,7 +93,8 @@ export function TeaPacketDecisionDialog({
           toast.success(
             verb === 'approve' ? t('teaPackets.approved') : t('teaPackets.rejected'),
           );
-          onClose();
+          if (onDecided) onDecided();
+          else onClose();
         },
         // Stays open on failure: closing would discard the note just written, and an
         // already-decided or four-eyes refusal is something to read, not a toast.

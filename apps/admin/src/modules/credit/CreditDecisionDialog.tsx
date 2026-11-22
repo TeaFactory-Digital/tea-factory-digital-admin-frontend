@@ -28,6 +28,7 @@ import { DEFAULT_CREDIT_RULES, approvalTierFor, canDecideCredit, isSelfApproval 
 import { useAuthStore, useCurrentUser } from '@/auth/authStore';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { useNoteSuggestions } from '@/components/useNoteSuggestions';
+import { useQueueKeys } from '@/components/useQueueKeys';
 import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -38,16 +39,19 @@ import { errorMessageKey, isBlockingError } from '@/lib/errorMessage';
 import { formatAmount } from '@/lib/format';
 import { isApiError } from '@/services/api/errors';
 import { useDecideCreditRequest, type CreditVerb } from './hooks';
+import { SUGGESTIONS } from './suggestions';
 
 const MIN_NOTE = 10;
 
-/** The money queue's own sentences, by verb. Words in the string tables. */
-const SUGGESTIONS: Record<CreditVerb, readonly string[]> = {
-  approve: ['withinCeiling', 'counter', 'deducted'],
-  reject: ['overCeiling', 'shortHistory', 'outstanding'],
-};
 
-export function CreditDecisionActions({ request }: { request: AdminCreditRequest }) {
+export function CreditDecisionActions({
+  request,
+  onDecided,
+}: {
+  request: AdminCreditRequest;
+  /** After a decision went through: the queue moves on to the next request. */
+  onDecided?: () => void;
+}) {
   const { t } = useTranslation();
   const user = useCurrentUser();
   const grants = useAuthStore((s) => s.grants);
@@ -60,6 +64,17 @@ export function CreditDecisionActions({ request }: { request: AdminCreditRequest
 
   const selfRaised = isSelfApproval(user, request.createdById);
   const eligibility = request.eligibility;
+  // A approves (unless over the ceiling), R rejects, as the buttons would.
+  const keysOn = request.status === 'pending' && Boolean(eligibility) && mayDecide && !selfRaised;
+  useQueueKeys(
+    {
+      onApprove: () => {
+        if (eligibility && request.amount <= eligibility.available) setVerb('approve');
+      },
+      onReject: () => setVerb('reject'),
+    },
+    keysOn,
+  );
 
   // Read only after the status check: a rejected or cancelled request carries no
   // eligibility (see `AdminCreditRequest.eligibility`), and nothing is decided without it.
@@ -144,6 +159,7 @@ export function CreditDecisionActions({ request }: { request: AdminCreditRequest
           eligibility={eligibility}
           verb={verb}
           onClose={() => setVerb(null)}
+          onDecided={onDecided}
         />
       ) : null}
     </div>
@@ -155,12 +171,14 @@ function CreditDecisionDialog({
   eligibility,
   verb,
   onClose,
+  onDecided,
 }: {
   request: AdminCreditRequest;
   /** Narrowed by the caller, which renders nothing for a request without figures. */
   eligibility: CreditEligibility;
   verb: CreditVerb;
   onClose: () => void;
+  onDecided?: () => void;
 }) {
   const { t } = useTranslation();
   const toast = useToast();
@@ -192,6 +210,7 @@ function CreditDecisionDialog({
         onSuccess: () => {
           toast.success(approving ? t('credit.approved') : t('credit.rejected'));
           onClose();
+          onDecided?.();
         },
         // Stays open on failure: the note is worth keeping, and every refusal this
         // dialog can meet is one the clerk has to read.

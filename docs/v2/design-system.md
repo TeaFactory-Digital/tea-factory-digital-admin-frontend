@@ -263,6 +263,19 @@ its tooltip. Each list is the factory's own once saved (Configuration, Common no
 the built-in sentences in the string tables (`reasonChip.<list>.<slug>`). A new reason box
 gets a list too: add its key to `NOTE_SUGGESTION_KEYS` and its slugs to `REASON_CHIPS`.
 
+### Money boxes and forms filled top to bottom
+
+A rupee figure is typed in `MoneyInput`: it shows `45,000.50` while the value in and out stays
+`45000.50`, and Enter moves to the next field (`enterMovesOn`), as a paper form is filled
+down. Where Enter already means something (a row saved on Enter) pass `enterToNext={false}`.
+
+### Working a queue
+
+A queue screen offers the keys A, R, J, K (`useQueueKeys`), moves on to the next waiting item
+after a decision, and lets several rows be decided together (`BulkDecision`), each still on
+its own request. A list remembers its filters (`RememberFilters`); a new list route gets the
+wrapper in `router.tsx`.
+
 ### Text must fit in every language
 
 Sinhala and Tamil labels run longer than English ones (a Tamil sidebar label can be a third

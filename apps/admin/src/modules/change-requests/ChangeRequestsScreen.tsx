@@ -11,7 +11,7 @@
  * to work a whole queue without opening fourteen records.
  */
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -27,6 +27,15 @@ import { EmptyState } from '@/components/ui/states';
 import { useDebounced } from '@/lib/useDebounced';
 import { formatAge } from '@/lib/format';
 import { useChangeRequests } from './hooks';
+import { SUGGESTIONS as CHANGE_SUGGESTIONS } from './suggestions';
+import { BulkBar, BulkDecisionDialog } from '@/components/BulkDecision';
+import { selectionColumn } from '@/components/selectionColumn';
+import { FactorySystemReminder } from '@/components/FactorySystemReminder';
+import { useCan, useCurrentUser } from '@/auth/authStore';
+import { changeRequestRepository } from '@/services/repositories/changeRequestRepository';
+import { useQueryClient } from '@tanstack/react-query';
+import { qk } from '@/query/queryKeys';
+import { isSelfApproval } from '@tfd/domain';
 
 const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'neutral' } as const;
 
@@ -65,6 +74,20 @@ export function ChangeRequestsScreen() {
   );
 
   const { data, isPending, error, refetch } = useChangeRequests(query);
+  const rows = useMemo(() => data?.items ?? [], [data]);
+  const canDecide = useCan('changeRequests', 'approve');
+  const user = useCurrentUser();
+  const client = useQueryClient();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulk, setBulk] = useState<'approve' | 'reject' | null>(null);
+  // One kind of change at a time: the notes for an address change mean nothing on a bank one.
+  const selectedType = rows.find((row) => selected.has(row.id))?.type as ChangeRequestType | undefined;
+  const decidable = useCallback(
+    (row: AdminChangeRequest) =>
+      row.status === 'pending' && !isSelfApproval(user, row.createdById) && (!selectedType || row.type === selectedType),
+    [user, selectedType],
+  );
+  const bulkMode = canDecide && status === 'pending' && rows.length > 0;
 
   function setParam(key: string, value: string | null) {
     const next = new URLSearchParams(params);
@@ -80,6 +103,18 @@ export function ChangeRequestsScreen() {
 
   const columns = useMemo<ColumnDef<AdminChangeRequest, unknown>[]>(
     () => [
+      ...(bulkMode
+        ? [
+            selectionColumn<AdminChangeRequest>({
+              rows,
+              selected,
+              onChange: setSelected,
+              idOf: (row) => row.id,
+              nameOf: (row) => `${row.supplierCode} ${row.supplierName}`,
+              selectable: decidable,
+            }),
+          ]
+        : []),
       {
         /**
          * An `accessorKey`, not an `id`, even though the cell reads the whole row.
@@ -155,7 +190,7 @@ export function ChangeRequestsScreen() {
         },
       },
     ],
-    [t],
+    [t, bulkMode, rows, selected, decidable],
   );
 
   return (
@@ -206,6 +241,17 @@ export function ChangeRequestsScreen() {
           </Select>
         </div>
 
+        {bulkMode ? (
+          <div className="shrink-0 px-md pt-sm">
+            <BulkBar
+              count={selected.size}
+              onApprove={() => setBulk('approve')}
+              onReject={() => setBulk('reject')}
+              onClear={() => setSelected(new Set())}
+            />
+          </div>
+        ) : null}
+
         <DataTable
           label={t('changeRequests.title')}
           columns={columns}
@@ -226,6 +272,33 @@ export function ChangeRequestsScreen() {
           }
         />
       </Card>
+
+      {bulk && selectedType ? (
+        <BulkDecisionDialog
+          verb={bulk}
+          notice={<FactorySystemReminder>{t('bulk.factoryReminder')}</FactorySystemReminder>}
+          items={rows
+            .filter((row) => selected.has(row.id))
+            .map((row) => ({
+              id: row.id,
+              label: `${row.supplierCode} ${row.supplierName}`,
+              detail: t(`changeRequests.type.${row.type as ChangeRequestType}`),
+            }))}
+          noteList={bulk === 'approve' ? 'changeRequests.approve' : 'changeRequests.reject'}
+          builtIn={CHANGE_SUGGESTIONS[selectedType][bulk].map((slug) => ({
+            label: t(`changeRequests.noteSuggest.${bulk}.${slug}`),
+            text: t(`changeRequests.noteSuggest.${bulk}.${slug}.text`),
+          }))}
+          decide={(id, note) =>
+            bulk === 'approve' ? changeRequestRepository.approve(id, { note }) : changeRequestRepository.reject(id, { note })
+          }
+          onClose={(decided) => {
+            setBulk(null);
+            setSelected((current) => new Set([...current].filter((id) => !decided.includes(id))));
+            void client.invalidateQueries({ queryKey: qk.changeRequests.all });
+          }}
+        />
+      ) : null}
     </>
   );
 }

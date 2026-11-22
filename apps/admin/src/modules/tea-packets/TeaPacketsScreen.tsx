@@ -44,7 +44,12 @@ import { EmptyState, Notice } from '@/components/ui/states';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { useDebounced } from '@/lib/useDebounced';
 import { formatAge, formatAmount } from '@/lib/format';
-import { TeaPacketDecisionDialog } from './TeaPacketDecisionDialog';
+import { SUGGESTIONS, TeaPacketDecisionDialog } from './TeaPacketDecisionDialog';
+import { BulkBar, BulkDecisionDialog } from '@/components/BulkDecision';
+import { selectionColumn } from '@/components/selectionColumn';
+import { FactorySystemReminder } from '@/components/FactorySystemReminder';
+import { useQueryClient } from '@tanstack/react-query';
+import { qk } from '@/query/queryKeys';
 import { useTeaPacketRequests } from './hooks';
 
 const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'neutral' } as const;
@@ -65,6 +70,9 @@ export function TeaPacketsScreen() {
   const page = Number(params.get('page') ?? 0);
   // Oldest waiting first, always: the server orders the queue and takes no sort parameter.
   const [deciding, setDeciding] = useState<AdminTeaPacketRequest | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulk, setBulk] = useState<'approve' | 'reject' | null>(null);
+  const client = useQueryClient();
 
   /**
    * The store's policy, or the bundled default.
@@ -88,6 +96,14 @@ export function TeaPacketsScreen() {
   );
 
   const { data, isPending, error, refetch } = useTeaPacketRequests(query);
+  const rows = useMemo(() => data?.items ?? [], [data]);
+  const bulkMode = canDecide && status === 'pending';
+
+  /** After a decision, the next request in the queue opens, so the clerk works front to back. */
+  function openNext(current: AdminTeaPacketRequest) {
+    const index = rows.findIndex((row) => row.id === current.id);
+    setDeciding(rows.slice(index + 1).find((row) => row.status === 'pending') ?? null);
+  }
 
   function setParam(key: string, value: string | null) {
     const next = new URLSearchParams(params);
@@ -99,6 +115,17 @@ export function TeaPacketsScreen() {
 
   const columns = useMemo<ColumnDef<AdminTeaPacketRequest, unknown>[]>(
     () => [
+      ...(bulkMode
+        ? [
+            selectionColumn<AdminTeaPacketRequest>({
+              rows,
+              selected,
+              onChange: setSelected,
+              idOf: (row) => row.id,
+              nameOf: (row) => `${row.supplierCode} ${row.supplierName}`,
+            }),
+          ]
+        : []),
       {
         accessorKey: 'supplierCode',
         header: t('teaPackets.column.supplier'),
@@ -210,7 +237,7 @@ export function TeaPacketsScreen() {
         },
       },
     ],
-    [t, policy, user, canDecide],
+    [t, policy, user, canDecide, bulkMode, rows, selected],
   );
 
   return (
@@ -292,6 +319,17 @@ export function TeaPacketsScreen() {
           </Select>
         </div>
 
+        {bulkMode ? (
+          <div className="shrink-0 px-md pt-sm">
+            <BulkBar
+              count={selected.size}
+              onApprove={() => setBulk('approve')}
+              onReject={() => setBulk('reject')}
+              onClear={() => setSelected(new Set())}
+            />
+          </div>
+        ) : null}
+
         <DataTable
           label={t('teaPackets.title')}
           columns={columns}
@@ -312,9 +350,38 @@ export function TeaPacketsScreen() {
 
       {deciding ? (
         <TeaPacketDecisionDialog
+          key={deciding.id}
           request={deciding}
           policy={policy}
           onClose={() => setDeciding(null)}
+          onDecided={() => openNext(deciding)}
+        />
+      ) : null}
+
+      {bulk ? (
+        <BulkDecisionDialog
+          verb={bulk}
+          notice={<FactorySystemReminder>{t('bulk.factoryReminder')}</FactorySystemReminder>}
+          items={rows
+            .filter((row) => selected.has(row.id))
+            .map((row) => ({
+              id: row.id,
+              label: `${row.supplierCode} ${row.supplierName}`,
+              detail: t('bulk.packets', { count: row.packets }),
+            }))}
+          noteList="teaPackets"
+          builtIn={SUGGESTIONS.map((slug) => ({
+            label: t(`teaPackets.noteSuggest.${slug}`),
+            text: t(`teaPackets.noteSuggest.${slug}.text`),
+          }))}
+          decide={(id, note) =>
+            bulk === 'approve' ? teaPacketRepository.approve(id, { note }) : teaPacketRepository.reject(id, { note })
+          }
+          onClose={(decided) => {
+            setBulk(null);
+            setSelected((current) => new Set([...current].filter((id) => !decided.includes(id))));
+            void client.invalidateQueries({ queryKey: qk.teaPackets.all });
+          }}
         />
       ) : null}
     </>

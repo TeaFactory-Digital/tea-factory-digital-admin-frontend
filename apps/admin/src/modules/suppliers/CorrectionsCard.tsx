@@ -23,9 +23,10 @@ import {
 import { useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { MoneyInput } from '@/components/ui/MoneyInput';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Dialog } from '@/components/ui/Dialog';
-import { Field, Input, Textarea } from '@/components/ui/Field';
+import { Field, Textarea } from '@/components/ui/Field';
 import { Select } from '@/components/ui/Select';
 import { ErrorState, Spinner } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
@@ -231,13 +232,11 @@ function CorrectionDialog({
           error={amount.trim() !== '' && !amountOk ? t('corrections.amountInvalid') : undefined}
         >
           {({ id, invalid }) => (
-            <Input
+            <MoneyInput
               id={id}
               invalid={invalid}
-              inputMode="decimal"
-              className="numeric"
               value={amount}
-              onChange={(event) => setAmount(event.target.value)}
+              onValueChange={setAmount}
             />
           )}
         </Field>

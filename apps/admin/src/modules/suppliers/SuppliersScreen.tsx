@@ -14,12 +14,12 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import type { SupplierListItem, SupplierQuery, SupplierStatus } from '@tfd/domain';
 import { useKeepsFactoryRecords, useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { useCan } from '@/auth/authStore';
-import { UserPlus } from 'lucide-react';
+import { Table2, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ImportMenu } from '@/components/ImportMenu';
 import { AddSupplierDialog } from './AddSupplierDialog';
@@ -47,7 +47,9 @@ export function SuppliersScreen() {
   // While the factory-system sync is off, suppliers are registered here (one, or a file).
   const keepsRecords = useKeepsFactoryRecords();
   const canWrite = useCan('suppliers', 'write');
-  const [adding, setAdding] = useState(false);
+  // Opened from Ctrl+K's "Add a supplier": the dialog is already open.
+  const location = useLocation();
+  const [adding, setAdding] = useState(() => (location.state as { action?: string } | null)?.action === 'add');
   const [params, setParams] = useSearchParams();
 
   const [searchText, setSearchText] = useState(params.get('q') ?? '');
@@ -292,6 +294,9 @@ export function SuppliersScreen() {
             {keepsRecords && canWrite ? (
               <>
                 <ImportMenu kinds={['suppliers', 'openingBalances', 'transportRates']} />
+                <Button variant="secondary" iconLeft={<Table2 className="size-icon-sm" aria-hidden />} onClick={() => navigate('/suppliers/opening-balances')}>
+                  {t('records.openingGrid.open')}
+                </Button>
                 <Button
                   variant="primary"
                   iconLeft={<UserPlus className="size-icon-sm" aria-hidden />}

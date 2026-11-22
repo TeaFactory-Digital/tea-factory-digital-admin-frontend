@@ -92,7 +92,9 @@
   <li><strong>Shows the newest published bill.</strong> A bill the office is still checking, or one held back, is never shown. With no bill at all: "No bill is available yet."</li>
   <li><strong>Laid out like the printed slip</strong>: factory name, telephone, registration number and month at the top; rate and kilos; amounts; the nine deductions; balance; carried-forward and savings panels; legal footer.</li>
   <li><strong>Daily supply:</strong> a calendar of days 1 to 31 with the kilos supplied each day (blank for no leaf), and a small bar chart. Under it, where the month's leaf was weighed, for example "Weighed at MAKADURA (days: 16)", once the server sends the points.</li>
-  <li><strong>PDF:</strong> the bill can be saved or shared as a PDF identical to the screen.</li>
+  <li><strong>PDF:</strong> the bill can be saved or shared as a PDF identical to the screen. The button is "Share or save PDF": it opens the phone's share sheet, so the bill can go straight to WhatsApp.</li>
+  <li><strong>Against last month:</strong> under the balance, the kilos, gross and final balance with an up or down mark against the month before, from the income history the app already reads; nothing when the month before has no figures.</li>
+  <li><strong>Pull down to refresh</strong> reads the bill and this month so far again; a line at the top says when the figures were fetched ("Updated just now", "Updated 5 min ago"). The <strong>Large text</strong> chip beside it switches large text on and off with one tap.</li>
   <li><strong>"Ask about this bill"</strong> opens an inquiry about that month.</li>
   <li><strong>The labels are the slip's:</strong> "Loan (instalment 3)" for the loan line (the PDF prints the slip's "Loans / Advance 3"), and "Other deductions" with the office's reason under it.</li>
   <li><strong>Loan balance</strong> is the loan still owed; <strong>Loan interest</strong> is this month's interest in rupees.</li>
@@ -132,7 +134,7 @@ Paid          68,220.00  (in tens)     coins carried 6.91 → August</div>
   <tr><td>Stamps</td><td>Revenue stamp duty (none on a bill without leaf)</td></tr>
   <tr><td>Previous debts</td><td>What last month could not cover</td></tr>
 </table>
-<p>The total is always the sum of the nine lines. On the screen, tap Total deductions to open the lines that have an amount this month.</p>
+<p>The total is always the sum of the nine lines. On the screen, tap Total deductions to open the lines that have an amount this month. Tap a line to see one sentence on what it is; tap it again to hide it.</p>
 <h2>5.3 Carried forward and savings</h2>
 <table>
   <tr><th>Panel line</th><th>Means</th></tr>
@@ -168,7 +170,7 @@ Paid          68,220.00  (in tens)     coins carried 6.91 → August</div>
 <h1>7. This month so far</h1>
 <p>Where the factory turns it on, a card above the bill shows the month whose bill is next:</p>
 <ul>
-  <li>Kilos so far, days with leaf, the last supply date and a strip of daily bars.</li>
+  <li>Kilos so far, days with leaf, the last supply date and a strip of daily bars. Tapping a bar shows that day's kilos and where the leaf was weighed, or "no leaf".</li>
   <li>The advance, loan, manure and tea packets approved in the month.</li>
   <li><strong>No money</strong>: the rate comes after the auction. The card says the payment comes with the bill.</li>
   <li>When the month ends the card says "Month ended, bill being prepared" and stays until that bill is published.</li>
@@ -218,6 +220,7 @@ Paid          68,220.00  (in tens)     coins carried 6.91 → August</div>
   <li><strong>Cash against leaf already supplied this month.</strong></li>
   <li><strong>Limit</strong> = last settled month's rate × this month's kilos so far. So it is 0 at the start of the month, and grows as leaf is weighed.</li>
   <li><strong>No history needed.</strong></li>
+  <li><strong>Quick amounts:</strong> chips under the amount (5,000, 10,000, 25,000 and so on, only those under the limit, then "Most you can request" itself) fill it with one tap; typing still works.</li>
   <li><strong>Deducted in full on this month's bill</strong>, even if it is more than the month earned; the rest becomes next month's debt.</li>
   <li><strong>Not offered</strong> while an earlier advance is not yet deducted, or while any loan is owed.</li>
   <li>The screen's "Loan interest" row is the newest bill's loan interest. An advance bears no interest.</li>
@@ -235,6 +238,7 @@ Paid          68,220.00  (in tens)     coins carried 6.91 → August</div>
   <li>Each bill deducts the same instalment, numbered ("Loan (instalment 3)"), but never more than the factory's share of that month's gross; in a poor month the loan simply runs longer. A month without leaf, or a lean month that repays none of the loan, is skipped in the numbering, never a restart.</li>
   <li><strong>Interest</strong> is the factory's: 0% unless set. Simple interest on the loan owed before the month's instalment (as at the month's end, so a loan approved during the month is included), taken on top of the instalment or inside it. Inside it, interest an instalment cannot cover in a poor month is taken from the next bill, never added to the loan. The last instalment takes what is owed plus its interest, so it clears the loan.</li>
   <li>A month without leaf takes no instalment and no interest.</li>
+  <li><strong>Quick amounts:</strong> chips under the amount, only those under the limit, then "Credit limit" itself, fill it with one tap; typing still works.</li>
   <li><strong>While a loan is owed</strong>, neither a new loan nor an advance can be asked for. Manure is not affected.</li>
 </ul>
 <div class="box example"><span class="label">Example</span>
@@ -263,7 +267,7 @@ With 1% inside the instalment: deducts 5,000, loan balance 45,500</div>
 <h1>13. Request tea packets</h1>
 <ul>
   <li><strong>The factory's own tea for the household. Not credit</strong>: no history needed.</li>
-  <li><strong>The cost is shown as the number is typed</strong>, at the factory's packet price, and comes off the next bill's Tea line.</li>
+  <li><strong>The cost is shown as the number is typed</strong>, at the factory's packet price, and comes off the next bill's Tea line. Minus and plus buttons under the number change it without the keyboard, never past what is left this month.</li>
   <li><strong>A monthly allowance</strong> (default 10 packets); the screen shows what is left this month and hides the form when it is used up.</li>
   <li><strong>Delivery is a choice</strong>: collect at the factory, or on the vehicle that collects the leaf.</li>
   <li>If the factory has set no price: "The factory has not set a price yet", and no form.</li>
@@ -305,6 +309,7 @@ With 1% inside the instalment: deducts 5,000, loan balance 45,500</div>
 <ul>
   <li>Each inquiry is a <strong>conversation</strong>: the supplier's message, the office's replies and follow-ups, in one thread.</li>
   <li>A new inquiry has a subject of up to 160 characters and a first message of up to 4,000; each reply in the thread is up to 2,000. Suggested replies under the box fill it with one tap.</li>
+  <li><strong>Topics:</strong> Bill, Payment, Leaf weighing, Loan or advance and Other fill the subject with one tap; each topic but Other offers two or three ready first messages, which the supplier can edit before sending.</li>
   <li>When the office closes it, the message box is replaced by a note; a new inquiry can be started.</li>
   <li>The list is newest first, with status: Waiting for reply, Waiting for your reply, Answered or Closed.</li>
 </ul>
@@ -312,7 +317,7 @@ With 1% inside the instalment: deducts 5,000, loan balance 45,500</div>
 <!-- 17 -->
 <h1>17. News, banners and notifications</h1>
 <ul>
-  <li><strong>News:</strong> the factory's articles, newest first, pull down to refresh. An article with only English text still shows to a Sinhala or Tamil reader.</li>
+  <li><strong>News:</strong> the factory's articles, newest first, pull down to refresh; a line above the list says when it was last updated. An article with only English text still shows to a Sinhala or Tamil reader.</li>
   <li><strong>Banners:</strong> a picture or panel on the way in, shown only during the factory's chosen dates. Its button opens a screen in the app, a website, a phone call or an email.</li>
   <li><strong>Notifications:</strong> Monthly account ready, Request decided, Reply to your inquiry, Factory news (and Daily leaf weight, understood by the app but not sent yet).</li>
   <li><strong>The bell list is the factory's record</strong>, not the phone's: a push that was swiped away or blocked is still in the list. Tapping one opens what it is about and marks it read.</li>
@@ -325,7 +330,7 @@ With 1% inside the instalment: deducts 5,000, loan balance 45,500</div>
   <tr><th>Setting</th><th>Choices</th></tr>
   <tr><td>Language</td><td>Sinhala (default), English, Tamil</td></tr>
   <tr><td>Theme</td><td>System, Light (default) or Dark, where the factory allows</td></tr>
-  <tr><td>Text size</td><td>Small, medium, large</td></tr>
+  <tr><td>Text size</td><td>Small, medium, large; the Large text chip at the top of the Account tab switches large on and off with one tap</td></tr>
   <tr><td>Fingerprint / face</td><td>On or off, when the phone supports it and an app PIN is set</td></tr>
   <tr><td>App PIN and auto-lock</td><td>Immediately, 1 minute, 5 minutes, never</td></tr>
   <tr><td>Change password</td><td>Current, new and confirm</td></tr>

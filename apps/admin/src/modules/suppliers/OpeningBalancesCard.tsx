@@ -12,6 +12,7 @@ import { Lock, Pencil } from 'lucide-react';
 import type { OpeningBalances } from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
 import { Button } from '@/components/ui/Button';
+import { MoneyInput } from '@/components/ui/MoneyInput';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Dialog } from '@/components/ui/Dialog';
 import { Field, Input, Textarea } from '@/components/ui/Field';
@@ -185,13 +186,11 @@ function OpeningBalancesDialog({
             error={invalid.includes(key) ? t('records.opening.amountInvalid') : undefined}
           >
             {({ id, invalid: isInvalid }) => (
-              <Input
+              <MoneyInput
                 id={id}
                 invalid={isInvalid}
-                inputMode="decimal"
-                className="numeric"
                 value={amounts[key]}
-                onChange={(event) => setAmounts({ ...amounts, [key]: event.target.value })}
+                onValueChange={(plain) => setAmounts({ ...amounts, [key]: plain })}
               />
             )}
           </Field>

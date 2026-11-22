@@ -37,6 +37,10 @@ import { formatAmount, formatKg, formatMoney } from '@/lib/format';
 import { MonthSelect } from '@/modules/money/MonthSelect';
 import { resolveMonthKey, useBillMonths } from '@/modules/money/monthOptions';
 import { useBillRun, useBills } from './hooks';
+import { useCan } from '@/auth/authStore';
+import { useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
+import { OTHER_DEDUCTIONS_ON_SERVER } from '@/lib/serverReady';
+import { OtherChargesFromList } from './OtherChargesDialog';
 
 type Lens = 'all' | 'missingBankDetails' | 'carriesDebt';
 
@@ -65,6 +69,12 @@ export function BillsScreen() {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'supplierCode', desc: false }]);
 
   const run = useBillRun(monthKey);
+  // Other deductions typed from the list (22 November 2026): a month this console calculates
+  // and has not published, for someone who may write bills.
+  const keepsRecords = useKeepsFactoryRecords();
+  const canWriteBills = useCan('billing', 'write');
+  const canAdjust = OTHER_DEDUCTIONS_ON_SERVER && keepsRecords && canWriteBills && Boolean(month?.open);
+  const [adjusting, setAdjusting] = useState<string | null>(null);
 
   const query = useMemo<BillQuery>(
     () => ({
@@ -183,8 +193,31 @@ export function BillsScreen() {
           );
         },
       },
+      ...(canAdjust
+        ? [
+            {
+              id: 'otherCards',
+              header: t('records.otherCharges.column'),
+              enableSorting: false,
+              cell: (info) => (
+                <button
+                  type="button"
+                  className="rounded-sm px-xs text-caption font-medium text-primary hover:bg-primary-muted"
+                  aria-label={t('records.otherCharges.forSupplier', { code: info.row.original.supplierCode })}
+                  onClick={(event) => {
+                    // The row opens the bill; this opens only the one line.
+                    event.stopPropagation();
+                    setAdjusting(info.row.original.id);
+                  }}
+                >
+                  {t('records.otherCharges.edit')}
+                </button>
+              ),
+            } satisfies ColumnDef<BillListItem, unknown>,
+          ]
+        : []),
     ],
-    [t],
+    [t, canAdjust],
   );
 
   return (
@@ -268,6 +301,7 @@ export function BillsScreen() {
           }
         />
       </Card>
+      {adjusting ? <OtherChargesFromList billId={adjusting} onClose={() => setAdjusting(null)} /> : null}
     </>
   );
 }

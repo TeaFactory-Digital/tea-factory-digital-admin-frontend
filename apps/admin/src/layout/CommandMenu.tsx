@@ -13,7 +13,21 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import * as RadixDialog from '@radix-ui/react-dialog';
-import { CornerDownLeft, Search, UserRound } from 'lucide-react';
+import {
+  CalendarCheck,
+  CornerDownLeft,
+  Coins,
+  Inbox,
+  Leaf,
+  Package,
+  Scale,
+  Search,
+  Table2,
+  UserPlus,
+  UserRound,
+  type LucideIcon,
+} from 'lucide-react';
+import type { Capability } from '@tfd/domain';
 import { can } from '@tfd/domain';
 import { useAuthStore } from '@/auth/authStore';
 import { useFeatureFlags, useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
@@ -27,7 +41,98 @@ interface Result {
   hint: string;
   to: string;
   icon: typeof Search;
+  /** Read by the screen it opens: `add` opens its "add" dialog straight away. */
+  state?: { action: string };
 }
+
+/**
+ * Things to do, not only places to go (22 November 2026): "add a supplier", "record walk-in
+ * credit", the queues already filtered to what is waiting. Each shows only to someone who may
+ * do it, and only where the factory keeps that record here.
+ */
+interface Action {
+  key: string;
+  labelKey: string;
+  to: string;
+  icon: LucideIcon;
+  capability: Capability;
+  verb: 'read' | 'write';
+  records?: boolean;
+  state?: { action: string };
+}
+const COMMAND_ACTIONS: Action[] = [
+  {
+    key: 'addSupplier',
+    labelKey: 'search.action.addSupplier',
+    to: '/suppliers',
+    icon: UserPlus,
+    capability: 'suppliers',
+    verb: 'write',
+    records: true,
+    state: { action: 'add' },
+  },
+  {
+    key: 'enterLeaf',
+    labelKey: 'search.action.enterLeaf',
+    to: '/deliveries',
+    icon: Leaf,
+    capability: 'deliveries',
+    verb: 'write',
+    records: true,
+  },
+  {
+    key: 'walkIn',
+    labelKey: 'search.action.walkIn',
+    to: '/credit',
+    icon: Coins,
+    capability: 'creditRequests',
+    verb: 'write',
+    records: true,
+    state: { action: 'add' },
+  },
+  {
+    key: 'openingBalances',
+    labelKey: 'search.action.openingBalances',
+    to: '/suppliers/opening-balances',
+    icon: Table2,
+    capability: 'suppliers',
+    verb: 'write',
+    records: true,
+  },
+  {
+    key: 'monthClose',
+    labelKey: 'search.action.monthClose',
+    to: '/rates',
+    icon: CalendarCheck,
+    capability: 'ratesAndMonthClose',
+    verb: 'read',
+    records: true,
+  },
+  {
+    key: 'pendingCredit',
+    labelKey: 'search.action.pendingCredit',
+    to: '/credit?status=pending',
+    icon: Scale,
+    capability: 'creditRequests',
+    verb: 'read',
+  },
+  {
+    key: 'pendingChanges',
+    labelKey: 'search.action.pendingChanges',
+    to: '/change-requests?status=pending',
+    icon: Inbox,
+    capability: 'changeRequests',
+    verb: 'read',
+  },
+  {
+    key: 'pendingPackets',
+    labelKey: 'search.action.pendingPackets',
+    to: '/tea-packets?status=pending',
+    icon: Package,
+    capability: 'creditRequests',
+    verb: 'read',
+  },
+];
 
 export function CommandMenu() {
   const { t } = useTranslation();
@@ -80,6 +185,22 @@ export function CommandMenu() {
       .filter((item) => !lower || item.label.toLowerCase().includes(lower));
   }, [needle, flags, grants, keepsRecords, t]);
 
+  const actions = useMemo<Result[]>(() => {
+    const lower = needle.toLowerCase();
+    return COMMAND_ACTIONS.filter(
+      (action) => can(grants, action.capability, action.verb) && (!action.records || keepsRecords),
+    )
+      .map((action) => ({
+        key: `action-${action.key}`,
+        label: t(action.labelKey),
+        hint: t('search.actionHint'),
+        to: action.to,
+        icon: action.icon,
+        state: action.state,
+      }))
+      .filter((item) => !lower || item.label.toLowerCase().includes(lower));
+  }, [needle, grants, keepsRecords, t]);
+
   const results: Result[] = [
     ...(suppliers.data?.items ?? []).map((supplier) => ({
       key: `supplier-${supplier.id}`,
@@ -88,13 +209,14 @@ export function CommandMenu() {
       to: `/suppliers/${supplier.id}`,
       icon: UserRound,
     })),
+    ...actions,
     ...pages,
   ];
 
   function go(result: Result | undefined) {
     if (!result) return;
     setOpen(false);
-    navigate(result.to);
+    navigate(result.to, result.state ? { state: result.state } : undefined);
   }
 
   function onKeyDown(event: React.KeyboardEvent) {

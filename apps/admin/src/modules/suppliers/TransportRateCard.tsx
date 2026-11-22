@@ -15,9 +15,10 @@ import { transportRateFor } from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { MoneyInput } from '@/components/ui/MoneyInput';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Dialog } from '@/components/ui/Dialog';
-import { Field, Input, Textarea } from '@/components/ui/Field';
+import { Field, Textarea } from '@/components/ui/Field';
 import { Spinner } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
@@ -165,15 +166,13 @@ function TransportRateDialog({
           error={invalid ? t('records.transport.invalid') : undefined}
         >
           {({ id, describedBy, invalid: isInvalid }) => (
-            <Input
+            <MoneyInput
               id={id}
               aria-describedby={describedBy}
               invalid={isInvalid}
-              inputMode="decimal"
-              className="numeric"
               placeholder={pointRate === null ? '' : String(pointRate)}
               value={value}
-              onChange={(event) => setValue(event.target.value)}
+              onValueChange={setValue}
             />
           )}
         </Field>

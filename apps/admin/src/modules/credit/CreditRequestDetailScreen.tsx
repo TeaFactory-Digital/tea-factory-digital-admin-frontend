@@ -15,7 +15,7 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { RequestStatus } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader, DetailRow } from '@/components/ui/Card';
@@ -25,7 +25,9 @@ import { AuditPanel } from '@/components/AuditPanel';
 import { formatAge, formatAmount, formatDateTime, formatQuantityKg } from '@/lib/format';
 import { CreditDecisionActions } from './CreditDecisionDialog';
 import { EligibilityPanel } from './EligibilityPanel';
-import { useCreditRequest, useCreditRequestAudit } from './hooks';
+import { useCreditRequest, useCreditRequestAudit, useCreditRequests } from './hooks';
+import { useQueueKeys } from '@/components/useQueueKeys';
+import { queueNeighbours } from '@/components/useQueueNeighbours';
 
 const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'neutral' } as const;
 
@@ -33,6 +35,14 @@ export function CreditRequestDetailScreen() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { data: request, isPending, error, refetch } = useCreditRequest(id);
+  const navigate = useNavigate();
+  // The pending queue, oldest first: J and K walk it, and a decision moves on to the next one.
+  const queue = useCreditRequests({ status: 'pending', page: 0, pageSize: 100 });
+  const { next, previous } = queueNeighbours((queue.data?.items ?? []).map((one) => one.id), id);
+  useQueueKeys({
+    onNext: () => (next ? navigate(`/credit/${next}`) : undefined),
+    onPrevious: () => (previous ? navigate(`/credit/${previous}`) : undefined),
+  });
   const { data: audit, isPending: auditPending } = useCreditRequestAudit(id);
 
   if (error) return <ErrorState error={error} onRetry={() => void refetch()} />;
@@ -140,7 +150,11 @@ export function CreditRequestDetailScreen() {
                 </div>
               ) : null}
 
-              <CreditDecisionActions request={request} />
+              <CreditDecisionActions
+                request={request}
+                onDecided={() => navigate(next ? `/credit/${next}` : '/credit')}
+              />
+              <p className="mt-sm text-caption text-text-secondary">{t('queue.keysHint')}</p>
             </CardBody>
           </Card>
 

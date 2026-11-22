@@ -234,7 +234,9 @@ describe('a factory that calculates its bills here', () => {
     const row = within(table).getByText(odd.supplierCode).closest('tr')!;
     expect(within(row).getByText('Does not match')).toBeInTheDocument();
     expect(within(row).getByRole('button', { name: 'Hold' })).toBeInTheDocument();
-    expect(await screen.findByText('Matches the printed slips')).toBeInTheDocument();
+    // In the checklist, and in the Next step bar above it, which points at the slips card.
+    expect((await screen.findAllByText('Matches the printed slips')).length).toBe(2);
+    expect(screen.getByRole('button', { name: 'Compare with the printed slips' })).toBeInTheDocument();
   }, 20_000);
 
   it('takes printed Balances typed in the table, Enter moving to the next slip', async () => {

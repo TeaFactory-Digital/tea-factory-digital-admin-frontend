@@ -69,6 +69,16 @@
 </ol>
 </div>
 
+<h2>1.1 Working fast</h2>
+<table>
+  <tr><th>Shortcut</th><th>What it does</th></tr>
+  <tr><td>Ctrl+K</td><td>Find a supplier or a page, or start an action: add a supplier, enter leaf, record walk-in credit, enter opening balances, the queues already filtered to what is waiting. Only what your role may do is offered.</td></tr>
+  <tr><td>A, R, J, K</td><td>On a credit or change request: A approve, R reject, J the next waiting request, K the previous one. After a decision the next waiting request opens by itself. Not while typing in a box.</td></tr>
+  <tr><td>Tick and decide</td><td>On the credit, tea packet and change request queues, tick several rows and approve or reject them with one note. Each is still decided on its own, with every check; one that cannot be decided stays with its reason. Change requests: one kind at a time.</td></tr>
+  <tr><td>Money boxes</td><td>Thousands are grouped while you type (45,000), and Enter moves to the next box.</td></tr>
+  <tr><td>Remembered filters</td><td>Each list opens again as you left it (status, search, view), in that browser. A link with its own filters always wins; the page number, month and day are not kept.</td></tr>
+</table>
+
 <!-- 2 -->
 <h1>2. The monthly cycle</h1>
 <p>Everything hangs off one cycle. The factory cannot price a month's leaf until it has sold the tea that leaf became, and that happens at auction some weeks after the month ends.</p>
@@ -327,6 +337,7 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
 <div class="box example"><span class="label">Example</span>
 <p>Cut-over month 2026-10. Supplier 5147 owes Rs. 30,000 on a loan with 6 months left, 4 instalments paid. Their first bill here deducts 30,000 ÷ 6 = Rs. 5,000 (if the cap allows) and is shown as "Loan (instalment 5)".</p>
 </div>
+<p><strong>Many suppliers at once:</strong> Suppliers → <span class="ui">Opening balances sheet</span>. Choose the cut-over month, then type a code and the figures across; Enter moves to the next box and from the last one opens a new line, and a block copied from Excel (code, then the figures in the sheet's order) can be pasted into any code box. The supplier's name shows beside the code. Ctrl+Enter or <span class="ui">Save</span> saves the sheet through the same checks as the file: all lines or none, a wrong line marked in red with its reason.</p>
 <h2>7.5 Transport rate per supplier and per collection point</h2>
 <ul>
   <li><strong>Which rate applies:</strong> the supplier's own rate if set, else the collection point's rate, else the factory rate. A supplier's own rate of 0 is real (someone who brings their own leaf).</li>
@@ -395,6 +406,7 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
 </ol>
 <p>Calculated bills are also <strong>made</strong> month by month: a month before the newest published one or before the cut-over month is refused, an earlier month with leaf or bills must be published first, and the factory's first calculated month needs opening balances (or an earlier bill of ours).</p>
 <p>Publishing makes the bills visible in the app, sends a "your account is ready" notification to each supplier whose bill was published (never to every supplier; a held bill's supplier is told when it is released), posts savings, settles withdrawals and moves every credit limit.</p>
+<p>Above the checklist a <strong>Next step</strong> bar names the first step not done and takes you to it (the rate box, the exceptions, the bill run, the slip comparison, or Leaf intake). When every step is done it offers <span class="ui">Publish the month</span> to a manager who may publish.</p>
 <h2>9.5 Other deductions (calculated bills)</h2>
 <ul>
   <li>The one line typed by hand: an amount of 0 or more, and a reason of at least 3 characters when above 0. The supplier reads the reason under the line.</li>
@@ -402,6 +414,8 @@ Next Month Deb            10,025.00   → next month's Previous debts</div>
   <li>Making the bills again keeps each supplier's other deductions and reason.</li>
   <li>On an imported bill the line is the factory's and is not edited here.</li>
 </ul>
+
+<p>On the Bills list of a calculated month not yet published, the <span class="ui">Other deductions</span> column opens this line for any row without opening the bill, so a month's lines are typed down the list. A bill imported from the factory slip says it is corrected in the factory system instead.</p>
 
 <!-- 10 -->
 <h1>10. Credit: the rules all three share</h1>
@@ -732,6 +746,7 @@ Month with gross 40,000: cap 20% =  8,000 → takes  8,000 (the loan simply runs
   <li><strong>Suppliers:</strong> a code already on the roll is skipped and left as it is, not updated. The rest of the file is added.</li>
   <li>The dialog first shows what <em>would</em> happen (saved, skipped, problems) before anything is saved.</li>
 </ul>
+<p>A file can be dragged onto the box as well as chosen. The dialog shows the last file of that kind imported in this browser (name, rows, when), so the same week's file is not imported twice by mistake.</p>
 <h2>23.2 The kinds</h2>
 <table>
   <tr><th>File</th><th>Saves</th><th>Typical refusals</th></tr>

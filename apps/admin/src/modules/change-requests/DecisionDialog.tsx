@@ -21,6 +21,7 @@ import { Check, CheckCircle2, Info, TriangleAlert, X, XCircle } from 'lucide-rea
 import type { AdminChangeRequest, ChangeRequestType } from '@tfd/domain';
 import { isSelfApproval } from '@tfd/domain';
 import { useCurrentUser } from '@/auth/authStore';
+import { useQueueKeys } from '@/components/useQueueKeys';
 import { useNoteSuggestions } from '@/components/useNoteSuggestions';
 import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Button } from '@/components/ui/Button';
@@ -33,43 +34,24 @@ import { isApiError } from '@/services/api/errors';
 import { ChangeComparison } from './ChangeComparison';
 import { FactorySystemReminder } from '@/components/FactorySystemReminder';
 import { useDecideChangeRequest, type DecisionVerb } from './hooks';
+import { SUGGESTIONS } from './suggestions';
 
 const MIN_NOTE = 10;
 
-/**
- * The notes this queue writes all day, by change type and verb. The words live in the
- * string tables, only the choice and order are here.
- *
- * Per type, because a reason only helps when it fits: "Bring passbook" means nothing on
- * an address change, and nothing in this queue carries a photo to call unclear. Approving
- * and rejecting share no vocabulary, so the clerk is never shown a chip for the decision
- * they are not making.
- */
-const SUGGESTIONS: Record<ChangeRequestType, Record<DecisionVerb, readonly string[]>> = {
-  address: {
-    approve: ['phone', 'collector', 'addressUpdated'],
-    reject: ['addressIncomplete', 'outsideArea', 'notConfirmed'],
-  },
-  bankDetails: {
-    approve: ['passbook', 'nameMatches', 'phone'],
-    reject: ['mismatch', 'bringPassbook', 'notConfirmed'],
-  },
-  paymentMethod: {
-    approve: ['nextPayout', 'bankOnFile', 'phone'],
-    reject: ['noBankAccount', 'notConfirmed', 'visitOffice'],
-  },
-  savingsRate: {
-    approve: ['nextMonth', 'phone'],
-    reject: ['outstandingLoan', 'notConfirmed', 'visitOffice'],
-  },
-};
 /** For a type this console does not know yet: the reasons that fit any change. */
 const FALLBACK_SUGGESTIONS: Record<DecisionVerb, readonly string[]> = {
   approve: ['phone'],
   reject: ['notConfirmed', 'visitOffice'],
 };
 
-export function DecisionActions({ request }: { request: AdminChangeRequest }) {
+export function DecisionActions({
+  request,
+  onDecided,
+}: {
+  request: AdminChangeRequest;
+  /** After a decision went through: the queue moves on to the next request. */
+  onDecided?: () => void;
+}) {
   const { t } = useTranslation();
   const user = useCurrentUser();
   const [verb, setVerb] = useState<DecisionVerb | null>(null);
@@ -78,6 +60,11 @@ export function DecisionActions({ request }: { request: AdminChangeRequest }) {
   // supplier's behalf cannot decide it, and being told that up front beats
   // filling in a note and being refused.
   const selfRaised = isSelfApproval(user, request.createdById);
+  // A approves, R rejects, as the buttons would.
+  useQueueKeys(
+    { onApprove: () => setVerb('approve'), onReject: () => setVerb('reject') },
+    request.status === 'pending' && !selfRaised,
+  );
 
   if (request.status !== 'pending') return null;
 
@@ -115,7 +102,9 @@ export function DecisionActions({ request }: { request: AdminChangeRequest }) {
         </Button>
       </div>
 
-      {verb ? <DecisionDialog request={request} verb={verb} onClose={() => setVerb(null)} /> : null}
+      {verb ? (
+        <DecisionDialog request={request} verb={verb} onClose={() => setVerb(null)} onDecided={onDecided} />
+      ) : null}
     </>
   );
 }
@@ -124,10 +113,12 @@ function DecisionDialog({
   request,
   verb,
   onClose,
+  onDecided,
 }: {
   request: AdminChangeRequest;
   verb: DecisionVerb;
   onClose: () => void;
+  onDecided?: () => void;
 }) {
   const { t } = useTranslation();
   const toast = useToast();
@@ -154,6 +145,7 @@ function DecisionDialog({
         onSuccess: () => {
           toast.success(approving ? t('changeRequests.approved') : t('changeRequests.rejected'));
           onClose();
+          onDecided?.();
         },
         // The dialog stays open on failure. Closing it would discard the note the
         // clerk just wrote, and a four-eyes or already-decided refusal is

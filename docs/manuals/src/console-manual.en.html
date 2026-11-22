@@ -66,6 +66,14 @@
 <p>Always sign out when you leave. Sign-out asks first, so a stray click does not lose your work.</p>
 </div>
 
+<div class="box rule"><span class="label">Working fast</span>
+<ul>
+  <li><strong>Ctrl+K</strong> also starts an action: <span class="ui">Add a supplier</span>, <span class="ui">Enter leaf</span>, <span class="ui">Record walk-in credit</span>, <span class="ui">Enter opening balances</span>, or a queue already showing what is waiting.</li>
+  <li><strong>Money boxes</strong> group thousands as you type (45,000); <strong>Enter</strong> moves to the next box.</li>
+  <li><strong>Lists remember their filters</strong> in this browser: open Credit queues again and it shows the status and search you left.</li>
+</ul>
+</div>
+
 <!-- 2 -->
 <h1>2. Who does what</h1>
 <table>
@@ -146,6 +154,15 @@
 <p>Also on <span class="ui">Payout &amp; credit</span>: the <span class="ui">Transport rate</span> card sets what this supplier pays per kilo for transport (<span class="ui">Change</span>; empty means the collection point's rate). The <span class="ui">Corrections</span> card is the manager's: <span class="ui">Post a correction</span> fixes a payment, or a loan, fertilizer or savings balance, after a bill is published, with a reason; a payment lands on the next bill.</p>
 </div>
 
+<div class="box rule"><span class="label">Opening balances for many suppliers <span class="who">Clerk, sync off</span></span>
+<ol class="steps">
+  <li>On Suppliers, click <span class="ui">Opening balances sheet</span> and check the month.</li>
+  <li>Type a code; the name appears. Type the figures across, pressing Enter after each. From the last box, Enter opens the next line.</li>
+  <li>Or paste a block copied from Excel into a code box: code, then the figures in the order of the columns.</li>
+  <li>Press Ctrl+Enter or click <span class="ui">Save</span>. All lines are saved, or none: a line marked in red says what to fix.</li>
+</ol>
+</div>
+
 <!-- 5 -->
 <h1>5. Deciding credit requests <span class="who">Manager</span></h1>
 <figure><img class="screen" src="../images/console/10-credit-queue.jpg"><figcaption><b>Figure 5.1</b> Credit queues: advances, loans and manure in one list, oldest first. "Over ceiling" marks a request above the supplier's limit.</figcaption></figure>
@@ -184,6 +201,13 @@ Still available              Rs. 190,192.17      → "Within the ceiling"</div>
 </ul>
 </div>
 
+<div class="box rule"><span class="label">Many at once, and the keys</span>
+<ul>
+  <li>Tick the rows (or the box at the top for all), click <span class="ui">Approve selected</span> or <span class="ui">Reject selected</span>, and type one note. Each request is still checked on its own; one over the limit is left out and named, and one refused stays in the queue with its reason.</li>
+  <li>On an open request: <strong>A</strong> approve, <strong>R</strong> reject, <strong>J</strong> next, <strong>K</strong> previous. After you decide, the next waiting request opens.</li>
+</ul>
+</div>
+
 <!-- 6 -->
 <h1>6. Recording a request made at the counter <span class="who">Clerk, sync off</span></h1>
 <figure><img class="screen half" src="../images/console/10b-walk-in-dialog.jpg"><figcaption><b>Figure 6.1</b> Record a walk-in request.</figcaption></figure>
@@ -207,6 +231,8 @@ Still available              Rs. 190,192.17      → "Within the ceiling"</div>
 <figure><img class="screen half" src="../images/console/12b-tea-decide-dialog.jpg"><figcaption><b>Figure 7.2</b> Example: supplier 5056 asks for 2 packets (0.8 kg), collected from the store, Rs. 2,400.00 on the next bill's Tea line.</figcaption></figure>
 <p>The price is fixed when you decide. An orange line at the top (Figure 7.1) means the factory has not set its own packet price yet: set it in Configuration → Tea packets.</p>
 
+<p>Many at once: tick the rows and click <span class="ui">Approve selected</span> or <span class="ui">Reject selected</span> with one note. After a decision in the dialog, the next waiting request opens.</p>
+
 <!-- 8 -->
 <h1>8. Change requests <span class="who">Clerk or manager</span></h1>
 <figure><img class="screen" src="../images/console/13-change-requests.jpg"><figcaption><b>Figure 8.1</b> Changes suppliers asked for: bank details, payment method, savings rate and address, with the current and requested values side by side.</figcaption></figure>
@@ -222,6 +248,8 @@ Still available              Rs. 190,192.17      → "Within the ceiling"</div>
   <figure><img class="screen" src="../images/console/13c-change-approve-dialog.jpg"><figcaption><b>Figure 8.3</b> Approve this change</figcaption></figure>
 </div>
 <p>Until you approve, the supplier is still paid to the old account, and the app shows the new one as pending. A savings-rate change starts from the next month not yet closed.</p>
+
+<p>Many at once: tick requests of the same kind (address, bank details, payment method or savings rate) and decide them with one note. The keys A, R, J and K work on an open request.</p>
 
 <!-- 9 -->
 <h1>9. Inquiries <span class="who">Clerk and manager</span></h1>
@@ -256,6 +284,8 @@ Balance amount        121,680.47
 Final balance         121,680.00   coins 0.47 carried to October</div>
 </div>
 <p>The bills screen is for checking and answering suppliers. Bills are made and published on Rates &amp; month close (sections 12 and 13). With the factory sync on, bills arrive from the factory system and are read-only.</p>
+
+<p>On a calculated month not yet published, click <span class="ui">Edit</span> in the <span class="ui">Other deductions</span> column to type a supplier's line without opening the bill.</p>
 
 <!-- 11 -->
 <h1>11. Leaf intake <span class="who">Clerk, sync off</span></h1>
@@ -300,6 +330,7 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
 <div class="box rule"><span class="label">Other deductions (clerk)</span>
 <p>On a bill, click <span class="ui">Edit</span> on the Other deductions line and type the amount and a reason the supplier reads. Many at once: <span class="ui">Import from file</span> → <span class="ui">Import other deductions</span>. Only before the publish, or on a held bill.</p>
 </div>
+<p>The <strong>Next step</strong> bar at the top of the checklist names what to do now and its button takes you there. When everything is ticked it shows <span class="ui">Publish the month</span>.</p>
 <h2>12.1 Compare with the printed slips</h2>
 <p>The factory's system still prints a slip for every supplier, so each calculated bill must equal its slip before the month is published.</p>
 <ol class="steps">
@@ -340,6 +371,8 @@ Final balance         121,680.00   coins 0.47 carried to October</div>
   <li>Figures are refused, never rounded: too many decimals, a minus sign, or 31 February.</li>
   <li>Up to 5,000 rows per file.</li>
 </ul>
+
+<p>You can drag the file onto the box. Under it, the dialog shows the last file of this kind imported here, with its rows and time, so a file is not imported twice.</p>
 
 <!-- 14 -->
 <h1>14. News, banners and fixed pages <span class="who">Content editor and factory administrator</span></h1>

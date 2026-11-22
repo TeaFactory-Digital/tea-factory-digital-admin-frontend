@@ -12,9 +12,9 @@
  * whether the first fits inside the second.
  */
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { AdminCreditRequest, CreditFacility, RequestStatus } from '@tfd/domain';
 import { CREDIT_FACILITIES, CREDIT_FACILITY_FLAGS, QUEUE_SLA_HOURS } from '@tfd/domain';
@@ -23,13 +23,21 @@ import { Card } from '@/components/ui/Card';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
+import { BulkBar, BulkDecisionDialog } from '@/components/BulkDecision';
+import { selectionColumn } from '@/components/selectionColumn';
+import { FactorySystemReminder } from '@/components/FactorySystemReminder';
+import { useAuthStore, useCurrentUser } from '@/auth/authStore';
+import { useQueryClient } from '@tanstack/react-query';
+import { qk } from '@/query/queryKeys';
+import { DEFAULT_CREDIT_RULES, approvalTierFor, canDecideCredit, isSelfApproval } from '@tfd/domain';
+import { SUGGESTIONS as CREDIT_SUGGESTIONS } from './suggestions';
 import { SearchInput, Select } from '@/components/ui/Field';
 import { Label } from '@/components/ui/Label';
 import { creditRepository } from '@/services/repositories/creditRepository';
 import { ExportCsvButton } from '@/components/ExportCsvButton';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/states';
-import { useFeatureFlags, useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
+import { useFeatureFlags, useKeepsFactoryRecords, useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { useCan } from '@/auth/authStore';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -64,7 +72,9 @@ export function CreditScreen() {
   // deducts them.
   const keepsRecords = useKeepsFactoryRecords();
   const canRecord = useCan('creditRequests', 'write');
-  const [recording, setRecording] = useState(false);
+  // Opened from Ctrl+K's "Record walk-in credit": the dialog is already open.
+  const location = useLocation();
+  const [recording, setRecording] = useState(() => (location.state as { action?: string } | null)?.action === 'add');
 
   const [searchText, setSearchText] = useState(params.get('q') ?? '');
   const debouncedSearch = useDebounced(searchText, 250);
@@ -102,6 +112,24 @@ export function CreditScreen() {
   );
 
   const { data, isPending, error, refetch } = useCreditRequests(query);
+  const rows = useMemo(() => data?.items ?? [], [data]);
+  const user = useCurrentUser();
+  const grants = useAuthStore((st) => st.grants);
+  const { config } = useRuntimeConfig();
+  const client = useQueryClient();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulk, setBulk] = useState<'approve' | 'reject' | null>(null);
+
+  /** A request this user may decide here, as the single decision would allow it. */
+  const decidable = useCallback(
+    (row: AdminCreditRequest): boolean => {
+      if (row.status !== 'pending' || !row.eligibility) return false;
+      const tier = approvalTierFor(row.amount, (config.creditRules ?? DEFAULT_CREDIT_RULES)[row.facility]);
+      return canDecideCredit(grants, tier) && !isSelfApproval(user, row.createdById);
+    },
+    [config, grants, user],
+  );
+  const bulkMode = status === 'pending' && rows.some(decidable);
 
   function setParam(key: string, value: string | null) {
     const next = new URLSearchParams(params);
@@ -113,6 +141,18 @@ export function CreditScreen() {
 
   const columns = useMemo<ColumnDef<AdminCreditRequest, unknown>[]>(
     () => [
+      ...(bulkMode
+        ? [
+            selectionColumn<AdminCreditRequest>({
+              rows,
+              selected,
+              onChange: setSelected,
+              idOf: (row) => row.id,
+              nameOf: (row) => `${row.supplierCode} ${row.supplierName}`,
+              selectable: decidable,
+            }),
+          ]
+        : []),
       {
         accessorKey: 'supplierCode',
         header: t('credit.column.supplier'),
@@ -205,7 +245,7 @@ export function CreditScreen() {
         },
       },
     ],
-    [t],
+    [t, bulkMode, rows, selected, decidable],
   );
 
   return (
@@ -296,6 +336,17 @@ export function CreditScreen() {
           </Label>
         </div>
 
+        {bulkMode ? (
+          <div className="shrink-0 px-md pt-sm">
+            <BulkBar
+              count={selected.size}
+              onApprove={() => setBulk('approve')}
+              onReject={() => setBulk('reject')}
+              onClear={() => setSelected(new Set())}
+            />
+          </div>
+        ) : null}
+
         <DataTable
           label={t('credit.title')}
           columns={columns}
@@ -315,6 +366,42 @@ export function CreditScreen() {
         />
       </Card>
       {recording ? <WalkInCreditDialog onClose={() => setRecording(false)} /> : null}
+
+      {bulk ? (
+        <BulkDecisionDialog
+          verb={bulk}
+          notice={<FactorySystemReminder>{t('bulk.factoryReminder')}</FactorySystemReminder>}
+          items={rows
+            .filter((row) => selected.has(row.id))
+            .map((row) => ({
+              id: row.id,
+              label: `${row.supplierCode} ${row.supplierName}`,
+              detail: formatAmount(row.amount),
+              // The amount has to fit the supplier's headroom now; the server checks it too.
+              skip:
+                bulk === 'approve' && row.eligibility && row.amount > row.eligibility.available
+                  ? t('bulk.overLimit')
+                  : undefined,
+            }))}
+          noteList={bulk === 'approve' ? 'credit.approve' : 'credit.reject'}
+          builtIn={CREDIT_SUGGESTIONS[bulk].map((slug) => ({
+            label: t(`credit.noteSuggest.${bulk}.${slug}`),
+            text: t(`credit.noteSuggest.${bulk}.${slug}.text`),
+          }))}
+          decide={(id, note) => {
+            const row = rows.find((one) => one.id === id)!;
+            const body = { note, ceilingSeen: row.eligibility?.ceiling ?? 0 };
+            return bulk === 'approve'
+              ? creditRepository.approve(id, body, { amount: row.amount, available: row.eligibility?.available ?? 0 })
+              : creditRepository.reject(id, body);
+          }}
+          onClose={(decided) => {
+            setBulk(null);
+            setSelected((current) => new Set([...current].filter((id) => !decided.includes(id))));
+            void client.invalidateQueries({ queryKey: qk.credit.all });
+          }}
+        />
+      ) : null}
     </>
   );
 }

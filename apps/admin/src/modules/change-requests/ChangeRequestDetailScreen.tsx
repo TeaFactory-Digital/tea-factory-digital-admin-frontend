@@ -9,7 +9,7 @@
 
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowUpRight,
   Building2,
@@ -30,7 +30,9 @@ import { cn } from '@/lib/cn';
 import { formatAge, formatDateTime } from '@/lib/format';
 import { ChangeComparison } from './ChangeComparison';
 import { DecisionActions } from './DecisionDialog';
-import { useChangeRequest, useChangeRequestAudit } from './hooks';
+import { useQueueKeys } from '@/components/useQueueKeys';
+import { queueNeighbours } from '@/components/useQueueNeighbours';
+import { useChangeRequest, useChangeRequestAudit, useChangeRequests } from './hooks';
 
 const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'neutral' } as const;
 /** Past this, the waiting time is shown as a problem rather than a fact. */
@@ -40,6 +42,14 @@ export function ChangeRequestDetailScreen() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { data: request, isPending, error, refetch } = useChangeRequest(id);
+  const navigate = useNavigate();
+  // The pending queue, oldest first: J and K walk it, and a decision moves on to the next one.
+  const queue = useChangeRequests({ status: 'pending', page: 0, pageSize: 100 });
+  const { next, previous } = queueNeighbours((queue.data?.items ?? []).map((one) => one.id), id);
+  useQueueKeys({
+    onNext: () => (next ? navigate(`/change-requests/${next}`) : undefined),
+    onPrevious: () => (previous ? navigate(`/change-requests/${previous}`) : undefined),
+  });
   const { data: audit, isPending: auditPending } = useChangeRequestAudit(id);
 
   if (error) return <ErrorState error={error} onRetry={() => void refetch()} />;
@@ -185,7 +195,11 @@ export function ChangeRequestDetailScreen() {
                 description={t('changeRequests.detail.decideHint')}
               />
               <CardBody>
-                <DecisionActions request={request} />
+                <DecisionActions
+                  request={request}
+                  onDecided={() => navigate(next ? `/change-requests/${next}` : '/change-requests')}
+                />
+                <p className="mt-sm text-caption text-text-secondary">{t('queue.keysHint')}</p>
               </CardBody>
             </Card>
           ) : null}

@@ -22,8 +22,9 @@ import type { MonthSummary } from '@tfd/domain';
 import { round2 } from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
 import { Button } from '@/components/ui/Button';
+import { MoneyInput } from '@/components/ui/MoneyInput';
 import { Card, CardBody, CardHeader, DetailRow } from '@/components/ui/Card';
-import { Field, Input } from '@/components/ui/Field';
+import { Field } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDateTime, formatMoney } from '@/lib/format';
@@ -131,15 +132,14 @@ export function RateCard({ month }: { month: MonthSummary }) {
               hint={t('months.ratePerKgHint')}
             >
               {({ id, describedBy, invalid }) => (
-                <Input
+                <MoneyInput
                   id={id}
+                  data-step-target="rate"
                   aria-describedby={describedBy}
                   invalid={invalid}
-                  inputMode="decimal"
-                  className="numeric"
                   value={ratePerKg}
-                  onChange={(event) => {
-                    setRatePerKg(event.target.value);
+                  onValueChange={(plain) => {
+                    setRatePerKg(plain);
                     setError(null);
                   }}
                   placeholder="0.00"
@@ -149,14 +149,12 @@ export function RateCard({ month }: { month: MonthSummary }) {
 
             <Field label={t('months.extraRatePerKg')} className="w-40" hint={t('months.extraHint')}>
               {({ id, describedBy }) => (
-                <Input
+                <MoneyInput
                   id={id}
                   aria-describedby={describedBy}
-                  inputMode="decimal"
-                  className="numeric"
                   value={extraRatePerKg}
-                  onChange={(event) => {
-                    setExtraRatePerKg(event.target.value);
+                  onValueChange={(plain) => {
+                    setExtraRatePerKg(plain);
                     setError(null);
                   }}
                   placeholder="0.00"

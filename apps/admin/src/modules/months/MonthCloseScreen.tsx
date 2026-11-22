@@ -63,9 +63,7 @@ export function MonthCloseScreen() {
    * back is a screen that can show a month the factory has no records for.
    */
   const monthKey =
-    requested && known.some((item) => item.monthKey === requested)
-      ? requested
-      : (fallback ?? '');
+    requested && known.some((item) => item.monthKey === requested) ? requested : (fallback ?? '');
 
   const month = useMonth(monthKey);
   const billMonths = useBillMonths();
@@ -86,7 +84,8 @@ export function MonthCloseScreen() {
     ...(canBills && comparesWithSlips ? (['printedBalances'] as const) : []),
   ];
 
-  if (months.error) return <ErrorState error={months.error} onRetry={() => void months.refetch()} />;
+  if (months.error)
+    return <ErrorState error={months.error} onRetry={() => void months.refetch()} />;
   /**
    * No months yet: a factory whose bills are imported has none until its first file, and the
    * import is what creates the month. So the Import menu is offered here, not a spinner.
@@ -98,12 +97,18 @@ export function MonthCloseScreen() {
           title={t('months.title')}
           description={t('months.subtitle')}
           actions={
-            importKinds.length > 0 ? <ImportMenu kinds={importKinds as [ImportKind, ...ImportKind[]]} /> : null
+            importKinds.length > 0 ? (
+              <ImportMenu kinds={importKinds as [ImportKind, ...ImportKind[]]} />
+            ) : null
           }
         />
         <EmptyState
           title={t('months.noMonthsTitle')}
-          body={billSource === 'imported' ? t('months.noMonthsImported') : t('months.noMonthsCalculated')}
+          body={
+            billSource === 'imported'
+              ? t('months.noMonthsImported')
+              : t('months.noMonthsCalculated')
+          }
         />
       </>
     );
@@ -167,16 +172,20 @@ export function MonthCloseScreen() {
       {/* Rate in, then bills: calculated here from the leaf, the rate and the deduction
           rates, then checked on the bills screen before the month is published. */}
       {billSource === 'calculated' ? (
-        <BillRunCard
-          monthKey={monthKey}
-          month={billMonths.data?.find((one) => one.monthKey === monthKey)}
-          run={run.data ?? undefined}
-          runError={run.error}
-          heldCount={slips.data?.counts.held ?? 0}
-        />
+        <div data-step-target="bills">
+          <BillRunCard
+            monthKey={monthKey}
+            month={billMonths.data?.find((one) => one.monthKey === monthKey)}
+            run={run.data ?? undefined}
+            runError={run.error}
+            heldCount={slips.data?.counts.held ?? 0}
+          />
+        </div>
       ) : null}
       {comparesWithSlips && run.data ? (
-        <SlipComparisonCard monthKey={monthKey} monthOpen={current.open} />
+        <div data-step-target="slips">
+          <SlipComparisonCard monthKey={monthKey} monthOpen={current.open} />
+        </div>
       ) : null}
       <div className="-mt-md flex justify-end">
         <Link
@@ -189,7 +198,11 @@ export function MonthCloseScreen() {
       </div>
 
       {/* An imported month has no exceptions (A13): the slip is the record. */}
-      {billSource === 'imported' ? null : <ExceptionsQueue month={current} />}
+      {billSource === 'imported' ? null : (
+        <div data-step-target="exceptions">
+          <ExceptionsQueue month={current} />
+        </div>
+      )}
 
       {/* §21.10's standing rates, under the month's own rate: both are figures that decide
           what a supplier is paid, and both need a second person. */}

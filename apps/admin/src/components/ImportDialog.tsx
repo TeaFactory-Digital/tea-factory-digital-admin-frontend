@@ -44,9 +44,36 @@ import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/cn';
 import { downloadText } from '@/lib/csv';
 import { errorMessageKey } from '@/lib/errorMessage';
-import { formatCount, formatKg, formatMoney } from '@/lib/format';
+import { formatCount, formatDateTime, formatKg, formatMoney } from '@/lib/format';
 import { ImportFileError, readImportFile, type ImportFile } from '@/lib/importFile';
 import { useImportRows, usePreviewImport } from '@/modules/records/hooks';
+
+/**
+ * The last file imported of each kind, in this browser (22 November 2026): shown before the
+ * next one is chosen, so nobody imports last week's file twice by mistake. A convenience only,
+ * so blocked storage just means the line is not shown.
+ */
+interface LastImport {
+  name: string;
+  saved: number;
+  at: string;
+}
+const lastImportKey = (kind: ImportKind) => `tfd.lastImport.${kind}`;
+function readLastImport(kind: ImportKind): LastImport | null {
+  try {
+    const raw = window.localStorage.getItem(lastImportKey(kind));
+    return raw ? (JSON.parse(raw) as LastImport) : null;
+  } catch {
+    return null;
+  }
+}
+function writeLastImport(kind: ImportKind, value: LastImport): void {
+  try {
+    window.localStorage.setItem(lastImportKey(kind), JSON.stringify(value));
+  } catch {
+    // Storage blocked or full: nothing lost but the reminder.
+  }
+}
 
 /** Rows shown in the preview. The count and every problem cover the whole file. */
 const PREVIEW_ROWS = 50;
@@ -81,6 +108,8 @@ export function ImportDialog({
   const [leafDifferences, setLeafDifferences] = useState<ImportResult['leafDifferences']>(undefined);
   // Leaf only: import the rows already recorded anyway.
   const [keepDuplicates, setKeepDuplicates] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [lastImport, setLastImport] = useState<LastImport | null>(() => readLastImport(kind));
 
   const columns = IMPORT_COLUMNS[kind];
   // Required columns, and the balance columns whose header must be there even when blank.
@@ -169,6 +198,9 @@ export function ImportDialog({
         return;
       }
       setSaved(result.saved);
+      const last = { name: file.name, saved: result.saved, at: new Date().toISOString() };
+      writeLastImport(kind, last);
+      setLastImport(last);
       setSavedSkipped(result.skippedTotal ?? result.skipped?.length ?? 0);
       setLeafDifferences(result.leafDifferences);
       toast.success(t('records.import.saved', { count: result.saved }));
@@ -267,15 +299,25 @@ export function ImportDialog({
             <button
               type="button"
               onClick={() => input.current?.click()}
-              onDragOver={(event) => event.preventDefault()}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={() => setDragging(false)}
               onDrop={(event) => {
                 event.preventDefault();
+                setDragging(false);
                 void choose(event.dataTransfer.files[0]);
               }}
-              className="flex flex-col items-center gap-sm rounded-lg border-2 border-dashed border-border px-lg py-xl text-center hover:border-primary hover:bg-primary-muted"
+              className={cn(
+                'flex flex-col items-center gap-sm rounded-lg border-2 border-dashed px-lg py-xl text-center hover:border-primary hover:bg-primary-muted',
+                dragging ? 'border-primary bg-primary-muted' : 'border-border',
+              )}
             >
               <FileSpreadsheet className="size-icon-xl text-primary" aria-hidden />
-              <span className="text-body font-medium text-text-primary">{t('records.import.choose')}</span>
+              <span className="text-body font-medium text-text-primary">
+                {dragging ? t('records.import.dropHere') : t('records.import.choose')}
+              </span>
               <span className="text-caption text-text-secondary">{t('records.import.formats')}</span>
             </button>
             <input
@@ -287,6 +329,15 @@ export function ImportDialog({
               onChange={(event) => void choose(event.target.files?.[0])}
             />
 
+            {lastImport ? (
+              <p className="text-caption text-text-secondary">
+                {t('records.import.last', {
+                  name: lastImport.name,
+                  count: lastImport.saved,
+                  when: formatDateTime(lastImport.at),
+                })}
+              </p>
+            ) : null}
             {readError ? <Notice tone="error">{readError}</Notice> : null}
 
             <div className="flex flex-col gap-sm rounded-md bg-surface-variant p-md">

@@ -20,8 +20,8 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
-import { Check, CircleAlert, Lock } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Check, CircleAlert, Lock } from 'lucide-react';
 import type { MonthSummary } from '@tfd/domain';
 import { billSourceOf, isFactorySyncEnabled, round2 } from '@tfd/domain';
 import { Notice } from '@/components/ui/states';
@@ -172,6 +172,28 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
   // Leaf and exceptions are this console's own records; an imported month has neither.
   const shown = imported ? steps.filter((step) => step.key !== 'leaf' && step.key !== 'exceptions') : steps;
   const blocked = shown.some((step) => !step.done) || wouldBeSelfApproval;
+  const navigate = useNavigate();
+  // The one thing to do now (22 November 2026), as a button at the top, so the office never
+  // reads down the list to find where the month is stuck.
+  const nextStep = shown.find((step) => !step.done);
+
+  /** Takes the office to the step: the card on this screen that does it, else its screen. */
+  function goToStep(step: Step) {
+    if (step.key === 'leaf') {
+      navigate('/deliveries');
+      return;
+    }
+    const target = document.querySelector<HTMLElement>(`[data-step-target="${step.key}"]`);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const control = target.matches('input, button, select, textarea')
+        ? target
+        : target.querySelector<HTMLElement>('input:not([disabled]), button:not([disabled])');
+      control?.focus({ preventScroll: true });
+      return;
+    }
+    if (step.href) navigate(step.href);
+  }
 
   async function submit() {
     setMissingApprovals(null);
@@ -207,6 +229,26 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
       />
 
       <CardBody className="flex flex-col gap-md">
+        {month.open ? (
+          nextStep ? (
+            <div className="flex flex-wrap items-center justify-between gap-sm rounded-md bg-primary-muted px-md py-sm">
+              <span className="flex min-w-0 flex-col">
+                <span className="text-overline text-text-secondary uppercase">{t('months.next.label')}</span>
+                <span className="text-body-small font-semibold text-text-primary">{nextStep.label}</span>
+              </span>
+              <Button size="sm" variant="primary" iconRight={<ArrowRight className="size-icon-sm" aria-hidden />} onClick={() => goToStep(nextStep)}>
+                {t(`months.next.${nextStep.key}`, { defaultValue: t('months.next.go') })}
+              </Button>
+            </div>
+          ) : canPublish && !wouldBeSelfApproval ? (
+            <div className="flex flex-wrap items-center justify-between gap-sm rounded-md bg-success-muted px-md py-sm">
+              <span className="text-body-small font-semibold text-text-primary">{t('months.next.ready')}</span>
+              <Button size="sm" variant="primary" iconRight={<ArrowRight className="size-icon-sm" aria-hidden />} onClick={() => setConfirming(true)}>
+                {t('months.next.publish')}
+              </Button>
+            </div>
+          ) : null
+        ) : null}
         {/**
          * The steps are a **pre-publish** control, so a closed month does not show
          * them. It reads badly and it misleads: a month published before the

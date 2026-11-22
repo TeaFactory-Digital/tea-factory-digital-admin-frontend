@@ -21,6 +21,7 @@ import {
 import { useFeatureFlags, useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { SupplierPicker } from '@/components/SupplierPicker';
 import { Button } from '@/components/ui/Button';
+import { MoneyInput } from '@/components/ui/MoneyInput';
 import { Dialog } from '@/components/ui/Dialog';
 import { Field, Input, Select, Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
@@ -139,7 +140,7 @@ export function WalkInCreditDialog({ onClose }: { onClose: () => void }) {
         ) : (
           <Field label={t('records.walkIn.amount')} required error={amount && !amountOk ? t('records.walkIn.amountInvalid') : undefined}>
             {({ id, invalid }) => (
-              <Input id={id} invalid={invalid} inputMode="decimal" className="numeric" value={amount} onChange={(event) => setAmount(event.target.value)} />
+              <MoneyInput id={id} invalid={invalid}  value={amount} onValueChange={setAmount} />
             )}
           </Field>
         )}

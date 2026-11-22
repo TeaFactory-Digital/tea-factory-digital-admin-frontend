@@ -31,12 +31,18 @@ import {
 } from '@/auth/guards';
 import { SignInScreen } from '@/auth/SignInScreen';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
+import { RememberFilters } from '@/components/RememberFilters';
 
 const DashboardScreen = lazy(() =>
   import('@/modules/dashboard/DashboardScreen').then((m) => ({ default: m.DashboardScreen })),
 );
 const SuppliersScreen = lazy(() =>
   import('@/modules/suppliers/SuppliersScreen').then((m) => ({ default: m.SuppliersScreen })),
+);
+const OpeningBalancesGridScreen = lazy(() =>
+  import('@/modules/suppliers/OpeningBalancesGridScreen').then((m) => ({
+    default: m.OpeningBalancesGridScreen,
+  })),
 );
 const SupplierDetailScreen = lazy(() =>
   import('@/modules/suppliers/SupplierDetailScreen').then((m) => ({
@@ -157,8 +163,21 @@ export const router = createBrowserRouter([
         path: 'suppliers',
         element: (
           <RequireCapability capability="suppliers">
-            <SuppliersScreen />
+            <RememberFilters screen="suppliers">
+              <SuppliersScreen />
+            </RememberFilters>
           </RequireCapability>
+        ),
+      },
+      {
+        // Opening balances for many suppliers on one sheet (22 November 2026).
+        path: 'suppliers/opening-balances',
+        element: (
+          <RequireFactoryRecords>
+            <RequireCapability capability="suppliers">
+              <OpeningBalancesGridScreen />
+            </RequireCapability>
+          </RequireFactoryRecords>
         ),
       },
       {
@@ -178,7 +197,9 @@ export const router = createBrowserRouter([
         element: (
           <RequireFactoryRecords>
             <RequireCapability capability="deliveries">
-              <DeliveriesScreen />
+              <RememberFilters screen="deliveries">
+                <DeliveriesScreen />
+              </RememberFilters>
             </RequireCapability>
           </RequireFactoryRecords>
         ),
@@ -205,7 +226,9 @@ export const router = createBrowserRouter([
         path: 'bills',
         element: (
           <RequireCapability capability="billing">
-            <BillsScreen />
+            <RememberFilters screen="bills">
+              <BillsScreen />
+            </RememberFilters>
           </RequireCapability>
         ),
       },
@@ -221,7 +244,9 @@ export const router = createBrowserRouter([
         path: 'change-requests',
         element: (
           <RequireCapability capability="changeRequests">
-            <ChangeRequestsScreen />
+            <RememberFilters screen="changeRequests">
+              <ChangeRequestsScreen />
+            </RememberFilters>
           </RequireCapability>
         ),
       },
@@ -238,7 +263,9 @@ export const router = createBrowserRouter([
         element: (
           <RequireAnyFlag flags={[...CREDIT_FLAGS]}>
             <RequireCapability capability="creditRequests">
-              <CreditScreen />
+              <RememberFilters screen="credit">
+                <CreditScreen />
+              </RememberFilters>
             </RequireCapability>
           </RequireAnyFlag>
         ),
@@ -265,7 +292,9 @@ export const router = createBrowserRouter([
         element: (
           <RequireFlag flag="enableTeaPackets">
             <RequireCapability capability="creditRequests">
-              <TeaPacketsScreen />
+              <RememberFilters screen="teaPackets">
+                <TeaPacketsScreen />
+              </RememberFilters>
             </RequireCapability>
           </RequireFlag>
         ),
@@ -275,7 +304,9 @@ export const router = createBrowserRouter([
         element: (
           <RequireFlag flag="enableInquiry">
             <RequireCapability capability="inquiries">
-              <InquiriesScreen />
+              <RememberFilters screen="inquiries">
+                <InquiriesScreen />
+              </RememberFilters>
             </RequireCapability>
           </RequireFlag>
         ),
@@ -413,7 +444,9 @@ export const router = createBrowserRouter([
         path: 'users',
         element: (
           <RequireCapability capability="usersAndRoles">
-            <UsersScreen />
+            <RememberFilters screen="users">
+              <UsersScreen />
+            </RememberFilters>
           </RequireCapability>
         ),
       },
@@ -421,7 +454,9 @@ export const router = createBrowserRouter([
         path: 'audit',
         element: (
           <RequireCapability capability="auditLog">
-            <AuditScreen />
+            <RememberFilters screen="audit">
+              <AuditScreen />
+            </RememberFilters>
           </RequireCapability>
         ),
       },
