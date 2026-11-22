@@ -47,7 +47,7 @@ export function StatCard({
         <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
           <Icon className="size-icon-sm" aria-hidden />
         </span>
-        <h2 className="min-w-0 flex-1 truncate font-medium">{label}</h2>
+        <h2 className="min-w-0 flex-1 break-words leading-tight font-medium">{label}</h2>
         {period ? <span className="shrink-0 text-caption">{period}</span> : null}
       </header>
 

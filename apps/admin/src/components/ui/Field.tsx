@@ -171,7 +171,9 @@ export const SearchInput = forwardRef<
       type="search"
       aria-label={label}
       placeholder={label}
-      className={cn(CONTROL, CONTROL_OK, width(fullWidth), 'h-10', className)}
+      // Not full width: the caller's width class sizes it. `w-auto` here would win over that
+      // class in the stylesheet and shrink the box below its own placeholder.
+      className={cn(CONTROL, CONTROL_OK, fullWidth && 'w-full', 'h-10', className)}
       {...rest}
     />
   );

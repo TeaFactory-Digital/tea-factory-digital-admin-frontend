@@ -254,6 +254,22 @@ asked for less of it meant.
   12-column row needs help staying on one line.
 - **The page body never scrolls horizontally**, in any language.
 
+### Text must fit in every language
+
+Sinhala and Tamil labels run longer than English ones (a Tamil sidebar label can be a third
+wider), so a label or a placeholder sized for English gets cut off.
+
+- **Labels wrap, they do not truncate.** Sidebar items, stat-card titles and queue tiles use
+  `break-words leading-tight` and take a second line when they need it. Keep `truncate` for
+  data that can be opened in full elsewhere, such as a name in a row or an email in a menu.
+- **A placeholder fits its box.** A search box that sits in a filter row takes the room left
+  (`min-w-72 flex-1`), not a fixed width. `SearchInput` with `fullWidth={false}` takes the
+  width its caller gives. It used to add `w-auto`, which won over that width and shrank the
+  box below its own placeholder.
+- **Checked in all three languages.** On 21 November 2026 every screen was measured in en, si
+  and ta as the administrator, clerk and manager: no placeholder wider than its box and no
+  label cut off. When a Tamil or Sinhala string will not fit, shorten the string, not the box.
+
 ### A grid must never be squeezed to nothing
 
 `AppShell` gives a screen a **definite** height (`h-full`) so a `flex-1` grid card can

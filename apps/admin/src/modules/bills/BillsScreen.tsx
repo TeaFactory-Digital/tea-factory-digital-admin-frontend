@@ -226,7 +226,7 @@ export function BillsScreen() {
         <div className="flex shrink-0 flex-wrap items-end gap-sm border-b border-divider p-md">
           <SearchInput
             label={t('bills.searchPlaceholder')}
-            className="w-72"
+            className="min-w-72 flex-1"
             fullWidth={false}
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}

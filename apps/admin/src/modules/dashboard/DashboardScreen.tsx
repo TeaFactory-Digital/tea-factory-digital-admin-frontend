@@ -572,7 +572,7 @@ function QueueCard({ queue }: { queue: QueueCount }) {
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-variant text-text-secondary">
             <Icon className="size-icon-sm" aria-hidden />
           </span>
-          <p className="truncate text-label text-text-secondary">{label}</p>
+          <p className="break-words leading-tight text-label text-text-secondary">{label}</p>
         </span>
         {queue.breachingSla > 0 ? (
           <Badge tone="error">{t('dashboard.slaBreaching', { count: queue.breachingSla })}</Badge>

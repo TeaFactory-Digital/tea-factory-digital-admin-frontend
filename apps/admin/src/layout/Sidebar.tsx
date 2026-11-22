@@ -180,7 +180,8 @@ function SidebarLink({ item, pending }: { item: NavItem; pending: number }) {
             )}
             aria-hidden
           />
-          <span className="min-w-0 flex-1 truncate">{t(item.labelKey)}</span>
+          {/* Wraps rather than cuts: a Tamil or Sinhala label can be longer than the English. */}
+          <span className="min-w-0 flex-1 break-words leading-tight">{t(item.labelKey)}</span>
           <CountBadge count={pending} />
         </>
       )}
