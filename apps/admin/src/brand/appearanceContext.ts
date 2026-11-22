@@ -8,13 +8,15 @@
  */
 
 import { createContext } from 'react';
-import { DEFAULT_APPEARANCE, type Appearance, type ConsoleScheme, type TextSize } from './appearance';
+import { DEFAULT_APPEARANCE, type Appearance, type ConsoleScheme, type GlassBackdrop, type TextSize } from './appearance';
 
 export interface AppearanceValue {
   appearance: Appearance;
   setScheme: (scheme: ConsoleScheme) => void;
   setTextSize: (size: TextSize) => void;
   setGlass: (glass: boolean) => void;
+  /** The backdrop, with the photo it shows (kept as it is when omitted). */
+  setBackdrop: (backdrop: GlassBackdrop, photo?: string | null) => void;
 }
 
 /**
@@ -27,4 +29,5 @@ export const AppearanceContext = createContext<AppearanceValue>({
   setScheme: () => {},
   setTextSize: () => {},
   setGlass: () => {},
+  setBackdrop: () => {},
 });

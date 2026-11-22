@@ -25,19 +25,28 @@ export function AppearanceProvider({ children }: PropsWithChildren) {
    */
   const [appearance, setAppearance] = useState<Appearance>(readAppearance);
 
-  const update = useCallback((next: Appearance) => {
-    setAppearance(next);
-    // Persisted alongside the state update rather than in an effect, so a choice survives
-    // a reload even if the tab is closed in the same tick.
-    persistAppearance(next);
+  /**
+   * Merged into the **latest** value, not the one this render saw: the profile screen applies
+   * several settings in one go, and each setter spreading a stale copy would undo the one
+   * before it.
+   */
+  const update = useCallback((change: Partial<Appearance>) => {
+    setAppearance((previous) => {
+      const next = { ...previous, ...change };
+      // Persisted with the state update rather than in an effect, so a choice survives a
+      // reload even if the tab is closed in the same tick.
+      persistAppearance(next);
+      return next;
+    });
   }, []);
 
   const value = useMemo<AppearanceValue>(
     () => ({
       appearance,
-      setScheme: (scheme) => update({ ...appearance, scheme }),
-      setTextSize: (textSize) => update({ ...appearance, textSize }),
-      setGlass: (glass) => update({ ...appearance, glass }),
+      setScheme: (scheme) => update({ scheme }),
+      setTextSize: (textSize) => update({ textSize }),
+      setGlass: (glass) => update({ glass }),
+      setBackdrop: (backdrop, photo) => update(photo === undefined ? { backdrop } : { backdrop, photo }),
     }),
     [appearance, update],
   );

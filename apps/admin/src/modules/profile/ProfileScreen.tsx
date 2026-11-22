@@ -58,7 +58,7 @@ export function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const user = useCurrentUser();
-  const { appearance, setScheme, setTextSize, setGlass } = useAppearance();
+  const { appearance, setScheme, setTextSize, setGlass, setBackdrop } = useAppearance();
 
   const savedLanguage: LanguageCode = isLanguageCode(i18n.resolvedLanguage)
     ? i18n.resolvedLanguage
@@ -85,7 +85,9 @@ export function ProfileScreen() {
     draftLanguage !== savedLanguage ||
     draftAppearance.scheme !== appearance.scheme ||
     draftAppearance.textSize !== appearance.textSize ||
-    draftAppearance.glass !== appearance.glass;
+    draftAppearance.glass !== appearance.glass ||
+    draftAppearance.backdrop !== appearance.backdrop ||
+    draftAppearance.photo !== appearance.photo;
 
   function revert() {
     setDraftLanguage(savedLanguage);
@@ -98,6 +100,9 @@ export function ProfileScreen() {
     if (draftAppearance.scheme !== appearance.scheme) setScheme(draftAppearance.scheme);
     if (draftAppearance.textSize !== appearance.textSize) setTextSize(draftAppearance.textSize);
     if (draftAppearance.glass !== appearance.glass) setGlass(draftAppearance.glass);
+    if (draftAppearance.backdrop !== appearance.backdrop || draftAppearance.photo !== appearance.photo) {
+      setBackdrop(draftAppearance.backdrop, draftAppearance.photo);
+    }
     if (draftLanguage !== savedLanguage) await setLanguage(draftLanguage);
 
     setConfirming(false);

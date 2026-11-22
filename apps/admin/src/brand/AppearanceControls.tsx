@@ -19,9 +19,11 @@
  * light against dark a four-click job.
  */
 
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Moon, Sparkles, Square, Sun } from 'lucide-react';
-import { TEXT_SIZES, type Appearance, type ConsoleScheme, type TextSize } from './appearance';
+import { Image, Moon, Mountain, Palette, Sparkles, Square, Sun } from 'lucide-react';
+import { GLASS_BACKDROPS, TEXT_SIZES, type Appearance, type ConsoleScheme, type GlassBackdrop, type TextSize } from './appearance';
+import { BackdropPhotoError, prepareBackdropPhoto } from '@/lib/backdropPhoto';
 import { useAppearance } from './useAppearance';
 import { cn } from '@/lib/cn';
 
@@ -35,6 +37,13 @@ const GLASS: Array<{ value: boolean; Icon: typeof Sun }> = [
   { value: false, Icon: Square },
   { value: true, Icon: Sparkles },
 ];
+
+/** What the glass sits on (22 November 2026). */
+const BACKDROP_ICON: Record<GlassBackdrop, typeof Sun> = {
+  colours: Palette,
+  estate: Mountain,
+  photo: Image,
+};
 
 /** The step's own size, so the control shows what it does rather than describing it. */
 const SIZE_PREVIEW: Record<TextSize, string> = {
@@ -70,6 +79,29 @@ export function AppearanceControls({ className, value, onChange }: AppearanceCon
     onChange ? onChange({ ...appearance, textSize }) : store.setTextSize(textSize);
   const setGlass = (glass: boolean) =>
     onChange ? onChange({ ...appearance, glass }) : store.setGlass(glass);
+  const setBackdrop = (backdrop: GlassBackdrop, photo?: string | null) =>
+    onChange
+      ? onChange({ ...appearance, backdrop, ...(photo === undefined ? {} : { photo }) })
+      : store.setBackdrop(backdrop, photo);
+
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [preparing, setPreparing] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+
+  async function choosePhoto(file: File | undefined) {
+    if (!file) return;
+    setPhotoError(null);
+    setPreparing(true);
+    try {
+      setBackdrop('photo', await prepareBackdropPhoto(file));
+    } catch (error) {
+      const code = error instanceof BackdropPhotoError ? error.code : 'unreadable';
+      setPhotoError(t(`appearance.backdrop.error.${code}`));
+    } finally {
+      setPreparing(false);
+      if (fileInput.current) fileInput.current.value = '';
+    }
+  }
 
   return (
     <div className={cn('flex flex-col gap-sm', className)}>
@@ -164,6 +196,77 @@ export function AppearanceControls({ className, value, onChange }: AppearanceCon
         </div>
         <span className="text-caption text-text-secondary">{t('appearance.glassHint')}</span>
       </div>
+
+      {appearance.glass ? (
+        <div className="flex flex-col gap-xxs">
+          <span className="text-caption text-text-secondary">{t('appearance.backdrop')}</span>
+          <div role="radiogroup" aria-label={t('appearance.backdrop')} className="flex gap-xxs">
+            {GLASS_BACKDROPS.map((backdrop) => {
+              const active = appearance.backdrop === backdrop;
+              const Icon = BACKDROP_ICON[backdrop];
+              return (
+                <button
+                  key={backdrop}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  disabled={preparing}
+                  onClick={() => {
+                    // "Your photo" with none chosen yet asks for one first.
+                    if (backdrop === 'photo' && !appearance.photo) fileInput.current?.click();
+                    else setBackdrop(backdrop);
+                  }}
+                  className={cn(
+                    SEGMENT,
+                    'text-body-small',
+                    active
+                      ? 'bg-primary text-primary-contrast'
+                      : 'text-text-primary hover:bg-surface-variant',
+                  )}
+                >
+                  <Icon className="size-icon-sm" aria-hidden />
+                  {t(`appearance.backdrop.${backdrop}`)}
+                </button>
+              );
+            })}
+          </div>
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            tabIndex={-1}
+            aria-label={t('appearance.backdrop.choose')}
+            onChange={(event) => void choosePhoto(event.target.files?.[0])}
+          />
+          {appearance.photo && appearance.backdrop === 'photo' ? (
+            <div className="flex items-center gap-sm">
+              <img src={appearance.photo} alt={t('appearance.backdrop.preview')} className="h-10 w-16 rounded-sm object-cover" />
+              <button
+                type="button"
+                className="text-caption font-medium text-primary hover:underline"
+                onClick={() => fileInput.current?.click()}
+              >
+                {t('appearance.backdrop.change')}
+              </button>
+              <button
+                type="button"
+                className="text-caption font-medium text-error hover:underline"
+                onClick={() => setBackdrop('colours', null)}
+              >
+                {t('appearance.backdrop.remove')}
+              </button>
+            </div>
+          ) : null}
+          {preparing ? <span className="text-caption text-text-secondary">{t('appearance.backdrop.preparing')}</span> : null}
+          {photoError ? (
+            <span role="alert" className="text-caption text-error">
+              {photoError}
+            </span>
+          ) : null}
+          <span className="text-caption text-text-secondary">{t('appearance.backdrop.hint')}</span>
+        </div>
+      ) : null}
     </div>
   );
 }

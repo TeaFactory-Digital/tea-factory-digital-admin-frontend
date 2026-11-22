@@ -100,6 +100,25 @@ export function BrandProvider({ children }: PropsWithChildren) {
     };
   }, [appearance.glass]);
 
+  // What the glass sits on: an attribute for the CSS, and the photo as a custom property.
+  // The estate photograph ships with the console and is fetched only when chosen.
+  useEffect(() => {
+    const root = document.documentElement;
+    const url =
+      appearance.backdrop === 'estate'
+        ? `${import.meta.env.BASE_URL}backdrops/tea-estate.jpg`
+        : appearance.backdrop === 'photo'
+          ? appearance.photo
+          : null;
+    if (appearance.glass && url) {
+      root.dataset.glassPhoto = 'on';
+      root.style.setProperty('--glass-photo', `url("${url}")`);
+    } else {
+      delete root.dataset.glassPhoto;
+      root.style.removeProperty('--glass-photo');
+    }
+  }, [appearance.glass, appearance.backdrop, appearance.photo]);
+
   useEffect(() => {
     const name = config.factory.name?.trim();
     document.title = name ? `${name} · Console` : 'Tea Factory Console';

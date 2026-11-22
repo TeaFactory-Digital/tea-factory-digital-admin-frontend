@@ -49,8 +49,8 @@ describe('the appearance preference', () => {
   });
 
   it('survives a reload', () => {
-    persistAppearance({ scheme: 'dark', textSize: 'larger', glass: true });
-    expect(readAppearance()).toEqual({ scheme: 'dark', textSize: 'larger', glass: true });
+    persistAppearance({ scheme: 'dark', textSize: 'larger', glass: true, backdrop: 'estate', photo: null });
+    expect(readAppearance()).toEqual({ scheme: 'dark', textSize: 'larger', glass: true, backdrop: 'estate', photo: null });
   });
 
   it('falls back per field, so one bad value does not cost both settings', () => {
@@ -61,12 +61,12 @@ describe('the appearance preference', () => {
       JSON.stringify({ scheme: 'dark', textSize: 'enormous' }),
     );
 
-    expect(readAppearance()).toEqual({ scheme: 'dark', textSize: 'normal', glass: false });
+    expect(readAppearance()).toEqual({ scheme: 'dark', textSize: 'normal', glass: false, backdrop: 'colours', photo: null });
   });
 
   it('reads a preference saved before the glass effect existed as glass off', () => {
     window.localStorage.setItem('tfd.admin.appearance', JSON.stringify({ scheme: 'dark', textSize: 'large' }));
-    expect(readAppearance()).toEqual({ scheme: 'dark', textSize: 'large', glass: false });
+    expect(readAppearance()).toEqual({ scheme: 'dark', textSize: 'large', glass: false, backdrop: 'colours', photo: null });
     expect(DEFAULT_APPEARANCE.glass).toBe(false);
   });
 
@@ -163,5 +163,67 @@ describe('the glass effect', () => {
     const dialog = screen.getByRole('dialog');
     expect(dialog).toHaveAttribute('data-glass-surface', 'dialog');
     expect(dialog.querySelectorAll('[data-glass-surface]')).toHaveLength(0);
+  });
+});
+
+describe('the background behind the glass', () => {
+  const PHOTO = 'data:image/jpeg;base64,/9j/4AAQSkZJRg==';
+
+  afterEach(() => {
+    delete document.documentElement.dataset.glass;
+    delete document.documentElement.dataset.glassPhoto;
+    document.documentElement.style.removeProperty('--glass-photo');
+  });
+
+  it('keeps the photo under its own key, apart from the other settings', () => {
+    persistAppearance({ scheme: 'light', textSize: 'normal', glass: true, backdrop: 'photo', photo: PHOTO });
+    expect(window.localStorage.getItem('tfd.admin.glassPhoto')).toBe(PHOTO);
+    expect(window.localStorage.getItem('tfd.admin.appearance')).not.toContain('base64');
+    expect(readAppearance()).toMatchObject({ backdrop: 'photo', photo: PHOTO });
+  });
+
+  it('reads "your photo" with no photo stored as the factory colours', () => {
+    window.localStorage.setItem('tfd.admin.appearance', JSON.stringify({ scheme: 'light', textSize: 'normal', glass: true, backdrop: 'photo' }));
+    expect(readAppearance()).toMatchObject({ backdrop: 'colours', photo: null });
+  });
+
+  it('offers the background only with glass on, and puts the estate photograph behind it', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <AppearanceProvider>
+        <BrandProvider>
+          <AppearanceControls />
+        </BrandProvider>
+      </AppearanceProvider>,
+    );
+    expect(screen.queryByRole('radiogroup', { name: 'Background' })).not.toBeInTheDocument();
+    await user.click(within(screen.getByRole('radiogroup', { name: 'Glass effect' })).getByRole('radio', { name: 'On' }));
+
+    const group = screen.getByRole('radiogroup', { name: 'Background' });
+    expect(within(group).getByRole('radio', { name: 'Factory colours' })).toHaveAttribute('aria-checked', 'true');
+    expect(document.documentElement.dataset.glassPhoto).toBeUndefined();
+
+    await user.click(within(group).getByRole('radio', { name: 'Tea estate' }));
+    expect(document.documentElement.dataset.glassPhoto).toBe('on');
+    expect(document.documentElement.style.getPropertyValue('--glass-photo')).toContain('backdrops/tea-estate.jpg');
+
+    // Glass off takes the photo away with it.
+    await user.click(within(screen.getByRole('radiogroup', { name: 'Glass effect' })).getByRole('radio', { name: 'Off' }));
+    expect(document.documentElement.dataset.glassPhoto).toBeUndefined();
+  });
+
+  it('refuses a file that is not a photo, and says so', async () => {
+    const user = userEvent.setup({ applyAccept: false });
+    renderWithProviders(
+      <AppearanceProvider>
+        <BrandProvider>
+          <AppearanceControls />
+        </BrandProvider>
+      </AppearanceProvider>,
+    );
+    await user.click(within(screen.getByRole('radiogroup', { name: 'Glass effect' })).getByRole('radio', { name: 'On' }));
+    await user.upload(screen.getByLabelText('Choose a photo'), new File(['hello'], 'notes.txt', { type: 'text/plain' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('That file is not a photo');
+    expect(readAppearance().backdrop).toBe('colours');
   });
 });

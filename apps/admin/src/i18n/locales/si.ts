@@ -3166,4 +3166,18 @@ export const si: Record<TranslationKey, string> = {
   'appearance.glass.off': 'අක්‍රියයි',
   'appearance.glass.on': 'සක්‍රියයි',
   'appearance.glassHint': 'පැති තීරුව, ඉහළ තීරුව සහ සංවාද ආලෝකය නමන පාවෙන දියර වීදුරු ලෙස. වගු සහ සංඛ්‍යා නොවිනිවිද ලෙසම පවතී. මෙම පරිගණකය මන්දගාමී නම් එය අක්‍රිය කරන්න.',
+  // Background behind the glass (22 November 2026).
+  'appearance.backdrop': 'පසුබිම',
+  'appearance.backdrop.colours': 'කර්මාන්තශාලා වර්ණ',
+  'appearance.backdrop.estate': 'තේ වත්ත',
+  'appearance.backdrop.photo': 'ඔබේ ඡායාරූපය',
+  'appearance.backdrop.choose': 'ඡායාරූපයක් තෝරන්න',
+  'appearance.backdrop.preview': 'ඔබේ පසුබිම් ඡායාරූපය',
+  'appearance.backdrop.change': 'ඡායාරූපය වෙනස් කරන්න',
+  'appearance.backdrop.remove': 'ඉවත් කරන්න',
+  'appearance.backdrop.preparing': 'ඡායාරූපය සකසමින්…',
+  'appearance.backdrop.hint': 'වීදුරුව පිටුපස පෙන්වයි. ඔබේම ඡායාරූපය මෙම බ්‍රව්සරයේ පමණක් තිබෙන අතර කොතැනකටවත් යවනු නොලැබේ.',
+  'appearance.backdrop.error.not-image': 'එම ගොනුව ඡායාරූපයක් නොවේ. JPEG, PNG හෝ ඒ හා සමාන එකක් තෝරන්න.',
+  'appearance.backdrop.error.unreadable': 'එම ඡායාරූපය විවෘත කළ නොහැකි විය. වෙනත් එකක් උත්සාහ කරන්න.',
+  'appearance.backdrop.error.too-large': 'එම ඡායාරූපය තබා ගැනීමට විශාල වැඩියි. කුඩා එකක් උත්සාහ කරන්න.',
 } as const;

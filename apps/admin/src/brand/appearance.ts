@@ -45,7 +45,22 @@ export interface Appearance {
    * transparency" turns it off whatever this says (`theme.css`).
    */
   glass: boolean;
+  /**
+   * What the glass sits on (22 November 2026): the factory's colours, the tea estate
+   * photograph that ships with the console, or the reader's own photo. Only shown while
+   * `glass` is on.
+   */
+  backdrop: GlassBackdrop;
+  /**
+   * The reader's own photo, as a JPEG data URL already scaled down (`backdropPhoto.ts`).
+   * Stored under its own key, so a full storage quota costs the photo and never the other
+   * settings, and it never leaves this browser.
+   */
+  photo: string | null;
 }
+
+export const GLASS_BACKDROPS = ['colours', 'estate', 'photo'] as const;
+export type GlassBackdrop = (typeof GLASS_BACKDROPS)[number];
 
 /**
  * Light and normal until somebody says otherwise.
@@ -56,9 +71,19 @@ export interface Appearance {
  * standing at it. Flipping a clerk's screen to dark because a technician set the desktop
  * that way is a preference nobody expressed.
  */
-export const DEFAULT_APPEARANCE: Appearance = { scheme: 'light', textSize: 'normal', glass: false };
+export const DEFAULT_APPEARANCE: Appearance = {
+  scheme: 'light',
+  textSize: 'normal',
+  glass: false,
+  backdrop: 'colours',
+  photo: null,
+};
 
 const STORAGE_KEY = 'tfd.admin.appearance';
+const PHOTO_KEY = 'tfd.admin.glassPhoto';
+
+const isBackdrop = (value: unknown): value is GlassBackdrop =>
+  typeof value === 'string' && (GLASS_BACKDROPS as readonly string[]).includes(value);
 
 const isScheme = (value: unknown): value is ConsoleScheme =>
   value === 'light' || value === 'dark';
@@ -86,6 +111,7 @@ export function readAppearance(): Appearance {
       scheme: isScheme(record.scheme) ? record.scheme : DEFAULT_APPEARANCE.scheme,
       textSize: isTextSize(record.textSize) ? record.textSize : DEFAULT_APPEARANCE.textSize,
       glass: typeof record.glass === 'boolean' ? record.glass : DEFAULT_APPEARANCE.glass,
+      ...readBackdrop(record.backdrop),
     };
   } catch {
     // Unreadable storage, or JSON somebody hand-edited. Neither is worth a broken console.
@@ -93,11 +119,32 @@ export function readAppearance(): Appearance {
   }
 }
 
-export function persistAppearance(appearance: Appearance): void {
+/** The backdrop, and the photo it needs: "your photo" with no photo stored is the colours. */
+function readBackdrop(stored: unknown): Pick<Appearance, 'backdrop' | 'photo'> {
+  const backdrop = isBackdrop(stored) ? stored : DEFAULT_APPEARANCE.backdrop;
+  let photo: string | null = null;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(appearance));
+    const raw = window.localStorage.getItem(PHOTO_KEY);
+    photo = raw && raw.startsWith('data:image/') ? raw : null;
+  } catch {
+    photo = null;
+  }
+  if (backdrop === 'photo' && !photo) return { backdrop: 'colours', photo: null };
+  return { backdrop, photo };
+}
+
+export function persistAppearance(appearance: Appearance): void {
+  const { photo, ...settings } = appearance;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   } catch {
     // A session that cannot persist the choice still honours it until reload.
+  }
+  try {
+    if (photo) window.localStorage.setItem(PHOTO_KEY, photo);
+    else window.localStorage.removeItem(PHOTO_KEY);
+  } catch {
+    // Too large for what is left of the quota: the photo shows until reload, nothing else lost.
   }
 }
 

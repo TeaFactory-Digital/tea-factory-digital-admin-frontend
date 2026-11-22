@@ -3172,6 +3172,20 @@ export const en = {
   'appearance.glass.off': 'Off',
   'appearance.glass.on': 'On',
   'appearance.glassHint': 'The sidebar, top bar and dialogs as floating liquid glass that bends the light. Tables and figures stay solid. Turn it off if this computer feels slow.',
+  // Background behind the glass (22 November 2026).
+  'appearance.backdrop': 'Background',
+  'appearance.backdrop.colours': 'Factory colours',
+  'appearance.backdrop.estate': 'Tea estate',
+  'appearance.backdrop.photo': 'Your photo',
+  'appearance.backdrop.choose': 'Choose a photo',
+  'appearance.backdrop.preview': 'Your background photo',
+  'appearance.backdrop.change': 'Change photo',
+  'appearance.backdrop.remove': 'Remove',
+  'appearance.backdrop.preparing': 'Preparing the photo…',
+  'appearance.backdrop.hint': 'Shown behind the glass. Your own photo stays in this browser and is not sent anywhere.',
+  'appearance.backdrop.error.not-image': 'That file is not a photo. Choose a JPEG, PNG or similar.',
+  'appearance.backdrop.error.unreadable': 'That photo could not be opened. Try another.',
+  'appearance.backdrop.error.too-large': 'That photo is too large to keep. Try a smaller one.',
 } as const;
 
 export type TranslationKey = keyof typeof en;

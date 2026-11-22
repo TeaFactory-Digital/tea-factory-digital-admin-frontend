@@ -384,7 +384,19 @@ refraction: `backdrop-filter: url(#tfd-liquid-glass)`, an SVG displacement filte
 (`LiquidGlassFilter`), gated on `data-glass-refract` because other browsers drop the whole
 value. Dialogs take a denser tint and no drawn rim, since a long dialog scrolls. All over a
 wash of the factory's primary, secondary and info colours on the shell
-(`data-glass-backdrop`). Cards, grids and every figure stay solid. Colours are tokens mixed
+(`data-glass-backdrop`).
+
+**Background** (`Appearance.backdrop`: `colours`, `estate`, `photo`) replaces the wash with a
+photo: `public/backdrops/tea-estate.jpg` (the website's estate photograph at 2000 px, 420 KB,
+fetched only when chosen) or the reader's own, scaled to at most 1920 px and about 1.5 MB as a
+JPEG data URL in the browser (`lib/backdropPhoto.ts`), stored under its own key
+(`tfd.admin.glassPhoto`) so a full quota costs the photo and nothing else, and never sent
+anywhere. `BrandProvider` sets `data-glass-photo="on"` and `--glass-photo`. Over a photo the
+panes take a denser tint and more blur, and a veil of the page colour sits over the photo,
+heaviest under the page title. Axe cannot measure contrast over a photo, so it was measured
+from screenshots: every text on the panes and the page title and description at 4.5:1 or
+better, light and dark, over the estate photograph. A reader's own, much darker photo is not
+guaranteed the same. Cards, grids and every figure stay solid. Colours are tokens mixed
 with `transparent`, never literals, so a factory's palette and the dark scheme carry through.
 A browser without `backdrop-filter`, and an operating system set to reduce transparency, get
 the solid surface. The accessibility e2e audits the queues and the search dialog with it on,

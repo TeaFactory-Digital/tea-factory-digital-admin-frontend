@@ -3227,4 +3227,18 @@ export const ta: Record<TranslationKey, string> = {
   'appearance.glass.off': 'முடக்கு',
   'appearance.glass.on': 'இயக்கு',
   'appearance.glassHint': 'பக்கப்பட்டி, மேல் பட்டை மற்றும் உரையாடல்கள் ஒளியை வளைக்கும் மிதக்கும் திரவக் கண்ணாடி போல. அட்டவணைகளும் தொகைகளும் திடமாகவே இருக்கும். இந்தக் கணினி மெதுவாக இருந்தால் அதை முடக்கவும்.',
+  // Background behind the glass (22 November 2026).
+  'appearance.backdrop': 'பின்னணி',
+  'appearance.backdrop.colours': 'தொழிற்சாலை நிறங்கள்',
+  'appearance.backdrop.estate': 'தேயிலைத் தோட்டம்',
+  'appearance.backdrop.photo': 'உங்கள் புகைப்படம்',
+  'appearance.backdrop.choose': 'புகைப்படத்தைத் தேர்ந்தெடு',
+  'appearance.backdrop.preview': 'உங்கள் பின்னணிப் புகைப்படம்',
+  'appearance.backdrop.change': 'புகைப்படத்தை மாற்று',
+  'appearance.backdrop.remove': 'நீக்கு',
+  'appearance.backdrop.preparing': 'புகைப்படம் தயாராகிறது…',
+  'appearance.backdrop.hint': 'கண்ணாடிக்குப் பின்னால் காட்டப்படும். உங்கள் சொந்தப் புகைப்படம் இந்த உலாவியில் மட்டுமே இருக்கும், எங்கும் அனுப்பப்படாது.',
+  'appearance.backdrop.error.not-image': 'அந்தக் கோப்பு புகைப்படம் அல்ல. JPEG, PNG அல்லது அதைப் போன்றதைத் தேர்ந்தெடுக்கவும்.',
+  'appearance.backdrop.error.unreadable': 'அந்தப் புகைப்படத்தைத் திறக்க முடியவில்லை. வேறொன்றை முயற்சிக்கவும்.',
+  'appearance.backdrop.error.too-large': 'அந்தப் புகைப்படம் வைத்திருக்க மிகப் பெரியது. சிறியதை முயற்சிக்கவும்.',
 } as const;

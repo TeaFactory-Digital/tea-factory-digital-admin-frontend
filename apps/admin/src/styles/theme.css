@@ -410,6 +410,38 @@
     var(--color-background);
 }
 
+/*
+ * A photo behind the glass (Profile → Appearance → Background): the tea estate that ships
+ * with the console, or the reader's own. A photo is busier than a colour wash, so the panes
+ * take more tint and more blur to keep their text readable, and a light veil of the page
+ * colour sits over the photo so the gaps between cards stay calm.
+ */
+:root[data-glass='on'][data-glass-photo='on'] {
+  --glass-tint: color-mix(in srgb, var(--color-surface) 84%, transparent);
+  --glass-tint-dialog: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  --glass-veil: color-mix(in srgb, var(--color-background) 22%, transparent);
+  --glass-veil-top: color-mix(in srgb, var(--color-background) 62%, transparent);
+  --glass-optics: blur(18px) saturate(140%) brightness(1.12);
+  --glass-optics-dialog: blur(22px) saturate(140%) brightness(1.04);
+}
+
+:root[data-glass='on'][data-glass-photo='on'][data-scheme='dark'] {
+  --glass-tint: color-mix(in srgb, var(--color-surface) 76%, transparent);
+  --glass-tint-dialog: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  --glass-veil: color-mix(in srgb, var(--color-background) 55%, transparent);
+  --glass-veil-top: color-mix(in srgb, var(--color-background) 86%, transparent);
+  --glass-optics: blur(18px) saturate(130%) brightness(0.7);
+  --glass-optics-dialog: blur(22px) saturate(120%) brightness(0.82);
+}
+
+:root[data-glass='on'][data-glass-photo='on'] [data-glass-backdrop] {
+  background:
+    /* Heavier at the top, where the page title and its line of description sit on the photo. */
+    linear-gradient(var(--glass-veil-top) 0, var(--glass-veil-top) 10rem, var(--glass-veil) 22rem),
+    var(--glass-photo) center / cover no-repeat,
+    var(--color-background);
+}
+
 /* The material. */
 :root[data-glass='on'] [data-glass-surface] {
   isolation: isolate;
@@ -528,7 +560,8 @@
     backdrop-filter: none;
   }
 
-  :root[data-glass='on'] [data-glass-backdrop] {
+  :root[data-glass='on'] [data-glass-backdrop],
+  :root[data-glass='on'][data-glass-photo='on'] [data-glass-backdrop] {
     background: var(--color-background);
   }
 }
