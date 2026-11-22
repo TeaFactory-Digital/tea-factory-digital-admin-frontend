@@ -25,6 +25,60 @@ factory publishes its own app with its own name and icon.
 | **The factory's system vendor** (sync on only) | One read-only endpoint, and nothing else | [factory-system-team.md](./factory-system-team.md) |
 | **The backend developer** | What the API still has to build for the records kept in the console | [BACKEND-TODO.md](./BACKEND-TODO.md), [factory-records.md](./factory-records.md) |
 
+## Before the first factory: the one-time launch
+
+**Status (22 November 2026): none of this exists yet.** There is no production API, no
+production database, no domain, and the supplier app is in neither store. Everything so
+far runs on the free **staging** API (it sleeps when idle) with test data. The steps
+below assume this section is done; it is done **once**, for the platform, not per factory.
+In order, because each needs the one before it:
+
+**L1. Decisions and accounts (the company)**
+
+- [ ] Who pays, and in whose name the accounts are opened (the company or the factory).
+- [ ] **A domain** (for example `teafactory.lk`): the API (`api.<domain>`), the console
+      (`<slug>.admin.<domain>`) and the app's link domain (`app.<domain>`, #66).
+- [ ] **API hosting** that does not sleep (staging is Render's free plan) and a
+      **production database** with backups (staging is Neon's free tier).
+- [ ] **Apple Developer Program** (yearly fee) and **Google Play Console** (one-time fee)
+      accounts, and the Apple team confirmed (the Xcode project has `MP32X3M4H8`).
+- [ ] A **Firebase project** for push (with the push sender, gap 5 in status.md).
+
+**L2. The production API (backend developer, BACKEND-TODO #65)**
+
+- [ ] The API deployed with its own database, the migrations applied, backups and the
+      five-year record list (#59) from the first day; `CORS_ORIGINS` set.
+- [ ] Its origin (`https://api.<domain>/v1`) handed to the console and the app.
+
+**L3. Console and app pointed at it (front-end developers)**
+
+- [ ] Console: the production `VITE_API_BASE_URL` on Vercel, and `<slug>.admin.<domain>`.
+- [ ] App: the production origin in the client config. A release build refuses to start
+      on the placeholder origin, so no store build can be made before this.
+
+**L4. The app made ready for the stores (mobile developer and the company)**
+
+- [ ] **A real Android release signing key**, kept safe and backed up (release builds are
+      still signed with the debug key). Losing it means the app can never be updated.
+- [ ] iOS signing with the confirmed team, and the Associated Domains entitlement
+      (`applinks:app.<domain>`).
+- [ ] The store listings: name, descriptions in Sinhala, English and Tamil, screenshots,
+      a **privacy policy URL** (both stores require one), Google Play's Data safety form
+      and Apple's privacy answers.
+- [ ] A test round on **Google Play internal testing** and **Apple TestFlight** with a
+      few real suppliers, against the production API.
+
+**L5. Link files (backend developer, BACKEND-TODO #66)**
+
+- [ ] After the first upload to Play Console, its app signing **SHA-256** and the
+      `app.<domain>` host go to the backend developer, who serves `assetlinks.json` and
+      `apple-app-site-association` there.
+
+**L6. Release**
+
+- [ ] Store review, then the factory is told; the A3 supplier posters (Figma) get the real
+      QR code and the factory's telephone number before printing.
+
 ## 0. Decide first
 
 - [ ] **Slug:** lower-case letters and digits, e.g. `hillside`. It becomes the console

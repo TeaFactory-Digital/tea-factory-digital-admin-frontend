@@ -720,7 +720,15 @@ Against the mobile repo's `docs/domain-logic.md` §18.3.
 
 Worst first: correctness, then plumbing, then polish.
 
-1. **The factory-system sync does not exist yet** (backend Phase 10). A factory with the
+1. **Nothing is live yet** (22 November 2026). No production API, no production database,
+   no domain, and the supplier app is in neither store; everything runs on the free staging
+   API with test data. The one-time launch, in order, is in
+   [new-factory.md](./new-factory.md#before-the-first-factory-the-one-time-launch): accounts
+   and domain, the production API (BACKEND-TODO #65, on hold until there is a real client),
+   the console and app pointed at it, a real Android signing key and store listings, the
+   link files (#66), then release.
+
+2. **The factory-system sync does not exist yet** (backend Phase 10). A factory with the
    sync **on** has no pull from its system, so its suppliers, leaf, bills and balances are
    whatever reached the API some other way. Galaboda keeps its records with the sync
    **off** and imports its bills. When the sync lands, the credit ceiling also needs the Factory System's **complete**
@@ -728,7 +736,7 @@ Worst first: correctness, then plumbing, then polish.
    headroom twice ([factory-system-team.md §C](./factory-system-team.md#c-who-decides-credit-and-what-each-side-calculates)).
    Switching a factory from records kept here back to the sync also waits for Phase 10.
 
-2. **BACKEND-TODO #45 is finished** (21 November 2026). A sync-off factory can add
+3. **BACKEND-TODO #45 is finished** (21 November 2026). A sync-off factory can add
    suppliers, set transport rates, record walk-ins, import and publish its finished bills
    (late division files included), enter opening balances, enter and import leaf and
    monthly rates (importing again skips what is there), and, where bills are calculated,
@@ -737,7 +745,7 @@ Worst first: correctness, then plumbing, then polish.
    [Hidden in the console](#hidden-in-the-console-until-the-backend-ships-it) says what is
    hidden.
 
-3. **`@tfd/domain` is vendored by the backend and the app.** *Closed 29 October 2026.*
+4. **`@tfd/domain` is vendored by the backend and the app.** *Closed 29 October 2026.*
    Both copy `packages/domain/src` (`npm run vendor:pull`) and fail their own CI on a
    local edit (`vendor:check`). The app imports its types, the credit rules, the banner
    resolver and the page points from it, no longer keeping its own. `npm run domain:drift`
@@ -745,47 +753,47 @@ Worst first: correctness, then plumbing, then polish.
    CI asks the same of this repository (`vendor:upstream`). What is left is the pull
    itself: a change here reaches the API and the app only when each pulls it.
 
-4. **Nothing is pushed.** The API's sender is a no-op until it is built; M13 records what
+5. **Nothing is pushed.** The API's sender is a no-op until it is built; M13 records what
    it would send and what it would reach. When it lands it brings a per-device delivery
    result arriving later, which `NotificationSend.status` (`queued`, `failed`) is ready
    for and nothing sets yet.
 
-5. **A composed notification picks its language per supplier in the inbox only.** Since 30
+6. **A composed notification picks its language per supplier in the inbox only.** Since 30
    October 2026 the composer has the language strip M11 has: English required, Sinhala and
    Tamil optional, the gaps marked and named before the send, all languages sent as
    `translations`. The API keeps them and the app's inbox answers in the supplier's language
-   (`?lang=`, the fallback otherwise). What is left is the push itself: the sender (gap 4)
+   (`?lang=`, the fallback otherwise). What is left is the push itself: the sender (gap 5)
    must pick each device's language the same way (`notificationCopyFor`).
 
-6. **Corrections after a published bill are live** (C5, backend `2304045`). Built
+7. **Corrections after a published bill are live** (C5, backend `2304045`). Built
    in the console and the app on 30 October 2026: the manager posts one on the supplier's Money
    tab (a balance moves at once, a payment lands on the next bill as a "Correction" line with
    the reason). Switched on 4 November 2026. A payment correction waits `pending` until the
    next calculated bill carries it (the bill engine is live, `221a1c0`); imported factories correct
    payments in their own system.
 
-7. **The Sinhala and Tamil labels: signed off.** The factory confirmed on 30 October 2026
+8. **The Sinhala and Tamil labels: signed off.** The factory confirmed on 30 October 2026
    that the native-speaker reading is done (Q39). `stringTables.test.ts` still fails on a
    letter of the other script, a broken vowel sign, a renamed placeholder, untranslated
    English or an em dash, so a new label cannot slip back. Kept so the history is found.
-8. **No evidence attachment on a change request, by decision** (29 October 2026). A
+9. **No evidence attachment on a change request, by decision** (29 October 2026). A
    bank-detail change is approved on the details alone, and inquiries stay text only.
    The Evidence card on the change-request screen stays hidden while `attachments` is
    empty, which it always is; nothing on either side uploads one.
 
-9. **Error reporting waits for a Sentry project.** It is built (`lib/monitoring.ts`, 28
+10. **Error reporting waits for a Sentry project.** It is built (`lib/monitoring.ts`, 28
    October 2026) and switched on by `VITE_SENTRY_DSN`; until a DSN is set nothing is loaded
    and a console error reaches `console.error` only. *To close:* create the Sentry project
    and set the DSN in Vercel for staging and production (operations.md, Error reporting).
 
-10. **The screen-reader pass is still a person's to do.** The automated half is done: axe runs
+11. **The screen-reader pass is still a person's to do.** The automated half is done: axe runs
     against WCAG 2.2 A and AA on every screen, light and dark, as the administrator and the
     manager (`e2e/accessibility.spec.ts`); its first run's 79 findings were fixed on 30 October
     2026 (contrast kept at AA for any factory's colours, radio groups for choices that are not
     tabs, the sidebar mark's name, one `h1` per screen). Nobody has yet driven NVDA or
     VoiceOver over it: the checklist is [accessibility.md](./accessibility.md) §2.
 
-11. **Reports read live records.** §19.5 asks for a read replica; the reports are single
+12. **Reports read live records.** §19.5 asks for a read replica; the reports are single
     passes over live records, so moving them is a connection string, not a rewrite.
 
 ---
@@ -844,9 +852,8 @@ Numbering follows `status.md` §21 in the mobile repo.
 
 ## What I would build next
 
-1. **Finish #45 on the backend**, in the order in [BACKEND-TODO.md](./BACKEND-TODO.md):
-   leaf and months next (opening balances shipped in `5b58f81`). Remove each line
-   from `serverReady.ts` as it ships.
-2. **The push sender** (gap 4): every notification setting in the console is a control
+1. **The one-time launch** (gap 1): accounts and a domain, the production API, the store
+   builds. #45 is complete, so this is what stands between the product and a real factory.
+2. **The push sender** (gap 5): every notification setting in the console is a control
    over nothing until it exists.
-3. **The factory-system sync** (gap 1), when a factory with a reachable system signs up.
+3. **The factory-system sync** (gap 2), when a factory with a reachable system signs up.
