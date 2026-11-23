@@ -324,6 +324,21 @@ notification permission is asked on that save, and a refusal saves the rest and 
 tab is hidden, for supplier-sent kinds only, never for what was already in the feed when the
 console opened. While on, the activity feed polls every 30 seconds in the background too.
 
+### A bill reads at a glance (24 November 2026)
+
+- Four of the slip's own totals sit above the cards (`bills.atAGlance`): total kilos (days with
+  leaf), gross amount (rate a kg), total deductions (share of the gross, red when BR-107 fails)
+  and payable (payout method), the last on the primary tint. They repeat the cards; nothing
+  leaves the cards, which keep the printed slip's order (AC-03).
+- A subtotal (gross, deductions total, final balance) sits on a band of its own, the final
+  balance on the primary tint. A zero line is still printed, in secondary text, so the lines
+  that took money stand out.
+- The card descriptions (deductions, balance, savings) are behind an "i" by the title. Balance
+  and carried-forward share the column beside the nine lines; savings reads across as three
+  figures. Each day of the supply grid has a bar against the month's heaviest day.
+- A note on a line (other deductions, a correction's reason) goes inside the row's label: a
+  `dl` holds only its rows (axe `definition-list`).
+
 ### The audit log reads as sentences (24 November 2026)
 
 - The record type in words (`auditEntityLabel`, `audit.entity.<type>`, every type in

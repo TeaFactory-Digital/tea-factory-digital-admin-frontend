@@ -3311,6 +3311,12 @@ export const en = {
   'audit.field.changeType': 'Change',
   'audit.origin.automatic': 'Automatic',
   'audit.origin.manual': 'The office',
+  // Bill detail at a glance (24 November 2026).
+  'bills.atAGlance': 'Bill at a glance',
+  'bills.leafDays': 'Leaf on {{count}} days',
+  'bills.perKg': '{{rate}} a kg',
+  'bills.shareOfGross': '{{percent}} of the gross amount',
+  'bills.payable': 'Payable',
 } as const;
 
 export type TranslationKey = keyof typeof en;

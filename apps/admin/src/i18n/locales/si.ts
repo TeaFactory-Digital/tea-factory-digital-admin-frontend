@@ -3305,4 +3305,10 @@ export const si: Record<TranslationKey, string> = {
   'audit.field.changeType': 'වෙනස',
   'audit.origin.automatic': 'ස්වයංක්‍රීය',
   'audit.origin.manual': 'කාර්යාලය',
+  // Bill detail at a glance (24 November 2026).
+  'bills.atAGlance': 'බිල්පත එක බැල්මෙන්',
+  'bills.leafDays': 'දළු දින {{count}}',
+  'bills.perKg': 'කිලෝවකට {{rate}}',
+  'bills.shareOfGross': 'දළ මුදලින් {{percent}}',
+  'bills.payable': 'ගෙවිය යුතු',
 } as const;

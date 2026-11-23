@@ -3366,4 +3366,10 @@ export const ta: Record<TranslationKey, string> = {
   'audit.field.changeType': 'மாற்றம்',
   'audit.origin.automatic': 'தானியங்கி',
   'audit.origin.manual': 'அலுவலகம்',
+  // Bill detail at a glance (24 November 2026).
+  'bills.atAGlance': 'பில் ஒரே பார்வையில்',
+  'bills.leafDays': '{{count}} நாட்கள் கொழுந்து',
+  'bills.perKg': 'கிலோவுக்கு {{rate}}',
+  'bills.shareOfGross': 'மொத்தத் தொகையில் {{percent}}',
+  'bills.payable': 'செலுத்த வேண்டியது',
 } as const;

@@ -2,8 +2,8 @@
  * One Green Leaf Account, laid out as the printed slip.
  *
  * **AC-03 is the whole specification of this screen**: the console, the printed slip
- * and the app's Home screen must be the same figures, field for field. So it does not
- * summarise, re-order or omit; it renders `GreenLeafBill` in the order the paper
+ * and the app's Home screen must be the same figures, field for field. So the cards do
+ * not summarise, re-order or omit; they render `GreenLeafBill` in the order the paper
  * reads, because the office checks this screen *against* the paper and a rearranged
  * layout makes that comparison line-by-line impossible.
  *
@@ -11,12 +11,17 @@
  *
  *  - **Every deduction line is shown, including the zeros.** A slip with a blank
  *    where "Stamps" should be is a slip the supplier queries. The nine lines are the
- *    document's shape (§18.1), not a list of non-empty values.
+ *    document's shape (§18.1), not a list of non-empty values. A zero is drawn quieter
+ *    (24 November 2026), so the lines that took money stand out, but it is still there.
  *  - **The total is verified, not trusted** (BR-107). If the lines disagree with the
  *    stated total, that is said loudly here: this is the last screen before the
  *    figure becomes something a supplier is holding.
  *  - **`null` is a dash (`-`).** A month with no auction result has no gross amount, and
  *    `LKR 0.00` would be a number the office has to explain (BR-102).
+ *
+ * The strip above the cards (24 November 2026) repeats four of the slip's own totals so
+ * the account reads at a glance; it adds nothing the cards do not carry and takes nothing
+ * out of them.
  *
  * There is no edit control and there will not be one: a wrong bill is a wrong
  * delivery or a wrong rate, and the fix is upstream in M3 or M4 followed by a
@@ -24,7 +29,7 @@
  * unanswered. See the notice at the foot of the page.
  */
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Lock, TriangleAlert } from 'lucide-react';
@@ -32,8 +37,18 @@ import { DEDUCTION_CATEGORIES, collectionPointDays, fullMonthDays, type AdminBil
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader, DetailRow } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { InfoTip } from '@/components/ui/Tooltip';
 import { ErrorState, Spinner } from '@/components/ui/states';
-import { formatAmount, formatDateTime, formatKg, formatMoney, formatMonthKey, formatSignedAmount } from '@/lib/format';
+import { cn } from '@/lib/cn';
+import {
+  formatAmount,
+  formatDateTime,
+  formatKg,
+  formatMoney,
+  formatMonthKey,
+  formatPercent,
+  formatSignedAmount,
+} from '@/lib/format';
 import { billIsBalanced } from '@/services/repositories/billRepository';
 import { useBill } from './hooks';
 import { useCan } from '@/auth/authStore';
@@ -69,6 +84,9 @@ export function BillDetailScreen() {
     canWriteBills &&
     data.publishedAt === null &&
     data.source !== 'imported';
+  const leafDays = data.dailySupply.filter((day) => day.kgs !== null).length;
+  const deductionShare =
+    data.grossAmount && data.grossAmount > 0 ? data.deductions.total / data.grossAmount : null;
 
   return (
     <>
@@ -85,8 +103,7 @@ export function BillDetailScreen() {
         title={t('bills.detailTitle', { code: data.supplierCode })}
         description={t('bills.detailSubtitle', { name: data.supplierName, month: data.month })}
         actions={
-          <div className="flex flex-wrap items-center gap-md">
-            <Figure label={t('bills.column.payable')} value={formatMoney(data.finalBalance)} strong />
+          <div className="flex flex-wrap items-center gap-xs">
             {data.source === 'imported' ? (
               <Badge tone="neutral">{t('records.bills.imported')}</Badge>
             ) : null}
@@ -127,6 +144,40 @@ export function BillDetailScreen() {
           {t('bills.unbalancedWarning')}
         </p>
       ) : null}
+
+      {/* ── At a glance: the slip's own totals, in the order they are reached ── */}
+      <dl aria-label={t('bills.atAGlance')} className="grid shrink-0 grid-cols-2 gap-md lg:grid-cols-4">
+        <GlanceTile
+          label={t('bills.totalKgs')}
+          value={formatKg(data.totalKgs)}
+          note={t('bills.leafDays', { count: leafDays })}
+        />
+        <GlanceTile
+          label={t('bills.grossAmount')}
+          value={formatMoney(data.grossAmount)}
+          note={
+            data.auctionResultAvailable
+              ? t('bills.perKg', { rate: formatMoney(data.totalRatePerKg) })
+              : t('bills.noAuctionResult')
+          }
+        />
+        <GlanceTile
+          label={t('bills.deductionsTotal')}
+          value={formatMoney(data.deductions.total)}
+          note={
+            deductionShare === null
+              ? undefined
+              : t('bills.shareOfGross', { percent: formatPercent(deductionShare) })
+          }
+          tone={balanced ? undefined : 'error'}
+        />
+        <GlanceTile
+          label={t('bills.payable')}
+          value={formatMoney(data.finalBalance)}
+          note={t(`suppliers.payment.${data.paymentMethod}`)}
+          tone="primary"
+        />
+      </dl>
 
       <div className="grid gap-lg lg:grid-cols-2">
         {/* ── Who and what ──────────────────────────────────────────────── */}
@@ -176,34 +227,30 @@ export function BillDetailScreen() {
                 value={formatMoney(data.totalRatePerKg)}
                 numeric
               />
-              <div className="mt-xs border-t border-divider pt-xs">
-                <dl>
-                  <DetailRow
-                    label={t('bills.greenLeafAmount')}
-                    value={formatMoney(data.greenLeafAmount)}
-                    numeric
-                  />
-                  <DetailRow
-                    label={t('bills.extraPayment')}
-                    value={formatMoney(data.extraPayment)}
-                    numeric
-                  />
-                  <DetailRow
-                    label={<span className="font-semibold">{t('bills.grossAmount')}</span>}
-                    value={
-                      <span className="font-semibold">{formatMoney(data.grossAmount)}</span>
-                    }
-                    numeric
-                  />
-                </dl>
-              </div>
+            </dl>
+            {/* A second list rather than a wrapper inside the first: a `dl` holds only
+                its rows. */}
+            <dl className="mt-xs border-t border-divider pt-xs">
+              <DetailRow
+                label={t('bills.greenLeafAmount')}
+                value={formatMoney(data.greenLeafAmount)}
+                numeric
+              />
+              <DetailRow
+                label={t('bills.extraPayment')}
+                value={formatMoney(data.extraPayment)}
+                numeric
+              />
+              <TotalRow label={t('bills.grossAmount')} value={formatMoney(data.grossAmount)} />
             </dl>
           </CardBody>
         </Card>
 
         {/* ── The nine lines ─────────────────────────────────────────────── */}
         <Card>
-          <CardHeader title={t('bills.deductions')} description={t('bills.deductionsPolicy')} />
+          <CardHeader
+            title={<TitleWithTip title={t('bills.deductions')} tip={t('bills.deductionsPolicy')} />}
+          />
           <CardBody>
             <dl>
               {/* Iterated from the shared constant, in slip order, zeros included:
@@ -211,9 +258,11 @@ export function BillDetailScreen() {
                   values, and a missing row is a row the supplier asks about. */}
               {DEDUCTION_CATEGORIES.map((category) =>
                 category === 'otherCards' ? (
-                  <div key={category}>
-                    <DetailRow
-                      label={
+                  <DetailRow
+                    key={category}
+                    label={
+                      // The note goes under the name, inside the row: a `dl` holds only rows.
+                      <span className="flex flex-col">
                         <span className="flex items-center gap-xs">
                           {t(`bills.deduction.${category}`)}
                           {/* The one typed line, and only on a bill this console calculated
@@ -228,14 +277,14 @@ export function BillDetailScreen() {
                             </button>
                           ) : null}
                         </span>
-                      }
-                      value={formatAmount(data.deductions[category])}
-                      numeric
-                    />
-                    {data.otherCardsNote ? (
-                      <p className="pb-xs text-caption text-text-secondary">{data.otherCardsNote}</p>
-                    ) : null}
-                  </div>
+                        {data.otherCardsNote ? (
+                          <span className="text-caption">{data.otherCardsNote}</span>
+                        ) : null}
+                      </span>
+                    }
+                    value={<Amount value={data.deductions[category]} />}
+                    numeric
+                  />
                 ) : (
                   <DetailRow
                     key={category}
@@ -245,172 +294,160 @@ export function BillDetailScreen() {
                         ? t('bills.deduction.loanInstalment', { n: data.loanInstalmentNo })
                         : t(`bills.deduction.${category}`)
                     }
-                    value={formatAmount(data.deductions[category])}
+                    value={<Amount value={data.deductions[category]} />}
                     numeric
                   />
                 ),
               )}
-              <div className="mt-xs border-t border-divider pt-xs">
-                <DetailRow
-                  label={<span className="font-semibold">{t('bills.deductionsTotal')}</span>}
-                  value={
-                    <span className={balanced ? 'font-semibold' : 'font-semibold text-error'}>
-                      {formatMoney(data.deductions.total)}
-                    </span>
-                  }
-                  numeric
-                />
-              </div>
+              <TotalRow
+                label={t('bills.deductionsTotal')}
+                value={formatMoney(data.deductions.total)}
+                tone={balanced ? undefined : 'error'}
+              />
             </dl>
           </CardBody>
         </Card>
 
-        {/* ── What is actually paid ──────────────────────────────────────── */}
-        <Card>
-          <CardHeader title={t('bills.balance')} description={t('bills.balanceDescription')} />
-          <CardBody>
-            <dl>
-              <DetailRow
-                label={t('bills.balanceAmount')}
-                value={formatMoney(data.balanceAmount)}
-                numeric
-              />
-              <DetailRow
-                label={t('bills.coinsBroughtForward')}
-                value={formatAmount(data.coinsBroughtForward)}
-                numeric
-              />
-              {/**
-               * Savings taken back (§21.9), shown **only when there is one**.
-               *
-               * The one row on this slip that is conditional, and deliberately so: a zero
-               * here every month would read as "your savings were touched and came to
-               * nothing", which is the opposite of what happened. The nine deduction lines
-               * above print their zeros because their absence would look like an omission
-               * from a document the supplier checks line by line; this is not one of them.
-               */}
-              {data.savingsWithdrawal > 0 ? (
+        {/* Balance and what carries over share the column beside the nine lines, so
+            neither card stretches to the deductions' height with nothing in it. */}
+        <div className="flex flex-col gap-lg">
+          {/* ── What is actually paid ──────────────────────────────────────── */}
+          <Card>
+            <CardHeader
+              title={<TitleWithTip title={t('bills.balance')} tip={t('bills.balanceDescription')} />}
+            />
+            <CardBody>
+              <dl>
                 <DetailRow
-                  label={t('bills.savingsWithdrawal')}
-                  value={formatAmount(data.savingsWithdrawal)}
+                  label={t('bills.balanceAmount')}
+                  value={formatMoney(data.balanceAmount)}
                   numeric
                 />
-              ) : null}
-              {/* C5: an earlier month paid too little (+) or too much (-), with the reason. */}
-              {(data.corrections ?? []).map((line, index) => (
-                <div key={`${line.correctsMonthKey}-${index}`}>
+                <DetailRow
+                  label={t('bills.coinsBroughtForward')}
+                  value={<Amount value={data.coinsBroughtForward} />}
+                  numeric
+                />
+                {/**
+                 * Savings taken back (§21.9), shown **only when there is one**.
+                 *
+                 * The one row on this slip that is conditional, and deliberately so: a zero
+                 * here every month would read as "your savings were touched and came to
+                 * nothing", which is the opposite of what happened. The nine deduction lines
+                 * above print their zeros because their absence would look like an omission
+                 * from a document the supplier checks line by line; this is not one of them.
+                 */}
+                {data.savingsWithdrawal > 0 ? (
                   <DetailRow
-                    label={t('bills.correction', { month: formatMonthKey(line.correctsMonthKey) })}
+                    label={t('bills.savingsWithdrawal')}
+                    value={formatAmount(data.savingsWithdrawal)}
+                    numeric
+                  />
+                ) : null}
+                {/* C5: an earlier month paid too little (+) or too much (-), with the reason. */}
+                {(data.corrections ?? []).map((line, index) => (
+                  <DetailRow
+                    key={`${line.correctsMonthKey}-${index}`}
+                    label={
+                      <span className="flex flex-col">
+                        {t('bills.correction', { month: formatMonthKey(line.correctsMonthKey) })}
+                        <span className="text-caption">{line.reason}</span>
+                      </span>
+                    }
                     value={formatSignedAmount(line.amount)}
                     numeric
                   />
-                  <p className="pb-xs text-caption text-text-secondary">{line.reason}</p>
-                </div>
-              ))}
-              <DetailRow
-                label={t('bills.coinsCarriedForward')}
-                value={formatAmount(data.coinsCarriedForward)}
-                numeric
-              />
-              <div className="mt-xs border-t border-divider pt-xs">
+                ))}
                 <DetailRow
-                  label={<span className="font-semibold">{t('bills.finalBalance')}</span>}
-                  value={
-                    <span className="text-subtitle font-semibold">
-                      {formatMoney(data.finalBalance)}
-                    </span>
-                  }
+                  label={t('bills.coinsCarriedForward')}
+                  value={<Amount value={data.coinsCarriedForward} />}
                   numeric
                 />
-              </div>
-            </dl>
+                <TotalRow
+                  label={t('bills.finalBalance')}
+                  value={formatMoney(data.finalBalance)}
+                  tone="primary"
+                />
+              </dl>
 
-            {/* An account that owes more than it earned pays nothing, and the reader
-                needs to be told that rather than left to infer it from a zero. */}
-            {data.carryForward.nextMonthDeb > 0 ? (
-              <p className="mt-sm rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
-                {t('bills.carriesDebtNotice', {
-                  amount: formatMoney(data.carryForward.nextMonthDeb),
-                })}
-              </p>
-            ) : null}
+              {/* An account that owes more than it earned pays nothing, and the reader
+                  needs to be told that rather than left to infer it from a zero. */}
+              {data.carryForward.nextMonthDeb > 0 ? (
+                <p className="mt-sm rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
+                  {t('bills.carriesDebtNotice', {
+                    amount: formatMoney(data.carryForward.nextMonthDeb),
+                  })}
+                </p>
+              ) : null}
 
-            {(data.finalBalance ?? 0) > 0 && !data.hasBankDetails ? (
-              <p className="mt-sm rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
-                {t('bills.noBankNotice')}
-              </p>
-            ) : null}
-          </CardBody>
-        </Card>
+              {(data.finalBalance ?? 0) > 0 && !data.hasBankDetails ? (
+                <p className="mt-sm rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
+                  {t('bills.noBankNotice')}
+                </p>
+              ) : null}
+            </CardBody>
+          </Card>
 
-        {/* ── Carried into next month ────────────────────────────────────── */}
-        <Card>
-          <CardHeader title={t('bills.carryForward')} />
-          <CardBody>
-            <dl>
-              <DetailRow
-                label={t('bills.nextMonthDeb')}
-                value={formatAmount(data.carryForward.nextMonthDeb)}
-                numeric
-              />
-              {/* The slip's "Loan Balance": the loan still owed. An advance is settled
-                  within its month, so it never carries. */}
-              <DetailRow
-                label={t('bills.loanBalance')}
-                value={formatAmount(data.carryForward.loanBalance)}
-                numeric
-              />
-              <DetailRow
-                label={t('bills.manureBalance')}
-                value={formatAmount(data.carryForward.manureBalance)}
-                numeric
-              />
-              <DetailRow
-                label={t('bills.loanInterest')}
-                value={formatAmount(data.carryForward.loanInterest)}
-                numeric
-              />
-            </dl>
-          </CardBody>
-        </Card>
-
-        {/* ── Savings ────────────────────────────────────────────────────── */}
-        <Card>
-          <CardHeader
-            title={t('suppliers.detail.savings')}
-            description={t('bills.savingsDescription')}
-            actions={
-              <Link
-                to={`/savings?supplier=${data.supplierId}`}
-                className="text-label text-primary underline-offset-2 hover:underline"
-              >
-                {t('bills.openPassbook')}
-              </Link>
-            }
-          />
-          <CardBody>
-            <dl>
-              <DetailRow
-                label={t('bills.savingsThisMonth')}
-                value={formatAmount(data.savingsSummary.thisMonth)}
-                numeric
-              />
-              <DetailRow
-                label={t('bills.savingsPrevious')}
-                value={formatAmount(data.savingsSummary.previous)}
-                numeric
-              />
-              <DetailRow
-                label={<span className="font-semibold">{t('bills.savingsToDate')}</span>}
-                value={
-                  <span className="font-semibold">{formatMoney(data.savingsSummary.toDate)}</span>
-                }
-                numeric
-              />
-            </dl>
-          </CardBody>
-        </Card>
+          {/* ── Carried into next month ────────────────────────────────────── */}
+          <Card className="flex-1">
+            <CardHeader title={t('bills.carryForward')} />
+            <CardBody>
+              <dl>
+                <DetailRow
+                  label={t('bills.nextMonthDeb')}
+                  value={<Amount value={data.carryForward.nextMonthDeb} />}
+                  numeric
+                />
+                {/* The slip's "Loan Balance": the loan still owed. An advance is settled
+                    within its month, so it never carries. */}
+                <DetailRow
+                  label={t('bills.loanBalance')}
+                  value={<Amount value={data.carryForward.loanBalance} />}
+                  numeric
+                />
+                <DetailRow
+                  label={t('bills.manureBalance')}
+                  value={<Amount value={data.carryForward.manureBalance} />}
+                  numeric
+                />
+                <DetailRow
+                  label={t('bills.loanInterest')}
+                  value={<Amount value={data.carryForward.loanInterest} />}
+                  numeric
+                />
+              </dl>
+            </CardBody>
+          </Card>
+        </div>
       </div>
+
+      {/* ── Savings: three figures, read across ─────────────────────────────── */}
+      <Card>
+        <CardHeader
+          title={
+            <TitleWithTip title={t('suppliers.detail.savings')} tip={t('bills.savingsDescription')} />
+          }
+          actions={
+            <Link
+              to={`/savings?supplier=${data.supplierId}`}
+              className="text-label text-primary underline-offset-2 hover:underline"
+            >
+              {t('bills.openPassbook')}
+            </Link>
+          }
+        />
+        <CardBody>
+          <dl className="grid gap-md sm:grid-cols-3">
+            <SavingsFigure label={t('bills.savingsThisMonth')} value={formatAmount(data.savingsSummary.thisMonth)} />
+            <SavingsFigure label={t('bills.savingsPrevious')} value={formatAmount(data.savingsSummary.previous)} />
+            <SavingsFigure
+              label={t('bills.savingsToDate')}
+              value={formatMoney(data.savingsSummary.toDate)}
+              strong
+            />
+          </dl>
+        </CardBody>
+      </Card>
 
       <DailySupplyCard bill={data} />
 
@@ -433,18 +470,97 @@ export function BillDetailScreen() {
   );
 }
 
-function Figure({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+/** One of the four totals in the strip above the cards. */
+function GlanceTile({
+  label,
+  value,
+  note,
+  tone,
+}: {
+  label: string;
+  value: string;
+  note?: string;
+  tone?: 'primary' | 'error';
+}) {
   return (
-    <div className="flex flex-col">
-      <span className="text-caption text-text-secondary">{label}</span>
-      <span
-        className={
-          strong ? 'numeric text-h3 text-text-primary' : 'numeric text-subtitle text-text-primary'
-        }
+    <div
+      className={cn(
+        'flex min-w-0 flex-col gap-xxs rounded-lg border p-lg shadow-card',
+        tone === 'primary' ? 'border-primary bg-primary-muted' : 'border-border bg-surface',
+      )}
+    >
+      <dt className="text-caption font-medium text-text-secondary">{label}</dt>
+      <dd
+        className={cn(
+          'numeric text-h3 font-semibold tracking-tight',
+          tone === 'error' ? 'text-error' : 'text-text-primary',
+        )}
       >
         {value}
-      </span>
+      </dd>
+      {note ? <dd className="text-caption text-text-secondary">{note}</dd> : null}
     </div>
+  );
+}
+
+/**
+ * A slip line's amount. A zero is still printed (the line is the document's shape), only
+ * quieter, so the lines that moved money are the ones the eye lands on.
+ */
+function Amount({ value }: { value: number | null }) {
+  return (
+    <span className={value === 0 ? 'text-text-secondary' : 'font-medium'}>{formatAmount(value)}</span>
+  );
+}
+
+/** A card's subtotal, on a band of its own so it is never read as one more line. */
+function TotalRow({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: 'primary' | 'error';
+}) {
+  return (
+    <div
+      className={cn(
+        'mt-sm flex flex-wrap items-baseline justify-between gap-sm rounded-md px-sm py-xs',
+        tone === 'primary' ? 'bg-primary-muted' : 'bg-surface-variant',
+      )}
+    >
+      <dt className="text-body-small font-semibold text-text-primary">{label}</dt>
+      <dd
+        className={cn(
+          'numeric font-semibold',
+          tone === 'primary' ? 'text-subtitle text-text-primary' : 'text-body-small',
+          tone === 'error' ? 'text-error' : 'text-text-primary',
+        )}
+      >
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+function SavingsFigure({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className={cn('flex flex-col gap-xxs rounded-md px-md py-sm', strong ? 'bg-primary-muted' : 'bg-surface-variant')}>
+      <dt className="text-caption text-text-secondary">{label}</dt>
+      <dd className="numeric text-subtitle font-semibold text-text-primary">{value}</dd>
+    </div>
+  );
+}
+
+/** A card title with its explanation behind an "i" (24 November 2026). */
+function TitleWithTip({ title, tip }: { title: string; tip: ReactNode }) {
+  const { t } = useTranslation();
+  return (
+    <span className="inline-flex items-center gap-xxs">
+      {title}
+      <InfoTip label={`${t('tip.moreInfo')}: ${title}`}>{tip}</InfoTip>
+    </span>
   );
 }
 
@@ -453,12 +569,14 @@ function Figure({ label, value, strong }: { label: string; value: string; strong
  *
  * Kept as a grid rather than a list of the days with leaf on them, because the office
  * reads it as a calendar: "did they come in on the 14th" is answered by looking at the
- * 14th, and a compacted list makes that a search.
+ * 14th, and a compacted list makes that a search. A bar under each figure (24 November
+ * 2026) shows the day against the month's heaviest, so a thin week shows without reading.
  */
 function DailySupplyCard({ bill }: { bill: AdminBill }) {
   const { t } = useTranslation();
   const days = bill.dailySupply.filter((day) => day.kgs !== null).length;
   const points = collectionPointDays(bill.dailySupply);
+  const heaviest = Math.max(0, ...bill.dailySupply.map((day) => day.kgs ?? 0));
 
   return (
     <Card>
@@ -477,17 +595,30 @@ function DailySupplyCard({ bill }: { bill: AdminBill }) {
               key={day.day}
               // The point(s) the day's leaf went in at, on hover (Q13).
               title={day.points?.length ? day.points.join(', ') : undefined}
-              className={
+              className={cn(
+                'flex flex-col gap-xxs rounded-md border px-sm py-xs text-caption',
                 day.kgs === null
-                  ? 'flex flex-col rounded-sm bg-surface-variant px-xs py-xxs text-caption text-text-secondary'
-                  : 'flex flex-col rounded-sm bg-primary-muted px-xs py-xxs text-caption text-text-primary'
-              }
+                  ? 'border-transparent bg-surface-variant text-text-secondary'
+                  : 'border-primary/30 bg-primary-muted text-text-primary',
+              )}
             >
               <span className="numeric text-text-secondary">{day.day}</span>
               {/* A day with no leaf shows a dash (`-`), not `0.00`: the supplier did
                   not come in, which is not the same as bringing nothing. */}
-              <span className="numeric font-medium">
+              <span className="numeric text-body-small font-semibold">
                 {day.kgs === null ? '-' : formatAmount(day.kgs)}
+              </span>
+              {/* Always the same height, so a day with no leaf keeps its row in line. */}
+              <span
+                aria-hidden
+                className={cn('h-1 overflow-clip rounded-full', day.kgs === null ? '' : 'bg-surface')}
+              >
+                {day.kgs !== null && heaviest > 0 ? (
+                  <span
+                    className="block h-full rounded-full bg-primary"
+                    style={{ width: `${Math.max(6, (day.kgs / heaviest) * 100)}%` }}
+                  />
+                ) : null}
               </span>
             </li>
           ))}
