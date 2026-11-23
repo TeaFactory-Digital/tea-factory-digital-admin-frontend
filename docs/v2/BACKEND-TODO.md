@@ -1,6 +1,6 @@
 # Backend to-do
 
-Only the work still open (22 November 2026). Finished work is taken out; git history keeps it.
+Only the work still open (24 November 2026). Finished work is taken out; git history keeps it.
 The rules for every item are in [`factory-records.md`](./factory-records.md) (the console)
 and `packages/domain` (please `vendor:pull` after each console change).
 
@@ -13,9 +13,8 @@ console's mock carries the number on the same way. Staging is migrated through
 
 | # | What | Priority |
 |---|------|----------|
-| Deploy | The manual deploy of 29824a0 (with fb687f7) to staging | **Next** (your side) |
-| vendor:pull | `NOTE_SUGGESTION_KEYS` has 17 new keys (reason chips under every reason box, 22 November; `inquiries.escalate` and `inquiries.close` added 24 November): your `PATCH /admin/config` validates against the vendored list, so a pull is all it needs | With the deploy |
-| Push data | `requestDecided`: put `facility` (`advance`, `loan`, `manure`, `teaPackets`) and `requestId` in the push `data`. The app opens that screen with the request first and marked (24 November); today `fireTrigger` passes only `supplierId` and `decision`, so a tap opens the notifications list. `decidedAt` on the app request types is already sent by `app-wire.ts`; the domain now types it (a `vendor:pull` brings the type, no behaviour) | With the push sender |
+| Deploy | Staging is being deployed at 8a665d4: 29824a0 and fb687f7, plus the `vendor:pull` of d383ee0 (all 17 note-chip lists, `decidedAt` on the app request types); no new migration. Tell us when it is live, for the calculated-bill end-to-end | **In progress** (your side) |
+| Push data | `requestDecided`: put `facility` (`advance`, `loan`, `manure`, `teaPackets`) and `requestId` in the push `data`. The app opens that screen with the request first and marked (24 November); today `fireTrigger` passes only `supplierId` and `decision`, so a tap opens the notifications list (checked at 8a665d4: credit, tea-packet and change requests still pass only those two) | With the push sender |
 | 65 | A production environment | **On hold** (your note, 12 November): until there are real clients; staging is the only environment |
 | 66 | Universal-link files on each factory's domain: waits for the Play signing SHA-256 and the host | Before the first store release |
 | - | Later: factory sync (Phase 10), the push sender, the five-year job (#59), a reporting replica | Later |
