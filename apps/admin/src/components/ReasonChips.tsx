@@ -39,10 +39,13 @@ export function ReasonChips({
   list,
   value,
   onChange,
+  compact = false,
 }: {
   list: ReasonList;
   value: string;
   onChange: (next: string) => void;
+  /** Pills instead of the grid (see `SuggestionGrid`). */
+  compact?: boolean;
 }) {
   const { t } = useTranslation();
   const builtIn: NoteSuggestion[] = REASON_CHIPS[list].map((slug) => ({
@@ -50,5 +53,5 @@ export function ReasonChips({
     text: t(`reasonChip.${list}.${slug}.text`),
   }));
   const suggestions = useNoteSuggestions(list, builtIn);
-  return <SuggestionGrid value={value} onChange={onChange} suggestions={suggestions} label={t('common.noteSuggestions')} />;
+  return <SuggestionGrid value={value} onChange={onChange} suggestions={suggestions} label={t('common.noteSuggestions')} compact={compact} />;
 }

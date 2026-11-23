@@ -71,8 +71,6 @@ function ReplyComposer({ inquiry }: { inquiry: AdminInquiry }) {
   const { t } = useTranslation();
   const toast = useToast();
   const [text, setText] = useState('');
-  const [closing, setClosing] = useState(false);
-  const [escalating, setEscalating] = useState(false);
   // The reply asks the supplier something: wait for their answer instead of resolving.
   const [awaitSupplier, setAwaitSupplier] = useState(false);
   const answer = useAnswerInquiry(inquiry.id);
@@ -126,6 +124,8 @@ function ReplyComposer({ inquiry }: { inquiry: AdminInquiry }) {
         suggestions={suggestions}
         suggestionsLabel={t('common.noteSuggestions')}
         autoFocus={false}
+        rows={3}
+        compactSuggestions
       />
 
       {blocking ? (
@@ -137,31 +137,14 @@ function ReplyComposer({ inquiry }: { inquiry: AdminInquiry }) {
         </Notice>
       ) : null}
 
-      <Label className="flex items-center gap-xs text-body-small text-text-primary">
-        <Checkbox checked={awaitSupplier} onCheckedChange={(checked) => setAwaitSupplier(checked === true)} />
-        {t('inquiries.awaitSupplierLabel')}
-      </Label>
-
+      {/* One bar: what the reply does on the left, sending it on the right. Closing and
+          passing it up are in the conversation's header, away from the send button. */}
       <div className="flex flex-wrap items-center justify-between gap-sm">
-        <div className="flex flex-wrap items-center gap-xs">
-          <Button
-            variant="ghost"
-            iconLeft={<X className="size-icon-sm" aria-hidden />}
-            onClick={() => setClosing(true)}
-          >
-            {t('inquiries.close')}
-          </Button>
-          {inquiry.status !== 'escalated' && inquiry.status !== 'resolved' ? (
-            <Button
-              variant="ghost"
-              iconLeft={<ArrowUpCircle className="size-icon-sm" aria-hidden />}
-              onClick={() => setEscalating(true)}
-            >
-              {t('inquiries.escalate')}
-            </Button>
-          ) : null}
-        </div>
-        <div className="flex items-center gap-md">
+        <Label className="flex items-center gap-xs text-body-small text-text-primary">
+          <Checkbox checked={awaitSupplier} onCheckedChange={(checked) => setAwaitSupplier(checked === true)} />
+          {t('inquiries.awaitSupplierLabel')}
+        </Label>
+        <div className="ml-auto flex items-center gap-md">
           <span
             aria-live="polite"
             className={cn('text-caption', tooShort ? 'text-text-secondary' : 'text-success')}
@@ -181,10 +164,44 @@ function ReplyComposer({ inquiry }: { inquiry: AdminInquiry }) {
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
 
+/**
+ * Closing it unanswered and passing it to the manager (24 November 2026): in the
+ * conversation's header, small and apart from the send button, because both end or hand
+ * over the conversation rather than answer it.
+ */
+export function InquiryDecisions({ inquiry }: { inquiry: AdminInquiry }) {
+  const { t } = useTranslation();
+  const canAnswer = useCan('inquiries', 'approve');
+  const [closing, setClosing] = useState(false);
+  const [escalating, setEscalating] = useState(false);
+  if (!canAnswer || !isAnswerable(inquiry)) return null;
+  return (
+    <>
+      {inquiry.status !== 'escalated' && inquiry.status !== 'resolved' ? (
+        <Button
+          size="sm"
+          variant="secondary"
+          iconLeft={<ArrowUpCircle className="size-icon-sm" aria-hidden />}
+          onClick={() => setEscalating(true)}
+        >
+          {t('inquiries.escalate')}
+        </Button>
+      ) : null}
+      <Button
+        size="sm"
+        variant="ghost"
+        iconLeft={<X className="size-icon-sm" aria-hidden />}
+        onClick={() => setClosing(true)}
+      >
+        {t('inquiries.close')}
+      </Button>
       {closing ? <CloseDialog inquiry={inquiry} onClose={() => setClosing(false)} /> : null}
       {escalating ? <EscalateDialog inquiry={inquiry} onClose={() => setEscalating(false)} /> : null}
-    </div>
+    </>
   );
 }
 

@@ -324,6 +324,20 @@ notification permission is asked on that save, and a refusal saves the rest and 
 tab is hidden, for supplier-sent kinds only, never for what was already in the feed when the
 console opened. While on, the activity feed polls every 30 seconds in the background too.
 
+### An inquiry reads as a conversation, not a form (24 November 2026)
+
+- The facts row above the messages is gone: who and how it came are in the page header
+  (`PageHeader` `description` now takes inline parts), how long it has waited sits by the
+  status badge (red past the SLA), and when it came is in the supplier card.
+- **Pass to the manager** and **Close unanswered** are in the conversation card's header
+  (`InquiryDecisions`), away from **Send reply**; the reply bar holds only the "wait for their
+  answer" tick, the count and the send button.
+- Reply and office-note chips are small pills (`SuggestionGrid` `compact`, `ReasonChips`
+  `compact`); dialogs keep the two-column grid, where the box is the only thing on them.
+- Who has it is a section of the supplier card (`InquiryAssignment`), not a card of its own.
+- The thread keeps at least a quarter of the window (`lg:min-h-[25vh]`), so the message is
+  never squeezed out by the reply box on a 768 px tall laptop.
+
 ### A bill reads at a glance (24 November 2026)
 
 - Four of the slip's own totals sit above the cards (`bills.atAGlance`): total kilos (days with

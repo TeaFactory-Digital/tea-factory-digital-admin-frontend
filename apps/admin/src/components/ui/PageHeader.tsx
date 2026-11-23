@@ -13,7 +13,8 @@ export function PageHeader({
   breadcrumb,
 }: {
   title: string;
-  description?: string;
+  /** Text, or a line of inline parts (an icon beside a word); it sits in a `p`. */
+  description?: ReactNode;
   actions?: ReactNode;
   breadcrumb?: ReactNode;
 }) {

@@ -40,8 +40,8 @@ import { SPLIT_PANE_BOTH, SPLIT_PANE_SCROLLER } from '@/components/ui/layout';
 import { cn } from '@/lib/cn';
 import { formatAge, formatDate, formatDateTime } from '@/lib/format';
 import { isAnswerable } from './answerable';
-import { InquiryActions } from './ReplyDialog';
-import { InquiryAssignmentCard, InquiryNotesCard } from './InquiryOfficeCards';
+import { InquiryActions, InquiryDecisions } from './ReplyDialog';
+import { InquiryAssignment, InquiryNotesCard } from './InquiryOfficeCards';
 import { useNotificationTriggers } from '@/modules/notifications/hooks';
 import { useInquiry, useInquiryAudit } from './hooks';
 
@@ -94,23 +94,57 @@ export function InquiryDetailScreen() {
   const late = inquiryCountsTowardsSla(inquiry.status) && inquiry.ageHours > QUEUE_SLA_HOURS.inquiries;
   const fromApp = inquiry.channel === 'app';
 
+  const channel = inquiry.createdByName
+    ? `${t(`changeRequests.channel.${inquiry.channel}`)} · ${inquiry.createdByName}`
+    : t(`changeRequests.channel.${inquiry.channel}`);
+
   return (
     <>
+      {/* Who, how and how long, in the header (24 November 2026): the facts row that sat
+          above the conversation took a band of the card the messages need. */}
       <PageHeader
         title={inquiry.subject}
-        description={t('inquiries.detail.from', {
-          name: inquiry.supplierName,
-          code: inquiry.supplierCode,
-        })}
+        description={
+          <span className="flex flex-wrap items-center gap-x-sm gap-y-xxs">
+            <span>
+              {t('inquiries.detail.from', {
+                name: inquiry.supplierName,
+                code: inquiry.supplierCode,
+              })}
+            </span>
+            <span aria-hidden>·</span>
+            <span className="inline-flex items-center gap-xxs">
+              {fromApp ? (
+                <Smartphone className="size-icon-xs" aria-hidden />
+              ) : (
+                <Building2 className="size-icon-xs" aria-hidden />
+              )}
+              {channel}
+            </span>
+          </span>
+        }
         breadcrumb={
           <Link to="/inquiries" className="hover:text-text-primary">
             {t('inquiries.title')}
           </Link>
         }
         actions={
-          <Badge tone={STATUS_TONES[inquiry.status]}>
-            {t(`inquiries.status.${inquiry.status}`)}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-sm">
+            {open ? (
+              <span
+                className={cn(
+                  'inline-flex items-center gap-xxs text-caption',
+                  late ? 'font-semibold text-error' : 'text-text-secondary',
+                )}
+              >
+                <Hourglass className="size-icon-xs" aria-hidden />
+                {t('inquiries.detail.waitingLabel')} {formatAge(inquiry.ageHours)}
+              </span>
+            ) : null}
+            <Badge tone={STATUS_TONES[inquiry.status]}>
+              {t(`inquiries.status.${inquiry.status}`)}
+            </Badge>
+          </div>
         }
       />
 
@@ -119,33 +153,11 @@ export function InquiryDetailScreen() {
           columns stack and the page scrolls as usual (see `SPLIT_PANE_BOTH`). */}
       <div className={cn(SPLIT_PANE_BOTH, 'lg:grid-cols-3')}>
         <Card className="flex flex-col lg:col-span-2 lg:min-h-0">
-          <CardHeader title={t('inquiries.detail.conversation')} />
-          <CardBody className="flex flex-col gap-lg lg:min-h-0 lg:flex-1">
-            <dl className="grid shrink-0 gap-md sm:grid-cols-3">
-              <Fact
-                icon={CalendarClock}
-                label={t('inquiries.detail.receivedLabel')}
-                value={formatDateTime(inquiry.createdAt)}
-              />
-              <Fact
-                icon={fromApp ? Smartphone : Building2}
-                label={t('inquiries.detail.channelLabel')}
-                value={
-                  inquiry.createdByName
-                    ? `${t(`changeRequests.channel.${inquiry.channel}`)} · ${inquiry.createdByName}`
-                    : t(`changeRequests.channel.${inquiry.channel}`)
-                }
-              />
-              {open ? (
-                <Fact
-                  icon={Hourglass}
-                  label={t('inquiries.detail.waitingLabel')}
-                  value={formatAge(inquiry.ageHours)}
-                  tone={late ? 'error' : undefined}
-                />
-              ) : null}
-            </dl>
-
+          <CardHeader
+            title={t('inquiries.detail.conversation')}
+            actions={<InquiryDecisions inquiry={inquiry} />}
+          />
+          <CardBody className="flex flex-col gap-md lg:min-h-0 lg:flex-1">
             {/* The conversation as a chat: the supplier on the left, the office (this
                 console's side) on the right, a separator for each day. Scrolls on its own
                 and opens at the latest message, with the reply box right under it. */}
@@ -208,7 +220,7 @@ export function InquiryDetailScreen() {
             />
 
             {answerable ? (
-              <div className="shrink-0 border-t border-divider pt-lg">
+              <div className="shrink-0">
                 <InquiryActions inquiry={inquiry} />
               </div>
             ) : null}
@@ -216,6 +228,7 @@ export function InquiryDetailScreen() {
         </Card>
 
         <div className={cn('flex flex-col gap-lg', SPLIT_PANE_SCROLLER)}>
+          {/* The supplier, the facts and who has it, in one card (24 November 2026). */}
           <Card>
             <CardHeader title={t('changeRequests.column.supplier')} />
             <CardBody className="flex flex-col gap-md">
@@ -235,10 +248,10 @@ export function InquiryDetailScreen() {
                   </span>
                 </span>
               </div>
-              <div className="flex flex-col gap-xs">
+              <div className="flex flex-wrap gap-x-md gap-y-xs">
                 <Link
                   to={`/suppliers/${inquiry.supplierId}`}
-                  className="inline-flex items-center gap-xs self-start text-body-small font-medium text-primary hover:underline"
+                  className="inline-flex items-center gap-xs text-body-small font-medium text-primary hover:underline"
                 >
                   {t('changeRequests.detail.supplierLink')}
                   <ArrowUpRight className="size-icon-sm" aria-hidden />
@@ -247,16 +260,26 @@ export function InquiryDetailScreen() {
                     different problem from three different questions. */}
                 <Link
                   to={`/inquiries?supplierId=${inquiry.supplierId}&status=resolved`}
-                  className="inline-flex items-center gap-xs self-start text-body-small font-medium text-primary hover:underline"
+                  className="inline-flex items-center gap-xs text-body-small font-medium text-primary hover:underline"
                 >
                   <MessageSquare className="size-icon-sm" aria-hidden />
                   {t('inquiries.detail.history')}
                 </Link>
               </div>
+              {/* How it came is in the page header; when it came is here. */}
+              <dl className="flex flex-col gap-xs border-t border-divider pt-md">
+                <Fact
+                  icon={CalendarClock}
+                  label={t('inquiries.detail.receivedLabel')}
+                  value={formatDateTime(inquiry.createdAt)}
+                />
+              </dl>
+              <div className="border-t border-divider pt-md">
+                <InquiryAssignment inquiry={inquiry} />
+              </div>
             </CardBody>
           </Card>
 
-          <InquiryAssignmentCard inquiry={inquiry} />
           <InquiryNotesCard inquiry={inquiry} />
 
           <AuditPanel
@@ -343,7 +366,7 @@ function ChatThread({
     // Below `lg` a fixed height keeps a long thread from pushing the reply box far down
     // the page; above it the card's height is the window's, and the thread takes the rest.
     // `max-lg:` rather than a `lg:max-h-none` override: this theme's `none` sizes to 0.
-    <ol className="relative flex flex-col gap-xs overflow-y-auto rounded-lg bg-surface-variant/50 p-md max-lg:max-h-[60vh] lg:min-h-0 lg:flex-1">
+    <ol className="relative flex flex-col gap-xs overflow-y-auto rounded-lg bg-surface-variant/50 p-md max-lg:max-h-[60vh] lg:min-h-[25vh] lg:flex-1">
       {rows.map((row) =>
         row.type === 'day' ? (
           <li key={row.key} className="my-sm self-center">
@@ -439,37 +462,21 @@ function Bubble({
   );
 }
 
+/** One fact in the supplier card: icon, label and value on one line. */
 function Fact({
   icon: Icon,
   label,
   value,
-  tone,
 }: {
   icon: typeof CalendarClock;
   label: string;
   value: ReactNode;
-  tone?: 'error';
 }) {
   return (
-    <div className="flex items-start gap-sm">
-      <Icon
-        className={cn(
-          'mt-xxs size-icon-sm shrink-0',
-          tone === 'error' ? 'text-error' : 'text-text-secondary',
-        )}
-        aria-hidden
-      />
-      <div className="min-w-0">
-        <dt className="text-caption text-text-secondary">{label}</dt>
-        <dd
-          className={cn(
-            'text-body-small',
-            tone === 'error' ? 'font-semibold text-error' : 'text-text-primary',
-          )}
-        >
-          {value}
-        </dd>
-      </div>
+    <div className="flex items-start gap-sm text-body-small">
+      <Icon className="mt-xxs size-icon-sm shrink-0 text-text-secondary" aria-hidden />
+      <dt className="text-text-secondary">{label}</dt>
+      <dd className="ml-auto text-right text-text-primary">{value}</dd>
     </div>
   );
 }

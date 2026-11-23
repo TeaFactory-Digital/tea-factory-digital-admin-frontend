@@ -21,7 +21,11 @@ import { formatDateTime } from '@/lib/format';
 import { useAddInquiryNote, useAssignInquiry } from './hooks';
 import { ReasonChips } from '@/components/ReasonChips';
 
-export function InquiryAssignmentCard({ inquiry }: { inquiry: AdminInquiry }) {
+/**
+ * Who has it: a section of the supplier card rather than a card of its own (24 November
+ * 2026). One line and one button did not earn a panel.
+ */
+export function InquiryAssignment({ inquiry }: { inquiry: AdminInquiry }) {
   const { t } = useTranslation();
   const toast = useToast();
   const user = useCurrentUser();
@@ -38,9 +42,11 @@ export function InquiryAssignmentCard({ inquiry }: { inquiry: AdminInquiry }) {
     });
 
   return (
-    <Card>
-      <CardHeader title={t('inquiries.assign.title')} />
-      <CardBody className="flex flex-col gap-md">
+    <section aria-labelledby="inquiry-handling" className="flex flex-col gap-sm">
+      <h3 id="inquiry-handling" className="text-caption font-medium text-text-secondary">
+        {t('inquiries.assign.title')}
+      </h3>
+      <div className="flex flex-wrap items-center justify-between gap-sm">
         <p className="flex items-center gap-sm text-body-small text-text-primary">
           <UserCheck className="size-icon-sm text-text-secondary" aria-hidden />
           {inquiry.assignedToName
@@ -72,8 +78,8 @@ export function InquiryAssignmentCard({ inquiry }: { inquiry: AdminInquiry }) {
             </Button>
           )
         ) : null}
-      </CardBody>
-    </Card>
+      </div>
+    </section>
   );
 }
 
@@ -128,7 +134,7 @@ export function InquiryNotesCard({ inquiry }: { inquiry: AdminInquiry }) {
           aria-label={t('inquiries.notes.add')}
           onChange={(event) => setDraft(event.target.value)}
         />
-        <ReasonChips list="inquiries.note" value={draft} onChange={setDraft} />
+        <ReasonChips list="inquiries.note" value={draft} onChange={setDraft} compact />
         <Button
           size="sm"
           variant="secondary"

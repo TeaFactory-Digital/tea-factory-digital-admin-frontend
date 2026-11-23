@@ -50,6 +50,9 @@ interface DecisionNoteFieldProps {
   /** Names the chip row, for the clerk and for a screen reader. */
   suggestionsLabel: string;
   autoFocus?: boolean;
+  /** Pills instead of the grid (see `SuggestionGrid`). */
+  compactSuggestions?: boolean;
+  rows?: number;
 }
 
 export function DecisionNoteField({
@@ -62,6 +65,8 @@ export function DecisionNoteField({
   suggestions,
   suggestionsLabel,
   autoFocus = true,
+  compactSuggestions = false,
+  rows,
 }: DecisionNoteFieldProps) {
   const textarea = useRef<HTMLTextAreaElement>(null);
 
@@ -91,6 +96,7 @@ export function DecisionNoteField({
             ref={textarea}
             id={id}
             autoFocus={autoFocus}
+            rows={rows}
             value={value}
             placeholder={placeholder}
             aria-describedby={describedBy}
@@ -104,6 +110,7 @@ export function DecisionNoteField({
             onChange={onChange}
             suggestions={suggestions}
             label={suggestionsLabel}
+            compact={compactSuggestions}
             onPicked={() => {
               returnFocus.current = true;
             }}
