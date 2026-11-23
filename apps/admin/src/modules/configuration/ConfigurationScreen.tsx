@@ -204,6 +204,13 @@ export function ConfigurationScreen() {
               </PopoverContent>
             </Popover>
             {!canEdit ? <Badge tone="neutral">{t('config.readOnlyBadge')}</Badge> : null}
+            {/* AC-12, stated on the screen it is about. An administrator who does not know this
+                screen is the whole onboarding path will ask a developer for the next change.
+                In the header (24 November 2026), not under the panes: the section rail is
+                taller than the panes on a short window and ran over it there. */}
+            <InfoTip label={t('tip.aboutScreen')} text={t('tip.aboutScreen')}>
+              {t('config.ac12Note')}
+            </InfoTip>
           </div>
         }
       />
@@ -274,11 +281,6 @@ export function ConfigurationScreen() {
         </Card>
       </div>
 
-      {/* AC-12, stated on the screen it is about. An administrator who does not know this
-          screen is the whole onboarding path will ask a developer for the next change. */}
-      <InfoTip label={t('tip.aboutScreen')} text={t('tip.aboutScreen')}>
-        {t('config.ac12Note')}
-      </InfoTip>
 
       <ConfirmDialog
         open={confirmingSave !== null}
