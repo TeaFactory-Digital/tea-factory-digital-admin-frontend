@@ -30,6 +30,7 @@ import { formatCount, formatPercent } from '@/lib/format';
 import { cn } from '@/lib/cn';
 import { NAVIGATION, isNavItemVisible, queuesOf, type NavItem } from './navigation';
 import { UserMenu } from './UserMenu';
+import { InfoTip } from '@/components/ui/Tooltip';
 import { useAppearance } from '@/brand/useAppearance';
 import { prefersReducedMotion } from '@/lib/navigate';
 
@@ -178,17 +179,20 @@ function AdoptionMeter({ app }: { app: DashboardView['app'] }) {
 
   return (
     <div className="flex shrink-0 flex-col gap-sm rounded-lg border border-border bg-surface p-md shadow-card">
-      <div className="flex items-baseline justify-between gap-sm text-label">
-        <span className="font-semibold text-text-primary">{t('dashboard.appAdoption')}</span>
+      <div className="flex items-center justify-between gap-sm text-label">
+        {/* The count behind the share sits behind the "i" (24 November 2026). */}
+        <span className="flex items-center gap-xxs font-semibold text-text-primary">
+          {t('dashboard.appAdoption')}
+          <InfoTip label={`${t('tip.moreInfo')}: ${t('dashboard.appAdoption')}`} side="right">
+            {t('dashboard.appInstalled', {
+              withApp: formatCount(app.suppliersWithApp),
+              total: formatCount(app.totalSuppliers),
+            })}
+          </InfoTip>
+        </span>
         <span className="numeric text-text-secondary">{formatPercent(share)}</span>
       </div>
       <Meter value={share} label={t('dashboard.appAdoption')} />
-      <span className="numeric text-caption text-text-secondary">
-        {t('dashboard.appInstalled', {
-          withApp: formatCount(app.suppliersWithApp),
-          total: formatCount(app.totalSuppliers),
-        })}
-      </span>
     </div>
   );
 }

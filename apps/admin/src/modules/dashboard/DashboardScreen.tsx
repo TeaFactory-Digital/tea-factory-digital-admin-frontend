@@ -210,13 +210,23 @@ function KpiRow({ queues, app, trend }: { queues: QueueCount[]; app: AppAdoption
       <StatCard
         icon={Smartphone}
         label={
-          <TitleWithTip title={t('dashboard.appAdoption')} tip={t('dashboard.appAdoptionHint')} />
+          <TitleWithTip
+            title={t('dashboard.appAdoption')}
+            tip={
+              // The count behind the share, then what the share means (24 November 2026).
+              <>
+                <span className="block font-medium">
+                  {t('dashboard.appInstalled', {
+                    withApp: formatCount(app.suppliersWithApp),
+                    total: formatCount(app.totalSuppliers),
+                  })}
+                </span>
+                <span className="mt-xxs block">{t('dashboard.appAdoptionHint')}</span>
+              </>
+            }
+          />
         }
         value={installed === null ? formatPercent(installed) : <CountUp value={installed} format={formatPercent} />}
-        caption={t('dashboard.appInstalled', {
-          withApp: formatCount(app.suppliersWithApp),
-          total: formatCount(app.totalSuppliers),
-        })}
         footer={
           <div className="flex flex-col gap-sm">
             {installed !== null ? (
@@ -819,7 +829,7 @@ function DashboardSkeleton() {
 }
 
 /** A card title with its explanation behind an "i" rather than under it. */
-function TitleWithTip({ title, tip }: { title: string; tip: string }) {
+function TitleWithTip({ title, tip }: { title: string; tip: ReactNode }) {
   const { t } = useTranslation();
   return (
     <span className="inline-flex items-center gap-xxs">
