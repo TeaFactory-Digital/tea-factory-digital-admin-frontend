@@ -15,7 +15,7 @@ the next slice.
 | **Console** | Every module in [Modules](#modules) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
 | **Backend** | `tea-factory-digital-backend`, shipped up to `29824a0`; staging is migrated through `20261112020000` and deploys by hand after migrating; galaboda's bill source is "Imported". BACKEND-TODO **#1 to #64 are done except #59's five-year job**: **#45** (factory records without the factory system) is complete with the bill engine (`221a1c0`, ADR-042), carried loan interest and repaid manure plans (`52afb75`) and the printed-slip check, hold and release (`e164e2f`). The T15 answers (`1e5401b`), the loan instalment number (`fb687f7`) and the printed number on an imported slip without leaf (`29824a0`) are built and **deployed to staging** (`29824a0`, 24 November 2026). Pending: the console's end-to-end check of calculated bills on a test factory switched to "Calculated" (generate, slip comparison, hold and release, instalment numbers, carried interest), and a backend `vendor:pull` for the 17 newer `NOTE_SUGGESTION_KEYS` (until then the API refuses a factory's own sentences for those lists). Open: #66 (link files, waiting on the Play SHA-256 and the host); #65 (production) is on hold until there are real clients. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
-| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls: **729 tests in 104 files** (24 November 2026). Playwright: **38 tests in 8 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
+| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls: **748 tests in 109 files** (24 November 2026). Playwright: **38 tests in 8 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
 ### Built against the mock and tested
 
@@ -252,6 +252,27 @@ fits about a third more rows), **High contrast**, the **sidebar rail** of icons 
 in a background tab), smooth **screen changes** (View Transitions), dashboard figures that
 **count up**, and a short **celebration** when a month is published. Motion is off under
 reduced motion. Frontend only; details in `design-system.md`.
+
+### Work and support (24 November 2026)
+
+Six additions, frontend only, from the lists the console already reads:
+
+- **Your work today** at the top of the dashboard (`TodayCard`, `today.ts`): overdue first,
+  then inquiries the user has taken, then what is waiting; only queues the role can decide.
+- **Supplier timeline** (`SupplierTimeline`, `timeline.ts`): bills, credit and tea packet
+  requests, change requests and inquiries in one list, by month, each a link, with a filter.
+- **Kilos vs last month** on the bills list (`useLastMonthKgs`, `lastMonth.ts`): every page of
+  the previous month fetched once (200 a page) and kept; a change of 30% or more is marked.
+- **Print or save PDF** on a bill (`BillSlip`): the slip rendered into `document.body` and
+  printed by the browser on one A4 page; no server PDF.
+- **Undo** on a toast (`ToastAction`) where the opposite action restores things exactly:
+  taking or releasing an inquiry (not taking one over), an automatic notification switch, a
+  cancelled news schedule, a paste into the opening grid.
+- **Welcome tour** (`WelcomeTour`, `tourEvent.ts`): four steps at a first sign-in per user and
+  browser, again from the user menu or Ctrl+K; the e2e fixtures mark it seen.
+
+The mock's supplier income now sends the bill's `finalBalance` as `finalBalance`, as the API
+does; it sent the balance before coins, so a month read 131,474.90 beside a bill of 131,474.00.
 
 ### M2 Suppliers
 

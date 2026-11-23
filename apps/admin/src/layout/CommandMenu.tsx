@@ -19,6 +19,7 @@ import {
   Coins,
   Inbox,
   Keyboard,
+  Compass,
   Leaf,
   Package,
   Scale,
@@ -36,6 +37,7 @@ import { cn } from '@/lib/cn';
 import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { NAVIGATION, isNavItemVisible } from './navigation';
 import { openShortcuts } from './shortcutsEvent';
+import { openTour } from './tourEvent';
 
 interface Result {
   key: string;
@@ -209,6 +211,14 @@ export function CommandMenu() {
         to: '',
         icon: Keyboard,
         run: openShortcuts,
+      })
+      .concat({
+        key: 'action-tour',
+        label: t('tour.again'),
+        hint: t('search.actionHint'),
+        to: '',
+        icon: Compass,
+        run: openTour,
       })
       .filter((item) => !lower || item.label.toLowerCase().includes(lower));
   }, [needle, grants, keepsRecords, t]);

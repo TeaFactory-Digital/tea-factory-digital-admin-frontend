@@ -45,7 +45,21 @@ export function ScheduleControl({ article }: { article: AdminNewsArticle }) {
           iconLeft={<X className="size-icon-sm" aria-hidden />}
           onClick={() =>
             schedule.mutate(null, {
-              onSuccess: () => toast.success(t('news.schedule.cancelled')),
+              // Undo puts the same time back, while that time is still to come.
+              onSuccess: () =>
+                toast.success(
+                  t('news.schedule.cancelled'),
+                  undefined,
+                  new Date(scheduledAt).getTime() > Date.now()
+                    ? {
+                        label: t('common.undo'),
+                        onClick: () =>
+                          schedule.mutate(scheduledAt, {
+                            onError: (cause) => toast.error(t('news.schedule.failed'), t(errorMessageKey(cause))),
+                          }),
+                      }
+                    : undefined,
+                ),
               onError: (cause) => toast.error(t('news.schedule.failed'), t(errorMessageKey(cause))),
             })
           }

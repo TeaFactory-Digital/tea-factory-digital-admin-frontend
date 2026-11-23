@@ -24,6 +24,7 @@ import {
   Ban,
   Bell,
   ChartColumn,
+  GitCommitVertical,
   History,
   Landmark,
   MapPin,
@@ -64,6 +65,7 @@ import { SupplierIncomeHistory } from './SupplierIncomeHistory';
 import { SupplierSavingsLedger } from './SupplierSavingsLedger';
 import { SupplierRequestHistory } from './SupplierRequestHistory';
 import { SupplierNotificationsPanel } from './SupplierNotificationsPanel';
+import { SupplierTimeline } from './SupplierTimeline';
 import { useReactivateSupplier, useSupplier, useSupplierAudit, useSuspendSupplier } from './hooks';
 
 const STATUS_TONES = { active: 'success', suspended: 'warning', closed: 'neutral' } as const;
@@ -74,11 +76,12 @@ const STATUS_TONES = { active: 'success', suspended: 'warning', closed: 'neutral
  * `overview` is first and is the default because it answers *"is this the right
  * person"*, the question every visit to this screen starts with.
  */
-const SECTIONS = ['overview', 'money', 'requests', 'income', 'notifications', 'activity'] as const;
+const SECTIONS = ['overview', 'timeline', 'money', 'requests', 'income', 'notifications', 'activity'] as const;
 type Section = (typeof SECTIONS)[number];
 
 const SECTION_ICONS: Record<Section, LucideIcon> = {
   overview: UserRound,
+  timeline: GitCommitVertical,
   money: Wallet,
   requests: ClipboardList,
   income: ChartColumn,
@@ -402,6 +405,12 @@ export function SupplierDetailScreen() {
             <SupplierRequestHistory supplierId={supplier.id} />
           </TabsContent>
         ) : null}
+
+        {/* Everything that happened, newest first (24 November 2026): the answer to "what
+            happened with my account" without walking four screens. */}
+        <TabsContent value="timeline">
+          <SupplierTimeline supplierId={supplier.id} />
+        </TabsContent>
 
         <TabsContent value="income">
           <SupplierIncomeHistory supplierId={supplier.id} />

@@ -102,7 +102,10 @@ describe('M2 · a supplier’s month history', () => {
     expect(bill.monthKey).toBe(month!.monthKey);
     expect(bill.totalKgs).toBe(month!.totalKgs);
     expect(bill.grossAmount).toBe(month!.grossAmount);
-    expect(bill.balanceAmount).toBe(month!.finalBalance);
+    // The amount paid, as the API sends it, not the balance before the coins carried: the
+    // mock had the second until 24 November 2026, and the timeline showed 131,474.90 beside
+    // a bill whose final balance was 131,474.00.
+    expect(bill.finalBalance).toBe(month!.finalBalance);
   });
 
   it('filters the bills list to one supplier: v2’s new query', async () => {

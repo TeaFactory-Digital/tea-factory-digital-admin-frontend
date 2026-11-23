@@ -17,6 +17,7 @@ import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { Notice, Spinner } from '@/components/ui/states';
 import { Sidebar } from './Sidebar';
 import { ShortcutsDialog } from './ShortcutsDialog';
+import { WelcomeTour } from './WelcomeTour';
 import { useRequestAlerts } from './useRequestAlerts';
 import { Topbar } from './Topbar';
 
@@ -46,6 +47,7 @@ export function AppShell() {
     <div data-glass-backdrop className="flex h-screen overflow-clip bg-background">
       <Sidebar summary={summary} />
       <ShortcutsDialog />
+      <WelcomeTour />
 
       <div data-glass-column className="relative flex min-w-0 flex-1 flex-col">
         <Topbar summary={summary} />

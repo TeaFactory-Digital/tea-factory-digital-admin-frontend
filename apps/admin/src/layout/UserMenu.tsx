@@ -12,7 +12,8 @@
  */
 
 import { useState } from 'react';
-import { ChevronsUpDown, LogOut, PanelLeftClose, PanelLeftOpen, UserRound } from 'lucide-react';
+import { ChevronsUpDown, Compass, LogOut, PanelLeftClose, PanelLeftOpen, UserRound } from 'lucide-react';
+import { openTour } from './tourEvent';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useAuthStore, useCurrentUser } from '@/auth/authStore';
@@ -143,6 +144,12 @@ export function UserMenu({ placement }: { placement: 'sidebar' | 'rail' | 'topba
               </kbd>
             </DropdownMenuItem>
           )}
+
+          {/* The welcome tour again (24 November 2026), for whoever skipped it. */}
+          <DropdownMenuItem onSelect={() => openTour()} className={ITEM}>
+            <Compass className="size-icon-sm" aria-hidden />
+            {t('tour.again')}
+          </DropdownMenuItem>
 
           {/* Appearance and text size live on M15 alone: one home for a setting beats
               two, and the profile row above is the way to it. */}

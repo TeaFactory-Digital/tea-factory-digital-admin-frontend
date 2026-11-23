@@ -3913,7 +3913,10 @@ export const handlers: HttpHandler[] = [
         totalKgs: bill.totalKgs,
         auctionResultAvailable: bill.auctionResultAvailable,
         grossAmount: bill.grossAmount,
-        finalBalance: bill.balanceAmount,
+        // What was paid, as the API sends it (`suppliers.service.ts`), not the balance before
+        // the coins carried: the timeline and the income tab read it beside the bill's own
+        // final balance, and the two must be the same figure (AC-03). Fixed 24 November 2026.
+        finalBalance: bill.finalBalance,
       }));
 
     return HttpResponse.json({ supplierId: supplier.id, years, year, months });

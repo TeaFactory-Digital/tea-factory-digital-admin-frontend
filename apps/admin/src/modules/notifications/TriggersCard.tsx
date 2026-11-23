@@ -42,7 +42,7 @@ export function TriggersCard() {
   const triggers = useNotificationTriggers();
   const set = useSetNotificationTrigger();
 
-  async function toggle(trigger: NotificationTrigger, enabled: boolean) {
+  async function toggle(trigger: NotificationTrigger, enabled: boolean, undoable = true) {
     try {
       await set.mutateAsync({ category: trigger.category, enabled });
       toast.success(
@@ -51,6 +51,9 @@ export function TriggersCard() {
           : t('notifications.triggerOff', {
               category: t(`notifications.category.${trigger.category}`),
             }),
+        undefined,
+        // A switch flicked by mistake is put back with the same switch (24 November 2026).
+        undoable ? { label: t('common.undo'), onClick: () => void toggle(trigger, !enabled, false) } : undefined,
       );
     } catch (cause) {
       toast.error(t('notifications.triggerFailed'), t(errorMessageKey(cause)));

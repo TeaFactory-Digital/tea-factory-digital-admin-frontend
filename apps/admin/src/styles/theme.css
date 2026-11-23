@@ -855,3 +855,126 @@ main#main {
     animation: none;
   }
 }
+
+/*
+ * The bill as a printed slip (24 November 2026, `BillSlip.tsx`). Hidden on screen; on paper
+ * it is the only thing printed, black on white, every figure in the slip's own order. The
+ * console itself (`#root`) and any toast or dialog layer are left off the page.
+ */
+.tfd-print-slip {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  /* A dark console still prints on white: the canvas follows `color-scheme`. */
+  :root,
+  html,
+  body {
+    color-scheme: light !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  body > *:not(.tfd-print-slip) {
+    display: none !important;
+  }
+
+  .tfd-print-slip {
+    display: block;
+    font-family: var(--font-sans, system-ui, sans-serif);
+    font-size: 10.5pt;
+    line-height: 1.35;
+    color: #000;
+  }
+
+  .tfd-print-slip h2 {
+    margin: 10pt 0 3pt;
+    font-size: 10.5pt;
+    font-weight: 700;
+    border-bottom: 1pt solid #000;
+    padding-bottom: 2pt;
+  }
+
+  .tfd-print-slip table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .tfd-print-slip th {
+    text-align: left;
+    font-weight: 400;
+    padding: 1.5pt 0;
+  }
+
+  .tfd-print-slip td {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    padding: 1.5pt 0;
+  }
+
+  .tfd-print-slip .slip-total th,
+  .tfd-print-slip .slip-total td {
+    font-weight: 700;
+    border-top: 0.75pt solid #000;
+  }
+
+  .tfd-print-slip .slip-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12pt;
+    border-bottom: 2pt solid #000;
+    padding-bottom: 6pt;
+    margin-bottom: 6pt;
+  }
+
+  .tfd-print-slip .slip-factory,
+  .tfd-print-slip .slip-title {
+    font-size: 13pt;
+    font-weight: 700;
+  }
+
+  .tfd-print-slip .slip-right {
+    text-align: right;
+  }
+
+  .tfd-print-slip .slip-facts th {
+    width: 40%;
+  }
+
+  .tfd-print-slip .slip-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18pt;
+  }
+
+  .tfd-print-slip .slip-days {
+    table-layout: fixed;
+  }
+
+  .tfd-print-slip .slip-days td {
+    border: 0.5pt solid #000;
+    text-align: center;
+    padding: 2pt 1pt;
+    font-size: 8.5pt;
+  }
+
+  .tfd-print-slip .slip-days span {
+    display: block;
+  }
+
+  .tfd-print-slip .slip-day {
+    font-size: 7pt;
+    color: #444;
+  }
+
+  .tfd-print-slip .slip-foot {
+    margin-top: 12pt;
+    font-size: 8pt;
+    color: #444;
+  }
+}

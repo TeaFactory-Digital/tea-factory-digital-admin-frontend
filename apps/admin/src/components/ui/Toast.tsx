@@ -9,7 +9,7 @@
  */
 
 import * as RadixToast from '@radix-ui/react-toast';
-import { CheckCircle2, Info, TriangleAlert, X } from 'lucide-react';
+import { CheckCircle2, Info, TriangleAlert, Undo2, X } from 'lucide-react';
 import {
   createContext,
   useCallback,
@@ -24,16 +24,28 @@ import { cn } from '@/lib/cn';
 
 type ToastTone = 'success' | 'error' | 'info';
 
+/**
+ * One button on the toast (24 November 2026), today only **Undo**: for a change that can be
+ * taken back by doing the opposite (assigning an inquiry, switching an automatic
+ * notification, cancelling a schedule, a paste into the opening grid). Never for a decision
+ * a supplier has already been told about.
+ */
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 interface ToastItem {
   id: number;
   tone: ToastTone;
   title: string;
   body?: string;
+  action?: ToastAction;
 }
 
 interface ToastApi {
   show: (toast: Omit<ToastItem, 'id'>) => void;
-  success: (title: string, body?: string) => void;
+  success: (title: string, body?: string, action?: ToastAction) => void;
   error: (title: string, body?: string) => void;
 }
 
@@ -58,6 +70,8 @@ const TONES: Record<ToastTone, { disc: string; timer: string }> = {
 
 /** Long enough to read a sentence; an error, which may need a second read, a little longer. */
 const DURATION: Record<ToastTone, number> = { success: 5000, info: 6000, error: 8000 };
+/** With an Undo on it, long enough to notice the mistake and reach the button. */
+const WITH_ACTION = 8000;
 
 export function ToastProvider({ children }: PropsWithChildren) {
   const { t } = useTranslation();
@@ -70,7 +84,7 @@ export function ToastProvider({ children }: PropsWithChildren) {
   const api = useMemo<ToastApi>(
     () => ({
       show,
-      success: (title, body) => show({ tone: 'success', title, body }),
+      success: (title, body, action) => show({ tone: 'success', title, body, action }),
       error: (title, body) => show({ tone: 'error', title, body }),
     }),
     [show],
@@ -83,7 +97,7 @@ export function ToastProvider({ children }: PropsWithChildren) {
         {items.map((item) => {
           const Icon = ICONS[item.tone];
           const tone = TONES[item.tone];
-          const duration = DURATION[item.tone];
+          const duration = item.action ? WITH_ACTION : DURATION[item.tone];
           return (
             <RadixToast.Root
               key={item.id}
@@ -109,6 +123,18 @@ export function ToastProvider({ children }: PropsWithChildren) {
                   <RadixToast.Description className="mt-xxs text-caption text-text-secondary">
                     {item.body}
                   </RadixToast.Description>
+                ) : null}
+                {item.action ? (
+                  // Radix closes the toast on click; `altText` is what a screen reader is
+                  // told to do instead, since the toast may be gone before it is reached.
+                  <RadixToast.Action
+                    altText={item.action.label}
+                    onClick={item.action.onClick}
+                    className="mt-xs -ml-xs inline-flex min-h-7 items-center gap-xxs rounded-md px-xs text-caption font-semibold text-primary transition-colors hover:bg-primary-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <Undo2 className="size-icon-xs" aria-hidden />
+                    {item.action.label}
+                  </RadixToast.Action>
                 ) : null}
               </div>
               <RadixToast.Close

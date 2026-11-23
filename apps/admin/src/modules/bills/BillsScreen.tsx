@@ -34,10 +34,13 @@ import { SyncFreshness } from '@/components/SyncFreshness';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { isFactorySyncEnabled } from '@tfd/domain';
 import { useDebounced } from '@/lib/useDebounced';
-import { formatAmount, formatKg, formatMoney } from '@/lib/format';
+import { formatAmount, formatKg, formatMoney, formatMonthShort, formatPercent } from '@/lib/format';
+import { cn } from '@/lib/cn';
+import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { MonthSelect } from '@/modules/money/MonthSelect';
 import { resolveMonthKey, useBillMonths } from '@/modules/money/monthOptions';
-import { useBillRun, useBills } from './hooks';
+import { useBillRun, useBills, useLastMonthKgs } from './hooks';
+import { kgChange } from './lastMonth';
 import { useCan } from '@/auth/authStore';
 import { useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
 import { OTHER_DEDUCTIONS_ON_SERVER } from '@/lib/serverReady';
@@ -92,6 +95,8 @@ export function BillsScreen() {
   );
 
   const bills = useBills(query);
+  // Each row against the month before (24 November 2026).
+  const lastMonth = useLastMonthKgs(monthKey || undefined);
 
   function setParam(key: string, value: string | null) {
     const next = new URLSearchParams(params);
@@ -136,6 +141,43 @@ export function BillsScreen() {
         accessorKey: 'totalKgs',
         header: t('bills.column.kgs'),
         cell: (info) => <span className="numeric">{formatKg(info.getValue<number>())}</span>,
+      },
+      {
+        // Kilos against last month: a big change is a bill worth a second look before the
+        // month is published. Not sortable: the server sorts, and it does not know last month.
+        id: 'lastMonth',
+        enableSorting: false,
+        header: lastMonth.monthKey
+          ? t('bills.column.vsMonth', { month: formatMonthShort(lastMonth.monthKey) })
+          : t('bills.column.vsLastMonth'),
+        cell: (info) => {
+          const row = info.row.original;
+          if (lastMonth.isPending) return <span className="text-text-secondary">…</span>;
+          const change = kgChange(row.totalKgs, lastMonth.kgs.get(row.supplierId));
+          if (change.kind === 'none') return <span className="text-text-secondary">-</span>;
+          if (change.kind === 'new') {
+            return <span className="text-caption text-text-secondary">{t('bills.lastMonth.new')}</span>;
+          }
+          const down = change.ratio < 0;
+          const Arrow = down ? ArrowDownRight : ArrowUpRight;
+          return (
+            <span
+              title={t('bills.lastMonth.hint', { kgs: formatKg(lastMonth.kgs.get(row.supplierId) ?? 0) })}
+              className={cn(
+                'numeric inline-flex items-center gap-xxs whitespace-nowrap rounded-full px-xs text-caption font-medium',
+                change.big
+                  ? down
+                    ? 'bg-error-muted text-error'
+                    : 'bg-warning-muted text-warning'
+                  : 'text-text-secondary',
+              )}
+            >
+              <Arrow className="size-icon-xs" aria-hidden />
+              {formatPercent(Math.abs(change.ratio))}
+              <span className="sr-only">{down ? t('bills.lastMonth.down') : t('bills.lastMonth.up')}</span>
+            </span>
+          );
+        },
       },
       {
         accessorKey: 'grossAmount',
@@ -218,7 +260,7 @@ export function BillsScreen() {
           ]
         : []),
     ],
-    [t, canAdjust],
+    [t, canAdjust, lastMonth.monthKey, lastMonth.isPending, lastMonth.kgs],
   );
 
   return (

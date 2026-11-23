@@ -9,12 +9,14 @@
  * careful about.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { billSourceOf, isFactorySyncEnabled, type BillQuery } from '@tfd/domain';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { SLIP_COMPARISON_ON_SERVER } from '@/lib/serverReady';
 import { billRepository } from '@/services/repositories/billRepository';
 import { qk } from '@/query/queryKeys';
+import { previousMonthKey } from './lastMonth';
 
 export function useBills(query: BillQuery) {
   return useQuery({
@@ -106,4 +108,61 @@ export function useGenerateBills(monthKey: string) {
       void client.invalidateQueries({ queryKey: qk.audit.all });
     },
   });
+}
+
+/** The largest page the API serves. */
+const LAST_MONTH_PAGE = 200;
+
+/**
+ * Last month's bills, every page, as kilos by supplier (24 November 2026): the bills list
+ * reads each row against it. A closed month does not change, so this is fetched once and
+ * kept. An empty map (no bills that month) leaves the column blank, never an error.
+ */
+export function useLastMonthKgs(monthKey: string | undefined): {
+  monthKey: string | undefined;
+  kgs: Map<string, number>;
+  isPending: boolean;
+} {
+  const previous = monthKey ? previousMonthKey(monthKey) : undefined;
+  const pageQuery = (page: number): BillQuery => ({
+    monthKey: previous,
+    page,
+    pageSize: LAST_MONTH_PAGE,
+    sort: 'supplierCode',
+    dir: 'asc',
+  });
+  const first = useQuery({
+    queryKey: qk.bills.list(pageQuery(0)),
+    queryFn: () => billRepository.list(pageQuery(0)),
+    enabled: Boolean(previous),
+    staleTime: 10 * 60_000,
+    retry: false,
+    throwOnError: false,
+  });
+  const pages = first.data ? Math.ceil(first.data.total / LAST_MONTH_PAGE) : 0;
+  const rest = useQueries({
+    queries: Array.from({ length: Math.max(0, pages - 1) }, (_, index) => ({
+      queryKey: qk.bills.list(pageQuery(index + 1)),
+      queryFn: () => billRepository.list(pageQuery(index + 1)),
+      staleTime: 10 * 60_000,
+      retry: false,
+      throwOnError: false,
+    })),
+  });
+  // Rebuilt only when a page arrives, so the grid's columns are not remade every render.
+  const stamp = [first.dataUpdatedAt, ...rest.map((one) => one.dataUpdatedAt)].join(',');
+  const kgs = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const page of [first.data, ...rest.map((one) => one.data)]) {
+      for (const row of page?.items ?? []) map.set(row.supplierId, row.totalKgs);
+    }
+    return map;
+    // `stamp` changes exactly when any page's data does.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stamp]);
+  return {
+    monthKey: previous,
+    kgs,
+    isPending: first.isPending || rest.some((one) => one.isPending),
+  };
 }

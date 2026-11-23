@@ -33,6 +33,7 @@ import { CountUp } from '@/components/charts/CountUp';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { TodayCard } from './TodayCard';
 import { Link } from 'react-router-dom';
 import {
   Area,
@@ -124,6 +125,9 @@ export function DashboardScreen() {
         <DashboardSkeleton />
       ) : (
         <>
+          {/* Where to start, before how big everything is (24 November 2026). */}
+          <TodayCard queues={data.queues} />
+
           <KpiRow queues={data.queues} app={data.app} trend={data.adoptionTrend} />
 
           <div className="grid gap-lg lg:grid-cols-3">

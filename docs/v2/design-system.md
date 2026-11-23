@@ -324,6 +324,22 @@ notification permission is asked on that save, and a refusal saves the rest and 
 tab is hidden, for supplier-sent kinds only, never for what was already in the feed when the
 console opened. While on, the activity feed polls every 30 seconds in the background too.
 
+### Work and support additions (24 November 2026)
+
+- **Lists of things to do** (Your work today, the supplier timeline) are rows with a tinted
+  icon disc, a sentence, a quiet second line, and the destination on the right; the first
+  row of the to-do list is the one filled button ("Start here"). Overdue rows use the error
+  tone in the disc and the sentence, never a red card.
+- **Filters as pills** with their counts (`aria-pressed`), as on the timeline.
+- **A change against last month** is a small arrow and a percentage; only a change of 30% or
+  more gets a tint (error falling, warning rising). The figure behind it is the `title`.
+- **Print** is its own layout (`.tfd-print-slip`), black on white, `color-scheme: light`
+  forced so a dark console prints on white; everything else on the page is left off.
+- **Undo** sits under the toast's sentence as a small primary text button with an arrow
+  icon; a toast with it stays 8 s.
+- **The welcome tour** is a dialog with a tinted icon tile, a step count in words, dots for
+  the eye, and Skip / Back / Next; no spotlight over the page.
+
 ### An inquiry reads as a conversation, not a form (24 November 2026)
 
 - The facts row above the messages is gone: who and how it came are in the page header

@@ -1,6 +1,7 @@
 import { test as base, expect } from '@playwright/test';
 import { getResponse } from 'msw';
 import { handlers, resetMockState } from '../src/services/mocks/handlers';
+import { mockUsers } from '../src/services/mocks/seed';
 
 /**
  * The API, answered by the test itself.
@@ -17,6 +18,11 @@ export const test = base.extend<{ mockApi: void }>({
   mockApi: [
     async ({ page }, use) => {
       resetMockState();
+      // The welcome tour greets a first sign-in; every e2e test is one, and a dialog over
+      // the page would stand in front of what it checks. Marked seen for each demo user.
+      await page.addInitScript((ids: string[]) => {
+        for (const id of ids) window.localStorage.setItem(`tfd.admin.tour.seen.${id}`, '1');
+      }, mockUsers.map((user) => user.id));
       await page.route('**/v1/**', async (route) => {
         const sent = route.request();
         const method = sent.method();

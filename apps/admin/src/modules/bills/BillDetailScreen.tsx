@@ -32,9 +32,10 @@
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Lock, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, Lock, Printer, TriangleAlert } from 'lucide-react';
 import { DEDUCTION_CATEGORIES, collectionPointDays, fullMonthDays, type AdminBill } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader, DetailRow } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { InfoTip } from '@/components/ui/Tooltip';
@@ -54,6 +55,7 @@ import { useBill } from './hooks';
 import { useCan } from '@/auth/authStore';
 import { useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
 import { OtherChargesDialog } from './OtherChargesDialog';
+import { BillSlip } from './BillSlip';
 import { OTHER_DEDUCTIONS_ON_SERVER } from '@/lib/serverReady';
 
 export function BillDetailScreen() {
@@ -111,6 +113,15 @@ export function BillDetailScreen() {
             <Badge tone={data.publishedAt ? 'success' : 'info'}>
               {data.publishedAt ? t('bills.published') : t('bills.draft')}
             </Badge>
+            {/* The slip on paper, or kept as a PDF from the print dialog (24 November 2026). */}
+            <Button
+              size="sm"
+              variant="secondary"
+              iconLeft={<Printer className="size-icon-sm" aria-hidden />}
+              onClick={() => window.print()}
+            >
+              {t('bills.print')}
+            </Button>
           </div>
         }
       />
@@ -458,6 +469,7 @@ export function BillDetailScreen() {
         <Lock className="mt-xxs size-icon-sm shrink-0" aria-hidden />
         {data.publishedAt ? t('bills.correctionsPublished') : t('bills.correctionsDraft')}
       </p>
+      <BillSlip bill={data} />
       {adjusting ? (
         <OtherChargesDialog
           billId={data.id}

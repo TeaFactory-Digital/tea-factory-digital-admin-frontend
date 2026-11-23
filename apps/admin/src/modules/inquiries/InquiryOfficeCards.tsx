@@ -34,10 +34,19 @@ export function InquiryAssignment({ inquiry }: { inquiry: AdminInquiry }) {
   const mine = inquiry.assignedToId != null && inquiry.assignedToId === user?.id;
   const open = inquiry.status !== 'closed';
 
-  const run = (assignToMe: boolean) =>
+  /**
+   * Undo, only where it puts things back exactly (24 November 2026): taking an inquiry
+   * nobody had, or letting go of one's own. Taking one over from a colleague has none: the
+   * console can assign only to oneself or to nobody, so it could not hand it back to them.
+   */
+  const run = (assignToMe: boolean, undoable: boolean) =>
     assign.mutate(assignToMe, {
       onSuccess: () =>
-        toast.success(assignToMe ? t('inquiries.assign.taken') : t('inquiries.assign.released')),
+        toast.success(
+          assignToMe ? t('inquiries.assign.taken') : t('inquiries.assign.released'),
+          undefined,
+          undoable ? { label: t('common.undo'), onClick: () => run(!assignToMe, false) } : undefined,
+        ),
       onError: (cause) => toast.error(t('inquiries.assign.failed'), t(errorMessageKey(cause))),
     });
 
@@ -62,7 +71,7 @@ export function InquiryAssignment({ inquiry }: { inquiry: AdminInquiry }) {
               variant="secondary"
               loading={assign.isPending}
               iconLeft={<UserMinus className="size-icon-sm" aria-hidden />}
-              onClick={() => run(false)}
+              onClick={() => run(false, true)}
             >
               {t('inquiries.assign.release')}
             </Button>
@@ -72,7 +81,7 @@ export function InquiryAssignment({ inquiry }: { inquiry: AdminInquiry }) {
               variant="secondary"
               loading={assign.isPending}
               iconLeft={<UserCheck className="size-icon-sm" aria-hidden />}
-              onClick={() => run(true)}
+              onClick={() => run(true, !inquiry.assignedToName)}
             >
               {inquiry.assignedToName ? t('inquiries.assign.takeOver') : t('inquiries.assign.take')}
             </Button>

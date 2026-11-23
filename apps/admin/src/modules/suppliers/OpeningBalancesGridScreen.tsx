@@ -74,13 +74,19 @@ export function OpeningBalancesGridScreen() {
     event.preventDefault();
     const pasted = parseGridPaste(text);
     if (pasted.length === 0) return;
+    // The sheet as it was, for Undo (24 November 2026): a paste into the wrong line is
+    // dozens of rows to clear by hand.
+    const before = lines;
     setLines((current) => {
       const at = current.findIndex((one) => one.key === line.key);
       // The empty line pasted into is replaced; a filled one keeps its place above.
       const keep = current[at]?.code.trim() ? at + 1 : at;
       return [...current.slice(0, keep), ...pasted, ...current.slice(at + 1)];
     });
-    toast.success(t('records.openingGrid.pasted', { count: pasted.length }));
+    toast.success(t('records.openingGrid.pasted', { count: pasted.length }), undefined, {
+      label: t('common.undo'),
+      onClick: () => setLines(before),
+    });
   }
 
   async function submit() {
