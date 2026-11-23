@@ -2887,12 +2887,12 @@ keeps the stored value, so a console that does not know the field cannot reset g
   `calculated` does the same to the `bills` import.
 - **`noteSuggestions`** is the office's own chip sentences under the note and reason
   boxes, keyed by `NoteSuggestionKey`; a list never saved uses the built-in sentences. Since
-  22 November 2026 there are 21 keys (`NOTE_SUGGESTION_KEYS`): the six decision and reply
+  24 November 2026 there are 23 keys (`NOTE_SUGGESTION_KEYS`): the six decision and reply
   lists, and one for each other reason box (`deliveries.void`, `bills.hold`,
   `bills.otherDeductions`, `credit.walkIn`, `months.exception`, `months.publish`,
   `suppliers.correction`, `suppliers.openingBalances`, `suppliers.transportRate`,
   `suppliers.revealBank`, `rates.proposal`, `rates.decision`, `users.status`,
-  `users.resetPassword`, `inquiries.note`). The API validates against the vendored list, so
+  `users.resetPassword`, `inquiries.note`, `inquiries.escalate`, `inquiries.close`). The API validates against the vendored list, so
   a `vendor:pull` is all it needs.
 
 `payouts.export` is **served on `GET /admin/config` only** (never on the public

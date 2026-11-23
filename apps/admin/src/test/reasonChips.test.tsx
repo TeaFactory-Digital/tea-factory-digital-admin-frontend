@@ -10,6 +10,7 @@ import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { NOTE_SUGGESTION_KEYS } from '@tfd/domain';
 import { DeliveriesScreen } from '@/modules/deliveries/DeliveriesScreen';
+import { InquiryDetailScreen } from '@/modules/inquiries/InquiryDetailScreen';
 import { adminConfigRepository } from '@/services/repositories/adminConfigRepository';
 import { deliveryRepository } from '@/services/repositories/deliveryRepository';
 import { REASON_CHIPS } from '@/components/ReasonChips';
@@ -76,5 +77,40 @@ describe('reason chips', () => {
     const dialog = await openVoidDialog();
     expect(within(dialog).getByRole('button', { name: 'Scale fault' })).toBeInTheDocument();
     expect(within(dialog).queryByRole('button', { name: 'Entered twice' })).not.toBeInTheDocument();
+  }, 20_000);
+});
+
+describe('reason chips on an inquiry (24 November 2026)', () => {
+  function renderInquiry() {
+    renderWithProviders(
+      <Routes>
+        <Route path="/inquiries/:id" element={<InquiryDetailScreen />} />
+      </Routes>,
+      { route: '/inquiries/inq-1' },
+    );
+  }
+
+  it('offer the usual reasons when passing it to the manager', async () => {
+    const user = userEvent.setup();
+    await signInAs(CLERK);
+    renderInquiry();
+    await user.click(await screen.findByRole('button', { name: 'Pass to the manager' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Records disagree' }));
+    expect(within(dialog).getByRole('textbox')).toHaveValue(
+      'The factory records and the supplier\u2019s account disagree.',
+    );
+    // Long enough on its own: the send button wakes up.
+    expect(within(dialog).getByRole('button', { name: 'Pass to the manager' })).toBeEnabled();
+  }, 20_000);
+
+  it('offer the usual reasons when closing it unanswered', async () => {
+    const user = userEvent.setup();
+    await signInAs(CLERK);
+    renderInquiry();
+    await user.click(await screen.findByRole('button', { name: 'Close unanswered' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Settled by phone' }));
+    expect(within(dialog).getByLabelText(/Why it is being closed/)).toHaveValue('Settled with the supplier by phone.');
   }, 20_000);
 });

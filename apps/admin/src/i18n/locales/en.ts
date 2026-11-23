@@ -3317,6 +3317,25 @@ export const en = {
   'bills.perKg': '{{rate}} a kg',
   'bills.shareOfGross': '{{percent}} of the gross amount',
   'bills.payable': 'Payable',
+  // Inquiry escalate and close chips (24 November 2026).
+  'config.notes.key.inquiries.escalate': 'Inquiries: send to the manager',
+  'reasonChip.inquiries.escalate.money': 'Money decision',
+  'reasonChip.inquiries.escalate.money.text': 'It needs a decision on money that the counter cannot make.',
+  'reasonChip.inquiries.escalate.records': 'Records disagree',
+  'reasonChip.inquiries.escalate.records.text': 'The factory records and the supplier’s account disagree.',
+  'reasonChip.inquiries.escalate.complaint': 'Complaint',
+  'reasonChip.inquiries.escalate.complaint.text': 'The supplier has a complaint about the service or a member of staff.',
+  'reasonChip.inquiries.escalate.rules': 'Outside the rules',
+  'reasonChip.inquiries.escalate.rules.text': 'The request is outside the factory’s usual rules.',
+  'config.notes.key.inquiries.close': 'Inquiries: close unanswered',
+  'reasonChip.inquiries.close.duplicate': 'Duplicate',
+  'reasonChip.inquiries.close.duplicate.text': 'A duplicate of another inquiry that was already answered.',
+  'reasonChip.inquiries.close.byPhone': 'Settled by phone',
+  'reasonChip.inquiries.close.byPhone.text': 'Settled with the supplier by phone.',
+  'reasonChip.inquiries.close.noReply': 'No reply',
+  'reasonChip.inquiries.close.noReply.text': 'The supplier did not answer our questions.',
+  'reasonChip.inquiries.close.notFactory': 'Not for the factory',
+  'reasonChip.inquiries.close.notFactory.text': 'Not something the factory can help with.',
 } as const;
 
 export type TranslationKey = keyof typeof en;

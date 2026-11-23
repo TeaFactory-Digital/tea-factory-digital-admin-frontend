@@ -14,7 +14,7 @@ console's mock carries the number on the same way. Staging is migrated through
 | # | What | Priority |
 |---|------|----------|
 | Deploy | The manual deploy of 29824a0 (with fb687f7) to staging | **Next** (your side) |
-| vendor:pull | `NOTE_SUGGESTION_KEYS` has 15 new keys (reason chips under every reason box, 22 November): your `PATCH /admin/config` validates against the vendored list, so a pull is all it needs | With the deploy |
+| vendor:pull | `NOTE_SUGGESTION_KEYS` has 17 new keys (reason chips under every reason box, 22 November; `inquiries.escalate` and `inquiries.close` added 24 November): your `PATCH /admin/config` validates against the vendored list, so a pull is all it needs | With the deploy |
 | 65 | A production environment | **On hold** (your note, 12 November): until there are real clients; staging is the only environment |
 | 66 | Universal-link files on each factory's domain: waits for the Play signing SHA-256 and the host | Before the first store release |
 | - | Later: factory sync (Phase 10), the push sender, the five-year job (#59), a reporting replica | Later |

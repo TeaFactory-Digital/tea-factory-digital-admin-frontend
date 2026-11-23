@@ -2,7 +2,8 @@
  * Reason chips for every reason or note box outside the decision dialogs (22 November 2026):
  * a void, a hold, other deductions, a counter request, an exception, a publish note, a
  * correction, opening balances, a transport rate, seeing a bank account, deduction rates,
- * a user's status or password, an office note on an inquiry. Each list is the factory's own
+ * a user's status or password, an office note on an inquiry, passing an inquiry up to the
+ * manager or closing one unanswered. Each list is the factory's own
  * when it has saved one (Configuration, Common notes), else the built-in sentences here.
  */
 
@@ -28,6 +29,8 @@ export const REASON_CHIPS = {
   'users.status': ['left', 'leave', 'back', 'roleChange'],
   'users.resetPassword': ['forgot', 'locked', 'shared'],
   'inquiries.note': ['called', 'checking', 'manager'],
+  'inquiries.escalate': ['money', 'records', 'complaint', 'rules'],
+  'inquiries.close': ['duplicate', 'byPhone', 'noReply', 'notFactory'],
 } as const satisfies Partial<Record<NoteSuggestionKey, readonly string[]>>;
 
 export type ReasonList = keyof typeof REASON_CHIPS;

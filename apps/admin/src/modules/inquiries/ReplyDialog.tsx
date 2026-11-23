@@ -23,6 +23,7 @@ import type { AdminInquiry } from '@tfd/domain';
 import { useCan } from '@/auth/authStore';
 import { useNoteSuggestions } from '@/components/useNoteSuggestions';
 import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
+import { ReasonChips } from '@/components/ReasonChips';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Label } from '@/components/ui/Label';
@@ -239,17 +240,21 @@ function CloseDialog({ inquiry, onClose }: { inquiry: AdminInquiry; onClose: () 
         error={answer.error && !blocking ? t(errorMessageKey(answer.error)) : undefined}
       >
         {({ id, describedBy, invalid, required }) => (
-          <Textarea
-            id={id}
-            autoFocus
-            rows={3}
-            value={text}
-            placeholder={t('inquiries.closurePlaceholder')}
-            aria-describedby={describedBy}
-            invalid={invalid}
-            required={required}
-            onChange={(event) => setText(event.target.value)}
-          />
+          <>
+            <Textarea
+              id={id}
+              autoFocus
+              rows={3}
+              value={text}
+              placeholder={t('inquiries.closurePlaceholder')}
+              aria-describedby={describedBy}
+              invalid={invalid}
+              required={required}
+              onChange={(event) => setText(event.target.value)}
+            />
+            {/* The usual reasons, one click each (24 November 2026). */}
+            <ReasonChips list="inquiries.close" value={text} onChange={setText} />
+          </>
         )}
       </Field>
     </Dialog>
@@ -303,16 +308,20 @@ function EscalateDialog({ inquiry, onClose }: { inquiry: AdminInquiry; onClose: 
         error={answer.error && !blocking ? t(errorMessageKey(answer.error)) : undefined}
       >
         {({ id, describedBy, invalid, required }) => (
-          <Textarea
-            id={id}
-            autoFocus
-            rows={3}
-            value={text}
-            aria-describedby={describedBy}
-            invalid={invalid}
-            required={required}
-            onChange={(event) => setText(event.target.value)}
-          />
+          <>
+            <Textarea
+              id={id}
+              autoFocus
+              rows={3}
+              value={text}
+              aria-describedby={describedBy}
+              invalid={invalid}
+              required={required}
+              onChange={(event) => setText(event.target.value)}
+            />
+            {/* Why it goes up, one click each (24 November 2026). */}
+            <ReasonChips list="inquiries.escalate" value={text} onChange={setText} />
+          </>
         )}
       </Field>
     </Dialog>

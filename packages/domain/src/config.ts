@@ -69,7 +69,10 @@ export type NoteSuggestionKey =
   | 'rates.decision'
   | 'users.status'
   | 'users.resetPassword'
-  | 'inquiries.note';
+  | 'inquiries.note'
+  // Passing an inquiry up, and closing one unanswered (24 November 2026).
+  | 'inquiries.escalate'
+  | 'inquiries.close';
 
 export const NOTE_SUGGESTION_KEYS: readonly NoteSuggestionKey[] = [
   'changeRequests.approve',
@@ -93,6 +96,8 @@ export const NOTE_SUGGESTION_KEYS: readonly NoteSuggestionKey[] = [
   'users.status',
   'users.resetPassword',
   'inquiries.note',
+  'inquiries.escalate',
+  'inquiries.close',
 ];
 
 /** One chip: its short label and the sentence it adds, per language code. */
