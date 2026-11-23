@@ -24,7 +24,10 @@ describe('the monthly caps', () => {
     const loan = await screen.findByLabelText('Loan', undefined, { timeout: 10_000 });
     expect(screen.getByLabelText('Manure')).toBeInTheDocument();
     expect(screen.queryByLabelText('Advance')).not.toBeInTheDocument();
-    expect(screen.getByText(/An advance has no cap/)).toBeInTheDocument();
+    // Said behind the caps' "i" (24 November 2026), on hover or focus.
+    await userEvent.hover(screen.getByRole('button', { name: /More information: Most a credit may take/ }));
+    expect((await screen.findAllByText(/An advance has no cap/)).length).toBeGreaterThan(0);
+    await userEvent.unhover(screen.getByRole('button', { name: /More information: Most a credit may take/ }));
 
     await userEvent.clear(loan);
     await userEvent.type(loan, '25');

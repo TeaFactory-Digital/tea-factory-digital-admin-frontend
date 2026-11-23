@@ -3229,6 +3229,10 @@ export const en = {
   'reports.column.balanceTotal': 'Savings held',
   'reports.column.suppliersSaving': 'Suppliers saving',
   'alerts.notAllowed': 'Desktop notifications were not turned on',
+  // Explanations behind an "i" (24 November 2026).
+  'tip.howToEnter': 'How to enter',
+  'tip.howToFix': 'How to fix it',
+  'tip.aboutSection': 'About this section',
 } as const;
 
 export type TranslationKey = keyof typeof en;

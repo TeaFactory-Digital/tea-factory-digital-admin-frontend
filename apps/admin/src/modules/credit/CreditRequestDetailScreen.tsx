@@ -29,6 +29,7 @@ import { EligibilityPanel } from './EligibilityPanel';
 import { useCreditRequest, useCreditRequestAudit, useCreditRequests } from './hooks';
 import { useQueueKeys } from '@/components/useQueueKeys';
 import { queueNeighbours } from '@/components/useQueueNeighbours';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'neutral' } as const;
 
@@ -155,7 +156,11 @@ export function CreditRequestDetailScreen() {
                 request={request}
                 onDecided={() => navigate(next ? `/credit/${next}` : '/credit')}
               />
-              <p className="mt-sm text-caption text-text-secondary">{t('queue.keysHint')}</p>
+              <div className="mt-sm">
+                <InfoTip label={t('shortcuts.title')} text={t('shortcuts.title')}>
+                  {t('queue.keysHint')}
+                </InfoTip>
+              </div>
             </CardBody>
           </Card>
 

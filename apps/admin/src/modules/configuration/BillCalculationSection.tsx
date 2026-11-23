@@ -237,7 +237,9 @@ export function BillCalculationSection(props: SectionProps) {
         </fieldset>
       ) : null}
 
-      <p className="text-caption text-text-secondary">{t('config.interest.how')}</p>
+      <InfoTip label={t('tip.interestRule')} text={t('tip.interestRule')}>
+        {t('config.interest.how')}
+      </InfoTip>
 
       <SectionFooter
         {...props}

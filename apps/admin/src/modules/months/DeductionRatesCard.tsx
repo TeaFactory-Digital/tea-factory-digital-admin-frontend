@@ -31,6 +31,7 @@ import {
   useProposeDeductionRates,
 } from './deductionRateHooks';
 import { ReasonChips } from '@/components/ReasonChips';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 const NOTE_MIN = 10;
 /**
@@ -155,19 +156,29 @@ export function DeductionRatesCard() {
         ) : null}
 
         <div className="grid gap-md md:grid-cols-2">
-          {field(t('rates.deduction.transportPerKg'), editing.transportPerKg, (next) =>
-            setDraft({ ...editing, transportPerKg: next }), 0.25)}
-          {field(t('rates.deduction.stamps'), editing.stamps, (next) =>
-            setDraft({ ...editing, stamps: next }), 5)}
+          {field(
+            t('rates.deduction.transportPerKg'),
+            editing.transportPerKg,
+            (next) => setDraft({ ...editing, transportPerKg: next }),
+            0.25,
+          )}
+          {field(
+            t('rates.deduction.stamps'),
+            editing.stamps,
+            (next) => setDraft({ ...editing, stamps: next }),
+            5,
+          )}
         </div>
 
         {/* A far division costs the lorry more. Empty means the factory-wide rate above. */}
         {points.length > 0 ? (
           <fieldset className="flex flex-col gap-sm">
-            <legend className="text-label text-text-primary">{t('rates.deduction.byPoint')}</legend>
-            <p className="text-caption text-text-secondary">
-              {t('rates.deduction.byPointHint', { rate: formatAmount(editing.transportPerKg) })}
-            </p>
+            <legend className="flex items-center gap-xxs text-label text-text-primary">
+              {t('rates.deduction.byPoint')}
+              <InfoTip label={`${t('tip.moreInfo')}: ${t('rates.deduction.byPoint')}`}>
+                {t('rates.deduction.byPointHint', { rate: formatAmount(editing.transportPerKg) })}
+              </InfoTip>
+            </legend>
             <div className="grid gap-md md:grid-cols-3">
               {points.map((point) => (
                 <Field label={point.name} key={point.id}>
@@ -191,10 +202,14 @@ export function DeductionRatesCard() {
         ) : null}
 
         <fieldset className="flex flex-col gap-sm">
-          <legend className="text-label text-text-primary">{t('rates.deduction.caps')}</legend>
+          <legend className="flex items-center gap-xxs text-label text-text-primary">
+            {t('rates.deduction.caps')}
+            <InfoTip label={`${t('tip.moreInfo')}: ${t('rates.deduction.caps')}`}>
+              {t('rates.deduction.capsHint')}
+            </InfoTip>
+          </legend>
           {/* A cap, not a schedule: the supplier picks the period, this stops a bad month
               disappearing into a repayment they agreed to when they were plucking well. */}
-          <p className="text-caption text-text-secondary">{t('rates.deduction.capsHint')}</p>
           <div className="grid gap-md md:grid-cols-2">
             {FACILITIES.map((facility) =>
               field(
@@ -225,8 +240,7 @@ export function DeductionRatesCard() {
             <ul className="flex flex-col gap-xxs">
               {deductionRateDiff(pending.current, pending.proposed).map((one) => (
                 <li key={one.field} className="numeric text-caption text-text-primary">
-                  {fieldLabel(one.field)}: {formatAmount(one.from)} →{' '}
-                  {formatAmount(one.to)}
+                  {fieldLabel(one.field)}: {formatAmount(one.from)} → {formatAmount(one.to)}
                 </li>
               ))}
             </ul>
@@ -270,7 +284,9 @@ export function DeductionRatesCard() {
                 ) : null}
               </div>
             ) : (
-              <p className="text-caption text-text-secondary">{t('rates.deduction.awaitingManager')}</p>
+              <p className="text-caption text-text-secondary">
+                {t('rates.deduction.awaitingManager')}
+              </p>
             )}
           </div>
         ) : canPropose ? (

@@ -47,6 +47,7 @@ import { errorMessageKey } from '@/lib/errorMessage';
 import { formatCount, formatDateTime, formatKg, formatMoney } from '@/lib/format';
 import { ImportFileError, readImportFile, type ImportFile } from '@/lib/importFile';
 import { useImportRows, usePreviewImport } from '@/modules/records/hooks';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 /**
  * The last file imported of each kind, in this browser (22 November 2026): shown before the
@@ -105,7 +106,8 @@ export function ImportDialog({
   const [preview, setPreview] = useState<ImportResult | null>(null);
   const [savedSkipped, setSavedSkipped] = useState(0);
   // `bills` (A8): how many suppliers' kilos on the slips differ from the leaf entered here.
-  const [leafDifferences, setLeafDifferences] = useState<ImportResult['leafDifferences']>(undefined);
+  const [leafDifferences, setLeafDifferences] =
+    useState<ImportResult['leafDifferences']>(undefined);
   // Leaf only: import the rows already recorded anyway.
   const [keepDuplicates, setKeepDuplicates] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -113,9 +115,14 @@ export function ImportDialog({
 
   const columns = IMPORT_COLUMNS[kind];
   // Required columns, and the balance columns whose header must be there even when blank.
-  const missing = useMemo(() => (file ? missingImportColumns(kind, file.data.headers) : []), [file, kind]);
+  const missing = useMemo(
+    () => (file ? missingImportColumns(kind, file.data.headers) : []),
+    [file, kind],
+  );
   const problems = useMemo(
-    () => serverProblems ?? (file && missing.length === 0 ? importRowProblems(kind, file.data.rows) : []),
+    () =>
+      serverProblems ??
+      (file && missing.length === 0 ? importRowProblems(kind, file.data.rows) : []),
     [serverProblems, file, missing, kind],
   );
   const badCells = useMemo(
@@ -124,11 +131,13 @@ export function ImportDialog({
   );
   const badRows = useMemo(() => new Set(problems.map((p) => p.row)), [problems]);
   const skippedRows = useMemo(
-    () => (keepDuplicates ? new Set<number>() : new Set((preview?.skipped ?? []).map((one) => one.row))),
+    () =>
+      keepDuplicates ? new Set<number>() : new Set((preview?.skipped ?? []).map((one) => one.row)),
     [preview, keepDuplicates],
   );
   const skippedTotal = preview?.skippedTotal ?? preview?.skipped?.length ?? 0;
-  const clientReady = file !== null && missing.length === 0 && serverProblems === null && problems.length === 0;
+  const clientReady =
+    file !== null && missing.length === 0 && serverProblems === null && problems.length === 0;
 
   /** The preview, once the file passes the console's own checks. */
   useEffect(() => {
@@ -177,7 +186,10 @@ export function ImportDialog({
     reset();
     try {
       const data = await readImportFile(chosen);
-      setFile({ name: chosen.name, data: { ...data, rows: data.rows.map((row) => cleanExcelNumbers(kind, row)) } });
+      setFile({
+        name: chosen.name,
+        data: { ...data, rows: data.rows.map((row) => cleanExcelNumbers(kind, row)) },
+      });
     } catch (error) {
       const code = error instanceof ImportFileError ? error.code : 'unreadable';
       setReadError(t(`records.import.fileError.${code}`));
@@ -221,10 +233,10 @@ export function ImportDialog({
             problem.code === 'not-allowed' && problem.column === 'date'
             ? t('records.import.problem.future-date')
             : t(`records.import.problem.${problem.code}`, {
-              amount: problem.amount === undefined ? '' : formatMoney(problem.amount),
-              days: LEAF_ENTRY_MAX_AGE_DAYS,
-              defaultValue: t('records.import.problem.other', { code: problem.code }),
-            }),
+                amount: problem.amount === undefined ? '' : formatMoney(problem.amount),
+                days: LEAF_ENTRY_MAX_AGE_DAYS,
+                defaultValue: t('records.import.problem.other', { code: problem.code }),
+              }),
     });
 
   const shownColumns = file ? columns.filter((c) => file.data.headers.includes(c.key)) : [];
@@ -254,7 +266,11 @@ export function ImportDialog({
               {t('common.cancel')}
             </Button>
             {file ? (
-              <Button variant="secondary" iconLeft={<RotateCcw className="size-icon-sm" aria-hidden />} onClick={reset}>
+              <Button
+                variant="secondary"
+                iconLeft={<RotateCcw className="size-icon-sm" aria-hidden />}
+                onClick={reset}
+              >
                 {t('records.import.another')}
               </Button>
             ) : null}
@@ -265,7 +281,9 @@ export function ImportDialog({
               loading={importRows.isPending || previewImport.isPending}
               onClick={() => void submit()}
             >
-              {file ? t('records.import.submit', { count: toImport }) : t('records.import.submitEmpty')}
+              {file
+                ? t('records.import.submit', { count: toImport })
+                : t('records.import.submitEmpty')}
             </Button>
           </>
         )
@@ -288,9 +306,12 @@ export function ImportDialog({
             ) : null}
             {savedSkipped > 0 ? (
               <p className="text-body-small text-text-secondary">
-                {t(`records.import.skip.done.${kind === 'suppliers' ? 'suppliers' : 'deliveries'}`, {
-                  count: savedSkipped,
-                })}
+                {t(
+                  `records.import.skip.done.${kind === 'suppliers' ? 'suppliers' : 'deliveries'}`,
+                  {
+                    count: savedSkipped,
+                  },
+                )}
               </p>
             ) : null}
           </div>
@@ -318,7 +339,9 @@ export function ImportDialog({
               <span className="text-body font-medium text-text-primary">
                 {dragging ? t('records.import.dropHere') : t('records.import.choose')}
               </span>
-              <span className="text-caption text-text-secondary">{t('records.import.formats')}</span>
+              <span className="text-caption text-text-secondary">
+                {t('records.import.formats')}
+              </span>
             </button>
             <input
               ref={input}
@@ -342,8 +365,11 @@ export function ImportDialog({
 
             <div className="flex flex-col gap-sm rounded-md bg-surface-variant p-md">
               <div className="flex flex-wrap items-center justify-between gap-sm">
-                <span className="text-body-small font-semibold text-text-primary">
+                <span className="flex items-center gap-xxs text-body-small font-semibold text-text-primary">
                   {t('records.import.columns')}
+                  <InfoTip label={`${t('tip.moreInfo')}: ${t('records.import.columns')}`}>
+                    {t('records.import.columnsHint')}
+                  </InfoTip>
                 </span>
                 <Button
                   size="sm"
@@ -360,7 +386,9 @@ export function ImportDialog({
                     key={column.key}
                     className={cn(
                       'rounded-sm px-sm py-xxs font-mono text-caption',
-                      column.required ? 'bg-primary-muted text-primary' : 'bg-surface text-text-secondary',
+                      column.required
+                        ? 'bg-primary-muted text-primary'
+                        : 'bg-surface text-text-secondary',
                     )}
                     title={column.values?.join(' | ')}
                   >
@@ -369,7 +397,6 @@ export function ImportDialog({
                   </li>
                 ))}
               </ul>
-              <span className="text-caption text-text-secondary">{t('records.import.columnsHint')}</span>
             </div>
           </>
         ) : (
@@ -383,7 +410,9 @@ export function ImportDialog({
             </div>
 
             {missing.length > 0 ? (
-              <Notice tone="error">{t('records.import.missingColumns', { columns: missing.join(', ') })}</Notice>
+              <Notice tone="error">
+                {t('records.import.missingColumns', { columns: missing.join(', ') })}
+              </Notice>
             ) : problems.length > 0 ? (
               <Notice tone="error">
                 <span className="flex flex-col gap-xs">
@@ -410,7 +439,9 @@ export function ImportDialog({
             ) : previews && !preview ? (
               <Notice tone="info">{t('records.import.skip.checking')}</Notice>
             ) : (
-              <Notice tone="info">{t('records.import.ready', { count: file.data.rows.length })}</Notice>
+              <Notice tone="info">
+                {t('records.import.ready', { count: file.data.rows.length })}
+              </Notice>
             )}
 
             {missing.length === 0 ? (
@@ -420,7 +451,10 @@ export function ImportDialog({
                     <tr>
                       <th className="px-sm py-xs font-semibold text-text-secondary">#</th>
                       {shownColumns.map((column) => (
-                        <th key={column.key} className="whitespace-nowrap px-sm py-xs font-mono font-semibold text-text-secondary">
+                        <th
+                          key={column.key}
+                          className="whitespace-nowrap px-sm py-xs font-mono font-semibold text-text-secondary"
+                        >
                           {column.key}
                         </th>
                       ))}
@@ -437,7 +471,9 @@ export function ImportDialog({
                             badRows.has(line) && 'bg-error-muted',
                             skippedRows.has(line) && 'text-text-secondary opacity-60',
                           )}
-                          title={skippedRows.has(line) ? t('records.import.skip.rowTitle') : undefined}
+                          title={
+                            skippedRows.has(line) ? t('records.import.skip.rowTitle') : undefined
+                          }
                         >
                           <td className="numeric px-sm py-xs text-text-secondary">{line}</td>
                           {shownColumns.map((column) => (
@@ -462,7 +498,10 @@ export function ImportDialog({
             ) : null}
             {file.data.rows.length > PREVIEW_ROWS ? (
               <span className="text-caption text-text-secondary">
-                {t('records.import.previewLimit', { shown: PREVIEW_ROWS, count: file.data.rows.length })}
+                {t('records.import.previewLimit', {
+                  shown: PREVIEW_ROWS,
+                  count: file.data.rows.length,
+                })}
               </span>
             ) : null}
           </>
@@ -539,4 +578,3 @@ function cleanExcelNumbers(kind: ImportKind, row: ImportRow): ImportRow {
   }
   return out;
 }
-

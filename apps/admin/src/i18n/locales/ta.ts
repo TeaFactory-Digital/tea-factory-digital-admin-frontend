@@ -3284,4 +3284,8 @@ export const ta: Record<TranslationKey, string> = {
   'reports.column.balanceTotal': 'வைத்திருக்கும் சேமிப்பு',
   'reports.column.suppliersSaving': 'சேமிக்கும் வழங்குநர்கள்',
   'alerts.notAllowed': 'டெஸ்க்டாப் அறிவிப்புகள் இயக்கப்படவில்லை',
+  // Explanations behind an "i" (24 November 2026).
+  'tip.howToEnter': 'உள்ளிடும் முறை',
+  'tip.howToFix': 'சரிசெய்யும் முறை',
+  'tip.aboutSection': 'இந்தப் பகுதி பற்றி',
 } as const;

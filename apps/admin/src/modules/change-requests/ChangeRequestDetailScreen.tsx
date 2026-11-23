@@ -34,6 +34,7 @@ import { DecisionActions } from './DecisionDialog';
 import { useQueueKeys } from '@/components/useQueueKeys';
 import { queueNeighbours } from '@/components/useQueueNeighbours';
 import { useChangeRequest, useChangeRequestAudit, useChangeRequests } from './hooks';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'neutral' } as const;
 /** Past this, the waiting time is shown as a problem rather than a fact. */
@@ -200,7 +201,11 @@ export function ChangeRequestDetailScreen() {
                   request={request}
                   onDecided={() => navigate(next ? `/change-requests/${next}` : '/change-requests')}
                 />
-                <p className="mt-sm text-caption text-text-secondary">{t('queue.keysHint')}</p>
+                <div className="mt-sm">
+                  <InfoTip label={t('shortcuts.title')} text={t('shortcuts.title')}>
+                    {t('queue.keysHint')}
+                  </InfoTip>
+                </div>
               </CardBody>
             </Card>
           ) : null}

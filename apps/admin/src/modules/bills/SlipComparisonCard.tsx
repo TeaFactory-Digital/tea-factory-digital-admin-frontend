@@ -31,6 +31,7 @@ import { formatCount, formatMoney, formatMonthKey } from '@/lib/format';
 import { cn } from '@/lib/cn';
 import { useHoldBill, useReleaseBill, useSetPrinted, useSlipComparison } from './hooks';
 import { ReasonChips } from '@/components/ReasonChips';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 export function SlipComparisonCard({ monthKey, monthOpen }: { monthKey: string; monthOpen: boolean }) {
   const { t } = useTranslation();
@@ -75,7 +76,9 @@ export function SlipComparisonCard({ monthKey, monthOpen }: { monthKey: string; 
               </Notice>
             ) : null}
             {canWrite && data.rows.some((row) => monthOpen || row.held) ? (
-              <p className="text-caption text-text-secondary">{t('slips.howToEnter')}</p>
+              <InfoTip label={t('tip.howToEnter')} text={t('tip.howToEnter')}>
+                {t('slips.howToEnter')}
+              </InfoTip>
             ) : null}
             {data.rows.length === 0 ? (
               <p className="flex items-start gap-xs text-body-small text-success">
@@ -171,7 +174,9 @@ export function SlipComparisonCard({ monthKey, monthOpen }: { monthKey: string; 
                 </table>
               </div>
             )}
-            <p className="text-caption text-text-secondary">{t('slips.howToFix')}</p>
+            <InfoTip label={t('tip.howToFix')} text={t('tip.howToFix')}>
+              {t('slips.howToFix')}
+            </InfoTip>
           </>
         )}
       </CardBody>

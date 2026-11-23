@@ -3223,4 +3223,8 @@ export const si: Record<TranslationKey, string> = {
   'reports.column.balanceTotal': 'රඳවා ඇති ඉතුරුම්',
   'reports.column.suppliersSaving': 'ඉතිරි කරන සැපයුම්කරුවන්',
   'alerts.notAllowed': 'Desktop දැනුම්දීම් සක්‍රිය නොවුණි',
+  // Explanations behind an "i" (24 November 2026).
+  'tip.howToEnter': 'ඇතුළත් කරන ආකාරය',
+  'tip.howToFix': 'නිවැරදි කරන ආකාරය',
+  'tip.aboutSection': 'මෙම කොටස ගැන',
 } as const;

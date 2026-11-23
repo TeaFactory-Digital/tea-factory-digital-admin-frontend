@@ -27,6 +27,7 @@ import { pickMatch } from '@/modules/deliveries/pickMatch';
 import { useImportRows } from '@/modules/records/hooks';
 import { useSuppliers } from './hooks';
 import { GRID_COLUMNS, lastMonthKey, newLine, parseGridPaste, type Line } from './openingGrid';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 export function OpeningBalancesGridScreen() {
   const { t } = useTranslation();
@@ -157,7 +158,9 @@ export function OpeningBalancesGridScreen() {
                 <Input id={id} aria-describedby={describedBy} type="month" fullWidth={false} value={month} onChange={(event) => setMonth(event.target.value)} />
               )}
             </Field>
-            <p className="max-w-prose text-caption text-text-secondary">{t('records.openingGrid.keys')}</p>
+            <InfoTip label={t('tip.howToEnter')} text={t('tip.howToEnter')}>
+              {t('records.openingGrid.keys')}
+            </InfoTip>
           </div>
 
           <div className="overflow-x-auto">

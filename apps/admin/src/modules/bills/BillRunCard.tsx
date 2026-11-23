@@ -31,6 +31,7 @@ import { formatCount, formatDateTime, formatKg, formatMoney, formatMonthKey } fr
 import { BILL_ENGINE_ON_SERVER } from '@/lib/serverReady';
 import { isApiError } from '@/services/api/errors';
 import { useGenerateBills } from './hooks';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 export function BillRunCard({
   monthKey,
@@ -170,7 +171,11 @@ export function BillRunCard({
                 >
                   {t('bills.regenerateHeld', { count: heldCount })}
                 </Button>
-                <p className="text-caption text-text-secondary">{t('bills.regenerateHeldHint')}</p>
+                <InfoTip
+                  label={`${t('tip.moreInfo')}: ${t('bills.regenerateHeld', { count: heldCount })}`}
+                >
+                  {t('bills.regenerateHeldHint')}
+                </InfoTip>
               </div>
             ) : null}
           </>

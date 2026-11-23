@@ -302,6 +302,14 @@ Motion, all of it off under `prefers-reduced-motion` and skipped in tests:
 - **Celebration**: `Celebration` after a month is published, under two seconds,
   `aria-hidden`, pointer-events none.
 
+**Explanations sit behind an "i", everywhere** (24 November 2026). A plain sentence of guidance
+is not printed under the thing it explains: `Field` puts its `hint` behind an "i" beside the
+label (kept in the page for `aria-describedby`), a fieldset puts it beside its `legend`, and a
+section's "how to" uses `InfoTip` with a short `text` ("How to enter", "How interest is worked
+out", "Keyboard shortcuts"). What stays printed: live figures and worked examples, anything
+with a link, a confirm dialog's or card's main content, and every reason or warning (why a
+button is disabled, that publishing cannot be undone, that notifications are blocked).
+
 On the profile screen each setting's explanation sits behind an "i" beside its label
 (`LabelWithTip`: the full 32 px target, named "More information: <setting>"), shown on hover
 or keyboard focus. A reason a setting cannot be used (notifications blocked, unsupported)

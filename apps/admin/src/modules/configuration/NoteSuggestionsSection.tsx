@@ -23,6 +23,7 @@ import { CardBody } from '@/components/ui/Card';
 import { Field, Input, Select, Textarea } from '@/components/ui/Field';
 import { cn } from '@/lib/cn';
 import { SectionFooter, type SectionProps } from './SectionFooter';
+import { InfoTip } from '@/components/ui/Tooltip';
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -70,7 +71,9 @@ export function NoteSuggestionsSection(props: SectionProps) {
 
   return (
     <CardBody className="flex flex-col gap-lg">
-      <p className="text-body-small text-text-secondary">{t('config.notes.intro')}</p>
+      <InfoTip label={t('tip.aboutSection')} text={t('tip.aboutSection')}>
+        {t('config.notes.intro')}
+      </InfoTip>
 
       <div className="flex flex-wrap items-end gap-md">
         <Field label={t('config.notes.list')}>
