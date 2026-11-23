@@ -18,7 +18,7 @@
  * is the only way a rebrand from M14 reaches a running console without a deploy.
  */
 
-import { useEffect, type PropsWithChildren } from 'react';
+import { useEffect, useState, type PropsWithChildren } from 'react';
 import {
   KNOWN_TOKENS,
   applyTheme,
@@ -30,7 +30,7 @@ import {
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { tenantId } from '@/config/tenant';
 import { BUNDLED_LOGO_URL } from './assets';
-import { scaleTypography } from './appearance';
+import { drawnScheme, scaleTypography } from './appearance';
 import { LiquidGlassFilter } from './LiquidGlassFilter';
 import { useAppearance } from './useAppearance';
 
@@ -48,6 +48,14 @@ import { useAppearance } from './useAppearance';
 export function BrandProvider({ children }: PropsWithChildren) {
   const { config } = useRuntimeConfig();
   const { appearance } = useAppearance();
+  // Auto is checked once a minute, so the console turns dark at six without a reload.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    if (appearance.scheme !== 'auto') return;
+    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(timer);
+  }, [appearance.scheme]);
+  const scheme = drawnScheme(appearance.scheme, now);
 
   useEffect(() => {
     const bundled = brandForTenant(tenantId);
@@ -58,7 +66,7 @@ export function BrandProvider({ children }: PropsWithChildren) {
       themeOverrideFromWire(config.theme, KNOWN_TOKENS),
     );
 
-    const theme = scaleTypography(createTheme(appearance.scheme, override), appearance.textSize);
+    const theme = scaleTypography(createTheme(scheme, override), appearance.textSize);
     const written = applyTheme(document.documentElement, theme);
 
     return () => {
@@ -67,7 +75,16 @@ export function BrandProvider({ children }: PropsWithChildren) {
       // tenant switch is a full page load (see config/tenant.ts).
       void written;
     };
-  }, [config.theme, appearance.scheme, appearance.textSize]);
+  }, [config.theme, scheme, appearance.textSize]);
+
+  // Density and contrast are CSS layers keyed on attributes (`theme.css`).
+  useEffect(() => {
+    const root = document.documentElement;
+    if (appearance.density === 'compact') root.dataset.density = 'compact';
+    else delete root.dataset.density;
+    if (appearance.contrast === 'high') root.dataset.contrast = 'high';
+    else delete root.dataset.contrast;
+  }, [appearance.density, appearance.contrast]);
 
   // The glass effect is a CSS layer keyed on this attribute (`theme.css`), so turning it on
   // re-renders nothing: the sidebar, top bar and dialogs carry `data-glass-surface` always.

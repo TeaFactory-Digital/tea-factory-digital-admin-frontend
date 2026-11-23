@@ -31,6 +31,7 @@ import { formatAge, formatAmount, hoursSince } from '@/lib/format';
 import type { DashboardView } from '@/services/repositories/dashboardRepository';
 import { NAVIGATION, queuesOf } from './navigation';
 import { useActivity, useMarkActivityRead } from './useActivity';
+import { activityPath } from './activityText';
 
 /** The queue screen narrows to one facility, as the dashboard's cards do. */
 const QUEUE_FACILITY: Partial<Record<QueueCount['queue'], CreditFacility>> = {
@@ -44,17 +45,17 @@ function activityTarget(item: ActivityItem): { to: string; icon: LucideIcon } {
   switch (item.kind) {
     case 'creditRequest.created':
     case 'creditRequest.cancelled':
-      return { to: `/credit/${item.entityId}`, icon: BadgeDollarSign };
+      return { to: activityPath(item), icon: BadgeDollarSign };
     case 'teaPacket.created':
     case 'teaPacket.cancelled':
-      return { to: '/tea-packets', icon: Package };
+      return { to: activityPath(item), icon: Package };
     case 'changeRequest.created':
-      return { to: `/change-requests/${item.entityId}`, icon: ClipboardList };
+      return { to: activityPath(item), icon: ClipboardList };
     case 'inquiry.created':
     case 'inquiry.replied':
-      return { to: `/inquiries/${item.entityId}`, icon: MessageSquare };
+      return { to: activityPath(item), icon: MessageSquare };
     case 'supplier.appDeletionRequested':
-      return { to: `/suppliers/${item.supplierId}`, icon: UserX };
+      return { to: activityPath(item), icon: UserX };
   }
 }
 

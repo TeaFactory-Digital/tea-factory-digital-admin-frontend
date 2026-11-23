@@ -15,7 +15,32 @@
 
 import type { Theme } from '@tfd/brand';
 
-export type ConsoleScheme = 'light' | 'dark';
+/** The reader's choice. `auto` (23 November 2026) is light by day and dark from 6 pm to 6 am. */
+export type ConsoleScheme = 'light' | 'dark' | 'auto';
+/** What is actually drawn. */
+export type DrawnScheme = 'light' | 'dark';
+
+/**
+ * Auto follows the office's clock, not the machine's dark-mode setting, for the reason the
+ * default does not sniff it either (see `DEFAULT_APPEARANCE`): evening at the counter is
+ * the same for everyone at that desk.
+ */
+export function drawnScheme(choice: ConsoleScheme, now: Date = new Date()): DrawnScheme {
+  if (choice !== 'auto') return choice;
+  const hour = now.getHours();
+  return hour >= 18 || hour < 6 ? 'dark' : 'light';
+}
+
+/** Comfortable is the console as designed; compact fits more rows on a 1366 × 768 laptop. */
+export const DENSITIES = ['comfortable', 'compact'] as const;
+export type Density = (typeof DENSITIES)[number];
+
+/** High contrast: darker secondary text and borders, for bright counters and tired eyes. */
+export const CONTRASTS = ['normal', 'high'] as const;
+export type Contrast = (typeof CONTRASTS)[number];
+
+/** The sidebar in full, or as a rail of icons that gives the grids the width. */
+export type SidebarMode = 'full' | 'icons';
 
 /**
  * Three steps, not a slider.
@@ -57,6 +82,9 @@ export interface Appearance {
    * settings, and it never leaves this browser.
    */
   photo: string | null;
+  density: Density;
+  contrast: Contrast;
+  sidebar: SidebarMode;
 }
 
 export const GLASS_BACKDROPS = ['colours', 'estate', 'photo'] as const;
@@ -77,6 +105,9 @@ export const DEFAULT_APPEARANCE: Appearance = {
   glass: false,
   backdrop: 'colours',
   photo: null,
+  density: 'comfortable',
+  contrast: 'normal',
+  sidebar: 'full',
 };
 
 const STORAGE_KEY = 'tfd.admin.appearance';
@@ -86,7 +117,15 @@ const isBackdrop = (value: unknown): value is GlassBackdrop =>
   typeof value === 'string' && (GLASS_BACKDROPS as readonly string[]).includes(value);
 
 const isScheme = (value: unknown): value is ConsoleScheme =>
-  value === 'light' || value === 'dark';
+  value === 'light' || value === 'dark' || value === 'auto';
+
+const oneOf =
+  <T extends string>(values: readonly T[]) =>
+  (value: unknown): value is T =>
+    typeof value === 'string' && (values as readonly string[]).includes(value);
+const isDensity = oneOf(DENSITIES);
+const isContrast = oneOf(CONTRASTS);
+const isSidebar = oneOf<SidebarMode>(['full', 'icons']);
 
 const isTextSize = (value: unknown): value is TextSize =>
   typeof value === 'string' && (TEXT_SIZES as readonly string[]).includes(value);
@@ -112,6 +151,9 @@ export function readAppearance(): Appearance {
       textSize: isTextSize(record.textSize) ? record.textSize : DEFAULT_APPEARANCE.textSize,
       glass: typeof record.glass === 'boolean' ? record.glass : DEFAULT_APPEARANCE.glass,
       ...readBackdrop(record.backdrop),
+      density: isDensity(record.density) ? record.density : DEFAULT_APPEARANCE.density,
+      contrast: isContrast(record.contrast) ? record.contrast : DEFAULT_APPEARANCE.contrast,
+      sidebar: isSidebar(record.sidebar) ? record.sidebar : DEFAULT_APPEARANCE.sidebar,
     };
   } catch {
     // Unreadable storage, or JSON somebody hand-edited. Neither is worth a broken console.

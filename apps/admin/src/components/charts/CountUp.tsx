@@ -1,0 +1,52 @@
+/**
+ * A dashboard figure that counts up to its value (23 November 2026): from 0 when the screen
+ * opens, and from the old figure to the new one when it changes, so the eye catches that a
+ * number moved. Under a second, eased, and drawn with the figure's own formatting.
+ *
+ * Instant for anyone whose system asks for reduced motion, and in tests. The text is the final
+ * figure for assistive technology from the first frame of each change, because the element is
+ * not a live region: nothing reads the in-between numbers aloud.
+ */
+
+import { useEffect, useRef, useState } from 'react';
+import { prefersReducedMotion } from '@/lib/navigate';
+
+const DURATION_MS = 700;
+
+export function CountUp({
+  value,
+  format,
+  animate = import.meta.env.MODE !== 'test' && !prefersReducedMotion(),
+}: {
+  value: number;
+  format: (value: number) => string;
+  animate?: boolean;
+}) {
+  const [shown, setShown] = useState(animate ? 0 : value);
+  const from = useRef(animate ? 0 : value);
+
+  useEffect(() => {
+    if (!animate) {
+      setShown(value);
+      from.current = value;
+      return;
+    }
+    const start = performance.now();
+    const origin = from.current;
+    let frame = requestAnimationFrame(function step(now) {
+      const progress = Math.min(1, (now - start) / DURATION_MS);
+      const eased = 1 - (1 - progress) ** 3;
+      setShown(origin + (value - origin) * eased);
+      if (progress < 1) frame = requestAnimationFrame(step);
+      else from.current = value;
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      from.current = value;
+    };
+  }, [value, animate]);
+
+  // Whole numbers stay whole on the way up; a percentage keeps its own rounding in `format`.
+  const display = Number.isInteger(value) ? Math.round(shown) : shown;
+  return <span className="numeric">{format(display)}</span>;
+}

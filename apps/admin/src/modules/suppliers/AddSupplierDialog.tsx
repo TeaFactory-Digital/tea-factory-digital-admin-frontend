@@ -11,7 +11,7 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/navigate';
 import { supplierRegistrationSchema, type NewSupplier, type PaymentMethod } from '@tfd/domain';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { Button } from '@/components/ui/Button';

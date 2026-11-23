@@ -49,8 +49,9 @@ describe('the appearance preference', () => {
   });
 
   it('survives a reload', () => {
-    persistAppearance({ scheme: 'dark', textSize: 'larger', glass: true, backdrop: 'estate', photo: null });
-    expect(readAppearance()).toEqual({ scheme: 'dark', textSize: 'larger', glass: true, backdrop: 'estate', photo: null });
+    const saved = { ...DEFAULT_APPEARANCE, scheme: 'auto', textSize: 'larger', glass: true, backdrop: 'estate', density: 'compact', contrast: 'high', sidebar: 'icons' } as const;
+    persistAppearance(saved);
+    expect(readAppearance()).toEqual(saved);
   });
 
   it('falls back per field, so one bad value does not cost both settings', () => {
@@ -61,12 +62,12 @@ describe('the appearance preference', () => {
       JSON.stringify({ scheme: 'dark', textSize: 'enormous' }),
     );
 
-    expect(readAppearance()).toEqual({ scheme: 'dark', textSize: 'normal', glass: false, backdrop: 'colours', photo: null });
+    expect(readAppearance()).toEqual({ ...DEFAULT_APPEARANCE, scheme: 'dark' });
   });
 
   it('reads a preference saved before the glass effect existed as glass off', () => {
     window.localStorage.setItem('tfd.admin.appearance', JSON.stringify({ scheme: 'dark', textSize: 'large' }));
-    expect(readAppearance()).toEqual({ scheme: 'dark', textSize: 'large', glass: false, backdrop: 'colours', photo: null });
+    expect(readAppearance()).toEqual({ ...DEFAULT_APPEARANCE, scheme: 'dark', textSize: 'large' });
     expect(DEFAULT_APPEARANCE.glass).toBe(false);
   });
 
@@ -176,7 +177,7 @@ describe('the background behind the glass', () => {
   });
 
   it('keeps the photo under its own key, apart from the other settings', () => {
-    persistAppearance({ scheme: 'light', textSize: 'normal', glass: true, backdrop: 'photo', photo: PHOTO });
+    persistAppearance({ ...DEFAULT_APPEARANCE, glass: true, backdrop: 'photo', photo: PHOTO });
     expect(window.localStorage.getItem('tfd.admin.glassPhoto')).toBe(PHOTO);
     expect(window.localStorage.getItem('tfd.admin.appearance')).not.toContain('base64');
     expect(readAppearance()).toMatchObject({ backdrop: 'photo', photo: PHOTO });

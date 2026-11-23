@@ -32,6 +32,7 @@ export function CardHeader({
     // No rule under the header: the title's weight separates it from the body, the
     // way the panels on the dashboard read. A grid below brings its own header line.
     <header
+      data-card-header
       className={cn(
         'flex flex-wrap items-start justify-between gap-md px-lg pt-lg pb-md',
         className,
@@ -58,7 +59,11 @@ export function CardBody({
   //
   // `flush` rather than a `p-0` from the caller: `cn` joins without merging, so two
   // paddings on one element are settled by stylesheet order, not by which was written last.
-  return <div className={cn(flush ? 'pb-sm' : 'p-lg [header+&]:pt-0', className)}>{children}</div>;
+  return (
+    <div data-card-body={flush ? 'flush' : ''} className={cn(flush ? 'pb-sm' : 'p-lg [header+&]:pt-0', className)}>
+      {children}
+    </div>
+  );
 }
 
 

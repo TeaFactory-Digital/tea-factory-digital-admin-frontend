@@ -14,7 +14,8 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
+import { useNavigate } from '@/lib/navigate';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { AdminCreditRequest, CreditFacility, RequestStatus } from '@tfd/domain';
 import { CREDIT_FACILITIES, CREDIT_FACILITY_FLAGS, QUEUE_SLA_HOURS } from '@tfd/domain';

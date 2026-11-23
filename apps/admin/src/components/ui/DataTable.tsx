@@ -145,7 +145,7 @@ export function DataTable<Row>({
        * The page body itself never scrolls: see `AppShell`.
        */}
       <div className="min-h-0 flex-1 overflow-auto">
-        <table className="w-full border-collapse text-data-cell" aria-label={label}>
+        <table data-grid className="w-full border-collapse text-data-cell" aria-label={label}>
           {/**
            * Sticky against the scroll container above, not the page.
            *

@@ -565,3 +565,165 @@
     background: var(--color-background);
   }
 }
+
+/**
+ * Compact density (23 November 2026), the reader's choice in Profile → Appearance. The type
+ * stays the same size; only the padding around grid rows, card edges and between sections
+ * comes in, so a 1366 × 768 laptop shows about a third more rows of a list.
+ */
+:root[data-density='compact'] [data-grid] th {
+  padding-block: var(--spacing-xs);
+  padding-inline: var(--spacing-md);
+}
+
+:root[data-density='compact'] [data-grid] td {
+  padding-block: var(--spacing-xs);
+  padding-inline: var(--spacing-md);
+}
+
+:root[data-density='compact'] [data-card-header] {
+  padding: var(--spacing-md) var(--spacing-md) var(--spacing-sm);
+}
+
+:root[data-density='compact'] [data-card-body=''] {
+  padding: var(--spacing-md);
+}
+
+:root[data-density='compact'] [data-card-header] + [data-card-body=''] {
+  padding-top: 0;
+}
+
+:root[data-density='compact'] [data-page] {
+  gap: var(--spacing-md);
+}
+
+:root[data-density='compact'] [data-nav-link] {
+  height: 2rem;
+}
+
+/**
+ * High contrast (23 November 2026): secondary text close to the main text colour, borders
+ * and dividers drawn firmly, a thicker focus ring, and no see-through glass. For a counter in
+ * the sun and for eyes that need it. Mixed from the brand's own text colour, so it works in
+ * light and dark and in every factory's palette.
+ */
+:root[data-contrast='high'] {
+  --color-text-secondary: color-mix(in srgb, var(--color-text-primary) 84%, var(--color-background));
+  --color-border: color-mix(in srgb, var(--color-text-primary) 62%, var(--color-background));
+  --color-divider: color-mix(in srgb, var(--color-text-primary) 40%, var(--color-background));
+}
+
+:root[data-contrast='high'] :focus-visible {
+  outline-width: 3px;
+  outline-offset: 3px;
+}
+
+:root[data-contrast='high'][data-glass='on'] [data-glass-surface] {
+  background-color: var(--color-surface);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/**
+ * Smooth screen changes (23 November 2026): the page area fades out and slides in as a row
+ * opens its record (`lib/navigate.ts` asks React Router for a View Transition). The rest of
+ * the window holds still; the top bar keeps its own snapshot above the page, so the floating
+ * glass capsule is never covered mid-change. None of it for reduced motion.
+ */
+main#main {
+  view-transition-name: page;
+}
+
+[data-glass-surface='bar'] {
+  view-transition-name: bar;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-group(bar) {
+  z-index: 1;
+}
+
+::view-transition-old(page) {
+  animation: 120ms ease-out both tfd-page-out;
+}
+
+::view-transition-new(page) {
+  animation: 200ms ease-out both tfd-page-in;
+}
+
+@keyframes tfd-page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes tfd-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* The month-published celebration (`components/Celebration.tsx`). */
+.tfd-confetti {
+  animation: tfd-confetti 1.4s cubic-bezier(0.15, 0.7, 0.3, 1) both;
+}
+
+@keyframes tfd-confetti {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), calc(var(--dy) + 80px)) rotate(var(--spin)) scale(0.6);
+  }
+}
+
+.tfd-celebrate-check {
+  animation: tfd-check 1.8s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+@keyframes tfd-check {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  28% {
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tfd-celebrate-check {
+    animation: none;
+  }
+}

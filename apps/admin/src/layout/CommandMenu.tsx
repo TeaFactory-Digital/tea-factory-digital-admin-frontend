@@ -10,7 +10,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/navigate';
 import { useQuery } from '@tanstack/react-query';
 import * as RadixDialog from '@radix-ui/react-dialog';
 import {
@@ -18,6 +18,7 @@ import {
   CornerDownLeft,
   Coins,
   Inbox,
+  Keyboard,
   Leaf,
   Package,
   Scale,
@@ -34,6 +35,7 @@ import { useFeatureFlags, useKeepsFactoryRecords } from '@/config/RuntimeConfigP
 import { cn } from '@/lib/cn';
 import { supplierRepository } from '@/services/repositories/supplierRepository';
 import { NAVIGATION, isNavItemVisible } from './navigation';
+import { openShortcuts } from './shortcutsEvent';
 
 interface Result {
   key: string;
@@ -43,6 +45,8 @@ interface Result {
   icon: typeof Search;
   /** Read by the screen it opens: `add` opens its "add" dialog straight away. */
   state?: { action: string };
+  /** Not a place: something done where you are (the shortcuts sheet). */
+  run?: () => void;
 }
 
 /**
@@ -190,7 +194,7 @@ export function CommandMenu() {
     return COMMAND_ACTIONS.filter(
       (action) => can(grants, action.capability, action.verb) && (!action.records || keepsRecords),
     )
-      .map((action) => ({
+      .map((action): Result => ({
         key: `action-${action.key}`,
         label: t(action.labelKey),
         hint: t('search.actionHint'),
@@ -198,6 +202,14 @@ export function CommandMenu() {
         icon: action.icon,
         state: action.state,
       }))
+      .concat({
+        key: 'action-shortcuts',
+        label: t('shortcuts.title'),
+        hint: t('search.actionHint'),
+        to: '',
+        icon: Keyboard,
+        run: openShortcuts,
+      })
       .filter((item) => !lower || item.label.toLowerCase().includes(lower));
   }, [needle, grants, keepsRecords, t]);
 
@@ -216,6 +228,11 @@ export function CommandMenu() {
   function go(result: Result | undefined) {
     if (!result) return;
     setOpen(false);
+    if (result.run) {
+      // After the search dialog has closed, so the sheet is not refused as "a dialog is open".
+      window.setTimeout(result.run, 0);
+      return;
+    }
     navigate(result.to, result.state ? { state: result.state } : undefined);
   }
 

@@ -24,7 +24,7 @@ From the workspace root:
 | `npm run preview`       | Serves the built bundle                                                                    |
 | `npm run typecheck`     | `tsc --build --force` across the projects                                                  |
 | `npm run lint`          | ESLint, including the white-label and layering rules                                       |
-| `npm run test`          | Vitest against the MSW fixtures: 701 tests in 100 files (22 November 2026)                   |
+| `npm run test`          | Vitest against the MSW fixtures: 713 tests in 101 files (22 November 2026)                   |
 | `npm run test:coverage` | The same with coverage: the logic (packages, `services`, `lib`) at 70% or more on all four measures (84, 76, 85, 87 on 30 October 2026); CI runs it |
 | `npm run test:watch`    | Vitest in watch mode                                                                       |
 | `npm run e2e`           | Playwright against its own dev server on port 5274, API answered by `e2e/fixtures.ts`. Needs `npx playwright install chromium` once; see Testing |
@@ -166,7 +166,7 @@ old binaries are in the field, and feature flags are the release valve.
 
 Layered so each layer tests what only it can.
 
-### Vitest: 701 tests in 100 files
+### Vitest: 713 tests in 101 files
 
 Every file runs against the MSW fixtures through the real transport, store and screens
 (`test/setup.ts`); only the server is a stand-in. Counts drift with every change, so
@@ -185,7 +185,7 @@ re-read them from `npm test` rather than from here. The files worth knowing:
 | `notificationBell.test.tsx`, `dashboard*.test.ts(x)` | The bell (waiting queues and supplier activity) and the dashboard |
 | `factorySync.test.ts` | The freshness states (fresh, stale, never), sized against the hourly polling window |
 | `content.test.ts`, `notifications.test.ts`, `users.test.ts`, `inquiries.test.tsx`, `reports.test.ts`, `teaPackets.test.ts`, `banners.test.ts` | The other modules, each against its refusals |
-| `consoleConveniences.test.tsx`, `weighingSheet.test.tsx`, `reasonChips.test.tsx` | The office's shortcuts: money boxes grouping thousands with Enter moving on, the queue keys (A, R, J, K), the bulk decision, remembered filters, the opening balances sheet, Ctrl+K actions; the weighing sheet; the reason chips under every reason box |
+| `consoleConveniences.test.tsx`, `lookAndFeel.test.tsx`, `appearance.test.tsx`, `weighingSheet.test.tsx`, `reasonChips.test.tsx` | The office's shortcuts: money boxes grouping thousands with Enter moving on, the queue keys (A, R, J, K), the bulk decision, remembered filters, the opening balances sheet, Ctrl+K actions; the reader's look (Auto theme, density, high contrast, the icon rail, Liquid Glass and its background), the shortcuts sheet, counting figures, the publish celebration and new-request alerts; the weighing sheet; the reason chips under every reason box |
 | `brand.test.ts`, `languageSwitcher.test.tsx`, `viewportGate.test.tsx`, `logo.test.tsx` | Tenant resolution and the brand bridge, the si/en/ta picker, the 768×480 floor, the logo fallback and boot splash |
 
 `rbac.test.ts` and `money.test.ts` are the highest-value files. The matrix is what

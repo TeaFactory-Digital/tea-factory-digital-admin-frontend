@@ -13,7 +13,8 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from '@/lib/navigate';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowRight } from 'lucide-react';
 import type { AdminChangeRequest, ChangeRequestType, RequestStatus } from '@tfd/domain';

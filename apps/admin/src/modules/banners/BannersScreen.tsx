@@ -19,7 +19,8 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from '@/lib/navigate';
 import type { ColumnDef } from '@tanstack/react-table';
 import { CircleAlert, ImageOff, Plus } from 'lucide-react';
 import type { BannerListItem, BannerQuery, ContentStatus } from '@tfd/domain';

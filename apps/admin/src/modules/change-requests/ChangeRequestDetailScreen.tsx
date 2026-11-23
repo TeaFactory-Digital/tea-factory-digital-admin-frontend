@@ -9,7 +9,8 @@
 
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import { useNavigate } from '@/lib/navigate';
 import {
   ArrowUpRight,
   Building2,

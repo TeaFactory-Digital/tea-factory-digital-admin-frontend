@@ -12,7 +12,7 @@
  */
 
 import { useState } from 'react';
-import { ChevronsUpDown, LogOut, UserRound } from 'lucide-react';
+import { ChevronsUpDown, LogOut, PanelLeftClose, PanelLeftOpen, UserRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useAuthStore, useCurrentUser } from '@/auth/authStore';
@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu';
 import { cn } from '@/lib/cn';
+import { useAppearance } from '@/brand/useAppearance';
 
 /** `Nadeeka Perera` → `NP`. */
 function initials(name: string): string {
@@ -54,11 +55,15 @@ export function Avatar({ name, className }: { name: string; className?: string }
 const ITEM =
   'flex cursor-pointer items-center gap-sm rounded-sm px-sm py-xs text-body-small text-text-primary outline-none data-highlighted:bg-surface-variant';
 
-export function UserMenu({ placement }: { placement: 'sidebar' | 'topbar' }) {
+export function UserMenu({ placement }: { placement: 'sidebar' | 'rail' | 'topbar' }) {
   const { t } = useTranslation();
   const user = useCurrentUser();
   const logout = useAuthStore((s) => s.logout);
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
+  // Collapsing the sidebar lives here, beside the profile (23 November 2026), so the
+  // sidebar itself carries no extra button. Only where there is a sidebar to collapse.
+  const { appearance, setSidebar } = useAppearance();
+  const rail = appearance.sidebar === 'icons';
 
   if (!user) return null;
 
@@ -70,14 +75,23 @@ export function UserMenu({ placement }: { placement: 'sidebar' | 'topbar' }) {
             type="button"
             className={cn(
               'flex min-w-0 items-center gap-sm rounded-md text-left transition-colors hover:bg-surface-variant',
-              placement === 'sidebar' ? 'w-full p-xs' : 'p-xxs',
+              placement === 'sidebar'
+                ? 'w-full p-xs'
+                : placement === 'rail'
+                  ? 'justify-center p-xs'
+                  : 'p-xxs',
             )}
+            aria-label={placement === 'rail' ? user.name : undefined}
           >
             <Avatar name={user.name} />
             <span
               className={cn(
                 'min-w-0 flex-1 flex-col',
-                placement === 'sidebar' ? 'flex' : 'hidden sm:flex',
+                placement === 'sidebar'
+                  ? 'flex'
+                  : placement === 'rail'
+                    ? 'hidden'
+                    : 'hidden sm:flex',
               )}
             >
               <span className="truncate text-body-small font-semibold text-text-primary">
@@ -87,12 +101,14 @@ export function UserMenu({ placement }: { placement: 'sidebar' | 'topbar' }) {
                 {user.roles.join(', ')}
               </span>
             </span>
-            <ChevronsUpDown className="size-icon-sm shrink-0 text-text-secondary" aria-hidden />
+            {placement === 'rail' ? null : (
+              <ChevronsUpDown className="size-icon-sm shrink-0 text-text-secondary" aria-hidden />
+            )}
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          align={placement === 'sidebar' ? 'start' : 'end'}
-          side={placement === 'sidebar' ? 'top' : 'bottom'}
+          align={placement === 'topbar' ? 'end' : 'start'}
+          side={placement === 'sidebar' ? 'top' : placement === 'rail' ? 'right' : 'bottom'}
           sideOffset={6}
           className="min-w-56 p-xs"
         >
@@ -113,6 +129,20 @@ export function UserMenu({ placement }: { placement: 'sidebar' | 'topbar' }) {
               {t('profile.title')}
             </Link>
           </DropdownMenuItem>
+
+          {placement === 'topbar' ? null : (
+            <DropdownMenuItem onSelect={() => setSidebar(rail ? 'full' : 'icons')} className={ITEM}>
+              {rail ? (
+                <PanelLeftOpen className="size-icon-sm" aria-hidden />
+              ) : (
+                <PanelLeftClose className="size-icon-sm" aria-hidden />
+              )}
+              <span className="flex-1">{rail ? t('nav.expand') : t('nav.collapse')}</span>
+              <kbd className="rounded-sm border border-border px-xs font-sans text-caption text-text-secondary">
+                [
+              </kbd>
+            </DropdownMenuItem>
+          )}
 
           {/* Appearance and text size live on M15 alone: one home for a setting beats
               two, and the profile row above is the way to it. */}

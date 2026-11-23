@@ -21,8 +21,31 @@
 
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, Moon, Mountain, Palette, Sparkles, Square, Sun } from 'lucide-react';
-import { GLASS_BACKDROPS, TEXT_SIZES, type Appearance, type ConsoleScheme, type GlassBackdrop, type TextSize } from './appearance';
+import {
+  Contrast as ContrastIcon,
+  Image,
+  Moon,
+  Mountain,
+  Palette,
+  Rows3,
+  Rows4,
+  Sparkles,
+  Square,
+  Sun,
+  SunMoon,
+} from 'lucide-react';
+import {
+  CONTRASTS,
+  DENSITIES,
+  GLASS_BACKDROPS,
+  TEXT_SIZES,
+  type Appearance,
+  type ConsoleScheme,
+  type Contrast,
+  type Density,
+  type GlassBackdrop,
+  type TextSize,
+} from './appearance';
 import { BackdropPhotoError, prepareBackdropPhoto } from '@/lib/backdropPhoto';
 import { useAppearance } from './useAppearance';
 import { cn } from '@/lib/cn';
@@ -30,6 +53,7 @@ import { cn } from '@/lib/cn';
 const SCHEMES: Array<{ value: ConsoleScheme; Icon: typeof Sun }> = [
   { value: 'light', Icon: Sun },
   { value: 'dark', Icon: Moon },
+  { value: 'auto', Icon: SunMoon },
 ];
 
 /** Glass for the sidebar, the top bar and dialogs (22 November 2026); off by default. */
@@ -37,6 +61,9 @@ const GLASS: Array<{ value: boolean; Icon: typeof Sun }> = [
   { value: false, Icon: Square },
   { value: true, Icon: Sparkles },
 ];
+
+const DENSITY_ICON: Record<Density, typeof Sun> = { comfortable: Rows3, compact: Rows4 };
+const CONTRAST_ICON: Record<Contrast, typeof Sun> = { normal: Square, high: ContrastIcon };
 
 /** What the glass sits on (22 November 2026). */
 const BACKDROP_ICON: Record<GlassBackdrop, typeof Sun> = {
@@ -83,6 +110,9 @@ export function AppearanceControls({ className, value, onChange }: AppearanceCon
     onChange
       ? onChange({ ...appearance, backdrop, ...(photo === undefined ? {} : { photo }) })
       : store.setBackdrop(backdrop, photo);
+
+  const set = (change: Partial<Appearance>) =>
+    onChange ? onChange({ ...appearance, ...change }) : store.updateAppearance(change);
 
   const fileInput = useRef<HTMLInputElement>(null);
   const [preparing, setPreparing] = useState(false);
@@ -135,6 +165,7 @@ export function AppearanceControls({ className, value, onChange }: AppearanceCon
             );
           })}
         </div>
+        <span className="text-caption text-text-secondary">{t('appearance.schemeHint')}</span>
       </div>
 
       <div className="flex flex-col gap-xxs">
@@ -167,6 +198,30 @@ export function AppearanceControls({ className, value, onChange }: AppearanceCon
           })}
         </div>
       </div>
+
+      <Segments
+        label={t('appearance.density')}
+        options={DENSITIES.map((value) => ({
+          value,
+          Icon: DENSITY_ICON[value],
+          label: t(`appearance.density.${value}`),
+        }))}
+        value={appearance.density}
+        onSelect={(density) => set({ density })}
+        hint={t('appearance.densityHint')}
+      />
+
+      <Segments
+        label={t('appearance.contrast')}
+        options={CONTRASTS.map((value) => ({
+          value,
+          Icon: CONTRAST_ICON[value],
+          label: t(`appearance.contrast.${value}`),
+        }))}
+        value={appearance.contrast}
+        onSelect={(contrast) => set({ contrast })}
+        hint={t('appearance.contrastHint')}
+      />
 
       <div className="flex flex-col gap-xxs">
         <span className="text-caption text-text-secondary">{t('appearance.glass')}</span>
@@ -241,7 +296,11 @@ export function AppearanceControls({ className, value, onChange }: AppearanceCon
           />
           {appearance.photo && appearance.backdrop === 'photo' ? (
             <div className="flex items-center gap-sm">
-              <img src={appearance.photo} alt={t('appearance.backdrop.preview')} className="h-10 w-16 rounded-sm object-cover" />
+              <img
+                src={appearance.photo}
+                alt={t('appearance.backdrop.preview')}
+                className="h-10 w-16 rounded-sm object-cover"
+              />
               <button
                 type="button"
                 className="text-caption font-medium text-primary hover:underline"
@@ -258,7 +317,11 @@ export function AppearanceControls({ className, value, onChange }: AppearanceCon
               </button>
             </div>
           ) : null}
-          {preparing ? <span className="text-caption text-text-secondary">{t('appearance.backdrop.preparing')}</span> : null}
+          {preparing ? (
+            <span className="text-caption text-text-secondary">
+              {t('appearance.backdrop.preparing')}
+            </span>
+          ) : null}
           {photoError ? (
             <span role="alert" className="text-caption text-error">
               {photoError}
@@ -267,6 +330,52 @@ export function AppearanceControls({ className, value, onChange }: AppearanceCon
           <span className="text-caption text-text-secondary">{t('appearance.backdrop.hint')}</span>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/** One row of segments: a radiogroup, so a screen reader hears "1 of 2". */
+function Segments<T extends string>({
+  label,
+  options,
+  value,
+  onSelect,
+  hint,
+}: {
+  label: string;
+  options: Array<{ value: T; Icon: typeof Sun; label: string }>;
+  value: T;
+  onSelect: (value: T) => void;
+  hint?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-xxs">
+      <span className="text-caption text-text-secondary">{label}</span>
+      <div role="radiogroup" aria-label={label} className="flex gap-xxs">
+        {options.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => onSelect(option.value)}
+              className={cn(
+                SEGMENT,
+                'text-body-small',
+                active
+                  ? 'bg-primary text-primary-contrast'
+                  : 'text-text-primary hover:bg-surface-variant',
+              )}
+            >
+              <option.Icon className="size-icon-sm" aria-hidden />
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+      {hint ? <span className="text-caption text-text-secondary">{hint}</span> : null}
     </div>
   );
 }

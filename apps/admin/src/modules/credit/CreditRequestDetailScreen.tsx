@@ -15,7 +15,8 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import { useNavigate } from '@/lib/navigate';
 import type { RequestStatus } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader, DetailRow } from '@/components/ui/Card';

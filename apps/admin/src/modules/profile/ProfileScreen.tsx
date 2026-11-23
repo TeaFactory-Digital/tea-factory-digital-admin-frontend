@@ -43,6 +43,9 @@ import { RevertButton } from '@/modules/configuration/StringListEditor';
 import { useToast } from '@/components/ui/Toast';
 import { formatDateTime } from '@/lib/format';
 import { InfoTip } from '@/components/ui/Tooltip';
+import { RequestAlertsSection } from './RequestAlertsSection';
+import { notificationsSupported, setAlerts, type RequestAlerts } from '@/lib/requestAlerts';
+import { useRequestAlertSettings } from '@/layout/useRequestAlerts';
 
 /** A label above its value, the shape M2's supplier detail already reads in. */
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
@@ -58,7 +61,8 @@ export function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const user = useCurrentUser();
-  const { appearance, setScheme, setTextSize, setGlass, setBackdrop } = useAppearance();
+  const { appearance, updateAppearance } = useAppearance();
+  const alerts = useRequestAlertSettings();
 
   const savedLanguage: LanguageCode = isLanguageCode(i18n.resolvedLanguage)
     ? i18n.resolvedLanguage
@@ -74,39 +78,56 @@ export function ProfileScreen() {
    */
   const [draftLanguage, setDraftLanguage] = useState<LanguageCode>(savedLanguage);
   const [draftAppearance, setDraftAppearance] = useState<Appearance>(appearance);
+  const [draftAlerts, setDraftAlerts] = useState<RequestAlerts>(alerts);
   const [confirming, setConfirming] = useState(false);
 
   // Re-seeded when the stored values move underneath: a second tab, or the sign-in
   // screen's switcher on the way in.
   useEffect(() => setDraftLanguage(savedLanguage), [savedLanguage]);
   useEffect(() => setDraftAppearance(appearance), [appearance]);
+  useEffect(() => setDraftAlerts(alerts), [alerts]);
 
   const dirty =
     draftLanguage !== savedLanguage ||
-    draftAppearance.scheme !== appearance.scheme ||
-    draftAppearance.textSize !== appearance.textSize ||
-    draftAppearance.glass !== appearance.glass ||
-    draftAppearance.backdrop !== appearance.backdrop ||
-    draftAppearance.photo !== appearance.photo;
+    (Object.keys(appearance) as (keyof Appearance)[]).some(
+      (key) => draftAppearance[key] !== appearance[key],
+    ) ||
+    draftAlerts.sound !== alerts.sound ||
+    draftAlerts.desktop !== alerts.desktop;
 
   function revert() {
     setDraftLanguage(savedLanguage);
     setDraftAppearance(appearance);
+    setDraftAlerts(alerts);
   }
 
   async function apply() {
     // Appearance first: the language swap re-renders every label, and applying it last
     // means the toast below is already written in the language that was chosen.
-    if (draftAppearance.scheme !== appearance.scheme) setScheme(draftAppearance.scheme);
-    if (draftAppearance.textSize !== appearance.textSize) setTextSize(draftAppearance.textSize);
-    if (draftAppearance.glass !== appearance.glass) setGlass(draftAppearance.glass);
-    if (draftAppearance.backdrop !== appearance.backdrop || draftAppearance.photo !== appearance.photo) {
-      setBackdrop(draftAppearance.backdrop, draftAppearance.photo);
+    updateAppearance(draftAppearance);
+
+    // A desktop notification needs the browser's permission, asked now, in answer to this
+    // click. Refused, the rest is still saved and the person is told why that one was not.
+    let desktop = draftAlerts.desktop;
+    let refused = false;
+    if (
+      desktop &&
+      !alerts.desktop &&
+      notificationsSupported() &&
+      Notification.permission !== 'granted'
+    ) {
+      const answer = await Notification.requestPermission();
+      desktop = answer === 'granted';
+      refused = !desktop;
     }
+    setAlerts({ sound: draftAlerts.sound, desktop });
+
     if (draftLanguage !== savedLanguage) await setLanguage(draftLanguage);
 
     setConfirming(false);
     toast.success(t('profile.saved'), t('profile.savedHint'));
+    if (refused)
+      toast.show({ tone: 'info', title: t('alerts.notAllowed'), body: t('alerts.denied') });
   }
 
   /**
@@ -176,6 +197,10 @@ export function ProfileScreen() {
               <AppearanceControls value={draftAppearance} onChange={setDraftAppearance} />
             </div>
 
+            <div className="border-t border-divider pt-lg">
+              <RequestAlertsSection value={draftAlerts} onChange={setDraftAlerts} />
+            </div>
+
             {/* The honest scope of all three: this machine, not this account. They are in
                 `localStorage` because they have to work on the sign-in screen, which has no
                 session to read a preference from. */}
@@ -204,13 +229,13 @@ export function ProfileScreen() {
       </div>
 
       {/*
-        * The confirmation these three now sit behind.
-        *
-        * Nothing here is destructive and all of it is one click to undo, so this is a
-        * consistency decision rather than a safety one: every other settings surface in the
-        * console drafts, saves and confirms, and one that applied on press would be the
-        * exception a reader has to learn.
-        */}
+       * The confirmation these three now sit behind.
+       *
+       * Nothing here is destructive and all of it is one click to undo, so this is a
+       * consistency decision rather than a safety one: every other settings surface in the
+       * console drafts, saves and confirms, and one that applied on press would be the
+       * exception a reader has to learn.
+       */}
       <ConfirmDialog
         open={confirming}
         onOpenChange={setConfirming}

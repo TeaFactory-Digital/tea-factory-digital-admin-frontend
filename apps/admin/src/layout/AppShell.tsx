@@ -16,11 +16,16 @@ import { qk } from '@/query/queryKeys';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { Notice, Spinner } from '@/components/ui/states';
 import { Sidebar } from './Sidebar';
+import { ShortcutsDialog } from './ShortcutsDialog';
+import { useRequestAlerts } from './useRequestAlerts';
 import { Topbar } from './Topbar';
 
 export function AppShell() {
   const { t } = useTranslation();
   const { degraded } = useRuntimeConfig();
+
+  // New-request alerts, for whoever switched them on (Profile).
+  useRequestAlerts();
 
   const { data: summary } = useQuery({
     queryKey: qk.dashboard,
@@ -36,6 +41,7 @@ export function AppShell() {
   return (
     <div data-glass-backdrop className="flex h-screen overflow-hidden bg-background">
       <Sidebar summary={summary} />
+      <ShortcutsDialog />
 
       <div data-glass-column className="relative flex min-w-0 flex-1 flex-col">
         <Topbar summary={summary} />
@@ -100,7 +106,7 @@ export function AppShell() {
           {/* Full width, deliberately: the 80 rem cap this used to carry would
               re-open the right-hand gap to whatever the monitor is wide, and a
               twelve-column grid is the screen that wants the pixels most. */}
-          <div className="flex h-full flex-col gap-lg">
+          <div data-page className="flex h-full flex-col gap-lg">
             {/* Module screens are lazy (see routes/router.tsx). The boundary is
                 here rather than per route so the sidebar and topbar stay
                 interactive while a screen's chunk arrives: a clerk can start

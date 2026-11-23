@@ -18,9 +18,10 @@
  *    (BR-501): the server decides, and the screen says so before they try.
  */
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useNavigate } from '@/lib/navigate';
 import { ArrowRight, Check, CircleAlert, Lock } from 'lucide-react';
 import type { MonthSummary } from '@tfd/domain';
 import { billSourceOf, isFactorySyncEnabled, round2 } from '@tfd/domain';
@@ -40,6 +41,7 @@ import { formatCount, formatDateTime, formatKg, formatMoney, formatMonthKey } fr
 import { useBillRun } from '@/modules/bills/hooks';
 import { usePublishMonth } from './hooks';
 import { ReasonChips } from '@/components/ReasonChips';
+import { Celebration } from '@/components/Celebration';
 
 interface Step {
   key: string;
@@ -81,6 +83,9 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
   const slipBlocking = slips.data ? slipComparisonBlocks(slips.data.rows).length : 0;
 
   const [confirming, setConfirming] = useState(false);
+  // The month is out: a moment of celebration over the toast (23 November 2026).
+  const [celebrating, setCelebrating] = useState(false);
+  const endCelebration = useCallback(() => setCelebrating(false), []);
   const [note, setNote] = useState('');
 
   /**
@@ -201,6 +206,7 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
       await publish.mutateAsync(note.trim() || undefined);
       setConfirming(false);
       setNote('');
+      setCelebrating(true);
       toast.success(
         lateBills > 0
           ? t('months.latePublished', { count: lateBills })
@@ -437,6 +443,7 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
           <ReasonChips list="months.publish" value={note} onChange={setNote} />
         </div>
       </Dialog>
+      {celebrating ? <Celebration onDone={endCelebration} /> : null}
     </Card>
   );
 }

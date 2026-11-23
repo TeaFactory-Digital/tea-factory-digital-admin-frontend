@@ -14,7 +14,8 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from '@/lib/navigate';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Image as ImageIcon, Plus } from 'lucide-react';
 import type { ContentStatus, LanguageCode, NewsListItem, NewsQuery } from '@tfd/domain';

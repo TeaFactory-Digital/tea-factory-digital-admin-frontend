@@ -276,6 +276,41 @@ after a decision, and lets several rows be decided together (`BulkDecision`), ea
 its own request. A list remembers its filters (`RememberFilters`); a new list route gets the
 wrapper in `router.tsx`.
 
+### The reader's own look, and motion that stays out of the way (23 November 2026)
+
+All in `Appearance` (`brand/appearance.ts`), kept per person in the browser and applied by
+`BrandProvider`:
+
+- **Theme Auto**: `scheme: 'auto'` draws light from 6 am and dark from 6 pm
+  (`drawnScheme`), checked once a minute. The office clock, not the machine's setting.
+- **Density** (`data-density="compact"`): grid cells (`data-grid`), card header and body
+  (`data-card-header`, `data-card-body`), the page gap (`data-page`) and sidebar rows
+  (`data-nav-link`) come in. Type size never changes. A new card or grid gets it by using
+  `Card`/`CardHeader`/`CardBody`/`DataTable`.
+- **High contrast** (`data-contrast="high"`): `--color-text-secondary`, `--color-border` and
+  `--color-divider` mixed from the text colour, a 3 px focus ring, and glass made solid.
+- **Sidebar rail** (`sidebar: 'icons'`): 5 rem of icons, each link named by its tooltip
+  (`title`) and a visually hidden label, badges kept; the [ key or "Collapse sidebar" in the menu under the person's name (`UserMenu`, not on the small-screen top bar).
+
+Motion, all of it off under `prefers-reduced-motion` and skipped in tests:
+
+- **Screen changes**: `lib/navigate.ts`'s `useNavigate` asks React Router for a View
+  Transition; only `main` (`view-transition-name: page`) fades and slides, the top bar keeps
+  its own snapshot above it. Use it, not React Router's, for a new navigation.
+- **Counting figures**: `CountUp` on the dashboard's figures, 700 ms eased, from the old
+  value to the new one.
+- **Celebration**: `Celebration` after a month is published, under two seconds,
+  `aria-hidden`, pointer-events none.
+
+The keyboard: **?** opens `ShortcutsDialog` (also a Ctrl+K action); a new shortcut is added
+to its `ROWS`. Shortcuts are ignored while typing, in a dialog, or with a modifier held.
+
+**New-request alerts** (`lib/requestAlerts.ts`, `layout/useRequestAlerts.ts`,
+`RequestAlertsSection` in Profile's preferences, drafted and saved with "Save preferences";
+notification permission is asked on that save, and a refusal saves the rest and says so): a chime made with Web Audio (no sound file) and a desktop `Notification` while the
+tab is hidden, for supplier-sent kinds only, never for what was already in the feed when the
+console opened. While on, the activity feed polls every 30 seconds in the background too.
+
 ### Text must fit in every language
 
 Sinhala and Tamil labels run longer than English ones (a Tamil sidebar label can be a third

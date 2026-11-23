@@ -29,6 +29,7 @@
  * history has no sparkline rather than an invented one.
  */
 
+import { CountUp } from '@/components/charts/CountUp';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -193,7 +194,7 @@ function KpiRow({ queues, app, trend }: { queues: QueueCount[]; app: AppAdoption
         icon={Inbox}
         label={t('dashboard.kpi.waiting')}
         period={t('dashboard.kpi.now')}
-        value={formatCount(pending)}
+        value={<CountUp value={pending} format={formatCount} />}
         delta={
           pending === 0 ? null : overdue > 0 ? (
             <Badge tone="error">{t('dashboard.kpi.overdue', { count: overdue })}</Badge>
@@ -211,7 +212,7 @@ function KpiRow({ queues, app, trend }: { queues: QueueCount[]; app: AppAdoption
         label={
           <TitleWithTip title={t('dashboard.appAdoption')} tip={t('dashboard.appAdoptionHint')} />
         }
-        value={formatPercent(installed)}
+        value={installed === null ? formatPercent(installed) : <CountUp value={installed} format={formatPercent} />}
         caption={t('dashboard.appInstalled', {
           withApp: formatCount(app.suppliersWithApp),
           total: formatCount(app.totalSuppliers),
@@ -240,7 +241,13 @@ function KpiRow({ queues, app, trend }: { queues: QueueCount[]; app: AppAdoption
         icon={Send}
         label={t('dashboard.kpi.appRequests')}
         period={t('dashboard.kpi.thisMonth')}
-        value={formatPercent(app.appRequestShare)}
+        value={
+          app.appRequestShare === null ? (
+            formatPercent(app.appRequestShare)
+          ) : (
+            <CountUp value={app.appRequestShare} format={formatPercent} />
+          )
+        }
         delta={
           app.appRequestShare !== null && delta !== null ? (
             <DeltaPill delta={delta}>
@@ -261,7 +268,7 @@ function KpiRow({ queues, app, trend }: { queues: QueueCount[]; app: AppAdoption
       <StatCard
         icon={BellRing}
         label={t('dashboard.kpi.devices')}
-        value={formatCount(app.devicesRegistered)}
+        value={<CountUp value={app.devicesRegistered} format={formatCount} />}
         caption={t('dashboard.kpi.devicesCaption')}
       />
     </div>
@@ -457,7 +464,7 @@ function QueueMixCard({ queues }: { queues: QueueCount[] }) {
         ) : (
           <DonutChart
             label={t('dashboard.queueMix')}
-            total={formatCount(total)}
+            total={<CountUp value={total} format={formatCount} />}
             totalLabel={t('dashboard.queueMixTotal')}
             formatValue={formatCount}
             showShare={waiting.length > 1}

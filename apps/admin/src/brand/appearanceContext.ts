@@ -8,7 +8,16 @@
  */
 
 import { createContext } from 'react';
-import { DEFAULT_APPEARANCE, type Appearance, type ConsoleScheme, type GlassBackdrop, type TextSize } from './appearance';
+import {
+  DEFAULT_APPEARANCE,
+  type Appearance,
+  type ConsoleScheme,
+  type Contrast,
+  type Density,
+  type GlassBackdrop,
+  type SidebarMode,
+  type TextSize,
+} from './appearance';
 
 export interface AppearanceValue {
   appearance: Appearance;
@@ -17,6 +26,11 @@ export interface AppearanceValue {
   setGlass: (glass: boolean) => void;
   /** The backdrop, with the photo it shows (kept as it is when omitted). */
   setBackdrop: (backdrop: GlassBackdrop, photo?: string | null) => void;
+  setDensity: (density: Density) => void;
+  setContrast: (contrast: Contrast) => void;
+  setSidebar: (sidebar: SidebarMode) => void;
+  /** Several settings at once, merged: the profile screen's draft lands in one write. */
+  updateAppearance: (change: Partial<Appearance>) => void;
 }
 
 /**
@@ -30,4 +44,8 @@ export const AppearanceContext = createContext<AppearanceValue>({
   setTextSize: () => {},
   setGlass: () => {},
   setBackdrop: () => {},
+  setDensity: () => {},
+  setContrast: () => {},
+  setSidebar: () => {},
+  updateAppearance: () => {},
 });

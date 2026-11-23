@@ -47,6 +47,10 @@ export function AppearanceProvider({ children }: PropsWithChildren) {
       setTextSize: (textSize) => update({ textSize }),
       setGlass: (glass) => update({ glass }),
       setBackdrop: (backdrop, photo) => update(photo === undefined ? { backdrop } : { backdrop, photo }),
+      setDensity: (density) => update({ density }),
+      setContrast: (contrast) => update({ contrast }),
+      setSidebar: (sidebar) => update({ sidebar }),
+      updateAppearance: update,
     }),
     [appearance, update],
   );

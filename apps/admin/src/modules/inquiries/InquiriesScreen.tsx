@@ -15,7 +15,8 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from '@/lib/navigate';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { AdminInquiry, InquiryStatus } from '@tfd/domain';
 import { INQUIRY_OFFICE_STATUSES, INQUIRY_STATUSES, QUEUE_SLA_HOURS, inquiryCountsTowardsSla } from '@tfd/domain';

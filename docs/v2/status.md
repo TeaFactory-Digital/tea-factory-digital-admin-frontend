@@ -15,7 +15,7 @@ the next slice.
 | **Console** | Every module in [Modules](#modules) is built and routed, in both modes: factory-system sync **on** (the console manages the app) and **off** (the office also keeps the factory's records: Leaf intake, Rates & month close, Add supplier, opening balances, transport rate, walk-in credit requests, other deductions, bills imported or calculated, and an Excel/CSV import for each) |
 | **Backend** | `tea-factory-digital-backend`, shipped up to `29824a0`; staging is migrated through `20261112020000` and deploys by hand after migrating; galaboda's bill source is "Imported". BACKEND-TODO **#1 to #64 are done except #59's five-year job**: **#45** (factory records without the factory system) is complete with the bill engine (`221a1c0`, ADR-042), carried loan interest and repaid manure plans (`52afb75`) and the printed-slip check, hold and release (`e164e2f`). The T15 answers (`1e5401b`), the loan instalment number (`fb687f7`) and the printed number on an imported slip without leaf (`29824a0`) are built; the staging deploy of `29824a0` is next. Open: #66 (link files, waiting on the Play SHA-256 and the host); #65 (production) is on hold until there are real clients. See [BACKEND-TODO.md](./BACKEND-TODO.md) |
 | **How the console runs** | Against the real API at `VITE_API_BASE_URL` (local on `:3000`, or staging). There is no in-browser mock any more |
-| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls: **701 tests in 100 files** (22 November 2026). Playwright: **36 tests in 8 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
+| **How the console is tested** | Vitest against the MSW mock in `services/mocks/handlers.ts`, which implements every endpoint the console calls: **713 tests in 101 files** (22 November 2026). Playwright: **36 tests in 8 specs**, the real console on its own dev server (port 5274) with every `/v1/**` call answered in Node by the same handlers (`e2e/fixtures.ts`). Typecheck and lint clean |
 
 ### Built against the mock and tested
 
@@ -243,6 +243,15 @@ Frontend only; every one goes through the endpoints and checks the single action
 | **Next step** | Month close checklist | The first step not done, with a button to its card (`data-step-target`) or Leaf intake; when all are done, **Publish the month** for a manager who may |
 | **Remembered filters** | `components/RememberFilters.tsx` around nine list routes | The query string kept per person and screen in `localStorage` (page, month, day and range left out), restored when the screen is opened with none; a link with filters wins; blocked storage just means defaults |
 | **Import** | `ImportDialog` | Drag highlight on the drop box, and the last file of that kind imported in this browser (name, rows, when) |
+
+### Look and feel (23 November 2026)
+
+Each person's own, in the browser: **Theme Auto** (dark 6 pm to 6 am), **Density** (Compact
+fits about a third more rows), **High contrast**, the **sidebar rail** of icons ([ key, or the menu under your name),
+**?** for every keyboard shortcut, **new-request alerts** (sound, and a desktop notification
+in a background tab), smooth **screen changes** (View Transitions), dashboard figures that
+**count up**, and a short **celebration** when a month is published. Motion is off under
+reduced motion. Frontend only; details in `design-system.md`.
 
 ### M2 Suppliers
 

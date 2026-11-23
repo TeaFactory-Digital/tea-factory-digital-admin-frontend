@@ -14,7 +14,8 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
+import { useNavigate } from '@/lib/navigate';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import type { SupplierListItem, SupplierQuery, SupplierStatus } from '@tfd/domain';
 import { useKeepsFactoryRecords, useRuntimeConfig } from '@/config/RuntimeConfigProvider';

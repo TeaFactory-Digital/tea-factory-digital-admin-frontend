@@ -19,7 +19,8 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from '@/lib/navigate';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import type { BillListItem, BillQuery } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';

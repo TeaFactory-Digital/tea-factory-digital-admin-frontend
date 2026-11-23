@@ -1,9 +1,10 @@
 /**
  * The console's primary navigation.
  *
- * Persistent rather than collapsible: a clerk moves between the queue and a
+ * Persistent, never hidden behind a menu: a clerk moves between the queue and a
  * supplier record dozens of times an hour, and a nav that has to be opened first
- * costs a click every time. It hides below `lg` because the office occasionally
+ * costs a click every time. Since 23 November 2026 it can narrow to a rail of icons
+ * (a person's own choice, the [ key), which keeps every link one click away. It hides below `lg` because the office occasionally
  * checks something on a tablet, and there the topbar carries a menu instead.
  *
  * Top to bottom: whose console this is, the modules, the app-adoption meter, and
@@ -11,12 +12,17 @@
  * cards on the right are the only raised surfaces on screen.
  */
 
+import { useEffect } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { can } from '@tfd/domain';
 import type { DashboardView } from '@/services/repositories/dashboardRepository';
 import { useAuthStore } from '@/auth/authStore';
-import { useFactory, useFeatureFlags, useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
+import {
+  useFactory,
+  useFeatureFlags,
+  useKeepsFactoryRecords,
+} from '@/config/RuntimeConfigProvider';
 import { Logo } from '@/brand/Logo';
 import { CountBadge } from '@/components/ui/Badge';
 import { Meter } from '@/components/charts/Meter';
@@ -24,6 +30,8 @@ import { formatCount, formatPercent } from '@/lib/format';
 import { cn } from '@/lib/cn';
 import { NAVIGATION, isNavItemVisible, queuesOf, type NavItem } from './navigation';
 import { UserMenu } from './UserMenu';
+import { useAppearance } from '@/brand/useAppearance';
+import { prefersReducedMotion } from '@/lib/navigate';
 
 export function Sidebar({ summary }: { summary?: DashboardView }) {
   const { t } = useTranslation();
@@ -55,11 +63,39 @@ export function Sidebar({ summary }: { summary?: DashboardView }) {
 
   const canSeeAdoption = can(grants, 'reports', 'read');
 
+  /**
+   * The rail (23 November 2026): icons only, so a grid gets the width on a 1366 laptop. A
+   * person's own choice, kept with the rest of their appearance; the menu under their name
+   * or the [ key switches it.
+   */
+  const { appearance, setSidebar } = useAppearance();
+  const rail = appearance.sidebar === 'icons';
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== '[' || event.ctrlKey || event.metaKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+      )
+        return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+      event.preventDefault();
+      setSidebar(rail ? 'full' : 'icons');
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [rail, setSidebar]);
+
   return (
     <nav
       aria-label={t('nav.dashboard')}
       data-glass-surface="sidebar"
-      className="hidden w-64 shrink-0 flex-col gap-md border-r border-border bg-background px-md py-lg lg:flex"
+      data-sidebar={rail ? 'icons' : 'full'}
+      className={cn(
+        'hidden shrink-0 flex-col gap-md border-r border-border bg-background py-lg transition-[width] duration-200 lg:flex',
+        rail ? 'w-20 items-stretch px-sm' : 'w-64 px-md',
+      )}
     >
       {/**
        * The mark is the way home.
@@ -75,10 +111,14 @@ export function Sidebar({ summary }: { summary?: DashboardView }) {
        */}
       <Link
         to="/"
-        className="flex shrink-0 items-center gap-sm rounded-md p-xs transition-colors hover:bg-surface-variant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        title={rail ? factory.name : undefined}
+        className={cn(
+          'flex shrink-0 items-center gap-sm rounded-md p-xs transition-colors hover:bg-surface-variant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+          rail && 'justify-center',
+        )}
       >
         <Logo showName={false} />
-        <span className="flex min-w-0 flex-col">
+        <span className={cn('flex min-w-0 flex-col', rail && 'sr-only')}>
           <span className="truncate text-body-small font-bold tracking-tight text-text-primary">
             {factory.name}
           </span>
@@ -93,14 +133,22 @@ export function Sidebar({ summary }: { summary?: DashboardView }) {
 
       <div className="-mx-xs min-h-0 flex-1 overflow-y-auto px-xs">
         {sections.map((section, index) => (
-          <div key={section.titleKey} className={cn(index > 0 && 'mt-lg')}>
-            <h2 className="px-sm pb-xs text-caption font-medium text-text-secondary">
+          <div
+            key={section.titleKey}
+            className={cn(index > 0 && (rail ? 'mt-sm border-t border-divider pt-sm' : 'mt-lg'))}
+          >
+            <h2
+              className={cn(
+                'px-sm pb-xs text-caption font-medium text-text-secondary',
+                rail && 'sr-only',
+              )}
+            >
               {t(section.titleKey)}
             </h2>
             <ul className="flex flex-col gap-xxs">
               {section.items.map((item) => (
                 <li key={item.to}>
-                  <SidebarLink item={item} pending={pendingFor(item)} />
+                  <SidebarLink item={item} pending={pendingFor(item)} rail={rail} />
                 </li>
               ))}
             </ul>
@@ -108,9 +156,9 @@ export function Sidebar({ summary }: { summary?: DashboardView }) {
         ))}
       </div>
 
-      {canSeeAdoption && summary ? <AdoptionMeter app={summary.app} /> : null}
+      {canSeeAdoption && summary && !rail ? <AdoptionMeter app={summary.app} /> : null}
 
-      <UserMenu placement="sidebar" />
+      <UserMenu placement={rail ? 'rail' : 'sidebar'} />
     </nav>
   );
 }
@@ -154,7 +202,7 @@ function AdoptionMeter({ app }: { app: DashboardView['app'] }) {
  * white-labelled, and a hard-coded green would be wrong for every factory whose brand is
  * not green.
  */
-function SidebarLink({ item, pending }: { item: NavItem; pending: number }) {
+function SidebarLink({ item, pending, rail }: { item: NavItem; pending: number; rail: boolean }) {
   const { t } = useTranslation();
   const Icon = item.icon;
 
@@ -162,9 +210,14 @@ function SidebarLink({ item, pending }: { item: NavItem; pending: number }) {
     <NavLink
       to={item.to}
       end={item.to === '/'}
+      viewTransition={!prefersReducedMotion()}
+      data-nav-link
+      // On the rail the label is not on screen: the tooltip shows it, and it stays the name.
+      title={rail ? t(item.labelKey) : undefined}
       className={({ isActive }) =>
         cn(
-          'group flex h-9 items-center gap-sm rounded-md px-sm text-body-small font-medium transition-colors duration-150',
+          'group relative flex h-9 items-center gap-sm rounded-md px-sm text-body-small font-medium transition-colors duration-150',
+          rail && 'justify-center',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
           isActive
             ? 'bg-surface text-text-primary shadow-card ring-1 ring-border'
@@ -182,8 +235,18 @@ function SidebarLink({ item, pending }: { item: NavItem; pending: number }) {
             aria-hidden
           />
           {/* Wraps rather than cuts: a Tamil or Sinhala label can be longer than the English. */}
-          <span className="min-w-0 flex-1 break-words leading-tight">{t(item.labelKey)}</span>
-          <CountBadge count={pending} />
+          <span className={cn('min-w-0 flex-1 break-words leading-tight', rail && 'sr-only')}>
+            {t(item.labelKey)}
+          </span>
+          {rail ? (
+            pending > 0 ? (
+              <span className="absolute -top-xxs -right-xxs">
+                <CountBadge count={pending} />
+              </span>
+            ) : null
+          ) : (
+            <CountBadge count={pending} />
+          )}
         </>
       )}
     </NavLink>
