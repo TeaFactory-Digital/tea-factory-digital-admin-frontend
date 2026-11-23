@@ -10,6 +10,8 @@ import { BellRing, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Label } from '@/components/ui/Label';
+import { LabelWithTip } from '@/components/ui/LabelWithTip';
+import { InfoTip } from '@/components/ui/Tooltip';
 import { notificationsSupported, playChime, type RequestAlerts } from '@/lib/requestAlerts';
 
 export function RequestAlertsSection({
@@ -25,8 +27,11 @@ export function RequestAlertsSection({
 
   return (
     <div className="flex flex-col gap-sm">
-      <span className="text-label text-text-primary">{t('alerts.title')}</span>
-      <span className="text-caption text-text-secondary">{t('alerts.description')}</span>
+      <LabelWithTip
+        label={t('alerts.title')}
+        tip={t('alerts.description')}
+        className="text-label text-text-primary"
+      />
 
       <div className="flex flex-wrap items-center gap-sm">
         <Checkbox
@@ -56,14 +61,16 @@ export function RequestAlertsSection({
             <BellRing className="size-icon-sm text-text-secondary" aria-hidden />
             {t('alerts.desktop')}
           </Label>
+          <InfoTip label={`${t('tip.moreInfo')}: ${t('alerts.desktop')}`}>
+            {t('alerts.desktopHint')}
+          </InfoTip>
         </div>
-        <span className="text-caption text-text-secondary">
-          {permission === 'unsupported'
-            ? t('alerts.unsupported')
-            : permission === 'denied'
-              ? t('alerts.denied')
-              : t('alerts.desktopHint')}
-        </span>
+        {/* A reason it cannot be switched on stays on the page: it must be seen, not found. */}
+        {permission === 'unsupported' || permission === 'denied' ? (
+          <span className="text-caption text-warning">
+            {permission === 'unsupported' ? t('alerts.unsupported') : t('alerts.denied')}
+          </span>
+        ) : null}
       </div>
     </div>
   );

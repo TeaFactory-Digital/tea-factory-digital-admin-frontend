@@ -302,6 +302,11 @@ Motion, all of it off under `prefers-reduced-motion` and skipped in tests:
 - **Celebration**: `Celebration` after a month is published, under two seconds,
   `aria-hidden`, pointer-events none.
 
+On the profile screen each setting's explanation sits behind an "i" beside its label
+(`LabelWithTip`: the full 32 px target, named "More information: <setting>"), shown on hover
+or keyboard focus. A reason a setting cannot be used (notifications blocked, unsupported)
+stays visible on the page instead.
+
 The keyboard: **?** opens `ShortcutsDialog` (also a Ctrl+K action); a new shortcut is added
 to its `ROWS`. Shortcuts are ignored while typing, in a dialog, or with a modifier held.
 

@@ -49,6 +49,7 @@ import {
 import { BackdropPhotoError, prepareBackdropPhoto } from '@/lib/backdropPhoto';
 import { useAppearance } from './useAppearance';
 import { cn } from '@/lib/cn';
+import { LabelWithTip } from '@/components/ui/LabelWithTip';
 
 const SCHEMES: Array<{ value: ConsoleScheme; Icon: typeof Sun }> = [
   { value: 'light', Icon: Sun },
@@ -136,7 +137,7 @@ export function AppearanceControls({ className, value, onChange }: AppearanceCon
   return (
     <div className={cn('flex flex-col gap-sm', className)}>
       <div className="flex flex-col gap-xxs">
-        <span className="text-caption text-text-secondary">{t('appearance.scheme')}</span>
+        <LabelWithTip label={t('appearance.scheme')} tip={t('appearance.schemeHint')} />
         {/*
          * `radiogroup`, not a row of buttons: these are one choice with two answers, so a
          * screen reader should hear "1 of 2" rather than two unrelated controls.
@@ -165,7 +166,6 @@ export function AppearanceControls({ className, value, onChange }: AppearanceCon
             );
           })}
         </div>
-        <span className="text-caption text-text-secondary">{t('appearance.schemeHint')}</span>
       </div>
 
       <div className="flex flex-col gap-xxs">
@@ -224,7 +224,7 @@ export function AppearanceControls({ className, value, onChange }: AppearanceCon
       />
 
       <div className="flex flex-col gap-xxs">
-        <span className="text-caption text-text-secondary">{t('appearance.glass')}</span>
+        <LabelWithTip label={t('appearance.glass')} tip={t('appearance.glassHint')} />
         <div role="radiogroup" aria-label={t('appearance.glass')} className="flex gap-xxs">
           {GLASS.map(({ value, Icon }) => {
             const active = appearance.glass === value;
@@ -249,12 +249,11 @@ export function AppearanceControls({ className, value, onChange }: AppearanceCon
             );
           })}
         </div>
-        <span className="text-caption text-text-secondary">{t('appearance.glassHint')}</span>
       </div>
 
       {appearance.glass ? (
         <div className="flex flex-col gap-xxs">
-          <span className="text-caption text-text-secondary">{t('appearance.backdrop')}</span>
+          <LabelWithTip label={t('appearance.backdrop')} tip={t('appearance.backdrop.hint')} />
           <div role="radiogroup" aria-label={t('appearance.backdrop')} className="flex gap-xxs">
             {GLASS_BACKDROPS.map((backdrop) => {
               const active = appearance.backdrop === backdrop;
@@ -327,7 +326,6 @@ export function AppearanceControls({ className, value, onChange }: AppearanceCon
               {photoError}
             </span>
           ) : null}
-          <span className="text-caption text-text-secondary">{t('appearance.backdrop.hint')}</span>
         </div>
       ) : null}
     </div>
@@ -350,7 +348,11 @@ function Segments<T extends string>({
 }) {
   return (
     <div className="flex flex-col gap-xxs">
-      <span className="text-caption text-text-secondary">{label}</span>
+      {hint ? (
+        <LabelWithTip label={label} tip={hint} />
+      ) : (
+        <span className="text-caption text-text-secondary">{label}</span>
+      )}
       <div role="radiogroup" aria-label={label} className="flex gap-xxs">
         {options.map((option) => {
           const active = option.value === value;
@@ -375,7 +377,6 @@ function Segments<T extends string>({
           );
         })}
       </div>
-      {hint ? <span className="text-caption text-text-secondary">{hint}</span> : null}
     </div>
   );
 }

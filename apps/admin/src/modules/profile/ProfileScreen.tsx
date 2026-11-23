@@ -43,6 +43,7 @@ import { RevertButton } from '@/modules/configuration/StringListEditor';
 import { useToast } from '@/components/ui/Toast';
 import { formatDateTime } from '@/lib/format';
 import { InfoTip } from '@/components/ui/Tooltip';
+import { LabelWithTip } from '@/components/ui/LabelWithTip';
 import { RequestAlertsSection } from './RequestAlertsSection';
 import { notificationsSupported, setAlerts, type RequestAlerts } from '@/lib/requestAlerts';
 import { useRequestAlertSettings } from '@/layout/useRequestAlerts';
@@ -188,8 +189,11 @@ export function ProfileScreen() {
           />
           <CardBody className="flex flex-col gap-lg">
             <div className="flex flex-col gap-xs">
-              <span className="text-label text-text-primary">{t('profile.language')}</span>
-              <span className="text-caption text-text-secondary">{t('profile.languageHint')}</span>
+              <LabelWithTip
+                label={t('profile.language')}
+                tip={t('profile.languageHint')}
+                className="text-label text-text-primary"
+              />
               <LanguageSwitcher value={draftLanguage} onChange={setDraftLanguage} />
             </div>
 
