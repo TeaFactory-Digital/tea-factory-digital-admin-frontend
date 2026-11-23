@@ -116,7 +116,7 @@ export function NotificationBell({ summary }: { summary?: DashboardView }) {
           ) : null}
         </div>
 
-        <div className="max-h-96 overflow-y-auto">
+        <div className="relative max-h-96 overflow-y-auto">
           {/* ── What is waiting ─────────────────────────────────────────── */}
           <section className="px-lg py-md">
             <p className="pb-xs text-caption font-medium uppercase tracking-wide text-text-secondary">

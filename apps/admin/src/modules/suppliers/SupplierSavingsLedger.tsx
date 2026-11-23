@@ -78,7 +78,7 @@ export function SupplierSavingsLedger({ supplierId }: { supplierId: string }) {
               />
             </dl>
 
-            <div className="max-h-96 overflow-y-auto rounded-md border border-border">
+            <div className="relative max-h-96 overflow-y-auto rounded-md border border-border">
               <table
                 className="w-full border-collapse text-data-cell"
                 aria-label={t('suppliers.savingsLedger.title')}

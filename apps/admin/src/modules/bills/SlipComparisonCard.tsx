@@ -86,7 +86,7 @@ export function SlipComparisonCard({ monthKey, monthOpen }: { monthKey: string; 
                 {t('slips.allMatch')}
               </p>
             ) : (
-              <div className="max-h-96 overflow-auto rounded-md border border-border">
+              <div className="relative max-h-96 overflow-auto rounded-md border border-border">
                 <table className="w-full border-collapse text-data-cell" aria-label={t('slips.title')}>
                   <thead className="sticky top-0 bg-table-header">
                     <tr>

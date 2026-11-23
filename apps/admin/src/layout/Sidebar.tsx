@@ -132,7 +132,7 @@ export function Sidebar({ summary }: { summary?: DashboardView }) {
         </span>
       </Link>
 
-      <div className="-mx-xs min-h-0 flex-1 overflow-y-auto px-xs">
+      <div className="relative -mx-xs min-h-0 flex-1 overflow-y-auto px-xs">
         {sections.map((section, index) => (
           <div
             key={section.titleKey}

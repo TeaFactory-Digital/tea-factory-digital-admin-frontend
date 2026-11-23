@@ -283,7 +283,7 @@ function MonthsTable({ months }: { months: CreditMonth[] }) {
     </>
   );
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table
         className="w-full border-collapse text-data-cell"
         aria-label={t('reports.credit.title')}

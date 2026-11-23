@@ -181,7 +181,7 @@ export function RoleMatrixView() {
       {/* The only scrolling region, in both axes. Five role columns fit a laptop where seven
           did not, but the axes stay: a factory that splits a role adds a column, and the
           capability name has to stay readable while scrolling right when it does. */}
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div className="relative min-h-0 flex-1 overflow-auto">
         <table className="w-full border-collapse text-data-cell" aria-label={t('users.matrixTitle')}>
           <thead className="sticky top-0 z-10 bg-table-header shadow-[inset_0_-1px_0_0_var(--color-border)]">
             <tr>

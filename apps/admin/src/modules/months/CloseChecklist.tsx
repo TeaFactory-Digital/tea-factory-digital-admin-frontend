@@ -382,7 +382,7 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
                 <strong className="font-semibold">
                   {t('months.approvalMissingTitle', { count: missingApprovals.total })}
                 </strong>
-                <ul className="max-h-40 list-disc overflow-y-auto pl-lg">
+                <ul className="relative max-h-40 list-disc overflow-y-auto pl-lg">
                   {missingApprovals.problems.map((problem, index) => (
                     <li key={index}>
                       {t('months.approvalMissingLine', {

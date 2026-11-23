@@ -122,7 +122,7 @@ export function TimePicker({
             ref={listRef}
             role="listbox"
             aria-label={t('common.openTimes')}
-            className="flex max-h-64 flex-col overflow-y-auto"
+            className="relative flex max-h-64 flex-col overflow-y-auto"
           >
             {slots.map((slot) => {
               const selected = slot === value;

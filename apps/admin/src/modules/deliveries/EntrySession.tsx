@@ -465,7 +465,7 @@ export function EntrySession({ date, defaultPoint, onCommitted }: EntrySessionPr
             <TriangleAlert className="size-icon-sm" aria-hidden />
             {t('deliveries.pendingTitle', { count: rows.length })}
           </h3>
-          <div className="max-h-80 overflow-auto">
+          <div className="relative max-h-80 overflow-auto">
             <table className="w-full border-collapse text-data-cell">
               <caption className="sr-only">{t('deliveries.sessionTable')}</caption>
               <thead className="sticky top-0 bg-table-header">

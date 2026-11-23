@@ -129,3 +129,57 @@ export function auditActionLabel(action: string, t: (key: string) => string): st
   const key = ACTION_KEYS[action];
   return key ? t(key) : action;
 }
+
+/**
+ * Every kind of record the audit log writes (the API's and the console's), for the filter
+ * and for a readable name in the Record column (24 November 2026).
+ */
+export const AUDIT_ENTITIES = [
+  'attachment',
+  'bankDetails',
+  'banner',
+  'bill',
+  'billRun',
+  'changeRequest',
+  'clientConfig',
+  'consoleUser',
+  'creditRequest',
+  'deductionRateChange',
+  'delivery',
+  'deliveryBatch',
+  'device',
+  'factory',
+  'import',
+  'inquiry',
+  'month',
+  'monthException',
+  'monthlyRate',
+  'newsArticle',
+  'notificationSend',
+  'notificationTrigger',
+  'openingBalances',
+  'report',
+  'roleMatrix',
+  'savingsWithdrawal',
+  'session',
+  'staticPage',
+  'staticPageDefault',
+  'supplier',
+  'supplierAppAccount',
+  'teaPacketRequest',
+  'uploadedFile',
+] as const;
+
+/** `staticPage` to "Static page", for a record type this console has no name for yet. */
+function words(code: string): string {
+  const spaced = code.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+/** The record type in the reader's language; a new type still reads as words, never as code. */
+export function auditEntityLabel(
+  entity: string,
+  t: (key: string, options?: { defaultValue?: string }) => string,
+): string {
+  return t(`audit.entity.${entity}`, { defaultValue: words(entity) });
+}

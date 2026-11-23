@@ -264,7 +264,7 @@ export function ConfigurationScreen() {
           </CardBody>
         </Card>
 
-        <Card className="lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden">
+        <Card className="lg:flex lg:min-h-0 lg:flex-col lg:overflow-clip">
           <CardHeader
             title={t(`config.section.${section.id}`)}
             description={t(`config.sectionDescription.${section.id}`)}
@@ -273,7 +273,7 @@ export function ConfigurationScreen() {
           {/* The one scroller on the screen. `min-h-0` is what lets it shrink below its own
               content; without it the editor pushes the pane taller and the rail scrolls
               away with it, which is the whole thing this layout is avoiding. */}
-          <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+          <div className="relative lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
             {/* Keyed by section, so switching remounts the editor and cannot carry one
                 section's unsaved draft into another's fields. */}
             <section.Component key={section.id} {...sectionProps} />

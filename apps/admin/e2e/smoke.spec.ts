@@ -113,3 +113,69 @@ test('a reduced-feature tenant loses the queues it does not use', async ({ page 
   await expect(nav.getByText(/^bills$/i)).toBeVisible();
 
 });
+
+/**
+ * The frame never slides (24 November 2026). The shell is `overflow: clip`: with `hidden`,
+ * focusing anything that stuck out of it scrolled the frame itself, sliding the sidebar off
+ * and the page up over the background. Only `main` scrolls.
+ */
+test('focusing something outside the frame does not slide the frame', async ({ page }) => {
+  await page.goto('/sign-in');
+  await page.getByLabel(/^email$/i).fill(CLERK);
+  await page.getByLabel(/^password$/i).fill(PASSWORD);
+  await page.getByRole('button', { name: /^sign in$/i }).click();
+  await expect(page.getByRole('main')).toBeVisible({ timeout: 15_000 });
+  const moved = await page.evaluate(() => {
+    const frame = document.querySelector('[data-glass-backdrop]') as HTMLElement;
+    const probe = document.createElement('button');
+    probe.textContent = 'x';
+    probe.style.cssText = 'position:absolute;top:2000px;left:2400px';
+    frame.lastElementChild!.appendChild(probe);
+    probe.focus();
+    const offset = { top: frame.scrollTop, left: frame.scrollLeft };
+    probe.remove();
+    return offset;
+  });
+  expect(moved).toEqual({ top: 0, left: 0 });
+});
+
+/**
+ * No empty page under the content (24 November 2026). A visually hidden label is
+ * `position: absolute`; in a scroll box that was not `relative` it was placed against `main`
+ * at its spot far down a long list, and the page scrolled thousands of pixels of nothing
+ * past the grid. Every screen: `main` is no taller than what is on it.
+ */
+const PAGES = ['/', '/suppliers', '/deliveries', '/rates', '/bills', '/change-requests', '/credit', '/tea-packets', '/inquiries', '/news', '/banners', '/content', '/notifications', '/reports', '/audit', '/configuration', '/users', '/profile', '/data-status'];
+
+test('no screen scrolls past its content, even with a long grid', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/sign-in');
+  await page.getByLabel(/^email$/i).fill('factoryadmin@galabodatea.lk');
+  await page.getByLabel(/^password$/i).fill(PASSWORD);
+  await page.getByRole('button', { name: /^sign in$/i }).click();
+  await expect(page.getByRole('main')).toBeVisible({ timeout: 15_000 });
+  const extra: string[] = [];
+  for (const path of PAGES) {
+    await page.goto(path);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(400);
+    const gap = await page.evaluate(() => {
+      const main = document.querySelector('main') as HTMLElement;
+      const content = document.querySelector('[data-page]') as HTMLElement;
+      // A long grid, its rows carrying hidden labels, as a real log of hundreds of rows does.
+      const body = document.querySelector('[data-grid] tbody');
+      if (body) {
+        for (let i = 0; i < 80; i++) {
+          const row = document.createElement('tr');
+          row.innerHTML = '<td style="height:60px">row <span class="sr-only">label</span></td>';
+          body.appendChild(row);
+        }
+      }
+      const padding = parseFloat(getComputedStyle(main).paddingTop) + parseFloat(getComputedStyle(main).paddingBottom);
+      return main.scrollHeight - (content.scrollHeight + padding);
+    });
+    if (gap > 8) extra.push(`${path}: ${Math.round(gap)}px past the content`);
+  }
+  expect(extra).toEqual([]);
+});

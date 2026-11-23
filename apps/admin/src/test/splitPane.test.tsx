@@ -91,7 +91,7 @@ describe('SPLIT_PANE', () => {
 describe('SPLIT_PANE_BOTH', () => {
   it('clips the container and drops the floor, above `lg` only', () => {
     // The container hides its own overflow so neither column can push the page.
-    expect(SPLIT_PANE_BOTH).toContain('lg:overflow-hidden');
+    expect(SPLIT_PANE_BOTH).toContain('lg:overflow-clip');
     // And can shrink at all: without this it inherits `min-height: auto` from its children.
     expect(SPLIT_PANE_BOTH).toContain('min-h-0');
 
@@ -127,7 +127,7 @@ describe('M13 notifications', () => {
 
     const pane = paneOf(container);
     expect(pane).toBeTruthy();
-    expect(pane).toHaveClass('lg:overflow-hidden');
+    expect(pane).toHaveClass('lg:overflow-clip');
 
     const [log, settings] = Array.from(pane!.children);
 
@@ -174,7 +174,7 @@ describe('M14 configuration', () => {
 
     const pane = paneOf(container);
     expect(pane).toHaveClass('lg:flex-1');
-    // Its scroller is one level in: the editor card owns `overflow-hidden` so the section
+    // Its scroller is one level in: the editor card owns `overflow-clip` so the section
     // header stays put while the body moves.
     expect(container.querySelector('.lg\\:overflow-y-auto')).toBeTruthy();
   });

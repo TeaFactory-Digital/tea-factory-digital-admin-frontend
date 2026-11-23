@@ -349,7 +349,7 @@ function MonthsTable({
   // Newest first in the table: the month just gone is the one people look up.
   const rows = [...months].reverse();
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table
         className="w-full border-collapse text-data-cell"
         aria-label={t('reports.appUse.tableTitle')}

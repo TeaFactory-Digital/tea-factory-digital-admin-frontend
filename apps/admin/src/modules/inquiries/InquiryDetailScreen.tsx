@@ -343,7 +343,7 @@ function ChatThread({
     // Below `lg` a fixed height keeps a long thread from pushing the reply box far down
     // the page; above it the card's height is the window's, and the thread takes the rest.
     // `max-lg:` rather than a `lg:max-h-none` override: this theme's `none` sizes to 0.
-    <ol className="flex flex-col gap-xs overflow-y-auto rounded-lg bg-surface-variant/50 p-md max-lg:max-h-[60vh] lg:min-h-0 lg:flex-1">
+    <ol className="relative flex flex-col gap-xs overflow-y-auto rounded-lg bg-surface-variant/50 p-md max-lg:max-h-[60vh] lg:min-h-0 lg:flex-1">
       {rows.map((row) =>
         row.type === 'day' ? (
           <li key={row.key} className="my-sm self-center">

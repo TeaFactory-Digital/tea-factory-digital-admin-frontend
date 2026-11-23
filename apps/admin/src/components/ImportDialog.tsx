@@ -421,7 +421,7 @@ export function ImportDialog({
                       ? t('records.import.serverProblems', { count: serverTotal })
                       : t('records.import.problems', { count: problems.length })}
                   </strong>
-                  <ul className="max-h-40 list-disc overflow-y-auto pl-lg">
+                  <ul className="relative max-h-40 list-disc overflow-y-auto pl-lg">
                     {problems.slice(0, 100).map((problem, index) => (
                       <li key={index}>{describe(problem)}</li>
                     ))}
@@ -445,7 +445,7 @@ export function ImportDialog({
             )}
 
             {missing.length === 0 ? (
-              <div className="max-h-80 overflow-auto rounded-md border border-border">
+              <div className="relative max-h-80 overflow-auto rounded-md border border-border">
                 <table className="w-full text-left text-caption">
                   <thead className="sticky top-0 bg-surface-variant">
                     <tr>

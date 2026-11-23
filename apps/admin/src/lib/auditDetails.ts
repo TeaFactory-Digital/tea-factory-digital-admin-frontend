@@ -93,10 +93,25 @@ function spellOut(key: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
+/**
+ * A field the list above does not name is still looked up as `audit.field.<key>` before it
+ * is spelled out (24 November 2026), so a label added to the string tables is enough, and a
+ * Sinhala or Tamil reader is not handed English words.
+ */
 function fieldLabel(key: string, t: Translate): string {
   const mapped = FIELD_KEYS[key];
-  return mapped ? t(mapped) : spellOut(key);
+  return mapped ? t(mapped) : t(`audit.field.${key}`, { defaultValue: spellOut(key) });
 }
+
+/** Coded values with a name elsewhere in the console: shown by that name, not as code. */
+const VALUE_NAMES: Record<string, string> = {
+  category: 'notifications.category',
+  origin: 'audit.origin',
+  paymentMethod: 'suppliers.payment',
+  facility: 'credit.facility',
+  type: 'changeRequests.type',
+  changeType: 'changeRequests.type',
+};
 
 function languageName(code: string, t: Translate): string {
   return LANGUAGES.has(code) ? t(`content.language.${code}`) : code;
@@ -125,6 +140,9 @@ function formatValue(key: string, value: unknown, t: Translate): string {
   if (typeof value === 'string') {
     if (key === 'status') {
       return STATUSES.has(value) ? t(`audit.status.${value}`) : spellOut(value);
+    }
+    if (VALUE_NAMES[key] && /^[a-zA-Z]+$/.test(value)) {
+      return t(`${VALUE_NAMES[key]}.${value}`, { defaultValue: value });
     }
     if (/lang/i.test(key) && LANGUAGES.has(value)) return languageName(value, t);
     if (ISO_DATE.test(value)) return formatDateTime(value);

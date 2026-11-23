@@ -324,6 +324,19 @@ notification permission is asked on that save, and a refusal saves the rest and 
 tab is hidden, for supplier-sent kinds only, never for what was already in the feed when the
 console opened. While on, the activity feed polls every 30 seconds in the background too.
 
+### The audit log reads as sentences (24 November 2026)
+
+- The record type in words (`auditEntityLabel`, `audit.entity.<type>`, every type in
+  `AUDIT_ENTITIES`; an unknown one is spelled out, never shown as code), the id under it small.
+- Field labels are looked up as `audit.field.<key>` for any key, and coded values with a name
+  elsewhere (notification category, origin, payment method, credit type, change type) are
+  shown by that name (`VALUE_NAMES` in `lib/auditDetails.ts`).
+- A long text change shows only the words that changed (`lib/textChange.ts`: common start and
+  end trimmed, widened to whole words, 40 characters of context), with **Show full text** for
+  the before and after; more than three fields fold behind **+N more**.
+- Columns hold a minimum width and rows align to the top (`DataTable` `alignTop`), so a long
+  change never squeezes a name into a letter per line.
+
 ### Text must fit in every language
 
 Sinhala and Tamil labels run longer than English ones (a Tamil sidebar label can be a third
@@ -339,6 +352,21 @@ wider), so a label or a placeholder sized for English gets cut off.
 - **Checked in all three languages.** On 21 November 2026 every screen was measured in en, si
   and ta as the administrator, clerk and manager: no placeholder wider than its box and no
   label cut off. When a Tamil or Sinhala string will not fit, shorten the string, not the box.
+
+### A frame clips, it never hides (24 November 2026)
+
+The shell and every pane or card that holds its own scroller use `overflow-clip`, not
+`overflow-hidden`. A hidden box is still a scroll container: the browser scrolled it to show
+a focused element that stuck out, and the whole frame slid (the sidebar off to the left, the
+page up over the background photo). A clipped box cannot be scrolled; the one scroller is
+`main`, or the pane's own `SPLIT_PANE_SCROLLER`. `smoke.spec.ts` checks the shell.
+
+**And every scroll box is `relative`.** A visually hidden label (`sr-only`) is
+`position: absolute`; in a scroll box that is not positioned it is placed against `main` at
+its spot far down a long list, and `main` grew thousands of pixels of empty page past the
+grid (the audit log: 4,500 px; suppliers: 6,400 px). `DataTable`'s scroller and every other
+`overflow-auto` box carry `relative`; a new one must too. `smoke.spec.ts` opens every screen
+with an 80-row grid and fails if `main` is taller than its content.
 
 ### A grid must never be squeezed to nothing
 

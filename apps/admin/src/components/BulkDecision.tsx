@@ -152,7 +152,7 @@ export function BulkDecisionDialog({
     >
       <div className="flex flex-col gap-md">
         {verb === 'approve' && notice ? notice : null}
-        <ul className="max-h-64 overflow-auto rounded-md border border-divider" aria-label={t('bulk.items')}>
+        <ul className="relative max-h-64 overflow-auto rounded-md border border-divider" aria-label={t('bulk.items')}>
           {items.map((item) => {
             const outcome = outcomes[item.id];
             return (

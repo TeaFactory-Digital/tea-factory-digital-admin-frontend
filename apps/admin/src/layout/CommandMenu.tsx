@@ -276,7 +276,7 @@ export function CommandMenu() {
           <RadixDialog.Overlay className="fixed inset-0 z-40 bg-overlay backdrop-blur-xs" />
           <RadixDialog.Content
             data-glass-surface="dialog"
-            className="fixed top-[15vh] left-1/2 z-50 w-[calc(100vw-2rem)] max-w-dialog-wide -translate-x-1/2 overflow-hidden rounded-lg border border-border bg-surface shadow-raised"
+            className="fixed top-[15vh] left-1/2 z-50 w-[calc(100vw-2rem)] max-w-dialog-wide -translate-x-1/2 overflow-clip rounded-lg border border-border bg-surface shadow-raised"
             aria-describedby={undefined}
           >
             <RadixDialog.Title className="sr-only">{t('search.open')}</RadixDialog.Title>
@@ -309,7 +309,7 @@ export function CommandMenu() {
               aria-label={t('search.results')}
               // Scrollable, so reachable by keyboard; the arrows in the box above still move the choice.
               tabIndex={0}
-              className="max-h-96 overflow-y-auto p-xs"
+              className="relative max-h-96 overflow-y-auto p-xs"
             >
               {results.length === 0 ? (
                 <li className="px-md py-lg text-center text-body-small text-text-secondary">

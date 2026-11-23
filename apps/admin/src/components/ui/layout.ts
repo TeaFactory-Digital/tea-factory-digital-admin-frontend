@@ -123,7 +123,9 @@ export const SPLIT_PANE_EDITOR = 'grid gap-lg lg:min-h-64 lg:flex-1';
  * column below a fold with no scrollbar anywhere to reach it. Under `lg` the page scrolls
  * as it always did, which is also why `GRID_CARD_PANE` keeps its floor down there.
  */
-export const SPLIT_PANE_BOTH = 'grid min-h-0 flex-1 gap-lg lg:overflow-hidden';
+// `clip`, not `hidden`: a hidden box is still scrolled by the browser to show a focused
+// element, which slid whole panes out of place (24 November 2026).
+export const SPLIT_PANE_BOTH = 'grid min-h-0 flex-1 gap-lg lg:overflow-clip';
 
 /**
  * {@link GRID_CARD} for a column of a {@link SPLIT_PANE_BOTH}: the floor below `lg`, none

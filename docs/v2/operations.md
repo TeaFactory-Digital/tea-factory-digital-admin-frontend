@@ -24,7 +24,7 @@ From the workspace root:
 | `npm run preview`       | Serves the built bundle                                                                    |
 | `npm run typecheck`     | `tsc --build --force` across the projects                                                  |
 | `npm run lint`          | ESLint, including the white-label and layering rules                                       |
-| `npm run test`          | Vitest against the MSW fixtures: 713 tests in 101 files (22 November 2026)                   |
+| `npm run test`          | Vitest against the MSW fixtures: 719 tests in 102 files (22 November 2026)                   |
 | `npm run test:coverage` | The same with coverage: the logic (packages, `services`, `lib`) at 70% or more on all four measures (84, 76, 85, 87 on 30 October 2026); CI runs it |
 | `npm run test:watch`    | Vitest in watch mode                                                                       |
 | `npm run e2e`           | Playwright against its own dev server on port 5274, API answered by `e2e/fixtures.ts`. Needs `npx playwright install chromium` once; see Testing |
@@ -166,7 +166,7 @@ old binaries are in the field, and feature flags are the release valve.
 
 Layered so each layer tests what only it can.
 
-### Vitest: 713 tests in 101 files
+### Vitest: 719 tests in 102 files
 
 Every file runs against the MSW fixtures through the real transport, store and screens
 (`test/setup.ts`); only the server is a stand-in. Counts drift with every change, so
@@ -192,7 +192,7 @@ re-read them from `npm test` rather than from here. The files worth knowing:
 a factory will ask to change, and the ceiling arithmetic is the one place a bug produces
 a dispute rather than a crash.
 
-### Playwright: 36 tests in 8 specs
+### Playwright: 38 tests in 8 specs
 
 `npm run e2e` starts its own dev server on **port 5274** (never your `npm run dev` on
 5273) with `VITE_API_BASE_URL` pointed at `/v1` on that origin, and `e2e/fixtures.ts`

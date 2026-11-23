@@ -39,7 +39,11 @@ export function AppShell() {
   });
 
   return (
-    <div data-glass-backdrop className="flex h-screen overflow-hidden bg-background">
+    // `overflow-clip`, not `overflow-hidden` (24 November 2026): a hidden overflow is still a
+    // scroll container, and the browser scrolled it to bring a focused element into view,
+    // sliding the sidebar off and the page up. A clipped frame cannot be scrolled; `main` is
+    // the one scroller.
+    <div data-glass-backdrop className="flex h-screen overflow-clip bg-background">
       <Sidebar summary={summary} />
       <ShortcutsDialog />
 

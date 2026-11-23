@@ -163,7 +163,7 @@ export function OpeningBalancesGridScreen() {
             </InfoTip>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full min-w-max border-collapse text-body-small">
               <thead>
                 <tr className="border-b border-divider text-left text-overline text-text-secondary uppercase">

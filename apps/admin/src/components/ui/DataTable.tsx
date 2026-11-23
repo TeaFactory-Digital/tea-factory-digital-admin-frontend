@@ -47,6 +47,8 @@ interface DataTableProps<Row> {
   emptyState: ReactNode;
   /** Accessible name for the grid: required, and it is not the page title. */
   label: string;
+  /** Cells line up at the top: for rows of very different heights (the audit log). */
+  alignTop?: boolean;
 }
 
 export function DataTable<Row>({
@@ -62,6 +64,7 @@ export function DataTable<Row>({
   onSortingChange,
   emptyState,
   label,
+  alignTop = false,
 }: DataTableProps<Row>) {
   const { t } = useTranslation();
   const bodyRef = useRef<HTMLTableSectionElement>(null);
@@ -108,19 +111,19 @@ export function DataTable<Row>({
     );
   if (loading && !page)
     return (
-      <div className="min-h-0 flex-1 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-clip">
         <TableSkeleton columns={columns.length} />
       </div>
     );
   if (page && page.items.length === 0)
-    return (
-      <div className="flex min-h-0 flex-1 items-center justify-center">{emptyState}</div>
-    );
+    return <div className="flex min-h-0 flex-1 items-center justify-center">{emptyState}</div>;
 
   /** ↑/↓ between rows, Enter to open. Focus stays inside the grid. */
   function handleKeyDown(event: KeyboardEvent<HTMLTableSectionElement>) {
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
-    const rows = Array.from(bodyRef.current?.querySelectorAll<HTMLTableRowElement>('tr[tabindex]') ?? []);
+    const rows = Array.from(
+      bodyRef.current?.querySelectorAll<HTMLTableRowElement>('tr[tabindex]') ?? [],
+    );
     const index = rows.indexOf(document.activeElement as HTMLTableRowElement);
     const nextIndex = event.key === 'ArrowDown' ? index + 1 : index - 1;
     const next = rows[nextIndex];
@@ -144,7 +147,11 @@ export function DataTable<Row>({
        * which column is which, and still needs "Next" without scrolling back.
        * The page body itself never scrolls: see `AppShell`.
        */}
-      <div className="min-h-0 flex-1 overflow-auto">
+      {/* `relative` is load-bearing (24 November 2026), as on SPLIT_PANE_SCROLLER: a visually
+          hidden label in a row (`sr-only` is `position: absolute`) is otherwise placed against
+          `main`, at its spot far down the list, and stretched the page thousands of pixels
+          past the grid, so the whole page scrolled away under the top bar. */}
+      <div className="relative min-h-0 flex-1 overflow-auto">
         <table data-grid className="w-full border-collapse text-data-cell" aria-label={label}>
           {/**
            * Sticky against the scroll container above, not the page.
@@ -219,11 +226,15 @@ export function DataTable<Row>({
                 className={cn(
                   'border-b border-divider transition-colors duration-100',
                   index % 2 === 1 && 'bg-table-row-alt',
-                  onRowActivate && 'cursor-pointer hover:bg-table-row-hover focus:bg-table-row-hover',
+                  onRowActivate &&
+                    'cursor-pointer hover:bg-table-row-hover focus:bg-table-row-hover',
                 )}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-lg py-md align-middle">
+                  <td
+                    key={cell.id}
+                    className={cn('px-lg py-md', alignTop ? 'align-top' : 'align-middle')}
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}

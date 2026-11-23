@@ -64,7 +64,7 @@ export function SupplierPicker({
         onChange={(event) => setText(event.target.value)}
       />
       {needle.length >= 1 ? (
-        <div className="max-h-56 overflow-y-auto rounded-md border border-border">
+        <div className="relative max-h-56 overflow-y-auto rounded-md border border-border">
           {results.isPending ? (
             <div className="flex justify-center p-md">
               <Spinner />

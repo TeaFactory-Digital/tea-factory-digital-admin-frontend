@@ -23,11 +23,9 @@ import { Select } from '@/components/ui/Field';
 import { ExportCsvButton } from '@/components/ExportCsvButton';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/states';
-import { auditActionLabel } from '@/lib/auditLabels';
+import { AUDIT_ENTITIES, auditActionLabel, auditEntityLabel } from '@/lib/auditLabels';
 import { AuditDetails } from '@/components/AuditDetails';
 import { formatDateTime } from '@/lib/format';
-
-const ENTITIES = ['changeRequest', 'supplier', 'monthlyRate'] as const;
 
 export function AuditScreen() {
   const { t } = useTranslation();
@@ -100,7 +98,7 @@ export function AuditScreen() {
         cell: (info) => {
           const row = info.row.original;
           return (
-            <span className="flex flex-col">
+            <span className="flex min-w-36 flex-col">
               <span className="text-text-primary">{row.actorName}</span>
               {/**
                * The realm the actor belongs to, when it is not the office.
@@ -125,15 +123,29 @@ export function AuditScreen() {
       {
         accessorKey: 'action',
         header: t('audit.column.action'),
-        cell: (info) => auditActionLabel(info.getValue<string>(), t),
+        cell: (info) => (
+          <span className="block min-w-40 text-text-primary">
+            {auditActionLabel(info.getValue<string>(), t)}
+          </span>
+        ),
       },
       {
         id: 'entity',
         header: t('audit.column.entity'),
         enableSorting: false,
+        // The kind of record in words, the id under it, small: the id is for finding the
+        // record, the kind is what the reader scans for.
         cell: (info) => (
-          <span className="numeric text-text-secondary">
-            {info.row.original.entity} · {info.row.original.entityId}
+          <span className="flex min-w-36 flex-col">
+            <span className="text-text-primary">
+              {auditEntityLabel(info.row.original.entity, t)}
+            </span>
+            <span
+              className="numeric max-w-48 truncate font-mono text-caption text-text-secondary"
+              title={info.row.original.entityId}
+            >
+              {info.row.original.entityId}
+            </span>
           </span>
         ),
       },
@@ -143,7 +155,11 @@ export function AuditScreen() {
         enableSorting: false,
         cell: (info) => {
           const { before, after } = info.row.original;
-          return <AuditDetails before={before} after={after} />;
+          return (
+            <div className="min-w-72 max-w-prose">
+              <AuditDetails before={before} after={after} />
+            </div>
+          );
         },
       },
     ],
@@ -162,7 +178,10 @@ export function AuditScreen() {
               { header: t('export.column.when'), value: (e) => e.at },
               { header: t('export.column.who'), value: (e) => e.actorName },
               { header: t('export.column.action'), value: (e) => auditActionLabel(e.action, t) },
-              { header: t('export.column.record'), value: (e) => `${e.entity} ${e.entityId}` },
+              {
+                header: t('export.column.record'),
+                value: (e) => `${auditEntityLabel(e.entity, t)} ${e.entityId}`,
+              },
             ]}
           />
         }
@@ -178,18 +197,20 @@ export function AuditScreen() {
             fullWidth={false}
           >
             <option value="">{t('audit.filter.allEntities')}</option>
-            {ENTITIES.map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            ))}
+            {[...AUDIT_ENTITIES]
+              .sort((a, b) => auditEntityLabel(a, t).localeCompare(auditEntityLabel(b, t)))
+              .map((value) => (
+                <option key={value} value={value}>
+                  {auditEntityLabel(value, t)}
+                </option>
+              ))}
           </Select>
 
           {/**
-            * *What did we do* versus *what did they do*: two readings of one log, and
-            * an investigator is always asking one of them. v1 had no way to separate
-            * them because it had no supplier entries to separate.
-            */}
+           * *What did we do* versus *what did they do*: two readings of one log, and
+           * an investigator is always asking one of them. v1 had no way to separate
+           * them because it had no supplier entries to separate.
+           */}
           <Select
             aria-label={t('audit.filter.actorType')}
             value={actorType ?? ''}
@@ -205,6 +226,7 @@ export function AuditScreen() {
 
         <DataTable
           label={t('audit.title')}
+          alignTop
           columns={columns}
           page={data}
           loading={isPending}
