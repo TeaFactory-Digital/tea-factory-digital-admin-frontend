@@ -795,3 +795,63 @@ main#main {
     display: none;
   }
 }
+
+/*
+ * The bell rings while something is unread (24 November 2026): a short swing from the
+ * handle, twice, with a ripple out of the count. It plays when the count appears or grows
+ * and as a reminder once a minute after that, never longer than about two seconds a time,
+ * so nothing on the screen keeps moving. None of it under reduced motion.
+ */
+@keyframes tfd-bell-ring {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0deg);
+  }
+  10% {
+    transform: rotate(16deg);
+  }
+  20% {
+    transform: rotate(-14deg);
+  }
+  30% {
+    transform: rotate(10deg);
+  }
+  40% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+  60% {
+    transform: rotate(-2deg);
+  }
+}
+
+@keyframes tfd-badge-ping {
+  from {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+
+.tfd-bell-ring {
+  transform-origin: 50% 8%;
+  animation: tfd-bell-ring 1.1s ease-in-out 2;
+}
+
+.tfd-badge-ping {
+  animation: tfd-badge-ping 1.1s ease-out 2 forwards;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tfd-bell-ring,
+  .tfd-badge-ping {
+    animation: none;
+  }
+}

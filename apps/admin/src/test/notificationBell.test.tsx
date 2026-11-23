@@ -72,3 +72,34 @@ describe('the bell', () => {
     await waitFor(() => expect(screen.getAllByLabelText('Not read yet').length).toBeGreaterThan(0));
   });
 });
+
+describe('the bell rings (24 November 2026)', () => {
+  const quiet = { queues: [] } as unknown as DashboardView;
+
+  it('rings while something is unread, with a ripple out of the count', async () => {
+    await signInAs(CLERK);
+    renderWithProviders(<NotificationBell summary={quiet} />);
+    const bell = await screen.findByRole('button', { name: /Notifications, \d+ new/ });
+    await waitFor(() => expect(bell.querySelector('[data-ringing]')).toHaveClass('tfd-bell-ring'));
+    expect(bell.querySelector('.tfd-badge-ping')).toBeInTheDocument();
+  });
+
+  it('stays still once everything is read', async () => {
+    await signInAs(CLERK);
+    const feed = (await activityRepository.feed())!;
+    await activityRepository.markRead(feed.items[0]!.at);
+    renderWithProviders(<NotificationBell summary={quiet} />);
+    const bell = await screen.findByRole('button', { name: 'Notifications' });
+    expect(bell.querySelector('.tfd-bell-ring')).not.toBeInTheDocument();
+    expect(bell.querySelector('.tfd-badge-ping')).not.toBeInTheDocument();
+  });
+
+  it('stops ringing while it is open', async () => {
+    await signInAs(MANAGER);
+    renderWithProviders(<NotificationBell summary={quiet} />);
+    const bell = await screen.findByRole('button', { name: /Notifications, \d+ new/ });
+    await waitFor(() => expect(bell.querySelector('.tfd-bell-ring')).toBeInTheDocument());
+    await userEvent.click(bell);
+    expect(bell.querySelector('.tfd-bell-ring')).not.toBeInTheDocument();
+  });
+});

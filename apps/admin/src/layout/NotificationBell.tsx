@@ -10,7 +10,7 @@
  * waiting instead, so the bell never shows a calm zero over a full inbox.
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import {
@@ -32,6 +32,9 @@ import type { DashboardView } from '@/services/repositories/dashboardRepository'
 import { NAVIGATION, queuesOf } from './navigation';
 import { useActivity, useMarkActivityRead } from './useActivity';
 import { activityPath } from './activityText';
+
+/** How often the bell rings again while something stays unread. */
+const REMIND_MS = 60_000;
 
 /** The queue screen narrows to one facility, as the dashboard's cards do. */
 const QUEUE_FACILITY: Partial<Record<QueueCount['queue'], CreditFacility>> = {
@@ -76,6 +79,27 @@ export function NotificationBell({ summary }: { summary?: DashboardView }) {
   const waitingTotal = waiting.reduce((sum, queue) => sum + queue.pending, 0);
   const badge = feed ? feed.unread : waitingTotal;
 
+  /**
+   * Ring the bell (24 November 2026): when the count appears or grows, and once a minute
+   * while it stays, only while the tab is in view and the bell is closed. Each ring is a new
+   * `key`, which restarts the animation; the styles stop it under reduced motion.
+   */
+  const [ring, setRing] = useState(0);
+  const previous = useRef(0);
+  useEffect(() => {
+    const grew = badge > previous.current;
+    previous.current = badge;
+    if (grew) setRing((count) => count + 1);
+  }, [badge]);
+  useEffect(() => {
+    if (badge === 0 || open) return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') setRing((count) => count + 1);
+    }, REMIND_MS);
+    return () => window.clearInterval(timer);
+  }, [badge, open]);
+  const ringing = ring > 0 && badge > 0 && !open;
+
   /** Closing the bell is reading it: everything up to the newest item shown. */
   function onOpenChange(next: boolean) {
     setOpen(next);
@@ -93,10 +117,24 @@ export function NotificationBell({ summary }: { summary?: DashboardView }) {
           }
           className="relative flex size-9 items-center justify-center rounded-md border border-border bg-surface text-text-secondary shadow-card transition-colors hover:border-text-secondary hover:text-text-primary"
         >
-          <Bell className="size-icon-sm" aria-hidden />
+          <span
+            key={`bell-${ring}`}
+            data-ringing={ringing || undefined}
+            className={cn('flex', ringing && 'tfd-bell-ring')}
+          >
+            <Bell className="size-icon-sm" aria-hidden />
+          </span>
           {badge > 0 ? (
             <span className="numeric absolute -top-xs -right-xs flex h-5 min-w-5 items-center justify-center rounded-full bg-error px-xxs text-caption font-semibold text-on-status">
-              {badge > 99 ? '99+' : badge}
+              {/* The ripple out of the count, with each ring. */}
+              {ringing ? (
+                <span
+                  key={`ping-${ring}`}
+                  aria-hidden
+                  className="tfd-badge-ping absolute inset-0 rounded-full bg-error"
+                />
+              ) : null}
+              <span className="relative">{badge > 99 ? '99+' : badge}</span>
             </span>
           ) : null}
         </button>
