@@ -727,3 +727,71 @@ main#main {
     animation: none;
   }
 }
+
+/* Toasts (`components/ui/Toast.tsx`): slide in from the right, fade out, and a timer line. */
+.tfd-toast[data-state='open'] {
+  animation: tfd-toast-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.tfd-toast[data-state='closed'] {
+  animation: tfd-toast-out 160ms ease-in both;
+}
+
+.tfd-toast[data-swipe='move'] {
+  transform: translateX(var(--radix-toast-swipe-move-x));
+}
+
+.tfd-toast[data-swipe='end'] {
+  animation: tfd-toast-swipe 160ms ease-out both;
+}
+
+.tfd-toast-timer {
+  animation-name: tfd-toast-timer;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
+/* Radix pauses every toast while the pointer or focus is in the stack, so the lines do too. */
+.tfd-toast-viewport:hover .tfd-toast-timer,
+.tfd-toast-viewport:focus-within .tfd-toast-timer {
+  animation-play-state: paused;
+}
+
+@keyframes tfd-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px) scale(0.98);
+  }
+}
+
+@keyframes tfd-toast-out {
+  to {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+
+@keyframes tfd-toast-swipe {
+  from {
+    transform: translateX(var(--radix-toast-swipe-end-x));
+  }
+  to {
+    opacity: 0;
+    transform: translateX(110%);
+  }
+}
+
+@keyframes tfd-toast-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tfd-toast-timer {
+    display: none;
+  }
+}

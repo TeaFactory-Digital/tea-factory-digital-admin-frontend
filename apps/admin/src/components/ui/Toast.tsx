@@ -10,7 +10,16 @@
 
 import * as RadixToast from '@radix-ui/react-toast';
 import { CheckCircle2, Info, TriangleAlert, X } from 'lucide-react';
-import { createContext, useCallback, useContext, useMemo, useState, type PropsWithChildren } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type PropsWithChildren,
+} from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/cn';
 
 type ToastTone = 'success' | 'error' | 'info';
@@ -36,13 +45,22 @@ const ICONS = {
   info: Info,
 } as const;
 
-const TONES: Record<ToastTone, string> = {
-  success: 'border-success text-success',
-  error: 'border-error text-error',
-  info: 'border-info text-info',
+/**
+ * The tone is the icon's tinted disc and the timer line, not the card's edge (24 November
+ * 2026): a coloured outline round the whole card, with a thick left stripe bent by the
+ * rounded corners, read heavier than the sentence it carried.
+ */
+const TONES: Record<ToastTone, { disc: string; timer: string }> = {
+  success: { disc: 'bg-success-muted text-success', timer: 'bg-success' },
+  error: { disc: 'bg-error-muted text-error', timer: 'bg-error' },
+  info: { disc: 'bg-info-muted text-info', timer: 'bg-info' },
 };
 
+/** Long enough to read a sentence; an error, which may need a second read, a little longer. */
+const DURATION: Record<ToastTone, number> = { success: 5000, info: 6000, error: 8000 };
+
 export function ToastProvider({ children }: PropsWithChildren) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<ToastItem[]>([]);
 
   const show = useCallback((toast: Omit<ToastItem, 'id'>) => {
@@ -64,20 +82,26 @@ export function ToastProvider({ children }: PropsWithChildren) {
         {children}
         {items.map((item) => {
           const Icon = ICONS[item.tone];
+          const tone = TONES[item.tone];
+          const duration = DURATION[item.tone];
           return (
             <RadixToast.Root
               key={item.id}
+              duration={duration}
               onOpenChange={(open) => {
                 if (!open) setItems((current) => current.filter((i) => i.id !== item.id));
               }}
-              className={cn(
-                'flex items-start gap-sm rounded-md border border-border bg-surface px-md py-sm shadow-raised',
-                'border-l-4',
-                TONES[item.tone],
-              )}
+              className="tfd-toast relative flex items-start gap-md overflow-hidden rounded-lg border border-border bg-surface p-md shadow-raised"
             >
-              <Icon className="size-icon-md shrink-0" aria-hidden />
-              <div className="min-w-0 flex-1">
+              <span
+                className={cn(
+                  'flex size-8 shrink-0 items-center justify-center rounded-full',
+                  tone.disc,
+                )}
+              >
+                <Icon className="size-icon-sm" aria-hidden />
+              </span>
+              <div className="min-w-0 flex-1 pt-xxs">
                 <RadixToast.Title className="text-body-small font-semibold text-text-primary">
                   {item.title}
                 </RadixToast.Title>
@@ -87,13 +111,25 @@ export function ToastProvider({ children }: PropsWithChildren) {
                   </RadixToast.Description>
                 ) : null}
               </div>
-              <RadixToast.Close className="rounded-sm p-xxs text-text-secondary hover:bg-surface-variant">
+              <RadixToast.Close
+                aria-label={t('common.close')}
+                className="-mt-xxs -mr-xxs flex size-8 shrink-0 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-surface-variant hover:text-text-primary"
+              >
                 <X className="size-icon-sm" aria-hidden />
               </RadixToast.Close>
+              {/* How long it has left. Paused while pointed at, as the toast itself is. */}
+              <span
+                aria-hidden
+                className={cn(
+                  'tfd-toast-timer absolute bottom-0 left-0 h-0.5 w-full origin-left',
+                  tone.timer,
+                )}
+                style={{ animationDuration: `${duration}ms` } as CSSProperties}
+              />
             </RadixToast.Root>
           );
         })}
-        <RadixToast.Viewport className="fixed right-lg bottom-lg z-50 flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-sm outline-none" />
+        <RadixToast.Viewport className="tfd-toast-viewport fixed right-lg bottom-lg z-50 flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-sm outline-none" />
       </RadixToast.Provider>
     </ToastContext.Provider>
   );

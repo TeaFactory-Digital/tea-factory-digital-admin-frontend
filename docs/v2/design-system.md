@@ -134,7 +134,7 @@ native elements everywhere else.
 | `Badge` / `CountBadge` | `CountBadge` renders **nothing** at zero, not a `0` |
 | `Field` / `Input` / `Textarea` / `Select` / `SearchInput` | See below |
 | `Dialog` | Radix. Focus trap and scroll lock are exactly what a hand-rolled modal gets subtly wrong, and this is where irreversible decisions are confirmed |
-| `Toast` / `useToast` | Confirmations only |
+| `Toast` / `useToast` | Confirmations only. A plain card with the tone in the icon's tinted disc and a timer line (paused while the pointer or focus is in the stack), sliding in from the right; 5 s, info 6 s, error 8 s; the close button is named |
 | `DataTable` | See below |
 | `Spinner` `SpinnerMark` `Skeleton` `TableSkeleton` `EmptyState` `ErrorState` `Notice` | See below |
 | `PageHeader` | One `<h1>` per page, here, so the document outline is right |
