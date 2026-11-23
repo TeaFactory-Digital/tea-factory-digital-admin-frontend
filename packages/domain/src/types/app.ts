@@ -272,6 +272,11 @@ export interface AdvanceRequest {
   reason?: string;
   status: RequestStatus;
   createdAt: string;
+  /**
+   * When the factory decided it (24 November 2026). The supplier API sends it
+   * (`app-wire.ts`); `null` or absent while it waits.
+   */
+  decidedAt?: string | null;
   note?: string;
   /** Accounts the supplier chose to repay over. See `LoanRequest.repaymentMonths`. */
   repaymentMonths?: number;
@@ -284,6 +289,11 @@ export interface LoanRequest {
   reason?: string;
   status: RequestStatus;
   createdAt: string;
+  /**
+   * When the factory decided it (24 November 2026). The supplier API sends it
+   * (`app-wire.ts`); `null` or absent while it waits.
+   */
+  decidedAt?: string | null;
   note?: string;
   /**
    * How many accounts the supplier chose to spread the repayment over (§21.10).
@@ -310,6 +320,11 @@ export interface ManureRequest {
   deliveryNotes?: string;
   status: RequestStatus;
   createdAt: string;
+  /**
+   * When the factory decided it (24 November 2026). The supplier API sends it
+   * (`app-wire.ts`); `null` or absent while it waits.
+   */
+  decidedAt?: string | null;
   note?: string;
   /** Accounts the supplier chose to repay over. See `LoanRequest.repaymentMonths`. */
   repaymentMonths?: number;
@@ -346,6 +361,11 @@ export interface TeaPacketRequest {
   notes?: string;
   status: RequestStatus;
   createdAt: string;
+  /**
+   * When the factory decided it (24 November 2026). The supplier API sends it
+   * (`app-wire.ts`); `null` or absent while it waits.
+   */
+  decidedAt?: string | null;
   note?: string;
 }
 

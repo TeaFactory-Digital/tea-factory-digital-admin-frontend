@@ -101,6 +101,11 @@
   <li><strong>Loan balance</strong> is the loan still owed; <strong>Loan interest</strong> is this month's interest in rupees.</li>
   <li><strong>Correction:</strong> when the office finds a mistake on an earlier bill, the next bill carries a line "Correction (month)" with the office's reason under it: a plus when the supplier was paid too little, a minus when paid too much. The earlier bill is never changed. A loan, fertilizer or savings balance the office corrects simply shows its new figure.</li>
   <li><strong>No signal:</strong> the app shows the copy saved on the phone (kept up to seven days). If it cannot reach the factory, every screen showing saved figures or messages shows a <strong>"Saved copy"</strong> notice with the date and time the figures were saved, and a Retry. Credit limits and the tea packet allowance are never shown from a saved copy.</li>
+  <li><strong>Your bill, explained:</strong> a card that opens to the steps with the month's own figures, following the bill's formula: leaf × rate, plus coins brought forward, is the gross; less deductions, the balance; plus any savings taken back or correction, the payable; paid in whole units, the coins kept for next month. With nothing paid, it ends on the debt carried.</li>
+  <li><strong>Why it changed:</strong> under "Against last month", the change in pay split into kilos (at last month's rate), the rate (on this month's kilos) and deductions (naming the line that moved most); coins, savings taken back and corrections together, when over Rs. 100. Largest first.</li>
+  <li><strong>Last 6 months:</strong> kilos or earnings, a bar a month (a month with no record is a zero bar), the average and how this month compares, from the income summaries.</li>
+  <li><strong>No signal, on every screen:</strong> a yellow bar from the first request that gets no answer until the first that does; it tries again every 30 seconds and when the app returns. The last three months' bills are fetched ahead while there is signal, so they open offline.</li>
+  <li><strong>Home-screen widget:</strong> "Leaf this month" (iOS WidgetKit, Android app widget): this month's kilos so far, or the newest bill's, and the days with leaf, written by the app in the supplier's language and cleared on sign-out. Kilos only, never money: it is outside the PIN. iOS needs the App Group <code>group.com.teafactorydigital.mobile</code> on both identifiers.</li>
 </ul>
 
 <!-- 5 -->
@@ -215,6 +220,7 @@ Paid          68,220.00  (in tens)     coins carried 6.91 → August</div>
 <p>The factory may approve a different amount or term from the one asked for. It checks the limit again when it decides, because a month may have been published or a loan approved in between.</p>
 </div>
 
+<p><strong>Where a request is.</strong> Each request in the history shows three steps: Sent (with its date), Being checked, then Approved or Not approved (with the date the factory decided, which the API sends), or "You cancelled it". A "decided" notification that names the request (<code>facility</code> and <code>requestId</code>) opens its screen with that request first, marked "From your notification"; one that names no facility the app knows opens the notifications list.</p>
 <!-- 10 -->
 <h1>10. Request an advance</h1>
 <ul>
