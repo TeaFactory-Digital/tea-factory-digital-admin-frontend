@@ -100,6 +100,7 @@ const BY_CODE: Record<string, string> = {
   'opening-balances-locked': 'error.openingBalancesLocked',
   'cut-over-month': 'error.cutOverMonth',
   'withdrawal-pending': 'error.withdrawalPending',
+  'loan-approved-in-month': 'error.loanApprovedInMonth',
   'correction-invalid': 'error.correctionInvalid',
   'approval-above-limit': 'error.approvalAboveLimit',
   'negative': 'error.negative',

@@ -170,6 +170,8 @@ see [status.md](./status.md#hidden-in-the-console-until-the-backend-ships-it)):
 - [ ] Import the suppliers, then their opening balances, from Excel/CSV
       (**Suppliers → Import**; each screen offers a template). Settle or cancel any savings
       withdrawal still pending before the cut-over month, then enter the opening savings.
+- [ ] Enter every opening balance **before approving any loan in the cut-over month**: one loan at a time (B2),
+      and a loan already approved in that month cannot sit beside an opening loan (T20.3)
 - [ ] Enter or import the month's leaf (**Factory records → Leaf intake**), the rate, and the
       deduction rates (transport per collection point, stamps, caps).
 - [ ] **Bills imported** (the factory's own system prints them, as at Galaboda): once the
