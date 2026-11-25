@@ -29,6 +29,12 @@ const CASES: Array<[ApiError, string, Record<string, string>]> = [
     { suppliers: '5708, 0123', count: '2' },
   ],
   [refusal('earlier-month-unpublished', { monthKey: '2026-09' }), 'error.earlierMonthUnpublished', { month: '2026-09' }],
+  // T20.3 (backend, 25 November 2026): an opening loan beside a loan approved from the cut-over month on.
+  [
+    refusal('loan-approved-in-month', { supplierId: 's-1', asOfMonth: '2026-11', approvedAt: '2026-11-05T04:30:00.000Z', amount: 20000 }),
+    'error.loanApprovedInMonth',
+    { month: '2026-11' },
+  ],
 ];
 
 describe('the bill engine refusals', () => {

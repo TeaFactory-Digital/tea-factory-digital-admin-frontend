@@ -2260,6 +2260,24 @@ function withdrawalPendingBefore(supplierId: string, month: string): boolean {
   );
 }
 
+/**
+ * A loan approved for this supplier from the cut-over month on (the server's T20.3, 25 November
+ * 2026): an opening loan cannot sit beside it, one loan at a time. The earliest, or null.
+ */
+function loanApprovedFrom(supplierId: string, month: string): { approvedAt: string; amount: number } | null {
+  const found = state.creditRequests
+    .filter(
+      (one) =>
+        one.supplierId === supplierId &&
+        one.facility === 'loan' &&
+        one.status === 'approved' &&
+        !!one.decision?.decidedAt &&
+        colomboMonthOf(one.decision.decidedAt) >= month,
+    )
+    .sort((a, b) => a.decision!.decidedAt.localeCompare(b.decision!.decidedAt))[0];
+  return found ? { approvedAt: found.decision!.decidedAt, amount: found.amount } : null;
+}
+
 function saveOpeningBalances(
   supplierId: string,
   body: OpeningBalances & { note: string },
@@ -2519,6 +2537,7 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
         const inFile = rows.map((one) => supplierByCode((one.supplierCode ?? '').trim())?.id).filter(Boolean) as string[];
         if (month && cutoverProblem(month, inFile)) return push('asOfMonth', 'cut-over-month');
         if (month && withdrawalPendingBefore(supplier.id, month)) push('supplierCode', 'withdrawal-pending');
+        if (month && Number(row.loan ?? 0) > 0 && loanApprovedFrom(supplier.id, month)) push('loan', 'loan-approved-in-month');
         return;
       }
       case 'walkInCredit': {
@@ -8596,6 +8615,15 @@ export const handlers: HttpHandler[] = [
         code: 'withdrawal-pending',
         message: 'A savings withdrawal from before the cut-over is still pending; settle or cancel it first.',
         details: { supplierId: id, asOfMonth: body.asOfMonth },
+      });
+    }
+    const approvedLoan = body.loan > 0 ? loanApprovedFrom(id, body.asOfMonth) : null;
+    if (approvedLoan) {
+      return fail({
+        status: 409,
+        code: 'loan-approved-in-month',
+        message: 'A loan was approved for this supplier in the cut-over month or later; an opening loan cannot sit beside it.',
+        details: { supplierId: id, asOfMonth: body.asOfMonth, ...approvedLoan },
       });
     }
     const saved = saveOpeningBalances(id, body, auth.user.name);
