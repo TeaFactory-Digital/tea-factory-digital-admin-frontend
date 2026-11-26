@@ -13,8 +13,9 @@
  * No password change. The auth surface is `login`, `refresh`, `logout` and `me`; there is
  * no self-service endpoint for one, and the supplier password reset in M2 is the office
  * issuing a *supplier's* app password, not a console user changing their own. A form posting
- * to an endpoint that does not exist would look like the feature until somebody needed it,
- * so the security card states where that change actually happens instead.
+ * to an endpoint that does not exist would look like the feature until somebody needed it.
+ * The sentence that used to say where a password is changed was taken off the screen on
+ * 26 November 2026, at the office's request; a factory administrator resets it from Users.
  *
  * There is no two-factor enrolment either, and now for a different reason: the factory has
  * withdrawn the requirement outright rather than left it unbuilt.
@@ -43,7 +44,8 @@ import { RevertButton } from '@/modules/configuration/StringListEditor';
 import { useToast } from '@/components/ui/Toast';
 import { formatDateTime } from '@/lib/format';
 import { InfoTip } from '@/components/ui/Tooltip';
-import { LabelWithTip } from '@/components/ui/LabelWithTip';
+import { SettingRow } from '@/components/ui/SettingRow';
+import { cn } from '@/lib/cn';
 import { RequestAlertsSection } from './RequestAlertsSection';
 import { InterfaceSoundSection } from './InterfaceSoundSection';
 import { setUiSound, useUiSound } from '@/lib/sound/uiSound';
@@ -54,10 +56,16 @@ import { useRequestAlertSettings } from '@/layout/useRequestAlerts';
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-xxs">
-      <span className="text-caption text-text-secondary">{label}</span>
-      <span className="text-body-small text-text-primary">{children}</span>
+      <dt className="text-caption text-text-secondary">{label}</dt>
+      <dd className="text-body-small text-text-primary">{children}</dd>
     </div>
   );
+}
+
+/** Two letters for the avatar: first and last name, as the account menu draws them. */
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : '')).toUpperCase() || '?';
 }
 
 export function ProfileScreen() {
@@ -150,98 +158,116 @@ export function ProfileScreen() {
     <>
       <PageHeader title={t('profile.title')} description={t('profile.subtitle')} />
 
-      <div className="grid gap-lg lg:grid-cols-2">
+      {/* Its own box, as tall as what is in it: the save bar sticks to the bottom of the
+          window only within its parent, and the page frame is only the window's height. */}
+      <div className="flex flex-col gap-lg">
+        {/* Who is signed in, in one band (26 November 2026). */}
         <Card>
-          <CardHeader title={t('profile.youTitle')} description={t('profile.youDescription')} />
-          <CardBody className="grid gap-md sm:grid-cols-2">
-            <Fact label={t('profile.name')}>{user.name}</Fact>
-            <Fact label={t('profile.email')}>{user.email}</Fact>
-
-            <Fact label={t('profile.roles')}>
-              {/* Every role, not the "highest": §12.1 grants are a union, and a person
-                  holding two roles is doing two jobs rather than the senior one. */}
-              <span className="flex flex-wrap gap-xxs">
-                {user.roles.map((role) => (
-                  <Badge key={role} tone="neutral">
-                    {t(`users.role.${role}`)}
-                  </Badge>
-                ))}
+          <CardBody className="flex flex-wrap items-center gap-x-xl gap-y-md">
+            <div className="flex min-w-0 flex-1 basis-72 items-center gap-md">
+              <span
+                aria-hidden
+                className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary-muted text-title font-semibold text-primary"
+              >
+                {initials(user.name)}
               </span>
-            </Fact>
+              <div className="flex min-w-0 flex-col gap-xxs">
+                <h2 className="truncate text-title font-semibold text-text-primary">{user.name}</h2>
+                <span className="truncate text-body-small text-text-secondary">{user.email}</span>
+                {/* Every role, not the "highest": §12.1 grants are a union, and a person
+                    holding two roles is doing two jobs rather than the senior one. */}
+                <span className="mt-xxs flex flex-wrap gap-xxs">
+                  {user.roles.map((role) => (
+                    <Badge key={role} tone="neutral">
+                      {t(`users.role.${role}`)}
+                    </Badge>
+                  ))}
+                </span>
+              </div>
+            </div>
 
-            <Fact label={t('profile.lastSignIn')}>
-              {user.lastLoginAt ? formatDateTime(user.lastLoginAt) : t('profile.firstSignIn')}
-            </Fact>
+            <dl className="flex flex-wrap gap-x-xl gap-y-sm">
+              <Fact label={t('profile.lastSignIn')}>
+                {user.lastLoginAt ? formatDateTime(user.lastLoginAt) : t('profile.firstSignIn')}
+              </Fact>
+            </dl>
           </CardBody>
         </Card>
 
-        <Card>
-          <CardHeader
-            title={t('profile.securityTitle')}
-            description={t('profile.securityDescription')}
-          />
-          <CardBody className="flex flex-col gap-md">
-            {/* Said rather than shown as a disabled form. There is no self-service endpoint
-                for a password change, and a control that cannot work is worse than a
-                sentence naming the person who can do it. */}
-            <InfoTip label={t('tip.passwordChange')} text={t('tip.passwordChange')}>
-              {t('profile.securityHint')}
-            </InfoTip>
-          </CardBody>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader
-            title={t('profile.preferencesTitle')}
-            description={t('profile.preferencesDescription')}
-          />
-          <CardBody className="flex flex-col gap-lg">
-            <div className="flex flex-col gap-xs">
-              <LabelWithTip
-                label={t('profile.language')}
-                tip={t('profile.languageHint')}
-                className="text-label text-text-primary"
+        {/* The preferences in four groups, each a list of rows with the control on the right. */}
+        <div className="grid gap-lg lg:grid-cols-2">
+          <Card>
+            <CardHeader title={t('profile.group.reading')} description={t('profile.group.readingHint')} />
+            <CardBody className="divide-y divide-divider">
+              <SettingRow label={t('profile.language')} hint={t('profile.languageHint')}>
+                <LanguageSwitcher value={draftLanguage} onChange={setDraftLanguage} className="w-64" />
+              </SettingRow>
+              <AppearanceControls
+                value={draftAppearance}
+                onChange={setDraftAppearance}
+                rows={['textSize', 'contrast']}
               />
-              <LanguageSwitcher value={draftLanguage} onChange={setDraftLanguage} />
-            </div>
+            </CardBody>
+          </Card>
 
-            <div className="border-t border-divider pt-lg">
-              <AppearanceControls value={draftAppearance} onChange={setDraftAppearance} />
-            </div>
+          <Card>
+            <CardHeader title={t('profile.group.look')} description={t('profile.group.lookHint')} />
+            <CardBody className="divide-y divide-divider">
+              <AppearanceControls value={draftAppearance} onChange={setDraftAppearance} rows={['scheme', 'density', 'glass']} />
+            </CardBody>
+          </Card>
 
-            <div className="border-t border-divider pt-lg">
+          <Card>
+            <CardHeader title={t('profile.group.motion')} description={t('profile.group.motionHint')} />
+            <CardBody className="divide-y divide-divider">
+              <AppearanceControls value={draftAppearance} onChange={setDraftAppearance} rows={['motion']} />
               <InterfaceSoundSection value={draftSound} onChange={setDraftSound} />
-            </div>
+            </CardBody>
+          </Card>
 
-            <div className="border-t border-divider pt-lg">
+          <Card>
+            <CardHeader title={t('alerts.title')} description={t('alerts.description')} />
+            <CardBody className="divide-y divide-divider">
               <RequestAlertsSection value={draftAlerts} onChange={setDraftAlerts} />
-            </div>
+            </CardBody>
+          </Card>
+        </div>
 
-            {/* The honest scope of all three: this machine, not this account. They are in
+        {/* Always in view (26 November 2026): it used to sit under the last card, so a
+            change near the top was made with the only way to keep it off the screen. Quiet
+            while there is nothing to save, raised and marked once there is. */}
+        <div
+          className={cn(
+            'sticky bottom-md z-10 flex flex-wrap items-center gap-sm rounded-lg border bg-surface px-lg py-sm transition-shadow',
+            dirty ? 'border-primary/40 shadow-raised' : 'border-border shadow-card',
+          )}
+        >
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-md gap-y-xxs">
+            {dirty ? (
+              <span className="flex items-center gap-xs text-body-small font-medium text-text-primary">
+                <span aria-hidden className="size-2 shrink-0 rounded-full bg-warning" />
+                {t('profile.unsavedHint')}
+              </span>
+            ) : (
+              <span className="text-body-small text-text-secondary">{t('profile.nothingToSave')}</span>
+            )}
+            {/* The honest scope of all of them: this machine, not this account. They are in
                 `localStorage` because they have to work on the sign-in screen, which has no
                 session to read a preference from. */}
-            <div className="border-t border-divider pt-md">
-              <InfoTip label={t('tip.savedHere')} text={t('tip.savedHere')}>
-                {t('profile.preferencesScope')}
-              </InfoTip>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-sm border-t border-divider pt-md">
-              <Button
-                variant="primary"
-                disabled={!dirty}
-                iconLeft={<Save className="size-icon-sm" aria-hidden />}
-                onClick={() => setConfirming(true)}
-              >
-                {t('profile.save')}
-              </Button>
-              <RevertButton onRevert={revert} disabled={!dirty} />
-              <p className="text-caption text-text-secondary">
-                {dirty ? t('profile.unsavedHint') : t('profile.nothingToSave')}
-              </p>
-            </div>
-          </CardBody>
-        </Card>
+            <InfoTip label={t('tip.savedHere')} text={t('tip.savedHere')}>
+              {t('profile.preferencesScope')}
+            </InfoTip>
+          </div>
+          <RevertButton onRevert={revert} disabled={!dirty} />
+          <Button
+            variant="primary"
+            disabled={!dirty}
+            iconLeft={<Save className="size-icon-sm" aria-hidden />}
+            onClick={() => setConfirming(true)}
+          >
+            {t('profile.save')}
+          </Button>
+        </div>
       </div>
 
       {/*

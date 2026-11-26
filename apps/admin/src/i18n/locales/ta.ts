@@ -72,7 +72,6 @@ export const ta: Record<TranslationKey, string> = {
   'tip.noRecall': 'திரும்பப் பெற முடியாது',
   'tip.editsAreLive': 'திருத்தங்கள் உடனே நேரலையாகும்',
   'tip.oneTimePassword': 'ஒருமுறை கடவுச்சொல்',
-  'tip.passwordChange': 'உங்கள் கடவுச்சொல்லை மாற்றுவது எப்படி',
   'tip.aboutScreen': 'இந்தத் திரை பற்றி',
   'tip.interestRule': 'வட்டி கணக்கிடப்படும் முறை',
   'tip.openQuestion': 'இன்னும் முடிவு செய்யப்படவில்லை',
@@ -111,10 +110,6 @@ export const ta: Record<TranslationKey, string> = {
   'profile.roles': 'பதவிகள்',
   'profile.lastSignIn': 'கடைசியாக உள்நுழைந்தது',
   'profile.firstSignIn': 'இது உங்கள் முதல் அமர்வு',
-  'profile.securityTitle': 'பாதுகாப்பு',
-  'profile.securityDescription': 'இந்தக் கணக்கு பாதுகாக்கப்படும் விதம்.',
-  'profile.securityHint':
-    'கடவுச்சொற்கள் தொழிற்சாலை நிர்வாகியால் “பயனர்கள் மற்றும் பதவிகள்” திரையிலிருந்து மீட்டமைக்கப்படுகின்றன. இங்கிருந்து மாற்ற முடியாது.',
   'profile.save': 'விருப்பங்களைச் சேமி',
   'profile.unsavedHint': 'இன்னும் பயன்படுத்தப்படவில்லை. பயன்படுத்த சேமிக்கவும்.',
   'profile.nothingToSave': 'சேமிக்க ஒன்றுமில்லை.',
@@ -125,6 +120,13 @@ export const ta: Record<TranslationKey, string> = {
   'profile.savedHint': 'இந்தக் கணினியில் அடுத்த முறை உள்நுழையும்போதும் இவை இருக்கும்.',
   'profile.preferencesTitle': 'இந்தக் கன்சோலை நீங்கள் படிக்கும் விதம்',
   'profile.preferencesDescription': 'உங்களுக்கு மட்டும். இவை மாறுவது வேறு யாருக்கும் தெரியாது.',
+  // The profile's preference groups (26 November 2026).
+  'profile.group.reading': 'மொழியும் வாசிப்பும்',
+  'profile.group.readingHint': 'சொற்கள், அவை எவ்வளவு பெரியதாகவும் தெளிவாகவும் உள்ளன.',
+  'profile.group.look': 'தோற்றம்',
+  'profile.group.lookHint': 'வெளிச்சம் அல்லது இருள், ஒரு திரையில் எவ்வளவு பொருந்தும், மற்றும் பக்கப்பட்டி, மேல் பட்டைக்குப் பின்னால் உள்ள கண்ணாடி.',
+  'profile.group.motion': 'அசைவும் ஒலியும்',
+  'profile.group.motionHint': 'திரையில் அசைவு, மற்றும் உங்கள் கிளிக்குகளின் மென்மையான ஒலிகள்.',
   'profile.language': 'மொழி',
   'profile.languageHint':
     'கன்சோலின் சொந்த லேபிள்கள். வழங்குநர்களுக்காக எழுதப்பட்ட உள்ளடக்கம் தன் மொழிகளைத் தக்கவைக்கும்.',

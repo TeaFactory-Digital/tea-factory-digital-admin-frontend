@@ -74,18 +74,13 @@ describe('the profile screen', () => {
     await signInAs(CLERK);
     const { container } = renderProfile();
     const view = within(container);
-    await view.findByText('Security');
+    await view.findByText('Nadeeka Perera');
 
     // Asked of the whole screen, not one card: the claim is that no such control exists
-    // anywhere on it.
-    // Inputs only: the "How to change your password" info icon is a button, not a field.
+    // anywhere on it. (The sentence naming who resets a password was removed at the
+    // office's request on 26 November 2026; the absence of a form is what still matters.)
     expect(view.queryByLabelText(/password/i, { selector: 'input' })).not.toBeInTheDocument();
     expect(view.queryByRole('textbox', { name: /password/i })).not.toBeInTheDocument();
-    // Said in a sentence instead, naming who can actually do it, behind the info icon.
-    await userEvent.hover(view.getByRole('button', { name: /change your password/i }));
-    expect(await screen.findByRole('tooltip')).toHaveTextContent(
-      /reset by a factory administrator/i,
-    );
   });
 
   it('says nothing about a second factor, for a manager least of all', async () => {
@@ -98,7 +93,7 @@ describe('the profile screen', () => {
     await signInAs(MANAGER);
     const { container } = renderProfile();
     const view = within(container);
-    await view.findByText('Security');
+    await view.findByRole('radiogroup', { name: /text size/i });
 
     expect(view.queryByText(/two-factor/i)).not.toBeInTheDocument();
   });

@@ -71,7 +71,6 @@ export const si: Record<TranslationKey, string> = {
   'tip.noRecall': 'ආපසු ගත නොහැක',
   'tip.editsAreLive': 'සංස්කරණ වහාම ක්‍රියාත්මක වේ',
   'tip.oneTimePassword': 'එක් වරක් භාවිත මුරපදය',
-  'tip.passwordChange': 'ඔබේ මුරපදය වෙනස් කරන ආකාරය',
   'tip.aboutScreen': 'මෙම තිරය ගැන',
   'tip.interestRule': 'පොලිය ගණනය කරන ආකාරය',
   'tip.openQuestion': 'තවම තීරණය කර නැත',
@@ -110,10 +109,6 @@ export const si: Record<TranslationKey, string> = {
   'profile.roles': 'භූමිකා',
   'profile.lastSignIn': 'අවසන් වරට ඇතුළු වූයේ',
   'profile.firstSignIn': 'මෙය ඔබේ පළමු වාරයයි',
-  'profile.securityTitle': 'ආරක්ෂාව',
-  'profile.securityDescription': 'මෙම ගිණුම ආරක්ෂා වන ආකාරය.',
-  'profile.securityHint':
-    'මුරපද නැවත සකසන්නේ කර්මාන්තශාලා පරිපාලකයෙකු විසින් “පරිශීලකයන් සහ භූමිකා” තිරයෙනි. මෙතැනින් එය වෙනස් කළ නොහැක.',
   'profile.save': 'මනාපයන් සුරකින්න',
   'profile.unsavedHint': 'තවම යොදා නැත. භාවිතයට සුරකින්න.',
   'profile.nothingToSave': 'සුරැකීමට කිසිවක් නැත.',
@@ -124,6 +119,13 @@ export const si: Record<TranslationKey, string> = {
   'profile.savedHint': 'මෙම පරිගණකයෙන් ඊළඟ වර ඇතුළු වන විටත් ඒවා එසේම තිබේ.',
   'profile.preferencesTitle': 'ඔබ මෙම කොන්සෝලය කියවන ආකාරය',
   'profile.preferencesDescription': 'ඔබට පමණයි. මේවා වෙනස් වීම වෙන කිසිවෙකුට නොපෙනේ.',
+  // The profile's preference groups (26 November 2026).
+  'profile.group.reading': 'භාෂාව සහ කියවීම',
+  'profile.group.readingHint': 'වචන, සහ ඒවා කොතරම් විශාල හා පැහැදිලිද යන්න.',
+  'profile.group.look': 'පෙනුම',
+  'profile.group.lookHint': 'ආලෝකමත් හෝ අඳුරු, එක් තිරයකට කොපමණ ගැලපේද, සහ පැති තීරුව හා ඉහළ තීරුව පිටුපස ඇති වීදුරුව.',
+  'profile.group.motion': 'චලනය සහ ශබ්දය',
+  'profile.group.motionHint': 'තිරයේ චලනය, සහ ඔබේ ක්ලික් කිරීම් සඳහා වන මෘදු ශබ්ද.',
   'profile.language': 'භාෂාව',
   'profile.languageHint':
     'කොන්සෝලයේම ලේබල. සැපයුම්කරුවන් සඳහා ලියූ අන්තර්ගතය එහිම භාෂාවලින් පවතී.',

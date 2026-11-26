@@ -59,7 +59,6 @@ export const en = {
   'tip.noRecall': 'Cannot be taken back',
   'tip.editsAreLive': 'Edits go live immediately',
   'tip.oneTimePassword': 'One-time password',
-  'tip.passwordChange': 'How to change your password',
   'tip.aboutScreen': 'About this screen',
   'tip.interestRule': 'How interest is worked out',
   'tip.openQuestion': 'Not decided yet',
@@ -98,10 +97,6 @@ export const en = {
   'profile.roles': 'Roles',
   'profile.lastSignIn': 'Last signed in',
   'profile.firstSignIn': 'This is your first session',
-  'profile.securityTitle': 'Security',
-  'profile.securityDescription': 'How this account is protected.',
-  'profile.securityHint':
-    'Passwords are reset by a factory administrator from Users & roles; there is no way to change one from here.',
   'profile.save': 'Save preferences',
   'profile.unsavedHint': 'Not applied yet. Save to use them.',
   'profile.nothingToSave': 'Nothing to save.',
@@ -112,6 +107,13 @@ export const en = {
   'profile.savedHint': 'They will still be here the next time you sign in on this computer.',
   'profile.preferencesTitle': 'How you read this console',
   'profile.preferencesDescription': 'Yours alone. Nobody else sees these change.',
+  // The profile's preference groups (26 November 2026).
+  'profile.group.reading': 'Language and reading',
+  'profile.group.readingHint': 'The words, and how large and clear they are.',
+  'profile.group.look': 'Look',
+  'profile.group.lookHint': 'Light or dark, how much fits on a screen, and the glass behind the sidebar and top bar.',
+  'profile.group.motion': 'Motion and sound',
+  'profile.group.motionHint': 'Movement on screen, and the quiet sounds your clicks make.',
   'profile.language': 'Language',
   'profile.languageHint':
     'The console’s own labels. Content written for suppliers keeps its own languages.',

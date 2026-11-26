@@ -347,6 +347,15 @@ out", "Keyboard shortcuts"). What stays printed: live figures and worked example
 with a link, a confirm dialog's or card's main content, and every reason or warning (why a
 button is disabled, that publishing cannot be undone, that notifications are blocked).
 
+**The profile's layout** (26 November 2026): who is signed in as one band (initials, name,
+email, roles, last sign-in), then four cards in two columns (Language
+and reading, Look, Motion and sound, Alerts for new requests), then a save bar that sticks to
+the bottom of the window and is raised and marked while something is unsaved. Every setting
+is a `SettingRow` (`components/ui/SettingRow.tsx`): label and "i" on the left, the control
+at its own width on the right (never stretched across the card), a reason it cannot be used
+printed under the label. Every choice, on/off included, is a `Segmented`; a new setting
+anywhere uses the same pair.
+
 On the profile screen each setting's explanation sits behind an "i" beside its label
 (`LabelWithTip`: the full 32 px target, named "More information: <setting>"), shown on hover
 or keyboard focus. A reason a setting cannot be used (notifications blocked, unsupported)

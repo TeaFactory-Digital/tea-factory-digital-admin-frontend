@@ -1,5 +1,6 @@
 /**
- * Light or dark, and how large the text is.
+ * How the console looks to this reader: theme, text size, density, contrast, glass and
+ * animations.
  *
  * A preference and not configuration: §12.1 makes `flagsAndBranding` writable by the
  * factory admin alone, so in M14 a clerk on a bright counter, or a weigher who needs
@@ -11,15 +12,13 @@
  * deliberately: two places to change one value is two places to look when it is wrong,
  * and the profile screen is where somebody *discovers* text size is adjustable at all.
  *
- * Still takes a `className` so a caller decides its padding, which is what let it sit in a
- * dropdown before and would again.
- *
- * Two rows of segments rather than a submenu, because both settings are things people try,
- * look at, and try again: a submenu that closed on every choice would make comparing
- * light against dark a four-click job.
+ * Each setting is a `SettingRow` with a `Segmented` beside it (26 November 2026), rather than
+ * a submenu, because these are things people try, look at, and try again. `rows` picks which
+ * ones and in what order, so the profile can group them into cards; without it, all of them.
+ * The rows come back as siblings, so the caller's divider runs between them.
  */
 
-import { useRef, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Contrast as ContrastIcon,
@@ -51,31 +50,16 @@ import {
 import { BackdropPhotoError, prepareBackdropPhoto } from '@/lib/backdropPhoto';
 import { prefersReducedMotion } from '@/lib/motion';
 import { useAppearance } from './useAppearance';
-import { cn } from '@/lib/cn';
-import { LabelWithTip } from '@/components/ui/LabelWithTip';
+import { Segmented } from '@/components/ui/Segmented';
+import { SettingRow } from '@/components/ui/SettingRow';
 
-const SCHEMES: Array<{ value: ConsoleScheme; Icon: typeof Sun }> = [
-  { value: 'light', Icon: Sun },
-  { value: 'dark', Icon: Moon },
-  { value: 'auto', Icon: SunMoon },
-];
+export type AppearanceRow = 'scheme' | 'textSize' | 'density' | 'contrast' | 'glass' | 'motion';
 
-/** Glass for the sidebar, the top bar and dialogs (22 November 2026); off by default. */
-const GLASS: Array<{ value: boolean; Icon: typeof Sun }> = [
-  { value: false, Icon: Square },
-  { value: true, Icon: Sparkles },
-];
+const ALL_ROWS: readonly AppearanceRow[] = ['scheme', 'textSize', 'density', 'contrast', 'glass', 'motion'];
 
+const SCHEME_ICON: Record<ConsoleScheme, typeof Sun> = { light: Sun, dark: Moon, auto: SunMoon };
 const DENSITY_ICON: Record<Density, typeof Sun> = { comfortable: Rows3, compact: Rows4 };
-
-/** Animations (26 November 2026), off first like every other on/off row here. */
-const MOTION: Array<{ value: 'off' | 'on'; Icon: typeof Sun }> = [
-  { value: 'off', Icon: Pause },
-  { value: 'on', Icon: Play },
-];
 const CONTRAST_ICON: Record<Contrast, typeof Sun> = { normal: Square, high: ContrastIcon };
-
-/** What the glass sits on (22 November 2026). */
 const BACKDROP_ICON: Record<GlassBackdrop, typeof Sun> = {
   colours: Palette,
   estate: Mountain,
@@ -89,40 +73,37 @@ const SIZE_PREVIEW: Record<TextSize, string> = {
   larger: 'text-subtitle',
 };
 
-const SEGMENT =
-  'flex flex-1 items-center justify-center gap-xxs rounded-sm px-sm py-xxs ' +
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring';
+/** An option's face: its icon, then its word. */
+function face(Icon: typeof Sun, label: string) {
+  return (
+    <>
+      <Icon className="size-icon-sm" aria-hidden />
+      {label}
+    </>
+  );
+}
 
 interface AppearanceControlsProps {
-  className?: string;
   /**
    * Drive it from a draft instead of from the stored preference.
    *
    * Omitted, a press applies immediately. Supplied, the caller owns the value: M15 holds
-   * all three preferences as a draft so they land together behind one confirmation.
+   * all its preferences as a draft so they land together behind one confirmation.
    */
   value?: Appearance;
   onChange?: (next: Appearance) => void;
+  rows?: readonly AppearanceRow[];
 }
 
-export function AppearanceControls({ className, value, onChange }: AppearanceControlsProps) {
+export function AppearanceControls({ value, onChange, rows = ALL_ROWS }: AppearanceControlsProps) {
   const { t } = useTranslation();
   const store = useAppearance();
 
   const appearance = value ?? store.appearance;
-  const setScheme = (scheme: ConsoleScheme) =>
-    onChange ? onChange({ ...appearance, scheme }) : store.setScheme(scheme);
-  const setTextSize = (textSize: TextSize) =>
-    onChange ? onChange({ ...appearance, textSize }) : store.setTextSize(textSize);
-  const setGlass = (glass: boolean) =>
-    onChange ? onChange({ ...appearance, glass }) : store.setGlass(glass);
-  const setBackdrop = (backdrop: GlassBackdrop, photo?: string | null) =>
-    onChange
-      ? onChange({ ...appearance, backdrop, ...(photo === undefined ? {} : { photo }) })
-      : store.setBackdrop(backdrop, photo);
-
   const set = (change: Partial<Appearance>) =>
     onChange ? onChange({ ...appearance, ...change }) : store.updateAppearance(change);
+  const setBackdrop = (backdrop: GlassBackdrop, photo?: string | null) =>
+    set(photo === undefined ? { backdrop } : { backdrop, photo });
 
   const fileInput = useRef<HTMLInputElement>(null);
   const [preparing, setPreparing] = useState(false);
@@ -143,270 +124,169 @@ export function AppearanceControls({ className, value, onChange }: AppearanceCon
     }
   }
 
-  return (
-    <div className={cn('flex flex-col gap-sm', className)}>
-      <div className="flex flex-col gap-xxs">
-        <LabelWithTip label={t('appearance.scheme')} tip={t('appearance.schemeHint')} />
-        {/*
-         * `radiogroup`, not a row of buttons: these are one choice with two answers, so a
-         * screen reader should hear "1 of 2" rather than two unrelated controls.
-         */}
-        <div role="radiogroup" aria-label={t('appearance.scheme')} className="flex gap-xxs">
-          {SCHEMES.map(({ value, Icon }) => {
-            const active = appearance.scheme === value;
-            return (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                onClick={() => setScheme(value)}
-                className={cn(
-                  SEGMENT,
-                  'text-body-small',
-                  active
-                    ? 'bg-primary text-primary-contrast'
-                    : 'text-text-primary hover:bg-surface-variant',
-                )}
-              >
-                <Icon className="size-icon-sm" aria-hidden />
-                {t(`appearance.scheme.${value}`)}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-xxs">
-        <span className="text-caption text-text-secondary">{t('appearance.textSize')}</span>
-        <div role="radiogroup" aria-label={t('appearance.textSize')} className="flex gap-xxs">
-          {TEXT_SIZES.map((size) => {
-            const active = appearance.textSize === size;
-            return (
-              <button
-                key={size}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                onClick={() => setTextSize(size)}
-                // Labelled, because the visible glyph is a letter "A" at three sizes and
-                // "A" is not a name anybody can act on.
-                aria-label={t(`appearance.textSize.${size}`)}
-                title={t(`appearance.textSize.${size}`)}
-                className={cn(
-                  SEGMENT,
-                  SIZE_PREVIEW[size],
-                  active
-                    ? 'bg-primary text-primary-contrast'
-                    : 'text-text-primary hover:bg-surface-variant',
-                )}
-              >
-                A
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <Segments
-        label={t('appearance.density')}
-        options={DENSITIES.map((value) => ({
-          value,
-          Icon: DENSITY_ICON[value],
-          label: t(`appearance.density.${value}`),
-        }))}
-        value={appearance.density}
-        onSelect={(density) => set({ density })}
-        hint={t('appearance.densityHint')}
-      />
-
-      <Segments
-        label={t('appearance.contrast')}
-        options={CONTRASTS.map((value) => ({
-          value,
-          Icon: CONTRAST_ICON[value],
-          label: t(`appearance.contrast.${value}`),
-        }))}
-        value={appearance.contrast}
-        onSelect={(contrast) => set({ contrast })}
-        hint={t('appearance.contrastHint')}
-      />
-
-      <div className="flex flex-col gap-xxs">
-        <LabelWithTip label={t('appearance.glass')} tip={t('appearance.glassHint')} />
-        <div role="radiogroup" aria-label={t('appearance.glass')} className="flex gap-xxs">
-          {GLASS.map(({ value, Icon }) => {
-            const active = appearance.glass === value;
-            return (
-              <button
-                key={String(value)}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                onClick={() => setGlass(value)}
-                className={cn(
-                  SEGMENT,
-                  'text-body-small',
-                  active
-                    ? 'bg-primary text-primary-contrast'
-                    : 'text-text-primary hover:bg-surface-variant',
-                )}
-              >
-                <Icon className="size-icon-sm" aria-hidden />
-                {t(value ? 'appearance.glass.on' : 'appearance.glass.off')}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {appearance.glass ? (
-        <div className="flex flex-col gap-xxs">
-          <LabelWithTip label={t('appearance.backdrop')} tip={t('appearance.backdrop.hint')} />
-          <div role="radiogroup" aria-label={t('appearance.backdrop')} className="flex gap-xxs">
-            {GLASS_BACKDROPS.map((backdrop) => {
-              const active = appearance.backdrop === backdrop;
-              const Icon = BACKDROP_ICON[backdrop];
-              return (
-                <button
-                  key={backdrop}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  disabled={preparing}
-                  onClick={() => {
-                    // "Your photo" with none chosen yet asks for one first.
-                    if (backdrop === 'photo' && !appearance.photo) fileInput.current?.click();
-                    else setBackdrop(backdrop);
-                  }}
-                  className={cn(
-                    SEGMENT,
-                    'text-body-small',
-                    active
-                      ? 'bg-primary text-primary-contrast'
-                      : 'text-text-primary hover:bg-surface-variant',
-                  )}
-                >
-                  <Icon className="size-icon-sm" aria-hidden />
-                  {t(`appearance.backdrop.${backdrop}`)}
-                </button>
-              );
-            })}
-          </div>
-          <input
-            ref={fileInput}
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            tabIndex={-1}
-            aria-label={t('appearance.backdrop.choose')}
-            onChange={(event) => void choosePhoto(event.target.files?.[0])}
-          />
-          {appearance.photo && appearance.backdrop === 'photo' ? (
-            <div className="flex items-center gap-sm">
-              <img
-                src={appearance.photo}
-                alt={t('appearance.backdrop.preview')}
-                className="h-10 w-16 rounded-sm object-cover"
-              />
-              <button
-                type="button"
-                className="text-caption font-medium text-primary hover:underline"
-                onClick={() => fileInput.current?.click()}
-              >
-                {t('appearance.backdrop.change')}
-              </button>
-              <button
-                type="button"
-                className="text-caption font-medium text-error hover:underline"
-                onClick={() => setBackdrop('colours', null)}
-              >
-                {t('appearance.backdrop.remove')}
-              </button>
-            </div>
-          ) : null}
-          {preparing ? (
-            <span className="text-caption text-text-secondary">
-              {t('appearance.backdrop.preparing')}
-            </span>
-          ) : null}
-          {photoError ? (
-            <span role="alert" className="text-caption text-error">
-              {photoError}
-            </span>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div className="flex flex-col gap-xxs">
-        <Segments
-          label={t('appearance.motion')}
-          options={MOTION.map(({ value, Icon }) => ({
-            value,
-            Icon,
-            label: t(`appearance.motion.${value}`),
-          }))}
-          value={appearance.motion ? 'on' : 'off'}
-          onSelect={(value) => set({ motion: value === 'on' })}
-          hint={t('appearance.motionHint')}
-        />
-        {/* Why "On" may still look still: the reason stays on the page, not behind the "i". */}
-        {appearance.motion && prefersReducedMotion() ? (
-          <span className="text-caption text-text-secondary">{t('appearance.motionReduced')}</span>
-        ) : null}
-      </div>
-    </div>
+  /** An on/off setting: Off first, like every other on/off row in the console. */
+  const onOff = (
+    key: 'appearance.glass' | 'appearance.motion',
+    on: boolean,
+    icons: [typeof Sun, typeof Sun],
+    choose: (on: boolean) => void,
+  ) => (
+    <Segmented
+      label={t(key)}
+      value={on ? 'on' : 'off'}
+      onValueChange={(next) => choose(next === 'on')}
+      options={[
+        { value: 'off', label: face(icons[0], t(`${key}.off`)) },
+        { value: 'on', label: face(icons[1], t(`${key}.on`)) },
+      ]}
+    />
   );
-}
 
-/**
- * One row of segments: a radiogroup, so a screen reader hears "1 of 2". Exported for the
- * profile's other on/off rows (interface sounds), so every row in that card looks alike.
- */
-export function Segments<T extends string>({
-  label,
-  options,
-  value,
-  onSelect,
-  hint,
-}: {
-  label: string;
-  options: Array<{ value: T; Icon: typeof Sun; label: string }>;
-  value: T;
-  onSelect: (value: T) => void;
-  hint?: string;
-}) {
+  const render: Record<AppearanceRow, () => React.ReactNode> = {
+    scheme: () => (
+      <SettingRow label={t('appearance.scheme')} hint={t('appearance.schemeHint')}>
+        <Segmented
+          label={t('appearance.scheme')}
+          value={appearance.scheme}
+          onValueChange={(scheme) => set({ scheme })}
+          options={(['light', 'dark', 'auto'] as const).map((scheme) => ({
+            value: scheme,
+            label: face(SCHEME_ICON[scheme], t(`appearance.scheme.${scheme}`)),
+          }))}
+        />
+      </SettingRow>
+    ),
+
+    textSize: () => (
+      <SettingRow label={t('appearance.textSize')}>
+        <Segmented
+          label={t('appearance.textSize')}
+          value={appearance.textSize}
+          onValueChange={(textSize) => set({ textSize })}
+          options={TEXT_SIZES.map((size) => ({
+            value: size,
+            // Labelled, because the visible glyph is a letter "A" at three sizes and "A" is
+            // not a name anybody can act on.
+            label: 'A',
+            ariaLabel: t(`appearance.textSize.${size}`),
+            title: t(`appearance.textSize.${size}`),
+            className: `min-w-10 ${SIZE_PREVIEW[size]}`,
+          }))}
+        />
+      </SettingRow>
+    ),
+
+    density: () => (
+      <SettingRow label={t('appearance.density')} hint={t('appearance.densityHint')}>
+        <Segmented
+          label={t('appearance.density')}
+          value={appearance.density}
+          onValueChange={(density) => set({ density })}
+          options={DENSITIES.map((density) => ({
+            value: density,
+            label: face(DENSITY_ICON[density], t(`appearance.density.${density}`)),
+          }))}
+        />
+      </SettingRow>
+    ),
+
+    contrast: () => (
+      <SettingRow label={t('appearance.contrast')} hint={t('appearance.contrastHint')}>
+        <Segmented
+          label={t('appearance.contrast')}
+          value={appearance.contrast}
+          onValueChange={(contrast) => set({ contrast })}
+          options={CONTRASTS.map((contrast) => ({
+            value: contrast,
+            label: face(CONTRAST_ICON[contrast], t(`appearance.contrast.${contrast}`)),
+          }))}
+        />
+      </SettingRow>
+    ),
+
+    glass: () => (
+      <>
+        <SettingRow label={t('appearance.glass')} hint={t('appearance.glassHint')}>
+          {onOff('appearance.glass', appearance.glass, [Square, Sparkles], (glass) => set({ glass }))}
+        </SettingRow>
+
+        {/* What the glass sits on: only while the glass is on. */}
+        {appearance.glass ? (
+          <SettingRow
+            label={t('appearance.backdrop')}
+            hint={t('appearance.backdrop.hint')}
+            note={photoError ?? (preparing ? t('appearance.backdrop.preparing') : undefined)}
+            noteTone={photoError ? 'warning' : 'muted'}
+            noteAlert={photoError !== null}
+          >
+            <Segmented
+              label={t('appearance.backdrop')}
+              value={appearance.backdrop}
+              onValueChange={(backdrop) => {
+                // "Your photo" with none chosen yet asks for one first.
+                if (backdrop === 'photo' && !appearance.photo) fileInput.current?.click();
+                else setBackdrop(backdrop);
+              }}
+              options={GLASS_BACKDROPS.map((backdrop) => ({
+                value: backdrop,
+                label: face(BACKDROP_ICON[backdrop], t(`appearance.backdrop.${backdrop}`)),
+                disabled: preparing,
+              }))}
+            />
+            <input
+              ref={fileInput}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              tabIndex={-1}
+              aria-label={t('appearance.backdrop.choose')}
+              onChange={(event) => void choosePhoto(event.target.files?.[0])}
+            />
+            {appearance.photo && appearance.backdrop === 'photo' ? (
+              <span className="flex basis-full items-center justify-end gap-sm">
+                <img
+                  src={appearance.photo}
+                  alt={t('appearance.backdrop.preview')}
+                  className="h-10 w-16 rounded-sm object-cover"
+                />
+                <button
+                  type="button"
+                  className="text-caption font-medium text-primary hover:underline"
+                  onClick={() => fileInput.current?.click()}
+                >
+                  {t('appearance.backdrop.change')}
+                </button>
+                <button
+                  type="button"
+                  className="text-caption font-medium text-error hover:underline"
+                  onClick={() => setBackdrop('colours', null)}
+                >
+                  {t('appearance.backdrop.remove')}
+                </button>
+              </span>
+            ) : null}
+          </SettingRow>
+        ) : null}
+      </>
+    ),
+
+    motion: () => (
+      <SettingRow
+        label={t('appearance.motion')}
+        hint={t('appearance.motionHint')}
+        // Why "On" may still look still: the reason stays on the page, not behind the "i".
+        note={appearance.motion && prefersReducedMotion() ? t('appearance.motionReduced') : undefined}
+      >
+        {onOff('appearance.motion', appearance.motion, [Pause, Play], (motion) => set({ motion }))}
+      </SettingRow>
+    ),
+  };
+
   return (
-    <div className="flex flex-col gap-xxs">
-      {hint ? (
-        <LabelWithTip label={label} tip={hint} />
-      ) : (
-        <span className="text-caption text-text-secondary">{label}</span>
-      )}
-      <div role="radiogroup" aria-label={label} className="flex gap-xxs">
-        {options.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => onSelect(option.value)}
-              className={cn(
-                SEGMENT,
-                'text-body-small',
-                active
-                  ? 'bg-primary text-primary-contrast'
-                  : 'text-text-primary hover:bg-surface-variant',
-              )}
-            >
-              <option.Icon className="size-icon-sm" aria-hidden />
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    <>
+      {rows.map((row) => (
+        <Fragment key={row}>{render[row]()}</Fragment>
+      ))}
+    </>
   );
 }

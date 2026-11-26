@@ -249,7 +249,7 @@ describe('new-request alerts', () => {
         <ProfileScreen />
       </AppearanceProvider>,
     );
-    await user.click(screen.getByRole('checkbox', { name: /soft sound/i }));
+    await user.click(within(screen.getByRole('radiogroup', { name: /soft sound/i })).getByRole('radio', { name: 'On' }));
     // A draft until saved.
     expect(window.localStorage.getItem('tfd.admin.alerts')).toBeNull();
 

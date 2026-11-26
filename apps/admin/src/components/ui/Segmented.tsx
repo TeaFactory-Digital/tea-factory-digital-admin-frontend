@@ -21,6 +21,11 @@ export interface SegmentedOption<T extends string> {
   value: T;
   label: ReactNode;
   disabled?: boolean;
+  /** The option's name when its label is not one (the text size's "A" at three sizes). */
+  ariaLabel?: string;
+  title?: string;
+  /** Typography only, e.g. the text size drawing each "A" at its own size. */
+  className?: string;
 }
 
 export function Segmented<T extends string>({
@@ -91,6 +96,8 @@ export function Segmented<T extends string>({
             role="radio"
             aria-checked={checked}
             disabled={option.disabled}
+            aria-label={option.ariaLabel}
+            title={option.title}
             // One stop on Tab: the chosen option; the arrows do the rest.
             tabIndex={checked ? 0 : -1}
             data-state={checked ? 'active' : 'inactive'}
@@ -103,6 +110,7 @@ export function Segmented<T extends string>({
               'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
               'data-[state=active]:font-semibold data-[state=active]:text-text-primary data-[state=active]:hover:bg-transparent',
               'disabled:pointer-events-none disabled:opacity-50',
+              option.className,
             )}
           >
             {option.label}

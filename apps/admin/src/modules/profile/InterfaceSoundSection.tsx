@@ -5,9 +5,10 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { Volume2, VolumeX } from 'lucide-react';
-import { Segments } from '@/brand/AppearanceControls';
+import { Play, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { Segmented } from '@/components/ui/Segmented';
+import { SettingRow } from '@/components/ui/SettingRow';
 import { sounds } from '@/lib/sound/engine';
 
 export function InterfaceSoundSection({
@@ -20,23 +21,41 @@ export function InterfaceSoundSection({
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-wrap items-end gap-sm">
-      <div className="min-w-0 flex-1">
-        <Segments
-          label={t('uiSound.title')}
-          hint={t('uiSound.hint')}
-          options={[
-            { value: 'off', Icon: VolumeX, label: t('uiSound.off') },
-            { value: 'on', Icon: Volume2, label: t('uiSound.on') },
-          ]}
-          value={value ? 'on' : 'off'}
-          onSelect={(next) => onChange(next === 'on')}
-        />
-      </div>
+    <SettingRow label={t('uiSound.title')} hint={t('uiSound.hint')}>
       {/* A preview, so it plays whatever the switch says: hearing it is how the choice is made. */}
-      <Button size="sm" variant="ghost" onClick={sounds.sent}>
+      <Button
+        size="sm"
+        variant="ghost"
+        iconLeft={<Play className="size-icon-xs" aria-hidden />}
+        onClick={sounds.sent}
+      >
         {t('alerts.test')}
       </Button>
-    </div>
+      <Segmented
+        label={t('uiSound.title')}
+        value={value ? 'on' : 'off'}
+        onValueChange={(next) => onChange(next === 'on')}
+        options={[
+          {
+            value: 'off',
+            label: (
+              <>
+                <VolumeX className="size-icon-sm" aria-hidden />
+                {t('uiSound.off')}
+              </>
+            ),
+          },
+          {
+            value: 'on',
+            label: (
+              <>
+                <Volume2 className="size-icon-sm" aria-hidden />
+                {t('uiSound.on')}
+              </>
+            ),
+          },
+        ]}
+      />
+    </SettingRow>
   );
 }
