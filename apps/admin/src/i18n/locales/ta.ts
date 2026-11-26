@@ -123,7 +123,7 @@ export const ta: Record<TranslationKey, string> = {
   // The profile's preference groups (26 November 2026).
   'profile.group.reading': 'மொழியும் வாசிப்பும்',
   'profile.group.readingHint': 'சொற்கள், அவை எவ்வளவு பெரியதாகவும் தெளிவாகவும் உள்ளன.',
-  'profile.group.look': 'தோற்றம்',
+  'profile.group.look': 'தோற்றமும் அமைப்பும்',
   'profile.group.lookHint': 'வெளிச்சம் அல்லது இருள், ஒரு திரையில் எவ்வளவு பொருந்தும், மற்றும் பக்கப்பட்டி, மேல் பட்டைக்குப் பின்னால் உள்ள கண்ணாடி.',
   'profile.group.motion': 'அசைவும் ஒலியும்',
   'profile.group.motionHint': 'திரையில் அசைவு, மற்றும் உங்கள் கிளிக்குகளின் மென்மையான ஒலிகள்.',

@@ -122,7 +122,7 @@ export const si: Record<TranslationKey, string> = {
   // The profile's preference groups (26 November 2026).
   'profile.group.reading': 'භාෂාව සහ කියවීම',
   'profile.group.readingHint': 'වචන, සහ ඒවා කොතරම් විශාල හා පැහැදිලිද යන්න.',
-  'profile.group.look': 'පෙනුම',
+  'profile.group.look': 'පෙනුම සහ පිරිසැලසුම',
   'profile.group.lookHint': 'ආලෝකමත් හෝ අඳුරු, එක් තිරයකට කොපමණ ගැලපේද, සහ පැති තීරුව හා ඉහළ තීරුව පිටුපස ඇති වීදුරුව.',
   'profile.group.motion': 'චලනය සහ ශබ්දය',
   'profile.group.motionHint': 'තිරයේ චලනය, සහ ඔබේ ක්ලික් කිරීම් සඳහා වන මෘදු ශබ්ද.',
