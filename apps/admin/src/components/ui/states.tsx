@@ -9,7 +9,8 @@
 
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Inbox, Lock, PackageOpen, SearchX, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { Check, Inbox, Lock, PackageOpen, RotateCw, SearchX, TriangleAlert, WifiOff, type LucideIcon } from 'lucide-react';
+import { motionAllowed } from '@/lib/motion';
 import { cn } from '@/lib/cn';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { Button } from './Button';
@@ -63,6 +64,43 @@ export function Skeleton({ className }: { className?: string }) {
   );
 }
 
+const LINE_WIDTHS = ['w-full', 'w-11/12', 'w-4/5', 'w-2/3', 'w-5/6', 'w-3/4'];
+
+/**
+ * Lines of text still to come, inside a card or a dialog (26 November 2026): the shape of
+ * what is loading instead of a spinner in an empty box, so nothing jumps when it arrives.
+ * Still a "Loading" status for a screen reader, as the spinner was.
+ */
+export function LinesSkeleton({ lines = 3 }: { lines?: number }) {
+  const { t } = useTranslation();
+  return (
+    <div role="status" aria-label={t('common.loading')} className="flex flex-col gap-sm py-xs">
+      {Array.from({ length: lines }).map((_, index) => (
+        <Skeleton key={index} className={cn('h-4', LINE_WIDTHS[index % LINE_WIDTHS.length])} />
+      ))}
+    </div>
+  );
+}
+
+/** A whole screen still to come: its title, the line under it, and a card of rows. */
+export function PageSkeleton() {
+  const { t } = useTranslation();
+  return (
+    <div role="status" aria-label={t('common.loading')} className="flex flex-col gap-lg">
+      <div className="flex flex-col gap-xs">
+        <Skeleton className="h-8 w-64 max-w-full" />
+        <Skeleton className="h-4 w-96 max-w-full" />
+      </div>
+      <div className="flex flex-col gap-md rounded-lg border border-border bg-surface p-lg shadow-card">
+        <Skeleton className="h-5 w-48" />
+        {Array.from({ length: 5 }).map((_, index) => (
+          <Skeleton key={index} className={cn('h-4', LINE_WIDTHS[index % LINE_WIDTHS.length])} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Rows of skeleton, for a table that is loading its first page. */
 export function TableSkeleton({ rows = 8, columns = 6 }: { rows?: number; columns?: number }) {
   return (
@@ -96,6 +134,51 @@ const EMPTY_ICON: Record<EmptyKind, LucideIcon> = {
 };
 
 /**
+ * The picture above an empty or failed state (26 November 2026): a soft disc, an icon that
+ * draws itself in, and an optional badge that pops on last. It moves once, as it appears,
+ * and is then still (`tfd-empty` in `theme.css`). Decoration only: the words beside it are
+ * what a screen reader hears.
+ */
+export function StatePicture({
+  Icon,
+  icon,
+  tone = 'primary',
+  badge,
+  small = false,
+}: {
+  Icon: LucideIcon;
+  icon?: ReactNode;
+  tone?: 'primary' | 'error' | 'warning';
+  badge?: ReactNode;
+  small?: boolean;
+}) {
+  const drawn = useRef<HTMLSpanElement>(null);
+  // Every stroke measured as length 1, before the first paint, so a short line and a long
+  // one draw in over the same time instead of the short ones being done at once.
+  useLayoutEffect(() => {
+    drawn.current
+      ?.querySelectorAll('path, line, polyline, polygon, rect, circle')
+      .forEach((shape) => shape.setAttribute('pathLength', '1'));
+  }, [Icon, icon]);
+  const tones = {
+    primary: ['bg-primary/5', 'bg-primary-muted', 'text-primary'],
+    error: ['bg-error/5', 'bg-error-muted', 'text-error'],
+    warning: ['bg-warning/5', 'bg-warning-muted', 'text-warning'],
+  } as const;
+  const [halo, disc, ink] = tones[tone];
+  return (
+    <div aria-hidden className={cn('relative mb-xs flex items-center justify-center', small ? 'size-14' : 'size-20')}>
+      <span className={cn('tfd-empty-disc absolute inset-0 rounded-full', halo)} />
+      <span className={cn('tfd-empty-disc tfd-empty-disc-inner absolute rounded-full', small ? 'inset-1.5' : 'inset-2', disc)} />
+      <span ref={drawn} className={cn('tfd-empty-draw relative flex', ink)}>
+        {icon ?? <Icon className={small ? 'size-6' : 'size-8'} strokeWidth={1.75} />}
+      </span>
+      {badge ? <span className="tfd-empty-pop absolute right-1 bottom-1">{badge}</span> : null}
+    </div>
+  );
+}
+
+/**
  * An empty list, said with a picture and a sentence.
  *
  * The picture moves **once**, as it appears (`tfd-empty` in `theme.css`): a soft disc
@@ -118,29 +201,19 @@ export function EmptyState({
   icon?: ReactNode;
   kind?: EmptyKind;
 }) {
-  const Icon = EMPTY_ICON[kind];
-  const drawn = useRef<HTMLSpanElement>(null);
-  // Every stroke measured as length 1, before the first paint, so a short line and a long
-  // one draw in over the same time instead of the short ones being done at once.
-  useLayoutEffect(() => {
-    drawn.current
-      ?.querySelectorAll('path, line, polyline, polygon, rect, circle')
-      .forEach((shape) => shape.setAttribute('pathLength', '1'));
-  }, [kind, icon]);
   return (
     <div className="tfd-empty flex flex-col items-center gap-sm px-lg py-xxxl text-center">
-      <div aria-hidden className="relative mb-xs flex size-20 items-center justify-center">
-        <span className="tfd-empty-disc absolute inset-0 rounded-full bg-primary/5" />
-        <span className="tfd-empty-disc tfd-empty-disc-inner absolute inset-2 rounded-full bg-primary-muted" />
-        <span ref={drawn} className="tfd-empty-draw relative flex text-primary">
-          {icon ?? <Icon className="size-8" strokeWidth={1.75} />}
-        </span>
-        {kind === 'clear' ? (
-          <span className="tfd-empty-pop absolute right-1 bottom-1 flex size-6 items-center justify-center rounded-full bg-success text-on-status shadow-card ring-2 ring-surface">
-            <Check className="size-icon-xs" strokeWidth={3} />
-          </span>
-        ) : null}
-      </div>
+      <StatePicture
+        Icon={EMPTY_ICON[kind]}
+        icon={icon}
+        badge={
+          kind === 'clear' ? (
+            <span className="flex size-6 items-center justify-center rounded-full bg-success text-on-status shadow-card ring-2 ring-surface">
+              <Check className="size-icon-xs" strokeWidth={3} />
+            </span>
+          ) : undefined
+        }
+      />
       <p className="tfd-empty-text text-subtitle text-text-primary">{title}</p>
       {body ? <p className="tfd-empty-text max-w-prose text-body-small text-text-secondary">{body}</p> : null}
       {action}
@@ -164,19 +237,44 @@ export function ErrorState({
   compact?: boolean;
 }) {
   const { t } = useTranslation();
+  const key = errorMessageKey(error);
+  // No answer at all (a dropped connection, a timeout) is a different trouble from an
+  // answer that said no, and the picture says which before the words do (26 November 2026).
+  const connection = key === 'error.network' || key === 'error.timeout';
+  const spin = useRef<SVGSVGElement>(null);
+
+  function retry() {
+    // The retry first: the turn of the arrow is decoration and must never stand in its way.
+    onRetry?.();
+    // One turn, so the press is seen even when the answer comes back the same. Not every
+    // browser an office runs has `animate`; there the arrow simply stays still.
+    const arrow = spin.current;
+    if (motionAllowed() && arrow && typeof arrow.animate === 'function') {
+      arrow.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }], {
+        duration: 600,
+        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      });
+    }
+  }
+
   return (
     <div
       role="alert"
       className={cn(
-        'flex flex-col items-center gap-sm text-center',
+        'tfd-empty flex flex-col items-center gap-sm text-center',
         compact ? 'px-md py-lg' : 'px-lg py-xxxl',
       )}
     >
-      <TriangleAlert className="size-icon-xl text-error" aria-hidden />
-      <p className="text-subtitle text-text-primary">{t('error.title')}</p>
-      <p className="max-w-prose text-body-small text-text-secondary">{t(errorMessageKey(error))}</p>
+      <StatePicture Icon={connection ? WifiOff : TriangleAlert} tone={connection ? 'warning' : 'error'} small={compact} />
+      <p className="tfd-empty-text text-subtitle text-text-primary">{t('error.title')}</p>
+      <p className="tfd-empty-text max-w-prose text-body-small text-text-secondary">{t(key)}</p>
       {onRetry ? (
-        <Button variant="secondary" size="sm" onClick={onRetry}>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={retry}
+          iconLeft={<RotateCw ref={spin} className="size-icon-sm" aria-hidden />}
+        >
           {t('common.retry')}
         </Button>
       ) : null}

@@ -17,7 +17,7 @@ import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { useAdjustBill } from '@/modules/records/hooks';
 import { ReasonChips } from '@/components/ReasonChips';
-import { ErrorState, Notice, Spinner } from '@/components/ui/states';
+import { ErrorState, Notice, LinesSkeleton } from '@/components/ui/states';
 import { useBill } from './hooks';
 
 export function OtherChargesDialog({
@@ -115,7 +115,7 @@ export function OtherChargesFromList({ billId, onClose }: { billId: string; onCl
   if (!data) {
     return (
       <Dialog open onOpenChange={(next) => (next ? undefined : onClose())} title={t('records.otherCharges.title')}>
-        <Spinner />
+        <LinesSkeleton lines={3} />
       </Dialog>
     );
   }

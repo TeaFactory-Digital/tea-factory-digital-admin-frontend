@@ -23,7 +23,7 @@ import type { MonthSummary } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Select } from '@/components/ui/Field';
-import { EmptyState, ErrorState, Spinner } from '@/components/ui/states';
+import { EmptyState, ErrorState, PageSkeleton } from '@/components/ui/states';
 import { formatCount, formatKg, formatMonthKey } from '@/lib/format';
 import { CloseChecklist } from './CloseChecklist';
 import { ExceptionsQueue } from './ExceptionsQueue';
@@ -115,9 +115,7 @@ export function MonthCloseScreen() {
   }
   if (!monthKey || month.isPending) {
     return (
-      <div className="flex justify-center py-xxxl">
-        <Spinner />
-      </div>
+      <PageSkeleton />
     );
   }
   if (month.error || !month.data) {

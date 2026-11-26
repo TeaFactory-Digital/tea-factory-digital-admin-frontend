@@ -32,6 +32,7 @@ import {
 } from '@tfd/domain';
 import { useCurrentUser, useCan } from '@/auth/authStore';
 import { Badge } from '@/components/ui/Badge';
+import { AgeBadge } from '@/components/ui/AgeBadge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { GRID_CARD } from '@/components/ui/layout';
@@ -43,12 +44,13 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState, Notice } from '@/components/ui/states';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { useDebounced } from '@/lib/useDebounced';
-import { formatAge, formatAmount } from '@/lib/format';
+import { formatAmount } from '@/lib/format';
 import { SUGGESTIONS, TeaPacketDecisionDialog } from './TeaPacketDecisionDialog';
 import { BulkBar, BulkDecisionDialog } from '@/components/BulkDecision';
 import { selectionColumn } from '@/components/selectionColumn';
 import { FactorySystemReminder } from '@/components/FactorySystemReminder';
 import { useQueryClient } from '@tanstack/react-query';
+import { useLeavingRows } from '@/components/useLeavingRows';
 import { qk } from '@/query/queryKeys';
 import { useTeaPacketRequests } from './hooks';
 
@@ -73,6 +75,7 @@ export function TeaPacketsScreen() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulk, setBulk] = useState<'approve' | 'reject' | null>(null);
   const client = useQueryClient();
+  const { leaving, leave } = useLeavingRows();
 
   /**
    * The store's policy, or the bundled default.
@@ -198,9 +201,7 @@ export function TeaPacketsScreen() {
           }
           const hours = info.getValue<number>();
           return (
-            <Badge tone={hours > QUEUE_SLA_HOURS.teaPacketRequests ? 'error' : 'neutral'}>
-              {formatAge(hours)}
-            </Badge>
+            <AgeBadge hours={hours} targetHours={QUEUE_SLA_HOURS.teaPacketRequests} />
           );
         },
       },
@@ -331,6 +332,7 @@ export function TeaPacketsScreen() {
         ) : null}
 
         <DataTable
+          leavingIds={leaving}
           label={t('teaPackets.title')}
           columns={columns}
           page={data}
@@ -381,7 +383,14 @@ export function TeaPacketsScreen() {
           onClose={(decided) => {
             setBulk(null);
             setSelected((current) => new Set([...current].filter((id) => !decided.includes(id))));
-            void client.invalidateQueries({ queryKey: qk.teaPackets.all });
+            // The decided rows slide out, then the queue and the sidebar's counts refresh
+            // together, so the badge drops as the rows go (26 November 2026).
+            leave(decided, () =>
+              Promise.all([
+                client.invalidateQueries({ queryKey: qk.teaPackets.all }),
+                client.invalidateQueries({ queryKey: qk.dashboard }),
+              ]),
+            );
           }}
         />
       ) : null}

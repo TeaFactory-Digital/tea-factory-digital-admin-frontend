@@ -15,6 +15,7 @@ import { useLocation } from 'react-router-dom';
 import { useFactory } from '@/config/RuntimeConfigProvider';
 import { Logo } from '@/brand/Logo';
 import { SyncStatusChip } from './SyncStatusChip';
+import { ConnectionChip } from './ConnectionChip';
 import { CommandMenu } from './CommandMenu';
 import { NAVIGATION } from './navigation';
 import { UserMenu } from './UserMenu';
@@ -66,6 +67,7 @@ export function Topbar({ summary }: { summary?: DashboardView }) {
       </div>
 
       <div className="flex items-center gap-sm">
+        <ConnectionChip />
         <SyncStatusChip />
         <CommandMenu />
         {/* Top right: what is waiting, and what suppliers just did. */}

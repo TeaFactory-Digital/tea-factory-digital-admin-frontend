@@ -28,7 +28,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Dialog } from '@/components/ui/Dialog';
 import { Field, Textarea } from '@/components/ui/Field';
 import { Select } from '@/components/ui/Select';
-import { ErrorState, Spinner } from '@/components/ui/states';
+import { ErrorState, LinesSkeleton } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDate, formatMoney, formatMonthKey, formatSignedAmount } from '@/lib/format';
@@ -68,7 +68,7 @@ export function CorrectionsCard({ supplierId, balances }: { supplierId: string; 
       />
       <CardBody>
         {query.isPending ? (
-          <Spinner />
+          <LinesSkeleton lines={3} />
         ) : query.error ? (
           <ErrorState error={query.error} onRetry={() => void query.refetch()} />
         ) : !data || data.items.length === 0 ? (

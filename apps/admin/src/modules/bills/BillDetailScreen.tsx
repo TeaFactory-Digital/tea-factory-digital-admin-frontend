@@ -39,7 +39,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader, DetailRow } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { InfoTip } from '@/components/ui/Tooltip';
-import { ErrorState, Spinner } from '@/components/ui/states';
+import { ErrorState, PageSkeleton } from '@/components/ui/states';
 import { cn } from '@/lib/cn';
 import {
   formatAmount,
@@ -68,9 +68,7 @@ export function BillDetailScreen() {
 
   if (bill.isPending) {
     return (
-      <div className="flex justify-center py-xxxl">
-        <Spinner />
-      </div>
+      <PageSkeleton />
     );
   }
   if (bill.error || !bill.data) {

@@ -10,7 +10,8 @@
  * are on their record (Suppliers, then Requests).
  */
 
-import { useMemo, useState } from 'react';
+import { CountUp } from '@/components/charts/CountUp';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Bar,
@@ -129,14 +130,14 @@ export function CreditReport() {
             key={tile.label}
             icon={tile.icon}
             label={tile.label}
-            value={formatMoney(tile.amount)}
+            value={<CountUp value={tile.amount} format={formatMoney} />}
             hint={t('reports.credit.approvedCount', { count: tile.count })}
           />
         ))}
         <Tile
           icon={Coffee}
           label={t('reports.credit.teaPackets')}
-          value={formatCount(sum((m) => m.teaPackets))}
+          value={<CountUp value={sum((m) => m.teaPackets)} format={formatCount} />}
           hint={formatMoney(sum((m) => m.teaPacketAmount))}
         />
       </section>
@@ -180,7 +181,7 @@ function Tile({
 }: {
   icon: typeof Banknote;
   label: string;
-  value: string;
+  value: ReactNode;
   hint: string;
 }) {
   return (

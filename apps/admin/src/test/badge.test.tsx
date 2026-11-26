@@ -62,7 +62,8 @@ describe('Badge', () => {
      * `min-width` outranks `width`, so the two coexist, but only while both are present,
      * and `cn` does not merge conflicting classes (see `lib/cn`).
      */
-    const pill = screen.getByText('7');
+    // The figure sits in its own span (it counts when it changes); the pill is around it.
+    const pill = screen.getByText('7').closest('.rounded-pill');
     expect(pill).toHaveClass('min-w-6');
     expect(pill).toHaveClass('w-fit');
   });

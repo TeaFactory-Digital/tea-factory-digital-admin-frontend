@@ -25,7 +25,7 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Paged } from '@tfd/domain';
 import { cn } from '@/lib/cn';
@@ -49,6 +49,11 @@ interface DataTableProps<Row> {
   label: string;
   /** Cells line up at the top: for rows of very different heights (the audit log). */
   alignTop?: boolean;
+  /**
+   * Rows on their way out (26 November 2026): just decided, about to be refetched away.
+   * They slide out (`tfd-row-leave`) instead of vanishing, so the clerk sees which went.
+   */
+  leavingIds?: ReadonlySet<string>;
 }
 
 export function DataTable<Row>({
@@ -65,9 +70,36 @@ export function DataTable<Row>({
   emptyState,
   label,
   alignTop = false,
+  leavingIds,
 }: DataTableProps<Row>) {
   const { t } = useTranslation();
   const bodyRef = useRef<HTMLTableSectionElement>(null);
+
+  /**
+   * Rows that arrived while the list was open (26 November 2026): a refetch or the poll
+   * brought them in. They are lit once (`tfd-row-new`) so a new request is seen without
+   * comparing the list against memory. Only when the total went up and the newcomers are a
+   * minority of the page: a new page, filter or sort is a different list, not an arrival.
+   */
+  const seen = useRef<{ ids: Set<string>; page: number; total: number } | null>(null);
+  const [fresh, setFresh] = useState<ReadonlySet<string>>(() => new Set());
+  useEffect(() => {
+    if (!page) return;
+    const ids = page.items.map(getRowId);
+    const before = seen.current;
+    seen.current = { ids: new Set(ids), page: page.page, total: page.total };
+    if (!before || before.page !== page.page || page.total <= before.total) {
+      setFresh(new Set());
+      return;
+    }
+    const added = ids.filter((id) => !before.ids.has(id));
+    setFresh(added.length > 0 && added.length <= ids.length / 2 ? new Set(added) : new Set());
+    // `getRowId` is a stable accessor per screen; the page is what changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
+  /** A shadow under the sticky header once the rows have scrolled beneath it. */
+  const [scrolled, setScrolled] = useState(false);
 
   const table = useReactTable({
     data: page?.items ?? [],
@@ -151,7 +183,13 @@ export function DataTable<Row>({
           hidden label in a row (`sr-only` is `position: absolute`) is otherwise placed against
           `main`, at its spot far down the list, and stretched the page thousands of pixels
           past the grid, so the whole page scrolled away under the top bar. */}
-      <div className="relative min-h-0 flex-1 overflow-auto">
+      <div
+        className="relative min-h-0 flex-1 overflow-auto"
+        onScroll={(event) => {
+          const now = event.currentTarget.scrollTop > 0;
+          if (now !== scrolled) setScrolled(now);
+        }}
+      >
         <table data-grid className="w-full border-collapse text-data-cell" aria-label={label}>
           {/**
            * Sticky against the scroll container above, not the page.
@@ -162,7 +200,10 @@ export function DataTable<Row>({
            * position and slides away under the header. A shadow is painted by the
            * cell, so it travels with it.
            */}
-          <thead className="sticky top-0 z-10 bg-table-header shadow-[inset_0_-1px_0_0_var(--color-border)]">
+          <thead
+            data-scrolled={scrolled || undefined}
+            className="sticky top-0 z-10 bg-table-header shadow-[inset_0_-1px_0_0_var(--color-border)]"
+          >
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
@@ -208,6 +249,13 @@ export function DataTable<Row>({
             {table.getRowModel().rows.map((row, index) => (
               <tr
                 key={getRowId(row.original)}
+                data-row-state={
+                  leavingIds?.has(getRowId(row.original))
+                    ? 'leaving'
+                    : fresh.has(getRowId(row.original))
+                      ? 'new'
+                      : undefined
+                }
                 // Rows are focusable and activatable only when there is somewhere
                 // to go. A `tabindex` on a non-interactive row is a keyboard trap
                 // that leads nowhere.

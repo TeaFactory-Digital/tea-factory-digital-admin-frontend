@@ -19,6 +19,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowRight } from 'lucide-react';
 import type { AdminChangeRequest, ChangeRequestType, RequestStatus } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
+import { AgeBadge } from '@/components/ui/AgeBadge';
 import { Card } from '@/components/ui/Card';
 import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
@@ -26,7 +27,6 @@ import { SearchInput, Select } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/states';
 import { useDebounced } from '@/lib/useDebounced';
-import { formatAge } from '@/lib/format';
 import { useChangeRequests } from './hooks';
 import { SUGGESTIONS as CHANGE_SUGGESTIONS } from './suggestions';
 import { BulkBar, BulkDecisionDialog } from '@/components/BulkDecision';
@@ -35,6 +35,7 @@ import { FactorySystemReminder } from '@/components/FactorySystemReminder';
 import { useCan, useCurrentUser } from '@/auth/authStore';
 import { changeRequestRepository } from '@/services/repositories/changeRequestRepository';
 import { useQueryClient } from '@tanstack/react-query';
+import { useLeavingRows } from '@/components/useLeavingRows';
 import { qk } from '@/query/queryKeys';
 import { isSelfApproval } from '@tfd/domain';
 
@@ -79,6 +80,7 @@ export function ChangeRequestsScreen() {
   const canDecide = useCan('changeRequests', 'approve');
   const user = useCurrentUser();
   const client = useQueryClient();
+  const { leaving, leave } = useLeavingRows();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulk, setBulk] = useState<'approve' | 'reject' | null>(null);
   // One kind of change at a time: the notes for an address change mean nothing on a bank one.
@@ -186,7 +188,7 @@ export function ChangeRequestsScreen() {
           // Colour *and* text: a red cell with no words is unreadable in a
           // pasted screenshot, which is how the office escalates.
           return (
-            <Badge tone={hours > SLA_HOURS ? 'error' : 'neutral'}>{formatAge(hours)}</Badge>
+            <AgeBadge hours={hours} targetHours={SLA_HOURS} />
           );
         },
       },
@@ -254,6 +256,7 @@ export function ChangeRequestsScreen() {
         ) : null}
 
         <DataTable
+          leavingIds={leaving}
           label={t('changeRequests.title')}
           columns={columns}
           page={data}
@@ -297,7 +300,14 @@ export function ChangeRequestsScreen() {
           onClose={(decided) => {
             setBulk(null);
             setSelected((current) => new Set([...current].filter((id) => !decided.includes(id))));
-            void client.invalidateQueries({ queryKey: qk.changeRequests.all });
+            // The decided rows slide out, then the queue and the sidebar's counts refresh
+            // together, so the badge drops as the rows go (26 November 2026).
+            leave(decided, () =>
+              Promise.all([
+                client.invalidateQueries({ queryKey: qk.changeRequests.all }),
+                client.invalidateQueries({ queryKey: qk.dashboard }),
+              ]),
+            );
           }}
         />
       ) : null}

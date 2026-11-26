@@ -38,6 +38,7 @@ import {
   type UserAction,
 } from './hooks';
 import { ReasonChips } from '@/components/ReasonChips';
+import { focusFirstError } from '@/lib/focusFirstError';
 
 const ROLES = Object.keys(DEFAULT_ROLE_MATRIX) as ConsoleRole[];
 const REASON_MIN = 10;
@@ -119,7 +120,10 @@ export function UserDialog({
 
   async function submit() {
     setSubmitted(true);
-    if (!complete) return;
+    if (!complete) {
+      focusFirstError();
+      return;
+    }
     setConfirmingSubmit(true);
   }
 

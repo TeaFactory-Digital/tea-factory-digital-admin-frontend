@@ -10,7 +10,8 @@
  * tab says so rather than showing an error.
  */
 
-import { useMemo, useState } from 'react';
+import { CountUp } from '@/components/charts/CountUp';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Bar,
@@ -117,25 +118,25 @@ export function SavingsReport() {
           icon={PiggyBank}
           tone="primary"
           label={t('reports.savings.held')}
-          value={formatMoney(latest?.balanceTotal ?? 0)}
+          value={<CountUp value={latest?.balanceTotal ?? 0} format={formatMoney} />}
           hint={t('reports.savings.heldHint', { month: formatMonthKey(latest?.monthKey) })}
         />
         <Tile
           icon={Users}
           label={t('reports.savings.suppliers')}
-          value={formatCount(latest?.suppliersSaving ?? 0)}
+          value={<CountUp value={latest?.suppliersSaving ?? 0} format={formatCount} />}
           hint={t('reports.savings.suppliersHint')}
         />
         <Tile
           icon={ArrowDownLeft}
           label={t('reports.savings.paidIn')}
-          value={formatMoney(paidIn)}
+          value={<CountUp value={paidIn} format={formatMoney} />}
           hint={t('reports.appUse.totalHint')}
         />
         <Tile
           icon={ArrowUpRight}
           label={t('reports.savings.takenOut')}
-          value={formatMoney(takenOut)}
+          value={<CountUp value={takenOut} format={formatMoney} />}
           hint={t('reports.appUse.totalHint')}
         />
       </section>
@@ -179,7 +180,7 @@ function Tile({
 }: {
   icon: typeof PiggyBank;
   label: string;
-  value: string;
+  value: ReactNode;
   hint: string;
   tone?: 'primary' | 'neutral';
 }) {

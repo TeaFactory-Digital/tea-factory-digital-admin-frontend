@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Field, Input, Textarea } from '@/components/ui/Field';
-import { Spinner } from '@/components/ui/states';
+import { LinesSkeleton } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatAmount, formatDateTime } from '@/lib/format';
@@ -61,8 +61,8 @@ export function DeductionRatesCard() {
   if (query.isPending) {
     return (
       <Card>
-        <CardBody className="flex justify-center py-xl">
-          <Spinner />
+        <CardBody>
+          <LinesSkeleton lines={4} />
         </CardBody>
       </Card>
     );

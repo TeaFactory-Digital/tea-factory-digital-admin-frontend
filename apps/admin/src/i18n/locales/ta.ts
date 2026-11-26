@@ -493,6 +493,7 @@ export const ta: Record<TranslationKey, string> = {
   'suppliers.resetPassword.hidePassword': 'கடவுச்சொல்லை மறை',
   'suppliers.resetPassword.copy': 'நகலெடு',
   'suppliers.resetPassword.copied': 'நகலெடுக்கப்பட்டது',
+  'suppliers.copyCode': 'வழங்குநர் எண்ணை நகலெடு',
   'suppliers.resetPassword.copyFailed': 'நகலெடுக்க முடியவில்லை. கடவுச்சொல்லைத் தேர்ந்தெடுத்து கையால் நகலெடுக்கவும்.',
   'suppliers.resetPassword.onceWarning':
     'இது காட்டப்படுவது இந்த ஒரு முறை மட்டுமே. இதை மூடினால் இது போய்விடும்; வேறொன்றை உருவாக்க வேண்டியிருக்கும்.',
@@ -3232,6 +3233,14 @@ export const ta: Record<TranslationKey, string> = {
   'appearance.glass.off': 'முடக்கு',
   'appearance.glass.on': 'இயக்கு',
   'appearance.glassHint': 'பக்கப்பட்டி, மேல் பட்டை மற்றும் உரையாடல்கள் ஒளியை வளைக்கும் மிதக்கும் திரவக் கண்ணாடி போல. அட்டவணைகளும் தொகைகளும் திடமாகவே இருக்கும். இந்தக் கணினி மெதுவாக இருந்தால் அதை முடக்கவும்.',
+  // Connection (26 November 2026).
+  'connection.offline': 'இணைப்பு இல்லை',
+  'connection.offlineHint': 'இந்தக் கணினி இணைப்பில் இல்லை. திரையில் உள்ளவை புதுப்பிக்கப்படாமல் இருக்கலாம், இணைப்பு திரும்பும் வரை எதையும் சேமிக்க முடியாது.',
+  'connection.back': 'மீண்டும் இணைந்தது',
+  'connection.backHint': 'திரையில் உள்ள எண்கள் புதுப்பிக்கப்படுகின்றன.',
+  'connection.boundaryTitle': 'இந்தத் திரைக்கு இணைப்பு தேவை',
+  'connection.boundaryBody': 'இது இந்தக் கணினியில் இன்னும் திறக்கப்படவில்லை, இணைப்பும் இல்லை. இணைப்பு திரும்பியவுடன் பக்கம் தானாகவே மீண்டும் ஏற்றப்படும்.',
+  'queue.ageTarget': 'இலக்கு: {{target}} க்குள்',
   // Animations and interface sounds (26 November 2026).
   'appearance.motion': 'அசைவூட்டங்கள்',
   'appearance.motion.off': 'முடக்கு',

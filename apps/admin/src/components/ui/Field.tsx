@@ -122,7 +122,7 @@ export function Field({ label, error, hint, required, children, className }: Fie
 
       {/* `role="alert"` so a validation failure is announced, not only shown. */}
       {error ? (
-        <p id={errorId} role="alert" className="text-caption text-error">
+        <p id={errorId} role="alert" data-field-error={id} className="text-caption text-error">
           {error}
         </p>
       ) : null}

@@ -24,7 +24,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Dialog } from '@/components/ui/Dialog';
 import { Field, Input, Textarea } from '@/components/ui/Field';
-import { ErrorState, Notice, Spinner } from '@/components/ui/states';
+import { ErrorState, Notice, LinesSkeleton } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey, errorMessageValues } from '@/lib/errorMessage';
 import { formatCount, formatMoney, formatMonthKey } from '@/lib/format';
@@ -51,9 +51,7 @@ export function SlipComparisonCard({ monthKey, monthOpen }: { monthKey: string; 
         {comparison.error ? (
           <ErrorState error={comparison.error} onRetry={() => void comparison.refetch()} />
         ) : !data ? (
-          <div className="flex justify-center py-lg">
-            <Spinner />
-          </div>
+          <LinesSkeleton lines={4} />
         ) : (
           <>
             <dl className="grid grid-cols-2 gap-x-lg gap-y-xs sm:grid-cols-4">

@@ -332,6 +332,27 @@ drafted and saved with "Save preferences" like the rest:
   person or factory cannot use). It plays once as it appears (`tfd-empty`: disc, strokes drawn
   in at `pathLength` 1, the tick last, about a second) and is then still; a new empty list
   picks the kind, never its own animation.
+- **Failed screens** (`ErrorState`) use the same picture: no answer at all (network, timeout)
+  is a warning-toned "no connection", a refusal is error-toned; "Try again" retries first and
+  then turns its arrow once. `RouteErrorBoundary` does the same for a screen whose code could
+  not be downloaded, and reloads by itself when the connection returns.
+- **Connection** (`lib/useOnline.ts`): "No connection" in the top bar while offline
+  (`ConnectionChip`), "Back online" once when it returns (`useConnectionNotice`); TanStack
+  Query refetches on reconnect by itself.
+- **Waiting time** is `AgeBadge` on every queue: grey, amber from half the target, red past
+  it, the target on its tooltip.
+- **Counts** in the sidebar (`CountBadge`) pop once and count to the new figure when they
+  change, never on first paint; report tiles count up like the dashboard's.
+- **Lists** (`DataTable`): rows just decided slide out first (`leavingIds`, `useLeavingRows`,
+  which refetches the queue and the sidebar counts together); rows that arrive while the list
+  is open are lit once; the sticky header grows a shadow once rows are scrolled under it.
+- **Loading** a screen or a card is `PageSkeleton` / `LinesSkeleton` (still a "Loading"
+  status), not a spinner in an empty box; a spinner is for a button or a small inline wait.
+- **A refused form** calls `focusFirstError()`: the first field with an error (each `Field`
+  tags it, `data-field-error`) is focused and scrolled to the middle.
+- **Copying** a short value is `CopyButton` (the supplier number): the icon becomes a tick
+  that pops, and a screen reader hears "Copied".
+- **Badges** change colour smoothly when their status does.
 - **Not built, because the console has no such screen**: a kanban board of moving cards (the
   spec's leaf intake board), a day/week schedule, a split-pane inbox.
 

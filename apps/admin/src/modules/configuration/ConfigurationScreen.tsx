@@ -49,7 +49,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover';
-import { ErrorState, Spinner } from '@/components/ui/states';
+import { ErrorState, PageSkeleton } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { SPLIT_PANE } from '@/components/ui/layout';
 import { cn } from '@/lib/cn';
@@ -136,9 +136,7 @@ export function ConfigurationScreen() {
 
   if (query.isPending) {
     return (
-      <div className="flex justify-center py-xxxl">
-        <Spinner />
-      </div>
+      <PageSkeleton />
     );
   }
   if (query.error || !query.data) {

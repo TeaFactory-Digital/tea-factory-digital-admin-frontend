@@ -11,7 +11,8 @@
  * The API returns every month and ignores a date range, so the range is applied here.
  */
 
-import { useMemo, useState } from 'react';
+import { CountUp } from '@/components/charts/CountUp';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Bar,
@@ -187,26 +188,32 @@ function AppUseReport() {
             <Tile
               icon={TrendingUp}
               label={t('reports.appUse.share')}
-              value={formatPercent(totals.share)}
+              value={
+                totals.share === null ? (
+                  formatPercent(null)
+                ) : (
+                  <CountUp value={totals.share} format={formatPercent} />
+                )
+              }
               hint={t('reports.appUse.shareHint')}
               tone="primary"
             />
             <Tile
               icon={Smartphone}
               label={t('reports.appUse.fromApp')}
-              value={formatCount(totals.fromApp)}
+              value={<CountUp value={totals.fromApp} format={formatCount} />}
               hint={t('reports.appUse.fromAppHint')}
             />
             <Tile
               icon={Building2}
               label={t('reports.appUse.fromOffice')}
-              value={formatCount(totals.fromOffice)}
+              value={<CountUp value={totals.fromOffice} format={formatCount} />}
               hint={t('reports.appUse.fromOfficeHint')}
             />
             <Tile
               icon={Sigma}
               label={t('reports.appUse.total')}
-              value={formatCount(totals.total)}
+              value={<CountUp value={totals.total} format={formatCount} />}
               hint={t('reports.appUse.totalHint')}
             />
           </section>
@@ -252,7 +259,7 @@ function Tile({
 }: {
   icon: typeof Smartphone;
   label: string;
-  value: string;
+  value: ReactNode;
   hint: string;
   tone?: 'primary' | 'neutral';
 }) {

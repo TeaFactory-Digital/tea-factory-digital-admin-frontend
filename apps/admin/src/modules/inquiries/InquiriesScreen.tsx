@@ -22,6 +22,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { AdminInquiry, InquiryStatus } from '@tfd/domain';
 import { INQUIRY_OFFICE_STATUSES, INQUIRY_STATUSES, QUEUE_SLA_HOURS, inquiryCountsTowardsSla } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
+import { AgeBadge } from '@/components/ui/AgeBadge';
 import { Card } from '@/components/ui/Card';
 import { GRID_CARD } from '@/components/ui/layout';
 import { DataTable } from '@/components/ui/DataTable';
@@ -31,7 +32,6 @@ import { ExportCsvButton } from '@/components/ExportCsvButton';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/states';
 import { useDebounced } from '@/lib/useDebounced';
-import { formatAge } from '@/lib/format';
 import { useInquiries } from './hooks';
 
 const STATUS_TONES = {
@@ -145,9 +145,7 @@ export function InquiriesScreen() {
           }
           return (
             <span className="flex flex-wrap items-center gap-xs">
-              <Badge tone={hours > QUEUE_SLA_HOURS.inquiries ? 'error' : 'neutral'}>
-                {formatAge(hours)}
-              </Badge>
+              <AgeBadge hours={hours} targetHours={QUEUE_SLA_HOURS.inquiries} />
               {row.status === 'escalated' ? (
                 <Badge tone={STATUS_TONES.escalated}>{t('inquiries.status.escalated')}</Badge>
               ) : null}

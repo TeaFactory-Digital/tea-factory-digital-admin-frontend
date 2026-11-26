@@ -40,7 +40,7 @@ import { Dialog } from '@/components/ui/Dialog';
 import { Field } from '@/components/ui/Field';
 import { DateTimePicker } from '@/components/ui/DatePicker';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { ErrorState, Notice, Spinner } from '@/components/ui/states';
+import { ErrorState, Notice, PageSkeleton } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDateTime } from '@/lib/format';
@@ -119,9 +119,7 @@ export function BannerEditorScreen() {
 
   if (banner.isPending) {
     return (
-      <div className="flex justify-center py-xxxl">
-        <Spinner />
-      </div>
+      <PageSkeleton />
     );
   }
   if (banner.error || !banner.data) {

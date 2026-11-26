@@ -16,7 +16,7 @@ import { MoneyInput } from '@/components/ui/MoneyInput';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Dialog } from '@/components/ui/Dialog';
 import { Field, Input, Textarea } from '@/components/ui/Field';
-import { ErrorState, Spinner } from '@/components/ui/states';
+import { ErrorState, LinesSkeleton } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDate, formatMoney, formatMonthKey } from '@/lib/format';
@@ -59,7 +59,7 @@ export function OpeningBalancesCard({ supplierId }: { supplierId: string }) {
       />
       <CardBody>
         {query.isPending ? (
-          <Spinner />
+          <LinesSkeleton lines={3} />
         ) : query.error ? (
           <ErrorState error={query.error} onRetry={() => void query.refetch()} />
         ) : !record ? (

@@ -19,7 +19,7 @@ import { MoneyInput } from '@/components/ui/MoneyInput';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Dialog } from '@/components/ui/Dialog';
 import { Field, Textarea } from '@/components/ui/Field';
-import { Spinner } from '@/components/ui/states';
+import { LinesSkeleton } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatAmount } from '@/lib/format';
@@ -75,7 +75,7 @@ export function TransportRateCard({
       />
       <CardBody className="flex flex-col gap-xs">
         {rates.isPending && ownRate === null ? (
-          <Spinner />
+          <LinesSkeleton lines={3} />
         ) : (
           <div className="flex flex-wrap items-center gap-sm">
             <span className="numeric text-title font-semibold text-text-primary">

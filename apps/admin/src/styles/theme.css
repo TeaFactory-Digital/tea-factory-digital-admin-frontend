@@ -842,6 +842,52 @@ main#main {
   animation-delay: 0s !important;
 }
 
+/*
+ * Lists (26 November 2026, `DataTable`).
+ *
+ * A row just decided slides out before the refetch takes it away; a row that arrived while
+ * the list was open is lit once and fades back to its stripe; the sticky header grows a soft
+ * shadow once rows are scrolled beneath it. Each happens once and stops.
+ */
+tr[data-row-state='leaving'] {
+  animation: tfd-row-leave 300ms ease-in forwards;
+  pointer-events: none;
+}
+
+tr[data-row-state='new'] {
+  animation: tfd-row-new 1.8s ease-out both;
+}
+
+thead[data-scrolled] {
+  box-shadow:
+    inset 0 -1px 0 0 var(--color-border),
+    0 10px 14px -12px color-mix(in srgb, var(--color-text-primary) 35%, transparent);
+}
+
+@keyframes tfd-row-leave {
+  to {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+}
+
+@keyframes tfd-row-new {
+  from,
+  25% {
+    background-color: var(--color-primary-muted);
+  }
+}
+
+/* A chip that appears in the top bar (no connection) settles in rather than popping. */
+.tfd-chip-in {
+  animation: tfd-empty-pop 320ms var(--ease-settle) both;
+}
+
+/* A tick that replaces "Copy" for a moment, as the copy lands. */
+.tfd-tick-pop {
+  animation: tfd-empty-pop 320ms cubic-bezier(0.2, 0.9, 0.3, 1.35) both;
+}
+
 /* The month-published celebration (`components/Celebration.tsx`). */
 .tfd-confetti {
   animation: tfd-confetti 1.4s cubic-bezier(0.15, 0.7, 0.3, 1) both;

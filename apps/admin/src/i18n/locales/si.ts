@@ -489,6 +489,7 @@ export const si: Record<TranslationKey, string> = {
   'suppliers.resetPassword.hidePassword': 'මුරපදය සඟවන්න',
   'suppliers.resetPassword.copy': 'පිටපත් කරන්න',
   'suppliers.resetPassword.copied': 'පිටපත් කළා',
+  'suppliers.copyCode': 'සැපයුම්කරු අංකය පිටපත් කරන්න',
   'suppliers.resetPassword.copyFailed': 'පිටපත් කළ නොහැකි විය. මුරපදය තෝරා අතින් පිටපත් කරන්න.',
   'suppliers.resetPassword.onceWarning':
     'මෙය පෙන්වන එකම අවස්ථාව මෙයයි. මෙය වසා දැමුවහොත් එය නැති වේ. ඔබට තවත් එකක් සෑදීමට සිදු වේ.',
@@ -3171,6 +3172,14 @@ export const si: Record<TranslationKey, string> = {
   'appearance.glass.off': 'අක්‍රියයි',
   'appearance.glass.on': 'සක්‍රියයි',
   'appearance.glassHint': 'පැති තීරුව, ඉහළ තීරුව සහ සංවාද ආලෝකය නමන පාවෙන දියර වීදුරු ලෙස. වගු සහ සංඛ්‍යා නොවිනිවිද ලෙසම පවතී. මෙම පරිගණකය මන්දගාමී නම් එය අක්‍රිය කරන්න.',
+  // Connection (26 November 2026).
+  'connection.offline': 'සම්බන්ධතාවය නැත',
+  'connection.offlineHint': 'මෙම පරිගණකය offline ය. තිරයේ ඇති දේ යාවත්කාලීන නොවිය හැකි අතර, සම්බන්ධතාවය නැවත ලැබෙන තුරු කිසිවක් සුරැකිය නොහැක.',
+  'connection.back': 'නැවත සම්බන්ධ විය',
+  'connection.backHint': 'තිරයේ ඇති සංඛ්‍යා යාවත්කාලීන කෙරේ.',
+  'connection.boundaryTitle': 'මෙම තිරයට සම්බන්ධතාවයක් අවශ්‍යයි',
+  'connection.boundaryBody': 'එය මෙම පරිගණකයේ තවම විවෘත කර නැති අතර, සම්බන්ධතාවය නැත. සම්බන්ධතාවය නැවත ලැබුණු විගස පිටුව ඉබේම නැවත load වේ.',
+  'queue.ageTarget': 'ඉලක්කය: {{target}} ඇතුළත',
   // Animations and interface sounds (26 November 2026).
   'appearance.motion': 'සජීවිකරණ',
   'appearance.motion.off': 'අක්‍රියයි',

@@ -7,7 +7,9 @@
  * screenshot pasted into an email, which is how the office actually escalates.
  */
 
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
+import { CountUp } from '@/components/charts/CountUp';
+import { motionAllowed } from '@/lib/motion';
 import { cn } from '@/lib/cn';
 
 export type BadgeTone = 'neutral' | 'success' | 'warning' | 'error' | 'info' | 'primary';
@@ -35,16 +37,19 @@ export function Badge({
   children,
   className,
   dot = true,
+  title,
 }: {
   tone?: BadgeTone;
   children: ReactNode;
   className?: string;
+  title?: string;
   /** Off where the pill is not a state, e.g. a count. */
   dot?: boolean;
 }) {
   const showDot = dot && DOT_TONES.has(tone);
   return (
     <span
+      title={title}
       className={cn(
         /**
          * `w-fit` because a pill must hug its text wherever it is put.
@@ -60,7 +65,9 @@ export function Badge({
          * without touching vertical alignment, which `self-start` would have changed for
          * every badge sitting in a row.
          */
-        'inline-flex w-fit items-center gap-xs rounded-pill px-sm py-xxs text-caption font-medium whitespace-nowrap',
+        // A status that changes (Pending to Approved, grey to amber) changes colour smoothly
+        // rather than blinking (26 November 2026).
+        'inline-flex w-fit items-center gap-xs rounded-pill px-sm py-xxs text-caption font-medium whitespace-nowrap transition-colors duration-200',
         TONES[tone],
         className,
       )}
@@ -76,11 +83,31 @@ export function Badge({
 }
 
 /** A count that means "waiting for you". Zero renders nothing, not a `0`. */
+/**
+ * A count beside a link (the sidebar's queues). When it changes it gives one small pop and
+ * counts to the new figure (26 November 2026), so a queue that just went down after a
+ * decision is seen to; the first paint is still, because nothing has changed yet.
+ */
 export function CountBadge({ count, tone = 'primary' }: { count: number; tone?: BadgeTone }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const previous = useRef(count);
+  useEffect(() => {
+    if (previous.current === count) return;
+    previous.current = count;
+    const node = ref.current;
+    if (!motionAllowed() || !node || typeof node.animate !== 'function') return;
+    node.animate(
+      [{ transform: 'scale(1)' }, { transform: 'scale(1.25)' }, { transform: 'scale(1)' }],
+      { duration: 360, easing: 'cubic-bezier(0.2, 0.9, 0.3, 1.35)' },
+    );
+  }, [count]);
+
   if (count <= 0) return null;
   return (
-    <Badge tone={tone} dot={false} className="numeric min-w-6 justify-center">
-      {count > 99 ? '99+' : count}
-    </Badge>
+    <span ref={ref} className="inline-flex">
+      <Badge tone={tone} dot={false} className="numeric min-w-6 justify-center">
+        {count > 99 ? '99+' : <CountUp value={count} format={(n) => String(Math.round(n))} fromZero={false} />}
+      </Badge>
+    </span>
   );
 }

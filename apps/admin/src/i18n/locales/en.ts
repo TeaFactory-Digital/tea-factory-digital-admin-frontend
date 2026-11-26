@@ -479,6 +479,7 @@ export const en = {
   'suppliers.resetPassword.hidePassword': 'Hide password',
   'suppliers.resetPassword.copy': 'Copy',
   'suppliers.resetPassword.copied': 'Copied',
+  'suppliers.copyCode': 'Copy the supplier number',
   'suppliers.resetPassword.copyFailed': 'Could not copy. Select the password and copy it by hand.',
   'suppliers.resetPassword.onceWarning':
     'This is the only time it is shown. Close this and it is gone; you would have to create another one.',
@@ -3177,6 +3178,14 @@ export const en = {
   'appearance.glass.off': 'Off',
   'appearance.glass.on': 'On',
   'appearance.glassHint': 'The sidebar, top bar and dialogs as floating liquid glass that bends the light. Tables and figures stay solid. Turn it off if this computer feels slow.',
+  // Connection (26 November 2026).
+  'connection.offline': 'No connection',
+  'connection.offlineHint': 'This computer is offline. What is on screen may be out of date, and nothing can be saved until the connection is back.',
+  'connection.back': 'Back online',
+  'connection.backHint': 'The figures on screen are being brought up to date.',
+  'connection.boundaryTitle': 'This screen needs a connection',
+  'connection.boundaryBody': 'It has not been opened on this computer yet, and the connection is down. The page reloads by itself as soon as the connection is back.',
+  'queue.ageTarget': 'Target: within {{target}}',
   // Animations and interface sounds (26 November 2026).
   'appearance.motion': 'Animations',
   'appearance.motion.off': 'Off',

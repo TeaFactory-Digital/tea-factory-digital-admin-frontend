@@ -17,13 +17,19 @@ export function CountUp({
   value,
   format,
   animate = import.meta.env.MODE !== 'test' && motionAllowed(),
+  fromZero = true,
 }: {
   value: number;
   format: (value: number) => string;
   animate?: boolean;
+  /**
+   * Count up from 0 when it first appears (a headline figure), or start at the value and
+   * count only when it changes (a badge that is on every screen: 26 November 2026).
+   */
+  fromZero?: boolean;
 }) {
-  const [shown, setShown] = useState(animate ? 0 : value);
-  const from = useRef(animate ? 0 : value);
+  const [shown, setShown] = useState(animate && fromZero ? 0 : value);
+  const from = useRef(animate && fromZero ? 0 : value);
 
   useEffect(() => {
     if (!animate) {

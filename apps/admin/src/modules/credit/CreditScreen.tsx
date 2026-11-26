@@ -20,6 +20,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { AdminCreditRequest, CreditFacility, RequestStatus } from '@tfd/domain';
 import { CREDIT_FACILITIES, CREDIT_FACILITY_FLAGS, QUEUE_SLA_HOURS } from '@tfd/domain';
 import { Badge } from '@/components/ui/Badge';
+import { AgeBadge } from '@/components/ui/AgeBadge';
 import { Card } from '@/components/ui/Card';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { GRID_CARD } from '@/components/ui/layout';
@@ -29,6 +30,7 @@ import { selectionColumn } from '@/components/selectionColumn';
 import { FactorySystemReminder } from '@/components/FactorySystemReminder';
 import { useAuthStore, useCurrentUser } from '@/auth/authStore';
 import { useQueryClient } from '@tanstack/react-query';
+import { useLeavingRows } from '@/components/useLeavingRows';
 import { qk } from '@/query/queryKeys';
 import { DEFAULT_CREDIT_RULES, approvalTierFor, canDecideCredit, isSelfApproval } from '@tfd/domain';
 import { SUGGESTIONS as CREDIT_SUGGESTIONS } from './suggestions';
@@ -45,7 +47,7 @@ import { Button } from '@/components/ui/Button';
 import { ImportMenu } from '@/components/ImportMenu';
 import { WalkInCreditDialog } from './WalkInCreditDialog';
 import { useDebounced } from '@/lib/useDebounced';
-import { formatAge, formatAmount, formatQuantityKg } from '@/lib/format';
+import { formatAmount, formatQuantityKg } from '@/lib/format';
 import { useCreditRequests } from './hooks';
 
 const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'neutral' } as const;
@@ -118,6 +120,7 @@ export function CreditScreen() {
   const grants = useAuthStore((st) => st.grants);
   const { config } = useRuntimeConfig();
   const client = useQueryClient();
+  const { leaving, leave } = useLeavingRows();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulk, setBulk] = useState<'approve' | 'reject' | null>(null);
 
@@ -239,9 +242,7 @@ export function CreditScreen() {
             );
           }
           return (
-            <Badge tone={hours > SLA_HOURS[row.facility] ? 'error' : 'neutral'}>
-              {formatAge(hours)}
-            </Badge>
+            <AgeBadge hours={hours} targetHours={SLA_HOURS[row.facility]} />
           );
         },
       },
@@ -349,6 +350,7 @@ export function CreditScreen() {
         ) : null}
 
         <DataTable
+          leavingIds={leaving}
           label={t('credit.title')}
           columns={columns}
           page={data}
@@ -400,7 +402,14 @@ export function CreditScreen() {
           onClose={(decided) => {
             setBulk(null);
             setSelected((current) => new Set([...current].filter((id) => !decided.includes(id))));
-            void client.invalidateQueries({ queryKey: qk.credit.all });
+            // The decided rows slide out, then the queue and the sidebar's counts refresh
+            // together, so the badge drops as the rows go (26 November 2026).
+            leave(decided, () =>
+              Promise.all([
+                client.invalidateQueries({ queryKey: qk.credit.all }),
+                client.invalidateQueries({ queryKey: qk.dashboard }),
+              ]),
+            );
           }}
         />
       ) : null}

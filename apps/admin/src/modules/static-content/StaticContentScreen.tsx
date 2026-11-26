@@ -42,7 +42,7 @@ import { Card, CardBody, CardHeader, DetailRow } from '@/components/ui/Card';
 import { useFactory } from '@/config/RuntimeConfigProvider';
 import type { PointLabels } from '@/modules/content/PointsEditor';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { ErrorState, Spinner } from '@/components/ui/states';
+import { ErrorState, PageSkeleton } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { SPLIT_PANE, SPLIT_PANE_SCROLLER } from '@/components/ui/layout';
 import { cn } from '@/lib/cn';
@@ -99,9 +99,7 @@ export function StaticContentScreen() {
 
   if (pages.isPending) {
     return (
-      <div className="flex justify-center py-xxxl">
-        <Spinner />
-      </div>
+      <PageSkeleton />
     );
   }
   if (pages.error || !pages.data) {

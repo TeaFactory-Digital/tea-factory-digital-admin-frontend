@@ -45,6 +45,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader, DetailRow } from '@/components/ui/Card';
 import { Dialog } from '@/components/ui/Dialog';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { CopyButton } from '@/components/ui/CopyButton';
 import { ErrorState, Notice, Skeleton } from '@/components/ui/states';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
@@ -137,9 +138,13 @@ export function SupplierDetailScreen() {
       <PageHeader
         title={supplier.name}
         description={
-          supplier.division
-            ? `${supplier.supplierCode} · ${supplier.division}`
-            : supplier.supplierCode
+          // The number is what gets read out over the phone and pasted into the factory's
+          // system, so it can be copied in one click (26 November 2026).
+          <span className="inline-flex items-center gap-xxs">
+            <span className="numeric">{supplier.supplierCode}</span>
+            <CopyButton text={supplier.supplierCode} label={t('suppliers.copyCode')} />
+            {supplier.division ? <span>· {supplier.division}</span> : null}
+          </span>
         }
         breadcrumb={
           <Link to="/suppliers" className="hover:text-text-primary">

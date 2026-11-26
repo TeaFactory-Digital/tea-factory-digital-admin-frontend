@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Label } from '@/components/ui/Label';
-import { ErrorState, Spinner } from '@/components/ui/states';
+import { ErrorState, LinesSkeleton } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDateTime } from '@/lib/format';
@@ -68,9 +68,7 @@ export function TriggersCard() {
       />
       <CardBody className="flex flex-col gap-md">
         {triggers.isPending ? (
-          <div className="flex justify-center py-lg">
-            <Spinner />
-          </div>
+          <LinesSkeleton lines={4} />
         ) : triggers.error ? (
           <ErrorState error={triggers.error} onRetry={() => void triggers.refetch()} compact />
         ) : (

@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { Languages } from 'lucide-react';
 import { parsePagePoints, type ContentPreview, type LanguageCode } from '@tfd/domain';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
-import { EmptyState, ErrorState, Spinner } from '@/components/ui/states';
+import { EmptyState, ErrorState, LinesSkeleton } from '@/components/ui/states';
 
 export function PreviewPanel({
   lang,
@@ -41,9 +41,7 @@ export function PreviewPanel({
       />
       <CardBody>
         {loading ? (
-          <div className="flex justify-center py-lg">
-            <Spinner />
-          </div>
+          <LinesSkeleton lines={4} />
         ) : error ? (
           <ErrorState error={error} onRetry={onRetry} compact />
         ) : !preview?.translation ? (

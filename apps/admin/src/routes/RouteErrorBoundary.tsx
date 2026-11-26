@@ -6,13 +6,24 @@
  * therefore offers a reload and says plainly that the rest still works.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouteError } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert, WifiOff } from 'lucide-react';
 import { Logo } from '@/brand/Logo';
 import { Button } from '@/components/ui/Button';
+import { StatePicture } from '@/components/ui/states';
 import { monitoring } from '@/lib/monitoring';
+import { useOnline } from '@/lib/useOnline';
+
+/**
+ * A screen whose code could not be downloaded: the browser's words for a lazy route that
+ * failed to load, in Chrome, Safari and Firefox.
+ */
+function isChunkLoadError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  return /dynamically imported module|Importing a module script failed|error loading dynamically imported module|Loading chunk/i.test(message);
+}
 
 export function RouteErrorBoundary() {
   const { t } = useTranslation();
@@ -25,6 +36,22 @@ export function RouteErrorBoundary() {
   // Reported as the error alone, never the props around it (`lib/monitoring.ts`).
   useEffect(() => monitoring.recordError(error, 'route'), [error]);
 
+  /**
+   * No connection (26 November 2026): a screen not yet opened on this computer cannot be
+   * fetched while the line is down. Said as that, not as a broken console, and the page
+   * reloads by itself once the connection is back.
+   */
+  const online = useOnline();
+  const connection = !online || isChunkLoadError(error);
+  const wasOffline = useRef(!online);
+  useEffect(() => {
+    if (!online) {
+      wasOffline.current = true;
+      return;
+    }
+    if (connection && wasOffline.current) window.location.reload();
+  }, [online, connection]);
+
   return (
     <div
       role="alert"
@@ -33,9 +60,15 @@ export function RouteErrorBoundary() {
       {/* The mark, because this screen replaces the whole shell: without it a
           clerk cannot tell a broken console apart from a page that is not theirs. */}
       <Logo className="mb-md" />
-      <TriangleAlert className="size-icon-xxl text-error" aria-hidden />
-      <h1 className="text-h3 text-text-primary">{t('error.boundaryTitle')}</h1>
-      <p className="max-w-prose text-body-small text-text-secondary">{t('error.boundaryBody')}</p>
+      <div className="tfd-empty flex flex-col items-center gap-sm">
+        <StatePicture Icon={connection ? WifiOff : TriangleAlert} tone={connection ? 'warning' : 'error'} />
+        <h1 className="tfd-empty-text text-h3 text-text-primary">
+          {t(connection ? 'connection.boundaryTitle' : 'error.boundaryTitle')}
+        </h1>
+        <p className="tfd-empty-text max-w-prose text-body-small text-text-secondary">
+          {t(connection ? 'connection.boundaryBody' : 'error.boundaryBody')}
+        </p>
+      </div>
       <Button variant="primary" onClick={() => window.location.reload()}>
         {t('error.reload')}
       </Button>

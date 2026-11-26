@@ -32,7 +32,7 @@ import { ImageField } from '@/components/ui/ImageField';
 import { Dialog } from '@/components/ui/Dialog';
 import { ScheduleControl } from './ScheduleControl';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { ErrorState, Spinner } from '@/components/ui/states';
+import { ErrorState, PageSkeleton } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDateTime } from '@/lib/format';
@@ -75,9 +75,7 @@ export function NewsArticleScreen() {
 
   if (article.isPending) {
     return (
-      <div className="flex justify-center py-xxxl">
-        <Spinner />
-      </div>
+      <PageSkeleton />
     );
   }
   if (article.error || !article.data) {

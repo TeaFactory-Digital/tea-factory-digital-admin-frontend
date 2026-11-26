@@ -14,11 +14,12 @@ import { useQuery } from '@tanstack/react-query';
 import { dashboardRepository } from '@/services/repositories/dashboardRepository';
 import { qk } from '@/query/queryKeys';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
-import { Notice, Spinner } from '@/components/ui/states';
+import { Notice, PageSkeleton } from '@/components/ui/states';
 import { Sidebar } from './Sidebar';
 import { ShortcutsDialog } from './ShortcutsDialog';
 import { WelcomeTour } from './WelcomeTour';
 import { useRequestAlerts } from './useRequestAlerts';
+import { useConnectionNotice } from './useConnectionNotice';
 import { Topbar } from './Topbar';
 
 export function AppShell() {
@@ -27,6 +28,8 @@ export function AppShell() {
 
   // New-request alerts, for whoever switched them on (Profile).
   useRequestAlerts();
+  // "Back online", once, when a lost connection returns.
+  useConnectionNotice();
 
   const { data: summary } = useQuery({
     queryKey: qk.dashboard,
@@ -119,9 +122,7 @@ export function AppShell() {
                 navigating somewhere else instead of watching a blank page. */}
             <Suspense
               fallback={
-                <div className="flex justify-center py-xxxl">
-                  <Spinner />
-                </div>
+                <PageSkeleton />
               }
             >
               <Outlet />

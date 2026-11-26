@@ -67,7 +67,7 @@ export function IssuedPasswordField({ password }: { password: string }) {
             variant="secondary"
             iconLeft={
               copied ? (
-                <Check className="size-icon-sm" aria-hidden />
+                <Check className="tfd-tick-pop size-icon-sm" aria-hidden />
               ) : (
                 <Copy className="size-icon-sm" aria-hidden />
               )

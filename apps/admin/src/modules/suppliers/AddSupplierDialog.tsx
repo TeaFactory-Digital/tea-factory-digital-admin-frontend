@@ -20,6 +20,7 @@ import { Field, Input, Select } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { useCreateSupplier } from '@/modules/records/hooks';
+import { focusFirstError } from '@/lib/focusFirstError';
 
 const PAYMENT_METHODS: PaymentMethod[] = ['bankTransfer', 'cheque', 'cash'];
 
@@ -96,7 +97,11 @@ export function AddSupplierDialog({ open, onClose }: { open: boolean; onClose: (
 
   async function submit() {
     setSubmitted(true);
-    if (!parsed.success || Object.keys(errors).length > 0) return;
+    if (!parsed.success || Object.keys(errors).length > 0) {
+      // Straight to the first field to fix, which may be below the fold (bank details).
+      focusFirstError();
+      return;
+    }
     const body: NewSupplier = {
       ...parsed.data,
       phone: parsed.data.phone || undefined,
