@@ -203,6 +203,7 @@ export function ExceptionsQueue({ month }: { month: MonthSummary }) {
         onPageChange={() => {}}
         emptyState={
           <EmptyState
+            kind={filter === 'open' ? 'clear' : 'search'}
             title={filter === 'open' ? t('months.noOpenExceptions') : t('common.noResults')}
             body={filter === 'open' ? t('months.noOpenExceptionsHint') : undefined}
           />

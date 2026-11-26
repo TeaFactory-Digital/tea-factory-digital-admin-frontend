@@ -781,6 +781,67 @@ main#main {
   }
 }
 
+/*
+ * An empty list's picture (26 November 2026, `EmptyState` in `components/ui/states.tsx`),
+ * once, as it appears: the disc settles, the icon's strokes draw in, a tick pops on for a
+ * queue that is clear, and the words rise after. About a second, then still. The final
+ * state is the element's own, so with the animation gone it is simply there.
+ */
+.tfd-empty-disc {
+  animation: tfd-empty-disc 420ms var(--ease-settle) both;
+}
+
+.tfd-empty-disc-inner {
+  animation-delay: 60ms;
+}
+
+.tfd-empty-draw :is(path, line, polyline, polygon, rect, circle) {
+  /* Each stroke has pathLength="1" (set by `EmptyState`), so 1 is its whole length. */
+  stroke-dasharray: 1;
+  animation: tfd-empty-draw 900ms var(--ease-move) 150ms both;
+}
+
+.tfd-empty-pop {
+  animation: tfd-empty-pop 380ms cubic-bezier(0.2, 0.9, 0.3, 1.35) 900ms both;
+}
+
+.tfd-empty-text {
+  animation: rise 0.45s var(--ease-settle) 220ms both;
+}
+
+@keyframes tfd-empty-disc {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+@keyframes tfd-empty-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes tfd-empty-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tfd-empty * {
+    animation-delay: 0s !important;
+  }
+}
+
+:root[data-motion='off'] .tfd-empty * {
+  animation-delay: 0s !important;
+}
+
 /* The month-published celebration (`components/Celebration.tsx`). */
 .tfd-confetti {
   animation: tfd-confetti 1.4s cubic-bezier(0.15, 0.7, 0.3, 1) both;

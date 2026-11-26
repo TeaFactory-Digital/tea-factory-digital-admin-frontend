@@ -338,6 +338,7 @@ export function BillsScreen() {
           onSortingChange={handleSortingChange}
           emptyState={
             <EmptyState
+              kind={lens === 'all' ? 'empty' : 'search'}
               title={lens === 'all' ? t('bills.empty') : t('common.noResults')}
               body={lens === 'all' ? t('bills.emptyHint') : t('common.noResultsHint')}
             />

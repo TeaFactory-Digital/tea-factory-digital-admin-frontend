@@ -318,7 +318,7 @@ export function UsersScreen() {
             getRowId={(row) => row.id}
             onPageChange={(next) => setParam('page', String(next))}
             emptyState={
-              <EmptyState title={t('common.noResults')} body={t('common.noResultsHint')} />
+              <EmptyState kind="search" title={t('common.noResults')} body={t('common.noResultsHint')} />
             }
           />
         </Card>

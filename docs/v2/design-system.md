@@ -326,6 +326,12 @@ drafted and saved with "Save preferences" like the rest:
   `confirm`, and the dialog counts "Deciding 4 of 12" with a `Meter` while the items go one by
   one. A hand-written notification plays `open` / `confirm` the same way, and its confirm
   button names the number of phones ("Send to 61 phones").
+- **Empty lists** (`EmptyState`, `components/ui/states.tsx`) carry a picture that says which
+  kind of empty: `clear` (a queue with nothing waiting: inbox and a tick), `search` (a search or
+  filter matched nothing), `empty` (nothing made yet, the default) and `locked` (a screen this
+  person or factory cannot use). It plays once as it appears (`tfd-empty`: disc, strokes drawn
+  in at `pathLength` 1, the tick last, about a second) and is then still; a new empty list
+  picks the kind, never its own animation.
 - **Not built, because the console has no such screen**: a kanban board of moving cards (the
   spec's leaf intake board), a day/week schedule, a split-pane inbox.
 

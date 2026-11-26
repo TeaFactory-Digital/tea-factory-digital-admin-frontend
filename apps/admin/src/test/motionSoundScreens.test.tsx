@@ -12,6 +12,7 @@ import { Route, Routes } from 'react-router-dom';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Segmented } from '@/components/ui/Segmented';
+import { EmptyState } from '@/components/ui/states';
 import { BulkBar, BulkDecisionDialog } from '@/components/BulkDecision';
 import { InquiryDetailScreen } from '@/modules/inquiries/InquiryDetailScreen';
 import { inquiryRepository } from '@/services/repositories/inquiryRepository';
@@ -170,5 +171,23 @@ describe('deciding several at once', () => {
     release();
     await waitFor(() => expect(screen.queryByText(/^Deciding/)).not.toBeInTheDocument());
     expect(played.confirm).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('an empty list', () => {
+  it('says what kind of empty it is: a clear queue gets the tick, a search does not', () => {
+    const { container, rerender } = renderWithProviders(<EmptyState kind="clear" title="Nothing waiting" />);
+    expect(screen.getByText('Nothing waiting')).toBeInTheDocument();
+    // The picture is decoration: hidden from assistive technology, the title is what is read.
+    const picture = container.querySelector('.tfd-empty [aria-hidden]')!;
+    expect(picture).not.toBeNull();
+    expect(picture.querySelector('.tfd-empty-pop')).not.toBeNull();
+    // Every stroke normalised to length 1, so short and long lines draw in together.
+    const strokes = picture.querySelectorAll('.tfd-empty-draw svg *');
+    expect(strokes.length).toBeGreaterThan(0);
+    strokes.forEach((stroke) => expect(stroke).toHaveAttribute('pathLength', '1'));
+
+    rerender(<EmptyState kind="search" title="Nothing to show" />);
+    expect(container.querySelector('.tfd-empty-pop')).toBeNull();
   });
 });

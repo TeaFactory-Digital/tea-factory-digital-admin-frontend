@@ -265,6 +265,7 @@ export function ChangeRequestsScreen() {
           onPageChange={(next) => setParam('page', String(next))}
           emptyState={
             <EmptyState
+              kind={status === 'pending' ? 'clear' : 'search'}
               title={status === 'pending' ? t('changeRequests.empty') : t('common.noResults')}
               body={
                 status === 'pending' ? t('changeRequests.emptyHint') : t('common.noResultsHint')

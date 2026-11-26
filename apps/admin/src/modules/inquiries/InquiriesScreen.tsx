@@ -222,6 +222,7 @@ export function InquiriesScreen() {
           onPageChange={(next) => setParam('page', String(next))}
           emptyState={
             <EmptyState
+              kind={status === null ? 'clear' : 'search'}
               title={status === null ? t('inquiries.empty') : t('common.noResults')}
               body={status === null ? t('inquiries.emptyHint') : t('common.noResultsHint')}
             />

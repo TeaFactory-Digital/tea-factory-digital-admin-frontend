@@ -392,7 +392,7 @@ export function SuppliersScreen() {
           onPageChange={(next) => setParam('page', String(next))}
           sorting={sorting}
           onSortingChange={handleSortingChange}
-          emptyState={<EmptyState title={t('common.noResults')} body={t('common.noResultsHint')} />}
+          emptyState={<EmptyState kind="search" title={t('common.noResults')} body={t('common.noResultsHint')} />}
         />
       </Card>
       {adding ? <AddSupplierDialog open onClose={() => setAdding(false)} /> : null}

@@ -144,7 +144,7 @@ function GuardState({ title, body }: { title: string; body?: string }) {
   return (
     <>
       <h1 className="sr-only">{title}</h1>
-      <EmptyState title={title} body={body} />
+      <EmptyState kind="locked" title={title} body={body} />
     </>
   );
 }

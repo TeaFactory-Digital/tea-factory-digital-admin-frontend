@@ -7,9 +7,9 @@
  * clear". Both are worse than an error, because the clerk acts on them.
  */
 
-import type { ReactNode } from 'react';
+import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { TriangleAlert } from 'lucide-react';
+import { Check, Inbox, Lock, PackageOpen, SearchX, TriangleAlert, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { Button } from './Button';
@@ -78,26 +78,71 @@ export function TableSkeleton({ rows = 8, columns = 6 }: { rows?: number; column
   );
 }
 
+/**
+ * What an empty list means (26 November 2026), so the picture says it before the words do:
+ *
+ *  - `clear`: a queue with nothing waiting. The work is done; an inbox with a tick.
+ *  - `search`: a search or filter that matched nothing. Change it; a magnifier with a cross.
+ *  - `empty`: nothing has been made yet (news, a report, a timeline); an open, empty box.
+ *  - `locked`: a screen this person or this factory cannot use; a padlock.
+ */
+export type EmptyKind = 'clear' | 'search' | 'empty' | 'locked';
+
+const EMPTY_ICON: Record<EmptyKind, LucideIcon> = {
+  clear: Inbox,
+  search: SearchX,
+  empty: PackageOpen,
+  locked: Lock,
+};
+
+/**
+ * An empty list, said with a picture and a sentence.
+ *
+ * The picture moves **once**, as it appears (`tfd-empty` in `theme.css`): a soft disc
+ * settles, the icon draws itself in, and for `clear` a tick pops onto it. Then it is still:
+ * an empty screen that kept moving would look like one still loading. The Animations switch
+ * and reduced motion show it finished at once. Decoration only; the title is what a screen
+ * reader hears.
+ */
 export function EmptyState({
   title,
   body,
   action,
   icon,
+  kind = 'empty',
 }: {
   title: string;
   body?: string;
   action?: ReactNode;
+  /** A screen's own icon in place of the kind's; it draws in the same way. */
   icon?: ReactNode;
+  kind?: EmptyKind;
 }) {
+  const Icon = EMPTY_ICON[kind];
+  const drawn = useRef<HTMLSpanElement>(null);
+  // Every stroke measured as length 1, before the first paint, so a short line and a long
+  // one draw in over the same time instead of the short ones being done at once.
+  useLayoutEffect(() => {
+    drawn.current
+      ?.querySelectorAll('path, line, polyline, polygon, rect, circle')
+      .forEach((shape) => shape.setAttribute('pathLength', '1'));
+  }, [kind, icon]);
   return (
-    <div className="flex flex-col items-center gap-sm px-lg py-xxxl text-center">
-      {icon ? (
-        <div className="flex size-12 items-center justify-center rounded-lg border border-border bg-surface-variant text-text-secondary shadow-card">
-          {icon}
-        </div>
-      ) : null}
-      <p className="text-subtitle text-text-primary">{title}</p>
-      {body ? <p className="max-w-prose text-body-small text-text-secondary">{body}</p> : null}
+    <div className="tfd-empty flex flex-col items-center gap-sm px-lg py-xxxl text-center">
+      <div aria-hidden className="relative mb-xs flex size-20 items-center justify-center">
+        <span className="tfd-empty-disc absolute inset-0 rounded-full bg-primary/5" />
+        <span className="tfd-empty-disc tfd-empty-disc-inner absolute inset-2 rounded-full bg-primary-muted" />
+        <span ref={drawn} className="tfd-empty-draw relative flex text-primary">
+          {icon ?? <Icon className="size-8" strokeWidth={1.75} />}
+        </span>
+        {kind === 'clear' ? (
+          <span className="tfd-empty-pop absolute right-1 bottom-1 flex size-6 items-center justify-center rounded-full bg-success text-on-status shadow-card ring-2 ring-surface">
+            <Check className="size-icon-xs" strokeWidth={3} />
+          </span>
+        ) : null}
+      </div>
+      <p className="tfd-empty-text text-subtitle text-text-primary">{title}</p>
+      {body ? <p className="tfd-empty-text max-w-prose text-body-small text-text-secondary">{body}</p> : null}
       {action}
     </div>
   );

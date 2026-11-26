@@ -341,6 +341,7 @@ export function TeaPacketsScreen() {
           onPageChange={(next) => setParam('page', String(next))}
           emptyState={
             <EmptyState
+              kind={status === 'pending' ? 'clear' : 'search'}
               title={status === 'pending' ? t('teaPackets.empty') : t('common.noResults')}
               body={status === 'pending' ? t('teaPackets.emptyHint') : t('common.noResultsHint')}
             />

@@ -360,6 +360,7 @@ export function CreditScreen() {
           onPageChange={(next) => setParam('page', String(next))}
           emptyState={
             <EmptyState
+              kind={status === 'pending' ? 'clear' : 'search'}
               title={status === 'pending' ? t('credit.empty') : t('common.noResults')}
               body={status === 'pending' ? t('credit.emptyHint') : t('common.noResultsHint')}
             />
