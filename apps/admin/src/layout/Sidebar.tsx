@@ -12,8 +12,8 @@
  * cards on the right are the only raised surfaces on screen.
  */
 
-import { useEffect } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { useEffect, type MouseEvent } from 'react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { can } from '@tfd/domain';
 import type { DashboardView } from '@/services/repositories/dashboardRepository';
@@ -32,7 +32,9 @@ import { NAVIGATION, isNavItemVisible, queuesOf, type NavItem } from './navigati
 import { UserMenu } from './UserMenu';
 import { InfoTip } from '@/components/ui/Tooltip';
 import { useAppearance } from '@/brand/useAppearance';
-import { prefersReducedMotion } from '@/lib/navigate';
+import { motionAllowed } from '@/lib/motion';
+import { useSlidingTile } from '@/lib/useSlidingTile';
+import { playSound } from '@/lib/sound/uiSound';
 
 export function Sidebar({ summary }: { summary?: DashboardView }) {
   const { t } = useTranslation();
@@ -64,6 +66,9 @@ export function Sidebar({ summary }: { summary?: DashboardView }) {
 
   const canSeeAdoption = can(grants, 'reports', 'read');
 
+  /** Which rows are drawn, so the open-row tile looks again when they change. */
+  const rowsKey = sections.flatMap((section) => section.items.map((item) => item.to)).join(',');
+
   /**
    * The rail (23 November 2026): icons only, so a grid gets the width on a 1366 laptop. A
    * person's own choice, kept with the rest of their appearance; the menu under their name
@@ -71,6 +76,7 @@ export function Sidebar({ summary }: { summary?: DashboardView }) {
    */
   const { appearance, setSidebar } = useAppearance();
   const rail = appearance.sidebar === 'icons';
+  const { pathname } = useLocation();
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== '[' || event.ctrlKey || event.metaKey || event.altKey) return;
@@ -113,6 +119,9 @@ export function Sidebar({ summary }: { summary?: DashboardView }) {
       <Link
         to="/"
         title={rail ? factory.name : undefined}
+        onClick={(event) => {
+          if (pathname !== '/' && !opensElsewhere(event)) playSound('tick');
+        }}
         className={cn(
           'flex shrink-0 items-center gap-sm rounded-md p-xs transition-colors hover:bg-surface-variant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
           rail && 'justify-center',
@@ -132,7 +141,8 @@ export function Sidebar({ summary }: { summary?: DashboardView }) {
         </span>
       </Link>
 
-      <div className="relative -mx-xs min-h-0 flex-1 overflow-y-auto px-xs">
+      <div data-nav-rows className="relative -mx-xs min-h-0 flex-1 overflow-y-auto px-xs">
+        <ActiveTile watch={`${pathname} ${rail} ${rowsKey}`} />
         {sections.map((section, index) => (
           <div
             key={section.titleKey}
@@ -197,11 +207,47 @@ function AdoptionMeter({ app }: { app: DashboardView['app'] }) {
   );
 }
 
+/** A click that opens a new tab or window leaves this screen where it is: no sound for it. */
+function opensElsewhere(event: MouseEvent): boolean {
+  return event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0;
+}
+
+/**
+ * The white key behind the open screen's row (26 November 2026), as one tile that slides
+ * from the row that was open to the row that is, so the eye follows the move instead of
+ * finding the new row again.
+ *
+ * Measured from the row React Router marks `aria-current="page"` (`useSlidingTile`), looked
+ * for again when the rows are redrawn (`watch`). None on a screen with no row of its own.
+ *
+ * Two ways it moves, because a sidebar click is a View Transition and the live page is
+ * hidden behind the browser's snapshots while one runs: there, the tile and the rows are
+ * named in `theme.css` and the browser slides the tile under the labels; anywhere else it is
+ * the hook's CSS transition. Both last `MOTION_MS.base`, so they finish together, and the
+ * Animations switch and reduced motion stop both.
+ */
+function ActiveTile({ watch }: { watch: string }) {
+  const tile = useSlidingTile<HTMLSpanElement>('[data-nav-link][aria-current="page"]', watch);
+  return (
+    <span
+      ref={tile.ref}
+      aria-hidden
+      data-nav-tile={tile.shown ? '' : undefined}
+      hidden={!tile.shown}
+      className={cn(
+        'pointer-events-none absolute top-0 left-0 rounded-md bg-surface shadow-card ring-1 ring-border',
+        tile.motion,
+      )}
+      style={tile.style}
+    />
+  );
+}
+
 /**
  * One row: icon and label on the canvas, muted until it is the open screen.
  *
- * The open screen lifts onto a white key with a hairline edge and its icon takes the
- * factory's primary colour, so "where am I" is answered at a glance without a block of
+ * The open screen lifts onto a white key with a hairline edge (`ActiveTile`, drawn behind
+ * the rows so it can slide between them) and its icon takes the factory's primary colour, so "where am I" is answered at a glance without a block of
  * saturated colour competing with the page. Every colour is a brand token: the console is
  * white-labelled, and a hard-coded green would be wrong for every factory whose brand is
  * not green.
@@ -214,8 +260,14 @@ function SidebarLink({ item, pending, rail }: { item: NavItem; pending: number; 
     <NavLink
       to={item.to}
       end={item.to === '/'}
-      viewTransition={!prefersReducedMotion()}
+      viewTransition={motionAllowed()}
       data-nav-link
+      onClick={(event) => {
+        // A click on the row already open goes nowhere, so it makes no sound.
+        if (event.currentTarget.getAttribute('aria-current') !== 'page' && !opensElsewhere(event)) {
+          playSound('tick');
+        }
+      }}
       // On the rail the label is not on screen: the tooltip shows it, and it stays the name.
       title={rail ? t(item.labelKey) : undefined}
       className={({ isActive }) =>
@@ -224,7 +276,7 @@ function SidebarLink({ item, pending, rail }: { item: NavItem; pending: number; 
           rail && 'justify-center',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
           isActive
-            ? 'bg-surface text-text-primary shadow-card ring-1 ring-border'
+            ? 'text-text-primary'
             : 'text-text-secondary hover:bg-surface-variant hover:text-text-primary',
         )
       }

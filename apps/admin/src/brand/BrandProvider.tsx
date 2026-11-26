@@ -86,6 +86,14 @@ export function BrandProvider({ children }: PropsWithChildren) {
     else delete root.dataset.contrast;
   }, [appearance.density, appearance.contrast]);
 
+  // Animations switched off: one attribute the CSS keys on (`theme.css`), and the one
+  // `lib/motion.ts` reads, so keyframes and scripted motion stop together.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (appearance.motion) delete root.dataset.motion;
+    else root.dataset.motion = 'off';
+  }, [appearance.motion]);
+
   // The glass effect is a CSS layer keyed on this attribute (`theme.css`), so turning it on
   // re-renders nothing: the sidebar, top bar and dialogs carry `data-glass-surface` always.
   useEffect(() => {

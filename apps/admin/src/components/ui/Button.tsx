@@ -58,7 +58,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cn(
-        'inline-flex items-center justify-center rounded-md font-medium transition-[background-color,opacity,box-shadow] duration-150 active:translate-y-px',
+        // Pressed, it gives a little (0.97, 26 November 2026): the click is felt before the
+        // screen answers. Never on a disabled button, which must not look pressable.
+        'inline-flex items-center justify-center rounded-md font-medium transition-[background-color,opacity,box-shadow,scale] duration-150 ease-settle enabled:active:scale-97',
         'disabled:cursor-not-allowed',
         VARIANTS[variant],
         SIZES[size],

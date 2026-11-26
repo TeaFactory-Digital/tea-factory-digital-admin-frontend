@@ -269,6 +269,12 @@
   /* The "live" dot's ring. */
   --animate-ping: ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
 
+  /* The two curves every new movement uses (26 November 2026; `lib/motion.ts` has the
+     timings): `ease-settle` for something arriving, quick then soft; `ease-move` for
+     something going from one place to another, even at both ends. */
+  --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-move: cubic-bezier(0.65, 0, 0.35, 1);
+
   @keyframes rise {
     from {
       opacity: 0;
@@ -333,6 +339,16 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
+  }
+
+  /* The same, for anyone who switched Animations off on their profile (26 November 2026).
+     Every `prefers-reduced-motion` rule below has a `data-motion='off'` twin. */
+  :root[data-motion='off'] *,
+  :root[data-motion='off'] *::before,
+  :root[data-motion='off'] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 
   /* Sinhala and Tamil run longer than English and must not clip (§20.2). Words
@@ -670,11 +686,98 @@ main#main {
   }
 }
 
+/*
+ * The sidebar's open-row tile slides between rows during a screen change (26 November 2026,
+ * `ActiveTile` in `layout/Sidebar.tsx`). The rows are their own layer above it, so the tile
+ * passes under the labels rather than over them, and they swap at once: only the tile moves.
+ * 280 ms on the settle curve, the same as the tile's own transition outside a View Transition.
+ */
+[data-nav-rows] {
+  view-transition-name: nav-rows;
+}
+
+[data-nav-tile] {
+  view-transition-name: nav-tile;
+}
+
+/* While a View Transition runs, the browser moves the tile: its own transition would leave it
+   at the old row when the "after" picture is taken. */
+:root:active-view-transition [data-nav-tile] {
+  transition: none;
+}
+
+::view-transition-group(nav-tile) {
+  animation-duration: 280ms;
+  animation-timing-function: var(--ease-move);
+}
+
+::view-transition-group(nav-rows) {
+  z-index: 1;
+}
+
+::view-transition-old(nav-rows) {
+  animation: none;
+  opacity: 0;
+}
+
+::view-transition-new(nav-rows) {
+  animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
   ::view-transition-old(*),
   ::view-transition-new(*) {
     animation: none !important;
+  }
+}
+
+:root[data-motion='off']::view-transition-group(*),
+:root[data-motion='off']::view-transition-old(*),
+:root[data-motion='off']::view-transition-new(*) {
+  animation: none !important;
+}
+
+/*
+ * A row of cards that rise (`animate-rise`) arrives left to right, 50 ms apart (26 November
+ * 2026): the dashboard's headline figures. No delay at all when nothing moves, so a still
+ * console never waits for an animation it is not showing.
+ */
+.tfd-stagger > :nth-child(2) {
+  animation-delay: 50ms;
+}
+
+.tfd-stagger > :nth-child(3) {
+  animation-delay: 100ms;
+}
+
+.tfd-stagger > :nth-child(n + 4) {
+  animation-delay: 150ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tfd-stagger > * {
+    animation-delay: 0s !important;
+  }
+}
+
+:root[data-motion='off'] .tfd-stagger > * {
+  animation-delay: 0s !important;
+}
+
+/*
+ * A message that arrives in an open conversation rises from its own corner (26 November 2026,
+ * `InquiryDetailScreen`): the office's reply from the bottom right, a supplier's from the
+ * bottom left. Only new ones; the thread a clerk opens is already still.
+ */
+.tfd-bubble-in {
+  animation: tfd-bubble-in 280ms var(--ease-settle) both;
+}
+
+@keyframes tfd-bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
   }
 }
 
@@ -726,6 +829,10 @@ main#main {
   .tfd-celebrate-check {
     animation: none;
   }
+}
+
+:root[data-motion='off'] .tfd-celebrate-check {
+  animation: none;
 }
 
 /* Toasts (`components/ui/Toast.tsx`): slide in from the right, fade out, and a timer line. */
@@ -796,6 +903,10 @@ main#main {
   }
 }
 
+:root[data-motion='off'] .tfd-toast-timer {
+  display: none;
+}
+
 /*
  * The bell rings while something is unread (24 November 2026): a short swing from the
  * handle, twice, with a ripple out of the count. It plays when the count appears or grows
@@ -854,6 +965,11 @@ main#main {
   .tfd-badge-ping {
     animation: none;
   }
+}
+
+:root[data-motion='off'] .tfd-bell-ring,
+:root[data-motion='off'] .tfd-badge-ping {
+  animation: none;
 }
 
 /*

@@ -20,6 +20,8 @@ import { Dialog } from '@/components/ui/Dialog';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessageKey, errorMessageValues } from '@/lib/errorMessage';
 import { cn } from '@/lib/cn';
+import { playSound } from '@/lib/sound/uiSound';
+import { Meter } from './charts/Meter';
 import { DecisionNoteField, type NoteSuggestion } from './DecisionNoteField';
 import { useNoteSuggestions } from './useNoteSuggestions';
 
@@ -43,11 +45,25 @@ export function BulkBar({
     <div role="toolbar" aria-label={t('bulk.toolbar')} className="flex flex-wrap items-center gap-sm rounded-md border border-primary/30 bg-primary-muted px-md py-sm">
       <span className="text-body-small font-semibold text-text-primary">{t('bulk.selected', { count })}</span>
       {onApprove ? (
-        <Button size="sm" variant="primary" onClick={onApprove}>
+        <Button
+          size="sm"
+          variant="primary"
+          onClick={() => {
+            playSound('open');
+            onApprove();
+          }}
+        >
           {t('bulk.approve')}
         </Button>
       ) : null}
-      <Button size="sm" variant="secondary" onClick={onReject}>
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={() => {
+          playSound('open');
+          onReject();
+        }}
+      >
         {t('bulk.reject')}
       </Button>
       <Button size="sm" variant="ghost" onClick={onClear}>
@@ -102,6 +118,7 @@ export function BulkDecisionDialog({
   const decided = Object.entries(outcomes).filter(([, o]) => o.state === 'done').map(([id]) => id);
 
   async function run() {
+    playSound('confirm');
     setRunning(true);
     const results: Record<string, Outcome> = {};
     for (const item of sendable) {
@@ -152,6 +169,19 @@ export function BulkDecisionDialog({
     >
       <div className="flex flex-col gap-md">
         {verb === 'approve' && notice ? notice : null}
+        {/* Live while it runs (26 November 2026): each item is its own request, so a long
+            list takes a moment, and a count that moves says it has not stalled. */}
+        {running ? (
+          <div className="flex flex-col gap-xs">
+            <span aria-live="polite" className="numeric text-body-small font-medium text-text-primary">
+              {t('bulk.progress', { done: Object.keys(outcomes).length, total: sendable.length })}
+            </span>
+            <Meter
+              value={sendable.length === 0 ? 0 : Object.keys(outcomes).length / sendable.length}
+              label={t('bulk.items')}
+            />
+          </div>
+        ) : null}
         <ul className="relative max-h-64 overflow-auto rounded-md border border-divider" aria-label={t('bulk.items')}>
           {items.map((item) => {
             const outcome = outcomes[item.id];

@@ -85,6 +85,13 @@ export interface Appearance {
   density: Density;
   contrast: Contrast;
   sidebar: SidebarMode;
+  /**
+   * Animations (26 November 2026): screens sliding in, figures counting, toasts and dialogs
+   * moving. On by default, because that is the console as it has been; off makes every
+   * screen still. The operating system's "reduce motion" turns them off whatever this says
+   * (`lib/motion.ts`, `theme.css`).
+   */
+  motion: boolean;
 }
 
 export const GLASS_BACKDROPS = ['colours', 'estate', 'photo'] as const;
@@ -108,6 +115,7 @@ export const DEFAULT_APPEARANCE: Appearance = {
   density: 'comfortable',
   contrast: 'normal',
   sidebar: 'full',
+  motion: true,
 };
 
 const STORAGE_KEY = 'tfd.admin.appearance';
@@ -154,6 +162,7 @@ export function readAppearance(): Appearance {
       density: isDensity(record.density) ? record.density : DEFAULT_APPEARANCE.density,
       contrast: isContrast(record.contrast) ? record.contrast : DEFAULT_APPEARANCE.contrast,
       sidebar: isSidebar(record.sidebar) ? record.sidebar : DEFAULT_APPEARANCE.sidebar,
+      motion: typeof record.motion === 'boolean' ? record.motion : DEFAULT_APPEARANCE.motion,
     };
   } catch {
     // Unreadable storage, or JSON somebody hand-edited. Neither is worth a broken console.

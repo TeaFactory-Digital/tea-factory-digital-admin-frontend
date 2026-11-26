@@ -357,6 +357,13 @@ function ChatThread({
 }) {
   const { t } = useTranslation();
   const end = useRef<HTMLLIElement>(null);
+  /**
+   * The messages already there when the thread opened. Only one that arrives after (the
+   * office's own reply, a supplier writing back) rises in: a thread that animated every
+   * bubble on opening would be a slideshow, not a conversation.
+   */
+  const opened = useRef<Set<string> | null>(null);
+  opened.current ??= new Set(rows.flatMap((row) => (row.type === 'message' ? [row.message.id] : [])));
   // Open at the latest message, and follow a new one in.
   useEffect(() => {
     end.current?.scrollIntoView?.({ block: 'end' });
@@ -378,6 +385,7 @@ function ChatThread({
           <Bubble
             key={row.message.id}
             row={row}
+            arriving={!opened.current?.has(row.message.id)}
             name={
               row.message.authorName ||
               (row.message.author === 'office' ? t('inquiries.detail.office') : supplierName)
@@ -406,11 +414,14 @@ function ChatThread({
  */
 function Bubble({
   row,
+  arriving,
   name,
   avatar,
   note,
 }: {
   row: Extract<Row, { type: 'message' }>;
+  /** New since the thread opened: it rises in from its own corner (`tfd-bubble-in`). */
+  arriving?: boolean;
   name: string;
   avatar: ReactNode;
   note?: ReactNode;
@@ -418,7 +429,14 @@ function Bubble({
   const { message, first, last } = row;
   const office = message.author === 'office';
   return (
-    <li className={cn('flex items-end gap-sm', office && 'flex-row-reverse', first && 'mt-sm')}>
+    <li
+      className={cn(
+        'flex items-end gap-sm',
+        office && 'flex-row-reverse',
+        first && 'mt-sm',
+        arriving && (office ? 'tfd-bubble-in origin-bottom-right' : 'tfd-bubble-in origin-bottom-left'),
+      )}
+    >
       <span className="w-9 shrink-0">
         {last ? (
           <span

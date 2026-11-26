@@ -27,6 +27,8 @@ import {
   Moon,
   Mountain,
   Palette,
+  Pause,
+  Play,
   Rows3,
   Rows4,
   Sparkles,
@@ -47,6 +49,7 @@ import {
   type TextSize,
 } from './appearance';
 import { BackdropPhotoError, prepareBackdropPhoto } from '@/lib/backdropPhoto';
+import { prefersReducedMotion } from '@/lib/motion';
 import { useAppearance } from './useAppearance';
 import { cn } from '@/lib/cn';
 import { LabelWithTip } from '@/components/ui/LabelWithTip';
@@ -64,6 +67,12 @@ const GLASS: Array<{ value: boolean; Icon: typeof Sun }> = [
 ];
 
 const DENSITY_ICON: Record<Density, typeof Sun> = { comfortable: Rows3, compact: Rows4 };
+
+/** Animations (26 November 2026), off first like every other on/off row here. */
+const MOTION: Array<{ value: 'off' | 'on'; Icon: typeof Sun }> = [
+  { value: 'off', Icon: Pause },
+  { value: 'on', Icon: Play },
+];
 const CONTRAST_ICON: Record<Contrast, typeof Sun> = { normal: Square, high: ContrastIcon };
 
 /** What the glass sits on (22 November 2026). */
@@ -328,12 +337,33 @@ export function AppearanceControls({ className, value, onChange }: AppearanceCon
           ) : null}
         </div>
       ) : null}
+
+      <div className="flex flex-col gap-xxs">
+        <Segments
+          label={t('appearance.motion')}
+          options={MOTION.map(({ value, Icon }) => ({
+            value,
+            Icon,
+            label: t(`appearance.motion.${value}`),
+          }))}
+          value={appearance.motion ? 'on' : 'off'}
+          onSelect={(value) => set({ motion: value === 'on' })}
+          hint={t('appearance.motionHint')}
+        />
+        {/* Why "On" may still look still: the reason stays on the page, not behind the "i". */}
+        {appearance.motion && prefersReducedMotion() ? (
+          <span className="text-caption text-text-secondary">{t('appearance.motionReduced')}</span>
+        ) : null}
+      </div>
     </div>
   );
 }
 
-/** One row of segments: a radiogroup, so a screen reader hears "1 of 2". */
-function Segments<T extends string>({
+/**
+ * One row of segments: a radiogroup, so a screen reader hears "1 of 2". Exported for the
+ * profile's other on/off rows (interface sounds), so every row in that card looks alike.
+ */
+export function Segments<T extends string>({
   label,
   options,
   value,

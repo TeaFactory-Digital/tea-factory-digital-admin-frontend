@@ -292,7 +292,44 @@ All in `Appearance` (`brand/appearance.ts`), kept per person in the browser and 
 - **Sidebar rail** (`sidebar: 'icons'`): 5 rem of icons, each link named by its tooltip
   (`title`) and a visually hidden label, badges kept; the [ key or "Collapse sidebar" in the menu under the person's name (`UserMenu`, not on the small-screen top bar).
 
-Motion, all of it off under `prefers-reduced-motion` and skipped in tests:
+**Animations and interface sounds** (26 November 2026), two switches in Profile's preferences,
+drafted and saved with "Save preferences" like the rest:
+
+- **Animations** (`Appearance.motion`, **on** by default). Off writes `<html data-motion="off">`
+  (`BrandProvider`); every `prefers-reduced-motion` rule in `theme.css` has a
+  `data-motion='off'` twin, and script asks `motionAllowed()` (`lib/motion.ts`), which says no
+  for either. New motion uses `motionAllowed()`, never `matchMedia` directly, plus the
+  `ease-settle` / `ease-move` curves and the `MOTION_MS` timings.
+- **Interface sounds** (`lib/sound/uiSound.ts`, **off** by default, `tfd.admin.uiSound`). Web
+  Audio blips in C major (`lib/sound/engine.ts`: `tick`, `select`, `insert`, `pop`, `sent`,
+  `toggle`, `open`, `confirm`). Screens call `playSound(id)`, which does nothing while off,
+  and only from a click or key handler: never from an effect, a query, polling or a timer,
+  one sound per action, nothing on hover, focus or typing. Separate from the new-request
+  chime below.
+- **Sidebar** (`layout/Sidebar.tsx`): the open row's white key is one tile (`ActiveTile`)
+  that slides between rows, carried by the View Transition when there is one
+  (`view-transition-name: nav-tile`, under `nav-rows`) and by a CSS transition otherwise. A
+  click to another screen plays `tick`; the open row and a new-tab click do not.
+- **Buttons** give a little when pressed (`enabled:active:scale-97`); a disabled one never.
+- **Rows of rising cards** arrive left to right with `tfd-stagger` (50 ms apart, no delay when
+  motion is off): the dashboard's headline figures.
+- **A tile behind the chosen thing** is `useSlidingTile` (`lib/useSlidingTile.ts`): the
+  sidebar's open row and the `Segmented` pill. It finds its container through its own
+  parent, never slides from nothing, and moves by a CSS transition.
+- **`Segmented`** plays `toggle` when the person changes the choice (click or arrow key), never
+  when the value changes underneath.
+- **Inquiries**: opening a row plays `select`; a suggestion chip (`SuggestionGrid`, in every
+  note box) plays `insert` when its sentence goes in, nothing when it comes out; a reply plays
+  `sent` once the server has it (a failed send is silent). In the conversation only a message
+  new since it opened rises in (`tfd-bubble-in`, from its own corner).
+- **Decisions that cannot be taken back**: the bulk bar plays `open`, the decide button
+  `confirm`, and the dialog counts "Deciding 4 of 12" with a `Meter` while the items go one by
+  one. A hand-written notification plays `open` / `confirm` the same way, and its confirm
+  button names the number of phones ("Send to 61 phones").
+- **Not built, because the console has no such screen**: a kanban board of moving cards (the
+  spec's leaf intake board), a day/week schedule, a split-pane inbox.
+
+Motion, all of it off under `prefers-reduced-motion` or the Animations switch, and skipped in tests:
 
 - **Screen changes**: `lib/navigate.ts`'s `useNavigate` asks React Router for a View
   Transition; only `main` (`view-transition-name: page`) fades and slides, the top bar keeps

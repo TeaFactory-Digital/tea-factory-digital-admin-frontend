@@ -4,19 +4,19 @@
  * month and the office should feel it land; the toast says it in words.
  *
  * Decoration only: hidden from assistive technology, never in the way of a click, and for
- * reduced motion just the check mark, held still for a moment.
+ * reduced motion or animations switched off, just the check mark, held still for a moment.
  */
 
 import { useEffect, useMemo, type CSSProperties } from 'react';
 import { Check } from 'lucide-react';
-import { prefersReducedMotion } from '@/lib/navigate';
+import { motionAllowed } from '@/lib/motion';
 
 const COLOURS = ['bg-primary', 'bg-secondary', 'bg-success', 'bg-warning', 'bg-info'];
 const PIECES = 28;
 const SHOWN_MS = 1800;
 
 export function Celebration({ onDone }: { onDone: () => void }) {
-  const still = prefersReducedMotion();
+  const still = !motionAllowed();
 
   useEffect(() => {
     const timer = window.setTimeout(onDone, still ? 1000 : SHOWN_MS);

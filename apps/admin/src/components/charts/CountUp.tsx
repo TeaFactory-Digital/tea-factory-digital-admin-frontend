@@ -3,20 +3,20 @@
  * opens, and from the old figure to the new one when it changes, so the eye catches that a
  * number moved. Under a second, eased, and drawn with the figure's own formatting.
  *
- * Instant for anyone whose system asks for reduced motion, and in tests. The text is the final
+ * Instant when animations are switched off (`lib/motion.ts`), and in tests. The text is the final
  * figure for assistive technology from the first frame of each change, because the element is
  * not a live region: nothing reads the in-between numbers aloud.
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { prefersReducedMotion } from '@/lib/navigate';
+import { MOTION_MS, motionAllowed } from '@/lib/motion';
 
-const DURATION_MS = 700;
+const DURATION_MS = MOTION_MS.count;
 
 export function CountUp({
   value,
   format,
-  animate = import.meta.env.MODE !== 'test' && !prefersReducedMotion(),
+  animate = import.meta.env.MODE !== 'test' && motionAllowed(),
 }: {
   value: number;
   format: (value: number) => string;

@@ -32,6 +32,7 @@ import { Field, Textarea } from '@/components/ui/Field';
 import { Notice } from '@/components/ui/states';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/cn';
+import { playSound } from '@/lib/sound/uiSound';
 import { errorMessageKey, isBlockingError } from '@/lib/errorMessage';
 import { isAnswerable } from './answerable';
 import { useAnswerInquiry } from './hooks';
@@ -91,6 +92,8 @@ function ReplyComposer({ inquiry }: { inquiry: AdminInquiry }) {
       { verb: 'reply', body: { body: text.trim(), ...(awaitSupplier ? { awaitSupplier: true } : {}) } },
       {
         onSuccess: () => {
+          // Heard when the reply has actually left, not on the press: a failed send is silent.
+          playSound('sent');
           toast.success(t(awaitSupplier ? 'inquiries.askedSupplier' : 'inquiries.replied'));
           setText('');
           setAwaitSupplier(false);

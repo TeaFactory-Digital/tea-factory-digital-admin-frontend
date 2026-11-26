@@ -10,6 +10,7 @@ import { Check, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 import { toggleNoteSuggestion } from '@/lib/noteSuggestion';
+import { playSound } from '@/lib/sound/uiSound';
 
 export interface NoteSuggestion {
   /** The chip's words. Short: it is a handle, not the note. */
@@ -51,6 +52,8 @@ export function SuggestionGrid({
         {suggestions.map((suggestion) => {
           const picked = value.includes(suggestion.text);
           const toggle = () => {
+            // A sentence dropped into the box is heard; taking it out again is not.
+            if (!picked) playSound('insert');
             onChange(toggleNoteSuggestion(value, suggestion.text));
             onPicked?.();
           };

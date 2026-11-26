@@ -45,6 +45,8 @@ import { formatDateTime } from '@/lib/format';
 import { InfoTip } from '@/components/ui/Tooltip';
 import { LabelWithTip } from '@/components/ui/LabelWithTip';
 import { RequestAlertsSection } from './RequestAlertsSection';
+import { InterfaceSoundSection } from './InterfaceSoundSection';
+import { setUiSound, useUiSound } from '@/lib/sound/uiSound';
 import { notificationsSupported, setAlerts, type RequestAlerts } from '@/lib/requestAlerts';
 import { useRequestAlertSettings } from '@/layout/useRequestAlerts';
 
@@ -64,6 +66,7 @@ export function ProfileScreen() {
   const user = useCurrentUser();
   const { appearance, updateAppearance } = useAppearance();
   const alerts = useRequestAlertSettings();
+  const uiSound = useUiSound();
 
   const savedLanguage: LanguageCode = isLanguageCode(i18n.resolvedLanguage)
     ? i18n.resolvedLanguage
@@ -80,6 +83,7 @@ export function ProfileScreen() {
   const [draftLanguage, setDraftLanguage] = useState<LanguageCode>(savedLanguage);
   const [draftAppearance, setDraftAppearance] = useState<Appearance>(appearance);
   const [draftAlerts, setDraftAlerts] = useState<RequestAlerts>(alerts);
+  const [draftSound, setDraftSound] = useState(uiSound);
   const [confirming, setConfirming] = useState(false);
 
   // Re-seeded when the stored values move underneath: a second tab, or the sign-in
@@ -87,6 +91,7 @@ export function ProfileScreen() {
   useEffect(() => setDraftLanguage(savedLanguage), [savedLanguage]);
   useEffect(() => setDraftAppearance(appearance), [appearance]);
   useEffect(() => setDraftAlerts(alerts), [alerts]);
+  useEffect(() => setDraftSound(uiSound), [uiSound]);
 
   const dirty =
     draftLanguage !== savedLanguage ||
@@ -94,12 +99,14 @@ export function ProfileScreen() {
       (key) => draftAppearance[key] !== appearance[key],
     ) ||
     draftAlerts.sound !== alerts.sound ||
-    draftAlerts.desktop !== alerts.desktop;
+    draftAlerts.desktop !== alerts.desktop ||
+    draftSound !== uiSound;
 
   function revert() {
     setDraftLanguage(savedLanguage);
     setDraftAppearance(appearance);
     setDraftAlerts(alerts);
+    setDraftSound(uiSound);
   }
 
   async function apply() {
@@ -122,6 +129,7 @@ export function ProfileScreen() {
       refused = !desktop;
     }
     setAlerts({ sound: draftAlerts.sound, desktop });
+    setUiSound(draftSound);
 
     if (draftLanguage !== savedLanguage) await setLanguage(draftLanguage);
 
@@ -199,6 +207,10 @@ export function ProfileScreen() {
 
             <div className="border-t border-divider pt-lg">
               <AppearanceControls value={draftAppearance} onChange={setDraftAppearance} />
+            </div>
+
+            <div className="border-t border-divider pt-lg">
+              <InterfaceSoundSection value={draftSound} onChange={setDraftSound} />
             </div>
 
             <div className="border-t border-divider pt-lg">

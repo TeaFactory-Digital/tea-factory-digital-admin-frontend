@@ -193,7 +193,8 @@ function KpiRow({ queues, app, trend }: { queues: QueueCount[]; app: AppAdoption
   const delta = monthOnMonth(trend);
 
   return (
-    <div className="grid gap-lg sm:grid-cols-2 xl:grid-cols-4">
+    // Left to right, 50 ms apart (`tfd-stagger`): four figures arriving at once read as one.
+    <div className="tfd-stagger grid gap-lg sm:grid-cols-2 xl:grid-cols-4">
       <StatCard
         icon={Inbox}
         label={t('dashboard.kpi.waiting')}

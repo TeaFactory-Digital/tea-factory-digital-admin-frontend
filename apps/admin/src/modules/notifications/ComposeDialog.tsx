@@ -49,6 +49,7 @@ import { Link } from 'react-router-dom';
 import { useToast } from '@/components/ui/Toast';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
 import { errorMessageKey } from '@/lib/errorMessage';
+import { playSound } from '@/lib/sound/uiSound';
 import { formatCount } from '@/lib/format';
 import { useNotificationReach, useSendNotification } from './hooks';
 import { InfoTip } from '@/components/ui/Tooltip';
@@ -158,11 +159,13 @@ export function ComposeDialog({
 
   async function submit() {
     if (!category) return;
+    playSound('open');
     setConfirmingSend(true);
   }
 
   async function confirmSend() {
     if (!category) return;
+    playSound('confirm');
     try {
       const result = await send.mutateAsync({
         category,
@@ -420,7 +423,13 @@ export function ComposeDialog({
         description={t('notifications.confirmSendBody', {
           count: reach.data?.reachableDevices ?? 0,
         })}
-        confirmLabel={t('notifications.send')}
+        // The exact number on the button that sends (26 November 2026), as on the compose
+        // button: the last thing read before a push that cannot be recalled.
+        confirmLabel={
+          reach.data
+            ? t('notifications.sendToCount', { count: reach.data.reachableDevices })
+            : t('notifications.send')
+        }
         confirmVariant="primary"
         onConfirm={() => void confirmSend()}
         loading={send.isPending}

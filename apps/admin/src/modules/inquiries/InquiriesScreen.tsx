@@ -17,6 +17,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { useNavigate } from '@/lib/navigate';
+import { playSound } from '@/lib/sound/uiSound';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { AdminInquiry, InquiryStatus } from '@tfd/domain';
 import { INQUIRY_OFFICE_STATUSES, INQUIRY_STATUSES, QUEUE_SLA_HOURS, inquiryCountsTowardsSla } from '@tfd/domain';
@@ -214,7 +215,10 @@ export function InquiriesScreen() {
           error={error}
           onRetry={() => void refetch()}
           getRowId={(row) => row.id}
-          onRowActivate={(row) => navigate(`/inquiries/${row.id}`)}
+          onRowActivate={(row) => {
+            playSound('select');
+            navigate(`/inquiries/${row.id}`);
+          }}
           onPageChange={(next) => setParam('page', String(next))}
           emptyState={
             <EmptyState
