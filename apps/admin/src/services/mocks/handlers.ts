@@ -2263,8 +2263,18 @@ function withdrawalPendingBefore(supplierId: string, month: string): boolean {
 /**
  * A loan approved for this supplier from the cut-over month on (the server's T20.3, 25 November
  * 2026): an opening loan cannot sit beside it, one loan at a time. The earliest, or null.
+ *
+ * Only a save that brings in or changes the opening loan is checked (backend 754096a). Saved
+ * again with the loan it already holds, the opening was in the system when the new loan was
+ * approved, so that loan came after the opening one was repaid at the counter; refusing it
+ * would stop the office correcting any other opening figure for the rest of the month.
  */
-function loanApprovedFrom(supplierId: string, month: string): { approvedAt: string; amount: number } | null {
+function loanApprovedFrom(
+  supplierId: string,
+  month: string,
+  loan: number,
+): { approvedAt: string; amount: number } | null {
+  if (!(loan > 0) || state.openingBalances.get(supplierId)?.loan === round2(loan)) return null;
   const found = state.creditRequests
     .filter(
       (one) =>
@@ -2537,7 +2547,7 @@ function importServerProblems(request: Request, kind: ImportKind, rows: ImportRo
         const inFile = rows.map((one) => supplierByCode((one.supplierCode ?? '').trim())?.id).filter(Boolean) as string[];
         if (month && cutoverProblem(month, inFile)) return push('asOfMonth', 'cut-over-month');
         if (month && withdrawalPendingBefore(supplier.id, month)) push('supplierCode', 'withdrawal-pending');
-        if (month && Number(row.loan ?? 0) > 0 && loanApprovedFrom(supplier.id, month)) push('loan', 'loan-approved-in-month');
+        if (month && loanApprovedFrom(supplier.id, month, Number(row.loan ?? 0))) push('loan', 'loan-approved-in-month');
         return;
       }
       case 'walkInCredit': {
@@ -8617,7 +8627,7 @@ export const handlers: HttpHandler[] = [
         details: { supplierId: id, asOfMonth: body.asOfMonth },
       });
     }
-    const approvedLoan = body.loan > 0 ? loanApprovedFrom(id, body.asOfMonth) : null;
+    const approvedLoan = loanApprovedFrom(id, body.asOfMonth, body.loan);
     if (approvedLoan) {
       return fail({
         status: 409,
