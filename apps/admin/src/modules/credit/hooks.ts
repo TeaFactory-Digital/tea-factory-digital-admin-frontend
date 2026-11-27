@@ -24,11 +24,13 @@ import { creditRepository } from '@/services/repositories/creditRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { qk } from '@/query/queryKeys';
 
-export function useCreditRequests(query: CreditRequestQuery) {
+/** `enabled: false` for a reader who may not see this queue (a count on another screen). */
+export function useCreditRequests(query: CreditRequestQuery, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: qk.credit.list(query),
     queryFn: () => creditRepository.list(query),
     placeholderData: (previous) => previous,
+    enabled: options.enabled ?? true,
   });
 }
 

@@ -16,11 +16,13 @@ import type { DecisionBody, TeaPacketRequestQuery } from '@tfd/domain';
 import { teaPacketRepository } from '@/services/repositories/teaPacketRepository';
 import { qk } from '@/query/queryKeys';
 
-export function useTeaPacketRequests(query: TeaPacketRequestQuery) {
+/** `enabled: false` for a reader who may not see this queue (a count on another screen). */
+export function useTeaPacketRequests(query: TeaPacketRequestQuery, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: qk.teaPackets.list(query),
     queryFn: () => teaPacketRepository.list(query),
     placeholderData: (previous) => previous,
+    enabled: options.enabled ?? true,
   });
 }
 

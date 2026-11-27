@@ -37,7 +37,7 @@ import {
   ClipboardList,
 } from 'lucide-react';
 import type { SupplierDetail, SupplierStatus } from '@tfd/domain';
-import { can } from '@tfd/domain';
+import { INQUIRY_OFFICE_STATUSES, can } from '@tfd/domain';
 import { useAuthStore, useCan } from '@/auth/authStore';
 import { DecisionNoteField, type NoteSuggestion } from '@/components/DecisionNoteField';
 import { Badge } from '@/components/ui/Badge';
@@ -68,6 +68,12 @@ import { SupplierRequestHistory } from './SupplierRequestHistory';
 import { SupplierNotificationsPanel } from './SupplierNotificationsPanel';
 import { SupplierTimeline } from './SupplierTimeline';
 import { useReactivateSupplier, useSupplier, useSupplierAudit, useSuspendSupplier } from './hooks';
+import { useChangeRequests } from '@/modules/change-requests/hooks';
+import { useCreditRequests } from '@/modules/credit/hooks';
+import { useTeaPacketRequests } from '@/modules/tea-packets/hooks';
+import { useInquiries } from '@/modules/inquiries/hooks';
+import { motionAllowed } from '@/lib/motion';
+import { playSound } from '@/lib/sound/uiSound';
 
 const STATUS_TONES = { active: 'success', suspended: 'warning', closed: 'neutral' } as const;
 
@@ -191,9 +197,7 @@ export function SupplierDetailScreen() {
       ) : null}
 
       {(supplier.pendingRequests ?? 0) > 0 ? (
-        <Notice tone="info">
-          {t('suppliers.detail.pendingRequests')}: {supplier.pendingRequests}
-        </Notice>
+        <OpenRequests supplierId={supplier.id} total={supplier.pendingRequests ?? 0} />
       ) : null}
 
       <SupplierSummary supplier={supplier} />
@@ -580,14 +584,13 @@ const QUEUE_SHORTCUTS = [
   { key: 'inquiries', to: '/inquiries' },
 ] as const;
 
-function QuickActions({ supplierId }: { supplierId: string }) {
-  const { t } = useTranslation();
+/** The queues this person may open for this factory, in the order of `QUEUE_SHORTCUTS`. */
+function useQueueShortcuts() {
   const flags = useFeatureFlags();
   const grants = useAuthStore((s) => s.grants);
-
   const rows = NAVIGATION.flatMap((section) => section.items);
 
-  const shortcuts = QUEUE_SHORTCUTS.flatMap(({ key, to }) => {
+  return QUEUE_SHORTCUTS.flatMap(({ key, to }) => {
     const row = rows.find((item) => item.to === to);
     if (!row) return [];
 
@@ -599,6 +602,67 @@ function QuickActions({ supplierId }: { supplierId: string }) {
 
     return [{ key, to, icon: row.icon }];
   });
+}
+
+/**
+ * "Open requests: 3", and where they are (27 November 2026): one link per queue that holds
+ * some, with its count, straight into that queue filtered to this supplier.
+ *
+ * It used to be a sentence that could not be clicked, and the three could be in any of four
+ * queues. The counts are the queues' own first pages (the same query, so the same cache:
+ * following a link shows the list at once), and they are asked for only when the supplier
+ * has something open, which is the case the comment on `QuickActions` below did not have:
+ * there the queues may well be empty and a count would cost four requests to say "0".
+ */
+function OpenRequests({ supplierId, total }: { supplierId: string; total: number }) {
+  const { t } = useTranslation();
+  const allowed = new Set(useQueueShortcuts().map((shortcut) => shortcut.key));
+  const page = { supplierId, page: 0, pageSize: 25 } as const;
+  const change = useChangeRequests({ status: 'pending', ...page }, { enabled: allowed.has('changeRequests') });
+  const credit = useCreditRequests({ status: 'pending', ...page }, { enabled: allowed.has('credit') });
+  const tea = useTeaPacketRequests({ status: 'pending', ...page }, { enabled: allowed.has('teaPackets') });
+  const inquiries = useInquiries({ status: INQUIRY_OFFICE_STATUSES, ...page }, { enabled: allowed.has('inquiries') });
+
+  const parts = (
+    [
+      { key: 'changeRequests', to: '/change-requests', count: change.data?.total },
+      { key: 'credit', to: '/credit', count: credit.data?.total },
+      { key: 'teaPackets', to: '/tea-packets', count: tea.data?.total },
+      { key: 'inquiries', to: '/inquiries', count: inquiries.data?.total },
+    ] as const
+  ).filter((part) => allowed.has(part.key) && (part.count ?? 0) > 0);
+
+  return (
+    <section
+      aria-label={t('suppliers.detail.pendingRequests')}
+      className="flex flex-wrap items-center gap-x-md gap-y-xs rounded-md bg-info-muted px-lg py-sm text-body-small text-info"
+    >
+      <span className="font-semibold">
+        {t('suppliers.detail.pendingRequests')}: <span className="numeric">{total}</span>
+      </span>
+      {parts.map((part) => (
+        <Link
+          key={part.key}
+          to={`${part.to}?supplierId=${supplierId}`}
+          viewTransition={motionAllowed()}
+          onClick={() => playSound('tick')}
+          className="group inline-flex items-center gap-xs rounded-full bg-surface px-sm py-xxs font-medium text-info shadow-card transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          {t(`suppliers.detail.queue.${part.key}`)}
+          <span className="numeric rounded-full bg-info-muted px-xs text-caption">{part.count}</span>
+          <ArrowRight
+            aria-hidden
+            className="size-icon-xs shrink-0 transition-transform group-hover:translate-x-0.5"
+          />
+        </Link>
+      ))}
+    </section>
+  );
+}
+
+function QuickActions({ supplierId }: { supplierId: string }) {
+  const { t } = useTranslation();
+  const shortcuts = useQueueShortcuts();
 
   if (shortcuts.length === 0) return null;
 

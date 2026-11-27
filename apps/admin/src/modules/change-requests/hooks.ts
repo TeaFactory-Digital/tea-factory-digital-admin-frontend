@@ -18,11 +18,13 @@ import { changeRequestRepository } from '@/services/repositories/changeRequestRe
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { qk } from '@/query/queryKeys';
 
-export function useChangeRequests(query: ChangeRequestQuery) {
+/** `enabled: false` for a reader who may not see this queue (a count on another screen). */
+export function useChangeRequests(query: ChangeRequestQuery, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: qk.changeRequests.list(query),
     queryFn: () => changeRequestRepository.list(query),
     placeholderData: (previous) => previous,
+    enabled: options.enabled ?? true,
   });
 }
 

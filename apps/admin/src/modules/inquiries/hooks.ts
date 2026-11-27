@@ -15,11 +15,13 @@ import { inquiryRepository } from '@/services/repositories/inquiryRepository';
 import { auditRepository } from '@/services/repositories/auditRepository';
 import { qk } from '@/query/queryKeys';
 
-export function useInquiries(query: InquiryQuery) {
+/** `enabled: false` for a reader who may not see this queue (a count on another screen). */
+export function useInquiries(query: InquiryQuery, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: qk.inquiries.list(query),
     queryFn: () => inquiryRepository.list(query),
     placeholderData: (previous) => previous,
+    enabled: options.enabled ?? true,
   });
 }
 
