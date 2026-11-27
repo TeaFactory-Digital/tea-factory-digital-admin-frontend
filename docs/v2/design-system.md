@@ -364,6 +364,15 @@ drafted and saved with "Save preferences" like the rest:
   server sends no `href`), "no bank details" and "carries debt" notices, the bill run's
   figures (`/bills` lenses), "set it in Configuration" hints, the notification log's source
   and audience, the audit log's records.
+- **The dashboard can be arranged** (27 November 2026), with @dnd-kit, only in "Customise":
+  `DashboardGrid` (`modules/dashboard/DashboardGrid.tsx`) gives each card a handle and an eye,
+  makes its content `inert` (a group's, the headline row, stays live for its own tiles, and
+  gets a strip of its own so the toolbars never overlap), and announces every move. Mouse,
+  touch and keyboard (Tab to a handle, Space, arrows, Space). The layout is per person and
+  per browser (`layout.ts`, `tfd.admin.dashboardLayout.<userId>`), repaired on read, and
+  "Reset" clears it. The grid is dense with the queues spanning two rows, which is what keeps
+  Content and Needs attention beside them in the default. A new dashboard card gets an id in
+  `CARD_IDS`, at the place it should appear by default.
 - **Not built, because the console has no such screen**: a kanban board of moving cards (the
   spec's leaf intake board), a day/week schedule, a split-pane inbox.
 

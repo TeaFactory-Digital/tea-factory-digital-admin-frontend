@@ -744,24 +744,29 @@ main#main {
  * console never waits for an animation it is not showing.
  */
 .tfd-stagger > :nth-child(2) {
-  animation-delay: 50ms;
+  --tfd-stagger: 50ms;
 }
 
 .tfd-stagger > :nth-child(3) {
-  animation-delay: 100ms;
+  --tfd-stagger: 100ms;
 }
 
 .tfd-stagger > :nth-child(n + 4) {
-  animation-delay: 150ms;
+  --tfd-stagger: 150ms;
+}
+
+/* A variable, so the delay reaches the card inside whatever wraps it (a sortable slot). */
+.tfd-stagger .animate-rise {
+  animation-delay: var(--tfd-stagger, 0ms);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tfd-stagger > * {
+  .tfd-stagger .animate-rise {
     animation-delay: 0s !important;
   }
 }
 
-:root[data-motion='off'] .tfd-stagger > * {
+:root[data-motion='off'] .tfd-stagger .animate-rise {
   animation-delay: 0s !important;
 }
 

@@ -35,6 +35,15 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { TodayCard } from './TodayCard';
 import { queueLink } from './today';
+import { DashboardGrid, type GridItem } from './DashboardGrid';
+import {
+  DEFAULT_LAYOUT,
+  clearLayout,
+  persistLayout,
+  readLayout,
+  type DashboardLayout,
+  type KpiId,
+} from './layout';
 import { InlineLink } from '@/components/ui/InlineLink';
 import { Link } from 'react-router-dom';
 import {
@@ -49,13 +58,16 @@ import {
 import {
   ArrowRight,
   BellRing,
+  Check,
   CircleCheck,
   FileWarning,
   ImageOff,
   Inbox,
   Info,
   Languages,
+  LayoutGrid,
   Megaphone,
+  RotateCcw,
   Send,
   Smartphone,
   TriangleAlert,
@@ -77,7 +89,8 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Segmented } from '@/components/ui/Segmented';
-import { ErrorState, Skeleton } from '@/components/ui/states';
+import { ErrorState, Notice, Skeleton } from '@/components/ui/states';
+import { Button } from '@/components/ui/Button';
 import { InfoTip } from '@/components/ui/Tooltip';
 import { StatCard } from '@/components/charts/StatCard';
 import { DeltaPill } from '@/components/charts/DeltaPill';
@@ -107,10 +120,29 @@ export function DashboardScreen() {
     queryFn: dashboardRepository.get,
   });
 
+  /**
+   * This person's arrangement (27 November 2026): order and hidden cards, saved as they
+   * change. Customising is a mode, so an ordinary click on a card is never a drag.
+   */
+  const [layout, setLayout] = useState<DashboardLayout>(() => readLayout(user?.id));
+  const [editing, setEditing] = useState(false);
+  const updateLayout = (change: Partial<DashboardLayout>) =>
+    setLayout((previous) => {
+      const next = { ...previous, ...change };
+      persistLayout(user?.id, next);
+      return next;
+    });
+  function resetLayout() {
+    clearLayout(user?.id);
+    setLayout(DEFAULT_LAYOUT);
+  }
+  const hiddenCount = layout.hiddenCards.length + layout.hiddenKpis.length;
+
   if (error) return <ErrorState error={error} onRetry={() => void refetch()} />;
 
   // The whole name: a first word alone gave "Good evening, The" for "The Manager".
   const name = user?.name.trim();
+
 
   return (
     <>
@@ -121,35 +153,119 @@ export function DashboardScreen() {
             : t('dashboard.title')
         }
         description={t('dashboard.subtitle')}
+        actions={
+          data ? (
+            editing ? (
+              <>
+                <Button variant="ghost" size="sm" iconLeft={<RotateCcw className="size-icon-sm" aria-hidden />} onClick={resetLayout}>
+                  {t('dashboard.layout.reset')}
+                </Button>
+                <Button variant="primary" size="sm" iconLeft={<Check className="size-icon-sm" aria-hidden />} onClick={() => setEditing(false)}>
+                  {t('dashboard.layout.done')}
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                iconLeft={<LayoutGrid className="size-icon-sm" aria-hidden />}
+                onClick={() => setEditing(true)}
+              >
+                {t('dashboard.layout.customise')}
+                {/* Said on the button, so a hidden card is never simply forgotten. */}
+                {hiddenCount > 0 ? (
+                  <Badge tone="neutral" dot={false}>
+                    {t('dashboard.layout.hiddenCount', { count: hiddenCount })}
+                  </Badge>
+                ) : null}
+              </Button>
+            )
+          ) : undefined
+        }
       />
+
+      {/* While arranging, how it works: said once, at the top, not on every card. */}
+      {editing ? <Notice tone="info">{t('dashboard.layout.hint')}</Notice> : null}
 
       {isPending || !data ? (
         <DashboardSkeleton />
       ) : (
-        <>
-          {/* Where to start, before how big everything is (24 November 2026). */}
-          <TodayCard queues={data.queues} />
-
-          <KpiRow queues={data.queues} app={data.app} trend={data.adoptionTrend} />
-
-          <div className="grid gap-lg lg:grid-cols-3">
-            <AdoptionTrendCard trend={data.adoptionTrend} className="lg:col-span-2" />
-            <QueueMixCard queues={data.queues} />
-          </div>
-
-          <div className="grid items-start gap-lg lg:grid-cols-3">
-            <QueueSection queues={data.queues} className="lg:col-span-2" />
-            <div className="flex flex-col gap-lg">
-              {/* Both were "not available" placeholders while the payload carried
-                  neither (G-12). The API reports them now. */}
-              <ContentHealthCard content={data.content} />
-              <AlertsCard alerts={data.alerts} />
-            </div>
-          </div>
-        </>
+        <DashboardGrid
+          editing={editing}
+          order={layout.cards}
+          hidden={layout.hiddenCards}
+          onReorder={(cards) => updateLayout({ cards })}
+          onToggle={(id) => updateLayout({ hiddenCards: toggled(layout.hiddenCards, id) })}
+          // Dense, so a card moved up leaves no hole; the queues span two rows, which keeps
+          // Content and Needs attention stacked beside them as the default always had them.
+          className="grid gap-lg lg:grid-flow-row-dense lg:grid-cols-3"
+          items={[
+            {
+              // Where to start, before how big everything is (24 November 2026).
+              id: 'today',
+              label: t('dashboard.today.title'),
+              className: 'lg:col-span-3',
+              node: <TodayCard queues={data.queues} />,
+            },
+            {
+              id: 'kpis',
+              label: t('dashboard.layout.kpis'),
+              className: 'lg:col-span-3',
+              group: true,
+              node: (
+                <KpiRow
+                  queues={data.queues}
+                  app={data.app}
+                  trend={data.adoptionTrend}
+                  layout={layout}
+                  editing={editing}
+                  onLayout={updateLayout}
+                />
+              ),
+            },
+            {
+              id: 'adoptionTrend',
+              label: t('dashboard.adoptionTrend'),
+              className: 'lg:col-span-2',
+              stretch: true,
+              node: <AdoptionTrendCard trend={data.adoptionTrend} />,
+            },
+            {
+              id: 'queueMix',
+              label: t('dashboard.queueMix'),
+              stretch: true,
+              node: <QueueMixCard queues={data.queues} />,
+            },
+            {
+              id: 'queues',
+              label: t('dashboard.queues'),
+              className: 'self-start lg:col-span-2 lg:row-span-2',
+              node: <QueueSection queues={data.queues} />,
+            },
+            {
+              // Both were "not available" placeholders while the payload carried neither
+              // (G-12). The API reports them now.
+              id: 'content',
+              label: t('dashboard.contentHealth'),
+              className: 'self-start',
+              node: <ContentHealthCard content={data.content} />,
+            },
+            {
+              id: 'alerts',
+              label: t('dashboard.alerts'),
+              className: 'self-start',
+              node: <AlertsCard alerts={data.alerts} />,
+            },
+          ]}
+        />
       )}
     </>
   );
+}
+
+/** The list with `id` taken out if it was in, put in if it was not. */
+function toggled<T>(list: T[], id: T): T[] {
+  return list.includes(id) ? list.filter((one) => one !== id) : [...list, id];
 }
 
 /**
@@ -185,7 +301,29 @@ function monthOnMonth(trend: Trend): number | null {
   return Math.round((latest.appShare - previous.appShare) * 100);
 }
 
-function KpiRow({ queues, app, trend }: { queues: QueueCount[]; app: AppAdoption; trend: Trend }) {
+/** Whole class names, so Tailwind sees them: the headline row's width per tiles shown. */
+const KPI_COLUMNS: Record<number, string> = {
+  1: 'xl:grid-cols-1',
+  2: 'xl:grid-cols-2',
+  3: 'xl:grid-cols-3',
+  4: 'xl:grid-cols-4',
+};
+
+function KpiRow({
+  queues,
+  app,
+  trend,
+  layout,
+  editing,
+  onLayout,
+}: {
+  queues: QueueCount[];
+  app: AppAdoption;
+  trend: Trend;
+  layout: DashboardLayout;
+  editing: boolean;
+  onLayout: (change: Partial<DashboardLayout>) => void;
+}) {
   const { t } = useTranslation();
 
   const pending = queues.reduce((total, queue) => total + queue.pending, 0);
@@ -194,101 +332,141 @@ function KpiRow({ queues, app, trend }: { queues: QueueCount[]; app: AppAdoption
   const withoutApp = Math.max(0, app.totalSuppliers - app.suppliersWithApp);
   const delta = monthOnMonth(trend);
 
+  /** Each tile by id, so this person's order and hidden tiles apply (`layout.ts`). */
+  const tiles: GridItem<KpiId>[] = [
+    {
+      id: 'waiting',
+      label: t('dashboard.kpi.waiting'),
+      stretch: true,
+      node: (
+        <StatCard
+          icon={Inbox}
+          label={t('dashboard.kpi.waiting')}
+          period={t('dashboard.kpi.now')}
+          value={<CountUp value={pending} format={formatCount} />}
+          delta={
+            pending === 0 ? null : overdue > 0 ? (
+              <Badge tone="error">{t('dashboard.kpi.overdue', { count: overdue })}</Badge>
+            ) : (
+              <Badge tone="success">{t('dashboard.kpi.onTarget')}</Badge>
+            )
+          }
+          caption={pending === 0 ? t('dashboard.queueEmpty') : null}
+        />
+      ),
+    },
+
+    /* The share is the headline and the count under it is the working; **who has not
+       installed it** is field work at the counter, so it links to the people it is about. */
+    {
+      id: 'adoption',
+      label: t('dashboard.appAdoption'),
+      stretch: true,
+      node: (
+        <StatCard
+          icon={Smartphone}
+          label={
+            <TitleWithTip
+              title={t('dashboard.appAdoption')}
+              tip={
+                // The count behind the share, then what the share means (24 November 2026).
+                <>
+                  <span className="block font-medium">
+                    {t('dashboard.appInstalled', {
+                      withApp: formatCount(app.suppliersWithApp),
+                      total: formatCount(app.totalSuppliers),
+                    })}
+                  </span>
+                  <span className="mt-xxs block">{t('dashboard.appAdoptionHint')}</span>
+                </>
+              }
+            />
+          }
+          value={installed === null ? formatPercent(installed) : <CountUp value={installed} format={formatPercent} />}
+          footer={
+            <div className="flex flex-col gap-sm">
+              {installed !== null ? (
+                <Meter value={installed} label={t('dashboard.appAdoption')} />
+              ) : null}
+              {withoutApp > 0 ? (
+                <Link
+                  to="/suppliers?hasApp=false"
+                  className="inline-flex w-fit items-center gap-xxs text-caption font-medium text-primary hover:underline"
+                >
+                  {t('dashboard.appWithout', { count: withoutApp })}
+                  <ArrowRight className="size-icon-xs" aria-hidden />
+                </Link>
+              ) : null}
+            </div>
+          }
+        />
+      ),
+    },
+
+    /* `null` is "nothing raised this month", a fact to state rather than a figure that
+       is "not available", so the caption says it in words. */
+    {
+      id: 'appRequests',
+      label: t('dashboard.kpi.appRequests'),
+      stretch: true,
+      node: (
+        <StatCard
+          icon={Send}
+          label={t('dashboard.kpi.appRequests')}
+          period={t('dashboard.kpi.thisMonth')}
+          value={
+            app.appRequestShare === null ? (
+              formatPercent(app.appRequestShare)
+            ) : (
+              <CountUp value={app.appRequestShare} format={formatPercent} />
+            )
+          }
+          delta={
+            app.appRequestShare !== null && delta !== null ? (
+              <DeltaPill delta={delta}>
+                {t('dashboard.kpi.points', { count: Math.abs(delta) })}
+              </DeltaPill>
+            ) : null
+          }
+          caption={
+            app.appRequestShare === null
+              ? t('dashboard.appRequestShareNone')
+              : delta !== null
+                ? t('dashboard.kpi.vsLastMonth')
+                : t('dashboard.kpi.ofAllRequests')
+          }
+          trend={<Sparkline values={trend.slice(-12).map((row) => row.appShare)} domain={[0, 1]} />}
+        />
+      ),
+    },
+
+    {
+      id: 'devices',
+      label: t('dashboard.kpi.devices'),
+      stretch: true,
+      node: (
+        <StatCard
+          icon={BellRing}
+          label={t('dashboard.kpi.devices')}
+          value={<CountUp value={app.devicesRegistered} format={formatCount} />}
+          caption={t('dashboard.kpi.devicesCaption')}
+        />
+      ),
+    },
+  ];
+
   return (
     // Left to right, 50 ms apart (`tfd-stagger`): four figures arriving at once read as one.
-    <div className="tfd-stagger grid gap-lg sm:grid-cols-2 xl:grid-cols-4">
-      <StatCard
-        icon={Inbox}
-        label={t('dashboard.kpi.waiting')}
-        period={t('dashboard.kpi.now')}
-        value={<CountUp value={pending} format={formatCount} />}
-        delta={
-          pending === 0 ? null : overdue > 0 ? (
-            <Badge tone="error">{t('dashboard.kpi.overdue', { count: overdue })}</Badge>
-          ) : (
-            <Badge tone="success">{t('dashboard.kpi.onTarget')}</Badge>
-          )
-        }
-        caption={pending === 0 ? t('dashboard.queueEmpty') : null}
-      />
-
-      {/* The share is the headline and the count under it is the working; **who has not
-          installed it** is field work at the counter, so it links to the people it is about. */}
-      <StatCard
-        icon={Smartphone}
-        label={
-          <TitleWithTip
-            title={t('dashboard.appAdoption')}
-            tip={
-              // The count behind the share, then what the share means (24 November 2026).
-              <>
-                <span className="block font-medium">
-                  {t('dashboard.appInstalled', {
-                    withApp: formatCount(app.suppliersWithApp),
-                    total: formatCount(app.totalSuppliers),
-                  })}
-                </span>
-                <span className="mt-xxs block">{t('dashboard.appAdoptionHint')}</span>
-              </>
-            }
-          />
-        }
-        value={installed === null ? formatPercent(installed) : <CountUp value={installed} format={formatPercent} />}
-        footer={
-          <div className="flex flex-col gap-sm">
-            {installed !== null ? (
-              <Meter value={installed} label={t('dashboard.appAdoption')} />
-            ) : null}
-            {withoutApp > 0 ? (
-              <Link
-                to="/suppliers?hasApp=false"
-                className="inline-flex w-fit items-center gap-xxs text-caption font-medium text-primary hover:underline"
-              >
-                {t('dashboard.appWithout', { count: withoutApp })}
-                <ArrowRight className="size-icon-xs" aria-hidden />
-              </Link>
-            ) : null}
-          </div>
-        }
-      />
-
-      {/* `null` is "nothing raised this month", a fact to state rather than a figure that
-          is "not available", so the caption says it in words. */}
-      <StatCard
-        icon={Send}
-        label={t('dashboard.kpi.appRequests')}
-        period={t('dashboard.kpi.thisMonth')}
-        value={
-          app.appRequestShare === null ? (
-            formatPercent(app.appRequestShare)
-          ) : (
-            <CountUp value={app.appRequestShare} format={formatPercent} />
-          )
-        }
-        delta={
-          app.appRequestShare !== null && delta !== null ? (
-            <DeltaPill delta={delta}>
-              {t('dashboard.kpi.points', { count: Math.abs(delta) })}
-            </DeltaPill>
-          ) : null
-        }
-        caption={
-          app.appRequestShare === null
-            ? t('dashboard.appRequestShareNone')
-            : delta !== null
-              ? t('dashboard.kpi.vsLastMonth')
-              : t('dashboard.kpi.ofAllRequests')
-        }
-        trend={<Sparkline values={trend.slice(-12).map((row) => row.appShare)} domain={[0, 1]} />}
-      />
-
-      <StatCard
-        icon={BellRing}
-        label={t('dashboard.kpi.devices')}
-        value={<CountUp value={app.devicesRegistered} format={formatCount} />}
-        caption={t('dashboard.kpi.devicesCaption')}
-      />
-    </div>
+    <DashboardGrid
+      items={tiles}
+      order={layout.kpis}
+      hidden={layout.hiddenKpis}
+      editing={editing}
+      onReorder={(kpis) => onLayout({ kpis })}
+      onToggle={(id) => onLayout({ hiddenKpis: toggled(layout.hiddenKpis, id) })}
+      // As many columns as tiles showing, so a hidden tile leaves no hole at the end.
+      className={cn('tfd-stagger grid gap-lg sm:grid-cols-2', KPI_COLUMNS[editing ? tiles.length : tiles.length - layout.hiddenKpis.length])}
+    />
   );
 }
 
