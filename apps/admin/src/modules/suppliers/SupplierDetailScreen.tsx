@@ -73,6 +73,8 @@ import { useCreditRequests } from '@/modules/credit/hooks';
 import { useTeaPacketRequests } from '@/modules/tea-packets/hooks';
 import { useInquiries } from '@/modules/inquiries/hooks';
 import { motionAllowed } from '@/lib/motion';
+import { cn } from '@/lib/cn';
+import { InlineLink } from '@/components/ui/InlineLink';
 import { playSound } from '@/lib/sound/uiSound';
 
 const STATUS_TONES = { active: 'success', suspended: 'warning', closed: 'neutral' } as const;
@@ -110,6 +112,7 @@ export function SupplierDetailScreen() {
    * `403`: the tab is not offered rather than offered and broken.
    */
   const canReadRequests = useCan('creditRequests', 'read');
+  const canReadChanges = useCan('changeRequests', 'read');
   // The Activity tab is the audit trail and nothing else; without `auditLog: R` it was empty.
   const canReadAudit = useCan('auditLog', 'read');
   const sections = SECTIONS.filter(
@@ -321,7 +324,18 @@ export function SupplierDetailScreen() {
                   ) : null}
                 </dl>
               ) : (
-                <Notice tone="warning">{t('suppliers.noBankDetails')}</Notice>
+                <Notice tone="warning">
+                  {/* Bank details reach the console as change requests: that is where to look
+                      for this supplier's, if one is waiting (27 November 2026). */}
+                  <span className="flex flex-wrap items-center gap-x-md gap-y-xxs">
+                    {t('suppliers.noBankDetails')}
+                    {canReadChanges ? (
+                      <InlineLink to={`/change-requests?supplierId=${supplier.id}&type=bankDetails`}>
+                        {t('link.bankChangeRequests')}
+                      </InlineLink>
+                    ) : null}
+                  </span>
+                </Notice>
               )}
             </CardBody>
           </Card>
@@ -351,7 +365,20 @@ export function SupplierDetailScreen() {
           </Card>
 
           <Card>
-            <CardHeader title={t('suppliers.detail.credit')} />
+            <CardHeader
+              title={t('suppliers.detail.credit')}
+              actions={
+                // What the balances came from: this supplier's approved credit.
+                canReadRequests ? (
+                  <InlineLink
+                    to={`/credit?supplierId=${supplier.id}&status=approved`}
+                    className="text-body-small text-primary"
+                  >
+                    {t('link.approvedCredit')}
+                  </InlineLink>
+                ) : null
+              }
+            />
             <CardBody>
               {/* `creditBalances` is not sent by the API yet. Reading `.advance` off it
                   took the whole screen down, so its absence is said in words. */}
@@ -487,12 +514,15 @@ function SupplierSummary({ supplier }: { supplier: SupplierDetail }) {
     value: string;
     hint?: string;
     tone: 'success' | 'warning' | 'neutral';
+    /** Where the answer is (27 November 2026): a tab of this page, or a filtered list. */
+    to?: string;
   }> = [
     {
       key: 'app',
       icon: Smartphone,
       label: t('suppliers.column.app'),
       ...appTile(supplier, t),
+      to: '?tab=notifications',
     },
     {
       key: 'bank',
@@ -501,6 +531,7 @@ function SupplierSummary({ supplier }: { supplier: SupplierDetail }) {
       value: supplier.bankDetails ? t('suppliers.bankOnFile') : t('suppliers.noBankDetails'),
       hint: supplier.bankDetails?.bankName,
       tone: supplier.bankDetails ? 'success' : 'warning',
+      to: '?tab=money',
     },
     {
       key: 'savings',
@@ -509,6 +540,7 @@ function SupplierSummary({ supplier }: { supplier: SupplierDetail }) {
       value:
         supplier.savingsPerKg === 0 ? t('suppliers.optedOut') : formatAmount(supplier.savingsPerKg),
       tone: 'neutral',
+      to: '?tab=money',
     },
     {
       key: 'point',
@@ -516,6 +548,8 @@ function SupplierSummary({ supplier }: { supplier: SupplierDetail }) {
       label: t('suppliers.column.point'),
       value: supplier.collectionPoint?.name ?? t('suppliers.noPoint'),
       tone: supplier.collectionPoint ? 'neutral' : 'warning',
+      // The other suppliers at the same point; no point, nowhere to go.
+      to: supplier.collectionPoint ? `/suppliers?collectionPointId=${supplier.collectionPoint.id}` : undefined,
     },
   ];
 
@@ -527,32 +561,57 @@ function SupplierSummary({ supplier }: { supplier: SupplierDetail }) {
 
   return (
     <ul className="grid gap-sm sm:grid-cols-2 xl:grid-cols-4">
-      {tiles.map(({ key, icon: Icon, label, value, hint, tone }) => (
-        <li
-          key={key}
-          className="flex items-center gap-sm rounded-lg border border-border bg-surface p-md"
-        >
-          <span
-            aria-hidden
-            className={`flex size-10 shrink-0 items-center justify-center rounded-md ${ICON_TONES[tone]}`}
-          >
-            <Icon className="size-icon-sm" />
-          </span>
-          <span className="flex min-w-0 flex-col">
-            <span className="text-caption text-text-secondary">{label}</span>
+      {tiles.map(({ key, icon: Icon, label, value, hint, tone, to }) => {
+        const body = (
+          <>
             <span
-              className={`truncate text-body-small font-semibold ${
-                tone === 'warning' ? 'text-warning' : 'text-text-primary'
-              }`}
+              aria-hidden
+              className={`flex size-10 shrink-0 items-center justify-center rounded-md ${ICON_TONES[tone]}`}
             >
-              {value}
+              <Icon className="size-icon-sm" />
             </span>
-            {hint ? (
-              <span className="truncate text-caption text-text-secondary">{hint}</span>
-            ) : null}
-          </span>
-        </li>
-      ))}
+            <span className="flex min-w-0 flex-col">
+              <span className="text-caption text-text-secondary">{label}</span>
+              <span
+                className={`truncate text-body-small font-semibold ${
+                  tone === 'warning' ? 'text-warning' : 'text-text-primary'
+                }`}
+              >
+                {value}
+              </span>
+              {hint ? (
+                <span className="truncate text-caption text-text-secondary">{hint}</span>
+              ) : null}
+            </span>
+          </>
+        );
+        const tile = 'flex h-full items-center gap-sm rounded-lg border border-border bg-surface p-md';
+        return (
+          <li key={key}>
+            {to ? (
+              <Link
+                to={to}
+                // A tab is reading, not navigating: Back still returns to the list.
+                replace={to.startsWith('?')}
+                viewTransition={!to.startsWith('?') && motionAllowed()}
+                onClick={() => playSound(to.startsWith('?') ? 'toggle' : 'tick')}
+                className={cn(
+                  tile,
+                  'group transition-colors hover:border-primary hover:bg-surface-variant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                )}
+              >
+                {body}
+                <ArrowRight
+                  aria-hidden
+                  className="ml-auto size-icon-xs shrink-0 text-text-secondary transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+                />
+              </Link>
+            ) : (
+              <div className={tile}>{body}</div>
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }

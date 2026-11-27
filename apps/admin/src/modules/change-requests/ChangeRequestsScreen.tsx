@@ -38,6 +38,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useLeavingRows } from '@/components/useLeavingRows';
 import { qk } from '@/query/queryKeys';
 import { isSelfApproval } from '@tfd/domain';
+import { SupplierFilterChip } from '@/components/SupplierFilterChip';
 
 const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'neutral' } as const;
 
@@ -203,6 +204,9 @@ export function ChangeRequestsScreen() {
       {/* Fixed-height card, scrolling rows. See the note in SuppliersScreen. */}
       <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-center gap-sm border-b border-divider p-md">
+          {supplierId ? (
+            <SupplierFilterChip supplierId={supplierId} onClear={() => setParam('supplierId', null)} />
+          ) : null}
           <div className="min-w-64 flex-1">
             <SearchInput
               label={t('changeRequests.column.supplier')}

@@ -56,7 +56,14 @@ export interface ServedDashboard {
   /** `totalKgs` is a `number`: the server casts the `SUM` to text and parses it. */
   intakeTrend: Array<{ monthKey: string; totalKgs: number }>;
   sync: FactorySyncStatus | null;
-  alerts: Array<{ key?: string; id?: string; severity?: DashboardAlert['severity']; params?: Record<string, string | number> }>;
+  alerts: Array<{
+    key?: string;
+    id?: string;
+    severity?: DashboardAlert['severity'];
+    params?: Record<string, string | number>;
+    /** Where the alert is about, when the server knows; else the console works it out. */
+    href?: string;
+  }>;
 }
 
 export const dashboardEndpoints = {

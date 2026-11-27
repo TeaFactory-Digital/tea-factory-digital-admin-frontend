@@ -3233,6 +3233,18 @@ export const ta: Record<TranslationKey, string> = {
   'appearance.glass.off': 'முடக்கு',
   'appearance.glass.on': 'இயக்கு',
   'appearance.glassHint': 'பக்கப்பட்டி, மேல் பட்டை மற்றும் உரையாடல்கள் ஒளியை வளைக்கும் மிதக்கும் திரவக் கண்ணாடி போல. அட்டவணைகளும் தொகைகளும் திடமாகவே இருக்கும். இந்தக் கணினி மெதுவாக இருந்தால் அதை முடக்கவும்.',
+  // Links into the records a sentence is about (27 November 2026).
+  'link.bankChangeRequests': 'வங்கி விவர மாற்றக் கோரிக்கைகள்',
+  'link.approvedCredit': 'அங்கீகரிக்கப்பட்ட கடன் கோரிக்கைகள்',
+  'link.showSuppliers': 'இந்த வழங்குநர்களைக் காட்டு',
+  'link.showBills': 'இந்தப் பில்களைக் காட்டு',
+  'link.openBills': 'பில்களைத் திற',
+  'link.openSupplier': 'வழங்குநரைத் திற',
+  'link.openPayout': 'கொடுப்பனவு & கடனைத் திற',
+  'link.openConfiguration': 'கட்டமைப்பைத் திற',
+  'link.openMonth': 'மாதத்தைத் திற',
+  'link.openInquiry': 'விசாரணையைத் திற',
+  'link.withoutApp': 'செயலி இல்லாத வழங்குநர்கள்',
   // Connection (26 November 2026).
   'connection.offline': 'இணைப்பு இல்லை',
   'connection.offlineHint': 'இந்தக் கணினி இணைப்பில் இல்லை. திரையில் உள்ளவை புதுப்பிக்கப்படாமல் இருக்கலாம், இணைப்பு திரும்பும் வரை எதையும் சேமிக்க முடியாது.',
@@ -3241,6 +3253,8 @@ export const ta: Record<TranslationKey, string> = {
   'connection.boundaryTitle': 'இந்தத் திரைக்கு இணைப்பு தேவை',
   'connection.boundaryBody': 'இது இந்தக் கணினியில் இன்னும் திறக்கப்படவில்லை, இணைப்பும் இல்லை. இணைப்பு திரும்பியவுடன் பக்கம் தானாகவே மீண்டும் ஏற்றப்படும்.',
   'queue.ageTarget': 'இலக்கு: {{target}} க்குள்',
+  'queue.onlySupplierPrefix': 'மட்டும்:',
+  'queue.clearSupplier': 'எல்லா வழங்குநர்களையும் காட்டு',
   // Animations and interface sounds (26 November 2026).
   'appearance.motion': 'அசைவூட்டங்கள்',
   'appearance.motion.off': 'முடக்கு',

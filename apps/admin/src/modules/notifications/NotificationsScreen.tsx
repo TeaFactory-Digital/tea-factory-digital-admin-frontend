@@ -61,6 +61,15 @@ import { ComposeDialog } from './ComposeDialog';
 import { TriggersCard } from './TriggersCard';
 import { useNotifications, useNotificationTriggers } from './hooks';
 import { useRuntimeConfig } from '@/config/RuntimeConfigProvider';
+import { InlineLink } from '@/components/ui/InlineLink';
+
+/** The screen an automatic send fired from, when the log says which record it was. */
+function firedFrom(row: NotificationSend): string | null {
+  if (!row.entityId) return null;
+  if (row.entity === 'inquiry') return `/inquiries/${row.entityId}`;
+  if (row.entity === 'monthlyRate') return `/bills?month=${row.entityId}`;
+  return null;
+}
 
 export function NotificationsScreen() {
   const { t } = useTranslation();
@@ -124,9 +133,18 @@ export function NotificationsScreen() {
               {/* Automatic sends say what fired them. A log entry nobody can trace to an
                   action is a log entry nobody trusts. */}
               <span className="text-caption text-text-secondary">
-                {row.origin === 'automatic'
-                  ? t('notifications.firedBy')
-                  : t('notifications.composedBy', { name: row.createdByName ?? '-' })}
+                {row.origin === 'automatic' ? (
+                  firedFrom(row) ? (
+                    // The record it fired from, as the type promised (27 November 2026).
+                    <InlineLink to={firedFrom(row)!} className="text-primary">
+                      {t('notifications.firedBy')}
+                    </InlineLink>
+                  ) : (
+                    t('notifications.firedBy')
+                  )
+                ) : (
+                  t('notifications.composedBy', { name: row.createdByName ?? '-' })
+                )}
               </span>
             </span>
           );
@@ -150,8 +168,15 @@ export function NotificationsScreen() {
           }
           const kind = row.audience.kind as string;
           const ids = (row.audience as { supplierIds?: string[] }).supplierIds;
-          return (
-            <span className="text-text-primary">
+          // Who it went to, one click away: the point's suppliers, or the one supplier.
+          const audienceTo =
+            kind === 'collectionPoint' && row.audience.collectionPointId
+              ? `/suppliers?collectionPointId=${row.audience.collectionPointId}`
+              : kind === 'supplier' && row.audience.supplierId
+                ? `/suppliers/${row.audience.supplierId}`
+                : null;
+          const label = (
+            <>
               {kind === 'collectionPoint'
                 ? t('notifications.audience.collectionPoint', {
                     // The API records the point's id; its name comes from the config.
@@ -169,7 +194,14 @@ export function NotificationsScreen() {
                         count: ids?.length ?? row.targetedSuppliers,
                       })
                     : t('notifications.audience.allSuppliers')}
-            </span>
+            </>
+          );
+          return audienceTo ? (
+            <InlineLink to={audienceTo} arrow={false} className="text-primary">
+              {label}
+            </InlineLink>
+          ) : (
+            <span className="text-text-primary">{label}</span>
           );
         },
       },

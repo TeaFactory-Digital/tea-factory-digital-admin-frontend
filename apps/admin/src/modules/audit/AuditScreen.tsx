@@ -26,6 +26,30 @@ import { EmptyState } from '@/components/ui/states';
 import { AUDIT_ENTITIES, auditActionLabel, auditEntityLabel } from '@/lib/auditLabels';
 import { AuditDetails } from '@/components/AuditDetails';
 import { formatDateTime } from '@/lib/format';
+import { InlineLink } from '@/components/ui/InlineLink';
+
+/** The screen a logged record lives on, for the kinds that have one. */
+function auditRecordPath(entity: string | null | undefined, id: string | null | undefined): string | null {
+  if (!entity || !id) return null;
+  switch (entity) {
+    case 'supplier':
+      return `/suppliers/${id}`;
+    case 'changeRequest':
+      return `/change-requests/${id}`;
+    case 'creditRequest':
+      return `/credit/${id}`;
+    case 'inquiry':
+      return `/inquiries/${id}`;
+    case 'newsArticle':
+      return `/news/${id}`;
+    case 'banner':
+      return `/banners/${id}`;
+    case 'bill':
+      return `/bills/${id}`;
+    default:
+      return null;
+  }
+}
 
 export function AuditScreen() {
   const { t } = useTranslation();
@@ -135,19 +159,28 @@ export function AuditScreen() {
         enableSorting: false,
         // The kind of record in words, the id under it, small: the id is for finding the
         // record, the kind is what the reader scans for.
-        cell: (info) => (
-          <span className="flex min-w-36 flex-col">
-            <span className="text-text-primary">
-              {auditEntityLabel(info.row.original.entity, t)}
+        cell: (info) => {
+          const to = auditRecordPath(info.row.original.entity, info.row.original.entityId);
+          const kind = auditEntityLabel(info.row.original.entity, t);
+          return (
+            <span className="flex min-w-36 flex-col">
+              {/* The record itself, where it has a screen (27 November 2026). */}
+              {to ? (
+                <InlineLink to={to} arrow={false} className="text-primary">
+                  {kind}
+                </InlineLink>
+              ) : (
+                <span className="text-text-primary">{kind}</span>
+              )}
+              <span
+                className="numeric max-w-48 truncate font-mono text-caption text-text-secondary"
+                title={info.row.original.entityId}
+              >
+                {info.row.original.entityId}
+              </span>
             </span>
-            <span
-              className="numeric max-w-48 truncate font-mono text-caption text-text-secondary"
-              title={info.row.original.entityId}
-            >
-              {info.row.original.entityId}
-            </span>
-          </span>
-        ),
+          );
+        },
       },
       {
         id: 'change',

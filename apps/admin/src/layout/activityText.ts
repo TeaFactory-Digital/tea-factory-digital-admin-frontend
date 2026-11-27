@@ -14,8 +14,11 @@ export function activityPath(item: ActivityItem): string {
     case 'creditRequest.cancelled':
       return `/credit/${item.entityId}`;
     case 'teaPacket.created':
-    case 'teaPacket.cancelled':
-      return '/tea-packets';
+    case 'teaPacket.cancelled': {
+      // This supplier's tea packets, in the status the event left them in (27 November 2026).
+      const status = item.kind === 'teaPacket.cancelled' ? 'cancelled' : 'pending';
+      return item.supplierId ? `/tea-packets?supplierId=${item.supplierId}&status=${status}` : '/tea-packets';
+    }
     case 'changeRequest.created':
       return `/change-requests/${item.entityId}`;
     case 'inquiry.created':

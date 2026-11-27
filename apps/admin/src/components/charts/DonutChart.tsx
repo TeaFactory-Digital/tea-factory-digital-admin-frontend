@@ -11,7 +11,12 @@
  */
 
 import { useState, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { motionAllowed } from '@/lib/motion';
+import { useNavigate } from '@/lib/navigate';
+import { playSound } from '@/lib/sound/uiSound';
 
 export interface DonutSegment {
   key: string;
@@ -19,6 +24,11 @@ export interface DonutSegment {
   value: number;
   /** A CSS colour, normally from `seriesColor`. */
   color: string;
+  /**
+   * Where this slice's records are (27 November 2026). The legend row becomes the link (the
+   * one a keyboard reaches) and the slice opens it on a click too.
+   */
+  to?: string;
 }
 
 const SIZE = 160;
@@ -47,6 +57,11 @@ export function DonutChart({
   label: string;
 }) {
   const [active, setActive] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const open = (to: string) => {
+    playSound('tick');
+    navigate(to);
+  };
   const sum = segments.reduce((acc, segment) => acc + segment.value, 0);
   const gap = segments.length > 1 ? GAP : 0;
 
@@ -88,9 +103,13 @@ export function DonutChart({
               strokeDashoffset={-arc.offset}
               transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
               opacity={active && active !== arc.key ? 0.35 : 1}
-              className="cursor-default transition-[stroke-width,opacity] duration-200"
+              className={cn(
+                'transition-[stroke-width,opacity] duration-200',
+                arc.to ? 'cursor-pointer' : 'cursor-default',
+              )}
               onMouseEnter={() => setActive(arc.key)}
               onMouseLeave={() => setActive(null)}
+              onClick={arc.to ? () => open(arc.to!) : undefined}
             >
               <title>{`${arc.label}: ${formatValue(arc.value)}`}</title>
             </circle>
@@ -115,32 +134,55 @@ export function DonutChart({
       </div>
 
       <ul className="flex flex-col gap-xxs">
-        {arcs.map((arc) => (
-          <li
-            key={arc.key}
-            onMouseEnter={() => setActive(arc.key)}
-            onMouseLeave={() => setActive(null)}
-            className={cn(
-              '-mx-sm flex items-center gap-sm rounded-sm px-sm py-xs text-body-small transition-colors duration-150',
-              active === arc.key && 'bg-surface-variant',
-            )}
-          >
-            <span
-              aria-hidden
-              className="size-2.5 shrink-0 rounded-full"
-              style={{ background: arc.color }}
-            />
-            <span className="min-w-0 flex-1 truncate text-text-primary">{arc.label}</span>
-            {showShare && sum > 0 ? (
-              <span className="numeric text-text-secondary">
-                {Math.round((arc.value / sum) * 100)}%
+        {arcs.map((arc) => {
+          const row = (
+            <>
+              <span
+                aria-hidden
+                className="size-2.5 shrink-0 rounded-full"
+                style={{ background: arc.color }}
+              />
+              <span className="min-w-0 flex-1 truncate text-text-primary">{arc.label}</span>
+              {showShare && sum > 0 ? (
+                <span className="numeric text-text-secondary">
+                  {Math.round((arc.value / sum) * 100)}%
+                </span>
+              ) : null}
+              <span className="numeric min-w-10 text-right font-semibold text-text-primary">
+                {formatValue(arc.value)}
               </span>
-            ) : null}
-            <span className="numeric min-w-10 text-right font-semibold text-text-primary">
-              {formatValue(arc.value)}
-            </span>
-          </li>
-        ))}
+            </>
+          );
+          const rowClass = cn(
+            '-mx-sm flex items-center gap-sm rounded-sm px-sm py-xs text-body-small transition-colors duration-150',
+            active === arc.key && 'bg-surface-variant',
+          );
+          return (
+            <li key={arc.key} onMouseEnter={() => setActive(arc.key)} onMouseLeave={() => setActive(null)}>
+              {arc.to ? (
+                <Link
+                  to={arc.to}
+                  viewTransition={motionAllowed()}
+                  onClick={() => playSound('tick')}
+                  onFocus={() => setActive(arc.key)}
+                  onBlur={() => setActive(null)}
+                  className={cn(
+                    rowClass,
+                    'group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                  )}
+                >
+                  {row}
+                  <ArrowRight
+                    aria-hidden
+                    className="size-icon-xs shrink-0 text-text-secondary transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+                  />
+                </Link>
+              ) : (
+                <div className={rowClass}>{row}</div>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </figure>
   );

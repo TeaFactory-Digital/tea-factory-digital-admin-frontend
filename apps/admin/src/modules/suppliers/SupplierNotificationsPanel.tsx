@@ -38,6 +38,8 @@ import { formatDate, formatDateTime } from '@/lib/format';
 import { isApiError } from '@/services/api/errors';
 import { errorMessageKey } from '@/lib/errorMessage';
 import { useSupplierNotifications } from './hooks';
+import { InlineLink } from '@/components/ui/InlineLink';
+import { useCan } from '@/auth/authStore';
 
 /**
  * The reason a category does not reach, as a key, or `null` when it does.
@@ -56,6 +58,7 @@ function reasonKeyFor(reach: SupplierCategoryReach, hasApp: boolean): string | n
 
 export function SupplierNotificationsPanel({ supplierId }: { supplierId: string }) {
   const { t } = useTranslation();
+  const canConfigure = useCan('flagsAndBranding', 'read');
   const query = useSupplierNotifications(supplierId);
 
   /**
@@ -73,6 +76,9 @@ export function SupplierNotificationsPanel({ supplierId }: { supplierId: string 
             <span className="inline-flex items-center gap-xs">
               <BellOff className="size-icon-sm shrink-0" aria-hidden />
               {disabled ? t('suppliers.push.featureOff') : t(errorMessageKey(query.error))}
+              {disabled && canConfigure ? (
+                <InlineLink to="/configuration?section=features">{t('link.openConfiguration')}</InlineLink>
+              ) : null}
             </span>
           </Notice>
         </CardBody>

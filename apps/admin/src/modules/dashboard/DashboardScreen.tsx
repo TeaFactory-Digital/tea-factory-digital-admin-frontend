@@ -34,6 +34,8 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { TodayCard } from './TodayCard';
+import { queueLink } from './today';
+import { InlineLink } from '@/components/ui/InlineLink';
 import { Link } from 'react-router-dom';
 import {
   Area,
@@ -457,8 +459,9 @@ const QUEUE_SLOT: Record<string, number> = {
 /**
  * What is waiting, split by queue.
  *
- * Not links: the queue cards below are the way into each screen, and a second set of
- * links to the same lists would only be two places to keep in step.
+ * Each slice and legend row opens its queue (27 November 2026): the office reads "Change
+ * requests 3" here and clicks it, whatever cards sit below. The link is `queueLink`, the
+ * same one the cards and Today use, so there is still one place it is decided.
  */
 function QueueMixCard({ queues }: { queues: QueueCount[] }) {
   const { t } = useTranslation();
@@ -488,6 +491,7 @@ function QueueMixCard({ queues }: { queues: QueueCount[] }) {
               label: t(`dashboard.queue.${queue.queue}`),
               value: queue.pending,
               color: seriesColor(QUEUE_SLOT[queue.queue] ?? 9),
+              to: queueLink(queue.queue),
             }))}
           />
         )}
@@ -540,11 +544,19 @@ function QueueSection({ queues, className }: { queues: QueueCount[]; className?:
             <div className="flex flex-wrap items-center gap-xs border-t border-divider pt-md text-caption text-text-secondary">
               <CircleCheck className="size-icon-xs shrink-0 text-success" aria-hidden />
               <span>{t('dashboard.clearQueues')}</span>
-              {clear.map((queue) => (
-                <Badge key={queue.queue} tone="neutral">
-                  {t(`dashboard.queue.${queue.queue}`)}
-                </Badge>
-              ))}
+              {clear.map((queue) => {
+                const to = queueLink(queue.queue);
+                const badge = <Badge tone="neutral">{t(`dashboard.queue.${queue.queue}`)}</Badge>;
+                // Each a link, as this section promised: "nothing waiting" is still a queue
+                // somebody may want to look back through (27 November 2026).
+                return to ? (
+                  <InlineLink key={queue.queue} to={to} arrow={false} className="rounded-pill hover:no-underline [&>span]:hover:bg-primary-muted [&>span]:hover:text-primary">
+                    {badge}
+                  </InlineLink>
+                ) : (
+                  <span key={queue.queue}>{badge}</span>
+                );
+              })}
             </div>
           ) : null}
         </section>
@@ -749,15 +761,19 @@ function ContentHealthCard({ content }: { content: ContentHealth }) {
         }
       />
       <CardBody className="flex flex-col gap-md">
-        <div className="flex items-center gap-md rounded-md bg-surface-variant px-md py-sm">
+        {/* Opens the banners that are live, the list's own default (27 November 2026). */}
+        <InlineLink
+          to="/banners"
+          className="flex items-center gap-md rounded-md bg-surface-variant px-md py-sm transition-colors hover:bg-primary-muted hover:no-underline [&>svg:last-child]:ml-auto [&>svg:last-child]:text-text-secondary"
+        >
           <Megaphone className="size-icon-md shrink-0 text-primary" aria-hidden />
-          <p className="flex items-baseline gap-xs text-body-small text-text-secondary">
+          <span className="flex items-baseline gap-xs text-body-small font-normal text-text-secondary">
             <span className="numeric text-title text-text-primary">
               {formatCount(content.bannersLive)}
             </span>
             {t('dashboard.bannersLive')}
-          </p>
-        </div>
+          </span>
+        </InlineLink>
 
         {rows.length === 0 ? (
           <p className="flex items-center gap-xs text-body-small text-success">

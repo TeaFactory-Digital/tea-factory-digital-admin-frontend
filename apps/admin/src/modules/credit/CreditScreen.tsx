@@ -49,6 +49,7 @@ import { WalkInCreditDialog } from './WalkInCreditDialog';
 import { useDebounced } from '@/lib/useDebounced';
 import { formatAmount, formatQuantityKg } from '@/lib/format';
 import { useCreditRequests } from './hooks';
+import { SupplierFilterChip } from '@/components/SupplierFilterChip';
 
 const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'neutral' } as const;
 
@@ -288,6 +289,9 @@ export function CreditScreen() {
 
       <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-center gap-sm border-b border-divider p-md">
+          {supplierId ? (
+            <SupplierFilterChip supplierId={supplierId} onClear={() => setParam('supplierId', null)} />
+          ) : null}
           <div className="min-w-64 flex-1">
             <SearchInput
               label={t('credit.column.supplier')}

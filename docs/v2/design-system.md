@@ -353,6 +353,17 @@ drafted and saved with "Save preferences" like the rest:
 - **Copying** a short value is `CopyButton` (the supplier number): the icon becomes a tick
   that pops, and a screen reader hears "Copied".
 - **Badges** change colour smoothly when their status does.
+- **A count or warning that names records links to them** (27 November 2026). `InlineLink`
+  (`components/ui/InlineLink.tsx`) is the link inside a sentence, notice or figure: it takes
+  the colour of what it sits in, slides its arrow on hover, and navigates the console's way
+  (View Transition, `tick`). Only to a route the destination screen reads (its own search
+  params), only when this role may open it (`useCan`), and never from inside a dialog or a
+  form with unsaved edits. Examples: the supplier's "Open requests" (one link per queue that
+  holds some, counted from the queues' own first pages), the supplier summary tiles (a tab of
+  the page, `replace`), dashboard alerts (`ALERT_HREF` in `dashboardRepository` when the
+  server sends no `href`), "no bank details" and "carries debt" notices, the bill run's
+  figures (`/bills` lenses), "set it in Configuration" hints, the notification log's source
+  and audience, the audit log's records.
 - **Not built, because the console has no such screen**: a kanban board of moving cards (the
   spec's leaf intake board), a day/week schedule, a split-pane inbox.
 

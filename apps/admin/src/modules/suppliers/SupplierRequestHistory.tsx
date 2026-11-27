@@ -75,10 +75,12 @@ export function SupplierRequestHistory({ supplierId }: { supplierId: string }) {
       detail: `${t('suppliers.requestHistory.packets', { count: request.packets })} · ${t(
         `teaPackets.delivery.${request.deliveryMethod}`,
       )}`,
-      to: null,
+      // No detail screen for a tea packet: its queue, this supplier, this status
+      // (27 November 2026; it used to be no link at all).
+      to: `/tea-packets?supplierId=${supplierId}&status=${request.status}`,
     }));
     return [...credit, ...tea].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }, [history.credit, history.teaPackets, t]);
+  }, [history.credit, history.teaPackets, supplierId, t]);
 
   const totals = useMemo(
     () =>

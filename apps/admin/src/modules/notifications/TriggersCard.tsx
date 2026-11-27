@@ -31,9 +31,11 @@ import { errorMessageKey } from '@/lib/errorMessage';
 import { formatDateTime } from '@/lib/format';
 import { useNotificationTriggers, useSetNotificationTrigger } from './hooks';
 import { InfoTip } from '@/components/ui/Tooltip';
+import { InlineLink } from '@/components/ui/InlineLink';
 
 export function TriggersCard() {
   const { t } = useTranslation();
+  const canConfigure = useCan('flagsAndBranding', 'read');
   const toast = useToast();
   // §12.1's `content: A`: deciding that every supplier's phone buzzes when a month
   // closes is a factory-administrator decision, not an editor's.
@@ -106,7 +108,13 @@ export function TriggersCard() {
                 {!trigger.available ? (
                   // Shown, not hidden: "this factory has not configured push" and "the
                   // factory turned it off" are different answers.
-                  <Badge tone="neutral">{t('notifications.notConfigured')}</Badge>
+                  canConfigure ? (
+                    <InlineLink to="/configuration?section=push" arrow={false} className="rounded-pill">
+                      <Badge tone="neutral">{t('notifications.notConfigured')}</Badge>
+                    </InlineLink>
+                  ) : (
+                    <Badge tone="neutral">{t('notifications.notConfigured')}</Badge>
+                  )
                 ) : canChange ? (
                   <Label className="flex shrink-0 items-center gap-xs text-label text-text-primary">
                     <Checkbox

@@ -75,6 +75,18 @@ function toAdoptionTrend(rows: ServedDashboard['adoptionTrend']) {
  * because an alert that shouts by default trains the office to ignore the ones that mean
  * it.
  */
+/**
+ * Where each alert is about (27 November 2026). The served shape has no link, and the card
+ * drew every alert as a row that could not be clicked; an alert names a set of records the
+ * office has to act on, so it opens them. The server's own `href` wins when it sends one.
+ */
+const ALERT_HREF: Record<string, (params: Record<string, string | number>) => string | undefined> = {
+  'dashboard.alert.missingBankDetails': () => '/suppliers?hasBankDetails=false',
+  'dashboard.alert.slaBreach': () => '/change-requests?status=pending',
+  'dashboard.alert.awaitingRate': (params) =>
+    params.month ? `/rates?month=${encodeURIComponent(String(params.month))}` : '/rates',
+};
+
 function toAlerts(rows: ServedDashboard['alerts']): DashboardAlert[] {
   return rows.flatMap((row, index) => {
     const messageKey = row.key;
@@ -85,6 +97,7 @@ function toAlerts(rows: ServedDashboard['alerts']): DashboardAlert[] {
         severity: row.severity ?? 'info',
         messageKey,
         params: row.params,
+        href: row.href ?? ALERT_HREF[messageKey]?.(row.params ?? {}),
       },
     ];
   });

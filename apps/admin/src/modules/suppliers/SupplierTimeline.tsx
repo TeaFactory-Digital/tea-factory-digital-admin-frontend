@@ -275,7 +275,8 @@ function describe(
         detail: `LKR ${formatAmount(teaPacket.amount)}`,
         status: { label: t(`teaPackets.status.${teaPacket.status}`), tone: REQUEST_TONES[teaPacket.status] },
         when: formatDateTime(teaPacket.createdAt),
-        to: '/tea-packets',
+        // The queue narrowed to this supplier and status, not the whole queue.
+        to: `/tea-packets?supplierId=${teaPacket.supplierId}&status=${teaPacket.status}`,
       };
     }
     case 'change':

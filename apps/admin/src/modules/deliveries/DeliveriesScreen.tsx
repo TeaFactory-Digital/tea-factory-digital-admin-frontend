@@ -54,6 +54,7 @@ import { EntrySession } from './EntrySession';
 import { VoidDeliveryDialog } from './VoidDeliveryDialog';
 import { useDaySummary, useDeliveries } from './hooks';
 import { useComparesWithSlips, useSlipComparison } from '@/modules/bills/hooks';
+import { InlineLink } from '@/components/ui/InlineLink';
 
 export function DeliveriesScreen() {
   const { t } = useTranslation();
@@ -236,12 +237,18 @@ export function DeliveriesScreen() {
       {heldOnly && day ? (
         <Notice tone="info">
           <Lock className="mt-xxs size-icon-sm shrink-0" aria-hidden />
-          {t('deliveries.heldOnly', { month: formatMonthKey(day.monthKey), suppliers: heldCodes.join(', ') })}
+          <span className="flex flex-wrap items-center gap-x-md gap-y-xxs">
+            {t('deliveries.heldOnly', { month: formatMonthKey(day.monthKey), suppliers: heldCodes.join(', ') })}
+            <InlineLink to={`/rates?month=${day.monthKey}`}>{t('link.openMonth')}</InlineLink>
+          </span>
         </Notice>
       ) : locked && day ? (
         <Notice tone="warning">
           <Lock className="mt-xxs size-icon-sm shrink-0" aria-hidden />
-          {t('deliveries.monthLocked', { month: formatMonthKey(day.monthKey) })}
+          <span className="flex flex-wrap items-center gap-x-md gap-y-xxs">
+            {t('deliveries.monthLocked', { month: formatMonthKey(day.monthKey) })}
+            <InlineLink to={`/rates?month=${day.monthKey}`}>{t('link.openMonth')}</InlineLink>
+          </span>
         </Notice>
       ) : canWrite && tooOld ? (
         <Notice tone="warning">

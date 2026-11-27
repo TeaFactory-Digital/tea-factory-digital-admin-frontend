@@ -3849,6 +3849,7 @@ export const handlers: HttpHandler[] = [
         key: alert.messageKey,
         severity: alert.severity,
         params: alert.params,
+        href: alert.href,
       })),
     });
   }),

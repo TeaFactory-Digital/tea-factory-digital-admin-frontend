@@ -33,6 +33,7 @@ import { UserMenu } from './UserMenu';
 import { InfoTip } from '@/components/ui/Tooltip';
 import { useAppearance } from '@/brand/useAppearance';
 import { motionAllowed } from '@/lib/motion';
+import { InlineLink } from '@/components/ui/InlineLink';
 import { useSlidingTile } from '@/lib/useSlidingTile';
 import { playSound } from '@/lib/sound/uiSound';
 
@@ -200,7 +201,14 @@ function AdoptionMeter({ app }: { app: DashboardView['app'] }) {
             })}
           </InfoTip>
         </span>
-        <span className="numeric text-text-secondary">{formatPercent(share)}</span>
+        {/* The suppliers still to bring onto the app (27 November 2026). */}
+        <InlineLink
+          to="/suppliers?hasApp=false"
+          arrow={false}
+          className="numeric font-normal text-text-secondary hover:text-primary"
+        >
+          <span title={t('link.withoutApp')}>{formatPercent(share)}</span>
+        </InlineLink>
       </div>
       <Meter value={share} label={t('dashboard.appAdoption')} />
     </div>

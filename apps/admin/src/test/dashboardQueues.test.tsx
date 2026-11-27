@@ -47,7 +47,10 @@ async function queueLinks(container: HTMLElement): Promise<string[]> {
   // `findAll`: a linked card prints its label twice (once as the heading, once beside
   // the arrow) so the singular query would fail on the very cards being asserted.
   await view.findAllByText(en['dashboard.queue.changeRequests']);
-  return view.getAllByRole('link').map((node) => node.getAttribute('href') ?? '');
+  // The queue cards' own section: the ring above links its legend to the same queues
+  // (27 November 2026), and those are not the cards being asserted.
+  const cards = view.getByRole('region', { name: en['dashboard.queues'] });
+  return within(cards).getAllByRole('link').map((node) => node.getAttribute('href') ?? '');
 }
 
 beforeEach(() => {

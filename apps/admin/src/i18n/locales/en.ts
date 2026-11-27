@@ -3178,6 +3178,18 @@ export const en = {
   'appearance.glass.off': 'Off',
   'appearance.glass.on': 'On',
   'appearance.glassHint': 'The sidebar, top bar and dialogs as floating liquid glass that bends the light. Tables and figures stay solid. Turn it off if this computer feels slow.',
+  // Links into the records a sentence is about (27 November 2026).
+  'link.bankChangeRequests': 'Bank-detail change requests',
+  'link.approvedCredit': 'Approved credit requests',
+  'link.showSuppliers': 'Show these suppliers',
+  'link.showBills': 'Show these bills',
+  'link.openBills': 'Open the bills',
+  'link.openSupplier': 'Open the supplier',
+  'link.openPayout': 'Open payout & credit',
+  'link.openConfiguration': 'Open Configuration',
+  'link.openMonth': 'Open the month',
+  'link.openInquiry': 'Open the inquiry',
+  'link.withoutApp': 'Suppliers without the app',
   // Connection (26 November 2026).
   'connection.offline': 'No connection',
   'connection.offlineHint': 'This computer is offline. What is on screen may be out of date, and nothing can be saved until the connection is back.',
@@ -3186,6 +3198,8 @@ export const en = {
   'connection.boundaryTitle': 'This screen needs a connection',
   'connection.boundaryBody': 'It has not been opened on this computer yet, and the connection is down. The page reloads by itself as soon as the connection is back.',
   'queue.ageTarget': 'Target: within {{target}}',
+  'queue.onlySupplierPrefix': 'Only',
+  'queue.clearSupplier': 'Show every supplier',
   // Animations and interface sounds (26 November 2026).
   'appearance.motion': 'Animations',
   'appearance.motion.off': 'Off',

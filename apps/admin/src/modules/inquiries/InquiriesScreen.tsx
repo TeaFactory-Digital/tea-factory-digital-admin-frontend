@@ -33,6 +33,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/states';
 import { useDebounced } from '@/lib/useDebounced';
 import { useInquiries } from './hooks';
+import { SupplierFilterChip } from '@/components/SupplierFilterChip';
 
 const STATUS_TONES = {
   open: 'warning',
@@ -179,6 +180,9 @@ export function InquiriesScreen() {
 
       <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-center gap-sm border-b border-divider p-md">
+          {supplierId ? (
+            <SupplierFilterChip supplierId={supplierId} onClear={() => setParam('supplierId', null)} />
+          ) : null}
           <div className="min-w-64 flex-1">
             <SearchInput
               label={t('inquiries.searchPlaceholder')}

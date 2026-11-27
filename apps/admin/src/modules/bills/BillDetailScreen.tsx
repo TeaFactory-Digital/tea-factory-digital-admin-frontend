@@ -57,6 +57,7 @@ import { useKeepsFactoryRecords } from '@/config/RuntimeConfigProvider';
 import { OtherChargesDialog } from './OtherChargesDialog';
 import { BillSlip } from './BillSlip';
 import { OTHER_DEDUCTIONS_ON_SERVER } from '@/lib/serverReady';
+import { InlineLink } from '@/components/ui/InlineLink';
 
 export function BillDetailScreen() {
   const { t } = useTranslation();
@@ -126,8 +127,10 @@ export function BillDetailScreen() {
 
       {/* Held back from the publish until it agrees with the factory's printed slip. */}
       {data.heldAt && data.heldForMonth ? (
-        <p className="shrink-0 rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
+        <p className="flex shrink-0 flex-wrap items-center gap-x-md gap-y-xxs rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
           {t('slips.heldForEarlierNotice', { month: formatMonthKey(data.heldForMonth) })}
+          {/* The month whose held bill this one waits on. */}
+          <InlineLink to={`/bills?month=${data.heldForMonth}`}>{t('link.openBills')}</InlineLink>
         </p>
       ) : data.heldAt ? (
         <p className="shrink-0 rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
@@ -198,7 +201,11 @@ export function BillDetailScreen() {
               <DetailRow label={t('bills.month')} value={data.month} />
               <DetailRow
                 label={t('bills.supplier')}
-                value={`${data.supplierCode} · ${data.supplierName}`}
+                value={
+                  <InlineLink to={`/suppliers/${data.supplierId}`} arrow={false} className="text-primary">
+                    {`${data.supplierCode} · ${data.supplierName}`}
+                  </InlineLink>
+                }
               />
               <DetailRow
                 label={t('suppliers.detail.payout')}
@@ -382,16 +389,18 @@ export function BillDetailScreen() {
               {/* An account that owes more than it earned pays nothing, and the reader
                   needs to be told that rather than left to infer it from a zero. */}
               {data.carryForward.nextMonthDeb > 0 ? (
-                <p className="mt-sm rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
+                <p className="mt-sm flex flex-wrap items-center gap-x-md gap-y-xxs rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
                   {t('bills.carriesDebtNotice', {
                     amount: formatMoney(data.carryForward.nextMonthDeb),
                   })}
+                  <InlineLink to={`/suppliers/${data.supplierId}?tab=money`}>{t('link.openPayout')}</InlineLink>
                 </p>
               ) : null}
 
               {(data.finalBalance ?? 0) > 0 && !data.hasBankDetails ? (
-                <p className="mt-sm rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
+                <p className="mt-sm flex flex-wrap items-center gap-x-md gap-y-xxs rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
                   {t('bills.noBankNotice')}
+                  <InlineLink to={`/suppliers/${data.supplierId}?tab=money`}>{t('link.openPayout')}</InlineLink>
                 </p>
               ) : null}
             </CardBody>
@@ -438,7 +447,9 @@ export function BillDetailScreen() {
           }
           actions={
             <Link
-              to={`/savings?supplier=${data.supplierId}`}
+              // The supplier's own savings card and ledger. It pointed at `/savings`, which
+              // is not a route, and every click landed on the dashboard (27 November 2026).
+              to={`/suppliers/${data.supplierId}?tab=money`}
               className="text-label text-primary underline-offset-2 hover:underline"
             >
               {t('bills.openPassbook')}

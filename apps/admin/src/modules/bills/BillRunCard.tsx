@@ -19,6 +19,7 @@
  *    no button, because BR-108 means the server would refuse.
  */
 
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FileText, Lock, RefreshCw, TriangleAlert } from 'lucide-react';
 import type { BillMonth, BillRun } from '@tfd/domain';
@@ -32,6 +33,7 @@ import { BILL_ENGINE_ON_SERVER } from '@/lib/serverReady';
 import { isApiError } from '@/services/api/errors';
 import { useGenerateBills } from './hooks';
 import { InfoTip } from '@/components/ui/Tooltip';
+import { InlineLink } from '@/components/ui/InlineLink';
 
 export function BillRunCard({
   monthKey,
@@ -102,12 +104,30 @@ export function BillRunCard({
         {run ? (
           <>
             <dl className="grid grid-cols-2 gap-x-lg gap-y-xs sm:grid-cols-3">
-              <Figure label={t('bills.runBills')} value={formatCount(run.billCount)} />
+              <Figure
+                label={t('bills.runBills')}
+                value={
+                  <InlineLink to={`/bills?month=${monthKey}`} arrow={false} className="text-primary">
+                    {formatCount(run.billCount)}
+                  </InlineLink>
+                }
+              />
               <Figure label={t('bills.runKgs')} value={formatKg(run.totalKgs)} />
               <Figure label={t('bills.runGross')} value={formatMoney(run.grossTotal)} />
               <Figure label={t('bills.runDeductions')} value={formatMoney(run.deductionsTotal)} />
               <Figure label={t('bills.runSavings')} value={formatMoney(run.savingsTotal)} />
-              <Figure label={t('bills.runCarryingDebt')} value={formatCount(run.carryingDebt)} />
+              <Figure
+                label={t('bills.runCarryingDebt')}
+                value={
+                  run.carryingDebt > 0 ? (
+                    <InlineLink to={`/bills?month=${monthKey}&lens=carriesDebt`} arrow={false} className="text-primary">
+                      {formatCount(run.carryingDebt)}
+                    </InlineLink>
+                  ) : (
+                    formatCount(run.carryingDebt)
+                  )
+                }
+              />
             </dl>
 
             <p className="text-caption text-text-secondary">
@@ -122,7 +142,13 @@ export function BillRunCard({
             {run.missingBankDetails > 0 ? (
               <p className="flex items-start gap-xs rounded-md bg-warning-muted px-md py-sm text-body-small text-warning">
                 <TriangleAlert className="mt-xxs size-icon-sm shrink-0" aria-hidden />
-                {t('bills.missingBankWarning', { count: run.missingBankDetails })}
+                <span className="flex flex-wrap items-center gap-x-md gap-y-xxs">
+                  {t('bills.missingBankWarning', { count: run.missingBankDetails })}
+                  {/* The bills list already has this lens: the very bills the warning counts. */}
+                  <InlineLink to={`/bills?month=${monthKey}&lens=missingBankDetails`}>
+                    {t('link.showBills')}
+                  </InlineLink>
+                </span>
               </p>
             ) : null}
 
@@ -203,7 +229,7 @@ export function BillRunCard({
   );
 }
 
-function Figure({ label, value }: { label: string; value: string }) {
+function Figure({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex flex-col">
       <dt className="text-caption text-text-secondary">{label}</dt>

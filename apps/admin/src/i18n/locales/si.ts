@@ -3172,6 +3172,18 @@ export const si: Record<TranslationKey, string> = {
   'appearance.glass.off': 'අක්‍රියයි',
   'appearance.glass.on': 'සක්‍රියයි',
   'appearance.glassHint': 'පැති තීරුව, ඉහළ තීරුව සහ සංවාද ආලෝකය නමන පාවෙන දියර වීදුරු ලෙස. වගු සහ සංඛ්‍යා නොවිනිවිද ලෙසම පවතී. මෙම පරිගණකය මන්දගාමී නම් එය අක්‍රිය කරන්න.',
+  // Links into the records a sentence is about (27 November 2026).
+  'link.bankChangeRequests': 'බැංකු විස්තර වෙනස් කිරීමේ ඉල්ලීම්',
+  'link.approvedCredit': 'අනුමත ණය ඉල්ලීම්',
+  'link.showSuppliers': 'මෙම සැපයුම්කරුවන් පෙන්වන්න',
+  'link.showBills': 'මෙම බිල්පත් පෙන්වන්න',
+  'link.openBills': 'බිල්පත් විවෘත කරන්න',
+  'link.openSupplier': 'සැපයුම්කරු විවෘත කරන්න',
+  'link.openPayout': 'ගෙවීම් සහ ණය විවෘත කරන්න',
+  'link.openConfiguration': 'වින්‍යාසය විවෘත කරන්න',
+  'link.openMonth': 'මාසය විවෘත කරන්න',
+  'link.openInquiry': 'විමසීම විවෘත කරන්න',
+  'link.withoutApp': 'යෙදුම නැති සැපයුම්කරුවන්',
   // Connection (26 November 2026).
   'connection.offline': 'සම්බන්ධතාවය නැත',
   'connection.offlineHint': 'මෙම පරිගණකය offline ය. තිරයේ ඇති දේ යාවත්කාලීන නොවිය හැකි අතර, සම්බන්ධතාවය නැවත ලැබෙන තුරු කිසිවක් සුරැකිය නොහැක.',
@@ -3180,6 +3192,8 @@ export const si: Record<TranslationKey, string> = {
   'connection.boundaryTitle': 'මෙම තිරයට සම්බන්ධතාවයක් අවශ්‍යයි',
   'connection.boundaryBody': 'එය මෙම පරිගණකයේ තවම විවෘත කර නැති අතර, සම්බන්ධතාවය නැත. සම්බන්ධතාවය නැවත ලැබුණු විගස පිටුව ඉබේම නැවත load වේ.',
   'queue.ageTarget': 'ඉලක්කය: {{target}} ඇතුළත',
+  'queue.onlySupplierPrefix': 'පමණි:',
+  'queue.clearSupplier': 'සියලු සැපයුම්කරුවන් පෙන්වන්න',
   // Animations and interface sounds (26 November 2026).
   'appearance.motion': 'සජීවිකරණ',
   'appearance.motion.off': 'අක්‍රියයි',

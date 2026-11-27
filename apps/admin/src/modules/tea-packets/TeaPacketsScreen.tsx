@@ -53,6 +53,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useLeavingRows } from '@/components/useLeavingRows';
 import { qk } from '@/query/queryKeys';
 import { useTeaPacketRequests } from './hooks';
+import { InlineLink } from '@/components/ui/InlineLink';
+import { SupplierFilterChip } from '@/components/SupplierFilterChip';
 
 const STATUS_TONES = { pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'neutral' } as const;
 
@@ -85,6 +87,7 @@ export function TeaPacketsScreen() {
    * column, which is the whole reason `DEFAULT_TEA_PACKET_POLICY` is not zeroes.
    */
   const policy = config.teaPackets ?? DEFAULT_TEA_PACKET_POLICY;
+  const canConfigure = useCan('flagsAndBranding', 'read');
 
   const query = useMemo(
     () => ({
@@ -273,13 +276,20 @@ export function TeaPacketsScreen() {
             <strong className="font-semibold">{t('teaPackets.noPolicy.title')}</strong>{' '}
             {t('teaPackets.noPolicy.body', {
               price: formatAmount(DEFAULT_TEA_PACKET_POLICY.pricePerPacket),
-            })}
+            })}{' '}
+            {/* The sentence says "set it in Configuration": so it goes there (27 November 2026). */}
+            {canConfigure ? (
+              <InlineLink to="/configuration?section=teaPackets">{t('link.openConfiguration')}</InlineLink>
+            ) : null}
           </span>
         </Notice>
       )}
 
       <Card className={GRID_CARD}>
         <div className="flex shrink-0 flex-wrap items-center gap-sm border-b border-divider p-md">
+          {supplierId ? (
+            <SupplierFilterChip supplierId={supplierId} onClear={() => setParam('supplierId', null)} />
+          ) : null}
           <div className="min-w-64 flex-1">
             <SearchInput
               label={t('teaPackets.column.supplier')}

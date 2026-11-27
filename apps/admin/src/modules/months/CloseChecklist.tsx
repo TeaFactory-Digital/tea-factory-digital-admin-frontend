@@ -42,6 +42,7 @@ import { useBillRun } from '@/modules/bills/hooks';
 import { usePublishMonth } from './hooks';
 import { ReasonChips } from '@/components/ReasonChips';
 import { Celebration } from '@/components/Celebration';
+import { InlineLink } from '@/components/ui/InlineLink';
 
 interface Step {
   key: string;
@@ -316,7 +317,12 @@ export function CloseChecklist({ month }: { month: MonthSummary }) {
             {/* A late division file: its bills wait for a manager other than the importer. */}
             {lateBills > 0 ? (
               <div className="flex flex-col gap-xs border-t border-divider pt-md">
-                <Notice tone="warning">{t('months.lateBillsWaiting', { count: lateBills })}</Notice>
+                <Notice tone="warning">
+                  <span className="flex flex-wrap items-center gap-x-md gap-y-xxs">
+                    {t('months.lateBillsWaiting', { count: lateBills })}
+                    <InlineLink to={`/bills?month=${month.monthKey}`}>{t('link.showBills')}</InlineLink>
+                  </span>
+                </Notice>
                 {canPublish ? (
                   <>
                     <Button variant="primary" disabled={wouldBeSelfApproval} onClick={() => setConfirming(true)}>
